@@ -1,0 +1,14 @@
+{
+  "name": "com.aoyon.facetune",
+  "displayName": "FaceTune",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "A modular tool for avatar emotion expression.",
+  "author": {
+    "name": "Ao_425",
+    "url": "https://github.com/Tliks"
+  },
+  "url": "https://github.com/Tliks/com.aoyon.facetune",
+  "changelogUrl": "https://github.com/Tliks/com.aoyon.facetune/blob/main/CHANGELOG.md",
+  "vpmDependencies": {}
+}

@@ -1,0 +1,29 @@
+using nadena.dev.ndmf;
+using com.aoyon.facetune.pass;
+using com.aoyon.facetune.preview;
+
+[assembly: ExportsPlugin(typeof(com.aoyon.facetune.PluginDefinition))]
+
+namespace com.aoyon.facetune;
+
+public sealed class PluginDefinition : Plugin<PluginDefinition>
+{
+    public override string QualifiedName => "com.aoyon.facetune";
+
+    public override string DisplayName => "FaceTune";
+
+    protected override void Configure()
+    {
+        InPhase(BuildPhase.Resolving)
+        .Run(ReolveRenferencesPass.Instance)
+        .PreviewingWith(new DefaultShapesPreview());
+
+        InPhase(BuildPhase.Transforming)
+        .Run(BuildPass.Instance);
+
+        InPhase(BuildPhase.Optimizing)
+        .AfterPlugin("net.rs64.tex-trans-tool")
+        .Run("Empty Pass", _ => { })
+        .PreviewingWith(new EditingShapesPreview(), new SelectedShapesPreview());
+    }
+}
