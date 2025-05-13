@@ -61,9 +61,9 @@ internal class AnimatorInstaller
             var pattern = patterns[i];
             var layer = _ctrl.NewLayer($"{info.PresetName}_{i}");
 
-            var init = layer.NewState("Init");
-            SetTracks(init, _sessionContext.DefaultExpression);
-
+            var defaultState = layer.NewState("default");
+            var defaultToExitConditions = defaultState.Exits().WhenConditions();
+            
             foreach (var expressionWithCondition in pattern.Expressions)
             {
                 var expressions = expressionWithCondition.Expressions;
@@ -80,12 +80,25 @@ internal class AnimatorInstaller
                 var expressionState = layer.NewState(name).WithAnimation(clip);
                 SetTracks(expressionState, facialExpressions.Last());
 
-                var conditions = init.TransitionsTo(expressionState).WithTransitionDurationSeconds(0.1f).WhenConditions();
-                WithConditions(conditions, expressionWithCondition.Conditions, layer.Av3(), true);
-                var exits = expressionState.Exits().WithTransitionDurationSeconds(0.1f).WhenConditions();
-                WithConditions(exits, expressionWithCondition.Conditions, layer.Av3(), false);
+                var entryConditions = expressionState.TransitionsFromEntry().WhenConditions();
+                var exitConditions = expressionState.Exits().WithTransitionDurationSeconds(0.1f).WhenConditions();
+                foreach (var condition in expressionWithCondition.Conditions)
+                {
+                    if (condition.Type != ConditionType.HandGesture) continue;
+                    if (condition.HandGestureCondition.Hand == Hand.Left)
+                    {
+                        entryConditions.And(layer.Av3().GestureLeft.IsEqualTo(Convert(condition.HandGestureCondition.HandGesture)));
+                        defaultToExitConditions.Or().When(layer.Av3().GestureLeft.IsNotEqualTo(Convert(condition.HandGestureCondition.HandGesture)));
+                        exitConditions.And(layer.Av3().GestureLeft.IsNotEqualTo(Convert(condition.HandGestureCondition.HandGesture)));
+                    }
+                    else
+                    {
+                        entryConditions.And(layer.Av3().GestureRight.IsEqualTo(Convert(condition.HandGestureCondition.HandGesture)));
+                        defaultToExitConditions.Or().When(layer.Av3().GestureRight.IsNotEqualTo(Convert(condition.HandGestureCondition.HandGesture)));
+                        exitConditions.And(layer.Av3().GestureRight.IsNotEqualTo(Convert(condition.HandGestureCondition.HandGesture)));
+                    }
+                }
             }
-            init.At(0, 5);
         }
     }
 
@@ -129,36 +142,6 @@ internal class AnimatorInstaller
                 return AacAv3.Av3Gesture.ThumbsUp;
             default:
                 throw new ArgumentOutOfRangeException(nameof(handGesture), handGesture, null);
-        }
-    }
-
-    private void WithConditions(AacFlTransitionContinuation aacContinuation, List<Condition> ftConditions, AacAv3 av3, bool isEqualTo)
-    {
-        foreach (var ftCondition in ftConditions)
-        {
-            if (ftCondition.Type != ConditionType.HandGesture) continue;
-            if (ftCondition.HandGestureCondition.Hand == Hand.Left)
-            {
-                if (isEqualTo)
-                {
-                    aacContinuation.And(av3.GestureLeft.IsEqualTo(Convert(ftCondition.HandGestureCondition.HandGesture)));
-                }
-                else
-                {
-                    aacContinuation.And(av3.GestureLeft.IsNotEqualTo(Convert(ftCondition.HandGestureCondition.HandGesture)));
-                }
-            }
-            else
-            {
-                if (isEqualTo)
-                {
-                    aacContinuation.And(av3.GestureRight.IsEqualTo(Convert(ftCondition.HandGestureCondition.HandGesture)));
-                }
-                else
-                {
-                    aacContinuation.And(av3.GestureRight.IsNotEqualTo(Convert(ftCondition.HandGestureCondition.HandGesture)));
-                }
-            }
         }
     }
 
