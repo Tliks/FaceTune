@@ -20,7 +20,7 @@ internal class ProjectSettings : ScriptableSingleton<ProjectSettings>
     }
 
     [SerializeField]
-    private bool enableSelectedExpressionPreview = false;
+    private bool enableSelectedExpressionPreview = true;
     public static Action<bool>? EnableSelectedExpressionPreviewChanged;
     public static bool EnableSelectedExpressionPreview
     {
