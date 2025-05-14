@@ -13,10 +13,7 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
         var defaultExpressionComponent = context.Observe(mainComponent, c => c.DefaultExpressionComponent, (a, b) => a == b);
         if (defaultExpressionComponent == null) return null;
 
-        var defaultBlendShapes = context.Observe(defaultExpressionComponent, c => c.BlendShapes, (a, b) => 
-        {
-            return false; // compareで何故か同じ値しか返ってこない
-        });
+        var defaultBlendShapes = context.Observe(defaultExpressionComponent, c => new List<BlendShape>(c.BlendShapes), (a, b) => a.SequenceEqual(b));
         return new BlendShapeSet(defaultBlendShapes);
     }
 }

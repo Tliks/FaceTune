@@ -75,10 +75,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var blendShapes = new List<BlendShape>();
         foreach (var expressionComponent in expressionComponents)
         {
-            var defaultBlendShapes = context.Observe(expressionComponent, c => c.BlendShapes, (a, b) => 
-            {
-                return false; // compareで何故か同じ値しか返ってこない
-            });
+            var defaultBlendShapes = context.Observe(expressionComponent, c => new List<BlendShape>(c.BlendShapes), (a, b) => a.SequenceEqual(b));
             blendShapes.AddRange(defaultBlendShapes);
         }
         return new BlendShapeSet(blendShapes);
