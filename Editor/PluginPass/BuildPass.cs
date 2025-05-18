@@ -11,29 +11,79 @@ internal class BuildPass : Pass<BuildPass>
 
     protected override void Execute(BuildContext context)
     {
-        var mainComponents = context.AvatarRootObject
-            .GetComponentsInChildren<FaceTuneComponent>(false);
-
+        var mainComponents = context.AvatarRootObject.GetComponentsInChildren<FaceTuneComponent>(false);
         if (mainComponents.Length == 0) return;
         if (mainComponents.Length > 1) throw new Exception("FaceTuneComponent is not unique");
-
         var mainComponent = mainComponents[0];
+
         if (!mainComponent.TryGetSessionContext(out var sessionContext)) return;
 
-        var presetComponents = mainComponent.GetComponentsInChildren<PresetComponent>(false);
-        if (presetComponents.Length == 0) return;
-        
-        var allPresets = presetComponents
-            .Select(c => c.GetPreset(sessionContext))
-            .ToList();
-        
+        Profiler.BeginSample("CollectPresetData");
+        var presets = CollectPresetData(sessionContext);
+        var expressions = presets.SelectMany(p => p.GetAllExpressions());
+        Profiler.EndSample();
+
+        // Generate a mesh with cloned disallowed blend shapes and replace the data
+        Profiler.BeginSample("CloneDisallowedBlendShapes");
+        var shapesToClone = SearchShapesToClone(sessionContext, expressions);
+        var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone);
+        ModifyPresetData(expressions, mapping);
+        Profiler.EndSample();
+
         // optionやmenuitemは一旦後回し
 
-        FTPlatformSupport.InstallPresets(context, sessionContext, allPresets);
+        Profiler.BeginSample("InstallPresetData");
+        InstallPresetData(context, sessionContext, presets);
+        Profiler.EndSample();
 
         foreach (var component in mainComponent.GetComponentsInChildren<FaceTuneTagComponent>(true))
         {
             Object.DestroyImmediate(component);
         }
+    }
+
+    private List<Preset> CollectPresetData(SessionContext context)
+    {
+        var presetComponents = context.Root.GetComponentsInChildren<PresetComponent>(false);
+        return presetComponents
+            .Select(c => c.GetPreset(context))
+            .OfType<Preset>()
+            .ToList();
+    }
+
+    private HashSet<string> SearchShapesToClone(SessionContext context, IEnumerable<Expression> expressions)
+    {
+        var disAllowedShapes = new HashSet<string>();
+        if (!context.Root.GetComponentsInChildren<CloneDisallowedBlendShapesComponent>(false).Any()) return disAllowedShapes;
+        disAllowedShapes.UnionWith(FTPlatformSupport.GetDisallowedBlendShape(context));
+        disAllowedShapes.IntersectWith(context.FaceRenderer.GetBlendShapes().Select(b => b.Name));
+        disAllowedShapes.IntersectWith(expressions.SelectMany(e => e.BlendShapeNames));
+        return disAllowedShapes;
+    }
+
+    private Dictionary<string, string> ModifyFaceMesh(SkinnedMeshRenderer renderer, HashSet<string> shapesToClone)
+    {
+        var oldMesh = renderer.sharedMesh;
+        var newMesh = Object.Instantiate(oldMesh);
+        ObjectRegistry.RegisterReplacedObject(oldMesh, newMesh);
+        var mapping = MeshHelper.CloneShapes(newMesh, shapesToClone);
+        renderer.sharedMesh = newMesh;
+        return mapping;
+    }
+
+    private void ModifyPresetData(IEnumerable<Expression> expressions, Dictionary<string, string> mapping)
+    {
+        foreach (var expression in expressions)
+        {
+            foreach (var (oldName, newName) in mapping)
+            {
+                expression.ReplaceBlendShapeName(oldName, newName);
+            }
+        }
+    }
+
+    private void InstallPresetData(BuildContext context, SessionContext sessionContext, IEnumerable<Preset> presets)
+    {
+        FTPlatformSupport.InstallPresets(context, sessionContext, presets);
     }
 }

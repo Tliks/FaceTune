@@ -6,15 +6,15 @@ namespace com.aoyon.facetune
         internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
         internal const string ComponentName = "FT Preset";
 
-        public PresetInfo Info = new();
+        public string PresetName = string.Empty;
 
-        internal Preset GetPreset(SessionContext context)
+        internal Preset? GetPreset(SessionContext context)
         {
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(false)
                 .Select(c => c.GetPatternWithPriority(context))
                 .ToList();
-            return new Preset(Info, new SortedExpressionPatterns(patterns));
+            if (patterns.Count == 0) return null;
+            return new Preset(PresetName, new SortedExpressionPatterns(patterns));
         }
     }
 }
-

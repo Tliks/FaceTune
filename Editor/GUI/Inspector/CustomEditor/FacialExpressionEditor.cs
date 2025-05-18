@@ -49,6 +49,39 @@ internal class FacialExpressionEditor : Editor
     private void RecieveEditorResult(BlendShapeSet result)
     {
         Undo.RecordObject(_component, "RecieveEditorResult");
-        _component.BlendShapes = result.BlendShapes.ToList(); // 同じKeyの場合は上書きにした方が良い
+        serializedObject.Update();
+        FacialExpressionEditorUtility.UpdateShapes(_blendShapesProperty, result.BlendShapes);
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+
+public class FacialExpressionEditorUtility
+{
+    public static void UpdateShapes(FacialExpressionComponent component, IReadOnlyCollection<BlendShape> newShapes)
+    {
+        var serializedObject = new SerializedObject(component);
+        var blendShapesProperty = serializedObject.FindProperty("_blendShapes");
+        UpdateShapes(blendShapesProperty, newShapes);
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    internal static void UpdateShapes(SerializedProperty blendShapesProperty, IReadOnlyCollection<BlendShape> newShapes)
+    {
+        var newShapesList = newShapes as List<BlendShape> ?? newShapes.ToList();
+
+        blendShapesProperty.ClearArray();
+
+        for (int i = 0; i < newShapesList.Count; i++)
+        {
+            blendShapesProperty.InsertArrayElementAtIndex(i);
+            SerializedProperty elementProperty = blendShapesProperty.GetArrayElementAtIndex(i);
+            BlendShape currentShape = newShapesList[i];
+
+            SerializedProperty nameProp = elementProperty.FindPropertyRelative(nameof(BlendShape.Name));
+            nameProp.stringValue = currentShape.Name;
+
+            SerializedProperty weightProp = elementProperty.FindPropertyRelative(nameof(BlendShape.Weight));
+            weightProp.floatValue = currentShape.Weight;
+        }
     }
 }

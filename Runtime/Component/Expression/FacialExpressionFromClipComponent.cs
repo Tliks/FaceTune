@@ -18,7 +18,7 @@ namespace com.aoyon.facetune
                 var newBlendShapes = GetBlendShapesFromClip(Clip);
                 if (!IncludeZeroWeight) newBlendShapes = newBlendShapes.Where(x => x.Weight > 0).ToArray();
 
-                var mapping = new BlendShapeSet(context.DefaultBlendShapes.ToList()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
+                var mapping = new BlendShapeSet(context.DefaultBlendShapes).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
                 foreach (var blendShape in newBlendShapes)
                 {
                     if (mapping.TryGetValue(blendShape.Name, out var index))
@@ -30,8 +30,8 @@ namespace com.aoyon.facetune
 #endif
             if (AddDefault)
             {
-                var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes.ToList());
-                blendShapes = defaultShapes.Merge(blendShapes);
+                var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes);
+                blendShapes = defaultShapes.Add(blendShapes);
             }
             return new FacialExpression(blendShapes, AllowEyeBlink, AllowLipSync, name);
         }

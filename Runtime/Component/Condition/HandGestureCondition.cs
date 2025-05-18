@@ -6,13 +6,13 @@ namespace com.aoyon.facetune
         internal const string ComponentName = "FT Hand Gesture Condition";
         internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
 
-        public Hand Hand = default;
-        public HandGesture HandGesture = default;
+        public Hand Hand = Hand.Left;
+        public BoolComparisonType ComparisonType = BoolComparisonType.Equal;
+        public HandGesture HandGesture = HandGesture.Fist;
 
         Condition IConditionProvider.ToCondition()
         {
-            return new Condition(Hand, HandGesture);
+            return new HandGestureCondition(Hand, ComparisonType, HandGesture);
         }
-
     }
 }

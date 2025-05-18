@@ -41,4 +41,17 @@ internal static class DictionaryExtensions
             source.Add(kv);
         }
     }
+
+    public static void RemoveRange<TKey, TValue>(this IDictionary<TKey, TValue> source, IEnumerable<TKey> removeKeys)
+    {
+        foreach (var key in removeKeys)
+        {
+            source.Remove(key);
+        }
+    }
+
+    public static IDictionary<TKey, TValue> Clone<TKey, TValue>(this IDictionary<TKey, TValue> source)
+    {
+        return new Dictionary<TKey, TValue>(source);
+    }
 }

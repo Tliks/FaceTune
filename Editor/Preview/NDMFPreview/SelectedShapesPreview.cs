@@ -34,7 +34,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         }
 
         _targetGameObject.Value = target;
-
     }
 
     // FacialExpressionComponent以外の取得が必要

@@ -1,23 +1,21 @@
 namespace com.aoyon.facetune;
 
-[Flags]
 public enum HandGesture
 {
-    Neutral = 1 << 0,
-    Fist = 1 << 1,
-    HandOpen = 1 << 2,
-    FingerPoint = 1 << 3,
-    Victory = 1 << 4,
-    RockNRoll = 1 << 5,
-    HandGun = 1 << 6,
-    ThumbsUp = 1 << 7
+    Neutral,
+    Fist,
+    HandOpen,
+    FingerPoint,
+    Victory,
+    RockNRoll,
+    HandGun,
+    ThumbsUp
 }
 
-[Flags]
 public enum Hand
 {
-    Left = 1 << 0,
-    Right = 1 << 1
+    Left,
+    Right
 }
 
 public enum PathType
@@ -30,6 +28,24 @@ public enum ParameterType
 {
     Int,
     Float,
-    Bool,
-    Trigger
+    Bool
+}
+
+public enum ComparisonType
+{
+    GreaterThan,
+    LessThan,
+}
+
+public enum BoolComparisonType
+{
+    Equal,
+    NotEqual
+}
+
+public enum TrackingPermission
+{
+    Allow,
+    Disallow,
+    Keep
 }

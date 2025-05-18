@@ -16,7 +16,7 @@ namespace com.aoyon.facetune
             var pathType = PathType;
             if (pathType == PathType.Absolute)
             {
-                return new AnimationExpression(Clip, name);
+                return new AnimationExpression(Clip, TrackingPermission.Keep, TrackingPermission.Keep, name);
             }
             else if (pathType == PathType.Relative)
             {

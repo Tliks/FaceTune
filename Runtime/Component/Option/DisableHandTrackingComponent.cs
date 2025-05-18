@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune
 {
-    [AddComponentMenu(MenuPath)]
+    [AddComponentMenu(FTName + "/" + ComponentName)]
     public class DisableHandTrackingComponent : FaceTuneTagComponent
     {
         internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;

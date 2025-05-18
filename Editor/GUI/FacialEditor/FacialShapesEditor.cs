@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using UnityEditor.IMGUI.Controls;
 using com.aoyon.facetune.preview;
 using nadena.dev.ndmf.preview;
+using UnityEngine.Profiling;
 
 namespace com.aoyon.facetune.ui;
 
@@ -214,11 +215,11 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_sourceClip == null) return;
 
-        var newBlendShapes = AnimationUtility.GetBlendShapesFromClip(_sourceClip);
-        if (!_includeZeroWeight) newBlendShapes = newBlendShapes.Where(x => x.Weight > 0).ToArray();
+        var newBlendShapes = new BlendShapeSet(AnimationUtility.GetBlendShapesFromClip(_sourceClip));
+        if (!_includeZeroWeight) newBlendShapes.RemoveZeroWeight();
 
-        var mapping = new BlendShapeSet(BaseShapes.ToList()).Merge(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
-        foreach (var blendShape in newBlendShapes)
+        var mapping = new BlendShapeSet(BaseShapes).Add(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
+        foreach (var blendShape in newBlendShapes.BlendShapes)
         {
             if (mapping.TryGetValue(blendShape.Name, out var index))
             {
@@ -344,6 +345,7 @@ internal class SelectedBlendShapeSelector : BlendShapeSelectorBase
     private const float ButtonWidth = 20f;
     public override void DrawRow(BlendShapeTreeViewItem item, Rect rect, bool selected)
     {
+        Profiler.BeginSample("SelectedBlendShapeSelector.DrawRow");
         var sliderRect = new Rect(rect.x, rect.y, rect.width - ButtonWidth, rect.height);
         var buttonRect = new Rect(rect.x + rect.width - ButtonWidth, rect.y, ButtonWidth, rect.height);
 
@@ -364,6 +366,7 @@ internal class SelectedBlendShapeSelector : BlendShapeSelectorBase
         {
             _manager.Remove(item.Index);
         }
+        Profiler.EndSample();
     }
 
 }
@@ -379,13 +382,25 @@ internal class UnSelectedBlendShapeSelector : BlendShapeSelectorBase
     private const float ButtonWidth = 20f;
     public override void DrawRow(BlendShapeTreeViewItem item, Rect rect, bool selected)
     {
+        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow");
+
+        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.Rect");
         var labelRect = new Rect(rect.x, rect.y, rect.width - ButtonWidth, rect.height);
         var buttonRect = new Rect(rect.x + rect.width - ButtonWidth, rect.y, ButtonWidth, rect.height);
+        Profiler.EndSample();
+
+        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.LabelField");
         EditorGUI.LabelField(labelRect, item.BlendShape.Name);
+        Profiler.EndSample();
+
+        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.Button");
         if (GUI.Button(buttonRect, "+"))
         {
             _manager.Add(item.Index);
         }
+        Profiler.EndSample();
+
+        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.Contains");
         if (rect.Contains(Event.current.mousePosition))
         {
             _isHovered = true;
@@ -396,6 +411,9 @@ internal class UnSelectedBlendShapeSelector : BlendShapeSelectorBase
                 _manager.Add(item.Index);
             }
         }
+        Profiler.EndSample();
+        
+        Profiler.EndSample();
     }
 
     private bool _isHovered = false;
@@ -486,7 +504,6 @@ internal class BlendShapeTreeView : TreeView
             items.Add(new BlendShapeTreeViewItem(i, 0, _blendShapes[i], i));
         }
         SetupParentsAndChildrenFromDepths(root, items);
-
         return root;
     }
 

@@ -151,7 +151,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 16
+  ComparisonType: 0
+  HandGesture: 4
 --- !u!114 &4284169912573089509
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -185,7 +186,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 8
+  ComparisonType: 0
+  HandGesture: 3
 --- !u!114 &7873206794651799658
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,7 +221,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 4
+  ComparisonType: 0
+  HandGesture: 2
 --- !u!114 &5354197935314635311
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -253,7 +256,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 2
+  ComparisonType: 0
+  HandGesture: 1
 --- !u!114 &4520069762889698292
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287,7 +291,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 128
+  ComparisonType: 0
+  HandGesture: 7
 --- !u!114 &5027249876331721660
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -321,7 +326,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 32
+  ComparisonType: 0
+  HandGesture: 5
 --- !u!114 &3466844160699697356
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -355,7 +361,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 64
+  ComparisonType: 0
+  HandGesture: 6
 --- !u!114 &8801796754080944348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -389,7 +396,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Hand: 0
-  HandGesture: 1
+  ComparisonType: 0
+  HandGesture: 0
 --- !u!114 &7758608823482251811
 MonoBehaviour:
   m_ObjectHideFlags: 0

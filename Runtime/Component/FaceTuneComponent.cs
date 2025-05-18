@@ -35,7 +35,7 @@ namespace com.aoyon.facetune
             }
             else
             {
-                return BlendShape.GetShapesFor(faceRenderer, faceMesh);
+                return faceRenderer.GetBlendShapes(faceMesh);
             }
         }
 
@@ -58,7 +58,7 @@ namespace com.aoyon.facetune
             }
             else
             {
-                defaultExpression = new FacialExpression(new BlendShapeSet(blendShapes.ToList()), false, true, "Default");
+                defaultExpression = new FacialExpression(new BlendShapeSet(blendShapes), TrackingPermission.Disallow, TrackingPermission.Allow, "Default");
             }
 
             context = new SessionContext(root, this, faceRenderer, mesh, defaultExpression, blendShapes);

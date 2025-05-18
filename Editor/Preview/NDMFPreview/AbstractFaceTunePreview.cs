@@ -5,8 +5,8 @@ namespace com.aoyon.facetune.preview;
 
 internal abstract class AbstractFaceTunePreview : IRenderFilter
 {
-    // RootComponetからFaceRendererを取得できればプレビュー対象には入れる
-    // RootComponetに依存しない対象の追加方法が必要か考える
+    // mainComponetからFaceRendererを取得できればプレビュー対象には入れる
+    // mainComponetに依存しない対象の追加方法が必要か考える
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
         var groups = new List<RenderGroup>();
@@ -48,13 +48,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
         if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Task.FromResult<IRenderFilterNode>(new EmptyNode());
 
-        var mapping = blendShapeSet.BlendShapes.ToDictionary(s => s.Name, s => s.Weight);
-        var blendShapeWeights = new float[proxyMesh.blendShapeCount];
-        for (int i = 0; i < proxyMesh.blendShapeCount; i++)
-        {
-            var blendShapeName = proxyMesh.GetBlendShapeName(i);
-            blendShapeWeights[i] = mapping.GetOrAdd(blendShapeName, -1); // 対象外の場合はフラグとして-1を代入しNode側で除外
-        }
+        var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1).Weights(); // 対象外の場合はフラグとして-1を代入しNode側で除外
 
         return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(blendShapeWeights));
 
