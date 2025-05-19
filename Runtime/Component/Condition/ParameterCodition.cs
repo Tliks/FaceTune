@@ -14,8 +14,9 @@ namespace com.aoyon.facetune
         public int IntValue = 0;
         public bool BoolValue = false;
 
-        Condition IConditionProvider.ToCondition()
+        Condition? IConditionProvider.ToCondition()
         {
+            if (string.IsNullOrWhiteSpace(ParameterName)) return null;
             switch (ParameterType)
             {
                 case ParameterType.Float:

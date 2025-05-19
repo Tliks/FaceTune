@@ -85,16 +85,7 @@ internal class AnimatorInstaller
                 var conditions = expressionWithCondition.Conditions;
                 var expressions = expressionWithCondition.Expressions;
 
-                AacFlState expressionState;
-                try
-                {
-                    expressionState = layer.NewState(expressions.First().Name);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Failed to create state for expression: {e.Message}");
-                    continue;
-                }
+                var expressionState = layer.NewState(expressions.First().Name);
 
                 AddExpressionsToState(expressionState, expressions);
 

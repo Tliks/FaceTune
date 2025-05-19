@@ -9,9 +9,12 @@ namespace com.aoyon.facetune
         public GameObject? ConditionRoot;
         public GameObject? ExpressionRoot;
 
-        internal ExpressionWithCondition GetExpressionWithCondition(SessionContext context)
+        internal ExpressionWithCondition? GetExpressionWithCondition(SessionContext context)
         {
-            return new ExpressionWithCondition(GetConditions(), GetExpressions(context));
+            var conditions = GetConditions();
+            var expressions = GetExpressions(context);
+            if (conditions.Count == 0 || expressions.Count == 0) return null;
+            return new ExpressionWithCondition(conditions, expressions);
         }
 
         private List<Condition> GetConditions()
@@ -19,6 +22,7 @@ namespace com.aoyon.facetune
             var root = ConditionRoot == null ? gameObject : ConditionRoot;
             return root.GetInterfacesInChildFTComponents<IConditionProvider>()
                 .Select(c => c.ToCondition())
+                .OfType<Condition>()
                 .ToList();
         }
 
@@ -30,6 +34,5 @@ namespace com.aoyon.facetune
                 .OfType<Expression>()
                 .ToList();
         }
-
     }
 }

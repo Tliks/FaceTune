@@ -20,6 +20,7 @@ internal class BuildPass : Pass<BuildPass>
 
         Profiler.BeginSample("CollectPresetData");
         var presets = CollectPresetData(sessionContext);
+        if (presets == null) { Debug.LogWarning("No preset data found"); return; }
         var expressions = presets.SelectMany(p => p.GetAllExpressions());
         Profiler.EndSample();
 
@@ -42,13 +43,15 @@ internal class BuildPass : Pass<BuildPass>
         }
     }
 
-    private List<Preset> CollectPresetData(SessionContext context)
+    private List<Preset>? CollectPresetData(SessionContext context)
     {
         var presetComponents = context.Root.GetComponentsInChildren<PresetComponent>(false);
-        return presetComponents
+        var presets = presetComponents
             .Select(c => c.GetPreset(context))
             .OfType<Preset>()
             .ToList();
+        if (presets.Count == 0) return null;
+        return presets;
     }
 
     private HashSet<string> SearchShapesToClone(SessionContext context, IEnumerable<Expression> expressions)

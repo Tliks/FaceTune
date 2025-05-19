@@ -12,6 +12,7 @@ namespace com.aoyon.facetune
         {
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(false)
                 .Select(c => c.GetPatternWithPriority(context))
+                .OfType<(ExpressionPattern, int)>()
                 .ToList();
             if (patterns.Count == 0) return null;
             return new Preset(PresetName, new SortedExpressionPatterns(patterns));

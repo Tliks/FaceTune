@@ -8,12 +8,14 @@ namespace com.aoyon.facetune
         
         public int Priority = 0;
 
-        internal (ExpressionPattern, int) GetPatternWithPriority(SessionContext context)
+        internal (ExpressionPattern, int)? GetPatternWithPriority(SessionContext context)
         {
-            var expression = gameObject.GetComponentsInChildren<ConnectConditionAndExpressionComponent>()
+            var expressionWithConditions = gameObject.GetComponentsInChildren<ConnectConditionAndExpressionComponent>()
                 .Select(c => c.GetExpressionWithCondition(context))
+                .OfType<ExpressionWithCondition>()
                 .ToList();
-            return (new ExpressionPattern(expression), Priority);
+            if (expressionWithConditions.Count == 0) return null;
+            return (new ExpressionPattern(expressionWithConditions), Priority);
         }
     }
 }

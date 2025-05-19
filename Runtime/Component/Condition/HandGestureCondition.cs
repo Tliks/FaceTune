@@ -10,7 +10,7 @@ namespace com.aoyon.facetune
         public BoolComparisonType ComparisonType = BoolComparisonType.Equal;
         public HandGesture HandGesture = HandGesture.Fist;
 
-        Condition IConditionProvider.ToCondition()
+        Condition? IConditionProvider.ToCondition()
         {
             return new HandGestureCondition(Hand, ComparisonType, HandGesture);
         }
