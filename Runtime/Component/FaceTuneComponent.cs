@@ -41,7 +41,7 @@ namespace com.aoyon.facetune
 
         internal bool TryGetSessionContext(out SessionContext context)
         {
-            context = default;
+            context = null!;
 
             if (CanBuild() is false) return false;
 
@@ -66,14 +66,14 @@ namespace com.aoyon.facetune
         }
     }
 
-    internal struct SessionContext
+    internal class SessionContext
     {
-        public GameObject Root;
-        public FaceTuneComponent FaceTuneComponent;
-        public SkinnedMeshRenderer FaceRenderer;
-        public Mesh FaceMesh;
-        public FacialExpression DefaultExpression;
-        public BlendShape[] DefaultBlendShapes;
+        public readonly GameObject Root;
+        public readonly FaceTuneComponent FaceTuneComponent;
+        public readonly SkinnedMeshRenderer FaceRenderer;
+        public readonly Mesh FaceMesh;
+        public readonly FacialExpression DefaultExpression;
+        public readonly BlendShape[] DefaultBlendShapes;
 
         public SessionContext(GameObject root, FaceTuneComponent faceTuneComponent, SkinnedMeshRenderer faceRenderer, Mesh faceMesh, FacialExpression defaultExpression, BlendShape[] defaultBlendShapes)
         {
