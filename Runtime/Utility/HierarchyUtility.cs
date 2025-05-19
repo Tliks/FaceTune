@@ -1,10 +1,12 @@
+using nadena.dev.ndmf.runtime;
+
 namespace com.aoyon.facetune;
 
-internal static class EngineExtensions
+internal static class HierarchyUtility
 {
-    public static T? NullCast<T>(this T obj) where T : UnityEngine.Object
+    public static string? GetRelativePath(GameObject root, GameObject child)
     {
-        return (obj == null) ? null : obj;
+        return RuntimeUtil.RelativePath(root, child);
     }
 
     public static T? GetComponentNullable<T>(this GameObject gameObject) where T : Component
@@ -71,3 +73,4 @@ internal static class EngineExtensions
         return GetInterfacesInChildFTComponents<TInterface>(component.gameObject, includeInactive);
     }
 }
+

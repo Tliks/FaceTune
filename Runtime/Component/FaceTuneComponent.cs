@@ -7,7 +7,7 @@ namespace com.aoyon.facetune
     public sealed class FaceTuneComponent : FaceTuneTagComponent, IHasObjectReferences
     {
         internal const string ComponentName = "FT FaceTune";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + ComponentName;
 
         [SerializeField]
         internal AvatarObjectReference m_faceObjectReference = new();

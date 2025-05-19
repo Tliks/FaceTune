@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class FacialExpressionComponent : FacialExpressionComponentBase, IExpressionProvider
     {
         internal const string ComponentName = "FT Facial Expression";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         [SerializeField]
         private List<BlendShape> _blendShapes = new();

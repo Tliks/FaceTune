@@ -6,5 +6,6 @@ global using System.Collections.ObjectModel;
 global using System.Linq;
 
 global using UnityEngine;
+global using UnityEngine.Profiling;
 
 global using Object = UnityEngine.Object;

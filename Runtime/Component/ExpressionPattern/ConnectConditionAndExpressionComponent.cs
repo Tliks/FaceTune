@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class ConnectConditionAndExpressionComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Connect Condition And Expression";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
         
         public GameObject? ConditionRoot;
         public GameObject? ExpressionRoot;

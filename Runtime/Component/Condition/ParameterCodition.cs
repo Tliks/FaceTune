@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public sealed class ParameterConditionComponent : FaceTuneTagComponent, IConditionProvider
     {
         internal const string ComponentName = "FT Parameter Condition";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Condition + "/" + ComponentName;
 
         public string ParameterName = string.Empty;
         public ParameterType ParameterType = ParameterType.Int;

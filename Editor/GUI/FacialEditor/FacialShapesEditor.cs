@@ -1,8 +1,6 @@
-using System.Collections.ObjectModel;
 using UnityEditor.IMGUI.Controls;
-using com.aoyon.facetune.preview;
 using nadena.dev.ndmf.preview;
-using UnityEngine.Profiling;
+using com.aoyon.facetune.preview;
 
 namespace com.aoyon.facetune.ui;
 

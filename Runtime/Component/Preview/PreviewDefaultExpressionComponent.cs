@@ -4,6 +4,6 @@ namespace com.aoyon.facetune
     public class PreviewDefaultExpressionComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Preview Default Expression";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Preview + "/" + ComponentName;
     }
 }

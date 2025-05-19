@@ -1,12 +1,9 @@
-using nadena.dev.ndmf.runtime;
-
 namespace com.aoyon.facetune;
 
 internal static class EngineUtility
 {
-    public static string? GetRelativePath(GameObject root, GameObject child)
+    public static T? NullCast<T>(this T obj) where T : UnityEngine.Object
     {
-        return RuntimeUtil.RelativePath(root, child);
+        return (obj == null) ? null : obj;
     }
 }
-

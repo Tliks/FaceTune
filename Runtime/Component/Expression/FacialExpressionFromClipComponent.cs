@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class FacialExpressionFromClipComponent : FacialExpressionComponentBase, IExpressionProvider
     {
         internal const string ComponentName = "FT Facial Expression From Clip";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         public AnimationClip? Clip;
         public bool IncludeZeroWeight = false;

@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public sealed class HandGestureConditionComponent : FaceTuneTagComponent, IConditionProvider
     {
         internal const string ComponentName = "FT Hand Gesture Condition";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Condition + "/" + ComponentName;
 
         public Hand Hand = Hand.Left;
         public BoolComparisonType ComparisonType = BoolComparisonType.Equal;

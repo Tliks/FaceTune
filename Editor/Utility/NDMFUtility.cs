@@ -3,7 +3,7 @@ using nadena.dev.ndmf.preview;
 
 namespace com.aoyon.facetune;
 
-internal static class NDMFExtensions
+internal static class NDMFUtility
 {
     public static bool TryGetComponent(this ComputeContext ctx, GameObject obj, Type type, out Component component)
     {

@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class PatternComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Pattern";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
         
         public int Priority = 0;
 
