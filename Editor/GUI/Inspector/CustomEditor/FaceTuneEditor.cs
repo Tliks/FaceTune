@@ -1,5 +1,6 @@
 namespace com.aoyon.facetune.ui;
 
+[CanEditMultipleObjects]
 [CustomEditor(typeof(FaceTuneComponent))]
 internal class FaceTuneEditor : FaceTuneCustomEditorBase<FaceTuneComponent>
 {

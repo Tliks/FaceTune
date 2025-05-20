@@ -2,17 +2,16 @@ namespace com.aoyon.facetune.ui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(FacialExpressionComponent))]
-internal class FacialExpressionEditor : Editor
+internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressionComponent>
 {
-    private FacialExpressionComponent _component = null!;
     private SerializedProperty _blendShapesProperty = null!;
     private SerializedProperty _addDefaultProperty = null!;
     private SerializedProperty _allowLipSyncProperty = null!;
     private SerializedProperty _allowEyeBlinkProperty = null!;
 
-    void OnEnable()
+    public override void OnEnable()
     {
-        _component = (target as FacialExpressionComponent)!;
+        base.OnEnable();
         _blendShapesProperty = serializedObject.FindProperty("_blendShapes");
         _addDefaultProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AddDefault));
         _allowLipSyncProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AllowLipSync));
@@ -38,17 +37,17 @@ internal class FacialExpressionEditor : Editor
 
     private void OpenFacialShapesEditor()
     {
-        var mainComponent = _component.GetComponentInParentNullable<FaceTuneComponent>();
+        var mainComponent = Component.GetComponentInParentNullable<FaceTuneComponent>();
         if (mainComponent == null) return;
         if (!mainComponent.TryGetSessionContext(out var context)) return;
 
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, context.DefaultBlendShapes, new(_component.BlendShapes));
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, context.DefaultBlendShapes, new(Component.BlendShapes));
         window.RegisterApplyCallback(RecieveEditorResult);
     }
 
     private void RecieveEditorResult(BlendShapeSet result)
     {
-        Undo.RecordObject(_component, "RecieveEditorResult");
+        Undo.RecordObject(Component, "RecieveEditorResult");
         serializedObject.Update();
         FacialExpressionEditorUtility.UpdateShapes(_blendShapesProperty, result.BlendShapes);
         serializedObject.ApplyModifiedProperties();
