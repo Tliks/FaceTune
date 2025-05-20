@@ -6,7 +6,7 @@ internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagCompone
     private bool _isMainComponent = false;
     public SessionContext? Context;
 
-    void OnEnable()
+    public virtual void OnEnable()
     {
         Component = (target as T)!;
         _isMainComponent = target is FaceTuneComponent;
@@ -23,6 +23,11 @@ internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagCompone
         }
     }
 
+    public virtual void OnDisable()
+    {
+        Context = null;
+    }
+
     public override void OnInspectorGUI()
     {
         if (!_isMainComponent && Context == null)
@@ -31,6 +36,8 @@ internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagCompone
             return;
         }
 
+        serializedObject.Update();
         base.OnInspectorGUI();
+        serializedObject.ApplyModifiedProperties();
     }
 }
