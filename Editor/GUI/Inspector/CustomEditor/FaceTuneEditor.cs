@@ -7,7 +7,7 @@ internal class FaceTuneEditor : FaceTuneCustomEditorBase<FaceTuneComponent>
     {
         base.OnInspectorGUI();
 
-        if (CanBuild is false) return;
+        if (Context == null) return;
 
         if (Component.DefaultExpressionComponent == null)
         {
@@ -29,7 +29,7 @@ internal class FaceTuneEditor : FaceTuneCustomEditorBase<FaceTuneComponent>
 
     private void CreateDefaultExpression()
     {
-        if (CanBuild is false) return;
+        if (Context == null) return;
 
         var defaultBlendShapes = Context.FaceRenderer.GetBlendShapes(Context.FaceMesh);
 
@@ -47,7 +47,8 @@ internal class FaceTuneEditor : FaceTuneCustomEditorBase<FaceTuneComponent>
 
     private void UpdateDefaultExpression()
     {
-        if (CanBuild is false) return;
+        if (Context == null) return;
+
         var defaultBlendShapes = Context.FaceRenderer.GetBlendShapes(Context.FaceMesh);
         FacialExpressionEditorUtility.UpdateShapes(Component.DefaultExpressionComponent!, defaultBlendShapes);
     }
