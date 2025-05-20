@@ -19,6 +19,7 @@ namespace com.aoyon.facetune
 
         internal bool CanBuild()
         {
+            if (!gameObject.activeInHierarchy) return false;
             if (RuntimeUtil.FindAvatarInParents(transform) is null) return false;
             if (FaceObject == null) return false;
             if (!FaceObject.TryGetComponent<SkinnedMeshRenderer>(out var faceRenderer)) return false;
