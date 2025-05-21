@@ -11,6 +11,11 @@ namespace com.aoyon.facetune
 
         public GameObject? OverrideExpressionRoot = null;
 
+        internal GameObject GetExpressionRoot()
+        {
+            return OverrideExpressionRoot == null ? gameObject : OverrideExpressionRoot;
+        }
+
         internal ExpressionWithCondition? GetExpressionWithCondition(SessionContext context)
         {
             var conditions = GetConditions();
@@ -21,13 +26,9 @@ namespace com.aoyon.facetune
 
         IEnumerable<Condition> GetConditions()
         {
-            return HandGestureConditions.Cast<Condition>()
-                .Concat(ParameterConditions.Where(x => !string.IsNullOrWhiteSpace(x.ParameterName)).Cast<Condition>());
-        }
-
-        internal GameObject GetExpressionRoot()
-        {
-            return OverrideExpressionRoot == null ? gameObject : OverrideExpressionRoot;
+            return HandGestureConditions.Select(x => x with { }).Cast<Condition>()
+                .Concat(ParameterConditions.Where(x => !string.IsNullOrWhiteSpace(x.ParameterName))
+                    .Select(x => x with { }).Cast<Condition>());
         }
 
         IEnumerable<Expression> GetExpressions(SessionContext context)
