@@ -5,7 +5,7 @@ namespace com.aoyon.facetune.ui;
 internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressionComponent>
 {
     private SerializedProperty _blendShapesProperty = null!;
-    private SerializedProperty _addDefaultProperty = null!;
+    private SerializedProperty _enableBlendingProperty = null!;
     private SerializedProperty _allowLipSyncProperty = null!;
     private SerializedProperty _allowEyeBlinkProperty = null!;
 
@@ -13,7 +13,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         base.OnEnable();
         _blendShapesProperty = serializedObject.FindProperty("_blendShapes");
-        _addDefaultProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AddDefault));
+        _enableBlendingProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.EnableBlending));
         _allowLipSyncProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AllowLipSync));
         _allowEyeBlinkProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AllowEyeBlink));
     }
@@ -24,7 +24,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
 
         EditorGUILayout.PropertyField(_allowEyeBlinkProperty);
         EditorGUILayout.PropertyField(_allowLipSyncProperty);
-        EditorGUILayout.PropertyField(_addDefaultProperty);
+        EditorGUILayout.PropertyField(_enableBlendingProperty);
         EditorGUILayout.PropertyField(_blendShapesProperty);
 
         serializedObject.ApplyModifiedProperties();

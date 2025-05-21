@@ -15,7 +15,7 @@ namespace com.aoyon.facetune
         {
             var blendShapeSet = new BlendShapeSet(BlendShapes);
             
-            if (AddDefault)
+            if (!EnableBlending)
             {
                 var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes);
                 blendShapeSet = defaultShapes.Add(blendShapeSet);
