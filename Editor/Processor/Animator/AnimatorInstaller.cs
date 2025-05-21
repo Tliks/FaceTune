@@ -44,6 +44,7 @@ internal class AnimatorInstaller
         var facialExpressions = expressions.OfType<FacialExpression>();
         var animationExpressions = expressions.OfType<AnimationExpression>();
         
+        // Todo:animationExpressionsとfacialExpressionsの統合や複数のanimationExpressionsへの対応など
         if (animationExpressions.Any())
         {
             state.WithAnimation(animationExpressions.First().Clip);
@@ -61,7 +62,10 @@ internal class AnimatorInstaller
             state.WithAnimation(clip);
         }
 
-        SetTracks(state, expressions.Last());
+        foreach (var expression in expressions)
+        {
+            SetTracks(state, expression);
+        }
     }
 
     public void InstallPreset(IEnumerable<Preset> presets)
