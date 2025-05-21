@@ -11,11 +11,11 @@ namespace com.aoyon.facetune
         internal Preset? GetPreset(SessionContext context)
         {
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(false)
-                .Select(c => c.GetPatternWithPriority(context))
-                .UnityOfType<(ExpressionPattern, int)>()
+                .Select(c => c.GetPattern(context))
+                .UnityOfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;
-            return new Preset(PresetName, new SortedExpressionPatterns(patterns));
+            return new Preset(PresetName, patterns);
         }
     }
 }

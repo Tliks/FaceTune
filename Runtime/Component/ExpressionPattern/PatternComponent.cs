@@ -6,16 +6,14 @@ namespace com.aoyon.facetune
         internal const string ComponentName = "FT Pattern";
         internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
         
-        public int Priority = 0;
-
-        internal (ExpressionPattern, int)? GetPatternWithPriority(SessionContext context)
+        internal ExpressionPattern? GetPattern(SessionContext context)
         {
             var expressionWithConditions = gameObject.GetComponentsInChildren<ConditionComponent>()
                 .Select(c => c.GetExpressionWithCondition(context))
                 .UnityOfType<ExpressionWithCondition>()
                 .ToList();
             if (expressionWithConditions.Count == 0) return null;
-            return (new ExpressionPattern(expressionWithConditions), Priority);
+            return new ExpressionPattern(expressionWithConditions);
         }
     }
 }

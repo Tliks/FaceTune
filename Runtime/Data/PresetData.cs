@@ -27,51 +27,20 @@ internal record class ExpressionPattern
     }
 }
 
-internal record class SortedExpressionPatterns
-{
-    public List<ExpressionPattern?> Patterns { get; private set; } = new();
-
-    public SortedExpressionPatterns(IEnumerable<(ExpressionPattern pattern, int priority)> patterns)
-    {
-        foreach (var (pattern, priority) in patterns)
-        {
-            Add(pattern, priority);
-        }
-    }
-
-    public void Add(ExpressionPattern pattern, int priority)
-    {
-        while (Patterns.Count <= priority)
-        {
-            Patterns.Add(null);
-        }
-
-        if (Patterns[priority] != null)
-        {
-            Patterns[priority]!.Merge(pattern);
-        }
-        else
-        {
-            Patterns[priority] = pattern;
-        }
-    }
-}
-
 internal record class Preset
 {
     public string PresetName { get; private set; }
-    public SortedExpressionPatterns SortedPatterns { get; private set; }
+    public List<ExpressionPattern> Patterns { get; private set; }
 
-    public Preset(string presetName, SortedExpressionPatterns sortedExpressionPatterns)
+    public Preset(string presetName, List<ExpressionPattern> patterns)
     {
         PresetName = presetName;
-        SortedPatterns = sortedExpressionPatterns;
+        Patterns = patterns;
     }
 
     public IEnumerable<Expression> GetAllExpressions()
     {
-        return SortedPatterns.Patterns
-            .UnityOfType<ExpressionPattern>()
+        return Patterns
             .SelectMany(p => p.ExpressionWithConditions)
             .SelectMany(e => e.Expressions);
     }

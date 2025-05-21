@@ -72,7 +72,7 @@ internal class AnimatorInstaller
     {
         var preset = presets.First(); // とりあえず先頭のみ
         var presetName = preset.PresetName;
-        var patterns = preset.SortedPatterns.Patterns;
+        var patterns = preset.Patterns;
 
         for (var i = 0; i < patterns.Count(); i++)
         {
