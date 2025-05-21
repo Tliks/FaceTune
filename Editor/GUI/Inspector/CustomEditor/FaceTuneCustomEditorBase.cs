@@ -33,7 +33,6 @@ internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagCompone
         if (!_isMainComponent && Context == null)
         {
             EditorGUILayout.HelpBox("Setup FaceTuneComponent and use this component as a child of it.", MessageType.Error);
-            return;
         }
 
         serializedObject.Update();
