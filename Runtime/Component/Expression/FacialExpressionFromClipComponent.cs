@@ -11,22 +11,12 @@ namespace com.aoyon.facetune
 
         Expression? IExpressionProvider.ToExpression(SessionContext context)
         {
+            if (Clip == null) return null;
             BlendShapeSet blendShapes = new();
 #if UNITY_EDITOR
-            if (Clip != null)
-            {
-                var newBlendShapes = GetBlendShapesFromClip(Clip);
-                if (!IncludeZeroWeight) newBlendShapes = newBlendShapes.Where(x => x.Weight > 0).ToArray();
-
-                var mapping = new BlendShapeSet(context.DefaultBlendShapes).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
-                foreach (var blendShape in newBlendShapes)
-                {
-                    if (mapping.TryGetValue(blendShape.Name, out var index))
-                    {
-                        blendShapes.Add(new BlendShape(blendShape.Name, blendShape.Weight));
-                    }
-                }
-            }
+            var newBlendShapes = new BlendShapeSet(GetBlendShapesFromClip(Clip));
+            if (!IncludeZeroWeight) newBlendShapes.RemoveZeroWeight();
+            blendShapes.Add(newBlendShapes);
 #endif
             if (!EnableBlending)
             {
@@ -39,8 +29,9 @@ namespace com.aoyon.facetune
 
 #if UNITY_EDITOR
         // AnimationUtilityからコピー
-        private static IEnumerable<BlendShape> GetBlendShapesFromClip(AnimationClip clip, bool first = true)
+        private static List<BlendShape> GetBlendShapesFromClip(AnimationClip clip, bool first = true)
         {
+            var blendShapes = new List<BlendShape>();
             var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
             foreach (var binding in bindings)
             {
@@ -51,9 +42,10 @@ namespace com.aoyon.facetune
                 {
                     var name = binding.propertyName.Replace("blendShape.", string.Empty);
                     var weight = first ? curve.keys[0].value : curve.keys[curve.keys.Length - 1].value;
-                    yield return new BlendShape(name, weight);
+                    blendShapes.Add(new BlendShape(name, weight));
                 }
             }
+            return blendShapes;
         }
 #endif
     }
