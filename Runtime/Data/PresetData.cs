@@ -71,7 +71,7 @@ internal record class Preset
     public IEnumerable<Expression> GetAllExpressions()
     {
         return SortedPatterns.Patterns
-            .OfType<ExpressionPattern>()
+            .UnityOfType<ExpressionPattern>()
             .SelectMany(p => p.ExpressionWithConditions)
             .SelectMany(e => e.Expressions);
     }

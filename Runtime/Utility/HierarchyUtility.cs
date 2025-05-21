@@ -51,7 +51,7 @@ internal static class HierarchyUtility
     {
         return gameObject
             .GetComponentsInChildren<TComponent>(includeInactive)
-            .OfType<TInterface>()
+            .UnityOfType<TInterface>()
             .ToList();
     }
 

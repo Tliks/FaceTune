@@ -36,7 +36,7 @@ namespace com.aoyon.facetune
             var root = GetExpressionRoot();
             return root.GetInterfacesInChildFTComponents<IExpressionProvider>()
                 .Select(c => c.ToExpression(context))
-                .OfType<Expression>()
+                .UnityOfType<Expression>()
                 .ToList();
         }
     }

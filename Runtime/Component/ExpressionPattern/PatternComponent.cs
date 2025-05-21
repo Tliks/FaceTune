@@ -12,7 +12,7 @@ namespace com.aoyon.facetune
         {
             var expressionWithConditions = gameObject.GetComponentsInChildren<ConditionComponent>()
                 .Select(c => c.GetExpressionWithCondition(context))
-                .OfType<ExpressionWithCondition>()
+                .UnityOfType<ExpressionWithCondition>()
                 .ToList();
             if (expressionWithConditions.Count == 0) return null;
             return (new ExpressionPattern(expressionWithConditions), Priority);

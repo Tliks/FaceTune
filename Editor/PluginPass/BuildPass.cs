@@ -48,7 +48,7 @@ internal class BuildPass : Pass<BuildPass>
         var presetComponents = context.Root.GetComponentsInChildren<PresetComponent>(false);
         var presets = presetComponents
             .Select(c => c.GetPreset(context))
-            .OfType<Preset>()
+            .UnityOfType<Preset>()
             .ToList();
         if (presets.Count == 0) return null;
         return presets;

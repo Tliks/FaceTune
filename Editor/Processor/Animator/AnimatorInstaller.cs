@@ -41,8 +41,8 @@ internal class AnimatorInstaller
 
     private void AddExpressionsToState(AacFlState state, IEnumerable<Expression> expressions)
     {
-        var facialExpressions = expressions.OfType<FacialExpression>();
-        var animationExpressions = expressions.OfType<AnimationExpression>();
+        var facialExpressions = expressions.UnityOfType<FacialExpression>();
+        var animationExpressions = expressions.UnityOfType<AnimationExpression>();
         
         // Todo:animationExpressionsとfacialExpressionsの統合や複数のanimationExpressionsへの対応など
         if (animationExpressions.Any())
@@ -137,9 +137,9 @@ internal class AnimatorInstaller
                         break;
                     case ParameterType.Bool:
                         var boolParam = layer.BoolParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryConditions, boolParam, parameterCondition.BoolComparisonType, parameterCondition.BoolValue);
-                        AddComparisonCondition(exitConditions, boolParam, Negate(parameterCondition.BoolComparisonType), parameterCondition.BoolValue);
-                        AddComparisonCondition(defaultToExitConditions, boolParam, parameterCondition.BoolComparisonType, parameterCondition.BoolValue, isOr: true);
+                        AddComparisonCondition(entryConditions, boolParam, parameterCondition.BoolValue);
+                        AddComparisonCondition(exitConditions, boolParam, Negate(parameterCondition.BoolValue));
+                        AddComparisonCondition(defaultToExitConditions, boolParam, parameterCondition.BoolValue, isOr: true);
                         break;
                 }
                 break;
@@ -209,21 +209,13 @@ internal class AnimatorInstaller
     private void AddComparisonCondition(
         AacFlTransitionContinuation conditions,
         AacFlBoolParameter parameter,
-        BoolComparisonType comparisonType,
         bool value,
         bool isOr = false)
     {
-        switch (comparisonType)
-        {
-            case BoolComparisonType.Equal:
-                if (isOr) conditions.Or().When(parameter.IsEqualTo(value));
-                else conditions.And(parameter.IsEqualTo(value));
-                break;
-            case BoolComparisonType.NotEqual:
-                if (isOr) conditions.Or().When(parameter.IsNotEqualTo(value));
-                else conditions.And(parameter.IsNotEqualTo(value));
-                break;
-        }
+        if (isOr)
+            conditions.Or().When(parameter.IsEqualTo(value));
+        else
+            conditions.And(parameter.IsEqualTo(value));
     }
 
     private ComparisonType Negate(ComparisonType type)
@@ -244,6 +236,11 @@ internal class AnimatorInstaller
             BoolComparisonType.NotEqual => BoolComparisonType.Equal,
             _ => type
         };
+    }
+
+    private bool Negate(bool value)
+    {
+        return !value;
     }
 
     private static void SetTracks(AacFlState state, Expression expression)
