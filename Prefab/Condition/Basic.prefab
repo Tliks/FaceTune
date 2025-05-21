@@ -87,7 +87,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1568190327929864006}
-  - component: {fileID: 2218456620654730564}
+  - component: {fileID: 3031662359919278565}
   - component: {fileID: 7518592953414362743}
   m_Layer: 0
   m_Name: AFK
@@ -111,7 +111,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1515388048725682998}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2218456620654730564
+--- !u!114 &3031662359919278565
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -120,16 +120,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 7071229721358465438}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e31f3768827c5041a6799d33aaa0f94, type: 3}
+  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParameterName: AFK
-  ParameterType: 2
-  ComparisonType: 0
-  BoolComparisonType: 0
-  FloatValue: 0
-  IntValue: 0
-  BoolValue: 1
+  HandGestureConditions: []
+  ParameterConditions:
+  - ParameterName: AFK
+    ParameterType: 2
+    ComparisonType: 0
+    FloatValue: 0
+    IntValue: 0
+    BoolValue: 1
+  OverrideExpressionRoot: {fileID: 0}
 --- !u!114 &7518592953414362743
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,7 +144,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -190,7 +192,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8598583962047321455}
-  - component: {fileID: 9175494365820401687}
+  - component: {fileID: 359562539305182980}
   - component: {fileID: 6676489197266061723}
   m_Layer: 0
   m_Name: Lipsyncing
@@ -214,7 +216,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5161989889833629867}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9175494365820401687
+--- !u!114 &359562539305182980
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -223,16 +225,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 7525024907218639199}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e31f3768827c5041a6799d33aaa0f94, type: 3}
+  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ParameterName: Voice
-  ParameterType: 1
-  ComparisonType: 0
-  BoolComparisonType: 0
-  FloatValue: 0.01
-  IntValue: 0
-  BoolValue: 0
+  HandGestureConditions: []
+  ParameterConditions:
+  - ParameterName: Voice
+    ParameterType: 1
+    ComparisonType: 0
+    FloatValue: 0
+    IntValue: 0
+    BoolValue: 0
+  OverrideExpressionRoot: {fileID: 0}
 --- !u!114 &6676489197266061723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -245,7 +249,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -281,6 +285,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3449897734882677660, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -352,6 +361,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5555063928113497144, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5573347110852679931, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: Hand
@@ -362,9 +376,29 @@ PrefabInstance:
       propertyPath: Hand
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6052042379382716081, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6374377119063250642, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6582729326544115812, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7130941481143049420, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7274638508754544556, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7676905473843606048, guid: 9f044864c335d38499244290e12697d3,
@@ -377,6 +411,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7930468317266661220, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_Name
@@ -385,6 +424,11 @@ PrefabInstance:
     - target: {fileID: 8453601211171139620, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8546227900262307577, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8833821061777606985, guid: 9f044864c335d38499244290e12697d3,
@@ -451,7 +495,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -473,7 +517,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -495,7 +539,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -517,7 +561,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -545,7 +589,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -567,7 +611,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -589,7 +633,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -611,7 +655,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 2
   AllowLipSync: 2
   _blendShapes: []
@@ -796,7 +840,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -818,7 +862,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -859,7 +903,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 2
   AllowLipSync: 2
   _blendShapes: []
@@ -881,7 +925,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -903,7 +947,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -925,7 +969,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -947,7 +991,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
@@ -975,7 +1019,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AddDefault: 1
+  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
   _blendShapes: []
