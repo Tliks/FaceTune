@@ -100,11 +100,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a2488166a470c4781349d0b99721d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Info:
-    PresetName: Preset 1
-    AutoCrateMenuItemFromChildren: 1
-    ExcludeExpressions: []
-    IncludeExpressions: []
+  PresetName: Preset 1
 --- !u!114 &7024949055286003727
 MonoBehaviour:
   m_ObjectHideFlags: 0

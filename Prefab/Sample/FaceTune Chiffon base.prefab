@@ -49,7 +49,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22651697d4d0efc4ea560d446bad014c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Priority: 5
 --- !u!1001 &856087714179478179
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -577,6 +576,11 @@ PrefabInstance:
       propertyPath: ExpressionRoot
       value: 
       objectReference: {fileID: 3562564632222533936}
+    - target: {fileID: 6684059832027589509, guid: be74fc2f75a4f344ba57325ed2eed5dd,
+        type: 3}
+      propertyPath: OverrideExpressionRoot
+      value: 
+      objectReference: {fileID: 2995207507299527117}
     - target: {fileID: 6691661730334898142, guid: be74fc2f75a4f344ba57325ed2eed5dd,
         type: 3}
       propertyPath: _blendShapes.Array.size
