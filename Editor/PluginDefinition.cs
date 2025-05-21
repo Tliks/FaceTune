@@ -14,11 +14,15 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
 
     protected override void Configure()
     {
-        InPhase(BuildPhase.Resolving)
-        .Run(ReolveRenferencesPass.Instance)
+        InPhase(BuildPhase.Transforming)
+        .BeforePlugin("nadena.dev.modular-avatar")
+        .BeforePlugin("net.rs64.tex-trans-tool")
+        .BeforePlugin("com.anatawa12.avatar-optimizer")
+        .Run(ApplyDefaulShapesPass.Instance)
         .PreviewingWith(new DefaultShapesPreview());
 
         InPhase(BuildPhase.Transforming)
+        .BeforePlugin("nadena.dev.modular-avatar")
         .Run(BuildPass.Instance);
 
         InPhase(BuildPhase.Optimizing)

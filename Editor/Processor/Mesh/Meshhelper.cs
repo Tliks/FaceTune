@@ -46,4 +46,23 @@ internal static class MeshHelper
         }
         return mapping;
     }
+
+    public static void ApplyBlendShapes(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> blendShapes)
+    {
+        var mapping = new Dictionary<string, int>();
+        for (int i = 0; i < mesh.blendShapeCount; i++)
+        {
+            // 同名のブレンドシェイプが存在する場合一つ目に適用
+            mapping.TryAdd(mesh.GetBlendShapeName(i), i);
+        }
+
+        foreach (var shape in blendShapes)
+        {
+            if (mapping.TryGetValue(shape.Name, out int index))
+            {
+                renderer.SetBlendShapeWeight(index, shape.Weight);
+            }
+        }
+    }
+    
 }
