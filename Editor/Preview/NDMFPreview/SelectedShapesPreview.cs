@@ -60,16 +60,16 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             return GetBlendShapeSet(expressionComponents, sessionContext, context);
         }
 
-        var connectComponents = context.Observe(_targetObject, o => (o as GameObject)?.GetComponents<ConnectConditionAndExpressionComponent>(), (a, b) => 
+        var conditionComponents = context.Observe(_targetObject, o => (o as GameObject)?.GetComponents<ConditionComponent>(), (a, b) => 
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
             return a.SequenceEqual(b);
         });
-        if (connectComponents != null && connectComponents.Length == 1)
+        if (conditionComponents != null && conditionComponents.Length == 1)
         {
-            var handGestureComponent = connectComponents.First();
-            var expressionRoot = context.Observe(handGestureComponent, c => c.ExpressionRoot, (a, b) => a == b);
+            var conditionComponent = conditionComponents.First();
+            var expressionRoot = context.Observe(conditionComponent, c => c.GetExpressionRoot(), (a, b) => a == b);
             var expressionComponents_ = context.GetComponentsInChildren<FacialExpressionComponentBase>(expressionRoot, false);
             return GetBlendShapeSet(expressionComponents_, sessionContext, context);
         }

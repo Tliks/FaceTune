@@ -5,7 +5,6 @@ namespace com.aoyon.facetune;
 public abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
 {
     internal const string FaceTune = "FaceTune";
-    internal const string Condition = "Condition";
     internal const string Expression = "Expression";
     internal const string ExpressionPattern = "ExpressionPattern";
     internal const string Global = "Global";

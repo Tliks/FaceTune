@@ -120,23 +120,28 @@ internal class AnimatorInstaller
                 AddComparisonCondition(exitConditions, gestureParam, Negate(handGestureCondition.ComparisonType), gesture);
                 AddComparisonCondition(defaultToExitConditions, gestureParam, handGestureCondition.ComparisonType, gesture, isOr: true);
                 break;
-            case IntParameterCondition intCondition:
-                var intParam = layer.IntParameter(intCondition.ParameterName);
-                AddComparisonCondition(entryConditions, intParam, intCondition.ComparisonType, intCondition.Value);
-                AddComparisonCondition(exitConditions, intParam, Negate(intCondition.ComparisonType), intCondition.Value);
-                AddComparisonCondition(defaultToExitConditions, intParam, intCondition.ComparisonType, intCondition.Value, isOr: true);
-                break;
-            case FloatParameterCondition floatCondition:
-                var floatParam = layer.FloatParameter(floatCondition.ParameterName);
-                AddComparisonCondition(entryConditions, floatParam, floatCondition.ComparisonType, floatCondition.Value);
-                AddComparisonCondition(exitConditions, floatParam, Negate(floatCondition.ComparisonType), floatCondition.Value);
-                AddComparisonCondition(defaultToExitConditions, floatParam, floatCondition.ComparisonType, floatCondition.Value, isOr: true);
-                break;
-            case BoolParameterCondition boolCondition:
-                var boolParam = layer.BoolParameter(boolCondition.ParameterName);
-                AddComparisonCondition(entryConditions, boolParam, boolCondition.ComparisonType, boolCondition.Value);
-                AddComparisonCondition(exitConditions, boolParam, Negate(boolCondition.ComparisonType), boolCondition.Value);
-                AddComparisonCondition(defaultToExitConditions, boolParam, boolCondition.ComparisonType, boolCondition.Value, isOr: true);
+            case ParameterCondition parameterCondition:
+                switch (parameterCondition.ParameterType)
+                {
+                    case ParameterType.Int:
+                        var intParam = layer.IntParameter(parameterCondition.ParameterName);
+                        AddComparisonCondition(entryConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue);
+                        AddComparisonCondition(exitConditions, intParam, Negate(parameterCondition.ComparisonType), parameterCondition.IntValue);
+                        AddComparisonCondition(defaultToExitConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue, isOr: true);
+                        break;
+                    case ParameterType.Float:
+                        var floatParam = layer.FloatParameter(parameterCondition.ParameterName);
+                        AddComparisonCondition(entryConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue);
+                        AddComparisonCondition(exitConditions, floatParam, Negate(parameterCondition.ComparisonType), parameterCondition.FloatValue);
+                        AddComparisonCondition(defaultToExitConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue, isOr: true);
+                        break;
+                    case ParameterType.Bool:
+                        var boolParam = layer.BoolParameter(parameterCondition.ParameterName);
+                        AddComparisonCondition(entryConditions, boolParam, parameterCondition.BoolComparisonType, parameterCondition.BoolValue);
+                        AddComparisonCondition(exitConditions, boolParam, Negate(parameterCondition.BoolComparisonType), parameterCondition.BoolValue);
+                        AddComparisonCondition(defaultToExitConditions, boolParam, parameterCondition.BoolComparisonType, parameterCondition.BoolValue, isOr: true);
+                        break;
+                }
                 break;
         }
     }
