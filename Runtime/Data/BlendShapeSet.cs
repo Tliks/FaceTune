@@ -108,7 +108,12 @@ internal record class BlendShapeSet
 
     public BlendShapeSet RemoveZeroWeight()
     {
-        foreach (var key in _mapping.Where(x => x.Value.Weight == 0).Select(x => x.Key))
+        var keysToRemove = _mapping
+            .Where(x => x.Value.Weight == 0)
+            .Select(x => x.Key)
+            .ToList();
+
+        foreach (var key in keysToRemove)
         {
             _mapping.Remove(key);
         }
