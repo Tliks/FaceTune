@@ -4,7 +4,6 @@ namespace com.aoyon.facetune.ui;
 internal class ParameterConditionDrawer : PropertyDrawer
 {
     private SerializedProperty? _comparisonTypeProp;
-    private SerializedProperty? _boolComparisonTypeProp;
     private SerializedProperty? _floatValueProp;
     private SerializedProperty? _intValueProp;
     private SerializedProperty? _boolValueProp;
@@ -44,10 +43,7 @@ internal class ParameterConditionDrawer : PropertyDrawer
                 EditorGUI.PropertyField(currentPosition, _floatValueProp, new GUIContent("Value"));
                 break;
             case ParameterType.Bool:
-                _boolComparisonTypeProp ??= property.FindPropertyRelative(nameof(ParameterCondition.BoolComparisonType));
                 _boolValueProp ??= property.FindPropertyRelative(nameof(ParameterCondition.BoolValue));
-                EditorGUI.PropertyField(currentPosition, _boolComparisonTypeProp, new GUIContent("Comparison"));
-                currentPosition.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(currentPosition, _boolValueProp, new GUIContent("Value"));
                 break;
         }
@@ -57,7 +53,26 @@ internal class ParameterConditionDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        // ParameterName, ParameterType, Comparison, Value の4行分
-        return EditorGUIUtility.singleLineHeight * 4;
+        var parameterTypeProp = property.FindPropertyRelative(nameof(ParameterCondition.ParameterType));
+        ParameterType paramType = (ParameterType)parameterTypeProp.enumValueIndex;
+
+        // ParameterName, ParameterTypeは必ず表示
+        int lineCount = 2;
+
+        // Int, FloatはComparisonとValueで+2行、BoolはValueで+1行
+        switch (paramType)
+        {
+            case ParameterType.Int:
+            case ParameterType.Float:
+                lineCount += 2;
+                break;
+            case ParameterType.Bool:
+                lineCount += 1;
+                break;
+            default:
+                break;
+        }
+
+        return EditorGUIUtility.singleLineHeight * lineCount;
     }
 }

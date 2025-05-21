@@ -24,7 +24,6 @@ public record class ParameterCondition : Condition
     public ParameterType ParameterType = ParameterType.Int;
 
     public ComparisonType ComparisonType = ComparisonType.GreaterThan;
-    public BoolComparisonType BoolComparisonType = BoolComparisonType.Equal;
     public float FloatValue = 0;
     public int IntValue = 0;
     public bool BoolValue = false;
