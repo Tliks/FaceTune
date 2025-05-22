@@ -59,7 +59,7 @@ namespace com.aoyon.facetune
             }
             else
             {
-                defaultExpression = new FacialExpression(new BlendShapeSet(blendShapes), TrackingPermission.Disallow, TrackingPermission.Allow, "Default");
+                defaultExpression = new FacialExpression(new BlendShapeSet(blendShapes), TrackingPermission.Allow, TrackingPermission.Allow, "Default");
             }
 
             context = new SessionContext(root, this, faceRenderer, mesh, defaultExpression, blendShapes);

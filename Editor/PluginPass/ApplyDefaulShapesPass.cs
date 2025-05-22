@@ -21,8 +21,10 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
 
         MeshHelper.ApplyBlendShapes(faceRenderer, sessionContext.FaceMesh, defaultBlendShapes);
 
+        /*
         // デフォルトの表情を適用したら、デフォルトの表情コンポーネントは不要
         // 後続のパスではその場にあるブレンドシェイプを適用する
         mainComponent.DefaultExpressionComponent = null;
+        */
     }
 }
