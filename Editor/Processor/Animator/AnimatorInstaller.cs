@@ -44,7 +44,7 @@ internal class AnimatorInstaller
     private AacFlLayer Addlayer(string layerName)
     {
         var layer = _ctrl.NewLayer(layerName);
-        layer.StateMachine.EnsureBehaviour<ModularAvatarMMDLayerControl>();
+        layer.StateMachine.EnsureBehaviour<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
         return layer;
     }
 
