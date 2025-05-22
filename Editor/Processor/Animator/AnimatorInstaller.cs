@@ -1,4 +1,5 @@
 using nadena.dev.ndmf;
+using nadena.dev.modular_avatar.core; 
 using AnimatorAsCode.V1;
 using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
@@ -25,9 +26,10 @@ internal class AnimatorInstaller
 
     public void CreateDefaultLayer()
     {
-        var defaultLayer = _ctrl.NewLayer("Default");
+        var defaultLayer = Addlayer("Default");
         var defaultState = defaultLayer.NewState("Default");
         AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
+        // SetTracks(defaultState, _sessionContext.DefaultExpression);
     }
 
     public void SaveAsMergeAnimator()
@@ -37,6 +39,13 @@ internal class AnimatorInstaller
             transform = { parent = _sessionContext.Root.transform }
         });
         modularAvatar.NewMergeAnimator(_ctrl, VRC.SDK3.Avatars.Components.VRCAvatarDescriptor.AnimLayerType.FX);
+    }
+
+    private AacFlLayer Addlayer(string layerName)
+    {
+        var layer = _ctrl.NewLayer(layerName);
+        layer.StateMachine.EnsureBehaviour<ModularAvatarMMDLayerControl>();
+        return layer;
     }
 
     private void AddExpressionsToState(AacFlState state, IEnumerable<Expression> expressions)
@@ -62,10 +71,6 @@ internal class AnimatorInstaller
             state.WithAnimation(clip);
         }
 
-        foreach (var expression in expressions)
-        {
-            SetTracks(state, expression);
-        }
     }
 
     public void InstallPreset(IEnumerable<Preset> presets)
@@ -79,11 +84,11 @@ internal class AnimatorInstaller
             var pattern = patterns[i];
             if (pattern == null || pattern.ExpressionWithConditions.Count == 0) continue;
 
-            var layer = _ctrl.NewLayer($"{presetName}_{i}");
+            var layer = Addlayer($"{presetName}_{i}");
 
             var defaultState = layer.NewState("Default");
-            var defaultToExitConditions = defaultState.Exits().WithTransitionDurationSeconds(0.1f).WhenConditions();
-            
+            SetTracks(defaultState, _sessionContext.DefaultExpression);
+                        
             foreach (var expressionWithCondition in pattern.ExpressionWithConditions)
             {
                 var conditions = expressionWithCondition.Conditions;
@@ -92,23 +97,26 @@ internal class AnimatorInstaller
                 var expressionState = layer.NewState(expressions.First().Name);
 
                 AddExpressionsToState(expressionState, expressions);
+                SetTracks(expressionState, expressions);
 
-                var entryConditions = expressionState.TransitionsFromEntry().WhenConditions();
+                var entryFromEntryConditions = expressionState.TransitionsFromEntry().WhenConditions();
+                var entryFromDefaultConditions = defaultState.TransitionsTo(expressionState).WhenConditions();
                 var exitConditions = expressionState.Exits().WithTransitionDurationSeconds(0.1f).WhenConditions();
                 foreach (var condition in conditions)
                 {
-                    AddConditionToTransitions(condition, layer, entryConditions, exitConditions, defaultToExitConditions);
+                    AddConditionToTransitions(condition, layer, entryFromEntryConditions, entryFromDefaultConditions, exitConditions);
                 }
             }
+            defaultState.At(0, 5);
         }
     }
 
     private void AddConditionToTransitions(
         Condition condition,
         AacFlLayer layer,
-        AacFlTransitionContinuation entryConditions,
-        AacFlTransitionContinuation exitConditions,
-        AacFlTransitionContinuation defaultToExitConditions)
+        AacFlTransitionContinuation entryFromEntryConditions,
+        AacFlTransitionContinuation entryFromDefaultConditions,
+        AacFlTransitionContinuation exitConditions)
     {
         switch (condition)
         {
@@ -116,30 +124,30 @@ internal class AnimatorInstaller
                 var gesture = Convert(handGestureCondition.HandGesture);
                 var isLeft = handGestureCondition.Hand == Hand.Left;
                 var gestureParam = isLeft ? layer.Av3().GestureLeft : layer.Av3().GestureRight;
-                AddComparisonCondition(entryConditions, gestureParam, handGestureCondition.ComparisonType, gesture);
+                AddComparisonCondition(entryFromEntryConditions, gestureParam, handGestureCondition.ComparisonType, gesture);
+                AddComparisonCondition(entryFromDefaultConditions, gestureParam, handGestureCondition.ComparisonType, gesture);
                 AddComparisonCondition(exitConditions, gestureParam, Negate(handGestureCondition.ComparisonType), gesture, isOr: true);
-                AddComparisonCondition(defaultToExitConditions, gestureParam, handGestureCondition.ComparisonType, gesture, isOr: true);
                 break;
             case ParameterCondition parameterCondition:
                 switch (parameterCondition.ParameterType)
                 {
                     case ParameterType.Int:
                         var intParam = layer.IntParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue);
+                        AddComparisonCondition(entryFromEntryConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue);
+                        AddComparisonCondition(entryFromDefaultConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue);
                         AddComparisonCondition(exitConditions, intParam, Negate(parameterCondition.ComparisonType), parameterCondition.IntValue, isOr: true);
-                        AddComparisonCondition(defaultToExitConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue, isOr: true);
                         break;
                     case ParameterType.Float:
                         var floatParam = layer.FloatParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue);
+                        AddComparisonCondition(entryFromEntryConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue);
+                        AddComparisonCondition(entryFromDefaultConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue);
                         AddComparisonCondition(exitConditions, floatParam, Negate(parameterCondition.ComparisonType), parameterCondition.FloatValue, isOr: true);
-                        AddComparisonCondition(defaultToExitConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue, isOr: true);
                         break;
                     case ParameterType.Bool:
                         var boolParam = layer.BoolParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryConditions, boolParam, parameterCondition.BoolValue);
+                        AddComparisonCondition(entryFromEntryConditions, boolParam, parameterCondition.BoolValue);
+                        AddComparisonCondition(entryFromDefaultConditions, boolParam, parameterCondition.BoolValue);
                         AddComparisonCondition(exitConditions, boolParam, Negate(parameterCondition.BoolValue), isOr: true);
-                        AddComparisonCondition(defaultToExitConditions, boolParam, parameterCondition.BoolValue, isOr: true);
                         break;
                 }
                 break;
@@ -243,8 +251,13 @@ internal class AnimatorInstaller
         return !value;
     }
 
-    private static void SetTracks(AacFlState state, Expression expression)
+    private static void SetTracks(AacFlState state, IEnumerable<Expression> expressions)
     {
+        foreach (var expression in expressions) SetTracks(state, expression);
+    }
+
+    private static void SetTracks(AacFlState state, Expression expression)
+    {   
         if (expression.AllowEyeBlink is TrackingPermission.Keep && expression.AllowLipSync is TrackingPermission.Keep) return;
 
         SetTracks(state, AacAv3.Av3TrackingElement.Eyes, expression.AllowEyeBlink);
