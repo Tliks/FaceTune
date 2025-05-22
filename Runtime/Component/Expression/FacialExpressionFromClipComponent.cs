@@ -11,12 +11,15 @@ namespace com.aoyon.facetune
 
         Expression? IExpressionProvider.ToExpression(SessionContext context)
         {
-            if (Clip == null) return null;
+            //if (Clip == null) return null;
             BlendShapeSet blendShapes = new();
 #if UNITY_EDITOR
-            var newBlendShapes = new BlendShapeSet(GetBlendShapesFromClip(Clip));
-            if (!IncludeZeroWeight) newBlendShapes.RemoveZeroWeight();
-            blendShapes.Add(newBlendShapes);
+            if (Clip != null)
+            {
+                var newBlendShapes = new BlendShapeSet(GetBlendShapesFromClip(Clip));
+                if (!IncludeZeroWeight) newBlendShapes.RemoveZeroWeight();
+                blendShapes.Add(newBlendShapes);
+            }
 #endif
             if (!EnableBlending)
             {
