@@ -36,11 +36,6 @@ internal class BuildPass : Pass<BuildPass>
         Profiler.BeginSample("InstallPresetData");
         InstallPresetData(context, sessionContext, presets);
         Profiler.EndSample();
-
-        foreach (var component in mainComponent.GetComponentsInChildren<FaceTuneTagComponent>(true))
-        {
-            Object.DestroyImmediate(component);
-        }
     }
 
     private List<Preset>? CollectPresetData(SessionContext context)

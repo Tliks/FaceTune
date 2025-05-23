@@ -19,14 +19,9 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
 
         InPhase(BuildPhase.Transforming)
         .BeforePlugin("nadena.dev.modular-avatar")
-        .BeforePlugin("net.rs64.tex-trans-tool")
-        .BeforePlugin("com.anatawa12.avatar-optimizer")
-        .Run(ApplyDefaulShapesPass.Instance)
-        .PreviewingWith(new DefaultShapesPreview());
-
-        InPhase(BuildPhase.Transforming)
-        .BeforePlugin("nadena.dev.modular-avatar")
-        .Run(BuildPass.Instance);
+        .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
+        .Run(BuildPass.Instance).Then
+        .Run(RemoveFTComponentsPass.Instance);
 
         InPhase(BuildPhase.Optimizing)
         .AfterPlugin("nadena.dev.modular-avatar")
