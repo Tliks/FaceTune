@@ -1,5 +1,4 @@
 using nadena.dev.ndmf;
-using com.aoyon.facetune.platform;
 
 namespace com.aoyon.facetune.pass;
 
@@ -8,7 +7,7 @@ internal class ProcessTrackedShapesPass : AbstractBuildPass<ProcessTrackedShapes
     public override string QualifiedName => "com.aoyon.facetune.process-tracked-shapes";
     public override string DisplayName => "Process Tracked Shapes";
 
-    protected override void ExecuteCore(BuildPassContext context)
+    protected override void Execute(BuildPassContext context)
     {
         var sessionContext = context.SessionContext;
         var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext);

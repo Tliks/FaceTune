@@ -36,7 +36,12 @@ internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagCompone
         }
 
         serializedObject.Update();
-        base.OnInspectorGUI();
+        var iterator = serializedObject.GetIterator();
+        iterator.NextVisible(true);
+        while (iterator.NextVisible(false))
+        {
+            EditorGUILayout.PropertyField(iterator, true);
+        }
         serializedObject.ApplyModifiedProperties();
     }
 }

@@ -108,10 +108,7 @@ internal record class BlendShapeSet
             .Select(x => x.Key)
             .ToList();
 
-        foreach (var key in keysToRemove)
-        {
-            _mapping.Remove(key);
-        }
+        _mapping.RemoveRange(keysToRemove);
         return this;
     }
 

@@ -1,5 +1,3 @@
-using com.aoyon.facetune.platform;
-
 namespace com.aoyon.facetune.pass;
 
 internal class InstallPresetsPass : AbstractBuildPass<InstallPresetsPass>
@@ -7,7 +5,7 @@ internal class InstallPresetsPass : AbstractBuildPass<InstallPresetsPass>
     public override string QualifiedName => "com.aoyon.facetune.install-presets";
     public override string DisplayName => "Install Presets";
 
-    protected override void ExecuteCore(BuildPassContext context)
+    protected override void Execute(BuildPassContext context)
     {
         // optionやmenuitemは一旦後回し
 

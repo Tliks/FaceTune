@@ -5,7 +5,6 @@ namespace com.aoyon.facetune.pass;
 internal class ResolveReferencesPass : Pass<ResolveReferencesPass>
 {
     public override string QualifiedName => "com.aoyon.facetune.resolve-references";
-
     public override string DisplayName => "Resolve References";
 
     protected override void Execute(BuildContext context)

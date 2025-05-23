@@ -23,10 +23,10 @@ internal abstract class AbstractBuildPass<T> : Pass<T> where T : AbstractBuildPa
             return new BuildPassContext(context, sessionContext, presetData);
         });
         if (buildPassContext == null) return;
-        ExecuteCore(buildPassContext);
+        Execute(buildPassContext);
     }
 
-    protected abstract void ExecuteCore(BuildPassContext context);
+    protected abstract void Execute(BuildPassContext context);
 
     private PresetData? CollectPresetData(SessionContext context)
     {
@@ -42,9 +42,9 @@ internal abstract class AbstractBuildPass<T> : Pass<T> where T : AbstractBuildPa
 
 internal class BuildPassContext
 {
-    public BuildContext BuildContext { get; }
-    public SessionContext SessionContext { get; }
-    public PresetData PresetData { get; }
+    public readonly BuildContext BuildContext;
+    public readonly SessionContext SessionContext;
+    public readonly PresetData PresetData;
 
     public BuildPassContext(BuildContext buildContext, SessionContext sessionContext, PresetData presetData)
     {
