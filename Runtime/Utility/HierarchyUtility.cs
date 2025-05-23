@@ -91,5 +91,15 @@ internal static class HierarchyUtility
             .Where(c => c != null)
             .ToArray();
     }
+
+    public static TComponent EnsureComponent<TComponent>(this GameObject gameObject) where TComponent : Component
+    {
+        var component = gameObject.GetComponent<TComponent>();
+        if (component == null)
+        {
+            component = gameObject.AddComponent<TComponent>();
+        }
+        return component;
+    }
 }
 
