@@ -40,9 +40,9 @@ namespace com.aoyon.facetune
             }
         }
 
-        internal bool TryGetSessionContext(out SessionContext context)
+        internal bool TryGetSessionContext([NotNullWhen(true)] out SessionContext? context)
         {
-            context = null!;
+            context = null;
 
             if (CanBuild() is false) return false;
 

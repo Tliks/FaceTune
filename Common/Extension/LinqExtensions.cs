@@ -57,11 +57,11 @@ internal static class LinqExtensions
         }
     }
 
-    public static bool TryGetFirst<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate, out TSource? result)
+    public static bool TryGetFirst<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate, [NotNullWhen(true)] out TSource? result)
     {
         try
         {
-            result = source.First(predicate);
+            result = source.First(predicate)!;
             return true;
         }
         catch
