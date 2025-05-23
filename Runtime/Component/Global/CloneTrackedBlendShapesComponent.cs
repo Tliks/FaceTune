@@ -1,10 +1,9 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class CloneDisallowedBlendShapesComponent : FaceTuneTagComponent
+    public class CloneTrackedBlendShapesComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = "FT Clone Disallowed BlendShapes";
+        internal const string ComponentName = "FT Clone Tracked BlendShapes";
         internal const string MenuPath = FaceTune + "/" + Global + "/" + ComponentName;
     }
 }
-

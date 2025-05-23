@@ -41,8 +41,8 @@ internal static class FTPlatformSupport
         GetSupport(context.Root.transform).InstallPresets(buildContext, context, presets);
     }
 
-    public static IEnumerable<string> GetDisallowedBlendShape(SessionContext context)
+    public static IEnumerable<string> GetTrackedBlendShape(SessionContext context)
     {
-        return GetSupport(context.Root.transform).GetDisallowedBlendShape(context);
+        return GetSupport(context.Root.transform).GetTrackedBlendShape(context);
     }
 }

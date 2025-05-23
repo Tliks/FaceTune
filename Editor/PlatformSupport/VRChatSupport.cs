@@ -64,7 +64,7 @@ internal class VRChatSuport : IPlatformSupport
         animatorInstaller.SaveAsMergeAnimator();
     }
 
-    public IEnumerable<string> GetDisallowedBlendShape(SessionContext context)
+    public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
     {
         var disAllowed = new HashSet<string>();
         var lipSync = GetLipSyncBlendShape();

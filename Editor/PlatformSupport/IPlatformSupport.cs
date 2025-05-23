@@ -11,7 +11,7 @@ internal interface IPlatformSupport
     {
         return;
     }
-    public IEnumerable<string> GetDisallowedBlendShape(SessionContext context)
+    public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
     {
         return new string[] { };
     }
