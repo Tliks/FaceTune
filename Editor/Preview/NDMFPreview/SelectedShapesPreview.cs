@@ -94,7 +94,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             });
             if (facialExpression != null)
             {
-                blendShapes.Add(facialExpression.BlendShapes);
+                blendShapes.Add(facialExpression.BlendShapeSet);
             }
         }
         return blendShapes;

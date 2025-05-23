@@ -63,7 +63,7 @@ internal class AnimatorInstaller
             var clip = _aac.NewClip();
             var renderer = _sessionContext.FaceRenderer;
             var shapes = new BlendShapeSet();
-            foreach (var facialExpression in facialExpressions) shapes.Add(facialExpression.BlendShapes);
+            foreach (var facialExpression in facialExpressions) shapes.Add(facialExpression.BlendShapeSet);
             foreach (var blendShape in shapes.BlendShapes)
             {
                 clip.BlendShape(renderer, blendShape.Name, blendShape.Weight);

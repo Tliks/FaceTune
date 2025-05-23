@@ -23,8 +23,7 @@ namespace com.aoyon.facetune
 #endif
             if (!EnableBlending)
             {
-                var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes);
-                blendShapes = defaultShapes.Add(blendShapes);
+                blendShapes.Add(context.DefaultBlendShapes, BlendShapeSetOptions.PreferFormer);
             }
             if (!blendShapes.BlendShapes.Any()) return null;
             return new FacialExpression(blendShapes, AllowEyeBlink, AllowLipSync, name);

@@ -37,11 +37,19 @@ internal record class Preset
         PresetName = presetName;
         Patterns = patterns;
     }
+}
+
+internal record class PresetData
+{
+    public List<Preset> Presets { get; private set; }
+
+    public PresetData(List<Preset> presets)
+    {
+        Presets = presets;
+    }
 
     public IEnumerable<Expression> GetAllExpressions()
     {
-        return Patterns
-            .SelectMany(p => p.ExpressionWithConditions)
-            .SelectMany(e => e.Expressions);
+        return Presets.SelectMany(p => p.Patterns.SelectMany(p => p.ExpressionWithConditions.SelectMany(e => e.Expressions)));
     }
 }

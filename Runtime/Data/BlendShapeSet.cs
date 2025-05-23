@@ -6,36 +6,22 @@ namespace com.aoyon.facetune;
 /// </summary>
 internal record class BlendShapeSet
 {
-    public ReadOnlyCollection<BlendShape> BlendShapes { get => _mapping.Values.ToList().AsReadOnly(); }
     private readonly Dictionary<string, BlendShape> _mapping;
+    public IEnumerable<BlendShape> BlendShapes => _mapping.Values;
+    public IEnumerable<string> Names => _mapping.Keys;
+    public IEnumerable<float> Weights => _mapping.Values.Select(x => x.Weight);
 
     public BlendShapeSet()
     {
         _mapping = new Dictionary<string, BlendShape>();
     }
 
-    public BlendShapeSet(IReadOnlyCollection<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public BlendShapeSet(IEnumerable<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         _mapping = new Dictionary<string, BlendShape>();
         Add(blendShapes, options);
     }
 
-    public BlendShape[] ToArrayForMesh(Mesh mesh, Func<int, float> defaultValueFactory)
-    {
-        var mapping = _mapping.Clone();
-        var blendShapeCount = mesh.blendShapeCount;
-        var blendShapes = new BlendShape[blendShapeCount];
-        for (int i = 0; i < blendShapeCount; i++)
-        {
-            var name = mesh.GetBlendShapeName(i);
-            blendShapes[i] = mapping.GetOrAdd(name, new BlendShape(name, defaultValueFactory(i)));
-        }
-        return blendShapes;
-    }
-
-    public IEnumerable<string> Names() => _mapping.Keys;
-    public IEnumerable<BlendShape> Weights() => _mapping.Values;
-    
     public BlendShapeSet Add(BlendShape blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         if (string.IsNullOrWhiteSpace(blendShape.Name)) return this;
@@ -55,6 +41,7 @@ internal record class BlendShapeSet
         return this;
     }
 
+    // otherが不変な保証がない
     public BlendShapeSet Add(BlendShapeSet other, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         foreach (var blendShape in other.BlendShapes)
@@ -97,6 +84,14 @@ internal record class BlendShapeSet
         return this;
     }
 
+    public void ReplaceNames(Dictionary<string, string> mapping)
+    {
+        foreach (var (oldName, newName) in mapping)
+        {
+            ReplaceName(oldName, newName);
+        }
+    }
+
     public void ReplaceName(string oldName, string newName)
     {
         if (_mapping.TryGetValue(oldName, out var blendShape))
@@ -118,6 +113,19 @@ internal record class BlendShapeSet
             _mapping.Remove(key);
         }
         return this;
+    }
+
+    public BlendShape[] ToArrayForMesh(Mesh mesh, Func<int, float> defaultValueFactory)
+    {
+        var mapping = _mapping.Clone();
+        var blendShapeCount = mesh.blendShapeCount;
+        var blendShapes = new BlendShape[blendShapeCount];
+        for (int i = 0; i < blendShapeCount; i++)
+        {
+            var name = mesh.GetBlendShapeName(i);
+            blendShapes[i] = mapping.GetOrAdd(name, new BlendShape(name, defaultValueFactory(i)));
+        }
+        return blendShapes;
     }
 
     public BlendShapeSet ToDiff(BlendShapeSet baseSet, bool includeEqualOverride = false)

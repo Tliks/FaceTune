@@ -49,14 +49,14 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         Undo.RecordObject(Component, "RecieveEditorResult");
         serializedObject.Update();
-        FacialExpressionEditorUtility.UpdateShapes(_blendShapesProperty, result.BlendShapes);
+        FacialExpressionEditorUtility.UpdateShapes(_blendShapesProperty, result.BlendShapes.ToList().AsReadOnly());
         serializedObject.ApplyModifiedProperties();
     }
 }
 
 public class FacialExpressionEditorUtility
 {
-    public static void UpdateShapes(FacialExpressionComponent component, IReadOnlyCollection<BlendShape> newShapes)
+    public static void UpdateShapes(FacialExpressionComponent component, IReadOnlyList<BlendShape> newShapes)
     {
         var serializedObject = new SerializedObject(component);
         var blendShapesProperty = serializedObject.FindProperty("_blendShapes");
@@ -64,17 +64,15 @@ public class FacialExpressionEditorUtility
         serializedObject.ApplyModifiedProperties();
     }
 
-    internal static void UpdateShapes(SerializedProperty blendShapesProperty, IReadOnlyCollection<BlendShape> newShapes)
+    internal static void UpdateShapes(SerializedProperty blendShapesProperty, IReadOnlyList<BlendShape> newShapes)
     {
-        var newShapesList = newShapes as List<BlendShape> ?? newShapes.ToList();
-
         blendShapesProperty.ClearArray();
 
-        for (int i = 0; i < newShapesList.Count; i++)
+        for (int i = 0; i < newShapes.Count; i++)
         {
             blendShapesProperty.InsertArrayElementAtIndex(i);
             SerializedProperty elementProperty = blendShapesProperty.GetArrayElementAtIndex(i);
-            BlendShape currentShape = newShapesList[i];
+            BlendShape currentShape = newShapes[i];
 
             SerializedProperty nameProp = elementProperty.FindPropertyRelative(nameof(BlendShape.Name));
             nameProp.stringValue = currentShape.Name;

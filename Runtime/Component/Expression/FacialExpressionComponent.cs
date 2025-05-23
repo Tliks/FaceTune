@@ -7,9 +7,8 @@ namespace com.aoyon.facetune
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         [SerializeField]
-        private List<BlendShape> _blendShapes = new();
-        public ReadOnlyCollection<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
-        // use FacialExpressionEditorUtility for setter
+        private readonly List<BlendShape> _blendShapes = new();
+        public IReadOnlyList<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
         
         Expression? IExpressionProvider.ToExpression(SessionContext context)
         {
@@ -17,7 +16,7 @@ namespace com.aoyon.facetune
             
             if (!EnableBlending)
             {
-                var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes);
+                var defaultShapes = context.DefaultExpression.BlendShapeSet;
                 blendShapeSet = defaultShapes.Add(blendShapeSet);
             }
 

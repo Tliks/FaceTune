@@ -32,6 +32,7 @@ namespace com.aoyon.facetune
         {
             if (DefaultExpressionComponent != null)
             {
+                // Todo: 不足分の対応
                 return DefaultExpressionComponent.BlendShapes.ToArray();
             }
             else
@@ -62,7 +63,7 @@ namespace com.aoyon.facetune
                 defaultExpression = new FacialExpression(new BlendShapeSet(blendShapes), TrackingPermission.Allow, TrackingPermission.Allow, "Default");
             }
 
-            context = new SessionContext(root, this, faceRenderer, mesh, defaultExpression, blendShapes);
+            context = new SessionContext(root, gameObject, faceRenderer, mesh, defaultExpression);
             return true;
         }
     }
@@ -70,20 +71,19 @@ namespace com.aoyon.facetune
     internal class SessionContext
     {
         public readonly GameObject Root;
-        public readonly FaceTuneComponent FaceTuneComponent;
+        public readonly GameObject FTRoot;
         public readonly SkinnedMeshRenderer FaceRenderer;
         public readonly Mesh FaceMesh;
         public readonly FacialExpression DefaultExpression;
-        public readonly BlendShape[] DefaultBlendShapes;
+        public IEnumerable<BlendShape> DefaultBlendShapes => DefaultExpression.BlendShapeSet.BlendShapes;
 
-        public SessionContext(GameObject root, FaceTuneComponent faceTuneComponent, SkinnedMeshRenderer faceRenderer, Mesh faceMesh, FacialExpression defaultExpression, BlendShape[] defaultBlendShapes)
+        public SessionContext(GameObject root, GameObject faceTuneComponent, SkinnedMeshRenderer faceRenderer, Mesh faceMesh, FacialExpression defaultExpression)
         {
             Root = root;
-            FaceTuneComponent = faceTuneComponent;
+            FTRoot = faceTuneComponent;
             FaceRenderer = faceRenderer;
             FaceMesh = faceMesh;
             DefaultExpression = defaultExpression;
-            DefaultBlendShapes = defaultBlendShapes;
         }
     }
 }

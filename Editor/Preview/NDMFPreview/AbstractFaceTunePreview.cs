@@ -48,7 +48,8 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
         if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Task.FromResult<IRenderFilterNode>(new EmptyNode());
 
-        var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1).Weights(); // 対象外の場合はフラグとして-1を代入しNode側で除外
+        var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1) // 対象外の場合はフラグとして-1を代入しNode側で除外
+            .Select(b => b.Weight).ToArray();
 
         return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(blendShapeWeights));
 
