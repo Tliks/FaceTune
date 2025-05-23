@@ -5,17 +5,12 @@ namespace com.aoyon.facetune.platform;
 
 internal static class FTPlatformSupport
 {
-    private static readonly IPlatformSupport[] s_supports;
+    private static readonly List<IPlatformSupport> s_supports = new();
     private static readonly IPlatformSupport s_fallback = new FallbackSupport();
     
-    static FTPlatformSupport()
+    public static void Register(IPlatformSupport support)
     {
-        s_supports = new IPlatformSupport[]
-        {
-#if FT_VRCSDK3_AVATARS
-            new VRChatSuport(),
-#endif
-        };
+        s_supports.Add(support);
     }
 
     public static Transform? FindAvatarInParents(Transform transform)

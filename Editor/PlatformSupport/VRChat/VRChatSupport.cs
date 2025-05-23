@@ -9,6 +9,12 @@ namespace com.aoyon.facetune.platform;
 
 internal class VRChatSuport : IPlatformSupport
 {
+    [InitializeOnLoadMethod]
+    static void Register()
+    {
+        FTPlatformSupport.Register(new VRChatSuport());
+    }
+
     private Transform _root = null!;
     private VRCAvatarDescriptor _descriptor = null!;
 

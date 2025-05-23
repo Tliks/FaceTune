@@ -1,15 +1,15 @@
 {
-    "name": "com.aoyon.facetune.editor",
+    "name": "com.aoyon.facetune.editor.vrchat",
     "rootNamespace": "",
     "references": [
+        "VRC.SDKBase",
+        "VRC.SDKBase.Editor",
+        "VRC.SDK3A",
+        "VRC.SDK3A.Editor",
         "com.aoyon.facetune.common",
+        "com.aoyon.facetune.editor",
         "com.aoyon.facetune.runtime",
-        "nadena.dev.ndmf",
-        "nadena.dev.ndmf.runtime",
-        "nadena.dev.modular-avatar.core",
-        "AnimatorAsCode.V1",
-        "AnimatorAsCode.V1.ModularAvatar",
-        "AnimatorAsCode.V1.VRChat"
+        "nadena.dev.ndmf"
     ],
     "includePlatforms": [
         "Editor"
