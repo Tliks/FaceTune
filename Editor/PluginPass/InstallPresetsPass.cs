@@ -12,7 +12,7 @@ internal class InstallPresetsPass : AbstractBuildPass<InstallPresetsPass>
         // optionやmenuitemは一旦後回し
 
         Profiler.BeginSample("InstallPresetData");
-        FTPlatformSupport.InstallPresets(context.BuildContext, context.SessionContext, context.PresetData.Presets);
+        platform.PlatformSupport.InstallPresets(context.BuildContext, context.SessionContext, context.PresetData.Presets);
         Profiler.EndSample();
     }
 }

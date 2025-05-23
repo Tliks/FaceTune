@@ -11,7 +11,7 @@ internal class ProcessTrackedShapesPass : AbstractBuildPass<ProcessTrackedShapes
     protected override void ExecuteCore(BuildPassContext context)
     {
         var sessionContext = context.SessionContext;
-        var trackedShapes = FTPlatformSupport.GetTrackedBlendShape(sessionContext);
+        var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext);
 
         // トラッキングにより巻き戻し得るので、トラッキングの仕組みに依存するものの基本デフォルト表情として定義する意味がない
         // また、同一の効果により競合するのでクローンの対象でもない

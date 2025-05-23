@@ -3,7 +3,7 @@ using nadena.dev.ndmf.runtime;
 
 namespace com.aoyon.facetune.platform;
 
-internal static class FTPlatformSupport
+internal static class PlatformSupport
 {
     private static readonly List<IPlatformSupport> s_supports = new();
     private static readonly IPlatformSupport s_fallback = new FallbackSupport();

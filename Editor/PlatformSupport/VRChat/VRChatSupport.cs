@@ -12,7 +12,7 @@ internal class VRChatSuport : IPlatformSupport
     [InitializeOnLoadMethod]
     static void Register()
     {
-        FTPlatformSupport.Register(new VRChatSuport());
+        PlatformSupport.Register(new VRChatSuport());
     }
 
     private Transform _root = null!;
