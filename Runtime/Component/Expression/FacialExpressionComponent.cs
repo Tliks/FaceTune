@@ -7,7 +7,7 @@ namespace com.aoyon.facetune
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         [SerializeField]
-        private readonly List<BlendShape> _blendShapes = new();
+        private List<BlendShape> _blendShapes = new(); //シリアライズしているので非readonly
         public IReadOnlyList<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
         
         Expression? IExpressionProvider.ToExpression(SessionContext context)
