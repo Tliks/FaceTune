@@ -19,10 +19,13 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
 
         InPhase(BuildPhase.Transforming)
         .BeforePlugin("nadena.dev.modular-avatar")
+        
         .Run(ModifyEarlyDataPass.Instance).Then
+
         .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
         .Run(ProcessTrackedShapesPass.Instance).Then
         .Run(InstallPresetsPass.Instance).Then
+
         .Run(RemoveFTComponentsPass.Instance);
 
         InPhase(BuildPhase.Optimizing)
