@@ -31,4 +31,27 @@ public record class ParameterCondition : Condition
     public ParameterCondition()
     {
     }
+
+    public ParameterCondition(string parameterName, ComparisonType comparisonType, float floatValue)
+    {
+        ParameterName = parameterName;
+        ParameterType = ParameterType.Float;
+        ComparisonType = comparisonType;
+        FloatValue = floatValue;
+    }
+
+    public ParameterCondition(string parameterName, ComparisonType comparisonType, int intValue)
+    {
+        ParameterName = parameterName;
+        ParameterType = ParameterType.Int;
+        ComparisonType = comparisonType;
+        IntValue = intValue;
+    }
+
+    public ParameterCondition(string parameterName, bool boolValue)
+    {
+        ParameterName = parameterName;
+        ParameterType = ParameterType.Bool;
+        BoolValue = boolValue;
+    }
 }
