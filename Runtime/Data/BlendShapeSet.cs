@@ -1,27 +1,44 @@
 namespace com.aoyon.facetune;
 
-
 /// <summary>
 /// 同名のBlendShapeを許容しないグループ
+/// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet
+internal record class BlendShapeSet
 {
-    public IEnumerable<BlendShape> BlendShapes { get => _mapping.Values; }
+    public ReadOnlyCollection<BlendShape> BlendShapes { get => _mapping.Values.ToList().AsReadOnly(); }
     private readonly Dictionary<string, BlendShape> _mapping;
 
-    internal BlendShapeSet()
+    public BlendShapeSet()
     {
         _mapping = new Dictionary<string, BlendShape>();
     }
 
-    internal BlendShapeSet(List<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public BlendShapeSet(IReadOnlyCollection<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         _mapping = new Dictionary<string, BlendShape>();
-        AddRange(blendShapes, options);
+        Add(blendShapes, options);
     }
-    
-    internal BlendShapeSet Add(BlendShape blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+
+    public BlendShape[] ToArrayForMesh(Mesh mesh, Func<int, float> defaultValueFactory)
     {
+        var mapping = _mapping.Clone();
+        var blendShapeCount = mesh.blendShapeCount;
+        var blendShapes = new BlendShape[blendShapeCount];
+        for (int i = 0; i < blendShapeCount; i++)
+        {
+            var name = mesh.GetBlendShapeName(i);
+            blendShapes[i] = mapping.GetOrAdd(name, new BlendShape(name, defaultValueFactory(i)));
+        }
+        return blendShapes;
+    }
+
+    public IEnumerable<string> Names() => _mapping.Keys;
+    public IEnumerable<BlendShape> Weights() => _mapping.Values;
+    
+    public BlendShapeSet Add(BlendShape blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    {
+        if (string.IsNullOrWhiteSpace(blendShape.Name)) return this;
         if (!_mapping.TryAdd(blendShape.Name, blendShape))
         {
             switch (options)
@@ -38,7 +55,7 @@ internal class BlendShapeSet
         return this;
     }
 
-    internal BlendShapeSet Merge(BlendShapeSet other, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public BlendShapeSet Add(BlendShapeSet other, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         foreach (var blendShape in other.BlendShapes)
         {
@@ -47,17 +64,80 @@ internal class BlendShapeSet
         return this;
     }
 
-    internal void AddRange(List<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public BlendShapeSet Add(IEnumerable<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         foreach (var blendShape in blendShapes)
         {
             Add(blendShape, options);
         }
+        return this;
     }
 
-    internal bool Remove(string name)
+    public BlendShapeSet Remove(string name)
     {
-        return _mapping.Remove(name);
+        _mapping.Remove(name);
+        return this;
+    }
+
+    public BlendShapeSet Remove(IEnumerable<string> names)
+    {
+        _mapping.RemoveRange(names);
+        return this;
+    }
+
+    public BlendShapeSet Remove(BlendShape blendShape)
+    {
+        _mapping.Remove(blendShape.Name);
+        return this;
+    }
+
+    public BlendShapeSet Remove(IEnumerable<BlendShape> blendShapes)
+    {
+        _mapping.RemoveRange(blendShapes.Select(x => x.Name));
+        return this;
+    }
+
+    public void ReplaceName(string oldName, string newName)
+    {
+        if (_mapping.TryGetValue(oldName, out var blendShape))
+        {
+            _mapping.Remove(oldName);
+            _mapping.Add(newName, new BlendShape(newName, blendShape.Weight));
+        }
+    }
+
+    public BlendShapeSet RemoveZeroWeight()
+    {
+        var keysToRemove = _mapping
+            .Where(x => x.Value.Weight == 0)
+            .Select(x => x.Key)
+            .ToList();
+
+        foreach (var key in keysToRemove)
+        {
+            _mapping.Remove(key);
+        }
+        return this;
+    }
+
+    public BlendShapeSet ToDiff(BlendShapeSet baseSet, bool includeEqualOverride = false)
+    {
+        var diff = new BlendShapeSet();
+        foreach (var blendShape in BlendShapes)
+        {
+            if (baseSet._mapping.TryGetValue(blendShape.Name, out var baseValue))
+            {
+                if (includeEqualOverride || baseValue.Weight != blendShape.Weight)
+                {
+                    diff.Add(blendShape);
+                }
+            }
+            else
+            {
+                diff.Add(blendShape);
+            }
+        }
+        return diff;
     }
 }
 

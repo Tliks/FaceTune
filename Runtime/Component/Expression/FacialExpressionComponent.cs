@@ -4,29 +4,26 @@ namespace com.aoyon.facetune
     public class FacialExpressionComponent : FacialExpressionComponentBase, IExpressionProvider
     {
         internal const string ComponentName = "FT Facial Expression";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         [SerializeField]
         private List<BlendShape> _blendShapes = new();
-        public List<BlendShape> BlendShapes
-        {
-            get => _blendShapes;
-            set => _blendShapes = value;
-        }
+        public ReadOnlyCollection<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
+        // use FacialExpressionEditorUtility for setter
         
         Expression? IExpressionProvider.ToExpression(SessionContext context)
         {
-            var blendShapes = new BlendShapeSet(_blendShapes);
+            var blendShapeSet = new BlendShapeSet(BlendShapes);
             
-            if (AddDefault)
+            if (!EnableBlending)
             {
-                var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes.ToList());
-                blendShapes = defaultShapes.Merge(blendShapes);
+                var defaultShapes = new BlendShapeSet(context.DefaultBlendShapes);
+                blendShapeSet = defaultShapes.Add(blendShapeSet);
             }
 
-            if (blendShapes.BlendShapes.Any())
+            if (blendShapeSet.BlendShapes.Any())
             {
-                return new FacialExpression(blendShapes, AllowEyeBlink, AllowLipSync, name);
+                return new FacialExpression(blendShapeSet, AllowEyeBlink, AllowLipSync, name);
             }
             else
             {

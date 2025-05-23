@@ -1,9 +1,9 @@
 namespace com.aoyon.facetune;
 
-internal struct ExpressionWithCondition
+internal record class ExpressionWithCondition
 {
-    public List<Condition> Conditions;
-    public List<Expression> Expressions;
+    public List<Condition> Conditions { get; private set; }
+    public List<Expression> Expressions { get; private set; }
 
     public ExpressionWithCondition(List<Condition> conditions, List<Expression> expressions)
     {
@@ -12,60 +12,36 @@ internal struct ExpressionWithCondition
     }
 }
 
-internal struct ExpressionPattern
+internal record class ExpressionPattern
 {
-    public List<ExpressionWithCondition> Expressions;
+    public List<ExpressionWithCondition> ExpressionWithConditions { get; private set; }
 
-    public ExpressionPattern(List<ExpressionWithCondition> expressions)
+    public ExpressionPattern(List<ExpressionWithCondition> expressionWithConditions)
     {
-        Expressions = expressions;
+        ExpressionWithConditions = expressionWithConditions;
     }
 
     public void Merge(ExpressionPattern other)
     {
-        Expressions.AddRange(other.Expressions);
+        ExpressionWithConditions.AddRange(other.ExpressionWithConditions);
     }
 }
 
-internal readonly struct SortedExpressionPatterns
+internal record class Preset
 {
-    private readonly List<(ExpressionPattern Pattern, int Priority)> _patternsWithPriority;
+    public string PresetName { get; private set; }
+    public List<ExpressionPattern> Patterns { get; private set; }
 
-    public SortedExpressionPatterns(List<(ExpressionPattern Pattern, int Priority)> patternsWithPriority)
+    public Preset(string presetName, List<ExpressionPattern> patterns)
     {
-        _patternsWithPriority = new();
-        foreach (var (pattern, priority) in patternsWithPriority)
-        {
-            Add(pattern, priority);
-        }
+        PresetName = presetName;
+        Patterns = patterns;
     }
 
-    public readonly void Add(ExpressionPattern pattern, int priority)
+    public IEnumerable<Expression> GetAllExpressions()
     {
-        if (_patternsWithPriority.TryGetFirst(x => x.Priority == priority, out var existingPattern))
-        {
-            existingPattern.Pattern.Merge(pattern);
-        }
-        else
-        {
-            _patternsWithPriority.Add((pattern, priority));
-        }
-    }
-
-    public readonly List<ExpressionPattern> GetPatternsInPriorityOrder()
-    {
-        return _patternsWithPriority.OrderBy(x => x.Priority).Select(x => x.Pattern).ToList();
-    }
-}
-
-internal struct Preset
-{
-    public PresetInfo Info;
-    public SortedExpressionPatterns SortedExpressionPatterns;
-
-    public Preset(PresetInfo info, SortedExpressionPatterns sortedExpressionPatterns)
-    {
-        Info = info;
-        SortedExpressionPatterns = sortedExpressionPatterns;
+        return Patterns
+            .SelectMany(p => p.ExpressionWithConditions)
+            .SelectMany(e => e.Expressions);
     }
 }

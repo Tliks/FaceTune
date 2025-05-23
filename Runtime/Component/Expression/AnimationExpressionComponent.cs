@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class AnimationExpressionComponent : ExpressionComponentBase, IExpressionProvider
     {
         internal const string ComponentName = "FT AnimationExpression";
-        internal const string MenuPath = FaceTuneTagComponent.FTName + "/" + ComponentName;
+        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         public PathType PathType = PathType.Absolute;
         public AnimationClip? Clip = null;
@@ -16,7 +16,7 @@ namespace com.aoyon.facetune
             var pathType = PathType;
             if (pathType == PathType.Absolute)
             {
-                return new AnimationExpression(Clip, name);
+                return new AnimationExpression(Clip, TrackingPermission.Keep, TrackingPermission.Keep, name);
             }
             else if (pathType == PathType.Relative)
             {

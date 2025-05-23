@@ -27,17 +27,22 @@ internal static class FTPlatformSupport
     {
         var support = s_supports.FirstOrNull(s => s.IsTarget(root));
         support ??= s_fallback;
-
+        support.Initialize(root);
         return support;
     }
 
     public static SkinnedMeshRenderer? GetFaceRenderer(Transform root)
     {
-        return GetSupport(root).GetFaceRenderer(root);
+        return GetSupport(root).GetFaceRenderer();
     }
 
-    public static void InstallPresets(BuildContext buildContext, SessionContext context, List<Preset> presets)
+    public static void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
     {
         GetSupport(context.Root.transform).InstallPresets(buildContext, context, presets);
+    }
+
+    public static IEnumerable<string> GetDisallowedBlendShape(SessionContext context)
+    {
+        return GetSupport(context.Root.transform).GetDisallowedBlendShape(context);
     }
 }

@@ -1,4 +1,3 @@
-using nadena.dev.ndmf;
 namespace com.aoyon.facetune.platform;
 
 internal class FallbackSupport : IPlatformSupport
@@ -8,12 +7,18 @@ internal class FallbackSupport : IPlatformSupport
         return true;
     }
 
-    public SkinnedMeshRenderer? GetFaceRenderer(Transform root)
+    private Transform _root = null!;
+    public void Initialize(Transform root)
+    {
+        _root = root;
+    }
+
+    public SkinnedMeshRenderer? GetFaceRenderer()
     {
         SkinnedMeshRenderer? faceRenderer = null;
-        for (int i = 0; i < root.childCount; i++)
+        for (int i = 0; i < _root.childCount; i++)
         {
-            var child = root.GetChild(i);
+            var child = _root.GetChild(i);
             if (child.name == "Body")
             {
                 faceRenderer = child.GetComponentNullable<SkinnedMeshRenderer>();
@@ -21,10 +26,5 @@ internal class FallbackSupport : IPlatformSupport
             }
         }
         return faceRenderer;
-    }
-
-    public void InstallPresets(BuildContext buildContext, SessionContext context, List<Preset> presets)
-    {
-        return;
     }
 }

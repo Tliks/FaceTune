@@ -7,7 +7,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
 {
     // 一時的に無効化出来るようにするために、必ずしもProjectSettings.EnableSelectedExpressionPreviewとは一致しない
     private static readonly PublishedValue<int> _disabledDepth = new(0); // 0で有効 無効化したい時は足す
-    private static readonly PublishedValue<GameObject?> _targetGameObject = new(null);
+    private static readonly PublishedValue<Object?> _targetObject = new(null);
     public static bool Enabled => _disabledDepth.Value == 0;
     public static void Disable() => _disabledDepth.Value++;
     public static void MayEnable() => _disabledDepth.Value--;
@@ -16,7 +16,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
     static void Init()
     {
         _disabledDepth.Value = ProjectSettings.EnableSelectedExpressionPreview ? 0 : 1;
-        _targetGameObject.Value = Selection.objects.OfType<GameObject>().FirstOrNull();
+        _targetObject.Value = Selection.objects.FirstOrNull();
         Selection.selectionChanged += OnSelectionChanged;
         ProjectSettings.EnableSelectedExpressionPreviewChanged += (value) => { if (value) MayEnable(); else Disable(); };
     }
@@ -25,25 +25,31 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
     {
         if (!Enabled) return;
 
-        var selections = Selection.objects.OfType<GameObject>();
+        var selections = Selection.objects;
 
-        GameObject? target = null;
+        Object? target = null;
         if (selections.Count() == 1)
         {
             target = selections.First();
         }
 
-        _targetGameObject.Value = target;
-
+        _targetObject.Value = target;
     }
 
-    // FacialExpressionComponent以外の取得が必要
     protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, FaceTuneComponent mainComponent, ComputeContext context)
     {
         context.Observe(_disabledDepth, d => d, (a, b) => false);
         if (!Enabled) return null;
 
-        var expressionComponents = context.Observe(_targetGameObject, c => c?.GetComponents<FacialExpressionComponent>(), (a, b) => 
+        if (!mainComponent.TryGetSessionContext(out var sessionContext)) return null;
+
+        var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
+        if (clip != null)
+        {
+            return GetBlendShapeSet(clip);
+        }
+
+        var expressionComponents = context.Observe(_targetObject, o => (o as GameObject)?.GetComponents<FacialExpressionComponentBase>(), (a, b) => 
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
@@ -51,33 +57,46 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         });
         if (expressionComponents != null && expressionComponents.Length > 0)
         {
-            return GetBlendShapeSet(expressionComponents, context);
+            return GetBlendShapeSet(expressionComponents, sessionContext, context);
         }
 
-        var connectComponents = context.Observe(_targetGameObject, c => c?.GetComponents<ConnectConditionAndExpressionComponent>(), (a, b) => 
+        var conditionComponents = context.Observe(_targetObject, o => (o as GameObject)?.GetComponents<ConditionComponent>(), (a, b) => 
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
             return a.SequenceEqual(b);
         });
-        if (connectComponents != null && connectComponents.Length == 1)
+        if (conditionComponents != null && conditionComponents.Length == 1)
         {
-            var handGestureComponent = connectComponents.First();
-            var expressionRoot = context.Observe(handGestureComponent, c => c.ExpressionRoot, (a, b) => a == b);
-            var expressionComponents_ = context.GetComponentsInChildren<FacialExpressionComponent>(expressionRoot, false);
-            return GetBlendShapeSet(expressionComponents_, context);
+            var conditionComponent = conditionComponents.First();
+            var expressionRoot = context.Observe(conditionComponent, c => c.GetExpressionRoot(), (a, b) => a == b);
+            var expressionComponents_ = context.GetComponentsInChildren<FacialExpressionComponentBase>(expressionRoot, false);
+            return GetBlendShapeSet(expressionComponents_, sessionContext, context);
         }
         return null;
     }
 
-    private static BlendShapeSet GetBlendShapeSet(FacialExpressionComponent[] expressionComponents, ComputeContext context)
+    private static BlendShapeSet GetBlendShapeSet(AnimationClip clip)
     {
-        var blendShapes = new List<BlendShape>();
+        return AnimationUtility.GetBlendShapesFromClip(clip).ToSet();
+    }
+
+    private static BlendShapeSet GetBlendShapeSet(IEnumerable<FacialExpressionComponentBase> expressionComponents, SessionContext sessionContext, ComputeContext context)
+    {
+        var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
         {
-            var defaultBlendShapes = context.Observe(expressionComponent, c => new List<BlendShape>(c.BlendShapes), (a, b) => a.SequenceEqual(b));
-            blendShapes.AddRange(defaultBlendShapes);
+            var facialExpression = context.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(sessionContext) as FacialExpression, (a, b) => 
+            {
+                if (a == null && b == null) return true;
+                if (a == null || b == null) return false;
+                return a.Equals(b);
+            });
+            if (facialExpression != null)
+            {
+                blendShapes.Add(facialExpression.BlendShapes);
+            }
         }
-        return new BlendShapeSet(blendShapes);
+        return blendShapes;
     }
 }

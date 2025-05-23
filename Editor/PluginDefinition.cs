@@ -15,11 +15,13 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
     protected override void Configure()
     {
         InPhase(BuildPhase.Resolving)
-        .Run(ReolveRenferencesPass.Instance)
-        .PreviewingWith(new DefaultShapesPreview());
+        .Run(ReolveRenferencesPass.Instance);
 
         InPhase(BuildPhase.Transforming)
-        .Run(BuildPass.Instance);
+        .BeforePlugin("nadena.dev.modular-avatar")
+        .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
+        .Run(BuildPass.Instance).Then
+        .Run(RemoveFTComponentsPass.Instance);
 
         InPhase(BuildPhase.Optimizing)
         .AfterPlugin("nadena.dev.modular-avatar")
