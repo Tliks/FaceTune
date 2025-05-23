@@ -9,6 +9,17 @@ internal static class HierarchyUtility
         return RuntimeUtil.RelativePath(root, child);
     }
 
+    public static List<GameObject> GetDirectChildren(this GameObject parent)
+    {
+        var result = new List<GameObject>();
+        var transform = parent.transform;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            result.Add(transform.GetChild(i).gameObject);
+        }
+        return result;
+    }
+
     public static T? GetComponentNullable<T>(this GameObject gameObject) where T : Component
     {
         //return gameObject.GetComponent<T>().NullCast();
@@ -71,6 +82,14 @@ internal static class HierarchyUtility
     where TInterface : class
     {
         return GetInterfacesInChildFTComponents<TInterface>(component.gameObject, includeInactive);
+    }
+
+    public static TComponent[] GetDirectChildComponents<TComponent>(this GameObject gameObject) where TComponent : Component
+    {
+        return gameObject.GetDirectChildren()
+            .Select(c => c.GetComponent<TComponent>())
+            .Where(c => c != null)
+            .ToArray();
     }
 }
 
