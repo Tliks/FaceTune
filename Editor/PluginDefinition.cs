@@ -15,7 +15,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
     protected override void Configure()
     {
         InPhase(BuildPhase.Resolving)
-        .Run(ReolveRenferencesPass.Instance);
+        .Run(ResolveReferencesPass.Instance);
 
         InPhase(BuildPhase.Transforming)
         .BeforePlugin("nadena.dev.modular-avatar")

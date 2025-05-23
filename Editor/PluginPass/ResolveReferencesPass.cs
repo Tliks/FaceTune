@@ -2,7 +2,7 @@ using nadena.dev.ndmf;
 
 namespace com.aoyon.facetune.pass;
 
-internal class ReolveRenferencesPass : Pass<ReolveRenferencesPass>
+internal class ResolveReferencesPass : Pass<ResolveReferencesPass>
 {
     public override string QualifiedName => "com.aoyon.facetune.resolve-references";
 
