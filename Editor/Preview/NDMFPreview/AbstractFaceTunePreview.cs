@@ -5,6 +5,20 @@ namespace com.aoyon.facetune.preview;
 
 internal abstract class AbstractFaceTunePreview : IRenderFilter
 {
+    protected virtual TogglablePreviewNode? ControlNode { get; }
+
+    public IEnumerable<TogglablePreviewNode> GetPreviewControlNodes()
+    {
+        if (ControlNode == null) yield break;
+        yield return ControlNode;
+    }
+
+    public bool IsEnabled(ComputeContext context)
+    {
+        if (ControlNode == null) return true;
+        return context.Observe(ControlNode.IsEnabled);
+    }
+
     // mainComponetからFaceRendererを取得できればプレビュー対象には入れる
     // mainComponetに依存しない対象の追加方法が必要か考える
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
