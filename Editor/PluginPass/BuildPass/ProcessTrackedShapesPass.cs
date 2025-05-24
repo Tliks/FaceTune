@@ -2,14 +2,18 @@ using nadena.dev.ndmf;
 
 namespace com.aoyon.facetune.pass;
 
-internal class ProcessTrackedShapesPass : AbstractBuildPass<ProcessTrackedShapesPass>
+internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 {
     public override string QualifiedName => "com.aoyon.facetune.process-tracked-shapes";
     public override string DisplayName => "Process Tracked Shapes";
 
-    protected override void Execute(BuildPassContext context)
+    protected override void Execute(BuildContext context)
     {
-        var sessionContext = context.SessionContext;
+        var sessionContext = context.Extension<BuildPassContext>().SessionContext;
+        if (sessionContext == null) return;
+        var presetData = context.Extension<BuildPassContext>().PresetData;
+        if (presetData == null) return;
+
         var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext);
 
         // トラッキングにより巻き戻し得るので、トラッキングの仕組みに依存するものの基本デフォルト表情として定義する意味がない
@@ -21,11 +25,11 @@ internal class ProcessTrackedShapesPass : AbstractBuildPass<ProcessTrackedShapes
         if (sessionContext.Root.GetComponentsInChildren<CloneTrackedBlendShapesComponent>(false).Any())
         {
             var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
-            ModifyData(context.PresetData, mapping);
+            ModifyData(presetData, mapping);
         }
         else
         {
-            Warning(context.PresetData, trackedShapes);
+            Warning(presetData, trackedShapes);
         }
     }
 

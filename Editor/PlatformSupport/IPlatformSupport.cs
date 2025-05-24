@@ -1,4 +1,5 @@
 using nadena.dev.ndmf;
+using nadena.dev.modular_avatar.core;
 
 namespace com.aoyon.facetune.platform;
 
@@ -17,5 +18,9 @@ internal interface IPlatformSupport
     public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
     {
         return new string[] { };
+    }
+    public string AssignParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        return string.Empty;
     }
 }

@@ -2,7 +2,9 @@
 
 using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
+using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.ndmf;
+using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.animator;
 
 namespace com.aoyon.facetune.platform;
@@ -120,6 +122,39 @@ internal class VRChatSuport : IPlatformSupport
             }
         }
         return ret;
+    }
+
+    public string AssignParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
+        usedNames.Add(parameterName);
+        var control = new VRCExpressionsMenu.Control()
+        {
+            name = menuItem.gameObject.name,
+            type = VRCExpressionsMenu.Control.ControlType.Toggle,
+            parameter = new VRCExpressionsMenu.Control.Parameter()
+            {
+                name = parameterName,
+            },
+            subParameters = new VRCExpressionsMenu.Control.Parameter[] { },
+            value = 0,
+            labels = new VRCExpressionsMenu.Control.Label[] { },
+            icon = null,
+        };
+        menuItem.Control = control;
+        return parameterName;
+    }
+    private string GenerateUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        var baseName = menuItem.gameObject.name.Replace(" ", "_");
+        var parameterName = $"facetune/{baseName}/toggle";
+        int index = 1;
+        while (usedNames.Contains(parameterName))
+        {
+            parameterName = $"facetune/{baseName}_{index}/toggle";
+            index++;
+        }
+        return parameterName;
     }
 }
 

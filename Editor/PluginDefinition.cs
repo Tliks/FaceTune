@@ -17,15 +17,21 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         InPhase(BuildPhase.Resolving)
         .Run(ResolveReferencesPass.Instance);
 
-        InPhase(BuildPhase.Transforming)
-        .BeforePlugin("nadena.dev.modular-avatar")
+        var mainSequence = InPhase(BuildPhase.Transforming)
+            .BeforePlugin("nadena.dev.modular-avatar");
         
+        mainSequence
         .Run(ModifyEarlyDataPass.Instance).Then
+        .Run(NegotiateMAMenuItemPass.Instance).Then
+        .WithRequiredExtensions(new Type[] { typeof(BuildPassContext) }, buildSequence => 
+        {
+            buildSequence
+            .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
+            .Run(ProcessTrackedShapesPass.Instance).Then
+            .Run(InstallPresetsPass.Instance);
+        });
 
-        .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
-        .Run(ProcessTrackedShapesPass.Instance).Then
-        .Run(InstallPresetsPass.Instance).Then
-
+        mainSequence
         .Run(RemoveFTComponentsPass.Instance);
 
         InPhase(BuildPhase.Optimizing)

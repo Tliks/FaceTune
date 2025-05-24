@@ -9,7 +9,8 @@
         "com.aoyon.facetune.common",
         "com.aoyon.facetune.editor",
         "com.aoyon.facetune.runtime",
-        "nadena.dev.ndmf"
+        "nadena.dev.ndmf",
+        "nadena.dev.modular-avatar.core"
     ],
     "includePlatforms": [
         "Editor"
