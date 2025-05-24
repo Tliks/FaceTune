@@ -23,7 +23,8 @@ public record class ParameterCondition : Condition
     public string ParameterName = string.Empty;
     public ParameterType ParameterType = ParameterType.Int;
 
-    public ComparisonType ComparisonType = ComparisonType.GreaterThan;
+    public FloatComparisonType FloatComparisonType = FloatComparisonType.GreaterThan;
+    public IntComparisonType IntComparisonType = IntComparisonType.Equal;
     public float FloatValue = 0;
     public int IntValue = 0;
     public bool BoolValue = false;
@@ -32,19 +33,19 @@ public record class ParameterCondition : Condition
     {
     }
 
-    public ParameterCondition(string parameterName, ComparisonType comparisonType, float floatValue)
+    public ParameterCondition(string parameterName, FloatComparisonType comparisonType, float floatValue)
     {
         ParameterName = parameterName;
         ParameterType = ParameterType.Float;
-        ComparisonType = comparisonType;
+        FloatComparisonType = comparisonType;
         FloatValue = floatValue;
     }
 
-    public ParameterCondition(string parameterName, ComparisonType comparisonType, int intValue)
+    public ParameterCondition(string parameterName, IntComparisonType comparisonType, int intValue)
     {
         ParameterName = parameterName;
         ParameterType = ParameterType.Int;
-        ComparisonType = comparisonType;
+        IntComparisonType = comparisonType;
         IntValue = intValue;
     }
 

@@ -134,15 +134,15 @@ internal class AnimatorInstaller
                 {
                     case ParameterType.Int:
                         var intParam = layer.IntParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryToExpressionConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue);
-                        AddComparisonCondition(defaultToExpressionConditions, intParam, parameterCondition.ComparisonType, parameterCondition.IntValue);
-                        AddComparisonCondition(expressionToExitConditions, intParam, Negate(parameterCondition.ComparisonType), parameterCondition.IntValue, isOr: true);
+                        AddComparisonCondition(entryToExpressionConditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue);
+                        AddComparisonCondition(defaultToExpressionConditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue);
+                        AddComparisonCondition(expressionToExitConditions, intParam, Negate(parameterCondition.IntComparisonType), parameterCondition.IntValue, isOr: true);
                         break;
                     case ParameterType.Float:
                         var floatParam = layer.FloatParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryToExpressionConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue);
-                        AddComparisonCondition(defaultToExpressionConditions, floatParam, parameterCondition.ComparisonType, parameterCondition.FloatValue);
-                        AddComparisonCondition(expressionToExitConditions, floatParam, Negate(parameterCondition.ComparisonType), parameterCondition.FloatValue, isOr: true);
+                        AddComparisonCondition(entryToExpressionConditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue);
+                        AddComparisonCondition(defaultToExpressionConditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue);
+                        AddComparisonCondition(expressionToExitConditions, floatParam, Negate(parameterCondition.FloatComparisonType), parameterCondition.FloatValue, isOr: true);
                         break;
                     case ParameterType.Bool:
                         var boolParam = layer.BoolParameter(parameterCondition.ParameterName);
@@ -178,17 +178,17 @@ internal class AnimatorInstaller
     private void AddComparisonCondition(
         AacFlTransitionContinuation conditions,
         AacFlFloatParameter parameter,
-        ComparisonType comparisonType,
+        FloatComparisonType comparisonType,
         float value,
         bool isOr = false)
     {
         switch (comparisonType)
         {
-            case ComparisonType.GreaterThan:
+            case FloatComparisonType.GreaterThan:
                 if (isOr) conditions.Or().When(parameter.IsGreaterThan(value));
                 else conditions.And(parameter.IsGreaterThan(value));
                 break;
-            case ComparisonType.LessThan:
+            case FloatComparisonType.LessThan:
                 if (isOr) conditions.Or().When(parameter.IsLessThan(value));
                 else conditions.And(parameter.IsLessThan(value));
                 break;
@@ -198,17 +198,25 @@ internal class AnimatorInstaller
     private void AddComparisonCondition(
         AacFlTransitionContinuation conditions,
         AacFlIntParameter parameter,
-        ComparisonType comparisonType,
+        IntComparisonType comparisonType,
         int value,
         bool isOr = false)
     {
         switch (comparisonType)
         {
-            case ComparisonType.GreaterThan:
+            case IntComparisonType.Equal:
+                if (isOr) conditions.Or().When(parameter.IsEqualTo(value));
+                else conditions.And(parameter.IsEqualTo(value));
+                break;
+            case IntComparisonType.NotEqual:
+                if (isOr) conditions.Or().When(parameter.IsNotEqualTo(value));
+                else conditions.And(parameter.IsNotEqualTo(value));
+                break;
+            case IntComparisonType.GreaterThan:
                 if (isOr) conditions.Or().When(parameter.IsGreaterThan(value));
                 else conditions.And(parameter.IsGreaterThan(value));
                 break;
-            case ComparisonType.LessThan:
+            case IntComparisonType.LessThan:
                 if (isOr) conditions.Or().When(parameter.IsLessThan(value));
                 else conditions.And(parameter.IsLessThan(value));
                 break;
@@ -227,12 +235,24 @@ internal class AnimatorInstaller
             conditions.And(parameter.IsEqualTo(value));
     }
 
-    private ComparisonType Negate(ComparisonType type)
+    private IntComparisonType Negate(IntComparisonType type)
     {
         return type switch
         {
-            ComparisonType.GreaterThan => ComparisonType.LessThan,
-            ComparisonType.LessThan => ComparisonType.GreaterThan,
+            IntComparisonType.Equal => IntComparisonType.NotEqual,
+            IntComparisonType.NotEqual => IntComparisonType.Equal,
+            IntComparisonType.GreaterThan => IntComparisonType.LessThan,
+            IntComparisonType.LessThan => IntComparisonType.GreaterThan,
+            _ => type
+        };
+    }
+
+    private FloatComparisonType Negate(FloatComparisonType type)
+    {
+        return type switch
+        {
+            FloatComparisonType.GreaterThan => FloatComparisonType.LessThan,
+            FloatComparisonType.LessThan => FloatComparisonType.GreaterThan,
             _ => type
         };
     }

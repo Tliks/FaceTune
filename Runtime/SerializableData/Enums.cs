@@ -31,7 +31,15 @@ public enum ParameterType
     Bool
 }
 
-public enum ComparisonType
+public enum IntComparisonType
+{
+    Equal,
+    NotEqual,
+    GreaterThan,
+    LessThan
+}
+
+public enum FloatComparisonType
 {
     GreaterThan,
     LessThan,

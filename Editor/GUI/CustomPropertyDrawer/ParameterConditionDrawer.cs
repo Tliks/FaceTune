@@ -3,7 +3,8 @@ namespace com.aoyon.facetune.ui;
 [CustomPropertyDrawer(typeof(ParameterCondition))]
 internal class ParameterConditionDrawer : PropertyDrawer
 {
-    private SerializedProperty? _comparisonTypeProp;
+    private SerializedProperty? _floatComparisonTypeProp;
+    private SerializedProperty? _intComparisonTypeProp;
     private SerializedProperty? _floatValueProp;
     private SerializedProperty? _intValueProp;
     private SerializedProperty? _boolValueProp;
@@ -29,16 +30,16 @@ internal class ParameterConditionDrawer : PropertyDrawer
         switch (paramType)
         {
             case ParameterType.Int:
-                _comparisonTypeProp ??= property.FindPropertyRelative(nameof(ParameterCondition.ComparisonType));
+                _intComparisonTypeProp ??= property.FindPropertyRelative(nameof(ParameterCondition.IntComparisonType));
                 _intValueProp ??= property.FindPropertyRelative(nameof(ParameterCondition.IntValue));
-                EditorGUI.PropertyField(currentPosition, _comparisonTypeProp, new GUIContent("Comparison"));
+                EditorGUI.PropertyField(currentPosition, _intComparisonTypeProp, new GUIContent("Comparison"));
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(currentPosition, _intValueProp, new GUIContent("Value"));
                 break;
             case ParameterType.Float:
-                _comparisonTypeProp ??= property.FindPropertyRelative(nameof(ParameterCondition.ComparisonType));
+                _floatComparisonTypeProp ??= property.FindPropertyRelative(nameof(ParameterCondition.FloatComparisonType));
                 _floatValueProp ??= property.FindPropertyRelative(nameof(ParameterCondition.FloatValue));
-                EditorGUI.PropertyField(currentPosition, _comparisonTypeProp, new GUIContent("Comparison"));
+                EditorGUI.PropertyField(currentPosition, _floatComparisonTypeProp, new GUIContent("Comparison"));
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(currentPosition, _floatValueProp, new GUIContent("Value"));
                 break;
