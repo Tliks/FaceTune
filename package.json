@@ -8,7 +8,14 @@
     "name": "Ao_425",
     "url": "https://github.com/Tliks"
   },
-  "url": "https://github.com/Tliks/com.aoyon.facetune",
-  "changelogUrl": "https://github.com/Tliks/com.aoyon.facetune/blob/main/CHANGELOG.md",
-  "vpmDependencies": {}
+  "url": "https://github.com/Tliks/FaceTune",
+  "changelogUrl": "https://github.com/Tliks/FaceTune/blob/main/CHANGELOG.md",
+  "vpmDependencies": {
+    "nadena.dev.ndmf": ">=1.5.0",
+    "nadena.dev.modular-avatar": ">=1.0.0",
+    "dev.hai-vr.animator-as-code.v1": ">=1.2.0-beta.1",
+    "dev.hai-vr.animator-as-code.v1.vrchat": ">=1.1.0",
+    "dev.hai-vr.animator-as-code.v1.modular-avatar": ">=1.1.0",
+    "com.vrchat.avatars": ">=3.5.2"
+  }
 }
