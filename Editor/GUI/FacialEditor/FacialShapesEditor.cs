@@ -55,8 +55,30 @@ internal class FacialShapesEditor : EditorWindow
     private bool _includeZeroWeight = false;
     private bool _includeEqualOverride = false;
 
-    public static FacialShapesEditor OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
+    public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
     {
+        if (HasOpenInstances<FacialShapesEditor>())
+        {
+            var existingWindow = GetWindow<FacialShapesEditor>();
+            if (existingWindow.hasUnsavedChanges)
+            {
+                var result = EditorUtility.DisplayDialogComplex("Unsaved Changes", "This window may have unsaved changes. Would you like to save?", "Save", "Unsave", "Cancel");
+                if (result == 0)
+                {
+                    existingWindow.SaveChanges();
+                    existingWindow.Close();
+                }
+                else if (result == 1)
+                {
+                    existingWindow.ForceClose();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         var window = GetWindow<FacialShapesEditor>();
         window.Init(renderer, mesh, defaultShapes, defaultOverrides);
         return window;

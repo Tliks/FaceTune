@@ -42,6 +42,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         if (!mainComponent.TryGetSessionContext(out var context)) return;
 
         var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, context.DefaultBlendShapes, new(Component.BlendShapes));
+        if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }
 
@@ -49,7 +50,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         Undo.RecordObject(Component, "RecieveEditorResult");
         serializedObject.Update();
-        FacialExpressionEditorUtility.UpdateShapes(_blendShapesProperty, result.BlendShapes.ToList().AsReadOnly());
+        FacialExpressionEditorUtility.UpdateShapes(Component, result.BlendShapes.ToList().AsReadOnly());
         serializedObject.ApplyModifiedProperties();
     }
 }
