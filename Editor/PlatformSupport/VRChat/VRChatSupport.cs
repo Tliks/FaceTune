@@ -67,8 +67,7 @@ internal class VRChatSuport : IPlatformSupport
     public void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
     {
         var animatorInstaller = new AnimatorInstaller(buildContext, context);
-        animatorInstaller.CreateDefaultLayer();
-        animatorInstaller.InstallPreset(presets);
+        animatorInstaller.Install(presets);
         animatorInstaller.SaveAsMergeAnimator();
     }
 

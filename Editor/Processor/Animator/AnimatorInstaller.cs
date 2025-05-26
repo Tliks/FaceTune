@@ -24,14 +24,6 @@ internal class AnimatorInstaller
         _ctrl = _aac.NewAnimatorController();
     }
 
-    public void CreateDefaultLayer()
-    {
-        var defaultLayer = Addlayer("Default");
-        var defaultState = defaultLayer.NewState("Default");
-        AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
-        // SetTracks(defaultState, _sessionContext.DefaultExpression);
-    }
-
     public void SaveAsMergeAnimator()
     {
         var modularAvatar = MaAc.Create(new GameObject(SystemName)
@@ -70,54 +62,95 @@ internal class AnimatorInstaller
             }
             state.WithAnimation(clip);
         }
-
     }
 
     private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
-    public void InstallPreset(IEnumerable<Preset> presets)
+    public void Install(IEnumerable<Preset> presets)
     {
-        var preset = presets.First(); // とりあえず先頭のみ
-        var presetName = preset.PresetName;
-        var patterns = preset.Patterns;
+        var defaultLayer = Addlayer("Default");
+        var defaultLayer_defaultState = defaultLayer.NewState("Default");
+        AddExpressionsToState(defaultLayer_defaultState, new[] { _sessionContext.DefaultExpression });
+        // SetTracks(defaultState, _sessionContext.DefaultExpression);
 
-        for (var i = 0; i < patterns.Count(); i++)
+        var presetList = presets.ToList();
+        var presetIndex = defaultLayer.IntParameter("PresetIndex");
+        
+        var layers = new AacFlLayer[presets.Max(p => p.Patterns.Count)];
+        var defaultStates = new AacFlState[presets.Max(p => p.Patterns.Count)];
+
+        for (var i = 0; i < presetList.Count(); i++)
         {
-            var pattern = patterns[i];
-            if (pattern == null || pattern.ExpressionWithConditions.Count == 0) continue;
+            var preset = presetList[i];
+            var presetName = preset.PresetName;
+            var patterns = preset.Patterns;
 
-            var layer = Addlayer($"{presetName}_{i}");
-
-            var defaultState = layer.NewState("Default");
-            SetTracks(defaultState, _sessionContext.DefaultExpression);
-                        
-            foreach (var expressionWithCondition in pattern.ExpressionWithConditions)
+            for (var j = 0; j < patterns.Count(); j++)
             {
-                var conditions = expressionWithCondition.Conditions;
-                var expressions = expressionWithCondition.Expressions;
+                var pattern = patterns[j];
+                if (pattern == null || pattern.ExpressionWithConditions.Count == 0) continue;
 
-                var expressionState = layer.NewState(expressions.First().Name);
-
-                AddExpressionsToState(expressionState, expressions);
-                SetTracks(expressionState, expressions);
-
-                var entryToExpressionConditions = expressionState.TransitionsFromEntry().WhenConditions();
-                var defaultToExpressionConditions = defaultState.TransitionsTo(expressionState).WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
-                var expressionToExitConditions = expressionState.Exits().WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
-                foreach (var condition in conditions)
+                var layer = layers[j];
+                if (layer == null)
                 {
-                    AddConditionToTransitions(condition, layer, entryToExpressionConditions, defaultToExpressionConditions, expressionToExitConditions);
+                    layer = Addlayer($"{j}");
+                    layers[j] = layer;
                 }
+
+                var defaultState = defaultStates[j];
+                if (defaultState == null)
+                {
+                    defaultState = layer.NewState("Default");
+                    defaultStates[j] = defaultState;
+                    SetTracks(defaultState, _sessionContext.DefaultExpression);
+                }
+
+                var presetCondition = new ParameterCondition("PresetIndex", IntComparisonType.Equal, i);
+                            
+                foreach (var expressionWithCondition in pattern.ExpressionWithConditions)
+                {
+                    var conditions = expressionWithCondition.Conditions;
+                    var expressions = expressionWithCondition.Expressions;
+
+                    var expressionState = layer.NewState(expressions.First().Name);
+
+                    AddExpressionsToState(expressionState, expressions);
+                    SetTracks(expressionState, expressions);
+
+                    var entryToExpressionConditions = expressionState.TransitionsFromEntry().WhenConditions();
+                    var defaultToExpressionConditions = defaultState.TransitionsTo(expressionState).WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
+                    var expressionToExitConditions = expressionState.Exits().WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
+                    
+                    var allTransitionConditions = conditions.Append(presetCondition).ToList();
+
+                    if (allTransitionConditions.Any())
+                    {
+                        // Process conditions for Entry and DefaultToExpression transitions (AND logic)
+                        AddConditionToTransitions(allTransitionConditions.First(), layer, entryToExpressionConditions, defaultToExpressionConditions, null, true);
+                        foreach (var cond in allTransitionConditions.Skip(1))
+                        {
+                            AddConditionToTransitions(cond, layer, entryToExpressionConditions, defaultToExpressionConditions, null, false);
+                        }
+
+                        // Process conditions for Exit transitions (OR logic for negated conditions)
+                        AddConditionToTransitions(allTransitionConditions.First(), layer, null, null, expressionToExitConditions, true);
+                        foreach (var cond in allTransitionConditions.Skip(1))
+                        {
+                            AddConditionToTransitions(cond, layer, null, null, expressionToExitConditions, false);
+                        }
+                    }
+                }
+                defaultState.At(0, 5);
             }
-            defaultState.At(0, 5);
         }
     }
 
     private void AddConditionToTransitions(
         Condition condition,
         AacFlLayer layer,
-        AacFlTransitionContinuation entryToExpressionConditions,
-        AacFlTransitionContinuation defaultToExpressionConditions,
-        AacFlTransitionContinuation expressionToExitConditions)
+        AacFlTransitionContinuation? entryToExpressionConditions,
+        AacFlTransitionContinuation? defaultToExpressionConditions,
+        AacFlTransitionContinuation? expressionToExitConditions,
+        bool isFirstInLogicBlock)
     {
         switch (condition)
         {
@@ -125,30 +158,44 @@ internal class AnimatorInstaller
                 var gesture = Convert(handGestureCondition.HandGesture);
                 var isLeft = handGestureCondition.Hand == Hand.Left;
                 var gestureParam = isLeft ? layer.Av3().GestureLeft : layer.Av3().GestureRight;
-                AddComparisonCondition(entryToExpressionConditions, gestureParam, handGestureCondition.ComparisonType, gesture);
-                AddComparisonCondition(defaultToExpressionConditions, gestureParam, handGestureCondition.ComparisonType, gesture);
-                AddComparisonCondition(expressionToExitConditions, gestureParam, Negate(handGestureCondition.ComparisonType), gesture, isOr: true);
+
+                if (entryToExpressionConditions != null)
+                    AddComparisonCondition(entryToExpressionConditions, gestureParam, handGestureCondition.ComparisonType, gesture, isOr: false);
+                if (defaultToExpressionConditions != null)
+                    AddComparisonCondition(defaultToExpressionConditions, gestureParam, handGestureCondition.ComparisonType, gesture, isOr: false);
+                
+                if (expressionToExitConditions != null)
+                    AddComparisonCondition(expressionToExitConditions, gestureParam, Negate(handGestureCondition.ComparisonType), gesture, isOr: !isFirstInLogicBlock);
                 break;
             case ParameterCondition parameterCondition:
                 switch (parameterCondition.ParameterType)
                 {
                     case ParameterType.Int:
                         var intParam = layer.IntParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryToExpressionConditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue);
-                        AddComparisonCondition(defaultToExpressionConditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue);
-                        AddComparisonCondition(expressionToExitConditions, intParam, Negate(parameterCondition.IntComparisonType), parameterCondition.IntValue, isOr: true);
+                        if (entryToExpressionConditions != null)
+                            AddComparisonCondition(entryToExpressionConditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue, isOr: false);
+                        if (defaultToExpressionConditions != null)
+                            AddComparisonCondition(defaultToExpressionConditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue, isOr: false);
+                        if (expressionToExitConditions != null)
+                            AddComparisonCondition(expressionToExitConditions, intParam, Negate(parameterCondition.IntComparisonType), parameterCondition.IntValue, isOr: !isFirstInLogicBlock);
                         break;
                     case ParameterType.Float:
                         var floatParam = layer.FloatParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryToExpressionConditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue);
-                        AddComparisonCondition(defaultToExpressionConditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue);
-                        AddComparisonCondition(expressionToExitConditions, floatParam, Negate(parameterCondition.FloatComparisonType), parameterCondition.FloatValue, isOr: true);
+                        if (entryToExpressionConditions != null)
+                            AddComparisonCondition(entryToExpressionConditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue, isOr: false);
+                        if (defaultToExpressionConditions != null)
+                            AddComparisonCondition(defaultToExpressionConditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue, isOr: false);
+                        if (expressionToExitConditions != null)
+                            AddComparisonCondition(expressionToExitConditions, floatParam, Negate(parameterCondition.FloatComparisonType), parameterCondition.FloatValue, isOr: !isFirstInLogicBlock);
                         break;
                     case ParameterType.Bool:
                         var boolParam = layer.BoolParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(entryToExpressionConditions, boolParam, parameterCondition.BoolValue);
-                        AddComparisonCondition(defaultToExpressionConditions, boolParam, parameterCondition.BoolValue);
-                        AddComparisonCondition(expressionToExitConditions, boolParam, Negate(parameterCondition.BoolValue), isOr: true);
+                        if (entryToExpressionConditions != null)
+                            AddComparisonCondition(entryToExpressionConditions, boolParam, parameterCondition.BoolValue, isOr: false);
+                        if (defaultToExpressionConditions != null)
+                            AddComparisonCondition(defaultToExpressionConditions, boolParam, parameterCondition.BoolValue, isOr: false);
+                        if (expressionToExitConditions != null)
+                            AddComparisonCondition(expressionToExitConditions, boolParam, Negate(parameterCondition.BoolValue), isOr: !isFirstInLogicBlock);
                         break;
                 }
                 break;
@@ -237,6 +284,7 @@ internal class AnimatorInstaller
 
     private IntComparisonType Negate(IntComparisonType type)
     {
+        // Todo: インクリメントが必要
         return type switch
         {
             IntComparisonType.Equal => IntComparisonType.NotEqual,
