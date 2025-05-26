@@ -23,8 +23,7 @@ internal class DefaultExpressionEditor : FaceTuneCustomEditorBase<DefaultExpress
     {
         if (Context == null) return;
         var defaultBlendShapes = Context.FaceRenderer.GetBlendShapes(Context.FaceMesh);
-        var serializedObject = new SerializedObject(Component);
-        var blendShapesProperty = serializedObject.FindProperty("_blendShapes");
+        var blendShapesProperty = serializedObject.FindProperty(nameof(DefaultExpressionComponent.BlendShapes));
         FacialExpressionEditorUtility.UpdateShapes(blendShapesProperty, defaultBlendShapes);
         serializedObject.ApplyModifiedProperties();
     }

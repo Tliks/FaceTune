@@ -33,7 +33,7 @@ internal static class SessionContextBuilder
         }
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
-        var faceRenderer = overrideFaceRenderers.Select(c => c.FaceObject.NullCast()?.GetComponent<SkinnedMeshRenderer>()).LastOrNull(r => r != null);
+        var faceRenderer = overrideFaceRenderers.Select(c => c.FaceObject.NullCast()?.GetComponentNullable<SkinnedMeshRenderer>()).LastOrNull(r => r != null);
         if (faceRenderer == null)
         {
             return platform.PlatformSupport.GetFaceRenderer(root.transform);

@@ -25,9 +25,11 @@ internal static class PlatformSupport
         {
             if (support.IsTarget(root))
             {
+                support.Initialize(root);
                 yield return support;
             }
         }
+        s_fallback.Initialize(root);
         yield return s_fallback;
     }
 
