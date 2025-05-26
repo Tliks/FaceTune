@@ -23,7 +23,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
         SelectedShapesPreview.MayEnable();
     }
 
-    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, FaceTuneComponent mainComponent, ComputeContext context)
+    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
     {
         var target = context.Observe(_target, t => t, (a, b) => a == b);
         if (target != original) return null;

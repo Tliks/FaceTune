@@ -19,8 +19,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         return context.Observe(ControlNode.IsEnabled);
     }
 
-    // mainComponetからFaceRendererを取得できればプレビュー対象には入れる
-    // mainComponetに依存しない対象の追加方法が必要か考える
+    // FaceTuneTagComponentが一つでもあれば対象に加える
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
         var groups = new List<RenderGroup>();
@@ -28,18 +27,13 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         {
             if (!context.ActiveInHierarchy(root)) continue;
 
-            var mainComponents = context.GetComponentsInChildren<FaceTuneComponent>(root, true)
-                .Where(c => context.ActiveInHierarchy(c.gameObject));
-            if (mainComponents.Count() == 0) continue;
-            if (mainComponents.Count() > 1) { Debug.LogError("FaceTuneComponent is not unique"); continue; }
-            var mainComponent = mainComponents.First();
+            var components = context.GetComponentsInChildren<FaceTuneTagComponent>(root, true);
+            if (components.Count() == 0) continue;
 
-            var canBuild = context.Observe(mainComponent, c => c.CanBuild(), (a, b) => a == b);
-            if (canBuild is false) continue;
-            
-            var renderer = context.Observe(mainComponent, r => r.FaceObject.GetComponent<SkinnedMeshRenderer>(), (a, b) => a == b)!;
+            if (!SessionContextBuilder.TryGet(root, out var sessionContext)) continue;
 
-            groups.Add(RenderGroup.For(renderer).WithData(mainComponent));
+            var faceRenderer = sessionContext.FaceRenderer;
+            groups.Add(RenderGroup.For(faceRenderer).WithData(sessionContext));
         }
         return groups.ToImmutableList();
     }
@@ -55,10 +49,10 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         var proxyMesh = proxy.sharedMesh;
         if (proxyMesh == null) return Error();
 
-        var mainComponent = group.GetData<FaceTuneComponent>();
-        if (mainComponent == null) return Error();
+        var sessionContext = group.GetData<SessionContext>();
+        if (sessionContext == null) return Error();
 
-        var blendShapeSet = QueryBlendShapeSet(original, proxy, mainComponent, context);
+        var blendShapeSet = QueryBlendShapeSet(original, proxy, sessionContext, context);
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
         if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Task.FromResult<IRenderFilterNode>(new EmptyNode());
 
@@ -79,7 +73,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
     /// プレビューするブレンドシェイプを取得する
     /// IRenderFilter.Instantiate内で呼ばれるので適時Observe
     /// </summary>
-    protected abstract BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, FaceTuneComponent mainComponent, ComputeContext context);
+    protected abstract BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context);
 }
 
 internal class BlendShapePreviewNode : IRenderFilterNode

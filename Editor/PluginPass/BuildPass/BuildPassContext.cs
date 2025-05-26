@@ -9,12 +9,7 @@ internal class BuildPassContext : IExtensionContext
 
     void IExtensionContext.OnActivate(BuildContext context)
     {
-        var mainComponents = context.AvatarRootObject.GetComponentsInChildren<FaceTuneComponent>(false);
-        if (mainComponents.Length == 0) return;
-        if (mainComponents.Length > 1) throw new Exception("FaceTuneComponent is not unique");
-        var mainComponent = mainComponents[0];
-
-        if (!mainComponent.TryGetSessionContext(out var sessionContext)) return;
+        if (!SessionContextBuilder.TryGet(context.AvatarRootObject, out var sessionContext)) return;
         
         Profiler.BeginSample("CollectPresetData");
         var presetData = CollectPresetData(sessionContext);

@@ -36,13 +36,11 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         _targetObject.Value = target;
     }
 
-    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, FaceTuneComponent mainComponent, ComputeContext context)
+    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
     {
         context.Observe(_disabledDepth, d => d, (a, b) => false);
         if (!Enabled) return null;
-
-        if (!mainComponent.TryGetSessionContext(out var sessionContext)) return null;
-
+        
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {

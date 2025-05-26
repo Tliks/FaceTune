@@ -3,24 +3,12 @@ namespace com.aoyon.facetune.ui;
 internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagComponent
 {
     public T Component = null!;
-    private bool _isMainComponent = false;
-    public SessionContext? Context;
+    public SessionContext? Context = null;
 
     public virtual void OnEnable()
     {
         Component = (target as T)!;
-        _isMainComponent = target is FaceTuneComponent;
-
-        var mainComponent = _isMainComponent 
-            ? Component as FaceTuneComponent 
-            : Component.GetComponentInParentNullable<FaceTuneComponent>();
-
-        if (mainComponent == null) return;
-
-        if (mainComponent.TryGetSessionContext(out var ctx))
-        {
-            Context = ctx;
-        }
+        SessionContextBuilder.TryGet(Component.gameObject, out Context);
     }
 
     public virtual void OnDisable()
@@ -30,9 +18,9 @@ internal class FaceTuneCustomEditorBase<T> : Editor where T : FaceTuneTagCompone
 
     public override void OnInspectorGUI()
     {
-        if (!_isMainComponent && Context == null)
+        if (Context == null)
         {
-            EditorGUILayout.HelpBox("Setup FaceTuneComponent and use this component as a child of it.", MessageType.Error);
+            EditorGUILayout.HelpBox("Failed to get SessionContext.", MessageType.Error);
         }
 
         serializedObject.Update();

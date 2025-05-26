@@ -19,31 +19,35 @@ internal static class PlatformSupport
         return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
     }
 
-    private static IPlatformSupport GetSupport(Transform root)
+    private static IEnumerable<IPlatformSupport> GetSupports(Transform root)
     {
-        var support = s_supports.FirstOrNull(s => s.IsTarget(root));
-        support ??= s_fallback;
-        support.Initialize(root);
-        return support;
+        foreach (var support in s_supports)
+        {
+            if (support.IsTarget(root))
+            {
+                yield return support;
+            }
+        }
+        yield return s_fallback;
     }
 
     public static SkinnedMeshRenderer? GetFaceRenderer(Transform root)
     {
-        return GetSupport(root).GetFaceRenderer();
+        return GetSupports(root).Select(s => s.GetFaceRenderer()).FirstOrNull(r => r != null);
     }
 
     public static void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
     {
-        GetSupport(context.Root.transform).InstallPresets(buildContext, context, presets);
+        GetSupports(context.Root.transform).First().InstallPresets(buildContext, context, presets);
     }
 
     public static IEnumerable<string> GetTrackedBlendShape(SessionContext context)
     {
-        return GetSupport(context.Root.transform).GetTrackedBlendShape(context);
+        return GetSupports(context.Root.transform).First().GetTrackedBlendShape(context);
     }
 
     public static string AssignParameterName(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
-        return GetSupport(root).AssignParameterName(menuItem, usedNames);
+        return GetSupports(root).First().AssignParameterName(menuItem, usedNames);
     }
 }

@@ -37,11 +37,9 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
 
     private void OpenFacialShapesEditor()
     {
-        var mainComponent = Component.GetComponentInParentNullable<FaceTuneComponent>();
-        if (mainComponent == null) return;
-        if (!mainComponent.TryGetSessionContext(out var context)) return;
+        if (Context == null) return;
 
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, context.DefaultBlendShapes, new(Component.BlendShapes));
+        var window = FacialShapesEditor.OpenEditor(Context.FaceRenderer, Context.FaceMesh, Context.DefaultBlendShapes, new(Component.BlendShapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }

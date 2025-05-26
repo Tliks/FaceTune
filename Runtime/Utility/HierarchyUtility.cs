@@ -37,24 +37,24 @@ internal static class HierarchyUtility
         return GetComponentNullable<T>(component.gameObject);
     }
 
-    public static T? GetComponentInParentNullable<T>(this GameObject gameObject) where T : Component
+    public static T? GetComponentInParentNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
     {
-        return gameObject.GetComponentInParent<T>().NullCast();
+        return gameObject.GetComponentInParent<T>(includeInactive).NullCast();
     }
 
-    public static T? GetComponentInParentNullable<T>(this Component component) where T : Component
+    public static T? GetComponentInParentNullable<T>(this Component component, bool includeInactive = false) where T : Component
     {
-        return GetComponentInParentNullable<T>(component.gameObject);
+        return GetComponentInParentNullable<T>(component.gameObject, includeInactive);
     }
 
-    public static T? GetComponentInChildrenNullable<T>(this GameObject gameObject) where T : Component
+    public static T? GetComponentInChildrenNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
     {
-        return gameObject.GetComponentInChildren<T>().NullCast();
+        return gameObject.GetComponentInChildren<T>(includeInactive).NullCast();
     }
 
-    public static T? GetComponentInChildrenNullable<T>(this Component component) where T : Component
+    public static T? GetComponentInChildrenNullable<T>(this Component component, bool includeInactive = false) where T : Component
     {
-        return GetComponentInChildrenNullable<T>(component.gameObject);
+        return GetComponentInChildrenNullable<T>(component.gameObject, includeInactive);
     }
 
     public static List<TInterface> GetInterfacesInChildComponents<TComponent, TInterface>(this GameObject gameObject, bool includeInactive = false)

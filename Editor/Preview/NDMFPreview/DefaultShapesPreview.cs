@@ -13,13 +13,13 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
 
     protected override TogglablePreviewNode? ControlNode => ToggleNode;
 
-    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, FaceTuneComponent mainComponent, ComputeContext context)
+    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
     {
-        var components = context.GetComponentsInChildren<PreviewDefaultExpressionComponent>(mainComponent.gameObject, false);
+        var components = context.GetComponentsInChildren<DefaultExpressionComponent>(sessionContext.Root, false);
         if (components.Length == 0) return null;
 
-        var defaultExpressionComponent = context.Observe(mainComponent, c => c.DefaultExpressionComponent, (a, b) => a == b);
-        if (defaultExpressionComponent == null) return null;
+        // Todo
+        var defaultExpressionComponent = components.First();
 
         var defaultBlendShapes = context.Observe(defaultExpressionComponent, c => new List<BlendShape>(c.BlendShapes), (a, b) => a.SequenceEqual(b));
         return new BlendShapeSet(defaultBlendShapes);
