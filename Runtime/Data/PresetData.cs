@@ -12,9 +12,11 @@ internal record class ExpressionWithCondition
     }
 }
 
-internal interface IPatternElement {}
+internal interface IPatternElement {
+    public string Name { get; }
+}
 
-internal record class ExpressionPattern : IPatternElement
+internal record class ExpressionPattern
 {
     public List<ExpressionWithCondition> ExpressionWithConditions { get; private set; }
 
@@ -24,14 +26,26 @@ internal record class ExpressionPattern : IPatternElement
     }
 }
 
+internal record class SingleExpressionPattern : IPatternElement
+{
+    public string Name { get; private set; }
+    public ExpressionPattern ExpressionPattern { get; private set; }
+
+    public SingleExpressionPattern(string name, ExpressionPattern expressionPattern)
+    {
+        Name = name;
+        ExpressionPattern = expressionPattern;
+    }
+}
+
 internal record class Preset : IPatternElement
 {
-    public string PresetName { get; private set; }
+    public string Name { get; private set; }
     public List<ExpressionPattern> Patterns { get; private set; }
 
     public Preset(string presetName, List<ExpressionPattern> patterns)
     {
-        PresetName = presetName;
+        Name = presetName;
         Patterns = patterns;
     }
 }
@@ -74,7 +88,7 @@ internal record PatternData
             {
                 var pattern = patternComponent.GetPattern(context);
                 if (pattern == null) continue;
-                orderedItems.Add(pattern);
+                orderedItems.Add(new SingleExpressionPattern(patternComponent.gameObject.name, pattern));
                 processedGameObjects.Add(patternComponent.gameObject);
             }
         }
@@ -128,9 +142,9 @@ internal record PatternData
             {
                 expressions.AddRange(preset.Patterns.SelectMany(p => p.ExpressionWithConditions.SelectMany(e => e.Expressions)));
             }
-            else if (orderedItem is ExpressionPattern expressionPattern)
+            else if (orderedItem is SingleExpressionPattern singleExpressionPattern)
             {
-                expressions.AddRange(expressionPattern.ExpressionWithConditions.SelectMany(e => e.Expressions));
+                expressions.AddRange(singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.SelectMany(e => e.Expressions));
             }
         }
         return expressions;
