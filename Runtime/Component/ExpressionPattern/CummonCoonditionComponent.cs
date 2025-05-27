@@ -1,17 +1,22 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class CommonConditionComponent : FaceTuneTagComponent, IModifyEarlyData
+    public class CommonConditionComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Common Condition";
         internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
 
         public List<HandGestureCondition> HandGestureConditions = new();
         public List<ParameterCondition> ParameterConditions = new();
+        
+        [SerializeField, HideInInspector]
+        internal bool AllChildren = false;
 
-        void IModifyEarlyData.Excute()
+        internal void Modify()
         {
-            var conditionComponents = gameObject.GetDirectChildComponents<ConditionComponent>();
+            var conditionComponents = AllChildren ?
+                gameObject.GetComponentsInChildren<ConditionComponent>(false) :
+                gameObject.GetDirectChildComponents<ConditionComponent>();
             foreach (var conditionComponent in conditionComponents)
             {
                 conditionComponent.HandGestureConditions.AddRange(HandGestureConditions);

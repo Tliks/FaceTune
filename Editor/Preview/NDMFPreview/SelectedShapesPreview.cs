@@ -84,7 +84,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
         {
-            var facialExpression = context.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(sessionContext) as FacialExpression, (a, b) => 
+            var facialExpression = context.Observe(expressionComponent, c => (c as IExpressionProvider)?.ToExpression(sessionContext) as FacialExpression, (a, b) => 
             {
                 if (a == null && b == null) return true;
                 if (a == null || b == null) return false;

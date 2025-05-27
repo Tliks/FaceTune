@@ -11,7 +11,7 @@ internal interface IPlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
+    public void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
     {
         return;
     }
@@ -19,8 +19,20 @@ internal interface IPlatformSupport
     {
         return new string[] { };
     }
-    public string AssignParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         return string.Empty;
+    }
+    public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        return;
+    }
+    public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
+    {
+        return;
+    }
+    public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
+    {
+        return;
     }
 }

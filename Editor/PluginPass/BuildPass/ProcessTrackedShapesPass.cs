@@ -11,7 +11,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
     {
         var sessionContext = context.Extension<BuildPassContext>().SessionContext;
         if (sessionContext == null) return;
-        var presetData = context.Extension<BuildPassContext>().PresetData;
+        var presetData = context.Extension<BuildPassContext>().PatternData;
         if (presetData == null) return;
 
         var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext);
@@ -43,7 +43,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         return mapping;
     }
 
-    private void ModifyData(PresetData presetData, Dictionary<string, string> mapping)
+    private void ModifyData(PatternData presetData, Dictionary<string, string> mapping)
     {
         var expressions = presetData.GetAllExpressions().ToList();        
         foreach (var expression in expressions)
@@ -52,7 +52,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         }
     }
 
-    private void Warning(PresetData presetData, IEnumerable<string> trackedShapes)
+    private void Warning(PatternData presetData, IEnumerable<string> trackedShapes)
     {
         var expressions = presetData.GetAllExpressions().ToList();   
         foreach (var expression in expressions)

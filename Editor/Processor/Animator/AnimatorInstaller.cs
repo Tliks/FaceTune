@@ -1,7 +1,6 @@
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core; 
 using AnimatorAsCode.V1;
-using AnimatorAsCode.V1.ModularAvatar;
 using AnimatorAsCode.V1.VRC;
 
 namespace com.aoyon.facetune.animator;
@@ -24,13 +23,14 @@ internal class AnimatorInstaller
         _ctrl = _aac.NewAnimatorController();
     }
 
-    public void SaveAsMergeAnimator()
+    public void SaveAsMergeAnimator(int layerPriority)
     {
-        var modularAvatar = MaAc.Create(new GameObject(SystemName)
-        {
-            transform = { parent = _sessionContext.Root.transform }
-        });
-        modularAvatar.NewMergeAnimator(_ctrl, VRC.SDK3.Avatars.Components.VRCAvatarDescriptor.AnimLayerType.FX);
+        var mergeAnimator = _sessionContext.Root.AddComponent<ModularAvatarMergeAnimator>();
+        mergeAnimator.animator = _ctrl.AnimatorController;
+        mergeAnimator.layerType = VRC.SDK3.Avatars.Components.VRCAvatarDescriptor.AnimLayerType.FX;
+        mergeAnimator.pathMode = MergeAnimatorPathMode.Absolute;
+        mergeAnimator.layerPriority = layerPriority;
+        mergeAnimator.mergeAnimatorMode = MergeAnimatorMode.Append;
     }
 
     private AacFlLayer Addlayer(string layerName)
@@ -64,82 +64,110 @@ internal class AnimatorInstaller
         }
     }
 
-    private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
-    public void Install(IEnumerable<Preset> presets)
+    public void CreateDefaultLayer()
     {
         var defaultLayer = Addlayer("Default");
-        var defaultLayer_defaultState = defaultLayer.NewState("Default");
-        AddExpressionsToState(defaultLayer_defaultState, new[] { _sessionContext.DefaultExpression });
+        var defaultState = defaultLayer.NewState("Default");
+        AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
         // SetTracks(defaultState, _sessionContext.DefaultExpression);
+    }
 
-        var presetList = presets.ToList();
-        var presetIndex = defaultLayer.IntParameter("PresetIndex");
-        
-        var layers = new AacFlLayer[presets.Max(p => p.Patterns.Count)];
-        var defaultStates = new AacFlState[presets.Max(p => p.Patterns.Count)];
-
-        for (var i = 0; i < presetList.Count(); i++)
+    private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
+    public void InstallPatternData(PatternData patternData)
+    {
+        foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
-            var preset = presetList[i];
-            var presetName = preset.PresetName;
-            var patterns = preset.Patterns;
+            var type = patternGroup.Type;
 
-            for (var j = 0; j < patterns.Count(); j++)
+            if (type == typeof(Preset))
             {
-                var pattern = patterns[j];
-                if (pattern == null || pattern.ExpressionWithConditions.Count == 0) continue;
+                var presets = patternGroup.Group.Select(item => (Preset)item).ToList();
 
-                var layer = layers[j];
-                if (layer == null)
+                var layers = new AacFlLayer[presets.Max(p => p.Patterns.Count)];
+                var defaultStates = new AacFlState[presets.Max(p => p.Patterns.Count)];
+
+                for (var i = 0; i < presets.Count; i++)
                 {
-                    layer = Addlayer($"{j}");
-                    layers[j] = layer;
-                }
+                    var preset = presets[i];
+                    // var presetName = preset.PresetName; // 未使用のためコメントアウト
+                    var patterns = preset.Patterns;
 
-                var defaultState = defaultStates[j];
-                if (defaultState == null)
-                {
-                    defaultState = layer.NewState("Default");
-                    defaultStates[j] = defaultState;
-                    SetTracks(defaultState, _sessionContext.DefaultExpression);
-                }
-
-                var presetCondition = new ParameterCondition("PresetIndex", IntComparisonType.Equal, i);
-                            
-                foreach (var expressionWithCondition in pattern.ExpressionWithConditions)
-                {
-                    var conditions = expressionWithCondition.Conditions;
-                    var expressions = expressionWithCondition.Expressions;
-
-                    var expressionState = layer.NewState(expressions.First().Name);
-
-                    AddExpressionsToState(expressionState, expressions);
-                    SetTracks(expressionState, expressions);
-
-                    var entryToExpressionConditions = expressionState.TransitionsFromEntry().WhenConditions();
-                    var defaultToExpressionConditions = defaultState.TransitionsTo(expressionState).WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
-                    var expressionToExitConditions = expressionState.Exits().WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
-                    
-                    var allTransitionConditions = conditions.Append(presetCondition).ToList();
-
-                    if (allTransitionConditions.Any())
+                    for (var j = 0; j < patterns.Count; j++)
                     {
-                        // Process conditions for Entry and DefaultToExpression transitions (AND logic)
-                        AddConditionToTransitions(allTransitionConditions.First(), layer, entryToExpressionConditions, defaultToExpressionConditions, null, true);
-                        foreach (var cond in allTransitionConditions.Skip(1))
+                        var pattern = patterns[j];
+                        if (pattern == null || pattern.ExpressionWithConditions.Count == 0) continue;
+
+                        var layer = layers[j];
+                        if (layer == null)
                         {
-                            AddConditionToTransitions(cond, layer, entryToExpressionConditions, defaultToExpressionConditions, null, false);
+                            layer = Addlayer($"Merged Presets Priority: {j}"); // レイヤー名はインデックス
+                            layers[j] = layer;
                         }
 
-                        // Process conditions for Exit transitions (OR logic for negated conditions)
-                        AddConditionToTransitions(allTransitionConditions.First(), layer, null, null, expressionToExitConditions, true);
-                        foreach (var cond in allTransitionConditions.Skip(1))
+                        var defaultState = defaultStates[j];
+                        if (defaultState == null)
                         {
-                            AddConditionToTransitions(cond, layer, null, null, expressionToExitConditions, false);
+                            defaultState = layer.NewState("Default");
+                            defaultStates[j] = defaultState;
+                            SetTracks(defaultState, _sessionContext.DefaultExpression);
                         }
+                                    
+                        ProcessExpressionWithConditions(layer, defaultState, pattern.ExpressionWithConditions);
+                        defaultState.At(0, 5); // Preset内の各パターンのDefaultステートの位置
                     }
                 }
-                defaultState.At(0, 5);
+            }
+            else if (type == typeof(ExpressionPattern))
+            {
+                var expressionPatterns = patternGroup.Group.Select(item => (ExpressionPattern)item).ToList();
+                foreach (var expressionPattern in expressionPatterns)
+                {
+                    if (expressionPattern == null || expressionPattern.ExpressionWithConditions.Count == 0) continue;
+
+                    var layer = Addlayer(expressionPattern.ExpressionWithConditions.First().Expressions.First().Name);
+                    var defaultState = layer.NewState("Default");
+                    SetTracks(defaultState, _sessionContext.DefaultExpression); 
+
+                    ProcessExpressionWithConditions(layer, defaultState, expressionPattern.ExpressionWithConditions);
+                    defaultState.At(0, 5); // ExpressionPatternのDefaultステートの位置
+                }
+            }
+        }
+    }
+
+    private void ProcessExpressionWithConditions(AacFlLayer layer, AacFlState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions)
+    {
+        foreach (var expressionWithCondition in expressionWithConditions)
+        {
+            var conditions = expressionWithCondition.Conditions;
+            var expressions = expressionWithCondition.Expressions;
+
+            if (!expressions.Any()) continue;
+
+            var expressionState = layer.NewState(expressions.First().Name);
+
+            AddExpressionsToState(expressionState, expressions);
+            SetTracks(expressionState, expressions);
+
+            var entryToExpressionConditions = expressionState.TransitionsFromEntry().WhenConditions();
+            var defaultToExpressionConditions = defaultState.TransitionsTo(expressionState).WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
+            var expressionToExitConditions = expressionState.Exits().WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
+            
+            if (conditions.Any())
+            {
+                // Process conditions for Entry and DefaultToExpression transitions (AND logic)
+                AddConditionToTransitions(conditions.First(), layer, entryToExpressionConditions, defaultToExpressionConditions, null, true);
+                foreach (var cond in conditions.Skip(1))
+                {
+                    AddConditionToTransitions(cond, layer, entryToExpressionConditions, defaultToExpressionConditions, null, false);
+                }
+
+                // Process conditions for Exit transitions (OR logic for negated conditions)
+                AddConditionToTransitions(conditions.First(), layer, null, null, expressionToExitConditions, true);
+                foreach (var cond in conditions.Skip(1))
+                {
+                    AddConditionToTransitions(cond, layer, null, null, expressionToExitConditions, false);
+                }
             }
         }
     }

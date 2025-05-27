@@ -22,6 +22,11 @@ internal record class BlendShapeSet
         Add(blendShapes, options);
     }
 
+    public BlendShapeSet Duplicate()
+    {
+        return new BlendShapeSet(BlendShapes);
+    }
+
     public BlendShapeSet Add(BlendShape blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         if (string.IsNullOrWhiteSpace(blendShape.Name)) return this;

@@ -27,4 +27,5 @@ internal record SessionContext
         FaceMesh = faceMesh;
         DefaultExpression = defaultExpression;
     }
+    
 }

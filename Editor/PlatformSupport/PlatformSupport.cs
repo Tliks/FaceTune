@@ -38,9 +38,9 @@ internal static class PlatformSupport
         return GetSupports(root).Select(s => s.GetFaceRenderer()).FirstOrNull(r => r != null);
     }
 
-    public static void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
+    public static void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
     {
-        GetSupports(context.Root.transform).First().InstallPresets(buildContext, context, presets);
+        GetSupports(context.Root.transform).First().InstallPatternData(buildContext, context, patternData, disableExistingControl);
     }
 
     public static IEnumerable<string> GetTrackedBlendShape(SessionContext context)
@@ -48,8 +48,21 @@ internal static class PlatformSupport
         return GetSupports(context.Root.transform).First().GetTrackedBlendShape(context);
     }
 
-    public static string AssignParameterName(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    // ModularAvatarMenuItem
+    public static string AssignUniqueParameterName(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
-        return GetSupports(root).First().AssignParameterName(menuItem, usedNames);
+        return GetSupports(root).First().AssignUniqueParameterName(menuItem, usedNames);
+    }
+    public static void AssignParameterName(Transform root, ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        GetSupports(root).First().AssignParameterName(menuItem, parameterName);
+    }
+    public static void AssignParameterValue(Transform root, ModularAvatarMenuItem menuItem, float value)
+    {
+        GetSupports(root).First().AssignParameterValue(menuItem, value);
+    }
+    public static void EnsureMenuItemIsToggle(Transform root, ModularAvatarMenuItem menuItem)
+    {
+        GetSupports(root).First().EnsureMenuItemIsToggle(menuItem);
     }
 }

@@ -21,7 +21,7 @@ internal class NegotiateMAMenuItemPass : Pass<NegotiateMAMenuItemPass>
             if (menuItem == null) throw new Exception($"ModularAvatarMenuItem is not found on {asConditionComponent.gameObject.name}");
 
             var conditionComponent = asConditionComponent.gameObject.EnsureComponent<ConditionComponent>();
-            var parameterName = platform.PlatformSupport.AssignParameterName(root.transform, menuItem, usedParameterNames);
+            var parameterName = platform.PlatformSupport.AssignUniqueParameterName(root.transform, menuItem, usedParameterNames);
             conditionComponent.ParameterConditions.Add(new ParameterCondition(parameterName, true));
         }
     }

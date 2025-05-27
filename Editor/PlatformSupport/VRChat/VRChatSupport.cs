@@ -64,11 +64,17 @@ internal class VRChatSuport : IPlatformSupport
         return faceRenderer;
     }
 
-    public void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
+    public void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
     {
         var animatorInstaller = new AnimatorInstaller(buildContext, context);
-        animatorInstaller.Install(presets);
-        animatorInstaller.SaveAsMergeAnimator();
+        animatorInstaller.CreateDefaultLayer();
+        // faceEmo: 0
+        var layerPriority = disableExistingControl ? 1 : -1;
+        animatorInstaller.SaveAsMergeAnimator(layerPriority);
+
+        animatorInstaller = new AnimatorInstaller(buildContext, context);
+        animatorInstaller.InstallPatternData(patternData);
+        animatorInstaller.SaveAsMergeAnimator(2);
     }
 
     public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
@@ -123,7 +129,7 @@ internal class VRChatSuport : IPlatformSupport
         return ret;
     }
 
-    public string AssignParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
         usedNames.Add(parameterName);
@@ -154,6 +160,18 @@ internal class VRChatSuport : IPlatformSupport
             index++;
         }
         return parameterName;
+    }
+    public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        menuItem.Control.parameter.name = parameterName;
+    }
+    public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
+    {
+        menuItem.Control.value = value;
+    }
+    public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
+    {
+        menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
     }
 }
 

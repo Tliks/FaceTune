@@ -20,22 +20,23 @@ internal abstract record class Expression
 
 internal record class FacialExpression : Expression
 {
-    public BlendShapeSet BlendShapeSet { get; private set; }
+    private BlendShapeSet _blendShapeSet;
+    public BlendShapeSet BlendShapeSet { get => _blendShapeSet.Duplicate(); private set => _blendShapeSet = value; }
     public FacialExpression(BlendShapeSet blendShapes, TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, string name) : base(name, allowEyeBlink, allowLipSync)
     {
-        BlendShapeSet = blendShapes;
+        _blendShapeSet = blendShapes;
     }
 
-    public override IEnumerable<string> BlendShapeNames => BlendShapeSet.Names;
+    public override IEnumerable<string> BlendShapeNames => _blendShapeSet.Names;
 
     public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
     {
-        BlendShapeSet.ReplaceNames(mapping);
+        _blendShapeSet.ReplaceNames(mapping);
     }
 
     public override void RemoveShapes(IEnumerable<string> names)
     {
-        BlendShapeSet.Remove(names);
+        _blendShapeSet.Remove(names);
     }
 }
 
