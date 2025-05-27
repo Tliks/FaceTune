@@ -9,7 +9,8 @@ namespace com.aoyon.facetune
         [SerializeField]
         private List<BlendShape> _blendShapes = new(); //シリアライズしているので非readonly
         public IReadOnlyList<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
-        
+        public bool EnableBlending = false;
+
         Expression? IExpressionProvider.ToExpression(SessionContext context)
         {
             var blendShapeSet = new BlendShapeSet(BlendShapes);

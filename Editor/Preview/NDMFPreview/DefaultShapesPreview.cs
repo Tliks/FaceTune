@@ -15,7 +15,7 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
 
     protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
     {
-        var components = context.GetComponentsInChildren<DefaultExpressionComponent>(sessionContext.Root, false);
+        var components = context.GetComponentsInChildren<DefaultFacialExpressionComponent>(sessionContext.Root, false);
         if (components.Length == 0) return null;
 
         // Todo

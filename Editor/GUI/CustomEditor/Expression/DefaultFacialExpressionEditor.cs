@@ -2,8 +2,8 @@ using com.aoyon.facetune.preview;
 
 namespace com.aoyon.facetune.ui;
 
-[CustomEditor(typeof(DefaultExpressionComponent))]
-internal class DefaultExpressionEditor : FaceTuneCustomEditorBase<DefaultExpressionComponent>
+[CustomEditor(typeof(DefaultFacialExpressionComponent))]
+internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultFacialExpressionComponent>
 {
     public override void OnInspectorGUI()
     {
@@ -23,7 +23,7 @@ internal class DefaultExpressionEditor : FaceTuneCustomEditorBase<DefaultExpress
     {
         if (Context == null) return;
         var defaultBlendShapes = Context.FaceRenderer.GetBlendShapes(Context.FaceMesh);
-        var blendShapesProperty = serializedObject.FindProperty(nameof(DefaultExpressionComponent.BlendShapes));
+        var blendShapesProperty = serializedObject.FindProperty(nameof(DefaultFacialExpressionComponent.BlendShapes));
         FacialExpressionEditorUtility.UpdateShapes(blendShapesProperty, defaultBlendShapes);
         serializedObject.ApplyModifiedProperties();
     }

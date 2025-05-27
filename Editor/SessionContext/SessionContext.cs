@@ -46,7 +46,7 @@ internal static class SessionContextBuilder
 
     public static FacialExpression GetDefaultExpression(Transform root, SkinnedMeshRenderer faceRenderer, Mesh mesh)
     {
-        var components = root.GetComponentsInChildren<DefaultExpressionComponent>(false);
+        var components = root.GetComponentsInChildren<DefaultFacialExpressionComponent>(false);
         if (components.Length > 1)
         {
             Debug.LogWarning($"Found {components.Length} DefaultExpressionComponent on {root.name}. Only one is allowed.");

@@ -8,6 +8,7 @@ namespace com.aoyon.facetune
 
         public AnimationClip? Clip;
         public bool IncludeZeroWeight = false;
+        public bool EnableBlending = false;
 
         Expression? IExpressionProvider.ToExpression(SessionContext context)
         {
