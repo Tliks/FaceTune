@@ -65,4 +65,8 @@ internal static class PlatformSupport
     {
         GetSupports(root).First().EnsureMenuItemIsToggle(menuItem);
     }
+    public static (string?, ParameterCondition?) MenuItemAsCondition(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        return GetSupports(root).First().MenuItemAsCondition(menuItem, usedNames);
+    }
 }

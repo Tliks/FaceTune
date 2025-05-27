@@ -1,6 +1,5 @@
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
-using com.aoyon.facetune.platform;
 
 namespace com.aoyon.facetune.pass;
 
@@ -12,17 +11,22 @@ internal class NegotiateMAMenuItemPass : Pass<NegotiateMAMenuItemPass>
     protected override void Execute(BuildContext context)
     {
         var root = context.AvatarRootObject;
-        var asConditionComponents = root.GetComponentsInChildren<MAMenuItemAsConditionComponent>(false);
+        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(false);
         var usedParameterNames = new HashSet<string>();
 
-        foreach (var asConditionComponent in asConditionComponents)
+        foreach (var expressionComponent in expressionComponents)
         {
-            var menuItem = asConditionComponent.GetComponentNullable<ModularAvatarMenuItem>();
-            if (menuItem == null) throw new Exception($"ModularAvatarMenuItem is not found on {asConditionComponent.gameObject.name}");
+            var menuItem = expressionComponent.GetComponentNullable<ModularAvatarMenuItem>();
+            if (menuItem == null) continue;
 
-            var conditionComponent = asConditionComponent.gameObject.EnsureComponent<ConditionComponent>();
-            var parameterName = platform.PlatformSupport.AssignUniqueParameterName(root.transform, menuItem, usedParameterNames);
-            conditionComponent.ParameterConditions.Add(new ParameterCondition(parameterName, true));
+            if (expressionComponent.TryGetComponent<CommonConditionComponent>(out var _)) continue;
+
+            var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
+            if (parameterName == null) continue;
+
+            var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
+            conditionComponent.ParameterConditions.Add(parameterCondition!);
+            conditionComponent.ExpressionFromSelfOnly = true;
         }
     }
 

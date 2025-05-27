@@ -28,6 +28,8 @@ internal class ProcessPresetPass : Pass<ProcessPresetPass>
             var condition = presetComponent.gameObject.AddComponent<CommonConditionComponent>();
             condition.AllChildren = true;
             condition.ParameterConditions.Add(new ParameterCondition(Peset_Index_Parameter, IntComparisonType.Equal, index));
+            
+            index++;
         }
     }
 }

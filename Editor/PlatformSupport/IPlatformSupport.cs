@@ -19,6 +19,8 @@ internal interface IPlatformSupport
     {
         return new string[] { };
     }
+
+    // ModularAvatarMenuItem
     public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         return string.Empty;
@@ -34,5 +36,9 @@ internal interface IPlatformSupport
     public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
     {
         return;
+    }
+    public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        return (null, null);
     }
 }

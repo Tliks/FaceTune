@@ -6,6 +6,7 @@ using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.animator;
+using System.Security.AccessControl;
 
 namespace com.aoyon.facetune.platform;
 
@@ -172,6 +173,21 @@ internal class VRChatSuport : IPlatformSupport
     public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
     {
         menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
+    }
+    public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        if (!string.IsNullOrEmpty(menuItem.Control.parameter.name)) 
+        {
+            return (null, null);
+        }
+        if (menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Toggle ||
+            menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Button)
+        {
+            var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
+            menuItem.Control.parameter.name = parameterName;
+            return (parameterName, new ParameterCondition(parameterName, true));
+        }
+        return (null, null);
     }
 }
 
