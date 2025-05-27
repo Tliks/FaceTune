@@ -1,96 +1,27 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2724054012868574023
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2679156288116854754}
-  - component: {fileID: 5275482411475768623}
-  - component: {fileID: 2674954388605982982}
-  m_Layer: 0
-  m_Name: Preset 1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2679156288116854754
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2724054012868574023}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 9072711654715146276}
-  - {fileID: 372599418610041147}
-  - {fileID: 6724254463772800816}
-  m_Father: {fileID: 3555103530477785023}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5275482411475768623
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2724054012868574023}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 46a2488166a470c4781349d0b99721d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PresetName: Preset 1
---- !u!114 &2674954388605982982
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2724054012868574023}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b29d45007c5493d926d2cd45a489529, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Control:
-    name: 
-    icon: {fileID: 0}
-    type: 102
-    parameter:
-      name: 
-    value: 1
-    style: 0
-    subMenu: {fileID: 0}
-    subParameters: []
-    labels: []
-  MenuSource: 1
-  menuSource_otherObjectChildren: {fileID: 0}
-  isSynced: 1
-  isSaved: 1
-  isDefault: 0
-  automaticValue: 1
-  label: 
 --- !u!1001 &1184929925588744888
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2679156288116854754}
+    m_TransformParent: {fileID: 3555103530477785023}
     m_Modifications:
     - target: {fileID: 2053227024675831482, guid: 48b0b3096f2029640a1f79b1bcd39a00,
         type: 3}
       propertyPath: m_Name
       value: Lipsync Override
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053227024675831482, guid: 48b0b3096f2029640a1f79b1bcd39a00,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2053227024675831482, guid: 48b0b3096f2029640a1f79b1bcd39a00,
+        type: 3}
+      propertyPath: m_TagString
+      value: EditorOnly
       objectReference: {fileID: 0}
     - target: {fileID: 5557704395542580616, guid: 48b0b3096f2029640a1f79b1bcd39a00,
         type: 3}
@@ -159,12 +90,22 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2679156288116854754}
+    m_TransformParent: {fileID: 3555103530477785023}
     m_Modifications:
     - target: {fileID: 1096914149684494623, guid: 45cd2ee49c64b0a448d56589bfff1c7e,
         type: 3}
       propertyPath: m_Name
       value: Morph Override
+      objectReference: {fileID: 0}
+    - target: {fileID: 1096914149684494623, guid: 45cd2ee49c64b0a448d56589bfff1c7e,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1096914149684494623, guid: 45cd2ee49c64b0a448d56589bfff1c7e,
+        type: 3}
+      propertyPath: m_TagString
+      value: EditorOnly
       objectReference: {fileID: 0}
     - target: {fileID: 2697236231034962528, guid: 45cd2ee49c64b0a448d56589bfff1c7e,
         type: 3}
@@ -238,7 +179,7 @@ PrefabInstance:
     - target: {fileID: 5177479075933827586, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
       propertyPath: m_Name
-      value: Template HandSign Variant
+      value: Template HandSign
       objectReference: {fileID: 0}
     - target: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
@@ -296,8 +237,16 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 9072711654715146276}
+    - targetCorrespondingSourceObject: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
+        type: 3}
       insertIndex: 1
-      addedObject: {fileID: 2679156288116854754}
+      addedObject: {fileID: 372599418610041147}
+    - targetCorrespondingSourceObject: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
+        type: 3}
+      insertIndex: 2
+      addedObject: {fileID: 6724254463772800816}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e643b160cc0f24a4fa8e33fb4df1fe7e, type: 3}
 --- !u!4 &3555103530477785023 stripped
@@ -312,7 +261,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2679156288116854754}
+    m_TransformParent: {fileID: 3555103530477785023}
     m_Modifications:
     - target: {fileID: 1378524398708127345, guid: e7a261d8cf051454ea0c41e427463276,
         type: 3}

@@ -9,11 +9,11 @@ namespace com.aoyon.facetune
         public List<HandGestureCondition> HandGestureConditions = new();
         public List<ParameterCondition> ParameterConditions = new();
 
-        public GameObject? OverrideExpressionRoot = null;
+        internal bool ExpressionFromSelfOnly = false;
 
         internal GameObject GetExpressionRoot()
         {
-            return OverrideExpressionRoot == null ? gameObject : OverrideExpressionRoot;
+            return gameObject;
         }
 
         internal ExpressionWithCondition? GetExpressionWithCondition(SessionContext context)
@@ -33,8 +33,11 @@ namespace com.aoyon.facetune
 
         IEnumerable<Expression> GetExpressions(SessionContext context)
         {
-            var root = GetExpressionRoot();
-            return root.GetInterfacesInChildFTComponents<IExpressionProvider>()
+            var providers = ExpressionFromSelfOnly
+                ? gameObject.GetInterfacesInChildFTComponents<IExpressionProvider>()
+                : gameObject.GetComponents<FaceTuneTagComponent>()
+                    .UnityOfType<IExpressionProvider>();
+            return providers
                 .Select(c => c.ToExpression(context))
                 .UnityOfType<Expression>()
                 .ToList();
