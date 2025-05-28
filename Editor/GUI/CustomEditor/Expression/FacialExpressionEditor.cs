@@ -56,6 +56,13 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         FacialExpressionEditorUtility.UpdateShapes(Component, result.BlendShapes.ToList().AsReadOnly());
         serializedObject.ApplyModifiedProperties();
     }
+
+    [MenuItem($"CONTEXT/{nameof(FacialExpressionComponent)}/ToClip")]
+    private static void ToClip(MenuCommand command)
+    {
+        var component = (command.context as FacialExpressionComponent)!;
+        CustomEditorUtility.ToClip(component.gameObject, context => (component as IExpressionProvider)!.ToExpression(context, new NonObserveContext())?.GetBlendShapeSet().BlendShapes);
+    }
 }
 
 public class FacialExpressionEditorUtility

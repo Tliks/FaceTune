@@ -27,4 +27,11 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
         FacialExpressionEditorUtility.UpdateShapes(blendShapesProperty, defaultBlendShapes);
         serializedObject.ApplyModifiedProperties();
     }
+
+    [MenuItem($"CONTEXT/{nameof(DefaultFacialExpressionComponent)}/ToClip")]
+    private static void ToClip(MenuCommand command)
+    {
+        var component = (command.context as DefaultFacialExpressionComponent)!;
+        CustomEditorUtility.ToClip(component.gameObject, context => component.BlendShapes);
+    }
 }
