@@ -33,6 +33,11 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         {
             OpenFacialShapesEditor();
         }
+
+        if (GUILayout.Button("Add FacialExpressionFromClip"))
+        {
+            Undo.AddComponent<FacialExpressionFromClipComponent>(Component.gameObject);
+        }
     }
 
     private void OpenFacialShapesEditor()
