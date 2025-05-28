@@ -11,11 +11,14 @@ namespace com.aoyon.facetune
         public IReadOnlyList<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
         public bool EnableBlending = false;
 
-        Expression? IExpressionProvider.ToExpression(SessionContext context)
+        Expression? IExpressionProvider.ToExpression(SessionContext context, IOberveContext observeContext)
         {
-            var blendShapeSet = new BlendShapeSet(BlendShapes);
-            
-            if (!EnableBlending)
+            var blendShapeSet = observeContext.Observe(this, c => c.BlendShapes.ToSet(), (a, b) => a == b);
+            if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return null;
+
+            var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
+
+            if (!enableBlending)
             {
                 var defaultShapes = context.DefaultExpression.BlendShapeSet;
                 blendShapeSet = defaultShapes.Add(blendShapeSet);

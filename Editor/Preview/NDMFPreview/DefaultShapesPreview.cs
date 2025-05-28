@@ -19,9 +19,11 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
         if (components.Length == 0) return null;
 
         // Todo
-        var defaultExpressionComponent = components.First();
+        var defaultExpressionComponent = components.Last();
 
-        var defaultBlendShapes = context.Observe(defaultExpressionComponent, c => new List<BlendShape>(c.BlendShapes), (a, b) => a.SequenceEqual(b));
-        return new BlendShapeSet(defaultBlendShapes);
+        var defaultBlendShapes = defaultExpressionComponent.GetDefaultExpression(new NDMFPreviewObserveContext(context));
+        if (defaultBlendShapes == null) return null;
+        
+        return defaultBlendShapes.BlendShapeSet;
     }
 }

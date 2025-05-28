@@ -1,18 +1,20 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class DefaultFacialExpressionComponent : FacialExpressionComponentBase
+    public class DefaultFacialExpressionComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Default Facial Expression";
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
+        public TrackingPermission AllowEyeBlink = TrackingPermission.Disallow;
+        public TrackingPermission AllowLipSync = TrackingPermission.Allow;
         public List<BlendShape> BlendShapes = new();
 
-        internal FacialExpression? GetDefaultExpression()
+        internal FacialExpression? GetDefaultExpression(IOberveContext observeContext)
         {
-            if (BlendShapes.Count == 0) return null;
-            var blendShapeSet = new BlendShapeSet(BlendShapes);
-            return new FacialExpression(blendShapeSet, AllowEyeBlink, AllowLipSync, name);
+            var set = observeContext.Observe(this, c => c.BlendShapes.ToSet(), (a, b) => a == b);
+            if (set == null || set.BlendShapes.Count() == 0) return null;
+            return new FacialExpression(set, AllowEyeBlink, AllowLipSync, name);
         }
     }
 }

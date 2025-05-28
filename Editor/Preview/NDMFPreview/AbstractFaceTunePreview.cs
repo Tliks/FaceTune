@@ -19,21 +19,20 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         return context.Observe(ControlNode.IsEnabled);
     }
 
-    // FaceTuneTagComponentが一つでもあれば対象に加える
+    // FaceTuneTagComponentが一つでもあれば対象に加える or 全て対象
+    // => 全て対象にする
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
         var groups = new List<RenderGroup>();
+        var observeContext = new NDMFPreviewObserveContext(context);
         foreach (var root in context.GetAvatarRoots())
         {
             if (!context.ActiveInHierarchy(root)) continue;
 
-            var components = context.GetComponentsInChildren<FaceTuneTagComponent>(root, true);
-            if (components.Count() == 0) continue;
+            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, observeContext);
+            if (faceRenderer == null) continue;
 
-            if (!SessionContextBuilder.TryGet(root, out var sessionContext)) continue;
-
-            var faceRenderer = sessionContext.FaceRenderer;
-            groups.Add(RenderGroup.For(faceRenderer).WithData(sessionContext));
+            groups.Add(RenderGroup.For(faceRenderer).WithData(root));
         }
         return groups.ToImmutableList();
     }
@@ -49,17 +48,24 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         var proxyMesh = proxy.sharedMesh;
         if (proxyMesh == null) return Error();
 
-        var sessionContext = group.GetData<SessionContext>();
-        if (sessionContext == null) return Error();
+        var root = group.GetData<GameObject>();
+        if (root == null) return Error();
+
+        if (!SessionContextBuilder.TryGet(root, out var sessionContext, new NDMFPreviewObserveContext(context))) return Empty();
 
         var blendShapeSet = QueryBlendShapeSet(original, proxy, sessionContext, context);
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
-        if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Task.FromResult<IRenderFilterNode>(new EmptyNode());
+        if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Empty();
 
         var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1) // 対象外の場合はフラグとして-1を代入しNode側で除外
             .Select(b => b.Weight).ToArray();
 
         return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(blendShapeWeights));
+        
+        static Task<IRenderFilterNode> Empty()
+        {
+            return Task.FromResult<IRenderFilterNode>(new EmptyNode());
+        }
 
         // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
         static Task<IRenderFilterNode> Error()

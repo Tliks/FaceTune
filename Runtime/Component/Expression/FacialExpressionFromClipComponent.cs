@@ -10,19 +10,23 @@ namespace com.aoyon.facetune
         public bool IncludeZeroWeight = false;
         public bool EnableBlending = false;
 
-        Expression? IExpressionProvider.ToExpression(SessionContext context)
+        Expression? IExpressionProvider.ToExpression(SessionContext context, IOberveContext observeContext)
         {
-            //if (Clip == null) return null;
-            BlendShapeSet blendShapes = new();
+            var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
+            if (clip == null) return null;
+            var includeZeroWeight = observeContext.Observe(this, c => c.IncludeZeroWeight, (a, b) => a == b);
+            var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
+
+            var blendShapes = new BlendShapeSet();
 #if UNITY_EDITOR
-            if (Clip != null)
+            if (clip != null)
             {
-                var newBlendShapes = new BlendShapeSet(GetBlendShapesFromClip(Clip));
+                var newBlendShapes = new BlendShapeSet(GetBlendShapesFromClip(clip));
                 if (!IncludeZeroWeight) newBlendShapes.RemoveZeroWeight();
                 blendShapes.Add(newBlendShapes);
             }
 #endif
-            if (!EnableBlending)
+            if (!enableBlending)
             {
                 blendShapes.Add(context.DefaultBlendShapes, BlendShapeSetOptions.PreferFormer);
             }

@@ -13,6 +13,7 @@ internal abstract record class Expression
         AllowLipSync = allowLipSync;
     }
 
+    public abstract BlendShapeSet GetBlendShapeSet();
     public abstract IEnumerable<string> BlendShapeNames { get; }
     public abstract void ReplaceBlendShapeNames(Dictionary<string, string> mapping);
     public abstract void RemoveShapes(IEnumerable<string> names);
@@ -27,6 +28,7 @@ internal record class FacialExpression : Expression
         _blendShapeSet = blendShapes;
     }
 
+    public override BlendShapeSet GetBlendShapeSet() => _blendShapeSet.Duplicate();
     public override IEnumerable<string> BlendShapeNames => _blendShapeSet.Names;
 
     public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
@@ -49,6 +51,7 @@ internal record class AnimationExpression : Expression
         Clip = clip;
     }
 
+    public override BlendShapeSet GetBlendShapeSet() => new(); // Todo
     public override IEnumerable<string> BlendShapeNames => new string[0]; // Todo
 
     public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
