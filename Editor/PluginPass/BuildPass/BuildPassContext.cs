@@ -11,13 +11,13 @@ internal class BuildPassContext : IExtensionContext
     {
         if (!SessionContextBuilder.TryGet(context.AvatarRootObject, out var sessionContext)) return;
         
-        Profiler.BeginSample("CollectPresetData");
-        var presetData = PatternData.CollectPresetData(sessionContext);
+        Profiler.BeginSample("CollectPatternData");
+        var patternData = PatternData.Collect(sessionContext);
         Profiler.EndSample();
-        if (presetData == null) return;
+        if (patternData == null) return;
 
         SessionContext = sessionContext;
-        PatternData = presetData;
+        PatternData = patternData;
     }
 
     void IExtensionContext.OnDeactivate(BuildContext context)

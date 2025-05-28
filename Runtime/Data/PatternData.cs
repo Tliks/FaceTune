@@ -59,7 +59,7 @@ internal record PatternData
         OrderedItems = orderedItems;
     }
 
-    public static PatternData? CollectPresetData(SessionContext context)
+    public static PatternData? Collect(SessionContext context)
     {
         var orderedItems = new List<IPatternElement>();
         var processedGameObjects = new HashSet<GameObject>();
