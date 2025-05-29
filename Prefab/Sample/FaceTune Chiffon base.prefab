@@ -12,11 +12,11 @@ GameObject:
   - component: {fileID: 2921357338159161328}
   m_Layer: 0
   m_Name: Additional Shapes
-  m_TagString: Untagged
+  m_TagString: EditorOnly
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2264807150236634757
 Transform:
   m_ObjectHideFlags: 0
@@ -129,6 +129,11 @@ PrefabInstance:
         type: 3}
       propertyPath: AddDefault
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
         type: 3}
@@ -778,6 +783,9 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: 9020164391984037595, guid: be74fc2f75a4f344ba57325ed2eed5dd, type: 3}
     - {fileID: 3576118716280472103, guid: be74fc2f75a4f344ba57325ed2eed5dd, type: 3}
+    - {fileID: 4070304495730803063, guid: be74fc2f75a4f344ba57325ed2eed5dd, type: 3}
+    - {fileID: 1497083004172500356, guid: be74fc2f75a4f344ba57325ed2eed5dd, type: 3}
+    - {fileID: 4425899492041449044, guid: be74fc2f75a4f344ba57325ed2eed5dd, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 3276846210405510643, guid: be74fc2f75a4f344ba57325ed2eed5dd,
         type: 3}
@@ -785,11 +793,11 @@ PrefabInstance:
       addedObject: {fileID: 2264807150236634757}
     - targetCorrespondingSourceObject: {fileID: 1632639808917791717, guid: be74fc2f75a4f344ba57325ed2eed5dd,
         type: 3}
-      insertIndex: 0
+      insertIndex: -1
       addedObject: {fileID: 7691172304825948956}
     - targetCorrespondingSourceObject: {fileID: 1632639808917791717, guid: be74fc2f75a4f344ba57325ed2eed5dd,
         type: 3}
-      insertIndex: 1
+      insertIndex: -1
       addedObject: {fileID: 4618117177923413841}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: be74fc2f75a4f344ba57325ed2eed5dd, type: 3}
@@ -979,6 +987,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
         type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
       propertyPath: _blendShapes.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -1147,6 +1160,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
         type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
       propertyPath: _blendShapes.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -1241,6 +1259,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
         type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
       propertyPath: _blendShapes.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -1332,6 +1355,11 @@ PrefabInstance:
         type: 3}
       propertyPath: AddDefault
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
         type: 3}
