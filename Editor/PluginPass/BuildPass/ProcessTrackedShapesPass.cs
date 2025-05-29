@@ -18,9 +18,11 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         // トラッキングにより巻き戻し得るので、トラッキングの仕組みに依存するものの基本デフォルト表情として定義する意味がない
         // また、同一の効果により競合するのでクローンの対象でもない
+        // Todo: これ本当？
         sessionContext.DefaultExpression.RemoveShapes(trackedShapes);
 
         var shapesToClone = trackedShapes.Intersect(sessionContext.FaceRenderer.GetBlendShapes(sessionContext.FaceMesh).Select(b => b.Name));
+        if (shapesToClone.Any()) return;
 
         if (sessionContext.Root.GetComponentsInChildren<CloneTrackedBlendShapesComponent>(false).Any())
         {

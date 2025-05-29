@@ -15,6 +15,7 @@ internal abstract record class Expression
 
     public abstract BlendShapeSet GetBlendShapeSet();
     public abstract IEnumerable<string> BlendShapeNames { get; }
+    public abstract void ReplaceShapeSet(BlendShapeSet set);
     public abstract void ReplaceBlendShapeNames(Dictionary<string, string> mapping);
     public abstract void RemoveShapes(IEnumerable<string> names);
 }
@@ -30,6 +31,10 @@ internal record class FacialExpression : Expression
 
     public override BlendShapeSet GetBlendShapeSet() => _blendShapeSet.Duplicate();
     public override IEnumerable<string> BlendShapeNames => _blendShapeSet.Names;
+    public override void ReplaceShapeSet(BlendShapeSet set)
+    {
+        _blendShapeSet = set;
+    }
 
     public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
     {
@@ -53,6 +58,11 @@ internal record class AnimationExpression : Expression
 
     public override BlendShapeSet GetBlendShapeSet() => new(); // Todo
     public override IEnumerable<string> BlendShapeNames => new string[0]; // Todo
+
+    public override void ReplaceShapeSet(BlendShapeSet set)
+    {
+        return; // Todo
+    }
 
     public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
     {

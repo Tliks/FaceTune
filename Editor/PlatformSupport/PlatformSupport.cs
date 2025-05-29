@@ -71,7 +71,6 @@ internal static class PlatformSupport
         return GetSupports(root).First().MenuItemAsCondition(menuItem, usedNames);
     }
 
-    // Todo VRC依存なのでPlatformSupportにいるべきではない
     public static void SetTracks(Transform root,VirtualState state, Expression expression)
     {
         GetSupports(root).First().SetTracks(state, expression);

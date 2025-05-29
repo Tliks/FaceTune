@@ -61,12 +61,17 @@ internal static class SessionContextBuilder
         // FirstOrNullなのは最初のプリセットのものを取るワークアラウンド
         // Presetごとに異なる可能性があるのでどうにかする必要がある
         var defaultExpression = components.Select(c => c.GetDefaultExpression(context)).FirstOrNull(e => e != null);
+        var sceneShapes = faceRenderer.GetBlendShapes(mesh);
         if (defaultExpression == null)
         {
-            return new FacialExpression(new BlendShapeSet(faceRenderer.GetBlendShapes(mesh)), TrackingPermission.Allow, TrackingPermission.Allow, "Default");
+            // defaultExpressionがない場合はシーン上の値をそのまま使う
+            return new FacialExpression(new BlendShapeSet(sceneShapes), TrackingPermission.Allow, TrackingPermission.Allow, "Default");
         }
         else
         {
+            // defaultExpressionが一部のShapeのみを指定している場合、シーン上の値に追加する
+            var defaultShapes = sceneShapes.ToSet().Add(defaultExpression.BlendShapeSet);
+            defaultExpression.ReplaceShapeSet(defaultShapes);
             return defaultExpression;
         }
     }
