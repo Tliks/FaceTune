@@ -38,7 +38,7 @@ internal class AnimatorInstaller
     public VirtualLayer CreateDefaultLayer(int priority)
     {
         var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
-        var defaultState = defaultLayer.StateMachine!.AddState("Default");
+        var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
         AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
         SetTracks(defaultState, _sessionContext.DefaultExpression);
         return defaultLayer;
@@ -49,6 +49,13 @@ internal class AnimatorInstaller
         var layerPriority = new LayerPriority(priority);
         var layer = controller.AddLayer(layerPriority, $"{SystemName}_{layerName}");
         return layer; 
+    }
+
+    private VirtualState AddFTState(VirtualLayer layer, string stateName, Vector3? position = null)
+    {
+        var state = layer.StateMachine!.AddState(stateName, position: position);
+        state.WriteDefaultValues = _useWriteDefaults;
+        return state;
     }
 
     private void AddExpressionsToState(VirtualState state, IEnumerable<Expression> expressions)
@@ -137,7 +144,7 @@ internal class AnimatorInstaller
 
     private VirtualState CreateDefaultState(VirtualLayer layer, Vector3 position)
     {
-        var defaultState = layer.StateMachine!.AddState("Default", position: position);
+        var defaultState = AddFTState(layer, "Default", position);
         position.y += PositionYStep;
         // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
         if (_useWriteDefaults)
@@ -171,7 +178,7 @@ internal class AnimatorInstaller
 
             if (!expressions.Any()) continue;
 
-            var expressionState = layer.StateMachine!.AddState(expressions.First().Name, position: position);
+            var expressionState = AddFTState(layer, expressions.First().Name, position);
             position.y += PositionYStep;
             AddExpressionsToState(expressionState, expressions);
             SetTracks(expressionState, expressions);
