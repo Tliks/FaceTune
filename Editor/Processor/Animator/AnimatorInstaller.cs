@@ -1,5 +1,6 @@
 using UnityEditor.Animations;
 using nadena.dev.ndmf.animator;
+using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.platform;
 
 namespace com.aoyon.facetune.animator;
@@ -48,6 +49,7 @@ internal class AnimatorInstaller
     {
         var layerPriority = new LayerPriority(priority);
         var layer = controller.AddLayer(layerPriority, $"{SystemName}_{layerName}");
+        layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
         return layer; 
     }
 
@@ -119,6 +121,7 @@ internal class AnimatorInstaller
                 {
                     layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
                     CreateDefaultState(layers[i], position);
+                    position.y += PositionYStep;
                     layerCreatedForThisIndex = true;
                 }
                 
@@ -138,6 +141,7 @@ internal class AnimatorInstaller
             var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
             var position = DefaultStatePosition;
             var defaultState = CreateDefaultState(layer, position);
+            position.y += PositionYStep;
             ProcessExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, position); 
         }
     }

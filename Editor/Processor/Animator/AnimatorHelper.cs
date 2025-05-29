@@ -31,4 +31,15 @@ internal static class AnimatorHelper
         return sm.States.Count == 1 && sm.AnyStateTransitions.Count == 0 &&
                 sm.DefaultState?.Transitions.Count == 0 && sm.DefaultState.Motion is VirtualBlendTree;
     }
+
+    public static TBehavior EnsureBehavior<TBehavior>(this VirtualStateMachine stateMachine) where TBehavior : StateMachineBehaviour, new()
+    {
+        var behavior = stateMachine.Behaviours.OfType<TBehavior>().FirstOrNull();
+        if (behavior == null)
+        {
+            behavior = new TBehavior();
+            stateMachine.Behaviours = stateMachine.Behaviours.Add(behavior);
+        }
+        return behavior;
+    }
 }
