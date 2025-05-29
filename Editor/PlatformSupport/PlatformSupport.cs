@@ -1,6 +1,7 @@
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
 using nadena.dev.modular_avatar.core;
+using nadena.dev.ndmf.animator;
 
 namespace com.aoyon.facetune.platform;
 
@@ -19,7 +20,7 @@ internal static class PlatformSupport
         return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
     }
 
-    private static IEnumerable<IPlatformSupport> GetSupports(Transform root)
+    public static IEnumerable<IPlatformSupport> GetSupports(Transform root)
     {
         foreach (var support in s_supports)
         {
@@ -68,5 +69,11 @@ internal static class PlatformSupport
     public static (string?, ParameterCondition?) MenuItemAsCondition(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         return GetSupports(root).First().MenuItemAsCondition(menuItem, usedNames);
+    }
+
+    // Todo VRC依存なのでPlatformSupportにいるべきではない
+    public static void SetTracks(Transform root,VirtualState state, Expression expression)
+    {
+        GetSupports(root).First().SetTracks(state, expression);
     }
 }

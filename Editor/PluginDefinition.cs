@@ -1,4 +1,5 @@
 using nadena.dev.ndmf;
+using nadena.dev.ndmf.animator;
 using com.aoyon.facetune.pass;
 using com.aoyon.facetune.preview;
 
@@ -29,7 +30,11 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         // PostProcess Phase
         .Run(NormalizeDataPass.Instance).Then
         // Collect Data and Build
-        .WithRequiredExtensions(new Type[] { typeof(BuildPassContext) }, buildSequence => 
+        .WithRequiredExtensions(new Type[] 
+        { 
+            typeof(BuildPassContext),
+            typeof(AnimatorServicesContext)
+        }, buildSequence => 
         {
             buildSequence
             .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then

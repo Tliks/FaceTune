@@ -1,8 +1,9 @@
 namespace com.aoyon.facetune;
 
 [Serializable]
-public record class Condition
+public abstract record class Condition
 {
+    internal abstract Condition Negate();
 }
 
 [Serializable]
@@ -14,6 +15,12 @@ public record class HandGestureCondition : Condition
 
     public HandGestureCondition()
     {
+    }
+
+    internal override Condition Negate()
+    {
+        ComparisonType = ComparisonType.Negate();
+        return this;
     }
 }
 
@@ -54,5 +61,22 @@ public record class ParameterCondition : Condition
         ParameterName = parameterName;
         ParameterType = ParameterType.Bool;
         BoolValue = boolValue;
+    }
+
+    internal override Condition Negate()
+    {
+        switch (ParameterType)
+        {
+            case ParameterType.Float:
+                FloatComparisonType = FloatComparisonType.Negate();
+                break;
+            case ParameterType.Int:
+                (IntComparisonType, IntValue) = ConditionUtility.Negate(IntComparisonType, IntValue);
+                break;
+            case ParameterType.Bool:
+                BoolValue = !BoolValue;
+                break;
+        }
+        return this;
     }
 }

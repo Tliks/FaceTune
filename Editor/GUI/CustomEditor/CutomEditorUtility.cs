@@ -9,7 +9,7 @@ internal static class CustomEditorUtility
         var blendShapes = blendShapesProvider(context);
         if (blendShapes == null) return;
         var clip = new AnimationClip();
-        AnimationUtility.SetBlendShapesToClip(clip, relativePath, blendShapes);
+        clip.SetBlendShapes(relativePath, blendShapes);
         var path = EditorUtility.SaveFilePanelInProject("Save FacialExpression as Clip", "FacialExpression", "anim", "Please enter the name of the animation clip.");
         if (string.IsNullOrEmpty(path)) return;
         AssetDatabase.CreateAsset(clip, path);

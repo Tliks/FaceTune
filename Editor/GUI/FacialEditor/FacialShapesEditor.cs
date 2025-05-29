@@ -235,7 +235,7 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_sourceClip == null) return;
 
-        var newBlendShapes = new BlendShapeSet(AnimationUtility.GetBlendShapesFromClip(_sourceClip));
+        var newBlendShapes = new BlendShapeSet(_sourceClip.GetBlendShapes());
         if (!_includeZeroWeight) newBlendShapes.RemoveZeroWeight();
 
         var mapping = new BlendShapeSet(BaseShapes).Add(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);

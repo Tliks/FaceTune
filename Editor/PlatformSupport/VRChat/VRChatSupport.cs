@@ -6,7 +6,7 @@ using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.animator;
-using System.Security.AccessControl;
+using nadena.dev.ndmf.animator;
 
 namespace com.aoyon.facetune.platform;
 
@@ -67,15 +67,18 @@ internal class VRChatSuport : IPlatformSupport
 
     public void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
     {
-        var animatorInstaller = new AnimatorInstaller(buildContext, context);
-        animatorInstaller.CreateDefaultLayer();
-        // faceEmo: 0
-        var layerPriority = disableExistingControl ? 1 : -1;
-        animatorInstaller.SaveAsMergeAnimator(layerPriority);
+        var asc = buildContext.Extension<AnimatorServicesContext>();
+        var vc = asc.ControllerContext;
+        var fx = vc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
+        var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
+        var animatorInstaller = new AnimatorInstaller(context, vc, fx, useWriteDefaults);
 
-        animatorInstaller = new AnimatorInstaller(buildContext, context);
-        animatorInstaller.InstallPatternData(patternData);
-        animatorInstaller.SaveAsMergeAnimator(2);
+        // faceEmo: 0
+        var defaultLayerPriority = disableExistingControl ? 1 : -1;
+        animatorInstaller.CreateDefaultLayer(defaultLayerPriority);
+
+        var layerPriority = 2;
+        animatorInstaller.InstallPatternData(patternData, layerPriority);
     }
 
     public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
@@ -188,6 +191,21 @@ internal class VRChatSuport : IPlatformSupport
             return (parameterName, new ParameterCondition(parameterName, true));
         }
         return (null, null);
+    }
+    public void SetTracks(VirtualState state, Expression expression)
+    {
+        var trackingControl = ScriptableObject.CreateInstance<VRCAnimatorTrackingControl>();
+
+        if (expression.AllowEyeBlink != TrackingPermission.Keep)
+        {
+            trackingControl.trackingEyes = expression.AllowEyeBlink == TrackingPermission.Allow ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
+        }
+        if (expression.AllowLipSync != TrackingPermission.Keep)
+        {
+            trackingControl.trackingMouth = expression.AllowLipSync == TrackingPermission.Allow ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
+        }
+
+        state.Behaviours.Add(trackingControl);
     }
 }
 

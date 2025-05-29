@@ -1,8 +1,9 @@
 namespace com.aoyon.facetune;
 
+// 遅いのでビルドではVirtualAnimationUtilityを使うように
 internal static class AnimationUtility
 {
-    public static List<BlendShape> GetBlendShapesFromClip(AnimationClip clip, bool first = true)
+    public static List<BlendShape> GetBlendShapes(this AnimationClip clip, bool first = true)
     {
         var blendShapes = new List<BlendShape>();
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
@@ -20,14 +21,8 @@ internal static class AnimationUtility
         }
         return blendShapes;
     }
-
-    // Todo: 多分動いていない
-    public static void ClearCurveBindings(AnimationClip clip)
-    {
-        clip.ClearCurves();
-    }
-
-    public static void SetBlendShapesToClip(AnimationClip clip, string relativePath, IEnumerable<BlendShape> blendShapes)
+    
+    public static void SetBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShape> blendShapes)
     {
         foreach (var blendShape in blendShapes)
         {
@@ -38,4 +33,3 @@ internal static class AnimationUtility
         }
     }
 }
-

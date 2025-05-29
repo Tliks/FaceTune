@@ -32,8 +32,8 @@ internal class FacialAnimationClipEditor : FacialShapesEditor
 
     private static void SaveClip(GameObject root, AnimationClip clip, SkinnedMeshRenderer renderer, BlendShape[] blendShapes)
     {
-        AnimationUtility.ClearCurveBindings(clip); // 消す以外のオプション
+        clip.ClearCurves(); // 消す以外のオプション
         var relativePath = HierarchyUtility.GetRelativePath(root, renderer.gameObject) ?? throw new Exception("Failed to get relative path");
-        AnimationUtility.SetBlendShapesToClip(clip, relativePath, blendShapes.Where(s => s.Weight > 0.0f));
+        clip.SetBlendShapes(relativePath, blendShapes.Where(s => s.Weight > 0.0f));
     }
 }

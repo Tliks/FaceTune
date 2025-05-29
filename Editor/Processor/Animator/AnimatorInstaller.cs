@@ -1,82 +1,79 @@
-using nadena.dev.ndmf;
-using nadena.dev.modular_avatar.core; 
-using AnimatorAsCode.V1;
-using AnimatorAsCode.V1.VRC;
+using UnityEditor.Animations;
+using nadena.dev.ndmf.animator;
+using com.aoyon.facetune.platform;
 
 namespace com.aoyon.facetune.animator;
 
 internal class AnimatorInstaller
 {
     private readonly SessionContext _sessionContext;
-    private readonly BuildContext _buildContext;
-    private readonly AacFlBase _aac;
-    private readonly AacFlController _ctrl;
+    private readonly VirtualControllerContext _vcc;
+    private readonly VirtualAnimatorController _virtualController;
+    private readonly Dictionary<string, AnimatorControllerParameter> _parameterCache;
+
+    private readonly IPlatformSupport _platformSupport;
+
+    private readonly VirtualClip _emptyClip;
+    private readonly string _relativePath;
 
     private const string SystemName = "FaceTune";
-    private const bool UseWriteDefaults = true;
+    private readonly bool _useWriteDefaults;
+    private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
+    private const string TrueParameterName = "FT_True";
+    private static readonly Vector3 DefaultStatePosition = new Vector3(300, 0, 0);
+    private const float PositionYStep = 50;
 
-    private int layer_sum = 0;
-
-    public AnimatorInstaller(BuildContext buildContext, SessionContext sessionContext)
+    public AnimatorInstaller(SessionContext sessionContext, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
-        _buildContext = buildContext;
         _sessionContext = sessionContext;
-        _aac = CreateAac();
-        _ctrl = _aac.NewAnimatorController();
+        _vcc = vcc;
+        _virtualController = virtualController;
+        _parameterCache = virtualController.Parameters.Values.ToDictionary(p => p.name, p => p);
+        _platformSupport = platform.PlatformSupport.GetSupports(_sessionContext.Root.transform).First();
+        _useWriteDefaults = useWriteDefaults;
+        _emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
+        _relativePath = HierarchyUtility.GetRelativePath(_sessionContext.Root, _sessionContext.FaceRenderer.gameObject)!;
     }
 
-    public void SaveAsMergeAnimator(int layerPriority)
+    public VirtualLayer CreateDefaultLayer(int priority)
     {
-        var mergeAnimator = _sessionContext.Root.AddComponent<ModularAvatarMergeAnimator>();
-        mergeAnimator.animator = _ctrl.AnimatorController;
-        mergeAnimator.layerType = VRC.SDK3.Avatars.Components.VRCAvatarDescriptor.AnimLayerType.FX;
-        mergeAnimator.pathMode = MergeAnimatorPathMode.Absolute;
-        mergeAnimator.layerPriority = layerPriority;
-        mergeAnimator.mergeAnimatorMode = MergeAnimatorMode.Append;
+        var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
+        var defaultState = defaultLayer.StateMachine!.AddState("Default");
+        AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
+        SetTracks(defaultState, _sessionContext.DefaultExpression);
+        return defaultLayer;
     }
 
-    private AacFlLayer Addlayer(string layerName)
+    private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
     {
-        var layer = _ctrl.NewLayer($"{layer_sum}_{layerName}");
-        layer.StateMachine.EnsureBehaviour<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
-        layer_sum++;
-        return layer;
+        var layerPriority = new LayerPriority(priority);
+        var layer = controller.AddLayer(layerPriority, $"{SystemName}_{layerName}");
+        return layer; 
     }
 
-    private void AddExpressionsToState(AacFlState state, IEnumerable<Expression> expressions)
+    private void AddExpressionsToState(VirtualState state, IEnumerable<Expression> expressions)
     {
         var facialExpressions = expressions.UnityOfType<FacialExpression>();
         var animationExpressions = expressions.UnityOfType<AnimationExpression>();
         
-        // Todo:animationExpressionsとfacialExpressionsの統合や複数のanimationExpressionsへの対応など
         if (animationExpressions.Any())
         {
-            state.WithAnimation(animationExpressions.First().Clip);
+            state.Motion = _vcc.Clone(animationExpressions.First().Clip);
         }
         else
         {
-            var clip = _aac.NewClip();
-            var renderer = _sessionContext.FaceRenderer;
-            var shapes = new BlendShapeSet();
-            foreach (var facialExpression in facialExpressions) shapes.Add(facialExpression.BlendShapeSet);
-            foreach (var blendShape in shapes.BlendShapes)
-            {
-                clip.BlendShape(renderer, blendShape.Name, blendShape.Weight);
-            }
-            state.WithAnimation(clip);
+            var name = facialExpressions.First().Name;
+            var newAnimationClip = VirtualClip.Create(name);
+            var shapes = facialExpressions.SelectMany(f => f.BlendShapeSet.BlendShapes).ToList();
+            newAnimationClip.SetBlendShapes(_relativePath, shapes);
+            state.Motion = newAnimationClip;
         }
     }
 
-    public void CreateDefaultLayer()
+    public void InstallPatternData(PatternData patternData, int priority)
     {
-        var defaultLayer = Addlayer("Default");
-        var defaultState = defaultLayer.NewState("Default");
-        AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
-        // SetTracks(defaultState, _sessionContext.DefaultExpression);
-    }
+        EnsureParameterExists(new ParameterCondition(TrueParameterName, true), param => param.defaultBool = true);
 
-    public void InstallPatternData(PatternData patternData)
-    {
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
             var type = patternGroup.Type;
@@ -84,70 +81,89 @@ internal class AnimatorInstaller
             if (type == typeof(Preset))
             {
                 var presets = patternGroup.Group.Select(item => (Preset)item).ToList();
-                InstallPresetGroup(presets);
+                InstallPresetGroup(presets, priority);
             }
             else if (type == typeof(SingleExpressionPattern))
             {
                 var singleExpressionPatterns = patternGroup.Group.Select(item => (SingleExpressionPattern)item).ToList();
-                InstallSingleExpressionPatternGroup(singleExpressionPatterns);
+                InstallSingleExpressionPatternGroup(singleExpressionPatterns, priority);
             }
         }
     }
 
-    private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
-    private void InstallPresetGroup(IReadOnlyList<Preset> presets)
+    private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
     {
-        var layers = new AacFlLayer[presets.Max(p => p.Patterns.Count)];
-        var defaultStates = new AacFlState[presets.Max(p => p.Patterns.Count)];
+        var maxPatterns = presets.Max(p => p.Patterns.Count); 
+        if (maxPatterns == 0) return;
 
-        for (var i = 0; i < presets.Count; i++)
+        VirtualLayer[] layers = new VirtualLayer[maxPatterns];
+        VirtualState[] defaultStates = new VirtualState[maxPatterns];
+
+        for (int i = 0; i < maxPatterns; i++)
         {
-            var preset = presets[i];
-            var patterns = preset.Patterns;
-
-            for (var j = 0; j < patterns.Count; j++)
+            bool layerCreatedForThisIndex = false;
+            var position = DefaultStatePosition;
+            foreach (var preset in presets)
             {
-                var pattern = patterns[j];
-                if (pattern == null || pattern.ExpressionWithConditions.Count == 0) continue;
+                var pattern = preset.Patterns[i];
+                if (pattern == null || pattern.ExpressionWithConditions == null || !pattern.ExpressionWithConditions.Any()) continue;
 
-                var layer = layers[j];
-                if (layer == null)
+                if (!layerCreatedForThisIndex)
                 {
-                    layer = Addlayer($"Merged Presets Priority: {j}");
-                    layers[j] = layer;
+                    layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
+                    CreateDefaultState(layers[i], position);
+                    layerCreatedForThisIndex = true;
                 }
-
-                var defaultState = defaultStates[j];
-                if (defaultState == null)
-                {
-                    defaultState = layer.NewState("Default");
-                    defaultStates[j] = defaultState;
-                    SetTracks(defaultState, _sessionContext.DefaultExpression);
-                    defaultState.Exits().Automatically().WithTransitionDurationSeconds(TransitionDurationSeconds);
-                }
-                                    
-                ProcessExpressionWithConditions(layer, pattern.ExpressionWithConditions);
+                
+                ProcessExpressionWithConditions(layers[i], defaultStates[i], pattern.ExpressionWithConditions, position);
             }
         }
     }
 
-    private void InstallSingleExpressionPatternGroup(IReadOnlyList<SingleExpressionPattern> singleExpressionPatterns)
+    private void InstallSingleExpressionPatternGroup(IReadOnlyList<SingleExpressionPattern> singleExpressionPatterns, int priority)
     {
-        foreach (var singleExpressionPattern in singleExpressionPatterns)
+        for (int i = 0; i < singleExpressionPatterns.Count; i++)
         {
-            if (singleExpressionPattern == null || singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Count == 0) continue;
+            var singleExpressionPattern = singleExpressionPatterns[i];
+            if (singleExpressionPattern == null || singleExpressionPattern.ExpressionPattern.ExpressionWithConditions == null || 
+                !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
-            var layer = Addlayer(singleExpressionPattern.Name);
-            var defaultState = layer.NewState("Default");
-            SetTracks(defaultState, _sessionContext.DefaultExpression);
-
-            defaultState.Exits().Automatically().WithTransitionDurationSeconds(TransitionDurationSeconds);
-            ProcessExpressionWithConditions(layer, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions);
+            var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
+            var position = DefaultStatePosition;
+            var defaultState = CreateDefaultState(layer, position);
+            ProcessExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, position); 
         }
     }
 
-    private void ProcessExpressionWithConditions(AacFlLayer layer, IEnumerable<ExpressionWithCondition> expressionWithConditions)
+    private VirtualState CreateDefaultState(VirtualLayer layer, Vector3 position)
     {
+        var defaultState = layer.StateMachine!.AddState("Default", position: position);
+        position.y += PositionYStep;
+        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
+        if (_useWriteDefaults)
+        {
+            defaultState.Motion = null; 
+        }
+        else
+        {
+            defaultState.Motion = _emptyClip;
+        }
+        SetTracks(defaultState, _sessionContext.DefaultExpression);
+        return defaultState;
+    }
+
+    private void ProcessExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 position)
+    {
+        var defaultToExitTransition = VirtualStateTransition.Create();
+        defaultToExitTransition.SetExitDestination();
+        defaultToExitTransition.HasFixedDuration = true;
+        defaultToExitTransition.Duration = TransitionDurationSeconds;
+        defaultToExitTransition.ExitTime = null;
+        defaultToExitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(new ParameterCondition(TrueParameterName, true)));
+        defaultState.Transitions = ImmutableList.Create(defaultToExitTransition);
+
+        var newEntryTransitions = new List<VirtualTransition>(layer.StateMachine!.EntryTransitions);
+
         foreach (var expressionWithCondition in expressionWithConditions)
         {
             var conditions = expressionWithCondition.Conditions;
@@ -155,276 +171,172 @@ internal class AnimatorInstaller
 
             if (!expressions.Any()) continue;
 
-            var expressionState = layer.NewState(expressions.First().Name);
-
+            var expressionState = layer.StateMachine!.AddState(expressions.First().Name, position: position);
+            position.y += PositionYStep;
             AddExpressionsToState(expressionState, expressions);
             SetTracks(expressionState, expressions);
 
-            var entryToExpressionConditions = expressionState.TransitionsFromEntry().WhenConditions();
-            var expressionToExitConditions = expressionState.Exits().WithTransitionDurationSeconds(TransitionDurationSeconds).WhenConditions();
-            
-            if (conditions.Any())
-            {
-                foreach (var cond in conditions)
-                {
-                    AddConditionToTransitions(cond, layer, entryToExpressionConditions, false);
-                }
+            var entryTransition = VirtualTransition.Create();
+            entryTransition.SetDestination(expressionState);
+            entryTransition.Conditions = ToAnimatorConditions(conditions, negate: false).ToImmutableList();
+            newEntryTransitions.Add(entryTransition);
 
-                // Exit時は条件を反転させ、OR条件。ただし、Transition生成時の初期のConditionが空とならないよう、最初だけAND
-                AddConditionToTransitions(NegateCondition(conditions.First()), layer, expressionToExitConditions, false); // 最初の条件はAND
-                foreach (var cond in conditions.Skip(1))
-                {
-                    AddConditionToTransitions(NegateCondition(cond), layer, expressionToExitConditions, true); // 2つ目以降はOR
-                }
+            var newExpressionStateTransitions = new List<VirtualStateTransition>(expressionState.Transitions);
+            foreach (var condition in conditions)
+            {
+                var exitTransition = VirtualStateTransition.Create();
+                exitTransition.SetExitDestination();
+                exitTransition.HasFixedDuration = true;
+                exitTransition.Duration = TransitionDurationSeconds;
+                exitTransition.ExitTime = null; 
+                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition, negate: true));
+                newExpressionStateTransitions.Add(exitTransition);
             }
+            expressionState.Transitions = newExpressionStateTransitions.ToImmutableList();
         }
+        layer.StateMachine!.EntryTransitions = newEntryTransitions.ToImmutableList();
     }
 
-    private Condition NegateCondition(Condition condition)
+    private AnimatorCondition ToAnimatorCondition(Condition condition, bool? negate = null)
     {
-        return condition switch
+        var currentCondition = negate == true ? condition.Negate() : condition;
+        var animatorCondition = CreateAnimatorCondition(currentCondition);
+        EnsureParameterExists(currentCondition);
+        return animatorCondition;
+    }
+    
+    private List<AnimatorCondition> ToAnimatorConditions(IEnumerable<Condition> conditions, bool negate)
+    {
+        if (!conditions.Any()) return new List<AnimatorCondition>();
+
+        var transitionConditions = new List<AnimatorCondition>();
+
+        foreach (var cond in conditions)
         {
-            HandGestureCondition hgc => hgc with { ComparisonType = Negate(hgc.ComparisonType) },
-            ParameterCondition pc => pc.ParameterType switch
-            {
-                ParameterType.Int =>
-                    pc with { 
-                        IntComparisonType = Negate(pc.IntComparisonType, pc.IntValue).newType,
-                        IntValue = Negate(pc.IntComparisonType, pc.IntValue).newValue
-                    },
-                ParameterType.Float =>
-                    pc with { FloatComparisonType = Negate(pc.FloatComparisonType) },
-                ParameterType.Bool => pc with { BoolValue = Negate(pc.BoolValue) },
-                _ => pc
-            },
-            _ => condition
-        };
+            var animatorCondition = ToAnimatorCondition(cond, negate);
+            transitionConditions.Add(animatorCondition);
+        }
+        return transitionConditions;
     }
 
-    private void AddConditionToTransitions(
-        Condition condition,
-        AacFlLayer layer,
-        AacFlTransitionContinuation conditions,
-        bool useOrCondition)
+    private AnimatorCondition CreateAnimatorCondition(Condition condition)
     {
         switch (condition)
         {
-            case HandGestureCondition handGestureCondition:
-                var gesture = Convert(handGestureCondition.HandGesture);
-                var isLeft = handGestureCondition.Hand == Hand.Left;
-                var gestureParam = isLeft ? layer.Av3().GestureLeft : layer.Av3().GestureRight;
-                AddComparisonCondition(conditions, gestureParam, handGestureCondition.ComparisonType, gesture, isOr: useOrCondition);
-                break;
-            case ParameterCondition parameterCondition:
-                switch (parameterCondition.ParameterType)
+            case HandGestureCondition hgc:
+                return new AnimatorCondition
                 {
-                    case ParameterType.Int:
-                        var intParam = layer.IntParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(conditions, intParam, parameterCondition.IntComparisonType, parameterCondition.IntValue, isOr: useOrCondition);
-                        break;
-                    case ParameterType.Float:
-                        var floatParam = layer.FloatParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(conditions, floatParam, parameterCondition.FloatComparisonType, parameterCondition.FloatValue, isOr: useOrCondition);
-                        break;
-                    case ParameterType.Bool:
-                        var boolParam = layer.BoolParameter(parameterCondition.ParameterName);
-                        AddComparisonCondition(conditions, boolParam, parameterCondition.BoolValue, isOr: useOrCondition);
-                        break;
-                }
-                break;
+                    mode = hgc.ComparisonType == BoolComparisonType.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
+                    parameter = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight",
+                    threshold = (int)hgc.HandGesture
+                };
+            case ParameterCondition pc:
+                return CreateParameterAnimatorCondition(pc);
+            default:
+                throw new NotImplementedException($"Condition type {condition.GetType()} is not implemented");
         }
     }
 
-    private void AddComparisonCondition<TEnum>(
-        AacFlTransitionContinuation conditions,
-        AacFlEnumIntParameter<TEnum> parameter,
-        BoolComparisonType comparisonType,
-        TEnum value,
-        bool isOr = false) where TEnum : Enum
+    private AnimatorCondition CreateParameterAnimatorCondition(ParameterCondition pc)
     {
-        switch (comparisonType)
+        AnimatorConditionMode mode = AnimatorConditionMode.Equals;
+        float threshold = 0;
+
+        switch (pc.ParameterType)
         {
-            case BoolComparisonType.Equal:
-                if (isOr) conditions.Or().When(parameter.IsEqualTo(value));
-                else conditions.And(parameter.IsEqualTo(value));
+            case ParameterType.Int:
+                mode = pc.IntComparisonType switch
+                {
+                    IntComparisonType.Equal => AnimatorConditionMode.Equals,
+                    IntComparisonType.NotEqual => AnimatorConditionMode.NotEqual,
+                    IntComparisonType.GreaterThan => AnimatorConditionMode.Greater,
+                    IntComparisonType.LessThan => AnimatorConditionMode.Less,
+                    _ => mode
+                };
+                threshold = pc.IntValue;
                 break;
-            case BoolComparisonType.NotEqual:
-                if (isOr) conditions.Or().When(parameter.IsNotEqualTo(value));
-                else conditions.And(parameter.IsNotEqualTo(value));
+            case ParameterType.Float:
+                mode = pc.FloatComparisonType switch
+                {
+                    FloatComparisonType.GreaterThan => AnimatorConditionMode.Greater,
+                    FloatComparisonType.LessThan => AnimatorConditionMode.Less,
+                    _ => mode
+                };
+                threshold = pc.FloatValue;
+                break;
+            case ParameterType.Bool:
+                mode = pc.BoolValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot;
                 break;
         }
-    }
 
-    private void AddComparisonCondition(
-        AacFlTransitionContinuation conditions,
-        AacFlFloatParameter parameter,
-        FloatComparisonType comparisonType,
-        float value,
-        bool isOr = false)
-    {
-        switch (comparisonType)
+        if (pc.ParameterType == ParameterType.Bool)
         {
-            case FloatComparisonType.GreaterThan:
-                if (isOr) conditions.Or().When(parameter.IsGreaterThan(value));
-                else conditions.And(parameter.IsGreaterThan(value));
-                break;
-            case FloatComparisonType.LessThan:
-                if (isOr) conditions.Or().When(parameter.IsLessThan(value));
-                else conditions.And(parameter.IsLessThan(value));
-                break;
+            return new AnimatorCondition { mode = mode, parameter = pc.ParameterName };
         }
-    }
-
-    private void AddComparisonCondition(
-        AacFlTransitionContinuation conditions,
-        AacFlIntParameter parameter,
-        IntComparisonType comparisonType,
-        int value,
-        bool isOr = false)
-    {
-        switch (comparisonType)
-        {
-            case IntComparisonType.Equal:
-                if (isOr) conditions.Or().When(parameter.IsEqualTo(value));
-                else conditions.And(parameter.IsEqualTo(value));
-                break;
-            case IntComparisonType.NotEqual:
-                if (isOr) conditions.Or().When(parameter.IsNotEqualTo(value));
-                else conditions.And(parameter.IsNotEqualTo(value));
-                break;
-            case IntComparisonType.GreaterThan:
-                if (isOr) conditions.Or().When(parameter.IsGreaterThan(value));
-                else conditions.And(parameter.IsGreaterThan(value));
-                break;
-            case IntComparisonType.LessThan:
-                if (isOr) conditions.Or().When(parameter.IsLessThan(value));
-                else conditions.And(parameter.IsLessThan(value));
-                break;
-        }
-    }
-
-    private void AddComparisonCondition(
-        AacFlTransitionContinuation conditions,
-        AacFlBoolParameter parameter,
-        bool value,
-        bool isOr = false)
-    {
-        if (isOr)
-            conditions.Or().When(parameter.IsEqualTo(value));
         else
-            conditions.And(parameter.IsEqualTo(value));
-    }
-
-    private (IntComparisonType newType, int newValue) Negate(IntComparisonType type, int currentValue)
-    {
-        return type switch
         {
-            IntComparisonType.Equal => (IntComparisonType.NotEqual, currentValue),
-            IntComparisonType.NotEqual => (IntComparisonType.Equal, currentValue),
-            IntComparisonType.GreaterThan => (IntComparisonType.LessThan, currentValue + 1), // val > X  -> val < X+1 (つまり val <= X)
-            IntComparisonType.LessThan => (IntComparisonType.GreaterThan, currentValue - 1),   // val < X  -> val > X-1 (つまり val >= X)
-            _ => (type, currentValue)
-        };
+            return new AnimatorCondition { mode = mode, parameter = pc.ParameterName, threshold = threshold };
+        }
     }
 
-    private FloatComparisonType Negate(FloatComparisonType type)
+    private void EnsureParameterExists(Condition condition, Action<AnimatorControllerParameter>? onParameterCreated = null)
     {
-        return type switch
+        string paramName = "";
+        AnimatorControllerParameterType resolvedParamType = AnimatorControllerParameterType.Float;
+
+        switch (condition)
         {
-            FloatComparisonType.GreaterThan => FloatComparisonType.LessThan,
-            FloatComparisonType.LessThan => FloatComparisonType.GreaterThan,
-            _ => type
-        };
-    }
+            case HandGestureCondition hgc:
+                paramName = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight";
+                resolvedParamType = AnimatorControllerParameterType.Int;
+                break;
+            case ParameterCondition pc:
+                paramName = pc.ParameterName;
+                resolvedParamType = pc.ParameterType switch
+                {
+                    ParameterType.Int => AnimatorControllerParameterType.Int,
+                    ParameterType.Float => AnimatorControllerParameterType.Float,
+                    ParameterType.Bool => AnimatorControllerParameterType.Bool,
+                    _ => resolvedParamType
+                };
+                break;
+            default:
+                return;
+        }
 
-    private BoolComparisonType Negate(BoolComparisonType type)
-    {
-        return type switch
+        if (!_parameterCache.ContainsKey(paramName))
         {
-            BoolComparisonType.Equal => BoolComparisonType.NotEqual,
-            BoolComparisonType.NotEqual => BoolComparisonType.Equal,
-            _ => type
-        };
+            var param = new AnimatorControllerParameter
+            {
+                name = paramName,
+                type = resolvedParamType
+            };
+
+            switch (resolvedParamType)
+            {
+                case AnimatorControllerParameterType.Bool:
+                    param.defaultBool = false;
+                    break;
+                case AnimatorControllerParameterType.Int:
+                    param.defaultInt = 0;
+                    break;
+                case AnimatorControllerParameterType.Float:
+                    param.defaultFloat = 0f;
+                    break;
+            }
+            onParameterCreated?.Invoke(param);
+            _virtualController.Parameters = _virtualController.Parameters.Add(paramName, param);
+            _parameterCache.Add(paramName, param);
+        }
     }
 
-    private bool Negate(bool value)
-    {
-        return !value;
-    }
-
-    private static void SetTracks(AacFlState state, IEnumerable<Expression> expressions)
+    private void SetTracks(VirtualState state, IEnumerable<Expression> expressions)
     {
         foreach (var expression in expressions) SetTracks(state, expression);
     }
 
-    private static void SetTracks(AacFlState state, Expression expression)
-    {   
-        if (expression.AllowEyeBlink is TrackingPermission.Keep && expression.AllowLipSync is TrackingPermission.Keep) return;
-
-        SetTracks(state, AacAv3.Av3TrackingElement.Eyes, expression.AllowEyeBlink);
-        SetTracks(state, AacAv3.Av3TrackingElement.Mouth, expression.AllowLipSync);
-
-        static void SetTracks(AacFlState state, AacAv3.Av3TrackingElement element, TrackingPermission permission)
-        {
-            switch (permission)
-            {
-                case TrackingPermission.Allow:
-                    state.TrackingTracks(element);
-                    break;
-                case TrackingPermission.Disallow:
-                    state.TrackingAnimates(element);
-                    break;
-                case TrackingPermission.Keep:
-                    break;
-            }
-        }
-    }
-
-    private AacAv3.Av3Gesture Convert(HandGesture handGesture)
+    private void SetTracks(VirtualState state, Expression expression)
     {
-        switch (handGesture)
-        {
-            case HandGesture.Neutral:
-                return AacAv3.Av3Gesture.Neutral;
-            case HandGesture.Fist:
-                return AacAv3.Av3Gesture.Fist;
-            case HandGesture.HandOpen:
-                return AacAv3.Av3Gesture.HandOpen;
-            case HandGesture.FingerPoint:
-                return AacAv3.Av3Gesture.Fingerpoint;
-            case HandGesture.Victory:
-                return AacAv3.Av3Gesture.Victory;
-            case HandGesture.RockNRoll:
-                return AacAv3.Av3Gesture.RockNRoll;
-            case HandGesture.HandGun:
-                return AacAv3.Av3Gesture.HandGun;
-            case HandGesture.ThumbsUp:
-                return AacAv3.Av3Gesture.ThumbsUp;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(handGesture), handGesture, null);
-        }
-    }
-    private AacFlBase CreateAac()
-    {
-        return AacV1.Create(new AacConfiguration()
-        {
-            SystemName = SystemName,
-            AnimatorRoot = _sessionContext.Root.transform,
-            DefaultValueRoot = _sessionContext.Root.transform,
-            AssetKey = GUID.Generate().ToString(),
-            AssetContainer = _buildContext.AssetContainer,
-            ContainerMode = AacConfiguration.Container.OnlyWhenPersistenceRequired,
-            AssetContainerProvider = new NDMFContainerProvider(_buildContext),
-            DefaultsProvider = new AacDefaultsProvider(UseWriteDefaults)
-        });
-    }
-
-    internal class NDMFContainerProvider : IAacAssetContainerProvider
-    {
-        private readonly BuildContext _ctx;
-        public NDMFContainerProvider(BuildContext ctx) => _ctx = ctx;
-        public void SaveAsPersistenceRequired(Object objectToAdd) => _ctx.AssetSaver.SaveAsset(objectToAdd);
-        public void SaveAsRegular(Object objectToAdd) { }
-        public void ClearPreviousAssets() { }
+        _platformSupport.SetTracks(state, expression);
     }
 }

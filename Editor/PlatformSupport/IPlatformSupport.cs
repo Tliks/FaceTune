@@ -1,5 +1,6 @@
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
+using nadena.dev.ndmf.animator;
 
 namespace com.aoyon.facetune.platform;
 
@@ -40,5 +41,9 @@ internal interface IPlatformSupport
     public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         return (null, null);
+    }
+    public void SetTracks(VirtualState state, Expression expression)
+    {
+        return;
     }
 }
