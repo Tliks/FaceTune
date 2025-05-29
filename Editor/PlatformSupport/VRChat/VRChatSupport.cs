@@ -205,7 +205,7 @@ internal class VRChatSuport : IPlatformSupport
             trackingControl.trackingMouth = expression.AllowLipSync == TrackingPermission.Allow ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
         }
 
-        state.Behaviours.Add(trackingControl);
+        state.Behaviours = state.Behaviours.Add(trackingControl);
     }
 }
 

@@ -41,7 +41,7 @@ internal class AnimatorInstaller
         var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
         var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
         AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
-        SetTracks(defaultState, _sessionContext.DefaultExpression);
+        // SetTracks(defaultState, _sessionContext.DefaultExpression);
         return defaultLayer;
     }
 
@@ -149,7 +149,6 @@ internal class AnimatorInstaller
     private VirtualState CreateDefaultState(VirtualLayer layer, Vector3 position)
     {
         var defaultState = AddFTState(layer, "Default", position);
-        position.y += PositionYStep;
         // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
         if (_useWriteDefaults)
         {
@@ -165,15 +164,7 @@ internal class AnimatorInstaller
 
     private void ProcessExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 position)
     {
-        var defaultToExitTransition = VirtualStateTransition.Create();
-        defaultToExitTransition.SetExitDestination();
-        defaultToExitTransition.HasFixedDuration = true;
-        defaultToExitTransition.Duration = TransitionDurationSeconds;
-        defaultToExitTransition.ExitTime = null;
-        defaultToExitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(new ParameterCondition(TrueParameterName, true)));
-        defaultState.Transitions = ImmutableList.Create(defaultToExitTransition);
-
-        var newEntryTransitions = new List<VirtualTransition>(layer.StateMachine!.EntryTransitions);
+        var newEntryTransitions = new List<VirtualTransition>();
 
         foreach (var expressionWithCondition in expressionWithConditions)
         {
@@ -192,7 +183,7 @@ internal class AnimatorInstaller
             entryTransition.Conditions = ToAnimatorConditions(conditions, negate: false).ToImmutableList();
             newEntryTransitions.Add(entryTransition);
 
-            var newExpressionStateTransitions = new List<VirtualStateTransition>(expressionState.Transitions);
+            var newExpressionStateTransitions = new List<VirtualStateTransition>();
             foreach (var condition in conditions)
             {
                 var exitTransition = VirtualStateTransition.Create();
@@ -203,9 +194,24 @@ internal class AnimatorInstaller
                 exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition, negate: true));
                 newExpressionStateTransitions.Add(exitTransition);
             }
-            expressionState.Transitions = newExpressionStateTransitions.ToImmutableList();
+            expressionState.Transitions = ImmutableList.CreateRange(expressionState.Transitions.Concat(newExpressionStateTransitions));
         }
-        layer.StateMachine!.EntryTransitions = newEntryTransitions.ToImmutableList();
+
+        // entry to expressinの全TrasntionのORをdefault to Exitに入れる
+        var exitTransitionsFromDefault = new List<VirtualStateTransition>();
+        foreach (var entryTr in newEntryTransitions)
+        {
+            var exitTransition = VirtualStateTransition.Create();
+            exitTransition.SetExitDestination();
+            exitTransition.HasFixedDuration = true;
+            exitTransition.Duration = TransitionDurationSeconds;
+            exitTransition.ExitTime = null;
+            exitTransition.Conditions = entryTr.Conditions; // newEntryTransition の条件をそのまま使用
+            exitTransitionsFromDefault.Add(exitTransition);
+        }
+        defaultState.Transitions = ImmutableList.CreateRange(exitTransitionsFromDefault);
+
+        layer.StateMachine!.EntryTransitions = ImmutableList.CreateRange(layer.StateMachine!.EntryTransitions.Concat(newEntryTransitions));
     }
 
     private AnimatorCondition ToAnimatorCondition(Condition condition, bool? negate = null)
