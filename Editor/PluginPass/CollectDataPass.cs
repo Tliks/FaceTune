@@ -16,7 +16,6 @@ internal class CollectDataPass : Pass<CollectDataPass>
         Profiler.BeginSample("CollectPatternData");
         var patternData = PatternData.Collect(sessionContext);
         Profiler.EndSample();
-        if (patternData == null) return;
 
         passContext.SetPatternData(patternData);
     }

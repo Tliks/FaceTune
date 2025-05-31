@@ -82,13 +82,14 @@ internal record PatternData
 {
     public IReadOnlyList<IPatternElement> OrderedItems { get; private set; }
     internal const string Peset_Index_Parameter = "FaceTune_PresetIndex";
+    public bool IsEmpty => OrderedItems.Count == 0;
 
     public PatternData(IReadOnlyList<IPatternElement> orderedItems)
     {
         OrderedItems = orderedItems;
     }
 
-    public static PatternData? Collect(SessionContext context)
+    public static PatternData Collect(SessionContext context)
     {
         var orderedItems = new List<IPatternElement>();
         var processedGameObjects = new HashSet<GameObject>();
@@ -129,7 +130,6 @@ internal record PatternData
             }
         }
 
-        if (orderedItems.Count == 0) return null;
         return new PatternData(orderedItems);
     }
 
