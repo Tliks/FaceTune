@@ -24,7 +24,10 @@ namespace com.aoyon.facetune
         {
             var defaultSet = defaultExpression.BlendShapeSet;
 
-            var blendShapeSet = GetBlendShapeSet(defaultSet, observeContext);
+            BlendShapeSet? blendShapeSet = null;
+#if UNITY_EDITOR
+            blendShapeSet = GetBlendShapeSet(defaultSet, observeContext);
+#endif
             if (blendShapeSet == null) return null;
 
             var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
