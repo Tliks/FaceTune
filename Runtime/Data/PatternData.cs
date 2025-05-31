@@ -103,16 +103,16 @@ internal record PatternData
 
             if (component is PresetComponent presetComponent)
             {
-                var patterns = presetComponent.gameObject.GetComponentsInChildren<PatternComponent>(true);
                 var presetCondition = new ParameterCondition(Peset_Index_Parameter, IntComparisonType.Equal, presetIndex++);
                 var preset = presetComponent.GetPreset(context.DEC.GetPresetDefaultExpression(presetComponent), presetCondition);
                 if (preset == null) continue;
                 preset.SetMenuTarget(presetComponent.GetMenuTarget());
                 orderedItems.Add(preset);
                 processedGameObjects.Add(presetComponent.gameObject);
-                foreach (var p in patterns)
+                var childPatterns = presetComponent.gameObject.GetComponentsInChildren<PatternComponent>(true);
+                foreach (var pattern in childPatterns)
                 {
-                    processedGameObjects.Add(p.gameObject);
+                    processedGameObjects.Add(pattern.gameObject);
                 }
             }
             else if (component is PatternComponent patternComponent)
@@ -121,6 +121,11 @@ internal record PatternData
                 if (pattern == null) continue;
                 orderedItems.Add(new SingleExpressionPattern(patternComponent.gameObject.name, pattern));
                 processedGameObjects.Add(patternComponent.gameObject);
+                var nestedPatterns = patternComponent.gameObject.GetComponentsInChildren<PatternComponent>(true);
+                foreach (var nestedPattern in nestedPatterns)
+                {
+                    processedGameObjects.Add(nestedPattern.gameObject);
+                }
             }
         }
 
