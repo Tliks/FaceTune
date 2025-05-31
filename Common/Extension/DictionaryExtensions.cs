@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace com.aoyon.facetune;
 
 internal static class DictionaryExtensions
