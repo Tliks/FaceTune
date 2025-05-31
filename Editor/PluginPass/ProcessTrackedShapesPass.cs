@@ -12,8 +12,9 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         var passContext = context.Extension<FTPassContext>()!;
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-        var presetData = passContext.PatternData;
-        if (presetData == null) throw new InvalidOperationException("PatternData is null");
+        var patternData = passContext.PatternData;
+        if (patternData == null) throw new InvalidOperationException("PatternData is null");
+        if (patternData.IsEmpty) return;
 
         var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext.Root.transform);
 
@@ -25,12 +26,12 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             if (!shapesToClone.Any()) return;
             var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
             ModifyData(sessionContext.DEC.GetAllExpressions(), mapping);
-            ModifyData(presetData.GetAllExpressions(), mapping);
+            ModifyData(patternData.GetAllExpressions(), mapping);
         }
         else
         {
             RemoveAndWarning(sessionContext.DEC.GetAllExpressions(), trackedShapes);
-            RemoveAndWarning(presetData.GetAllExpressions(), trackedShapes);
+            RemoveAndWarning(patternData.GetAllExpressions(), trackedShapes);
         }
     }
 

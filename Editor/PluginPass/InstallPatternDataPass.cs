@@ -14,6 +14,7 @@ internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
         if (sessionContext == null) return;
         var presetData = passContext.PatternData;
         if (presetData == null) throw new InvalidOperationException("PatternData is null");
+        if (presetData.IsEmpty) return;
 
         var disableExistingControl = sessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true).Any();
 

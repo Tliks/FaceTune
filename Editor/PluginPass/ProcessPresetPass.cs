@@ -15,6 +15,7 @@ internal class ProcessPresetPass : Pass<ProcessPresetPass>
         if (sessionContext == null) return;
         var presetData = passContext.PatternData;
         if (presetData == null) throw new InvalidOperationException("PatternData is null");
+        if (presetData.IsEmpty) return;
 
         // 単一のPresetを変換
         // presetData.ConvertSinglePresetToSingleExpressionPattern();
