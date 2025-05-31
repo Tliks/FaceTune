@@ -1,0 +1,9 @@
+namespace com.aoyon.facetune
+{
+    [AddComponentMenu(MenuPath)]
+    public class DisableExistingControlComponent : FaceTuneTagComponent
+    {
+        internal const string ComponentName = "FT Disable Existing Control";
+        internal const string MenuPath = FaceTune + "/" + Global + "/" + ComponentName;
+    }
+}

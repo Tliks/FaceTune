@@ -31,7 +31,15 @@ public enum ParameterType
     Bool
 }
 
-public enum ComparisonType
+public enum IntComparisonType
+{
+    Equal,
+    NotEqual,
+    GreaterThan,
+    LessThan
+}
+
+public enum FloatComparisonType
 {
     GreaterThan,
     LessThan,
@@ -48,4 +56,17 @@ public enum TrackingPermission
     Allow,
     Disallow,
     Keep
+}
+
+public enum ClipExcludeOption
+{
+    None,
+    ExcludeZeroWeight,
+    ExcludeDefault
+}
+
+public enum FacialExpressionType
+{
+    Manual,
+    FromClip
 }

@@ -9,16 +9,14 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
 
     protected override void Execute(BuildContext context)
     {
-        var mainComponents = context.AvatarRootObject.GetComponentsInChildren<FaceTuneComponent>(false);
-        if (mainComponents.Length == 0) return;
-        if (mainComponents.Length > 1) throw new Exception("FaceTuneComponent is not unique");
-        var mainComponent = mainComponents[0];
-
-        if (!mainComponent.TryGetSessionContext(out var sessionContext)) return;
+        var passContext = context.Extension<FTPassContext>()!;
+        var sessionContext = passContext.SessionContext;
+        if (sessionContext == null) return;
 
         var faceRenderer = sessionContext.FaceRenderer;
-        var defaultBlendShapes = sessionContext.DefaultBlendShapes;
+        var faceMesh = sessionContext.FaceMesh;
+        var defaultBlendShapes = sessionContext.DEC.GetGlobalDefaultBlendShapeSet().BlendShapes;
 
-        MeshHelper.ApplyBlendShapes(faceRenderer, sessionContext.FaceMesh, defaultBlendShapes);
+        MeshHelper.ApplyBlendShapes(faceRenderer, faceMesh, defaultBlendShapes);
     }
 }

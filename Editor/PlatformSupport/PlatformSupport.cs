@@ -1,21 +1,18 @@
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
+using nadena.dev.modular_avatar.core;
+using nadena.dev.ndmf.animator;
 
 namespace com.aoyon.facetune.platform;
 
-internal static class FTPlatformSupport
+internal static class PlatformSupport
 {
-    private static readonly IPlatformSupport[] s_supports;
+    private static readonly List<IPlatformSupport> s_supports = new();
     private static readonly IPlatformSupport s_fallback = new FallbackSupport();
     
-    static FTPlatformSupport()
+    public static void Register(IPlatformSupport support)
     {
-        s_supports = new IPlatformSupport[]
-        {
-#if FT_VRCSDK3_AVATARS
-            new VRChatSuport(),
-#endif
-        };
+        s_supports.Add(support);
     }
 
     public static Transform? FindAvatarInParents(Transform transform)
@@ -23,26 +20,59 @@ internal static class FTPlatformSupport
         return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
     }
 
-    private static IPlatformSupport GetSupport(Transform root)
+    public static IEnumerable<IPlatformSupport> GetSupports(Transform root)
     {
-        var support = s_supports.FirstOrNull(s => s.IsTarget(root));
-        support ??= s_fallback;
-        support.Initialize(root);
-        return support;
+        foreach (var support in s_supports)
+        {
+            if (support.IsTarget(root))
+            {
+                support.Initialize(root);
+                yield return support;
+            }
+        }
+        s_fallback.Initialize(root);
+        yield return s_fallback;
     }
 
     public static SkinnedMeshRenderer? GetFaceRenderer(Transform root)
     {
-        return GetSupport(root).GetFaceRenderer();
+        return GetSupports(root).Select(s => s.GetFaceRenderer()).FirstOrNull(r => r != null);
     }
 
-    public static void InstallPresets(BuildContext buildContext, SessionContext context, IEnumerable<Preset> presets)
+    public static void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
     {
-        GetSupport(context.Root.transform).InstallPresets(buildContext, context, presets);
+        GetSupports(context.Root.transform).First().InstallPatternData(buildContext, context, patternData, disableExistingControl);
     }
 
-    public static IEnumerable<string> GetDisallowedBlendShape(SessionContext context)
+    public static IEnumerable<string> GetTrackedBlendShape(Transform root)
     {
-        return GetSupport(context.Root.transform).GetDisallowedBlendShape(context);
+        return GetSupports(root).First().GetTrackedBlendShape();
+    }
+
+    // ModularAvatarMenuItem
+    public static string AssignUniqueParameterName(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        return GetSupports(root).First().AssignUniqueParameterName(menuItem, usedNames);
+    }
+    public static void AssignParameterName(Transform root, ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        GetSupports(root).First().AssignParameterName(menuItem, parameterName);
+    }
+    public static void AssignParameterValue(Transform root, ModularAvatarMenuItem menuItem, float value)
+    {
+        GetSupports(root).First().AssignParameterValue(menuItem, value);
+    }
+    public static void EnsureMenuItemIsToggle(Transform root, ModularAvatarMenuItem menuItem)
+    {
+        GetSupports(root).First().EnsureMenuItemIsToggle(menuItem);
+    }
+    public static (string?, ParameterCondition?) MenuItemAsCondition(Transform root, ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        return GetSupports(root).First().MenuItemAsCondition(menuItem, usedNames);
+    }
+
+    public static void SetTracks(Transform root,VirtualState state, Expression expression)
+    {
+        GetSupports(root).First().SetTracks(state, expression);
     }
 }

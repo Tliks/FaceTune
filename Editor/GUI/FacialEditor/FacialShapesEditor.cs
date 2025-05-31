@@ -8,7 +8,7 @@ internal class FacialShapesEditor : EditorWindow
 {
     public SkinnedMeshRenderer Renderer = null!;
     public Mesh Mesh = null!;
-    public BlendShape[] BaseShapes = null!;
+    public IReadOnlyList<BlendShape> BaseShapes = null!;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
 
@@ -55,19 +55,41 @@ internal class FacialShapesEditor : EditorWindow
     private bool _includeZeroWeight = false;
     private bool _includeEqualOverride = false;
 
-    public static FacialShapesEditor OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, BlendShape[] defaultShapes, BlendShapeSet defaultOverrides)
+    public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
     {
+        if (HasOpenInstances<FacialShapesEditor>())
+        {
+            var existingWindow = GetWindow<FacialShapesEditor>();
+            if (existingWindow.hasUnsavedChanges)
+            {
+                var result = EditorUtility.DisplayDialogComplex("Unsaved Changes", "This window may have unsaved changes. Would you like to save?", "Save", "Unsave", "Cancel");
+                if (result == 0)
+                {
+                    existingWindow.SaveChanges();
+                    existingWindow.Close();
+                }
+                else if (result == 1)
+                {
+                    existingWindow.ForceClose();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         var window = GetWindow<FacialShapesEditor>();
         window.Init(renderer, mesh, defaultShapes, defaultOverrides);
         return window;
     }
 
-    public void Init(SkinnedMeshRenderer renderer, Mesh mesh, BlendShape[] defaultShapes, BlendShapeSet defaultOverrides)
+    public void Init(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
     {
         Renderer = renderer;
         Mesh = mesh;
 
-        BaseShapes = defaultShapes;
+        BaseShapes = defaultShapes.ToList().AsReadOnly();
         var mapping = defaultOverrides.BlendShapes.ToDictionary(x => x.Name, x => x.Weight);
         _overrideFlags = BaseShapes.Select(x => mapping.ContainsKey(x.Name)).ToArray();
         _overrideWeights = BaseShapes.Select(x => mapping.ContainsKey(x.Name) ? mapping[x.Name] : -1).ToArray();
@@ -76,7 +98,7 @@ internal class FacialShapesEditor : EditorWindow
         _overrideFlagsProperty = _serializedObject.FindProperty(nameof(_overrideFlags));
         _overrideWeightsProperty = _serializedObject.FindProperty(nameof(_overrideWeights));
 
-        _selector = new BlendShapeSelectorManager(Array.AsReadOnly(BaseShapes), _overrideFlagsProperty, _overrideWeightsProperty, OnAnyChangeCallback, OnHoveredCallback);
+        _selector = new BlendShapeSelectorManager(BaseShapes, _overrideFlagsProperty, _overrideWeightsProperty, OnAnyChangeCallback, OnHoveredCallback);
         _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor(renderer, mesh);
 
         saveChangesMessage = "This window may have unsaved changes. Would you like to save?";
@@ -213,7 +235,7 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_sourceClip == null) return;
 
-        var newBlendShapes = new BlendShapeSet(AnimationUtility.GetBlendShapesFromClip(_sourceClip));
+        var newBlendShapes = new BlendShapeSet(_sourceClip.GetBlendShapes());
         if (!_includeZeroWeight) newBlendShapes.RemoveZeroWeight();
 
         var mapping = new BlendShapeSet(BaseShapes).Add(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
@@ -241,7 +263,7 @@ internal class FacialShapesEditor : EditorWindow
 
 internal class BlendShapeSelectorManager : IDisposable
 {
-    public readonly ReadOnlyCollection<BlendShape> BaseShapes;
+    public readonly IReadOnlyList<BlendShape> BaseShapes;
     private readonly SerializedProperty _overrideFlagsProperty;
     private readonly SerializedProperty _overrideWeightsProperty;
 
@@ -250,7 +272,7 @@ internal class BlendShapeSelectorManager : IDisposable
 
     private readonly Action? _anyChangeCallback;
     private readonly Action<int>? _hoveredCallback;
-    public BlendShapeSelectorManager(ReadOnlyCollection<BlendShape> baseShapes, SerializedProperty overrideFlagsProperty, SerializedProperty overrideWeightsProperty, 
+    public BlendShapeSelectorManager(IReadOnlyList<BlendShape> baseShapes, SerializedProperty overrideFlagsProperty, SerializedProperty overrideWeightsProperty, 
         Action? anyChangeCallback = null, Action<int>? hoveredCallback = null)
     {
         BaseShapes = baseShapes;
@@ -455,7 +477,7 @@ internal abstract class BlendShapeSelectorBase
     private readonly SearchField _searchField;
     private readonly BlendShapeTreeView _blendShapeTreeView;
 
-    public BlendShapeSelectorBase(ReadOnlyCollection<BlendShape> baseShapes, Func<int, bool> _display)
+    public BlendShapeSelectorBase(IReadOnlyList<BlendShape> baseShapes, Func<int, bool> _display)
     {
         _searchField = new SearchField();
         _blendShapeTreeView = new BlendShapeTreeView(baseShapes, _display, DrawRow);
@@ -479,11 +501,11 @@ internal abstract class BlendShapeSelectorBase
 
 internal class BlendShapeTreeView : TreeView
 {
-    private readonly ReadOnlyCollection<BlendShape> _blendShapes;
+    private readonly IReadOnlyList<BlendShape> _blendShapes;
     private readonly Func<int, bool> _display;
     private readonly Action<BlendShapeTreeViewItem, Rect, bool> _drawRow;
 
-    public BlendShapeTreeView(ReadOnlyCollection<BlendShape> blendShapes, Func<int, bool> display, Action<BlendShapeTreeViewItem, Rect, bool> drawRow) : base(new TreeViewState())
+    public BlendShapeTreeView(IReadOnlyList<BlendShape> blendShapes, Func<int, bool> display, Action<BlendShapeTreeViewItem, Rect, bool> drawRow) : base(new TreeViewState())
     {
         _blendShapes = blendShapes;
         _display = display;

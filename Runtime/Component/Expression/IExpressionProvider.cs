@@ -2,16 +2,9 @@ namespace com.aoyon.facetune;
 
 internal interface IExpressionProvider
 {
-    Expression? ToExpression(SessionContext context);
+    Expression? ToExpression(FacialExpression defaultExpression, IOberveContext observeContext);
 }
 
-public abstract class ExpressionComponentBase : FaceTuneTagComponent
+public abstract class ExpressionComponentBase : FaceTuneTagComponent // IExpressionProviderを実装
 {
-}
-
-public abstract class FacialExpressionComponentBase : ExpressionComponentBase
-{
-    public bool EnableBlending = false;
-    public TrackingPermission AllowEyeBlink = TrackingPermission.Disallow;
-    public TrackingPermission AllowLipSync = TrackingPermission.Allow;
 }

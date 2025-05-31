@@ -1,4 +1,5 @@
 using nadena.dev.ndmf;
+using nadena.dev.ndmf.animator;
 using com.aoyon.facetune.pass;
 using com.aoyon.facetune.preview;
 
@@ -15,12 +16,27 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
     protected override void Configure()
     {
         InPhase(BuildPhase.Resolving)
-        .Run(ReolveRenferencesPass.Instance);
+        .Run(ResolveReferencesPass.Instance);
 
-        InPhase(BuildPhase.Transforming)
-        .BeforePlugin("nadena.dev.modular-avatar")
-        .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
-        .Run(BuildPass.Instance).Then
+        var mainSequence = InPhase(BuildPhase.Transforming)
+            .BeforePlugin("nadena.dev.modular-avatar");
+        
+        mainSequence.WithRequiredExtension(typeof(FTPassContext), sq =>
+        {
+            sq
+            .Run(ModifyHierarchyPass.Instance).Then
+            .Run(CollectDataPass.Instance).Then
+            .Run(ProcessPresetPass.Instance).Then
+            .Run(ProcessTrackedShapesPass.Instance).Then
+            .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
+            .WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
+            {
+                sq1
+                .Run(InstallPatternDataPass.Instance);
+            });
+        });
+
+        mainSequence
         .Run(RemoveFTComponentsPass.Instance);
 
         InPhase(BuildPhase.Optimizing)

@@ -9,14 +9,14 @@ namespace com.aoyon.facetune
         public PathType PathType = PathType.Absolute;
         public AnimationClip? Clip = null;
 
-        Expression? IExpressionProvider.ToExpression(SessionContext context)
-        {
-            if (Clip == null) return null;
-            
-            var pathType = PathType;
+        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IOberveContext observeContext)
+        {            
+            var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
+            if (clip == null) return null;
+            var pathType = observeContext.Observe(this, c => c.PathType, (a, b) => a == b);
             if (pathType == PathType.Absolute)
             {
-                return new AnimationExpression(Clip, TrackingPermission.Keep, TrackingPermission.Keep, name);
+                return new AnimationExpression(clip, TrackingPermission.Keep, TrackingPermission.Keep, name);
             }
             else if (pathType == PathType.Relative)
             {
@@ -27,6 +27,5 @@ namespace com.aoyon.facetune
                 throw new Exception();
             }
         }
-
     }
 }

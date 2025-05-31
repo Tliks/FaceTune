@@ -5,27 +5,34 @@ namespace com.aoyon.facetune.preview;
 
 internal abstract class AbstractFaceTunePreview : IRenderFilter
 {
-    // mainComponetからFaceRendererを取得できればプレビュー対象には入れる
-    // mainComponetに依存しない対象の追加方法が必要か考える
+    protected virtual TogglablePreviewNode? ControlNode { get; }
+
+    public IEnumerable<TogglablePreviewNode> GetPreviewControlNodes()
+    {
+        if (ControlNode == null) yield break;
+        yield return ControlNode;
+    }
+
+    public virtual bool IsEnabled(ComputeContext context)
+    {
+        if (ControlNode == null) return true;
+        return context.Observe(ControlNode.IsEnabled);
+    }
+
+    // FaceTuneTagComponentが一つでもあれば対象に加える or 全て対象
+    // => 全て対象にする
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
         var groups = new List<RenderGroup>();
+        var observeContext = new NDMFPreviewObserveContext(context);
         foreach (var root in context.GetAvatarRoots())
         {
             if (!context.ActiveInHierarchy(root)) continue;
 
-            var mainComponents = context.GetComponentsInChildren<FaceTuneComponent>(root, true)
-                .Where(c => context.ActiveInHierarchy(c.gameObject));
-            if (mainComponents.Count() == 0) continue;
-            if (mainComponents.Count() > 1) { Debug.LogError("FaceTuneComponent is not unique"); continue; }
-            var mainComponent = mainComponents.First();
+            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, observeContext);
+            if (faceRenderer == null) continue;
 
-            var canBuild = context.Observe(mainComponent, c => c.CanBuild(), (a, b) => a == b);
-            if (canBuild is false) continue;
-            
-            var renderer = context.Observe(mainComponent, r => r.FaceObject.GetComponent<SkinnedMeshRenderer>(), (a, b) => a == b)!;
-
-            groups.Add(RenderGroup.For(renderer).WithData(mainComponent));
+            groups.Add(RenderGroup.For(faceRenderer).WithData(root));
         }
         return groups.ToImmutableList();
     }
@@ -41,16 +48,25 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         var proxyMesh = proxy.sharedMesh;
         if (proxyMesh == null) return Error();
 
-        var mainComponent = group.GetData<FaceTuneComponent>();
-        if (mainComponent == null) return Error();
+        var root = group.GetData<GameObject>();
+        if (root == null) return Error();
 
-        var blendShapeSet = QueryBlendShapeSet(original, proxy, mainComponent, context);
+        var observeContext = new NDMFPreviewObserveContext(context);
+        if (!SessionContextBuilder.TryBuild(root, out var sessionContext, observeContext)) return Empty();
+
+        var blendShapeSet = QueryBlendShapeSet(original, proxy, sessionContext, context);
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
-        if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Task.FromResult<IRenderFilterNode>(new EmptyNode());
+        if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Empty();
 
-        var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1).Weights(); // 対象外の場合はフラグとして-1を代入しNode側で除外
+        var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1) // 対象外の場合はフラグとして-1を代入しNode側で除外
+            .Select(b => b.Weight).ToArray();
 
         return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(blendShapeWeights));
+        
+        static Task<IRenderFilterNode> Empty()
+        {
+            return Task.FromResult<IRenderFilterNode>(new EmptyNode());
+        }
 
         // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
         static Task<IRenderFilterNode> Error()
@@ -64,7 +80,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
     /// プレビューするブレンドシェイプを取得する
     /// IRenderFilter.Instantiate内で呼ばれるので適時Observe
     /// </summary>
-    protected abstract BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, FaceTuneComponent mainComponent, ComputeContext context);
+    protected abstract BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context);
 }
 
 internal class BlendShapePreviewNode : IRenderFilterNode
