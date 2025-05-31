@@ -21,25 +21,19 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         var mainSequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
         
-        mainSequence
-        // Add Condition Component Phase
-        .Run(NegotiateMAMenuItemPass.Instance).Then // Todo: PresetがToggleかSubMenuか不明。一旦自動生成のToggleと仮定し、子のMenuを無視。
-        // Edit Condition Phase
-        .Run(ProcessPresetPass.Instance).Then /// Generate CommonCondition
-        .Run(CommonConditionPass.Instance).Then
-        // PostProcess Phase
-        .Run(NormalizeDataPass.Instance).Then
-        // Collect Data and Build
-        .WithRequiredExtensions(new Type[] 
-        { 
-            typeof(BuildPassContext),
-            typeof(AnimatorServicesContext)
-        }, buildSequence => 
+        mainSequence.WithRequiredExtension(typeof(FTPassContext), sq =>
         {
-            buildSequence
-            .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
+            sq
+            .Run(ModifyHierarchyPass.Instance).Then
+            .Run(CollectDataPass.Instance).Then
+            .Run(ProcessPresetPass.Instance).Then
             .Run(ProcessTrackedShapesPass.Instance).Then
-            .Run(InstallPatternDataPass.Instance);
+            .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
+            .WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
+            {
+                sq1
+                .Run(InstallPatternDataPass.Instance);
+            });
         });
 
         mainSequence

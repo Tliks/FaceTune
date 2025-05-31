@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune;
 
-internal static class DomainUtility
+internal static class BlendShapeUtility
 {
     public static BlendShape[] GetBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh)
     {

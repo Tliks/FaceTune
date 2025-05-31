@@ -16,7 +16,7 @@ internal interface IPlatformSupport
     {
         return;
     }
-    public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
+    public IEnumerable<string> GetTrackedBlendShape()
     {
         return new string[] { };
     }

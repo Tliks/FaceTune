@@ -12,10 +12,10 @@ namespace com.aoyon.facetune
         [SerializeField, HideInInspector]
         internal bool AllChildren = false;
 
-        internal void Modify()
+        internal void AddConditions()
         {
             var conditionComponents = AllChildren ?
-                gameObject.GetComponentsInChildren<ConditionComponent>(false) :
+                gameObject.GetComponentsInChildren<ConditionComponent>(true) :
                 gameObject.GetDirectChildComponents<ConditionComponent>();
             foreach (var conditionComponent in conditionComponents)
             {

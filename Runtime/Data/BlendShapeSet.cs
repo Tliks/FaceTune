@@ -10,6 +10,7 @@ internal record class BlendShapeSet
     public IEnumerable<BlendShape> BlendShapes => _mapping.Values;
     public IEnumerable<string> Names => _mapping.Keys;
     public IEnumerable<float> Weights => _mapping.Values.Select(x => x.Weight);
+    public int Count => _mapping.Count;
 
     public BlendShapeSet()
     {

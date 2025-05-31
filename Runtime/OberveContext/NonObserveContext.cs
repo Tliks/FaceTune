@@ -9,7 +9,7 @@ internal class NonObserveContext : IOberveContext
         return RuntimeUtil.FindAvatarInParents(obj.transform).NullCast()?.gameObject;
     }
 
-    public R? Observe<T, R>(T obj, Func<T, R?> extract, Func<R, R, bool>? compare = null) where T : Object
+    public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object
     {
         return extract(obj);
     }
@@ -21,7 +21,7 @@ internal class NonObserveContext : IOberveContext
 
     public C? GetComponentNullable<C>(GameObject obj) where C : Component
     {
-        return obj.GetComponent<C>().NullCast();
+        return obj.GetComponentNullable<C>();
     }
 
     public C[] GetComponents<C>(GameObject obj) where C : Component

@@ -16,10 +16,10 @@ namespace com.aoyon.facetune
             return gameObject;
         }
 
-        internal ExpressionWithCondition? GetExpressionWithCondition(SessionContext context, IOberveContext observeContext)
+        internal ExpressionWithCondition? GetExpressionWithCondition(FacialExpression defaultExpression)
         {
             var conditions = GetConditions();
-            var expressions = GetExpressions(context, observeContext);
+            var expressions = GetExpressions(defaultExpression, new NonObserveContext());
             if (conditions.Count() == 0 || expressions.Count() == 0) return null;
             return new ExpressionWithCondition(conditions.ToList(), expressions.ToList());
         }
@@ -31,11 +31,11 @@ namespace com.aoyon.facetune
                     .Select(x => x with { }).Cast<Condition>());
         }
 
-        internal IEnumerable<Expression> GetExpressions(SessionContext context, IOberveContext observeContext)
+        internal IEnumerable<Expression> GetExpressions(FacialExpression defaultExpression, IOberveContext observeContext)
         {
             return GetExpressionComponents(observeContext)
                 .Select(c => c as IExpressionProvider)
-                .Select(c => c!.ToExpression(context, observeContext))
+                .Select(c => c!.ToExpression(defaultExpression, observeContext))
                 .UnityOfType<Expression>()
                 .ToList();
         }
@@ -44,7 +44,7 @@ namespace com.aoyon.facetune
         {
             var fromSelfOnly = observeContext.Observe(this, c => c.ExpressionFromSelfOnly, (a, b) => a == b);
             return fromSelfOnly ? observeContext.GetComponents<ExpressionComponentBase>(gameObject)
-                : observeContext.GetComponentsInChildren<ExpressionComponentBase>(gameObject, false);
+                : observeContext.GetComponentsInChildren<ExpressionComponentBase>(gameObject, true);
         }
     }
 }

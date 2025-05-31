@@ -12,6 +12,9 @@ internal class AnimatorInstaller
     private readonly VirtualAnimatorController _virtualController;
     private readonly Dictionary<string, AnimatorControllerParameter> _parameterCache;
 
+    private readonly DefaultExpressionContext _defaultExpressionContext;
+    private readonly FacialExpression _globalDefaultExpression;
+
     private readonly IPlatformSupport _platformSupport;
 
     private readonly VirtualClip _emptyClip;
@@ -32,16 +35,33 @@ internal class AnimatorInstaller
         _parameterCache = virtualController.Parameters.Values.ToDictionary(p => p.name, p => p);
         _platformSupport = platform.PlatformSupport.GetSupports(_sessionContext.Root.transform).First();
         _useWriteDefaults = useWriteDefaults;
+        _defaultExpressionContext = sessionContext.DEC;
+        _globalDefaultExpression = _defaultExpressionContext.GetGlobalDefaultExpression();
         _emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
         _relativePath = HierarchyUtility.GetRelativePath(_sessionContext.Root, _sessionContext.FaceRenderer.gameObject)!;
     }
 
-    public VirtualLayer CreateDefaultLayer(int priority)
+    public VirtualLayer CreateDefaultLayer(PatternData patternData, int priority)
     {
         var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
         var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
-        AddExpressionsToState(defaultState, new[] { _sessionContext.DefaultExpression });
-        // SetTracks(defaultState, _sessionContext.DefaultExpression);
+        AddExpressionsToState(defaultState, new[] { _globalDefaultExpression });
+        // SetTracks(defaultState, _globalDefaultExpression);
+        var presets = patternData.GetAllPresets().ToList();
+        if (presets.Count > 0)
+        {
+            var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
+            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+            var presetStates = AddExclusiveStates(defaultLayer, defaultState, presetConditions, 0f, basePosition);
+            for (int i = 0; i < presets.Count; i++)
+            {
+                var preset = presets[i];
+                var presetState = presetStates[i];
+                presetState.Name = preset.Name;
+                AddExpressionsToState(presetState, new[] { preset.DefaultExpression });
+                // SetTracks(presetState, preset.DefaultExpression);
+            }
+        }
         return defaultLayer;
     }
 
@@ -111,21 +131,21 @@ internal class AnimatorInstaller
         for (int i = 0; i < maxPatterns; i++)
         {
             bool layerCreatedForThisIndex = false;
-            var position = DefaultStatePosition;
             foreach (var preset in presets)
             {
+                if (i >= preset.Patterns.Count) continue;
                 var pattern = preset.Patterns[i];
                 if (pattern == null || pattern.ExpressionWithConditions == null || !pattern.ExpressionWithConditions.Any()) continue;
 
                 if (!layerCreatedForThisIndex)
                 {
                     layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
-                    CreateDefaultState(layers[i], position);
-                    position.y += PositionYStep;
+                    defaultStates[i] = CreateDefaultState(layers[i], DefaultStatePosition);
                     layerCreatedForThisIndex = true;
                 }
                 
-                ProcessExpressionWithConditions(layers[i], defaultStates[i], pattern.ExpressionWithConditions, position);
+                var basePosition = layers[i].StateMachine!.States.Last().Position + new Vector3(0, 2 * PositionYStep, 0);
+                AddExpressionWithConditions(layers[i], defaultStates[i], pattern.ExpressionWithConditions, basePosition);
             }
         }
     }
@@ -139,10 +159,9 @@ internal class AnimatorInstaller
                 !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
             var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
-            var position = DefaultStatePosition;
-            var defaultState = CreateDefaultState(layer, position);
-            position.y += PositionYStep;
-            ProcessExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, position); 
+            var defaultState = CreateDefaultState(layer, DefaultStatePosition);
+            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+            AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
         }
     }
 
@@ -158,28 +177,44 @@ internal class AnimatorInstaller
         {
             defaultState.Motion = _emptyClip;
         }
-        SetTracks(defaultState, _sessionContext.DefaultExpression);
+        SetTracks(defaultState, _globalDefaultExpression);
         return defaultState;
     }
 
-    private void ProcessExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 position)
+    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 basePosition)
     {
+        var expressionWithConditionList = expressionWithConditions.ToList();
+        var duration = TransitionDurationSeconds;
+        var conditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.Conditions).ToArray();
+        var states = AddExclusiveStates(layer, defaultState, conditionsPerState, duration, basePosition);
+        for (int i = 0; i < states.Length; i++)
+        {
+            var expressionWithCondition = expressionWithConditionList[i];
+            var state = states[i];
+            state.Name = expressionWithCondition.Expressions.First().Name;
+            var expressions = expressionWithCondition.Expressions;
+            AddExpressionsToState(state, expressions);
+            SetTracks(state, expressions);
+        }
+    }
+
+    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, IEnumerable<Condition>[] conditionsPerState, float duration, Vector3 basePosition)
+    {
+        var states = new VirtualState[conditionsPerState.Length];
         var newEntryTransitions = new List<VirtualTransition>();
 
-        foreach (var expressionWithCondition in expressionWithConditions)
+        var position = basePosition;
+
+        for (int i = 0; i < conditionsPerState.Length; i++)
         {
-            var conditions = expressionWithCondition.Conditions;
-            var expressions = expressionWithCondition.Expressions;
+            var conditions = conditionsPerState[i];
 
-            if (!expressions.Any()) continue;
-
-            var expressionState = AddFTState(layer, expressions.First().Name, position);
+            var state = AddFTState(layer, "unnamed", position);
+            states[i] = state;
             position.y += PositionYStep;
-            AddExpressionsToState(expressionState, expressions);
-            SetTracks(expressionState, expressions);
 
             var entryTransition = VirtualTransition.Create();
-            entryTransition.SetDestination(expressionState);
+            entryTransition.SetDestination(state);
             entryTransition.Conditions = ToAnimatorConditions(conditions, negate: false).ToImmutableList();
             newEntryTransitions.Add(entryTransition);
 
@@ -189,12 +224,12 @@ internal class AnimatorInstaller
                 var exitTransition = VirtualStateTransition.Create();
                 exitTransition.SetExitDestination();
                 exitTransition.HasFixedDuration = true;
-                exitTransition.Duration = TransitionDurationSeconds;
+                exitTransition.Duration = duration;
                 exitTransition.ExitTime = null; 
                 exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition, negate: true));
                 newExpressionStateTransitions.Add(exitTransition);
             }
-            expressionState.Transitions = ImmutableList.CreateRange(expressionState.Transitions.Concat(newExpressionStateTransitions));
+            state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
         }
 
         // entry to expressinの全TrasntionのORをdefault to Exitに入れる
@@ -204,19 +239,21 @@ internal class AnimatorInstaller
             var exitTransition = VirtualStateTransition.Create();
             exitTransition.SetExitDestination();
             exitTransition.HasFixedDuration = true;
-            exitTransition.Duration = TransitionDurationSeconds;
+            exitTransition.Duration = duration;
             exitTransition.ExitTime = null;
             exitTransition.Conditions = entryTr.Conditions; // newEntryTransition の条件をそのまま使用
             exitTransitionsFromDefault.Add(exitTransition);
         }
-        defaultState.Transitions = ImmutableList.CreateRange(exitTransitionsFromDefault);
+        defaultState.Transitions = ImmutableList.CreateRange(defaultState.Transitions.Concat(exitTransitionsFromDefault));
 
         layer.StateMachine!.EntryTransitions = ImmutableList.CreateRange(layer.StateMachine!.EntryTransitions.Concat(newEntryTransitions));
+
+        return states;
     }
 
     private AnimatorCondition ToAnimatorCondition(Condition condition, bool? negate = null)
     {
-        var currentCondition = negate == true ? condition.Negate() : condition;
+        var currentCondition = negate == true ? condition.GetNegate() : condition;
         var animatorCondition = CreateAnimatorCondition(currentCondition);
         EnsureParameterExists(currentCondition);
         return animatorCondition;

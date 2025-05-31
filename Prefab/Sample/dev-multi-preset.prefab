@@ -1,0 +1,3261 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1617877696215001974
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 762440479051178696}
+  - component: {fileID: 8366443657147033155}
+  m_Layer: 0
+  m_Name: Additional Shapes
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &762440479051178696
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1617877696215001974}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4166771486201600442}
+  - {fileID: 1375830320074604223}
+  - {fileID: 8062527925292001539}
+  - {fileID: 5291717498265313905}
+  - {fileID: 6991328802766690545}
+  m_Father: {fileID: 6408158662676020517}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8366443657147033155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1617877696215001974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b29d45007c5493d926d2cd45a489529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Control:
+    name: 
+    icon: {fileID: 0}
+    type: 103
+    parameter:
+      name: 
+    value: 1
+    style: 0
+    subMenu: {fileID: 0}
+    subParameters: []
+    labels: []
+  MenuSource: 1
+  menuSource_otherObjectChildren: {fileID: 0}
+  isSynced: 1
+  isSaved: 1
+  isDefault: 0
+  automaticValue: 1
+  label: 
+--- !u!1001 &739403016178968121
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 762440479051178696}
+    m_Modifications:
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AddDefault
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Name
+      value: Option_heart
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Weight
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7214987413473881773, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_Name
+      value: heart
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dbb95b5ca0abfd2478f07d702c2e48b6, type: 3}
+--- !u!4 &4166771486201600442 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+    type: 3}
+  m_PrefabInstance: {fileID: 739403016178968121}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1597640707482549706
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2416071239649906124}
+    m_Modifications:
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_Name
+      value: Chiffon Default Facial
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941, type: 3}
+--- !u!4 &1887069712391898269 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+    type: 3}
+  m_PrefabInstance: {fileID: 1597640707482549706}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2343655032650776892
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 762440479051178696}
+    m_Modifications:
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AddDefault
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Name
+      value: Option_shiitake
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Weight
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7214987413473881773, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_Name
+      value: shiitake
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dbb95b5ca0abfd2478f07d702c2e48b6, type: 3}
+--- !u!4 &1375830320074604223 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+    type: 3}
+  m_PrefabInstance: {fileID: 2343655032650776892}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4764762596210281481
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 584921852272532731, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 584921852272532731, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_TagString
+      value: EditorOnly
+      objectReference: {fileID: 0}
+    - target: {fileID: 1308277682782707349, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_Name
+      value: Preset 1 Basic-adult
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487362731581000991, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: DefaultExpressionComponent
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487362731581000991, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: OverrideDefaultExpressionComponent
+      value: 
+      objectReference: {fileID: 3741191063810334342}
+    - target: {fileID: 4258807998067191206, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_Name
+      value: dev-multi-preset Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 4258807998067191206, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4258807998067191206, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
+    - target: {fileID: 4940710389550850055, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4940710389550850055, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_TagString
+      value: EditorOnly
+      objectReference: {fileID: 0}
+    - target: {fileID: 5974391815006727803, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: m_Name
+      value: Preset 2 HandSign-child
+      objectReference: {fileID: 0}
+    - target: {fileID: 8447961204084525986, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: DefaultExpressionComponent
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8447961204084525986, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      propertyPath: OverrideDefaultExpressionComponent
+      value: 
+      objectReference: {fileID: 8896380579920711173}
+    m_RemovedComponents:
+    - {fileID: 1843773276904129960, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 3753889718346980349, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 1012771800710219789, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 8766037758300263226, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 8691924408049956031, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 5207979545790813876, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 564701876218313644, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 8123980954213051805, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 1621799295132509430, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 8807334695559183573, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 7059029461424758692, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 5214030138264714356, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 584921852272532731, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 4940710389550850055, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    - {fileID: 1149717630709407144, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: 0
+      addedObject: {fileID: 7661763400964100834}
+    - targetCorrespondingSourceObject: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 762440479051178696}
+    - targetCorrespondingSourceObject: {fileID: 7176571407167406533, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1887069712391898269}
+    - targetCorrespondingSourceObject: {fileID: 8376529610198695782, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6054992751432790932}
+    - targetCorrespondingSourceObject: {fileID: 8376529610198695782, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7410440782676355693}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1308277682782707349, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8896380579920711173}
+    - targetCorrespondingSourceObject: {fileID: 5974391815006727803, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5791968756691291881}
+    - targetCorrespondingSourceObject: {fileID: 5974391815006727803, guid: e2c7cd827b519e24b940460ac2760740,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3741191063810334342}
+  m_SourcePrefab: {fileID: 100100000, guid: e2c7cd827b519e24b940460ac2760740, type: 3}
+--- !u!1 &1222335759283167858 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5974391815006727803, guid: e2c7cd827b519e24b940460ac2760740,
+    type: 3}
+  m_PrefabInstance: {fileID: 4764762596210281481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5791968756691291881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1222335759283167858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22651697d4d0efc4ea560d446bad014c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3741191063810334342
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1222335759283167858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7c78602628c33342a7196db8db756fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AllowEyeBlink: 1
+  AllowLipSync: 0
+  BlendShapes:
+  - Name: vrc.v_sil
+    Weight: 0
+  - Name: vrc.v_pp
+    Weight: 0
+  - Name: vrc.v_ff
+    Weight: 0
+  - Name: vrc.v_th
+    Weight: 0
+  - Name: vrc.v_dd
+    Weight: 0
+  - Name: vrc.v_kk
+    Weight: 0
+  - Name: vrc.v_ch
+    Weight: 0
+  - Name: vrc.v_ss
+    Weight: 0
+  - Name: vrc.v_nn
+    Weight: 0
+  - Name: vrc.v_rr
+    Weight: 0
+  - Name: vrc.v_aa
+    Weight: 0
+  - Name: vrc.v_e
+    Weight: 0
+  - Name: vrc.v_ih
+    Weight: 0
+  - Name: vrc.v_oh
+    Weight: 0
+  - Name: vrc.v_ou
+    Weight: 0
+  - Name: vrc.blink
+    Weight: 0
+  - Name: vrc.looking_up
+    Weight: 0
+  - Name: vrc.looking_down
+    Weight: 0
+  - Name: ---------Eye---------
+    Weight: 0
+  - Name: eye_brink_1
+    Weight: 0
+  - Name: eye_brink_1_L
+    Weight: 0
+  - Name: eye_brink_1_R
+    Weight: 0
+  - Name: eye_brink_2
+    Weight: 0
+  - Name: eye_brink_2_L
+    Weight: 0
+  - Name: eye_brink_2_R
+    Weight: 0
+  - Name: eye_smile_1
+    Weight: 0
+  - Name: eye_smile_1_L
+    Weight: 0
+  - Name: eye_smile_1_R
+    Weight: 0
+  - Name: eye_smile_2
+    Weight: 0
+  - Name: eye_smile_2_L
+    Weight: 0
+  - Name: eye_smile_2_R
+    Weight: 0
+  - Name: eye_nagomi
+    Weight: 0
+  - Name: eye_nagomi_L
+    Weight: 0
+  - Name: eye_nagomi_R
+    Weight: 0
+  - Name: eye_jitome_1
+    Weight: 0
+  - Name: eye_jitome_1_L
+    Weight: 0
+  - Name: eye_jitome_1_R
+    Weight: 0
+  - Name: eye_jitome_2
+    Weight: 0
+  - Name: eye_jitome_2_L
+    Weight: 0
+  - Name: eye_jitome_2_R
+    Weight: 0
+  - Name: eye_jitome_3
+    Weight: 0
+  - Name: eye_jitome_3_L
+    Weight: 0
+  - Name: eye_jitome_3_R
+    Weight: 0
+  - Name: eye_happy
+    Weight: 0
+  - Name: eye_happy_L
+    Weight: 0
+  - Name: eye_happy_R
+    Weight: 0
+  - Name: eye_angry
+    Weight: 0
+  - Name: eye_angry_L
+    Weight: 0
+  - Name: eye_angry_R
+    Weight: 0
+  - Name: eye_sad
+    Weight: 0
+  - Name: eye_sad_L
+    Weight: 0
+  - Name: eye_sad_R
+    Weight: 0
+  - Name: eye_surprise
+    Weight: 0
+  - Name: eye_surprise_L
+    Weight: 0
+  - Name: eye_surprise_R
+    Weight: 0
+  - Name: eye_sleepy
+    Weight: 0
+  - Name: eye_sleepy_L
+    Weight: 0
+  - Name: eye_sleepy_R
+    Weight: 0
+  - Name: eye_tsuri_1
+    Weight: 0
+  - Name: eye_tsuri_1_L
+    Weight: 0
+  - Name: eye_tsuri_1_R
+    Weight: 0
+  - Name: eye_tsuri_2
+    Weight: 0
+  - Name: eye_tsuri_2_L
+    Weight: 0
+  - Name: eye_tsuri_2_R
+    Weight: 0
+  - Name: eye_tsuri_3
+    Weight: 0
+  - Name: eye_tsuri_3_L
+    Weight: 0
+  - Name: eye_tsuri_3_R
+    Weight: 0
+  - Name: eye_tare_1
+    Weight: 0
+  - Name: eye_tare_1_L
+    Weight: 0
+  - Name: eye_tare_1_R
+    Weight: 0
+  - Name: eye_tare_2
+    Weight: 0
+  - Name: eye_tare_2_L
+    Weight: 0
+  - Name: eye_tare_2_R
+    Weight: 0
+  - Name: eye_tare_3
+    Weight: 0
+  - Name: eye_tare_3_L
+    Weight: 0
+  - Name: eye_tare_3_R
+    Weight: 0
+  - Name: eye_maru
+    Weight: 0
+  - Name: eye_maru_L
+    Weight: 0
+  - Name: eye_maru_R
+    Weight: 0
+  - Name: eye_><
+    Weight: 0
+  - Name: eye_OO
+    Weight: 0
+  - Name: ---------Eyelid---------
+    Weight: 0
+  - Name: eyelid_middle_up
+    Weight: 0
+  - Name: eyelid_middle_up_L
+    Weight: 0
+  - Name: eyelid_middle_up_R
+    Weight: 0
+  - Name: eyelid_middle_down
+    Weight: 0
+  - Name: eyelid_middle_down_L
+    Weight: 0
+  - Name: eyelid_middle_down_R
+    Weight: 0
+  - Name: eyelid_inner_up_1
+    Weight: 0
+  - Name: eyelid_inner_up_1_L
+    Weight: 0
+  - Name: eyelid_inner_up_1_R
+    Weight: 0
+  - Name: eyelid_inner_up_2
+    Weight: 0
+  - Name: eyelid_inner_up_2_L
+    Weight: 0
+  - Name: eyelid_inner_up_2_R
+    Weight: 0
+  - Name: eyelid_inner_down
+    Weight: 0
+  - Name: eyelid_inner_down_L
+    Weight: 0
+  - Name: eyelid_inner_down_R
+    Weight: 0
+  - Name: eyelid_inner_sharp
+    Weight: 0
+  - Name: eyelid_inner_sharp_L
+    Weight: 0
+  - Name: eyelid_inner_sharp_R
+    Weight: 0
+  - Name: eyelid_inner_wide
+    Weight: 0
+  - Name: eyelid_inner_wide_L
+    Weight: 0
+  - Name: eyelid_inner_wide_R
+    Weight: 0
+  - Name: eyelid_outer_up
+    Weight: 0
+  - Name: eyelid_outer_up_L
+    Weight: 0
+  - Name: eyelid_outer_up_R
+    Weight: 0
+  - Name: eyelid_outer_down
+    Weight: 0
+  - Name: eyelid_outer_down_L
+    Weight: 0
+  - Name: eyelid_outer_down_R
+    Weight: 0
+  - Name: eyelid_outer_wide_1
+    Weight: 0
+  - Name: eyelid_outer_wide_1_L
+    Weight: 0
+  - Name: eyelid_outer_wide_1_R
+    Weight: 0
+  - Name: eyelid_outer_wide_2
+    Weight: 0
+  - Name: eyelid_outer_wide_2_L
+    Weight: 0
+  - Name: eyelid_outer_wide_2_R
+    Weight: 0
+  - Name: eyelid_tail_1_up
+    Weight: 0
+  - Name: eyelid_tail_1_down
+    Weight: 0
+  - Name: eyelid_tail_1_long
+    Weight: 0
+  - Name: eyelid_tail_1_short
+    Weight: 0
+  - Name: eyelid_tail_2_thick
+    Weight: 0
+  - Name: eyelid_tail_2_thin
+    Weight: 0
+  - Name: eyelid_tail_2_long
+    Weight: 0
+  - Name: eyelid_tail_2_short
+    Weight: 0
+  - Name: "eyelid_line_\xD7"
+    Weight: 0
+  - Name: eyelid_line_forward
+    Weight: 0
+  - Name: eyelid_line_forward_L
+    Weight: 0
+  - Name: eyelid_line_forward_R
+    Weight: 0
+  - Name: lower_eyelid_up_1
+    Weight: 0
+  - Name: lower_eyelid_up_1_L
+    Weight: 0
+  - Name: lower_eyelid_up_1_R
+    Weight: 0
+  - Name: lower_eyelid_up_2
+    Weight: 0
+  - Name: lower_eyelid_up_2_L
+    Weight: 0
+  - Name: lower_eyelid_up_2_R
+    Weight: 0
+  - Name: lower_eyelid_down_1
+    Weight: 0
+  - Name: lower_eyelid_down_1_L
+    Weight: 0
+  - Name: lower_eyelid_down_1_R
+    Weight: 0
+  - Name: lower_eyelid_down_2
+    Weight: 0
+  - Name: lower_eyelid_down_2_L
+    Weight: 0
+  - Name: lower_eyelid_down_2_R
+    Weight: 0
+  - Name: lower_eyelid_tsuri
+    Weight: 0
+  - Name: lower_eyelid_tsuri_L
+    Weight: 0
+  - Name: lower_eyelid_tsuri_R
+    Weight: 0
+  - Name: lower_eyelid_tare
+    Weight: 0
+  - Name: lower_eyelid_tare_L
+    Weight: 0
+  - Name: lower_eyelid_tare_R
+    Weight: 0
+  - Name: lower_eyelid_thick
+    Weight: 0
+  - Name: lower_eyelid_thin
+    Weight: 0
+  - Name: "lower_eyelid_\xD7"
+    Weight: 0
+  - Name: ---------Eyelash---------
+    Weight: 0
+  - Name: eyelash_main_1_big
+    Weight: 0
+  - Name: eyelash_main_2_big
+    Weight: 0
+  - Name: eyelash_sub_1_big
+    Weight: 0
+  - Name: eyelash_sub_2_big
+    Weight: 0
+  - Name: eyelash_sub_3_big
+    Weight: 0
+  - Name: eyelash_sub_white_big
+    Weight: 0
+  - Name: eyelash_under_1_big
+    Weight: 0
+  - Name: eyelash_under_2_big
+    Weight: 0
+  - Name: eyelash_under_3_big
+    Weight: 0
+  - Name: eyelash_under_white_big
+    Weight: 0
+  - Name: eyelash_main_1_small
+    Weight: 0
+  - Name: eyelash_main_2_small
+    Weight: 0
+  - Name: eyelash_sub_1_small
+    Weight: 0
+  - Name: eyelash_sub_2_small
+    Weight: 0
+  - Name: eyelash_sub_white_small
+    Weight: 0
+  - Name: eyelash_under_1_small
+    Weight: 0
+  - Name: eyelash_under_2_small
+    Weight: 0
+  - Name: eyelash_under_3_small
+    Weight: 0
+  - Name: eyelash_under_white_small
+    Weight: 0
+  - Name: eyelash_main_1_thick
+    Weight: 0
+  - Name: eyelash_main_2_thick
+    Weight: 0
+  - Name: eyelash_sub_1_thick
+    Weight: 0
+  - Name: eyelash_sub_2_thick
+    Weight: 0
+  - Name: eyelash_main_1_thin
+    Weight: 0
+  - Name: eyelash_main_2_thin
+    Weight: 0
+  - Name: eyelash_sub_1_thin
+    Weight: 0
+  - Name: eyelash_sub_2_thin
+    Weight: 0
+  - Name: "eyelash_main_1_\xD7"
+    Weight: 0
+  - Name: "eyelash_main_2_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_1_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_2_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_3_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_white_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_1_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_2_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_3_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_white_\xD7"
+    Weight: 0
+  - Name: eyelash_line_1_x
+    Weight: 0
+  - Name: eyelash_line_2_x
+    Weight: 0
+  - Name: eyelash_line_white_x
+    Weight: 0
+  - Name: ---------Eye_Option---------
+    Weight: 0
+  - Name: eye_big
+    Weight: 0
+  - Name: eye_small
+    Weight: 0
+  - Name: "eye_\u3007_1"
+    Weight: 0
+  - Name: "eye_\u3007_2"
+    Weight: 0
+  - Name: eye_cat
+    Weight: 0
+  - Name: eye_uru
+    Weight: 0
+  - Name: eye_dark
+    Weight: 0
+  - Name: eye_marushiro
+    Weight: 0
+  - Name: "eye_\xD7"
+    Weight: 0
+  - Name: eye_look_up
+    Weight: 0
+  - Name: eye_look_down
+    Weight: 0
+  - Name: eye_look_R
+    Weight: 0
+  - Name: eye_look_L
+    Weight: 0
+  - Name: eye_look_inside
+    Weight: 0
+  - Name: eye_look_outside
+    Weight: 0
+  - Name: eye_back
+    Weight: 0
+  - Name: eye_pupil_big
+    Weight: 0
+  - Name: eye_pupil_small
+    Weight: 0
+  - Name: eye_pupil_up
+    Weight: 0
+  - Name: eye_pupil_down
+    Weight: 0
+  - Name: eye_pupil_close
+    Weight: 0
+  - Name: eye_pupil_far
+    Weight: 0
+  - Name: "eye_pupil_\xD7"
+    Weight: 0
+  - Name: eye_pupil_cat
+    Weight: 0
+  - Name: eye_pupil_heart
+    Weight: 0
+  - Name: eye_pupil_heart_big
+    Weight: 0
+  - Name: eye_pupil_star
+    Weight: 0
+  - Name: eye_pupil_star_big
+    Weight: 0
+  - Name: "eye_pupil_\u3007"
+    Weight: 0
+  - Name: "eye_pupil_\u3007_big"
+    Weight: 0
+  - Name: "eye_pupil_\u25A1"
+    Weight: 0
+  - Name: "eye_pupil_\u25A1_big"
+    Weight: 0
+  - Name: "eye_pupil_\u25C7"
+    Weight: 0
+  - Name: "eye_pupil_\u25C7_big"
+    Weight: 0
+  - Name: eye_pupil_+
+    Weight: 0
+  - Name: eye_pupil_+_big
+    Weight: 0
+  - Name: eye_pupil_x
+    Weight: 0
+  - Name: eye_pupil_x_big
+    Weight: 0
+  - Name: ---------Highlight---------
+    Weight: 0
+  - Name: highlight_1_big
+    Weight: 0
+  - Name: highlight_2_big
+    Weight: 0
+  - Name: highlight_3_big
+    Weight: 0
+  - Name: highlight_sub_big
+    Weight: 0
+  - Name: highlight_1_small
+    Weight: 0
+  - Name: highlight_2_small
+    Weight: 0
+  - Name: highlight_3_small
+    Weight: 0
+  - Name: highlight_sub_small
+    Weight: 0
+  - Name: highlight_1_up
+    Weight: 0
+  - Name: highlight_2_up
+    Weight: 0
+  - Name: highlight_3_up
+    Weight: 0
+  - Name: highlight_sub_up
+    Weight: 0
+  - Name: highlight_1_down
+    Weight: 0
+  - Name: highlight_2_down
+    Weight: 0
+  - Name: highlight_3_down
+    Weight: 0
+  - Name: highlight_sub_down
+    Weight: 0
+  - Name: highlight_1_close
+    Weight: 0
+  - Name: highlight_1_far
+    Weight: 0
+  - Name: highlight_sub_close
+    Weight: 0
+  - Name: highlight_sub_far
+    Weight: 0
+  - Name: "highlight_ALL_\xD7"
+    Weight: 0
+  - Name: "highlight_1_\xD7"
+    Weight: 0
+  - Name: "highlight_1_mini_\xD7"
+    Weight: 0
+  - Name: "highlight_2_\xD7"
+    Weight: 0
+  - Name: "highlight_3_\xD7"
+    Weight: 0
+  - Name: "highlight_sub_\xD7"
+    Weight: 0
+  - Name: "highlight_under_\xD7"
+    Weight: 0
+  - Name: "highlight_\u3007"
+    Weight: 0
+  - Name: highlight_0
+    Weight: 0
+  - Name: highlight_heart
+    Weight: 0
+  - Name: highlight_heart_big
+    Weight: 0
+  - Name: highlight_star
+    Weight: 0
+  - Name: highlight_star_big
+    Weight: 0
+  - Name: highlight_kirakira
+    Weight: 0
+  - Name: highlight_kirakira_big
+    Weight: 0
+  - Name: highlight_option_1
+    Weight: 0
+  - Name: highlight_option_2
+    Weight: 0
+  - Name: ---------Mouth---------
+    Weight: 0
+  - Name: mouth_A_1
+    Weight: 0
+  - Name: mouth_A_2
+    Weight: 0
+  - Name: mouth_I_1
+    Weight: 0
+  - Name: mouth_I_1_open
+    Weight: 0
+  - Name: mouth_I_2
+    Weight: 0
+  - Name: mouth_I_2_open
+    Weight: 0
+  - Name: mouth_I_3
+    Weight: 0
+  - Name: mouth_I_3_open
+    Weight: 0
+  - Name: mouth_I_4
+    Weight: 0
+  - Name: mouth_I_4_open
+    Weight: 0
+  - Name: mouth_U
+    Weight: 0
+  - Name: mouth_E
+    Weight: 0
+  - Name: mouth_O_1
+    Weight: 0
+  - Name: mouth_O_2
+    Weight: 0
+  - Name: mouth_straight
+    Weight: 0
+  - Name: mouth_straight_L
+    Weight: 0
+  - Name: mouth_straight_R
+    Weight: 0
+  - Name: mouth_smile_1
+    Weight: 0
+  - Name: mouth_smile_1_L
+    Weight: 0
+  - Name: mouth_smile_1_R
+    Weight: 0
+  - Name: mouth_smile_2
+    Weight: 0
+  - Name: mouth_angry
+    Weight: 0
+  - Name: mouth_angry_L
+    Weight: 0
+  - Name: mouth_angry_R
+    Weight: 0
+  - Name: mouth_narrow
+    Weight: 0
+  - Name: mouth_narrow_L
+    Weight: 0
+  - Name: mouth_narrow_R
+    Weight: 0
+  - Name: mouth_wide
+    Weight: 0
+  - Name: mouth_wide_L
+    Weight: 0
+  - Name: mouth_wide_R
+    Weight: 0
+  - Name: mouth_V
+    Weight: 0
+  - Name: "mouth_\u039B_1"
+    Weight: 0
+  - Name: "mouth_\u039B_2"
+    Weight: 0
+  - Name: yaeba_L
+    Weight: 0
+  - Name: yaeba_R
+    Weight: 0
+  - Name: mouth_pokan
+    Weight: 0
+  - Name: mouth_hawa
+    Weight: 0
+  - Name: mouth_nihe
+    Weight: 0
+  - Name: mouth_o
+    Weight: 0
+  - Name: "mouth_\u25B3"
+    Weight: 0
+  - Name: "mouth_\u25A1"
+    Weight: 0
+  - Name: mouth_~
+    Weight: 0
+  - Name: "mouth_~\u25A1_1"
+    Weight: 0
+  - Name: "mouth_~\u25A1_2"
+    Weight: 0
+  - Name: mouth_wa
+    Weight: 0
+  - Name: "mouth_\u03C9"
+    Weight: 0
+  - Name: "mouth_\u03C9_open_1"
+    Weight: 0
+  - Name: "mouth_\u03C9_open_2"
+    Weight: 0
+  - Name: mouth_yodare_L
+    Weight: 0
+  - Name: mouth_yodare_R
+    Weight: 0
+  - Name: mouth_grin_L
+    Weight: 0
+  - Name: mouth_grin_L_open
+    Weight: 0
+  - Name: mouth_grin_R
+    Weight: 0
+  - Name: mouth_grin_R_open
+    Weight: 0
+  - Name: mouth_puku-
+    Weight: 0
+  - Name: mouth_puku-_L
+    Weight: 0
+  - Name: mouth_puku-_R
+    Weight: 0
+  - Name: mouth_pero_1
+    Weight: 0
+  - Name: mouth_pero_2
+    Weight: 0
+  - Name: mouth_pero_3
+    Weight: 0
+  - Name: mouth_pero_4
+    Weight: 0
+  - Name: mouth_pero_5
+    Weight: 0
+  - Name: mouth_pero_6
+    Weight: 0
+  - Name: mouth_tehepero_1
+    Weight: 0
+  - Name: mouth_tehepero_2
+    Weight: 0
+  - Name: mouth_tehepero_3
+    Weight: 0
+  - Name: bero_forward
+    Weight: 0
+  - Name: bero_back
+    Weight: 0
+  - Name: bero_up
+    Weight: 0
+  - Name: bero_down
+    Weight: 0
+  - Name: bero_up_option
+    Weight: 0
+  - Name: bero_down_option
+    Weight: 0
+  - Name: bero_short
+    Weight: 0
+  - Name: bero_long
+    Weight: 0
+  - Name: bero_wide
+    Weight: 0
+  - Name: bero_narrow
+    Weight: 0
+  - Name: "bero_\u25BD"
+    Weight: 0
+  - Name: bero_maru
+    Weight: 0
+  - Name: "bero_\xD7"
+    Weight: 0
+  - Name: ---------Tooth---------
+    Weight: 0
+  - Name: yaeba_long_upper_tooth
+    Weight: 0
+  - Name: yaeba_long_upper_tooth_L
+    Weight: 0
+  - Name: yaeba_long_upper_tooth_R
+    Weight: 0
+  - Name: yaeba_long_lower_tooth
+    Weight: 0
+  - Name: yaeba_long_lower_tooth_L
+    Weight: 0
+  - Name: yaeba_long_lower_tooth_R
+    Weight: 0
+  - Name: yaeba_OFF_1
+    Weight: 0
+  - Name: yaeba_OFF_1_L
+    Weight: 0
+  - Name: yaeba_OFF_1_R
+    Weight: 0
+  - Name: yaeba_OFF_2
+    Weight: 0
+  - Name: yaeba_OFF_2_L
+    Weight: 0
+  - Name: yaeba_OFF_2_R
+    Weight: 0
+  - Name: tooth_flat
+    Weight: 0
+  - Name: tooth_flat_ALL
+    Weight: 0
+  - Name: tooth_gizaba
+    Weight: 0
+  - Name: upper_tooth_up
+    Weight: 0
+  - Name: upper_tooth_down
+    Weight: 0
+  - Name: upper_tooth_forward
+    Weight: 0
+  - Name: upper_tooth_back
+    Weight: 0
+  - Name: lower_tooth_up
+    Weight: 0
+  - Name: lower_tooth_down
+    Weight: 0
+  - Name: lower_tooth_forward
+    Weight: 0
+  - Name: lower_tooth_back
+    Weight: 0
+  - Name: "upper_tooth_\xD7"
+    Weight: 0
+  - Name: "lower_tooth_\xD7"
+    Weight: 0
+  - Name: ---------Eyebrow---------
+    Weight: 0
+  - Name: eyebrow_smile
+    Weight: 0
+  - Name: eyebrow_smile_L
+    Weight: 0
+  - Name: eyebrow_smile_R
+    Weight: 0
+  - Name: eyebrow_straight
+    Weight: 0
+  - Name: eyebrow_straight_L
+    Weight: 0
+  - Name: eyebrow_straight_R
+    Weight: 0
+  - Name: eyebrow_angry_1
+    Weight: 0
+  - Name: eyebrow_angry_1_L
+    Weight: 0
+  - Name: eyebrow_angry_1_R
+    Weight: 0
+  - Name: eyebrow_angry_2
+    Weight: 0
+  - Name: eyebrow_angry_2_L
+    Weight: 0
+  - Name: eyebrow_angry_2_R
+    Weight: 0
+  - Name: eyebrow_sad_1
+    Weight: 0
+  - Name: eyebrow_sad_1_L
+    Weight: 0
+  - Name: eyebrow_sad_1_R
+    Weight: 0
+  - Name: eyebrow_sad_2
+    Weight: 0
+  - Name: eyebrow_sad_2_L
+    Weight: 0
+  - Name: eyebrow_sad_2_R
+    Weight: 0
+  - Name: eyebrow_trouble
+    Weight: 0
+  - Name: eyebrow_trouble_L
+    Weight: 0
+  - Name: eyebrow_trouble_R
+    Weight: 0
+  - Name: eyebrow_up
+    Weight: 0
+  - Name: eyebrow_up_L
+    Weight: 0
+  - Name: eyebrow_up_R
+    Weight: 0
+  - Name: eyebrow_down
+    Weight: 0
+  - Name: eyebrow_down_L
+    Weight: 0
+  - Name: eyebrow_down_R
+    Weight: 0
+  - Name: eyebrow_tsuri
+    Weight: 0
+  - Name: eyebrow_tsuri_L
+    Weight: 0
+  - Name: eyebrow_tsuri_R
+    Weight: 0
+  - Name: eyebrow_tare
+    Weight: 0
+  - Name: eyebrow_tare_L
+    Weight: 0
+  - Name: eyebrow_tare_R
+    Weight: 0
+  - Name: eyebrow_close
+    Weight: 0
+  - Name: eyebrow_far
+    Weight: 0
+  - Name: eyebrow_thin
+    Weight: 0
+  - Name: eyebrow_thick
+    Weight: 0
+  - Name: eyebrow_long
+    Weight: 0
+  - Name: eyebrow_short
+    Weight: 0
+  - Name: eyebrow_maromayu
+    Weight: 0
+  - Name: eyebrow_forward_1
+    Weight: 0
+  - Name: eyebrow_forward_1_L
+    Weight: 0
+  - Name: eyebrow_forward_1_R
+    Weight: 0
+  - Name: eyebrow_forward_2
+    Weight: 0
+  - Name: eyebrow_forward_2_L
+    Weight: 0
+  - Name: eyebrow_forward_2_R
+    Weight: 0
+  - Name: eyebrow_forward_3
+    Weight: 0
+  - Name: eyebrow_forward_3_L
+    Weight: 0
+  - Name: eyebrow_forward_3_R
+    Weight: 0
+  - Name: "eyebrow_\xD7"
+    Weight: 0
+  - Name: ---------Face---------
+    Weight: 0
+  - Name: eye_up
+    Weight: 0
+  - Name: eye_down
+    Weight: 0
+  - Name: eye_close
+    Weight: 0
+  - Name: eye_far
+    Weight: 0
+  - Name: eye_size_big
+    Weight: 0
+  - Name: eye_size_small
+    Weight: 0
+  - Name: eye_width_up
+    Weight: 0
+  - Name: eye_width_down
+    Weight: 0
+  - Name: eye_height_up
+    Weight: 0
+  - Name: eye_height_down
+    Weight: 0
+  - Name: mouth_wide_ALL
+    Weight: 0
+  - Name: mouth_narrow_ALL
+    Weight: 0
+  - Name: mouth_up
+    Weight: 0
+  - Name: mouth_down
+    Weight: 0
+  - Name: mouth_forward
+    Weight: 0
+  - Name: mouth_back
+    Weight: 0
+  - Name: cheek_wide
+    Weight: 0
+  - Name: cheek_narrow
+    Weight: 0
+  - Name: cheek_up
+    Weight: 0
+  - Name: cheek_down
+    Weight: 0
+  - Name: cheek_puku-
+    Weight: 0
+  - Name: cheek_puku-_L
+    Weight: 0
+  - Name: cheek_puku-_R
+    Weight: 0
+  - Name: jaw_long
+    Weight: 0
+  - Name: jaw_short
+    Weight: 0
+  - Name: jaw_round
+    Weight: 0
+  - Name: ear_up
+    Weight: 0
+  - Name: ear_down
+    Weight: 0
+  - Name: ear_elf_1
+    Weight: 0
+  - Name: ear_elf_2
+    Weight: 0
+  - Name: "ear_\xD7"
+    Weight: 0
+  - Name: nose_up
+    Weight: 0
+  - Name: nose_down
+    Weight: 0
+  - Name: nose_line_OFF
+    Weight: 0
+  - Name: neck_hole_shrink
+    Weight: 0
+  - Name: face_child
+    Weight: 100
+  - Name: face_adult
+    Weight: 0
+  - Name: ---------Option---------
+    Weight: 0
+  - Name: Option_heart
+    Weight: 0
+  - Name: Option_shiitake
+    Weight: 0
+  - Name: Option_guruguru
+    Weight: 0
+  - Name: Option_shy_1
+    Weight: 0
+  - Name: Option_shy_2
+    Weight: 0
+  - Name: Option_shy_3
+    Weight: 0
+  - Name: Option_hoppe
+    Weight: 0
+  - Name: Option_tear_1
+    Weight: 0
+  - Name: Option_tear_2
+    Weight: 0
+  - Name: Option_tear_3_L
+    Weight: 0
+  - Name: Option_tear_3_R
+    Weight: 0
+  - Name: Option_sweat_1
+    Weight: 0
+  - Name: Option_sweat_2
+    Weight: 0
+  - Name: Option_sweat_3
+    Weight: 0
+  - Name: Option_pale_blue
+    Weight: 0
+  - Name: ---------M M D---------
+    Weight: 0
+  - Name: "\u307E\u3070\u305F\u304D"
+    Weight: 0
+  - Name: "\u7B11\u3044"
+    Weight: 0
+  - Name: "\u30A6\u30A3\u30F3\u30AF"
+    Weight: 0
+  - Name: "\u30A6\u30A3\u30F3\u30AF\u53F3"
+    Weight: 0
+  - Name: "\u30A6\u30A3\u30F3\u30AF\uFF12"
+    Weight: 0
+  - Name: "\uFF73\uFF68\uFF9D\uFF78\uFF12\u53F3"
+    Weight: 0
+  - Name: "\u306A\u3054\u307F"
+    Weight: 0
+  - Name: "\u306F\u3045"
+    Weight: 0
+  - Name: "\u3073\u3063\u304F\u308A"
+    Weight: 0
+  - Name: "\u3058\u3068\u76EE"
+    Weight: 0
+  - Name: "\uFF77\uFF98\uFF6F"
+    Weight: 0
+  - Name: "\u661F\u76EE"
+    Weight: 0
+  - Name: "\u306F\u3041\u3068"
+    Weight: 0
+  - Name: "\u77B3\u5C0F"
+    Weight: 0
+  - Name: "\u77B3\u5927"
+    Weight: 0
+  - Name: "\u6050\u308D\u3057\u3044\u5B50\uFF01"
+    Weight: 0
+  - Name: "\u5149\u4E0B"
+    Weight: 0
+  - Name: "\u30CF\u30A4\u30E9\u30A4\u30C8\u6D88\u3057"
+    Weight: 0
+  - Name: "\u039B"
+    Weight: 0
+  - Name: "\u25B2"
+    Weight: 0
+  - Name: "\u30EF"
+    Weight: 0
+  - Name: "\u03C9"
+    Weight: 0
+  - Name: "\u03C9\u25A1"
+    Weight: 0
+  - Name: "\u25A1"
+    Weight: 0
+  - Name: "\u306F\u3093\u3063\uFF01"
+    Weight: 0
+  - Name: "\u3042"
+    Weight: 0
+  - Name: "\u3044"
+    Weight: 0
+  - Name: "\u3046"
+    Weight: 0
+  - Name: "\u3048"
+    Weight: 0
+  - Name: "\u304A"
+    Weight: 0
+  - Name: "\u3093"
+    Weight: 0
+  - Name: "\u307A\u308D\u3063"
+    Weight: 0
+  - Name: "\u306B\u3084\u308A"
+    Weight: 0
+  - Name: "\u306B\u3063\u3053\u308A"
+    Weight: 0
+  - Name: "\u53E3\u89D2\u4E0A\u3052"
+    Weight: 0
+  - Name: "\u53E3\u89D2\u4E0B\u3052"
+    Weight: 0
+  - Name: "\u53E3\u89D2\u5E83\u3052"
+    Weight: 0
+  - Name: "\u771F\u9762\u76EE"
+    Weight: 0
+  - Name: "\u56F0\u308B"
+    Weight: 0
+  - Name: "\u306B\u3053\u308A"
+    Weight: 0
+  - Name: "\u6012\u308A"
+    Weight: 0
+  - Name: "\u4E0A"
+    Weight: 0
+  - Name: "\u4E0B"
+    Weight: 0
+  - Name: "\u7167\u308C"
+    Weight: 0
+  - Name: "\u6D99"
+    Weight: 0
+  - Name: "\u306F\u3061\u3085\u76EE"
+    Weight: 0
+--- !u!4 &2416071239649906124 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7176571407167406533, guid: e2c7cd827b519e24b940460ac2760740,
+    type: 3}
+  m_PrefabInstance: {fileID: 4764762596210281481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3900327398247347055 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8376529610198695782, guid: e2c7cd827b519e24b940460ac2760740,
+    type: 3}
+  m_PrefabInstance: {fileID: 4764762596210281481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5780433656509829788 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1308277682782707349, guid: e2c7cd827b519e24b940460ac2760740,
+    type: 3}
+  m_PrefabInstance: {fileID: 4764762596210281481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8896380579920711173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5780433656509829788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7c78602628c33342a7196db8db756fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AllowEyeBlink: 1
+  AllowLipSync: 0
+  BlendShapes:
+  - Name: vrc.v_sil
+    Weight: 0
+  - Name: vrc.v_pp
+    Weight: 0
+  - Name: vrc.v_ff
+    Weight: 0
+  - Name: vrc.v_th
+    Weight: 0
+  - Name: vrc.v_dd
+    Weight: 0
+  - Name: vrc.v_kk
+    Weight: 0
+  - Name: vrc.v_ch
+    Weight: 0
+  - Name: vrc.v_ss
+    Weight: 0
+  - Name: vrc.v_nn
+    Weight: 0
+  - Name: vrc.v_rr
+    Weight: 0
+  - Name: vrc.v_aa
+    Weight: 0
+  - Name: vrc.v_e
+    Weight: 0
+  - Name: vrc.v_ih
+    Weight: 0
+  - Name: vrc.v_oh
+    Weight: 0
+  - Name: vrc.v_ou
+    Weight: 0
+  - Name: vrc.blink
+    Weight: 0
+  - Name: vrc.looking_up
+    Weight: 0
+  - Name: vrc.looking_down
+    Weight: 0
+  - Name: ---------Eye---------
+    Weight: 0
+  - Name: eye_brink_1
+    Weight: 0
+  - Name: eye_brink_1_L
+    Weight: 0
+  - Name: eye_brink_1_R
+    Weight: 0
+  - Name: eye_brink_2
+    Weight: 0
+  - Name: eye_brink_2_L
+    Weight: 0
+  - Name: eye_brink_2_R
+    Weight: 0
+  - Name: eye_smile_1
+    Weight: 0
+  - Name: eye_smile_1_L
+    Weight: 0
+  - Name: eye_smile_1_R
+    Weight: 0
+  - Name: eye_smile_2
+    Weight: 0
+  - Name: eye_smile_2_L
+    Weight: 0
+  - Name: eye_smile_2_R
+    Weight: 0
+  - Name: eye_nagomi
+    Weight: 0
+  - Name: eye_nagomi_L
+    Weight: 0
+  - Name: eye_nagomi_R
+    Weight: 0
+  - Name: eye_jitome_1
+    Weight: 0
+  - Name: eye_jitome_1_L
+    Weight: 0
+  - Name: eye_jitome_1_R
+    Weight: 0
+  - Name: eye_jitome_2
+    Weight: 0
+  - Name: eye_jitome_2_L
+    Weight: 0
+  - Name: eye_jitome_2_R
+    Weight: 0
+  - Name: eye_jitome_3
+    Weight: 0
+  - Name: eye_jitome_3_L
+    Weight: 0
+  - Name: eye_jitome_3_R
+    Weight: 0
+  - Name: eye_happy
+    Weight: 0
+  - Name: eye_happy_L
+    Weight: 0
+  - Name: eye_happy_R
+    Weight: 0
+  - Name: eye_angry
+    Weight: 0
+  - Name: eye_angry_L
+    Weight: 0
+  - Name: eye_angry_R
+    Weight: 0
+  - Name: eye_sad
+    Weight: 0
+  - Name: eye_sad_L
+    Weight: 0
+  - Name: eye_sad_R
+    Weight: 0
+  - Name: eye_surprise
+    Weight: 0
+  - Name: eye_surprise_L
+    Weight: 0
+  - Name: eye_surprise_R
+    Weight: 0
+  - Name: eye_sleepy
+    Weight: 0
+  - Name: eye_sleepy_L
+    Weight: 0
+  - Name: eye_sleepy_R
+    Weight: 0
+  - Name: eye_tsuri_1
+    Weight: 0
+  - Name: eye_tsuri_1_L
+    Weight: 0
+  - Name: eye_tsuri_1_R
+    Weight: 0
+  - Name: eye_tsuri_2
+    Weight: 0
+  - Name: eye_tsuri_2_L
+    Weight: 0
+  - Name: eye_tsuri_2_R
+    Weight: 0
+  - Name: eye_tsuri_3
+    Weight: 0
+  - Name: eye_tsuri_3_L
+    Weight: 0
+  - Name: eye_tsuri_3_R
+    Weight: 0
+  - Name: eye_tare_1
+    Weight: 0
+  - Name: eye_tare_1_L
+    Weight: 0
+  - Name: eye_tare_1_R
+    Weight: 0
+  - Name: eye_tare_2
+    Weight: 0
+  - Name: eye_tare_2_L
+    Weight: 0
+  - Name: eye_tare_2_R
+    Weight: 0
+  - Name: eye_tare_3
+    Weight: 0
+  - Name: eye_tare_3_L
+    Weight: 0
+  - Name: eye_tare_3_R
+    Weight: 0
+  - Name: eye_maru
+    Weight: 0
+  - Name: eye_maru_L
+    Weight: 0
+  - Name: eye_maru_R
+    Weight: 0
+  - Name: eye_><
+    Weight: 0
+  - Name: eye_OO
+    Weight: 0
+  - Name: ---------Eyelid---------
+    Weight: 0
+  - Name: eyelid_middle_up
+    Weight: 0
+  - Name: eyelid_middle_up_L
+    Weight: 0
+  - Name: eyelid_middle_up_R
+    Weight: 0
+  - Name: eyelid_middle_down
+    Weight: 0
+  - Name: eyelid_middle_down_L
+    Weight: 0
+  - Name: eyelid_middle_down_R
+    Weight: 0
+  - Name: eyelid_inner_up_1
+    Weight: 0
+  - Name: eyelid_inner_up_1_L
+    Weight: 0
+  - Name: eyelid_inner_up_1_R
+    Weight: 0
+  - Name: eyelid_inner_up_2
+    Weight: 0
+  - Name: eyelid_inner_up_2_L
+    Weight: 0
+  - Name: eyelid_inner_up_2_R
+    Weight: 0
+  - Name: eyelid_inner_down
+    Weight: 0
+  - Name: eyelid_inner_down_L
+    Weight: 0
+  - Name: eyelid_inner_down_R
+    Weight: 0
+  - Name: eyelid_inner_sharp
+    Weight: 0
+  - Name: eyelid_inner_sharp_L
+    Weight: 0
+  - Name: eyelid_inner_sharp_R
+    Weight: 0
+  - Name: eyelid_inner_wide
+    Weight: 0
+  - Name: eyelid_inner_wide_L
+    Weight: 0
+  - Name: eyelid_inner_wide_R
+    Weight: 0
+  - Name: eyelid_outer_up
+    Weight: 0
+  - Name: eyelid_outer_up_L
+    Weight: 0
+  - Name: eyelid_outer_up_R
+    Weight: 0
+  - Name: eyelid_outer_down
+    Weight: 0
+  - Name: eyelid_outer_down_L
+    Weight: 0
+  - Name: eyelid_outer_down_R
+    Weight: 0
+  - Name: eyelid_outer_wide_1
+    Weight: 0
+  - Name: eyelid_outer_wide_1_L
+    Weight: 0
+  - Name: eyelid_outer_wide_1_R
+    Weight: 0
+  - Name: eyelid_outer_wide_2
+    Weight: 0
+  - Name: eyelid_outer_wide_2_L
+    Weight: 0
+  - Name: eyelid_outer_wide_2_R
+    Weight: 0
+  - Name: eyelid_tail_1_up
+    Weight: 0
+  - Name: eyelid_tail_1_down
+    Weight: 0
+  - Name: eyelid_tail_1_long
+    Weight: 0
+  - Name: eyelid_tail_1_short
+    Weight: 0
+  - Name: eyelid_tail_2_thick
+    Weight: 0
+  - Name: eyelid_tail_2_thin
+    Weight: 0
+  - Name: eyelid_tail_2_long
+    Weight: 0
+  - Name: eyelid_tail_2_short
+    Weight: 0
+  - Name: "eyelid_line_\xD7"
+    Weight: 0
+  - Name: eyelid_line_forward
+    Weight: 0
+  - Name: eyelid_line_forward_L
+    Weight: 0
+  - Name: eyelid_line_forward_R
+    Weight: 0
+  - Name: lower_eyelid_up_1
+    Weight: 0
+  - Name: lower_eyelid_up_1_L
+    Weight: 0
+  - Name: lower_eyelid_up_1_R
+    Weight: 0
+  - Name: lower_eyelid_up_2
+    Weight: 0
+  - Name: lower_eyelid_up_2_L
+    Weight: 0
+  - Name: lower_eyelid_up_2_R
+    Weight: 0
+  - Name: lower_eyelid_down_1
+    Weight: 0
+  - Name: lower_eyelid_down_1_L
+    Weight: 0
+  - Name: lower_eyelid_down_1_R
+    Weight: 0
+  - Name: lower_eyelid_down_2
+    Weight: 0
+  - Name: lower_eyelid_down_2_L
+    Weight: 0
+  - Name: lower_eyelid_down_2_R
+    Weight: 0
+  - Name: lower_eyelid_tsuri
+    Weight: 0
+  - Name: lower_eyelid_tsuri_L
+    Weight: 0
+  - Name: lower_eyelid_tsuri_R
+    Weight: 0
+  - Name: lower_eyelid_tare
+    Weight: 0
+  - Name: lower_eyelid_tare_L
+    Weight: 0
+  - Name: lower_eyelid_tare_R
+    Weight: 0
+  - Name: lower_eyelid_thick
+    Weight: 0
+  - Name: lower_eyelid_thin
+    Weight: 0
+  - Name: "lower_eyelid_\xD7"
+    Weight: 0
+  - Name: ---------Eyelash---------
+    Weight: 0
+  - Name: eyelash_main_1_big
+    Weight: 0
+  - Name: eyelash_main_2_big
+    Weight: 0
+  - Name: eyelash_sub_1_big
+    Weight: 0
+  - Name: eyelash_sub_2_big
+    Weight: 0
+  - Name: eyelash_sub_3_big
+    Weight: 0
+  - Name: eyelash_sub_white_big
+    Weight: 0
+  - Name: eyelash_under_1_big
+    Weight: 0
+  - Name: eyelash_under_2_big
+    Weight: 0
+  - Name: eyelash_under_3_big
+    Weight: 0
+  - Name: eyelash_under_white_big
+    Weight: 0
+  - Name: eyelash_main_1_small
+    Weight: 0
+  - Name: eyelash_main_2_small
+    Weight: 0
+  - Name: eyelash_sub_1_small
+    Weight: 0
+  - Name: eyelash_sub_2_small
+    Weight: 0
+  - Name: eyelash_sub_white_small
+    Weight: 0
+  - Name: eyelash_under_1_small
+    Weight: 0
+  - Name: eyelash_under_2_small
+    Weight: 0
+  - Name: eyelash_under_3_small
+    Weight: 0
+  - Name: eyelash_under_white_small
+    Weight: 0
+  - Name: eyelash_main_1_thick
+    Weight: 0
+  - Name: eyelash_main_2_thick
+    Weight: 0
+  - Name: eyelash_sub_1_thick
+    Weight: 0
+  - Name: eyelash_sub_2_thick
+    Weight: 0
+  - Name: eyelash_main_1_thin
+    Weight: 0
+  - Name: eyelash_main_2_thin
+    Weight: 0
+  - Name: eyelash_sub_1_thin
+    Weight: 0
+  - Name: eyelash_sub_2_thin
+    Weight: 0
+  - Name: "eyelash_main_1_\xD7"
+    Weight: 0
+  - Name: "eyelash_main_2_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_1_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_2_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_3_\xD7"
+    Weight: 0
+  - Name: "eyelash_sub_white_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_1_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_2_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_3_\xD7"
+    Weight: 0
+  - Name: "eyelash_under_white_\xD7"
+    Weight: 0
+  - Name: eyelash_line_1_x
+    Weight: 0
+  - Name: eyelash_line_2_x
+    Weight: 0
+  - Name: eyelash_line_white_x
+    Weight: 0
+  - Name: ---------Eye_Option---------
+    Weight: 0
+  - Name: eye_big
+    Weight: 0
+  - Name: eye_small
+    Weight: 0
+  - Name: "eye_\u3007_1"
+    Weight: 0
+  - Name: "eye_\u3007_2"
+    Weight: 0
+  - Name: eye_cat
+    Weight: 0
+  - Name: eye_uru
+    Weight: 0
+  - Name: eye_dark
+    Weight: 0
+  - Name: eye_marushiro
+    Weight: 0
+  - Name: "eye_\xD7"
+    Weight: 0
+  - Name: eye_look_up
+    Weight: 0
+  - Name: eye_look_down
+    Weight: 0
+  - Name: eye_look_R
+    Weight: 0
+  - Name: eye_look_L
+    Weight: 0
+  - Name: eye_look_inside
+    Weight: 0
+  - Name: eye_look_outside
+    Weight: 0
+  - Name: eye_back
+    Weight: 0
+  - Name: eye_pupil_big
+    Weight: 0
+  - Name: eye_pupil_small
+    Weight: 0
+  - Name: eye_pupil_up
+    Weight: 0
+  - Name: eye_pupil_down
+    Weight: 0
+  - Name: eye_pupil_close
+    Weight: 0
+  - Name: eye_pupil_far
+    Weight: 0
+  - Name: "eye_pupil_\xD7"
+    Weight: 0
+  - Name: eye_pupil_cat
+    Weight: 0
+  - Name: eye_pupil_heart
+    Weight: 0
+  - Name: eye_pupil_heart_big
+    Weight: 0
+  - Name: eye_pupil_star
+    Weight: 0
+  - Name: eye_pupil_star_big
+    Weight: 0
+  - Name: "eye_pupil_\u3007"
+    Weight: 0
+  - Name: "eye_pupil_\u3007_big"
+    Weight: 0
+  - Name: "eye_pupil_\u25A1"
+    Weight: 0
+  - Name: "eye_pupil_\u25A1_big"
+    Weight: 0
+  - Name: "eye_pupil_\u25C7"
+    Weight: 0
+  - Name: "eye_pupil_\u25C7_big"
+    Weight: 0
+  - Name: eye_pupil_+
+    Weight: 0
+  - Name: eye_pupil_+_big
+    Weight: 0
+  - Name: eye_pupil_x
+    Weight: 0
+  - Name: eye_pupil_x_big
+    Weight: 0
+  - Name: ---------Highlight---------
+    Weight: 0
+  - Name: highlight_1_big
+    Weight: 0
+  - Name: highlight_2_big
+    Weight: 0
+  - Name: highlight_3_big
+    Weight: 0
+  - Name: highlight_sub_big
+    Weight: 0
+  - Name: highlight_1_small
+    Weight: 0
+  - Name: highlight_2_small
+    Weight: 0
+  - Name: highlight_3_small
+    Weight: 0
+  - Name: highlight_sub_small
+    Weight: 0
+  - Name: highlight_1_up
+    Weight: 0
+  - Name: highlight_2_up
+    Weight: 0
+  - Name: highlight_3_up
+    Weight: 0
+  - Name: highlight_sub_up
+    Weight: 0
+  - Name: highlight_1_down
+    Weight: 0
+  - Name: highlight_2_down
+    Weight: 0
+  - Name: highlight_3_down
+    Weight: 0
+  - Name: highlight_sub_down
+    Weight: 0
+  - Name: highlight_1_close
+    Weight: 0
+  - Name: highlight_1_far
+    Weight: 0
+  - Name: highlight_sub_close
+    Weight: 0
+  - Name: highlight_sub_far
+    Weight: 0
+  - Name: "highlight_ALL_\xD7"
+    Weight: 0
+  - Name: "highlight_1_\xD7"
+    Weight: 0
+  - Name: "highlight_1_mini_\xD7"
+    Weight: 0
+  - Name: "highlight_2_\xD7"
+    Weight: 0
+  - Name: "highlight_3_\xD7"
+    Weight: 0
+  - Name: "highlight_sub_\xD7"
+    Weight: 0
+  - Name: "highlight_under_\xD7"
+    Weight: 0
+  - Name: "highlight_\u3007"
+    Weight: 0
+  - Name: highlight_0
+    Weight: 0
+  - Name: highlight_heart
+    Weight: 0
+  - Name: highlight_heart_big
+    Weight: 0
+  - Name: highlight_star
+    Weight: 0
+  - Name: highlight_star_big
+    Weight: 0
+  - Name: highlight_kirakira
+    Weight: 0
+  - Name: highlight_kirakira_big
+    Weight: 0
+  - Name: highlight_option_1
+    Weight: 0
+  - Name: highlight_option_2
+    Weight: 0
+  - Name: ---------Mouth---------
+    Weight: 0
+  - Name: mouth_A_1
+    Weight: 0
+  - Name: mouth_A_2
+    Weight: 0
+  - Name: mouth_I_1
+    Weight: 0
+  - Name: mouth_I_1_open
+    Weight: 0
+  - Name: mouth_I_2
+    Weight: 0
+  - Name: mouth_I_2_open
+    Weight: 0
+  - Name: mouth_I_3
+    Weight: 0
+  - Name: mouth_I_3_open
+    Weight: 0
+  - Name: mouth_I_4
+    Weight: 0
+  - Name: mouth_I_4_open
+    Weight: 0
+  - Name: mouth_U
+    Weight: 0
+  - Name: mouth_E
+    Weight: 0
+  - Name: mouth_O_1
+    Weight: 0
+  - Name: mouth_O_2
+    Weight: 0
+  - Name: mouth_straight
+    Weight: 0
+  - Name: mouth_straight_L
+    Weight: 0
+  - Name: mouth_straight_R
+    Weight: 0
+  - Name: mouth_smile_1
+    Weight: 0
+  - Name: mouth_smile_1_L
+    Weight: 0
+  - Name: mouth_smile_1_R
+    Weight: 0
+  - Name: mouth_smile_2
+    Weight: 0
+  - Name: mouth_angry
+    Weight: 0
+  - Name: mouth_angry_L
+    Weight: 0
+  - Name: mouth_angry_R
+    Weight: 0
+  - Name: mouth_narrow
+    Weight: 0
+  - Name: mouth_narrow_L
+    Weight: 0
+  - Name: mouth_narrow_R
+    Weight: 0
+  - Name: mouth_wide
+    Weight: 0
+  - Name: mouth_wide_L
+    Weight: 0
+  - Name: mouth_wide_R
+    Weight: 0
+  - Name: mouth_V
+    Weight: 0
+  - Name: "mouth_\u039B_1"
+    Weight: 0
+  - Name: "mouth_\u039B_2"
+    Weight: 0
+  - Name: yaeba_L
+    Weight: 0
+  - Name: yaeba_R
+    Weight: 0
+  - Name: mouth_pokan
+    Weight: 0
+  - Name: mouth_hawa
+    Weight: 0
+  - Name: mouth_nihe
+    Weight: 0
+  - Name: mouth_o
+    Weight: 0
+  - Name: "mouth_\u25B3"
+    Weight: 0
+  - Name: "mouth_\u25A1"
+    Weight: 0
+  - Name: mouth_~
+    Weight: 0
+  - Name: "mouth_~\u25A1_1"
+    Weight: 0
+  - Name: "mouth_~\u25A1_2"
+    Weight: 0
+  - Name: mouth_wa
+    Weight: 0
+  - Name: "mouth_\u03C9"
+    Weight: 0
+  - Name: "mouth_\u03C9_open_1"
+    Weight: 0
+  - Name: "mouth_\u03C9_open_2"
+    Weight: 0
+  - Name: mouth_yodare_L
+    Weight: 0
+  - Name: mouth_yodare_R
+    Weight: 0
+  - Name: mouth_grin_L
+    Weight: 0
+  - Name: mouth_grin_L_open
+    Weight: 0
+  - Name: mouth_grin_R
+    Weight: 0
+  - Name: mouth_grin_R_open
+    Weight: 0
+  - Name: mouth_puku-
+    Weight: 0
+  - Name: mouth_puku-_L
+    Weight: 0
+  - Name: mouth_puku-_R
+    Weight: 0
+  - Name: mouth_pero_1
+    Weight: 0
+  - Name: mouth_pero_2
+    Weight: 0
+  - Name: mouth_pero_3
+    Weight: 0
+  - Name: mouth_pero_4
+    Weight: 0
+  - Name: mouth_pero_5
+    Weight: 0
+  - Name: mouth_pero_6
+    Weight: 0
+  - Name: mouth_tehepero_1
+    Weight: 0
+  - Name: mouth_tehepero_2
+    Weight: 0
+  - Name: mouth_tehepero_3
+    Weight: 0
+  - Name: bero_forward
+    Weight: 0
+  - Name: bero_back
+    Weight: 0
+  - Name: bero_up
+    Weight: 0
+  - Name: bero_down
+    Weight: 0
+  - Name: bero_up_option
+    Weight: 0
+  - Name: bero_down_option
+    Weight: 0
+  - Name: bero_short
+    Weight: 0
+  - Name: bero_long
+    Weight: 0
+  - Name: bero_wide
+    Weight: 0
+  - Name: bero_narrow
+    Weight: 0
+  - Name: "bero_\u25BD"
+    Weight: 0
+  - Name: bero_maru
+    Weight: 0
+  - Name: "bero_\xD7"
+    Weight: 0
+  - Name: ---------Tooth---------
+    Weight: 0
+  - Name: yaeba_long_upper_tooth
+    Weight: 0
+  - Name: yaeba_long_upper_tooth_L
+    Weight: 0
+  - Name: yaeba_long_upper_tooth_R
+    Weight: 0
+  - Name: yaeba_long_lower_tooth
+    Weight: 0
+  - Name: yaeba_long_lower_tooth_L
+    Weight: 0
+  - Name: yaeba_long_lower_tooth_R
+    Weight: 0
+  - Name: yaeba_OFF_1
+    Weight: 0
+  - Name: yaeba_OFF_1_L
+    Weight: 0
+  - Name: yaeba_OFF_1_R
+    Weight: 0
+  - Name: yaeba_OFF_2
+    Weight: 0
+  - Name: yaeba_OFF_2_L
+    Weight: 0
+  - Name: yaeba_OFF_2_R
+    Weight: 0
+  - Name: tooth_flat
+    Weight: 0
+  - Name: tooth_flat_ALL
+    Weight: 0
+  - Name: tooth_gizaba
+    Weight: 0
+  - Name: upper_tooth_up
+    Weight: 0
+  - Name: upper_tooth_down
+    Weight: 0
+  - Name: upper_tooth_forward
+    Weight: 0
+  - Name: upper_tooth_back
+    Weight: 0
+  - Name: lower_tooth_up
+    Weight: 0
+  - Name: lower_tooth_down
+    Weight: 0
+  - Name: lower_tooth_forward
+    Weight: 0
+  - Name: lower_tooth_back
+    Weight: 0
+  - Name: "upper_tooth_\xD7"
+    Weight: 0
+  - Name: "lower_tooth_\xD7"
+    Weight: 0
+  - Name: ---------Eyebrow---------
+    Weight: 0
+  - Name: eyebrow_smile
+    Weight: 0
+  - Name: eyebrow_smile_L
+    Weight: 0
+  - Name: eyebrow_smile_R
+    Weight: 0
+  - Name: eyebrow_straight
+    Weight: 0
+  - Name: eyebrow_straight_L
+    Weight: 0
+  - Name: eyebrow_straight_R
+    Weight: 0
+  - Name: eyebrow_angry_1
+    Weight: 0
+  - Name: eyebrow_angry_1_L
+    Weight: 0
+  - Name: eyebrow_angry_1_R
+    Weight: 0
+  - Name: eyebrow_angry_2
+    Weight: 0
+  - Name: eyebrow_angry_2_L
+    Weight: 0
+  - Name: eyebrow_angry_2_R
+    Weight: 0
+  - Name: eyebrow_sad_1
+    Weight: 0
+  - Name: eyebrow_sad_1_L
+    Weight: 0
+  - Name: eyebrow_sad_1_R
+    Weight: 0
+  - Name: eyebrow_sad_2
+    Weight: 0
+  - Name: eyebrow_sad_2_L
+    Weight: 0
+  - Name: eyebrow_sad_2_R
+    Weight: 0
+  - Name: eyebrow_trouble
+    Weight: 0
+  - Name: eyebrow_trouble_L
+    Weight: 0
+  - Name: eyebrow_trouble_R
+    Weight: 0
+  - Name: eyebrow_up
+    Weight: 0
+  - Name: eyebrow_up_L
+    Weight: 0
+  - Name: eyebrow_up_R
+    Weight: 0
+  - Name: eyebrow_down
+    Weight: 0
+  - Name: eyebrow_down_L
+    Weight: 0
+  - Name: eyebrow_down_R
+    Weight: 0
+  - Name: eyebrow_tsuri
+    Weight: 0
+  - Name: eyebrow_tsuri_L
+    Weight: 0
+  - Name: eyebrow_tsuri_R
+    Weight: 0
+  - Name: eyebrow_tare
+    Weight: 0
+  - Name: eyebrow_tare_L
+    Weight: 0
+  - Name: eyebrow_tare_R
+    Weight: 0
+  - Name: eyebrow_close
+    Weight: 0
+  - Name: eyebrow_far
+    Weight: 0
+  - Name: eyebrow_thin
+    Weight: 0
+  - Name: eyebrow_thick
+    Weight: 0
+  - Name: eyebrow_long
+    Weight: 0
+  - Name: eyebrow_short
+    Weight: 0
+  - Name: eyebrow_maromayu
+    Weight: 0
+  - Name: eyebrow_forward_1
+    Weight: 0
+  - Name: eyebrow_forward_1_L
+    Weight: 0
+  - Name: eyebrow_forward_1_R
+    Weight: 0
+  - Name: eyebrow_forward_2
+    Weight: 0
+  - Name: eyebrow_forward_2_L
+    Weight: 0
+  - Name: eyebrow_forward_2_R
+    Weight: 0
+  - Name: eyebrow_forward_3
+    Weight: 0
+  - Name: eyebrow_forward_3_L
+    Weight: 0
+  - Name: eyebrow_forward_3_R
+    Weight: 0
+  - Name: "eyebrow_\xD7"
+    Weight: 0
+  - Name: ---------Face---------
+    Weight: 0
+  - Name: eye_up
+    Weight: 0
+  - Name: eye_down
+    Weight: 0
+  - Name: eye_close
+    Weight: 0
+  - Name: eye_far
+    Weight: 0
+  - Name: eye_size_big
+    Weight: 0
+  - Name: eye_size_small
+    Weight: 0
+  - Name: eye_width_up
+    Weight: 0
+  - Name: eye_width_down
+    Weight: 0
+  - Name: eye_height_up
+    Weight: 0
+  - Name: eye_height_down
+    Weight: 0
+  - Name: mouth_wide_ALL
+    Weight: 0
+  - Name: mouth_narrow_ALL
+    Weight: 0
+  - Name: mouth_up
+    Weight: 0
+  - Name: mouth_down
+    Weight: 0
+  - Name: mouth_forward
+    Weight: 0
+  - Name: mouth_back
+    Weight: 0
+  - Name: cheek_wide
+    Weight: 0
+  - Name: cheek_narrow
+    Weight: 0
+  - Name: cheek_up
+    Weight: 0
+  - Name: cheek_down
+    Weight: 0
+  - Name: cheek_puku-
+    Weight: 0
+  - Name: cheek_puku-_L
+    Weight: 0
+  - Name: cheek_puku-_R
+    Weight: 0
+  - Name: jaw_long
+    Weight: 0
+  - Name: jaw_short
+    Weight: 0
+  - Name: jaw_round
+    Weight: 0
+  - Name: ear_up
+    Weight: 0
+  - Name: ear_down
+    Weight: 0
+  - Name: ear_elf_1
+    Weight: 0
+  - Name: ear_elf_2
+    Weight: 0
+  - Name: "ear_\xD7"
+    Weight: 0
+  - Name: nose_up
+    Weight: 0
+  - Name: nose_down
+    Weight: 0
+  - Name: nose_line_OFF
+    Weight: 0
+  - Name: neck_hole_shrink
+    Weight: 0
+  - Name: face_child
+    Weight: 0
+  - Name: face_adult
+    Weight: 100
+  - Name: ---------Option---------
+    Weight: 0
+  - Name: Option_heart
+    Weight: 0
+  - Name: Option_shiitake
+    Weight: 0
+  - Name: Option_guruguru
+    Weight: 0
+  - Name: Option_shy_1
+    Weight: 0
+  - Name: Option_shy_2
+    Weight: 0
+  - Name: Option_shy_3
+    Weight: 0
+  - Name: Option_hoppe
+    Weight: 0
+  - Name: Option_tear_1
+    Weight: 0
+  - Name: Option_tear_2
+    Weight: 0
+  - Name: Option_tear_3_L
+    Weight: 0
+  - Name: Option_tear_3_R
+    Weight: 0
+  - Name: Option_sweat_1
+    Weight: 0
+  - Name: Option_sweat_2
+    Weight: 0
+  - Name: Option_sweat_3
+    Weight: 0
+  - Name: Option_pale_blue
+    Weight: 0
+  - Name: ---------M M D---------
+    Weight: 0
+  - Name: "\u307E\u3070\u305F\u304D"
+    Weight: 0
+  - Name: "\u7B11\u3044"
+    Weight: 0
+  - Name: "\u30A6\u30A3\u30F3\u30AF"
+    Weight: 0
+  - Name: "\u30A6\u30A3\u30F3\u30AF\u53F3"
+    Weight: 0
+  - Name: "\u30A6\u30A3\u30F3\u30AF\uFF12"
+    Weight: 0
+  - Name: "\uFF73\uFF68\uFF9D\uFF78\uFF12\u53F3"
+    Weight: 0
+  - Name: "\u306A\u3054\u307F"
+    Weight: 0
+  - Name: "\u306F\u3045"
+    Weight: 0
+  - Name: "\u3073\u3063\u304F\u308A"
+    Weight: 0
+  - Name: "\u3058\u3068\u76EE"
+    Weight: 0
+  - Name: "\uFF77\uFF98\uFF6F"
+    Weight: 0
+  - Name: "\u661F\u76EE"
+    Weight: 0
+  - Name: "\u306F\u3041\u3068"
+    Weight: 0
+  - Name: "\u77B3\u5C0F"
+    Weight: 0
+  - Name: "\u77B3\u5927"
+    Weight: 0
+  - Name: "\u6050\u308D\u3057\u3044\u5B50\uFF01"
+    Weight: 0
+  - Name: "\u5149\u4E0B"
+    Weight: 0
+  - Name: "\u30CF\u30A4\u30E9\u30A4\u30C8\u6D88\u3057"
+    Weight: 0
+  - Name: "\u039B"
+    Weight: 0
+  - Name: "\u25B2"
+    Weight: 0
+  - Name: "\u30EF"
+    Weight: 0
+  - Name: "\u03C9"
+    Weight: 0
+  - Name: "\u03C9\u25A1"
+    Weight: 0
+  - Name: "\u25A1"
+    Weight: 0
+  - Name: "\u306F\u3093\u3063\uFF01"
+    Weight: 0
+  - Name: "\u3042"
+    Weight: 0
+  - Name: "\u3044"
+    Weight: 0
+  - Name: "\u3046"
+    Weight: 0
+  - Name: "\u3048"
+    Weight: 0
+  - Name: "\u304A"
+    Weight: 0
+  - Name: "\u3093"
+    Weight: 0
+  - Name: "\u307A\u308D\u3063"
+    Weight: 0
+  - Name: "\u306B\u3084\u308A"
+    Weight: 0
+  - Name: "\u306B\u3063\u3053\u308A"
+    Weight: 0
+  - Name: "\u53E3\u89D2\u4E0A\u3052"
+    Weight: 0
+  - Name: "\u53E3\u89D2\u4E0B\u3052"
+    Weight: 0
+  - Name: "\u53E3\u89D2\u5E83\u3052"
+    Weight: 0
+  - Name: "\u771F\u9762\u76EE"
+    Weight: 0
+  - Name: "\u56F0\u308B"
+    Weight: 0
+  - Name: "\u306B\u3053\u308A"
+    Weight: 0
+  - Name: "\u6012\u308A"
+    Weight: 0
+  - Name: "\u4E0A"
+    Weight: 0
+  - Name: "\u4E0B"
+    Weight: 0
+  - Name: "\u7167\u308C"
+    Weight: 0
+  - Name: "\u6D99"
+    Weight: 0
+  - Name: "\u306F\u3061\u3085\u76EE"
+    Weight: 0
+--- !u!4 &6408158662676020517 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1941486898397311276, guid: e2c7cd827b519e24b940460ac2760740,
+    type: 3}
+  m_PrefabInstance: {fileID: 4764762596210281481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5951378497152444274
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 762440479051178696}
+    m_Modifications:
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AddDefault
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Name
+      value: Option_pale_blue
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Weight
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7214987413473881773, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_Name
+      value: pale_blue
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dbb95b5ca0abfd2478f07d702c2e48b6, type: 3}
+--- !u!4 &6991328802766690545 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+    type: 3}
+  m_PrefabInstance: {fileID: 5951378497152444274}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6349061682509155011
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3900327398247347055}
+    m_Modifications:
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_Name
+      value: R-Fist
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 2545958543387962037, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3445152368029023441}
+  m_SourcePrefab: {fileID: 100100000, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941, type: 3}
+--- !u!1 &2227652004925101834 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+    type: 3}
+  m_PrefabInstance: {fileID: 6349061682509155011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3445152368029023441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2227652004925101834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32ef5d7f80e3f20468dfb3b0de30692d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HandGestureConditions:
+  - Hand: 1
+    ComparisonType: 0
+    HandGesture: 1
+  ParameterConditions: []
+  AllChildren: 0
+--- !u!4 &6054992751432790932 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+    type: 3}
+  m_PrefabInstance: {fileID: 6349061682509155011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6661494385227896448
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 762440479051178696}
+    m_Modifications:
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AddDefault
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Name
+      value: Option_guruguru
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Weight
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7214987413473881773, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_Name
+      value: guruguru
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dbb95b5ca0abfd2478f07d702c2e48b6, type: 3}
+--- !u!4 &8062527925292001539 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+    type: 3}
+  m_PrefabInstance: {fileID: 6661494385227896448}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7372338841345731509
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6408158662676020517}
+    m_Modifications:
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_Name
+      value: Preset 0 Default
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941, type: 3}
+--- !u!4 &7661763400964100834 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+    type: 3}
+  m_PrefabInstance: {fileID: 7372338841345731509}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7695788116955239226
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3900327398247347055}
+    m_Modifications:
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      propertyPath: m_Name
+      value: R-HadOpen
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 2545958543387962037, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5273745889075957337}
+  m_SourcePrefab: {fileID: 100100000, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941, type: 3}
+--- !u!1 &3187069421222219507 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5113362680043789769, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+    type: 3}
+  m_PrefabInstance: {fileID: 7695788116955239226}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5273745889075957337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3187069421222219507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32ef5d7f80e3f20468dfb3b0de30692d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  HandGestureConditions:
+  - Hand: 1
+    ComparisonType: 0
+    HandGesture: 2
+  ParameterConditions: []
+  AllChildren: 0
+--- !u!4 &7410440782676355693 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 872504419172219223, guid: 1cb84fe83d33d9b4ebf6ff831fdd4941,
+    type: 3}
+  m_PrefabInstance: {fileID: 7695788116955239226}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8862607635030236658
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 762440479051178696}
+    m_Modifications:
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AddDefault
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Name
+      value: Option_shy_3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4192851067176261109, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: _blendShapes.Array.data[0].Weight
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7214987413473881773, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+        type: 3}
+      propertyPath: m_Name
+      value: shy
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dbb95b5ca0abfd2478f07d702c2e48b6, type: 3}
+--- !u!4 &5291717498265313905 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3715957563191656323, guid: dbb95b5ca0abfd2478f07d702c2e48b6,
+    type: 3}
+  m_PrefabInstance: {fileID: 8862607635030236658}
+  m_PrefabAsset: {fileID: 0}

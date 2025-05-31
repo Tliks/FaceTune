@@ -3,7 +3,7 @@ namespace com.aoyon.facetune;
 [Serializable]
 public abstract record class Condition
 {
-    internal abstract Condition Negate();
+    internal abstract Condition GetNegate();
 }
 
 [Serializable]
@@ -17,10 +17,9 @@ public record class HandGestureCondition : Condition
     {
     }
 
-    internal override Condition Negate()
+    internal override Condition GetNegate()
     {
-        ComparisonType = ComparisonType.Negate();
-        return this;
+        return this with { ComparisonType = ComparisonType.Negate() };
     }
 }
 
@@ -63,20 +62,21 @@ public record class ParameterCondition : Condition
         BoolValue = boolValue;
     }
 
-    internal override Condition Negate()
+    internal override Condition GetNegate()
     {
         switch (ParameterType)
         {
             case ParameterType.Float:
-                FloatComparisonType = FloatComparisonType.Negate();
-                break;
+                return this with { FloatComparisonType = FloatComparisonType.Negate() };
             case ParameterType.Int:
-                (IntComparisonType, IntValue) = ConditionUtility.Negate(IntComparisonType, IntValue);
-                break;
+                return this with { 
+                    IntComparisonType = ConditionUtility.Negate(IntComparisonType, IntValue).newType, 
+                    IntValue = ConditionUtility.Negate(IntComparisonType, IntValue).newValue 
+                };
             case ParameterType.Bool:
-                BoolValue = !BoolValue;
-                break;
+                return this with { BoolValue = !BoolValue };
+            default:
+                throw new InvalidOperationException($"Invalid parameter type: {ParameterType}");
         }
-        return this;
     }
 }

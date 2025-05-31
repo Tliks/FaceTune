@@ -68,20 +68,20 @@ internal class VRChatSuport : IPlatformSupport
     public void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
     {
         var asc = buildContext.Extension<AnimatorServicesContext>();
-        var vc = asc.ControllerContext;
-        var fx = vc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
+        var cc = asc.ControllerContext;
+        var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        var animatorInstaller = new AnimatorInstaller(context, vc, fx, useWriteDefaults);
+        var animatorInstaller = new AnimatorInstaller(context, cc, fx, useWriteDefaults);
 
         // faceEmo: 0
         var defaultLayerPriority = disableExistingControl ? 1 : -1;
-        animatorInstaller.CreateDefaultLayer(defaultLayerPriority);
+        animatorInstaller.CreateDefaultLayer(patternData, defaultLayerPriority);
 
-        var layerPriority = 2;
+        var layerPriority = 1;
         animatorInstaller.InstallPatternData(patternData, layerPriority);
     }
 
-    public IEnumerable<string> GetTrackedBlendShape(SessionContext context)
+    public IEnumerable<string> GetTrackedBlendShape()
     {
         var disAllowed = new HashSet<string>();
         var lipSync = GetLipSyncBlendShape();

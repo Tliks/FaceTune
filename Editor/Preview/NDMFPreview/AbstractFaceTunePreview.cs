@@ -13,7 +13,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         yield return ControlNode;
     }
 
-    public bool IsEnabled(ComputeContext context)
+    public virtual bool IsEnabled(ComputeContext context)
     {
         if (ControlNode == null) return true;
         return context.Observe(ControlNode.IsEnabled);
@@ -51,7 +51,8 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         var root = group.GetData<GameObject>();
         if (root == null) return Error();
 
-        if (!SessionContextBuilder.TryGet(root, out var sessionContext, new NDMFPreviewObserveContext(context))) return Empty();
+        var observeContext = new NDMFPreviewObserveContext(context);
+        if (!SessionContextBuilder.TryBuild(root, out var sessionContext, observeContext)) return Empty();
 
         var blendShapeSet = QueryBlendShapeSet(original, proxy, sessionContext, context);
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う

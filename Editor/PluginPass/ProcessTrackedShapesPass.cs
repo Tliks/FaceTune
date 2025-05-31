@@ -9,29 +9,28 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
     protected override void Execute(BuildContext context)
     {
-        var sessionContext = context.Extension<BuildPassContext>().SessionContext;
+        var passContext = context.Extension<FTPassContext>()!;
+        var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-        var presetData = context.Extension<BuildPassContext>().PatternData;
-        if (presetData == null) return;
+        var presetData = passContext.PatternData;
+        if (presetData == null) throw new InvalidOperationException("PatternData is null");
 
-        var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext);
+        var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext.Root.transform);
 
-        // トラッキングにより巻き戻し得るので、トラッキングの仕組みに依存するものの基本デフォルト表情として定義する意味がない
-        // また、同一の効果により競合するのでクローンの対象でもない
-        // Todo: これ本当？
-        sessionContext.DefaultExpression.RemoveShapes(trackedShapes);
-
-        var shapesToClone = trackedShapes.Intersect(sessionContext.FaceRenderer.GetBlendShapes(sessionContext.FaceMesh).Select(b => b.Name));
-        if (shapesToClone.Any()) return;
-
-        if (sessionContext.Root.GetComponentsInChildren<CloneTrackedBlendShapesComponent>(false).Any())
+        if (sessionContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
+            var shapeNames = sessionContext.FaceRenderer.GetBlendShapes(sessionContext.FaceMesh).Select(b => b.Name);
+            var shapesToClone = trackedShapes.Intersect(shapeNames);
+            _ = shapesToClone;
+            if (!shapesToClone.Any()) return;
             var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
-            ModifyData(presetData, mapping);
+            ModifyData(sessionContext.DEC.GetAllExpressions(), mapping);
+            ModifyData(presetData.GetAllExpressions(), mapping);
         }
         else
         {
-            Warning(presetData, trackedShapes);
+            RemoveAndWarning(sessionContext.DEC.GetAllExpressions(), trackedShapes);
+            RemoveAndWarning(presetData.GetAllExpressions(), trackedShapes);
         }
     }
 
@@ -45,18 +44,16 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         return mapping;
     }
 
-    private void ModifyData(PatternData presetData, Dictionary<string, string> mapping)
+    private void ModifyData(IEnumerable<Expression> expressions, Dictionary<string, string> mapping)
     {
-        var expressions = presetData.GetAllExpressions().ToList();        
         foreach (var expression in expressions)
         {
             expression.ReplaceBlendShapeNames(mapping);
         }
     }
 
-    private void Warning(PatternData presetData, IEnumerable<string> trackedShapes)
+    private void RemoveAndWarning(IEnumerable<Expression> expressions, IEnumerable<string> trackedShapes)
     {
-        var expressions = presetData.GetAllExpressions().ToList();   
         foreach (var expression in expressions)
         {
             var names = new HashSet<string>(expression.BlendShapeNames);
@@ -64,8 +61,9 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             if (intersection.Any())
             {
                 var joinedShapes = string.Join(", ", intersection);
-                Debug.LogWarning($"Expression {expression.Name} contains tracked blend shapes [{joinedShapes}]. These will not be processed and may cause unintended behavior.");
+                Debug.LogWarning($"Expression {expression.Name} contains tracked blend shapes [{joinedShapes}]. These will be removed and may cause unintended behavior.");
                 Debug.LogWarning($"Please either add CloneTrackedBlendShapesComponent or exclude these blend shapes.");
+                expression.RemoveShapes(intersection);
             }
         }
     }

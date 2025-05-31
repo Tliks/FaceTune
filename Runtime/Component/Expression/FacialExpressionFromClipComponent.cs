@@ -10,7 +10,7 @@ namespace com.aoyon.facetune
         public bool IncludeZeroWeight = false;
         public bool EnableBlending = false;
 
-        Expression? IExpressionProvider.ToExpression(SessionContext context, IOberveContext observeContext)
+        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IOberveContext observeContext)
         {
             var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
             if (clip == null) return null;
@@ -28,7 +28,7 @@ namespace com.aoyon.facetune
 #endif
             if (!enableBlending)
             {
-                blendShapes.Add(context.DefaultBlendShapes, BlendShapeSetOptions.PreferFormer);
+                blendShapes.Add(defaultExpression.BlendShapeSet, BlendShapeSetOptions.PreferFormer);
             }
             if (!blendShapes.BlendShapes.Any()) return null;
             return new FacialExpression(blendShapes, AllowEyeBlink, AllowLipSync, name);

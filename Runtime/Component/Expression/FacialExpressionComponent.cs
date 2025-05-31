@@ -11,7 +11,7 @@ namespace com.aoyon.facetune
         public IReadOnlyList<BlendShape> BlendShapes { get => _blendShapes.AsReadOnly(); }
         public bool EnableBlending = false;
 
-        Expression? IExpressionProvider.ToExpression(SessionContext context, IOberveContext observeContext)
+        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IOberveContext observeContext)
         {
             var blendShapeSet = observeContext.Observe(this, c => c.BlendShapes.ToSet(), (a, b) => a == b);
             if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return null;
@@ -20,7 +20,7 @@ namespace com.aoyon.facetune
 
             if (!enableBlending)
             {
-                var defaultShapes = context.DefaultExpression.BlendShapeSet;
+                var defaultShapes = defaultExpression.BlendShapeSet;
                 blendShapeSet = defaultShapes.Add(blendShapeSet);
             }
 

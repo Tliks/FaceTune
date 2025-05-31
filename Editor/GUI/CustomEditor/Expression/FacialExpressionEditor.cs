@@ -42,9 +42,10 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
 
     private void OpenFacialShapesEditor()
     {
-        if (Context == null) return;
-
-        var window = FacialShapesEditor.OpenEditor(Context.FaceRenderer, Context.FaceMesh, Context.DefaultBlendShapes, new(Component.BlendShapes));
+        CustomEditorUtility.TryGetContext(Component.gameObject, out var context);
+        if (context == null) return;
+        var defaultBlendShapes = context.DEC.GetDefaultBlendShapeSet(Component.gameObject);
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.BlendShapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }
@@ -61,7 +62,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     private static void ToClip(MenuCommand command)
     {
         var component = (command.context as FacialExpressionComponent)!;
-        CustomEditorUtility.ToClip(component.gameObject, context => (component as IExpressionProvider)!.ToExpression(context, new NonObserveContext())?.GetBlendShapeSet().BlendShapes);
+        CustomEditorUtility.ToClip(component.gameObject, dfc => (component as IExpressionProvider)!.ToExpression(dfc.GetDefaultExpression(component.gameObject), new NonObserveContext())?.GetBlendShapeSet().BlendShapes);
     }
 }
 

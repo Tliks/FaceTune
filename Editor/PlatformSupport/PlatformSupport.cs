@@ -44,9 +44,9 @@ internal static class PlatformSupport
         GetSupports(context.Root.transform).First().InstallPatternData(buildContext, context, patternData, disableExistingControl);
     }
 
-    public static IEnumerable<string> GetTrackedBlendShape(SessionContext context)
+    public static IEnumerable<string> GetTrackedBlendShape(Transform root)
     {
-        return GetSupports(context.Root.transform).First().GetTrackedBlendShape(context);
+        return GetSupports(root).First().GetTrackedBlendShape();
     }
 
     // ModularAvatarMenuItem
