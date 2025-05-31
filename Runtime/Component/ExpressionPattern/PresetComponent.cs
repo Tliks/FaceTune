@@ -6,7 +6,7 @@ namespace com.aoyon.facetune
         internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
         internal const string ComponentName = "FT Preset";
 
-        public string PresetName = string.Empty;
+        public string OverridePresetName = string.Empty;
         public DefaultFacialExpressionComponent? OverrideDefaultExpressionComponent = null;
 
         internal Preset? GetPreset(FacialExpression defaultExpression, ParameterCondition presetCondition)
@@ -16,7 +16,8 @@ namespace com.aoyon.facetune
                 .UnityOfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;
-            return new Preset(PresetName, patterns, defaultExpression, presetCondition);
+            var presetName = string.IsNullOrWhiteSpace(OverridePresetName) ? gameObject.name : OverridePresetName;
+            return new Preset(presetName, patterns, defaultExpression, presetCondition);
         }
 
         internal GameObject GetMenuTarget()
