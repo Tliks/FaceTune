@@ -21,8 +21,10 @@ internal class FacialExpressionFromClipEditor : FaceTuneCustomEditorBase<FacialE
     {
         var clip = Component.Clip;
         if (clip == null) return;
-        var newBlendShapes = clip.GetBlendShapes().ToSet(); 
-        if (!Component.IncludeZeroWeight) newBlendShapes.RemoveZeroWeight();
+        var excludeOption = Component.ClipExcludeOption;
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
+        var defaultExpression = context.DEC.GetDefaultExpression(Component.gameObject);
+        var newBlendShapes = FacialExpressionFromClipComponent.GetBlendShapeSetFromClip(clip, excludeOption, defaultExpression.BlendShapeSet);
         var fec = Undo.AddComponent<FacialExpressionComponent>(Component.gameObject);
         FacialExpressionEditorUtility.UpdateShapes(fec, newBlendShapes.BlendShapes.ToList());
         fec.EnableBlending = Component.EnableBlending;

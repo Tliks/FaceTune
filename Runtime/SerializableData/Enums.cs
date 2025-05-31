@@ -57,3 +57,10 @@ public enum TrackingPermission
     Disallow,
     Keep
 }
+
+public enum ClipExcludeOption
+{
+    None,
+    ExcludeZeroWeight,
+    ExcludeDefault
+}

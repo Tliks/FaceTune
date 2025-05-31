@@ -7,25 +7,17 @@ namespace com.aoyon.facetune
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         public AnimationClip? Clip;
-        public bool IncludeZeroWeight = false;
+        public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.None;
         public bool EnableBlending = false;
 
         Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IOberveContext observeContext)
         {
             var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
             if (clip == null) return null;
-            var includeZeroWeight = observeContext.Observe(this, c => c.IncludeZeroWeight, (a, b) => a == b);
+            var clipExcludeOption = observeContext.Observe(this, c => c.ClipExcludeOption, (a, b) => a == b);
             var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
 
-            var blendShapes = new BlendShapeSet();
-#if UNITY_EDITOR
-            if (clip != null)
-            {
-                var newBlendShapes = new BlendShapeSet(GetBlendShapesFromClip(clip));
-                if (!IncludeZeroWeight) newBlendShapes.RemoveZeroWeight();
-                blendShapes.Add(newBlendShapes);
-            }
-#endif
+            var blendShapes = GetBlendShapeSetFromClip(clip, clipExcludeOption, defaultExpression.BlendShapeSet);
             if (!enableBlending)
             {
                 blendShapes.Add(defaultExpression.BlendShapeSet, BlendShapeSetOptions.PreferFormer);
@@ -35,6 +27,23 @@ namespace com.aoyon.facetune
         }
 
 #if UNITY_EDITOR
+        internal static BlendShapeSet GetBlendShapeSetFromClip(AnimationClip clip, ClipExcludeOption clipExcludeOption, BlendShapeSet defaultSet)
+        {
+            var blendShapes = new BlendShapeSet(GetBlendShapesFromClip(clip));
+            switch (clipExcludeOption)
+            {
+                case ClipExcludeOption.None:
+                    break;
+                case ClipExcludeOption.ExcludeZeroWeight:
+                    blendShapes.RemoveZeroWeight();
+                    break;
+                case ClipExcludeOption.ExcludeDefault:
+                    blendShapes = blendShapes.ToDiff(defaultSet);
+                    break;
+            }
+            return blendShapes;
+        }
+
         // AnimationUtilityからコピー
         private static List<BlendShape> GetBlendShapesFromClip(AnimationClip clip, bool first = true)
         {
