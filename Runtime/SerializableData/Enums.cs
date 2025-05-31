@@ -64,3 +64,9 @@ public enum ClipExcludeOption
     ExcludeZeroWeight,
     ExcludeDefault
 }
+
+public enum FacialExpressionType
+{
+    Manual,
+    FromClip
+}
