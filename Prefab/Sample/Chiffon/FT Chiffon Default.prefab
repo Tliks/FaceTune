@@ -580,26 +580,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 696241075826170406}
     m_Modifications:
-    - target: {fileID: 458289895799268388, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: c6e2b7bf90146a14a9a4bfdd31792c84, type: 2}
-    - target: {fileID: 458289895799268388, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1303584095991788625, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 52db00ef288d98e48bc6c62e19d02295, type: 2}
-    - target: {fileID: 1303584095991788625, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 1482673358645777912, guid: c259edc6efd4aaa4bba3b1636557cc3b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -650,130 +630,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2325654322210713947, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 7ecf9c6880ea60e439733bc9b4881e02, type: 2}
-    - target: {fileID: 2325654322210713947, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2459307011453380138, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: e3f49ae007c4e834ea7ccc0ac5492d7e, type: 2}
-    - target: {fileID: 2459307011453380138, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2926805459072544317, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 7ecf9c6880ea60e439733bc9b4881e02, type: 2}
-    - target: {fileID: 2926805459072544317, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3292593580657882537, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: e3f49ae007c4e834ea7ccc0ac5492d7e, type: 2}
-    - target: {fileID: 3292593580657882537, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3746466781525004499, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: c6e2b7bf90146a14a9a4bfdd31792c84, type: 2}
-    - target: {fileID: 3746466781525004499, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4675258250338510382, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 8e3e05c932b51534b85e44d42507db57, type: 2}
-    - target: {fileID: 4675258250338510382, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5928468683418964542, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 7b220c5cacee3f34fafc5cfef7465508, type: 2}
-    - target: {fileID: 5928468683418964542, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6175857392804771687, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 304dabb5f6a6463428ba390f633b5a92, type: 2}
-    - target: {fileID: 6175857392804771687, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6400292184718332326, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 8e3e05c932b51534b85e44d42507db57, type: 2}
-    - target: {fileID: 6400292184718332326, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6430418330058241033, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 7b220c5cacee3f34fafc5cfef7465508, type: 2}
-    - target: {fileID: 6430418330058241033, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6582427788736134644, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 304dabb5f6a6463428ba390f633b5a92, type: 2}
-    - target: {fileID: 6582427788736134644, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 7290238891181836968, guid: c259edc6efd4aaa4bba3b1636557cc3b,
         type: 3}
       propertyPath: m_Name
       value: Basic
-      objectReference: {fileID: 0}
-    - target: {fileID: 7788925658235604068, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: Clip
-      value: 
-      objectReference: {fileID: 7400000, guid: 52db00ef288d98e48bc6c62e19d02295, type: 2}
-    - target: {fileID: 7788925658235604068, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      propertyPath: ExpressionType
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -797,7 +657,7 @@ PrefabInstance:
     - target: {fileID: 5177479075933827586, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
       propertyPath: m_Name
-      value: FT Chiffon Default Variant
+      value: FT Chiffon Default
       objectReference: {fileID: 0}
     - target: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}

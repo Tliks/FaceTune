@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1378524398708127345}
-  - component: {fileID: 2950239716581203829}
   m_Layer: 0
   m_Name: HandSign
   m_TagString: Untagged
@@ -30,6 +29,39 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6719281904775140670}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7612011762845916747
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6719281904775140670}
+  - component: {fileID: 3776110124273882151}
+  m_Layer: 0
+  m_Name: Pattern
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6719281904775140670
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7612011762845916747}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
   - {fileID: 6326022215658951004}
   - {fileID: 4283682269229074815}
   - {fileID: 6723124568644091924}
@@ -38,15 +70,15 @@ Transform:
   - {fileID: 6155453930840955190}
   - {fileID: 6076555927164944051}
   - {fileID: 2593348910492575108}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1378524398708127345}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2950239716581203829
+--- !u!114 &3776110124273882151
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3888757518488430444}
+  m_GameObject: {fileID: 7612011762845916747}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 22651697d4d0efc4ea560d446bad014c, type: 3}
@@ -58,7 +90,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -88,17 +120,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -155,7 +187,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -200,7 +233,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -230,17 +263,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -297,7 +330,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -342,7 +376,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -372,17 +406,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -439,7 +473,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -484,7 +519,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -514,17 +549,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -581,7 +616,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -626,7 +662,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -656,17 +692,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -723,7 +759,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -768,7 +805,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -798,17 +835,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -865,7 +902,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -910,7 +948,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -940,17 +978,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -1007,7 +1045,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -1052,7 +1091,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1378524398708127345}
+    m_TransformParent: {fileID: 6719281904775140670}
     m_Modifications:
     - target: {fileID: 2755770082623409649, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -1082,17 +1121,17 @@ PrefabInstance:
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
@@ -1149,7 +1188,8 @@ PrefabInstance:
       propertyPath: HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6579402978606877306, guid: 9f044864c335d38499244290e12697d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
