@@ -47,7 +47,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
-            Log($"SelectedShapesPreview.Clip: {clip.name}", GetBlendShapeSet(clip));
             return GetBlendShapeSet(clip);
         }
 
@@ -59,7 +58,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         });
         if (defaultExpression == null)
         {
-            Log($"SelectedShapesPreview.DefaultExpression: null => {dfc.GetGlobalDefaultExpression().Name}", dfc.GetGlobalDefaultExpression().BlendShapeSet);
             return null;
         }
 
@@ -73,7 +71,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         });
         if (expressionComponents != null && expressionComponents.Length > 0)
         {
-            Log($"SelectedShapesPreview.ExpressionComponents: {expressionComponents.Length} defaultExpression: {defaultExpression.Name}", defaultExpression.BlendShapeSet);
             return GetBlendShapeSet(expressionComponents, defaultExpression, observeContext);
         }
 
@@ -86,27 +83,21 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         if (conditionComponents != null && conditionComponents.Length == 1)
         {
             var conditionComponent = conditionComponents.First();
-            Log($"SelectedShapesPreview.ConditionComponent: {conditionComponent.name} defaultExpression: {defaultExpression.Name}", defaultExpression.BlendShapeSet);
             var expressionComponents_ = conditionComponent.GetExpressionComponents(observeContext);
             return GetBlendShapeSet(expressionComponents_, defaultExpression, observeContext);
         }
 
-        // PresetによりOverrideされたdefaultExpression
-        if (!defaultExpression.Equals(dfc.GetGlobalDefaultExpression()))
+        var globalDefaultExpression = dfc.GetGlobalDefaultExpression();
+        if (!defaultExpression.Equals(globalDefaultExpression))
         {
-            Log($"SelectedShapesPreview.PresetExpression: {defaultExpression.Name}", defaultExpression.BlendShapeSet);
+            // PresetdefaultExpression
             return defaultExpression.BlendShapeSet;
         }
         else
         {
-            Log($"SelectedShapesPreview.GlobalDefaultExpression: {dfc.GetGlobalDefaultExpression().Name}", dfc.GetGlobalDefaultExpression().BlendShapeSet);
-            return null;
-        }
-
-        static void Log(string message, BlendShapeSet set)
-        {
-            var shapes = set.BlendShapes.Where(s => s.Weight != 0).Select(s => s.Name);
-            Debug.Log($"SelectedShapesPreview: {message} {string.Join(", ", shapes)}");
+            // GlobalDefaultExpression
+            // DefaultPreviewと重複するが、DefaultPreviewがOFFの場合でも選択時はプレビューはして良いと思う。
+            return globalDefaultExpression.BlendShapeSet;
         }
     }
 
