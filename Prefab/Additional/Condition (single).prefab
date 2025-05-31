@@ -47,7 +47,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HandGestureConditions: []
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!114 &2906859138482423114
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62,5 +61,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AllowEyeBlink: 1
   AllowLipSync: 0
-  _blendShapes: []
   EnableBlending: 0
+  ExpressionType: 0
+  _blendShapes: []
+  Clip: {fileID: 0}
+  ClipExcludeOption: 1

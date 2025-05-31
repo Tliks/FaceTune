@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2697236231034962528}
-  - component: {fileID: 5438837220614855702}
   m_Layer: 0
   m_Name: Morph Override
   m_TagString: Untagged
@@ -33,18 +32,6 @@ Transform:
   - {fileID: 2714100070776296976}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5438837220614855702
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1096914149684494623}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 22651697d4d0efc4ea560d446bad014c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &5929888990525968584
 GameObject:
   m_ObjectHideFlags: 0
@@ -94,11 +81,11 @@ MonoBehaviour:
   ParameterConditions:
   - ParameterName: AFK
     ParameterType: 2
-    ComparisonType: 0
+    FloatComparisonType: 0
+    IntComparisonType: 0
     FloatValue: 0
     IntValue: 0
     BoolValue: 1
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!114 &6358615508912770849
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -111,7 +98,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EnableBlending: 0
   AllowEyeBlink: 1
   AllowLipSync: 0
+  EnableBlending: 0
+  ExpressionType: 0
   _blendShapes: []
+  Clip: {fileID: 0}
+  ClipExcludeOption: 1

@@ -61,7 +61,17 @@ PrefabInstance:
     - target: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       propertyPath: m_Name
-      value: One Hand Gesture Condition Right Variant
+      value: One Hand Gesture Condition Right
+      objectReference: {fileID: 0}
+    - target: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      propertyPath: m_TagString
+      value: EditorOnly
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -123,7 +133,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 1
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &719036594373005496 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -147,7 +156,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 7
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &1283242355045987396 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -171,7 +179,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 3
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &1593333329699954376 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1391225575274008053, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -195,7 +202,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 4
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &1887829009709415210 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -219,7 +225,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 2
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &5713551421088801279 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -243,7 +248,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 0
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &6467650993244730529 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -267,7 +271,6 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 6
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!1 &9153813716057836039 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -291,4 +294,3 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 5
   ParameterConditions: []
-  OverrideExpressionRoot: {fileID: 0}

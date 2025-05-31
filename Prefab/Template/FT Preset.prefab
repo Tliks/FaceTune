@@ -71,10 +71,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 3487362731581000991}
-    - targetCorrespondingSourceObject: {fileID: 3888757518488430444, guid: e7a261d8cf051454ea0c41e427463276,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1843773276904129960}
   m_SourcePrefab: {fileID: 100100000, guid: e7a261d8cf051454ea0c41e427463276, type: 3}
 --- !u!1 &5974391815006727803 stripped
 GameObject:
@@ -94,37 +90,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a2488166a470c4781349d0b99721d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PresetName: HandSign
---- !u!114 &1843773276904129960
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5974391815006727803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b29d45007c5493d926d2cd45a489529, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Control:
-    name: 
-    icon: {fileID: 0}
-    type: 102
-    parameter:
-      name: 
-    value: 1
-    style: 0
-    subMenu: {fileID: 0}
-    subParameters: []
-    labels: []
-  MenuSource: 1
-  menuSource_otherObjectChildren: {fileID: 0}
-  isSynced: 1
-  isSaved: 1
-  isDefault: 0
-  automaticValue: 1
-  label: 
+  OverridePresetName: 
+  OverrideDefaultExpressionComponent: {fileID: 0}
 --- !u!4 &8376529610198695782 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1378524398708127345, guid: e7a261d8cf051454ea0c41e427463276,
@@ -202,10 +169,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8447961204084525986}
-    - targetCorrespondingSourceObject: {fileID: 7290238891181836968, guid: c259edc6efd4aaa4bba3b1636557cc3b,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3753889718346980349}
   m_SourcePrefab: {fileID: 100100000, guid: c259edc6efd4aaa4bba3b1636557cc3b, type: 3}
 --- !u!1 &1308277682782707349 stripped
 GameObject:
@@ -225,37 +188,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46a2488166a470c4781349d0b99721d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PresetName: Basic
---- !u!114 &3753889718346980349
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1308277682782707349}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b29d45007c5493d926d2cd45a489529, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Control:
-    name: 
-    icon: {fileID: 0}
-    type: 102
-    parameter:
-      name: 
-    value: 1
-    style: 0
-    subMenu: {fileID: 0}
-    subParameters: []
-    labels: []
-  MenuSource: 1
-  menuSource_otherObjectChildren: {fileID: 0}
-  isSynced: 1
-  isSaved: 1
-  isDefault: 0
-  automaticValue: 1
-  label: 
+  OverridePresetName: 
+  OverrideDefaultExpressionComponent: {fileID: 0}
 --- !u!4 &7176571407167406533 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1482673358645777912, guid: c259edc6efd4aaa4bba3b1636557cc3b,
@@ -273,7 +207,7 @@ PrefabInstance:
     - target: {fileID: 5177479075933827586, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
       propertyPath: m_Name
-      value: Template Preset Variant
+      value: FT Preset
       objectReference: {fileID: 0}
     - target: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
@@ -331,11 +265,11 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
-      insertIndex: 0
+      insertIndex: -1
       addedObject: {fileID: 7176571407167406533}
     - targetCorrespondingSourceObject: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
-      insertIndex: 1
+      insertIndex: -1
       addedObject: {fileID: 8376529610198695782}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e643b160cc0f24a4fa8e33fb4df1fe7e, type: 3}

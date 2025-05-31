@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1378524398708127345}
+  - component: {fileID: 2950239716581203829}
   m_Layer: 0
   m_Name: HandSign
   m_TagString: Untagged
@@ -39,6 +40,18 @@ Transform:
   - {fileID: 2593348910492575108}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2950239716581203829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3888757518488430444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22651697d4d0efc4ea560d446bad014c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &244237918801222506
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -180,6 +193,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 1
   ParameterConditions: []
+  AllChildren: 0
 --- !u!1001 &1311749907831637040
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -321,6 +335,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 3
   ParameterConditions: []
+  AllChildren: 0
 --- !u!1001 &2012100077674592145
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -462,6 +477,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 7
   ParameterConditions: []
+  AllChildren: 0
 --- !u!1001 &6747528071099017512
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -597,6 +613,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 4
   ParameterConditions: []
+  AllChildren: 0
 --- !u!4 &7328779653820152637 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
@@ -738,6 +755,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 2
   ParameterConditions: []
+  AllChildren: 0
 --- !u!4 &6723124568644091924 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
@@ -879,6 +897,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 6
   ParameterConditions: []
+  AllChildren: 0
 --- !u!4 &6076555927164944051 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
@@ -1020,6 +1039,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 5
   ParameterConditions: []
+  AllChildren: 0
 --- !u!4 &6155453930840955190 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
@@ -1161,6 +1181,7 @@ MonoBehaviour:
     ComparisonType: 0
     HandGesture: 0
   ParameterConditions: []
+  AllChildren: 0
 --- !u!4 &6326022215658951004 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,

@@ -85,7 +85,7 @@ PrefabInstance:
     - target: {fileID: 5177479075933827586, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
       propertyPath: m_Name
-      value: FaceTune Basic
+      value: FT Basic
       objectReference: {fileID: 0}
     - target: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
@@ -143,7 +143,7 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 7363885164174601864, guid: e643b160cc0f24a4fa8e33fb4df1fe7e,
         type: 3}
-      insertIndex: 0
+      insertIndex: -1
       addedObject: {fileID: 1632639808917791717}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e643b160cc0f24a4fa8e33fb4df1fe7e, type: 3}

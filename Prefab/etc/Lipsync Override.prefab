@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5557704395542580616}
-  - component: {fileID: 8067411838256900487}
   m_Layer: 0
   m_Name: Lipsync Override
   m_TagString: Untagged
@@ -33,18 +32,6 @@ Transform:
   - {fileID: 9067912402786459724}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8067411838256900487
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2053227024675831482}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 22651697d4d0efc4ea560d446bad014c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &7128563309203844220
 GameObject:
   m_ObjectHideFlags: 0
@@ -99,7 +86,6 @@ MonoBehaviour:
     FloatValue: 0
     IntValue: 0
     BoolValue: 0
-  OverrideExpressionRoot: {fileID: 0}
 --- !u!114 &6207186560187071672
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,5 +100,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AllowEyeBlink: 2
   AllowLipSync: 2
-  _blendShapes: []
   EnableBlending: 1
+  ExpressionType: 0
+  _blendShapes: []
+  Clip: {fileID: 0}
+  ClipExcludeOption: 1

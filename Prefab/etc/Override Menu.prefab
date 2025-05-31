@@ -75,7 +75,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EnableBlending: 1
   AllowEyeBlink: 0
   AllowLipSync: 2
+  EnableBlending: 0
+  ExpressionType: 0
   _blendShapes: []
+  Clip: {fileID: 0}
+  ClipExcludeOption: 1
