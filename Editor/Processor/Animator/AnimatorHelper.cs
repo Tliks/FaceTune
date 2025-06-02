@@ -42,4 +42,24 @@ internal static class AnimatorHelper
         }
         return behavior;
     }
+
+    public static TBehavior EnsureBehavior<TBehavior>(this VirtualState state) where TBehavior : StateMachineBehaviour
+    {
+        var behavior = state.Behaviours.OfType<TBehavior>().FirstOrNull();
+        if (behavior == null)
+        {
+            behavior = ScriptableObject.CreateInstance<TBehavior>();
+            state.Behaviours = state.Behaviours.Add(behavior);
+        }
+        return behavior;
+    }
+
+    public static VirtualStateTransition CreateTransitionWithDurationSeconds(float duration)
+    {
+        var transition = VirtualStateTransition.Create();
+        transition.ExitTime = null; 
+        transition.HasFixedDuration = true;
+        transition.Duration = duration;
+        return transition;
+    }
 }

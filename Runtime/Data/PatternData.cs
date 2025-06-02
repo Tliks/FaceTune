@@ -82,7 +82,8 @@ internal record PatternData
 {
     public IReadOnlyList<IPatternElement> OrderedItems { get; private set; }
     internal const string Peset_Index_Parameter = "FaceTune_PresetIndex";
-    public bool IsEmpty => OrderedItems.Count == 0;
+    public int Count => OrderedItems.Count;
+    public bool IsEmpty => Count == 0;
 
     public PatternData(IReadOnlyList<IPatternElement> orderedItems)
     {

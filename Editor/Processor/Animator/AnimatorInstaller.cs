@@ -29,6 +29,8 @@ internal class AnimatorInstaller
     private const int WDLayerPriority = -1; // 上書きを意図したものではなく、WDの問題を回避するためのレイヤー。
     private const int LayerPriority = 1; // FaceEmo: 0
     private VirtualLayer? _disableExistingControlLayer;
+    private VirtualState? _defaultState;
+
 
     public AnimatorInstaller(SessionContext sessionContext, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
@@ -46,19 +48,20 @@ internal class AnimatorInstaller
 
     public VirtualLayer DisableExistingControl()
     {
-        var defaultLayer = AddDefaultLayer(LayerPriority);
-        defaultLayer.Name = "FT Disable Existing Control";
+        var (defaultLayer, defaultState) = AddDefaultLayer(LayerPriority);
+        defaultLayer.Name = $"{SystemName}_Disable Existing Control";
         _disableExistingControlLayer = defaultLayer;
+        _defaultState = defaultState;
         return _disableExistingControlLayer;
     }
 
-    public VirtualLayer AddDefaultLayer(int priority)
+    public (VirtualLayer defaultLayer, VirtualState defaultState) AddDefaultLayer(int priority)
     {
         var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
         var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
         AddExpressionsToState(defaultState, new[] { _globalDefaultExpression });
         // SetTracks(defaultState, _globalDefaultExpression);
-        return defaultLayer;
+        return (defaultLayer, defaultState);
     }
 
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
@@ -73,6 +76,15 @@ internal class AnimatorInstaller
     {
         var state = layer.StateMachine!.AddState(stateName, position: position);
         state.WriteDefaultValues = _useWriteDefaults;
+        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
+        if (_useWriteDefaults)
+        {
+            state.Motion = null; 
+        }
+        else
+        {
+            state.Motion = _emptyClip;
+        }
         return state;
     }
 
@@ -97,17 +109,22 @@ internal class AnimatorInstaller
 
     public void InstallPatternData(PatternData patternData)
     {
+        if (patternData.Count == 0) return;
+        
         VirtualLayer? defaultLayer = null;
-        if (_disableExistingControlLayer != null)
+        VirtualState? defaultState = null;
+        if (_disableExistingControlLayer != null && _defaultState != null)
         {
             defaultLayer = _disableExistingControlLayer;
+            defaultState = _defaultState;
         }
         else
         {
-            defaultLayer = AddDefaultLayer(WDLayerPriority);
+            (defaultLayer, defaultState) = AddDefaultLayer(WDLayerPriority);
         }
-        defaultLayer.Name = "FT Default";
-        CreateDefaultForPattern(patternData, defaultLayer);
+        defaultLayer.Name = $"{SystemName}_Default";
+
+        AddDefaultForPattern(patternData, defaultLayer, defaultState);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -125,10 +142,8 @@ internal class AnimatorInstaller
         }
     }
 
-    private void CreateDefaultForPattern(PatternData patternData, VirtualLayer defaultLayer)
+    private void AddDefaultForPattern(PatternData patternData, VirtualLayer defaultLayer, VirtualState defaultState)
     {
-        var defaultState = defaultLayer.StateMachine?.DefaultState;
-        if (defaultState == null) throw new Exception("Default state is not created");
         var presets = patternData.GetAllPresets().ToList();
         if (presets.Count > 0)
         {
@@ -166,7 +181,8 @@ internal class AnimatorInstaller
                 if (!layerCreatedForThisIndex)
                 {
                     layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
-                    defaultStates[i] = CreateDefaultState(layers[i], DefaultStatePosition);
+                    defaultStates[i] = AddFTState(layers[i], "Default", DefaultStatePosition);
+                    SetTracks(defaultStates[i], _globalDefaultExpression);
                     layerCreatedForThisIndex = true;
                 }
                 
@@ -185,26 +201,11 @@ internal class AnimatorInstaller
                 !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
             var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
-            var defaultState = CreateDefaultState(layer, DefaultStatePosition);
+            var defaultState = AddFTState(layer, "Default", DefaultStatePosition);
+            SetTracks(defaultState, _globalDefaultExpression);
             var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
             AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
         }
-    }
-
-    private VirtualState CreateDefaultState(VirtualLayer layer, Vector3 position)
-    {
-        var defaultState = AddFTState(layer, "Default", position);
-        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
-        if (_useWriteDefaults)
-        {
-            defaultState.Motion = null; 
-        }
-        else
-        {
-            defaultState.Motion = _emptyClip;
-        }
-        SetTracks(defaultState, _globalDefaultExpression);
-        return defaultState;
     }
 
     private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 basePosition)
@@ -220,7 +221,8 @@ internal class AnimatorInstaller
             state.Name = expressionWithCondition.Expressions.First().Name;
             var expressions = expressionWithCondition.Expressions;
             AddExpressionsToState(state, expressions);
-            SetTracks(state, expressions);
+            var (allowEyeBlink, allowLipSync) = ResolveTrackingPermission(expressions);
+            SetTracks(state, allowEyeBlink, allowLipSync);
         }
     }
 
@@ -247,11 +249,8 @@ internal class AnimatorInstaller
             var newExpressionStateTransitions = new List<VirtualStateTransition>();
             foreach (var condition in conditions)
             {
-                var exitTransition = VirtualStateTransition.Create();
+                var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.HasFixedDuration = true;
-                exitTransition.Duration = duration;
-                exitTransition.ExitTime = null; 
                 exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.GetNegate()));
                 newExpressionStateTransitions.Add(exitTransition);
             }
@@ -262,11 +261,8 @@ internal class AnimatorInstaller
         var exitTransitionsFromDefault = new List<VirtualStateTransition>();
         foreach (var entryTr in newEntryTransitions)
         {
-            var exitTransition = VirtualStateTransition.Create();
+            var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
             exitTransition.SetExitDestination();
-            exitTransition.HasFixedDuration = true;
-            exitTransition.Duration = duration;
-            exitTransition.ExitTime = null;
             exitTransition.Conditions = entryTr.Conditions; // newEntryTransition の条件をそのまま使用
             exitTransitionsFromDefault.Add(exitTransition);
         }
@@ -342,7 +338,18 @@ internal class AnimatorInstaller
                 throw new NotImplementedException($"Condition type {condition.GetType()} is not implemented");
         }
 
-        // EnsureParameterExists
+        EnsureParameterExists(resolvedParamType, parameter);
+        
+        return new AnimatorCondition
+        {
+            parameter = parameter,
+            mode = mode,
+            threshold = threshold
+        };
+    }
+
+    private AnimatorControllerParameter EnsureParameterExists(AnimatorControllerParameterType resolvedParamType, string parameter)
+    {
         if (!_parameterCache.ContainsKey(parameter))
         {
             var param = new AnimatorControllerParameter
@@ -366,22 +373,55 @@ internal class AnimatorInstaller
             _virtualController.Parameters = _virtualController.Parameters.Add(parameter, param);
             _parameterCache.Add(parameter, param);
         }
-        
-        return new AnimatorCondition
-        {
-            parameter = parameter,
-            mode = mode,
-            threshold = threshold
-        };
+
+        return _parameterCache[parameter];
     }
 
-    private void SetTracks(VirtualState state, IEnumerable<Expression> expressions)
+    private (bool? allowEyeBlink, bool? allowLipSync) ResolveTrackingPermission(IEnumerable<Expression> expressions)
     {
-        foreach (var expression in expressions) SetTracks(state, expression);
+        bool? allowEyeBlink = null;
+        bool? allowLipSync = null;
+
+        foreach (var expression in expressions)
+        {
+            if (expression.AllowEyeBlink != TrackingPermission.Keep)
+            {
+                allowEyeBlink = expression.AllowEyeBlink == TrackingPermission.Allow;
+            }
+
+            if (expression.AllowLipSync != TrackingPermission.Keep)
+            {
+                allowLipSync = expression.AllowLipSync == TrackingPermission.Allow;
+            }
+        }
+        
+        return (allowEyeBlink, allowLipSync);
     }
 
     private void SetTracks(VirtualState state, Expression expression)
     {
-        _platformSupport.SetTracks(state, expression);
+        bool? allowEyeBlink = null;
+        bool? allowLipSync = null;
+        if (expression.AllowEyeBlink != TrackingPermission.Keep)
+        {
+            allowEyeBlink = expression.AllowEyeBlink == TrackingPermission.Allow;
+        }
+        if (expression.AllowLipSync != TrackingPermission.Keep)
+        {
+            allowLipSync = expression.AllowLipSync == TrackingPermission.Allow;
+        }
+        SetTracks(state, allowEyeBlink, allowLipSync);
+    }
+
+    private void SetTracks(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
+    {
+        if (allowEyeBlink != null)
+    {
+            _platformSupport.SetEyeBlinkTrack(state, allowEyeBlink.Value);
+        }
+        if (allowLipSync != null)
+        {
+            _platformSupport.SetLipSyncTrack(state, allowLipSync.Value);
+        }
     }
 }

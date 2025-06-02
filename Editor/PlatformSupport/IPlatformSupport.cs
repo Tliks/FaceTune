@@ -48,7 +48,11 @@ internal interface IPlatformSupport
         return (null, null);
     }
 
-    public void SetTracks(VirtualState state, Expression expression)
+    public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
+    {
+        return;
+    }
+    public void SetLipSyncTrack(VirtualState state, bool isTracking)
     {
         return;
     }

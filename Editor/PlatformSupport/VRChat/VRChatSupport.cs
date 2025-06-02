@@ -214,20 +214,15 @@ internal class VRChatSuport : IPlatformSupport
         }
         return (null, null);
     }
-    public void SetTracks(VirtualState state, Expression expression)
+    public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
     {
-        var trackingControl = ScriptableObject.CreateInstance<VRCAnimatorTrackingControl>();
-
-        if (expression.AllowEyeBlink != TrackingPermission.Keep)
-        {
-            trackingControl.trackingEyes = expression.AllowEyeBlink == TrackingPermission.Allow ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
-        }
-        if (expression.AllowLipSync != TrackingPermission.Keep)
-        {
-            trackingControl.trackingMouth = expression.AllowLipSync == TrackingPermission.Allow ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
-        }
-
-        state.Behaviours = state.Behaviours.Add(trackingControl);
+        var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
+        trackingControl.trackingEyes = isTracking ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
+    }
+    public void SetLipSyncTrack(VirtualState state, bool isTracking)
+    {
+        var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
+        trackingControl.trackingMouth = isTracking ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
     }
 }
 

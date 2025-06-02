@@ -77,8 +77,12 @@ internal static class PlatformSupport
         return GetSupports(root).First().MenuItemAsCondition(menuItem, usedNames);
     }
 
-    public static void SetTracks(Transform root,VirtualState state, Expression expression)
+    public static void SetEyeBlinkTrack(Transform root, VirtualState state, bool isTracking)
     {
-        GetSupports(root).First().SetTracks(state, expression);
+        GetSupports(root).First().SetEyeBlinkTrack(state, isTracking);
+    }   
+    public static void SetLipSyncTrack(Transform root, VirtualState state, bool isTracking)
+    {
+        GetSupports(root).First().SetLipSyncTrack(state, isTracking);
     }
 }
