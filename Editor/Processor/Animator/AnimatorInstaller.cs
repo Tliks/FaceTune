@@ -23,7 +23,6 @@ internal class AnimatorInstaller
     private const string SystemName = "FaceTune";
     private readonly bool _useWriteDefaults;
     private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
-    private const string TrueParameterName = "FT_True";
     private static readonly Vector3 DefaultStatePosition = new Vector3(300, 0, 0);
     private const float PositionYStep = 50;
 
@@ -101,8 +100,6 @@ internal class AnimatorInstaller
 
     public void InstallPatternData(PatternData patternData, int priority)
     {
-        EnsureParameterExists(new ParameterCondition(TrueParameterName, true), param => param.defaultBool = true);
-
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
             var type = patternGroup.Type;
@@ -215,7 +212,7 @@ internal class AnimatorInstaller
 
             var entryTransition = VirtualTransition.Create();
             entryTransition.SetDestination(state);
-            entryTransition.Conditions = ToAnimatorConditions(conditions, negate: false).ToImmutableList();
+            entryTransition.Conditions = ToAnimatorConditions(conditions).ToImmutableList();
             newEntryTransitions.Add(entryTransition);
 
             var newExpressionStateTransitions = new List<VirtualStateTransition>();
@@ -226,7 +223,7 @@ internal class AnimatorInstaller
                 exitTransition.HasFixedDuration = true;
                 exitTransition.Duration = duration;
                 exitTransition.ExitTime = null; 
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition, negate: true));
+                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.GetNegate()));
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -250,119 +247,78 @@ internal class AnimatorInstaller
 
         return states;
     }
-
-    private AnimatorCondition ToAnimatorCondition(Condition condition, bool? negate = null)
-    {
-        var currentCondition = negate == true ? condition.GetNegate() : condition;
-        var animatorCondition = CreateAnimatorCondition(currentCondition);
-        EnsureParameterExists(currentCondition);
-        return animatorCondition;
-    }
     
-    private List<AnimatorCondition> ToAnimatorConditions(IEnumerable<Condition> conditions, bool negate)
+    private IEnumerable<AnimatorCondition> ToAnimatorConditions(IEnumerable<Condition> conditions)
     {
         if (!conditions.Any()) return new List<AnimatorCondition>();
-
         var transitionConditions = new List<AnimatorCondition>();
-
         foreach (var cond in conditions)
         {
-            var animatorCondition = ToAnimatorCondition(cond, negate);
+            var animatorCondition = ToAnimatorCondition(cond);
             transitionConditions.Add(animatorCondition);
         }
         return transitionConditions;
     }
 
-    private AnimatorCondition CreateAnimatorCondition(Condition condition)
+    private AnimatorCondition ToAnimatorCondition(Condition condition)
     {
-        switch (condition)
-        {
-            case HandGestureCondition hgc:
-                return new AnimatorCondition
-                {
-                    mode = hgc.ComparisonType == BoolComparisonType.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
-                    parameter = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight",
-                    threshold = (int)hgc.HandGesture
-                };
-            case ParameterCondition pc:
-                return CreateParameterAnimatorCondition(pc);
-            default:
-                throw new NotImplementedException($"Condition type {condition.GetType()} is not implemented");
-        }
-    }
-
-    private AnimatorCondition CreateParameterAnimatorCondition(ParameterCondition pc)
-    {
+        AnimatorControllerParameterType resolvedParamType = AnimatorControllerParameterType.Float;
+        string parameter = "";
         AnimatorConditionMode mode = AnimatorConditionMode.Equals;
         float threshold = 0;
 
-        switch (pc.ParameterType)
-        {
-            case ParameterType.Int:
-                mode = pc.IntComparisonType switch
-                {
-                    IntComparisonType.Equal => AnimatorConditionMode.Equals,
-                    IntComparisonType.NotEqual => AnimatorConditionMode.NotEqual,
-                    IntComparisonType.GreaterThan => AnimatorConditionMode.Greater,
-                    IntComparisonType.LessThan => AnimatorConditionMode.Less,
-                    _ => mode
-                };
-                threshold = pc.IntValue;
-                break;
-            case ParameterType.Float:
-                mode = pc.FloatComparisonType switch
-                {
-                    FloatComparisonType.GreaterThan => AnimatorConditionMode.Greater,
-                    FloatComparisonType.LessThan => AnimatorConditionMode.Less,
-                    _ => mode
-                };
-                threshold = pc.FloatValue;
-                break;
-            case ParameterType.Bool:
-                mode = pc.BoolValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot;
-                break;
-        }
-
-        if (pc.ParameterType == ParameterType.Bool)
-        {
-            return new AnimatorCondition { mode = mode, parameter = pc.ParameterName };
-        }
-        else
-        {
-            return new AnimatorCondition { mode = mode, parameter = pc.ParameterName, threshold = threshold };
-        }
-    }
-
-    private void EnsureParameterExists(Condition condition, Action<AnimatorControllerParameter>? onParameterCreated = null)
-    {
-        string paramName = "";
-        AnimatorControllerParameterType resolvedParamType = AnimatorControllerParameterType.Float;
-
         switch (condition)
         {
             case HandGestureCondition hgc:
-                paramName = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight";
                 resolvedParamType = AnimatorControllerParameterType.Int;
+                parameter = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight";
+                mode = hgc.ComparisonType == BoolComparisonType.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual;
+                threshold = (int)hgc.HandGesture; // 整数値をそのまま使う。
                 break;
             case ParameterCondition pc:
-                paramName = pc.ParameterName;
-                resolvedParamType = pc.ParameterType switch
+                parameter = pc.ParameterName;
+                switch (pc.ParameterType)
                 {
-                    ParameterType.Int => AnimatorControllerParameterType.Int,
-                    ParameterType.Float => AnimatorControllerParameterType.Float,
-                    ParameterType.Bool => AnimatorControllerParameterType.Bool,
-                    _ => resolvedParamType
-                };
+                    case ParameterType.Int:
+                        resolvedParamType = AnimatorControllerParameterType.Int;
+                        mode = pc.IntComparisonType switch
+                        {
+                            IntComparisonType.Equal => AnimatorConditionMode.Equals,
+                            IntComparisonType.NotEqual => AnimatorConditionMode.NotEqual,
+                            IntComparisonType.GreaterThan => AnimatorConditionMode.Greater,
+                            IntComparisonType.LessThan => AnimatorConditionMode.Less,
+                            _ => mode
+                        };
+                        threshold = pc.IntValue;
+                        break;
+                    case ParameterType.Float:
+                        resolvedParamType = AnimatorControllerParameterType.Float;
+                        mode = pc.FloatComparisonType switch
+                        {
+                            FloatComparisonType.GreaterThan => AnimatorConditionMode.Greater,
+                            FloatComparisonType.LessThan => AnimatorConditionMode.Less,
+                            _ => mode
+                        };
+                        threshold = pc.FloatValue;
+                        break;
+                    case ParameterType.Bool:
+                        resolvedParamType = AnimatorControllerParameterType.Bool;
+                        mode = pc.BoolValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot;
+                        break;
+                    default:
+                        throw new NotImplementedException($"Parameter type {pc.ParameterType} is not implemented");
+                }
                 break;
             default:
-                return;
+                throw new NotImplementedException($"Condition type {condition.GetType()} is not implemented");
         }
 
-        if (!_parameterCache.ContainsKey(paramName))
+        // EnsureParameterExists
+        if (!_parameterCache.ContainsKey(parameter))
         {
             var param = new AnimatorControllerParameter
             {
-                name = paramName,
+                name = parameter,
                 type = resolvedParamType
             };
 
@@ -378,10 +334,16 @@ internal class AnimatorInstaller
                     param.defaultFloat = 0f;
                     break;
             }
-            onParameterCreated?.Invoke(param);
-            _virtualController.Parameters = _virtualController.Parameters.Add(paramName, param);
-            _parameterCache.Add(paramName, param);
+            _virtualController.Parameters = _virtualController.Parameters.Add(parameter, param);
+            _parameterCache.Add(parameter, param);
         }
+        
+        return new AnimatorCondition
+        {
+            parameter = parameter,
+            mode = mode,
+            threshold = threshold
+        };
     }
 
     private void SetTracks(VirtualState state, IEnumerable<Expression> expressions)
