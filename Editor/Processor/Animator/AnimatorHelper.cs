@@ -37,7 +37,7 @@ internal static class AnimatorHelper
         var behavior = stateMachine.Behaviours.OfType<TBehavior>().FirstOrNull();
         if (behavior == null)
         {
-            behavior = Activator.CreateInstance<TBehavior>();
+            behavior = ScriptableObject.CreateInstance<TBehavior>();
             stateMachine.Behaviours = stateMachine.Behaviours.Add(behavior);
         }
         return behavior;
