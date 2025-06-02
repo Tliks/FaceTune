@@ -12,11 +12,15 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         var passContext = context.Extension<FTPassContext>()!;
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-        var patternData = passContext.PatternData;
-        if (patternData == null) throw new InvalidOperationException("PatternData is null");
-        if (patternData.IsEmpty) return;
 
-        var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext.Root.transform);
+        List<Expression> allExpressions = new();
+        allExpressions.AddRange(sessionContext.DEC.GetAllExpressions());
+        if (passContext.PatternData != null && !passContext.PatternData.IsEmpty)
+        {
+            allExpressions.AddRange(passContext.PatternData.GetAllExpressions());
+        }
+
+        var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext.Root.transform).ToHashSet();
 
         if (sessionContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
@@ -25,13 +29,11 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             _ = shapesToClone;
             if (!shapesToClone.Any()) return;
             var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
-            ModifyData(sessionContext.DEC.GetAllExpressions(), mapping);
-            ModifyData(patternData.GetAllExpressions(), mapping);
+            ModifyData(allExpressions, mapping);
         }
         else
         {
-            RemoveAndWarning(sessionContext.DEC.GetAllExpressions(), trackedShapes);
-            RemoveAndWarning(patternData.GetAllExpressions(), trackedShapes);
+            RemoveAndWarning(allExpressions, trackedShapes);
         }
     }
 
@@ -53,19 +55,34 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         }
     }
 
-    private void RemoveAndWarning(IEnumerable<Expression> expressions, IEnumerable<string> trackedShapes)
+    private void RemoveAndWarning(IEnumerable<Expression> expressions, HashSet<string> trackedShapes)
     {
+        var shapesToRemove = new List<BlendShape>();
+        var shapesToWarning = new List<BlendShape>();
+
         foreach (var expression in expressions)
         {
-            var names = new HashSet<string>(expression.BlendShapeNames);
-            var intersection = names.Intersect(trackedShapes);
-            if (intersection.Any())
+            var shapes = expression.GetBlendShapeSet();
+            foreach (var shape in shapes.BlendShapes)
             {
-                var joinedShapes = string.Join(", ", intersection);
-                Debug.LogWarning($"Expression {expression.Name} contains tracked blend shapes [{joinedShapes}]. These will be removed and may cause unintended behavior.");
-                Debug.LogWarning($"Please either add CloneTrackedBlendShapesComponent or exclude these blend shapes.");
-                expression.RemoveShapes(intersection);
+                if (trackedShapes.Contains(shape.Name))
+                {
+                    shapesToRemove.Add(shape);
+                    shapesToWarning.Add(shape);
+                }
             }
+
+            expression.RemoveShapes(shapesToRemove.Select(s => s.Name));
+
+            if (shapesToWarning.Any())
+            {
+                var joinedShapes = string.Join(", ", shapesToWarning.Select(s => s.Name));
+                Debug.LogWarning($"Expression {expression.Name} contains tracked blend shapes [{joinedShapes}]. These will be removed and may cause unintended behavior.");
+                Debug.LogWarning($"Please either add AllowTrackedBlendShapesComponent or exclude these blend shapes.");
+            }
+
+            shapesToRemove.Clear();
+            shapesToWarning.Clear();
         }
     }
 }
