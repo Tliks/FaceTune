@@ -68,7 +68,10 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
                 if (trackedShapes.Contains(shape.Name))
                 {
                     shapesToRemove.Add(shape);
-                    shapesToWarning.Add(shape);
+                    if (shape.Weight != 0)
+                    {
+                        shapesToWarning.Add(shape);
+                    }
                 }
             }
 
