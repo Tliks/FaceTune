@@ -31,6 +31,8 @@ internal class AnimatorInstaller
     private VirtualLayer? _disableExistingControlLayer;
     private VirtualState? _defaultState;
 
+    private const string AllowEyeBlinkAAP = "FT/AllowEyeBlinkAAP";
+    private const string AllowLipSyncAAP = "FT/AllowLipSyncAAP";
 
     public AnimatorInstaller(SessionContext sessionContext, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
@@ -110,7 +112,7 @@ internal class AnimatorInstaller
     public void InstallPatternData(PatternData patternData)
     {
         if (patternData.Count == 0) return;
-        
+
         VirtualLayer? defaultLayer = null;
         VirtualState? defaultState = null;
         if (_disableExistingControlLayer != null && _defaultState != null)
@@ -124,6 +126,10 @@ internal class AnimatorInstaller
         }
         defaultLayer.Name = $"{SystemName}_Default";
 
+        EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
+        EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
+
+        SetTracks(defaultState, _globalDefaultExpression);
         AddDefaultForPattern(patternData, defaultLayer, defaultState);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
@@ -140,6 +146,9 @@ internal class AnimatorInstaller
                 InstallSingleExpressionPatternGroup(singleExpressionPatterns, LayerPriority);
             }
         }
+
+        AddEyeBlinkLayer();
+        AddLipSyncLayer();
     }
 
     private void AddDefaultForPattern(PatternData patternData, VirtualLayer defaultLayer, VirtualState defaultState)
@@ -156,7 +165,7 @@ internal class AnimatorInstaller
                 var presetState = presetStates[i];
                 presetState.Name = preset.Name;
                 AddExpressionsToState(presetState, new[] { preset.DefaultExpression });
-                // SetTracks(presetState, preset.DefaultExpression);
+                SetTracks(presetState, preset.DefaultExpression);
             }
         }
     }
@@ -181,8 +190,7 @@ internal class AnimatorInstaller
                 if (!layerCreatedForThisIndex)
                 {
                     layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
-                    defaultStates[i] = AddFTState(layers[i], "Default", DefaultStatePosition);
-                    SetTracks(defaultStates[i], _globalDefaultExpression);
+                    defaultStates[i] = AddFTState(layers[i], "Default", DefaultStatePosition); // パススルー
                     layerCreatedForThisIndex = true;
                 }
                 
@@ -201,8 +209,7 @@ internal class AnimatorInstaller
                 !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
             var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
-            var defaultState = AddFTState(layer, "Default", DefaultStatePosition);
-            SetTracks(defaultState, _globalDefaultExpression);
+            var defaultState = AddFTState(layer, "Default", DefaultStatePosition); // パススルー
             var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
             AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
         }
@@ -415,13 +422,94 @@ internal class AnimatorInstaller
 
     private void SetTracks(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
     {
+        var clip = state.Motion as VirtualClip;
+        if (clip == null)
+        {
+            clip = VirtualClip.Create(state.Name);
+            state.Motion = clip;
+        }
+        if (clip.IsMarkerClip) throw new Exception("clip is marker clip");
+
+        // AAP
         if (allowEyeBlink != null)
-    {
-            _platformSupport.SetEyeBlinkTrack(state, allowEyeBlink.Value);
+        {
+            var curve = new AnimationCurve();
+            var value = allowEyeBlink.Value ? 1 : 0;
+            curve.AddKey(0, value);
+            clip.SetFloatCurve("", typeof(Animator), AllowEyeBlinkAAP, curve);
         }
         if (allowLipSync != null)
         {
-            _platformSupport.SetLipSyncTrack(state, allowLipSync.Value);
+            var curve = new AnimationCurve();
+            var value = allowLipSync.Value ? 1 : 0;
+            curve.AddKey(0, value);
+            clip.SetFloatCurve("", typeof(Animator), AllowLipSyncAAP, curve);
         }
+    }
+    
+    private void AddEyeBlinkLayer()
+    {
+        var eyeBlinkLayer = AddFTLayer(_virtualController, "EyeBlink", LayerPriority);
+
+        var position = DefaultStatePosition;
+        var enabled = AddFTState(eyeBlinkLayer, "Enabled", position);
+        position.y += 2 * PositionYStep;
+        var disabled = AddFTState(eyeBlinkLayer, "Disabled", position);
+
+        _platformSupport.SetEyeBlinkTrack(enabled, true);
+        _platformSupport.SetEyeBlinkTrack(disabled, false);
+
+        var enabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        enabledTransition.SetDestination(enabled);
+        enabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        {
+            parameter = AllowEyeBlinkAAP,
+            mode = AnimatorConditionMode.Greater,
+            threshold = 0.99f
+        });
+        disabled.Transitions = ImmutableList.Create(enabledTransition);
+
+        var disabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        disabledTransition.SetDestination(disabled);
+        disabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        {
+            parameter = AllowEyeBlinkAAP,
+            mode = AnimatorConditionMode.Less,
+            threshold = 0.99f
+        });
+        enabled.Transitions = ImmutableList.Create(disabledTransition);
+    }
+
+    private void AddLipSyncLayer()
+    {
+        var lipSyncLayer = AddFTLayer(_virtualController, "LipSync", LayerPriority);
+
+        var position = DefaultStatePosition;
+        var enabled = AddFTState(lipSyncLayer, "Enabled", position);
+        position.y += 2 * PositionYStep;
+        var disabled = AddFTState(lipSyncLayer, "Disabled", position);
+
+        _platformSupport.SetLipSyncTrack(enabled, true);
+        _platformSupport.SetLipSyncTrack(disabled, false);
+
+        var enabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        enabledTransition.SetDestination(enabled);
+        enabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        {
+            parameter = AllowLipSyncAAP,
+            mode = AnimatorConditionMode.Greater,
+            threshold = 0.99f
+        });
+        disabled.Transitions = ImmutableList.Create(enabledTransition);
+
+        var disabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        disabledTransition.SetDestination(disabled);
+        disabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        {
+            parameter = AllowLipSyncAAP,
+            mode = AnimatorConditionMode.Less,
+            threshold = 0.99f
+        });
+        enabled.Transitions = ImmutableList.Create(disabledTransition);
     }
 }
