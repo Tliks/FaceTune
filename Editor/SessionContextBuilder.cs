@@ -2,7 +2,7 @@ namespace com.aoyon.facetune;
 
 internal static class SessionContextBuilder
 {
-    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, IOberveContext? context = null)
+    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, IObserveContext? context = null)
     {
         sessionContext = null;
 
@@ -25,7 +25,7 @@ internal static class SessionContextBuilder
         return true;
     }
 
-    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IOberveContext? context = null)
+    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
 
@@ -48,7 +48,7 @@ internal static class SessionContextBuilder
         }
     }
 
-    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, BlendShapeSet sceneShapes, IOberveContext? context = null)
+    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, BlendShapeSet sceneShapes, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
 

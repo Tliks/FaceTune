@@ -20,7 +20,7 @@ namespace com.aoyon.facetune
         public AnimationClip? Clip;
         public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
-        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IOberveContext observeContext)
+        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
         {
             var defaultSet = defaultExpression.BlendShapeSet;
 
@@ -47,7 +47,7 @@ namespace com.aoyon.facetune
         }
 
 #if UNITY_EDITOR
-        internal BlendShapeSet? GetBlendShapeSet(BlendShapeSet defaultSet, IOberveContext observeContext)
+        internal BlendShapeSet? GetBlendShapeSet(BlendShapeSet defaultSet, IObserveContext observeContext)
         {
             var expressionType = observeContext.Observe(this, c => c.ExpressionType, (a, b) => a == b);
             BlendShapeSet? blendShapeSet = null;

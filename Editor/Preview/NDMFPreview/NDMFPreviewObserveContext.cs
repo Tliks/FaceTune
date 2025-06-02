@@ -2,7 +2,7 @@ using nadena.dev.ndmf.preview;
 
 namespace com.aoyon.facetune;
 
-internal class NDMFPreviewObserveContext : IOberveContext
+internal class NDMFPreviewObserveContext : IObserveContext
 {
     private readonly ComputeContext _context;
 

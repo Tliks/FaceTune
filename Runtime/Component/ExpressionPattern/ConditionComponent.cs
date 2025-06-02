@@ -31,7 +31,7 @@ namespace com.aoyon.facetune
                     .Select(x => x with { }).Cast<Condition>());
         }
 
-        internal IEnumerable<Expression> GetExpressions(FacialExpression defaultExpression, IOberveContext observeContext)
+        internal IEnumerable<Expression> GetExpressions(FacialExpression defaultExpression, IObserveContext observeContext)
         {
             return GetExpressionComponents(observeContext)
                 .Select(c => c as IExpressionProvider)
@@ -40,7 +40,7 @@ namespace com.aoyon.facetune
                 .ToList();
         }
 
-        internal IEnumerable<ExpressionComponentBase> GetExpressionComponents(IOberveContext observeContext)
+        internal IEnumerable<ExpressionComponentBase> GetExpressionComponents(IObserveContext observeContext)
         {
             var fromSelfOnly = observeContext.Observe(this, c => c.ExpressionFromSelfOnly, (a, b) => a == b);
             return fromSelfOnly ? observeContext.GetComponents<ExpressionComponentBase>(gameObject)

@@ -2,7 +2,7 @@ using nadena.dev.ndmf.runtime;
 
 namespace com.aoyon.facetune;
 
-internal class NonObserveContext : IOberveContext
+internal class NonObserveContext : IObserveContext
 {
     public GameObject? GetAvatarRoot(GameObject obj)
     {

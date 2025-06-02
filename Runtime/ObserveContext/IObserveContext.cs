@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune;
 
-internal interface IOberveContext
+internal interface IObserveContext
 {
     public GameObject? GetAvatarRoot(GameObject obj);
     public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object;

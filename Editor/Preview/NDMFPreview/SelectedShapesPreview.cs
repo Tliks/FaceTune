@@ -106,7 +106,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         return clip.GetBlendShapes().ToSet();
     }
 
-    private static BlendShapeSet GetBlendShapeSet(IEnumerable<ExpressionComponentBase> expressionComponents, FacialExpression defaultExpression, IOberveContext observeContext)
+    private static BlendShapeSet GetBlendShapeSet(IEnumerable<ExpressionComponentBase> expressionComponents, FacialExpression defaultExpression, IObserveContext observeContext)
     {
         var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
