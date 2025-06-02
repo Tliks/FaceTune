@@ -16,10 +16,8 @@ internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
         if (presetData == null) throw new InvalidOperationException("PatternData is null");
         if (presetData.IsEmpty) return;
 
-        var disableExistingControl = sessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true).Any();
-
         Profiler.BeginSample("InstallPatternData");
-        platform.PlatformSupport.InstallPatternData(context, sessionContext, presetData, disableExistingControl);
+        platform.PlatformSupport.InstallPatternData(passContext, presetData);
         Profiler.EndSample();
     }
 }

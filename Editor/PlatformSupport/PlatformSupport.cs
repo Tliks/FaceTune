@@ -2,6 +2,7 @@ using nadena.dev.ndmf;
 using nadena.dev.ndmf.runtime;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
+using com.aoyon.facetune.pass;
 
 namespace com.aoyon.facetune.platform;
 
@@ -39,9 +40,14 @@ internal static class PlatformSupport
         return GetSupports(root).Select(s => s.GetFaceRenderer()).FirstOrNull(r => r != null);
     }
 
-    public static void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
+    public static void DisableExistingControl(FTPassContext passContext)
     {
-        GetSupports(context.Root.transform).First().InstallPatternData(buildContext, context, patternData, disableExistingControl);
+        GetSupports(passContext.BuildContext.AvatarRootObject.transform).First().DisableExistingControl(passContext);
+    }
+
+    public static void InstallPatternData(FTPassContext passContext, PatternData patternData)
+    {
+        GetSupports(passContext.BuildContext.AvatarRootObject.transform).First().InstallPatternData(passContext, patternData);
     }
 
     public static IEnumerable<string> GetTrackedBlendShape(Transform root)

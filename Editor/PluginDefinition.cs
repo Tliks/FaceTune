@@ -10,7 +10,6 @@ namespace com.aoyon.facetune;
 public sealed class PluginDefinition : Plugin<PluginDefinition>
 {
     public override string QualifiedName => "com.aoyon.facetune";
-
     public override string DisplayName => "FaceTune";
 
     protected override void Configure()
@@ -32,6 +31,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
             .WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
             {
                 sq1
+                .Run(DisableExistingControlPass.Instance).Then
                 .Run(InstallPatternDataPass.Instance);
             });
         });

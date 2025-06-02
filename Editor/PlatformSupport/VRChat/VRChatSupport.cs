@@ -7,6 +7,7 @@ using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.animator;
 using nadena.dev.ndmf.animator;
+using com.aoyon.facetune.pass;
 
 namespace com.aoyon.facetune.platform;
 
@@ -65,20 +66,41 @@ internal class VRChatSuport : IPlatformSupport
         return faceRenderer;
     }
 
-    public void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
+    private AnimatorInstaller InitializeAnimatorInstaller(BuildContext buildContext, SessionContext context)
     {
         var asc = buildContext.Extension<AnimatorServicesContext>();
         var cc = asc.ControllerContext;
         var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        var animatorInstaller = new AnimatorInstaller(context, cc, fx, useWriteDefaults);
+        return new AnimatorInstaller(context, cc, fx, useWriteDefaults);
+    }
 
-        // faceEmo: 0
-        var defaultLayerPriority = disableExistingControl ? 1 : -1;
-        animatorInstaller.CreateDefaultLayer(patternData, defaultLayerPriority);
+    private AnimatorInstaller InitializeAnimatorInstallerIfNull(FTPassContext passContext)
+    {
+        var sessionContext = passContext.SessionContext;
+        if (sessionContext == null)
+        {
+            throw new Exception("SessionContext is not set");
+        }
+        var installer = passContext.AnimatorInstaller;
+        if (installer == null)
+        {
+            installer = InitializeAnimatorInstaller(passContext.BuildContext, sessionContext);
+            passContext.SetAnimatorInstaller(installer);
+        }
+        return installer;
+    }
 
-        var layerPriority = 1;
-        animatorInstaller.InstallPatternData(patternData, layerPriority);
+    public void DisableExistingControl(FTPassContext passContext)
+    {
+        var installer = InitializeAnimatorInstallerIfNull(passContext);
+        installer.DisableExistingControl();
+    }
+
+    public void InstallPatternData(FTPassContext passContext, PatternData patternData)
+    {
+        var installer = InitializeAnimatorInstallerIfNull(passContext);
+        installer.InstallPatternData(patternData);
     }
 
     public IEnumerable<string> GetTrackedBlendShape()

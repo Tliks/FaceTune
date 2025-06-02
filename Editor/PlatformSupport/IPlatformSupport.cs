@@ -1,6 +1,7 @@
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
+using com.aoyon.facetune.pass;
 
 namespace com.aoyon.facetune.platform;
 
@@ -12,7 +13,11 @@ internal interface IPlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void InstallPatternData(BuildContext buildContext, SessionContext context, PatternData patternData, bool disableExistingControl)
+    public void DisableExistingControl(FTPassContext passContext)
+    {
+        return;
+    }
+    public void InstallPatternData(FTPassContext passContext, PatternData patternData)
     {
         return;
     }
@@ -42,6 +47,7 @@ internal interface IPlatformSupport
     {
         return (null, null);
     }
+
     public void SetTracks(VirtualState state, Expression expression)
     {
         return;

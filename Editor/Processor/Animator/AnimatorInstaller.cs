@@ -25,6 +25,10 @@ internal class AnimatorInstaller
     private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
     private static readonly Vector3 DefaultStatePosition = new Vector3(300, 0, 0);
     private const float PositionYStep = 50;
+    
+    private const int WDLayerPriority = -1; // 上書きを意図したものではなく、WDの問題を回避するためのレイヤー。
+    private const int LayerPriority = 1; // FaceEmo: 0
+    private VirtualLayer? _disableExistingControlLayer;
 
     public AnimatorInstaller(SessionContext sessionContext, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
@@ -40,27 +44,20 @@ internal class AnimatorInstaller
         _relativePath = HierarchyUtility.GetRelativePath(_sessionContext.Root, _sessionContext.FaceRenderer.gameObject)!;
     }
 
-    public VirtualLayer CreateDefaultLayer(PatternData patternData, int priority)
+    public VirtualLayer DisableExistingControl()
+    {
+        var defaultLayer = AddDefaultLayer(LayerPriority);
+        defaultLayer.Name = "FT Disable Existing Control";
+        _disableExistingControlLayer = defaultLayer;
+        return _disableExistingControlLayer;
+    }
+
+    public VirtualLayer AddDefaultLayer(int priority)
     {
         var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
         var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
         AddExpressionsToState(defaultState, new[] { _globalDefaultExpression });
         // SetTracks(defaultState, _globalDefaultExpression);
-        var presets = patternData.GetAllPresets().ToList();
-        if (presets.Count > 0)
-        {
-            var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
-            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-            var presetStates = AddExclusiveStates(defaultLayer, defaultState, presetConditions, 0f, basePosition);
-            for (int i = 0; i < presets.Count; i++)
-            {
-                var preset = presets[i];
-                var presetState = presetStates[i];
-                presetState.Name = preset.Name;
-                AddExpressionsToState(presetState, new[] { preset.DefaultExpression });
-                // SetTracks(presetState, preset.DefaultExpression);
-            }
-        }
         return defaultLayer;
     }
 
@@ -98,21 +95,53 @@ internal class AnimatorInstaller
         }
     }
 
-    public void InstallPatternData(PatternData patternData, int priority)
+    public void InstallPatternData(PatternData patternData)
     {
+        VirtualLayer? defaultLayer = null;
+        if (_disableExistingControlLayer != null)
+        {
+            defaultLayer = _disableExistingControlLayer;
+        }
+        else
+        {
+            defaultLayer = AddDefaultLayer(WDLayerPriority);
+        }
+        defaultLayer.Name = "FT Default";
+        CreateDefaultForPattern(patternData, defaultLayer);
+
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
             var type = patternGroup.Type;
-
             if (type == typeof(Preset))
             {
                 var presets = patternGroup.Group.Select(item => (Preset)item).ToList();
-                InstallPresetGroup(presets, priority);
+                InstallPresetGroup(presets, LayerPriority);
             }
             else if (type == typeof(SingleExpressionPattern))
             {
                 var singleExpressionPatterns = patternGroup.Group.Select(item => (SingleExpressionPattern)item).ToList();
-                InstallSingleExpressionPatternGroup(singleExpressionPatterns, priority);
+                InstallSingleExpressionPatternGroup(singleExpressionPatterns, LayerPriority);
+            }
+        }
+    }
+
+    private void CreateDefaultForPattern(PatternData patternData, VirtualLayer defaultLayer)
+    {
+        var defaultState = defaultLayer.StateMachine?.DefaultState;
+        if (defaultState == null) throw new Exception("Default state is not created");
+        var presets = patternData.GetAllPresets().ToList();
+        if (presets.Count > 0)
+        {
+            var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
+            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+            var presetStates = AddExclusiveStates(defaultLayer, defaultState, presetConditions, 0f, basePosition);
+            for (int i = 0; i < presets.Count; i++)
+            {
+                var preset = presets[i];
+                var presetState = presetStates[i];
+                presetState.Name = preset.Name;
+                AddExpressionsToState(presetState, new[] { preset.DefaultExpression });
+                // SetTracks(presetState, preset.DefaultExpression);
             }
         }
     }
