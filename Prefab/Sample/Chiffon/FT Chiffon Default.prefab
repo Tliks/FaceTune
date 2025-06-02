@@ -580,6 +580,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 696241075826170406}
     m_Modifications:
+    - target: {fileID: 925550573792282443, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: e3f49ae007c4e834ea7ccc0ac5492d7e, type: 2}
+    - target: {fileID: 925550573792282443, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1454831304556310989, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 8e3e05c932b51534b85e44d42507db57, type: 2}
+    - target: {fileID: 1454831304556310989, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1482673358645777912, guid: c259edc6efd4aaa4bba3b1636557cc3b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -630,10 +650,130 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1835667709974530586, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 304dabb5f6a6463428ba390f633b5a92, type: 2}
+    - target: {fileID: 1835667709974530586, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1983330813973239188, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: e3f49ae007c4e834ea7ccc0ac5492d7e, type: 2}
+    - target: {fileID: 1983330813973239188, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2112699544551668768, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 7ecf9c6880ea60e439733bc9b4881e02, type: 2}
+    - target: {fileID: 2112699544551668768, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2353015802635284851, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 7b220c5cacee3f34fafc5cfef7465508, type: 2}
+    - target: {fileID: 2353015802635284851, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2494402359784175576, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: c6e2b7bf90146a14a9a4bfdd31792c84, type: 2}
+    - target: {fileID: 2494402359784175576, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2595426985217570620, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 7ecf9c6880ea60e439733bc9b4881e02, type: 2}
+    - target: {fileID: 2595426985217570620, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4144818537148158752, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 52db00ef288d98e48bc6c62e19d02295, type: 2}
+    - target: {fileID: 4144818537148158752, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4783374641729294204, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 52db00ef288d98e48bc6c62e19d02295, type: 2}
+    - target: {fileID: 4783374641729294204, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6026705092488586211, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: c6e2b7bf90146a14a9a4bfdd31792c84, type: 2}
+    - target: {fileID: 6026705092488586211, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6138559628904768169, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 8e3e05c932b51534b85e44d42507db57, type: 2}
+    - target: {fileID: 6138559628904768169, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7290238891181836968, guid: c259edc6efd4aaa4bba3b1636557cc3b,
         type: 3}
       propertyPath: m_Name
       value: Basic
+      objectReference: {fileID: 0}
+    - target: {fileID: 8261337629608886349, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 304dabb5f6a6463428ba390f633b5a92, type: 2}
+    - target: {fileID: 8261337629608886349, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9208484269093622807, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: Clip
+      value: 
+      objectReference: {fileID: 7400000, guid: 7b220c5cacee3f34fafc5cfef7465508, type: 2}
+    - target: {fileID: 9208484269093622807, guid: c259edc6efd4aaa4bba3b1636557cc3b,
+        type: 3}
+      propertyPath: ExpressionType
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
