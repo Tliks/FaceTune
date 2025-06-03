@@ -52,8 +52,7 @@ internal class FacialShapesEditor : EditorWindow
     private readonly PublishedValue<BlendShapeSet> _previewShapes = new(new());
 
     private AnimationClip? _sourceClip = null;
-    private bool _includeZeroWeight = false;
-    private bool _includeEqualOverride = false;
+    private ClipExcludeOption _clipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
     public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
     {
@@ -217,8 +216,7 @@ internal class FacialShapesEditor : EditorWindow
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         EditorGUILayout.LabelField("Clip Extraction", EditorStyles.boldLabel);
         _sourceClip = EditorGUILayout.ObjectField("Source Clip", _sourceClip, typeof(AnimationClip), false) as AnimationClip;
-        _includeEqualOverride = EditorGUILayout.Toggle("Include Equal Override", _includeEqualOverride);
-        _includeZeroWeight = EditorGUILayout.Toggle("Include Zero Weight", _includeZeroWeight);
+        _clipExcludeOption = (ClipExcludeOption)EditorGUILayout.EnumPopup("Exclude Option", _clipExcludeOption);
         
         EditorGUILayout.Space(5);
         if (GUILayout.Button("Extract from Clip"))
@@ -235,15 +233,14 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_sourceClip == null) return;
 
-        var newBlendShapes = new BlendShapeSet(_sourceClip.GetBlendShapes());
-        if (!_includeZeroWeight) newBlendShapes.RemoveZeroWeight();
+        var newBlendShapes = BlendShapeUtility.GetBlendShapeSetFromClip(_sourceClip, _clipExcludeOption, new BlendShapeSet(BaseShapes));
 
         var mapping = new BlendShapeSet(BaseShapes).Add(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
         foreach (var blendShape in newBlendShapes.BlendShapes)
         {
             if (mapping.TryGetValue(blendShape.Name, out var index))
             {
-                if (!_includeEqualOverride && _overrideWeights[index] == blendShape.Weight) continue;
+                // if (!_includeEqualOverride && _overrideWeights[index] == blendShape.Weight) continue;
                 _overrideFlags[index] = true;
                 _overrideWeights[index] = blendShape.Weight;
             }

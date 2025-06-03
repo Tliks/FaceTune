@@ -61,7 +61,21 @@ internal static class GameObjectMenu
     [M(BasePath + "Template Base", false, PRIORITY)] 
     static void TemplateBase() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e", true);
 
+    [M(BasePath + "Condition", false, PRIORITY + 1)] 
+    static void Condition() => IP("20aca02f84d174940bb4ca676555589a", true);
+    
+    private const string MenuPath = BasePath + "Menu/";
+    [M(MenuPath + "single", false, PRIORITY + 2)] 
+    static void MenuSingle() => IP("a045ae2cad411ae43b4c008ff814957e", true);
+
+    [M(MenuPath + "exclusive", false, PRIORITY + 3)] 
+    static void MenuExclusive() => IP("9e1741e66ac069742976cf8c7e785a35", true);
+
+    [M(MenuPath + "blending", false, PRIORITY + 4)] 
+    static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", true);
+
     // Additional
+    /*
     private const string AdditionalPath = BasePath + "Additional/";
     [M(AdditionalPath + "Condition (single)", false, PRIORITY + 10)] 
     static void ConditionSingle() => IP("20aca02f84d174940bb4ca676555589a");
@@ -71,8 +85,10 @@ internal static class GameObjectMenu
     static void MenuSingle() => IP("a045ae2cad411ae43b4c008ff814957e");
     [M(AdditionalPath + "Menu (multiple)", false, PRIORITY + 13)] 
     static void MenuMultiple() => IP("557c13125870f764bb20173aa14b004f");
+    */
 
     // etc
+    /* 
     private const string EtcPath = BasePath + "etc/";
     [M(EtcPath + "Lipsync Override", false, PRIORITY + 20)] 
     static void EtcLipsyncOverride() => IP("48b0b3096f2029640a1f79b1bcd39a00");
@@ -82,4 +98,5 @@ internal static class GameObjectMenu
     // static void EtcOption() => IP("552f6348a1639fd45bd202c3614c5c2a");
     [M(EtcPath + "Override Menu", false, PRIORITY + 23)] 
     static void EtcOverrideMenu() => IP("dbb95b5ca0abfd2478f07d702c2e48b6");
+    */
 }
