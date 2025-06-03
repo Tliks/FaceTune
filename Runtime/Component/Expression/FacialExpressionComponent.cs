@@ -20,30 +20,27 @@ namespace com.aoyon.facetune
         public AnimationClip? Clip;
         public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
-        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
+        Expression IExpressionProvider.ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
         {
+            var set = new BlendShapeSet();
             var defaultSet = defaultExpression.BlendShapeSet;
 
-            BlendShapeSet? blendShapeSet = null;
-#if UNITY_EDITOR
-            blendShapeSet = GetBlendShapeSet(defaultSet, observeContext);
-#endif
-            if (blendShapeSet == null) return null;
-
             var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
-            if (!enableBlending)
+            if (enableBlending)
             {
-                blendShapeSet = defaultSet.Add(blendShapeSet);
+                set.Add(defaultSet);
             }
 
-            if (blendShapeSet.BlendShapes.Any())
+            BlendShapeSet? newSet = null;
+#if UNITY_EDITOR
+            newSet = GetBlendShapeSet(defaultSet, observeContext);
+#endif 
+            if (newSet != null)
             {
-                return new FacialExpression(blendShapeSet, AllowEyeBlink, AllowLipSync, name);
+                set.Add(newSet);
             }
-            else
-            {
-                return null;
-            }
+
+            return new FacialExpression(set, AllowEyeBlink, AllowLipSync, name);
         }
 
 #if UNITY_EDITOR

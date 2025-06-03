@@ -9,10 +9,10 @@ namespace com.aoyon.facetune
         public PathType PathType = PathType.Absolute;
         public AnimationClip? Clip = null;
 
-        Expression? IExpressionProvider.ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
+        Expression IExpressionProvider.ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
         {            
             var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
-            if (clip == null) return null;
+            if (clip == null) return new FacialExpression(new BlendShapeSet(), TrackingPermission.Keep, TrackingPermission.Keep, name); // Todo
             var pathType = observeContext.Observe(this, c => c.PathType, (a, b) => a == b);
             if (pathType == PathType.Absolute)
             {

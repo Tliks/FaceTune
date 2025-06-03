@@ -111,16 +111,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
         {
-            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(defaultExpression, observeContext), (a, b) => 
-            {
-                if (a == null && b == null) return true;
-                if (a == null || b == null) return false;
-                return a.Equals(b);
-            });
-            if (expression != null)
-            {
-                blendShapes.Add(expression.GetBlendShapeSet());
-            }
+            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(defaultExpression, observeContext), (a, b) => a.Equals(b));
+            blendShapes.Add(expression.GetBlendShapeSet());
         }
         if (blendShapes.Count == 0) return defaultExpression.BlendShapeSet;
         return blendShapes;

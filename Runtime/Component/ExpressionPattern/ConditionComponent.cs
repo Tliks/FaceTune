@@ -36,7 +36,6 @@ namespace com.aoyon.facetune
             return GetExpressionComponents(observeContext)
                 .Select(c => c as IExpressionProvider)
                 .Select(c => c!.ToExpression(defaultExpression, observeContext))
-                .UnityOfType<Expression>()
                 .ToList();
         }
 
