@@ -51,7 +51,7 @@ internal class AnimatorInstaller
     public VirtualLayer DisableExistingControl()
     {
         var (defaultLayer, defaultState) = AddDefaultLayer(LayerPriority);
-        defaultLayer.Name = $"{SystemName}_Disable Existing Control";
+        defaultLayer.Name = $"{SystemName}: Disable Existing Control";
         _disableExistingControlLayer = defaultLayer;
         _defaultState = defaultState;
         return _disableExistingControlLayer;
@@ -69,7 +69,7 @@ internal class AnimatorInstaller
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
     {
         var layerPriority = new LayerPriority(priority);
-        var layer = controller.AddLayer(layerPriority, $"{SystemName}_{layerName}");
+        var layer = controller.AddLayer(layerPriority, $"{SystemName}: {layerName}");
         layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
         return layer; 
     }
@@ -124,7 +124,7 @@ internal class AnimatorInstaller
         {
             (defaultLayer, defaultState) = AddDefaultLayer(WDLayerPriority);
         }
-        defaultLayer.Name = $"{SystemName}_Default";
+        defaultLayer.Name = $"{SystemName}: Default";
 
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
