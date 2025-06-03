@@ -201,9 +201,10 @@ internal class VRChatSuport : IPlatformSupport
     }
     public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
-        if (!string.IsNullOrEmpty(menuItem.Control.parameter.name)) 
+        var existingParameterName = menuItem.Control.parameter.name;
+        if (!string.IsNullOrWhiteSpace(existingParameterName)) 
         {
-            return (null, null);
+            return (existingParameterName, new ParameterCondition(existingParameterName, true));
         }
         if (menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Toggle ||
             menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Button)
