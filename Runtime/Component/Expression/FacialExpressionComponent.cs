@@ -26,7 +26,7 @@ namespace com.aoyon.facetune
             var defaultSet = defaultExpression.BlendShapeSet;
 
             var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
-            if (enableBlending)
+            if (!enableBlending)
             {
                 set.Add(defaultSet);
             }
