@@ -13,7 +13,7 @@ internal class DisableExistingControlPass : Pass<DisableExistingControlPass>
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
 
-        if (sessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true).Any())
+        if (sessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true).Where(c => c.OverrideBlendShapes).Any())
         {
             platform.PlatformSupport.DisableExistingControl(passContext);
         }
