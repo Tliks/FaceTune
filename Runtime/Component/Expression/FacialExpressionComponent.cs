@@ -57,50 +57,13 @@ namespace com.aoyon.facetune
                     var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
                     if (clip == null) return null;
                     var clipExcludeOption = observeContext.Observe(this, c => c.ClipExcludeOption, (a, b) => a == b);
-                    blendShapeSet = GetBlendShapeSetFromClip(clip, clipExcludeOption, defaultSet);
+                    blendShapeSet = BlendShapeUtility.GetBlendShapeSetFromClip(clip, clipExcludeOption, defaultSet);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expressionType), expressionType, null);
             }
             if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return null;
             return blendShapeSet;
-        }
-
-        internal static BlendShapeSet GetBlendShapeSetFromClip(AnimationClip clip, ClipExcludeOption clipExcludeOption, BlendShapeSet defaultSet)
-        {
-            var blendShapes = new BlendShapeSet(GetBlendShapesFromClip(clip));
-            switch (clipExcludeOption)
-            {
-                case ClipExcludeOption.None:
-                    break;
-                case ClipExcludeOption.ExcludeZeroWeight:
-                    blendShapes.RemoveZeroWeight();
-                    break;
-                case ClipExcludeOption.ExcludeDefault:
-                    blendShapes = blendShapes.ToDiff(defaultSet);
-                    break;
-            }
-            return blendShapes;
-        }
-
-        // AnimationUtilityからコピー
-        private static List<BlendShape> GetBlendShapesFromClip(AnimationClip clip, bool first = true)
-        {
-            var blendShapes = new List<BlendShape>();
-            var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
-            foreach (var binding in bindings)
-            {
-                if (binding.type != typeof(SkinnedMeshRenderer) || !binding.propertyName.StartsWith("blendShape.")) continue;
-
-                var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
-                if (curve != null && curve.keys.Length > 0)
-                {
-                    var name = binding.propertyName.Replace("blendShape.", string.Empty);
-                    var weight = first ? curve.keys[0].value : curve.keys[curve.keys.Length - 1].value;
-                    blendShapes.Add(new BlendShape(name, weight));
-                }
-            }
-            return blendShapes;
         }
 #endif
     }
