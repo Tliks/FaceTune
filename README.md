@@ -65,43 +65,43 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 
 各コンポーネントの説明です。以下に説明のないコンポーネントは現在動作していません。
 
-`Condition`
+### Condition
 
 条件を設定します。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。アタッチされたGameObject以下のExpressionがこのConditionと紐付きます。
 
-`Facial Expression`
+### Facial Expression
 
 表情を設定します。デフォルト表情からの差分の設定のみで動作します。`Enable Blending`をオンにすると、他の表情と重ね合わせて表情を使えるようになります。
 
-`Pattern`
+### Pattern
 
 アタッチされたGameObject以下の複数の`Condition`とそれに紐づく`Expression`を排他制御としてマークします。
 
-`Preset`
+### Preset
 
 アタッチされたGameObject以下の制御をプリセットとしてマークします。このプリセットをオンオフするメニューは同じ階層に自動生成されます。このPresetを複数配置することで、複数の制御をメニューから切り替えできるようになります。
 
-`Default Facial Expression`
+### Default Facial Expression
 
 デフォルト表情を設定します。このコンポーネントが設定されない場合、シーン上のブレンドシェイプなどがデフォルト表情となります。プリセット単位で設定することも出来ます。
 
-`Disable Existing Control`
+### Disable Existing Control
  
 既存の表情制御を無効化します。表情ブレンドシェイプ以外の無効化は行いません。
 
-`Allow　Tracked BlendShapes`
+### Allow　Tracked BlendShapes
 
 まばたきやリップシンクに使用され、通常表情に用いることが許可されていないブレンドシェイプを用いることが出来るようにします。このコンポーネントが設定されておらず、許可されないブレンドシェイプが使用されていた場合、警告の上でそのブレンドシェイプは除外されます。動作原理はビルド時におけるブレンドシェイプの複製です。
 
-`Override　Face Renderer`
+### Override　Face Renderer
 
 適用対象のSkinnedMeshRendererを明示的に指定します。このコンポーネントが設定されていない場合、自動的に選定されます。
 
 
-`Common Condition`
+### Common Condition
 
 設定された条件を直下の`Condition`に一括で追加します。共通の条件をまとめたい際に便利です。
 
-`FaceTune Assistant`
+### FaceTune Assistant
 
 Editor上でのみ機能するコンポーネントです。現在アバターに対し設定されたFaceTuneの設定を簡単に解析し、設定に関する簡単な情報の提供をします。またGameObjectやコンポーネントの生成を行う機能などを提供します。
