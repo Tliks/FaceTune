@@ -61,7 +61,7 @@ internal class AnimatorInstaller
     {
         var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
         var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
-        AddExpressionsToState(defaultState, new[] { _globalDefaultExpression });
+        AddExpressionToState(defaultState, _globalDefaultExpression);
         // SetTracks(defaultState, _globalDefaultExpression);
         return (defaultLayer, defaultState);
     }
@@ -90,20 +90,17 @@ internal class AnimatorInstaller
         return state;
     }
 
-    private void AddExpressionsToState(VirtualState state, IEnumerable<Expression> expressions)
+    private void AddExpressionToState(VirtualState state, Expression expression)
     {
-        var facialExpressions = expressions.UnityOfType<FacialExpression>();
-        var animationExpressions = expressions.UnityOfType<AnimationExpression>();
-        
-        if (animationExpressions.Any())
+        if (expression is AnimationExpression animationExpression)
         {
-            state.Motion = _vcc.Clone(animationExpressions.First().Clip);
+            state.Motion = _vcc.Clone(animationExpression.Clip);
         }
         else
         {
-            var name = facialExpressions.First().Name;
+            var name = expression.Name;
             var newAnimationClip = VirtualClip.Create(name);
-            var shapes = facialExpressions.SelectMany(f => f.BlendShapeSet.BlendShapes).ToList();
+            var shapes = expression.GetBlendShapeSet().BlendShapes;
             newAnimationClip.SetBlendShapes(_relativePath, shapes);
             state.Motion = newAnimationClip;
         }
@@ -164,7 +161,7 @@ internal class AnimatorInstaller
                 var preset = presets[i];
                 var presetState = presetStates[i];
                 presetState.Name = preset.Name;
-                AddExpressionsToState(presetState, new[] { preset.DefaultExpression });
+                AddExpressionToState(presetState, preset.DefaultExpression);
                 SetTracks(presetState, preset.DefaultExpression);
             }
         }
@@ -226,10 +223,9 @@ internal class AnimatorInstaller
             var expressionWithCondition = expressionWithConditionList[i];
             var state = states[i];
             state.Name = expressionWithCondition.Expressions.First().Name;
-            var expressions = expressionWithCondition.Expressions;
-            AddExpressionsToState(state, expressions);
-            var (allowEyeBlink, allowLipSync) = ResolveTrackingPermission(expressions);
-            SetTracks(state, allowEyeBlink, allowLipSync);
+            var expression = expressionWithCondition.GetResolvedExpression();
+            AddExpressionToState(state, expression);
+            SetTracks(state, expression);
         }
     }
 
@@ -382,27 +378,6 @@ internal class AnimatorInstaller
         }
 
         return _parameterCache[parameter];
-    }
-
-    private (bool? allowEyeBlink, bool? allowLipSync) ResolveTrackingPermission(IEnumerable<Expression> expressions)
-    {
-        bool? allowEyeBlink = null;
-        bool? allowLipSync = null;
-
-        foreach (var expression in expressions)
-        {
-            if (expression.AllowEyeBlink != TrackingPermission.Keep)
-            {
-                allowEyeBlink = expression.AllowEyeBlink == TrackingPermission.Allow;
-            }
-
-            if (expression.AllowLipSync != TrackingPermission.Keep)
-            {
-                allowLipSync = expression.AllowLipSync == TrackingPermission.Allow;
-            }
-        }
-        
-        return (allowEyeBlink, allowLipSync);
     }
 
     private void SetTracks(VirtualState state, Expression expression)
