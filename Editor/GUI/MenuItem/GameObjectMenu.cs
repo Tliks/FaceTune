@@ -19,12 +19,10 @@ internal static class GameObjectMenu
             Debug.LogError("Prefab not found");
             return;
         }
-
-        Undo.IncrementCurrentGroup();
+        
         var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         if (parent == null) parent = Selection.activeGameObject;
         
-        Undo.RegisterCreatedObjectUndo(instance, "Create " + instance.name);
         instance.transform.SetParent(parent.transform, false);
         
         if (isFirstSibling)
@@ -34,11 +32,12 @@ internal static class GameObjectMenu
         
         if (unpackRoot)
         {
-            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
+            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
         }
-        
+
+        Undo.RegisterCreatedObjectUndo(instance, "Create " + instance.name);
+
         Selection.activeObject = instance;
-        Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
     }
     
     // Sample

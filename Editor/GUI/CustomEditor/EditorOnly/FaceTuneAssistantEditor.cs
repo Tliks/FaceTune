@@ -152,13 +152,16 @@ namespace com.aoyon.facetune.ui
             if (patternObject == null)
             {
                 Debug.LogError($"failed to load pattern: {patternGuid}");
+                return;
             }
+
+
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(patternObject);
+            instance.transform.SetParent(Component.transform, false);
             if (patternInfo.ShouldUnpack)
             {
-                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
+                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
             }
-            instance.transform.SetParent(Component.transform, false);
             Undo.RegisterCreatedObjectUndo(instance, "Create Pattern");
             Selection.activeObject = instance;
         }
