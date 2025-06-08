@@ -17,22 +17,28 @@ internal static class GameObjectMenu
         if (prefab == null)
         {
             Debug.LogError("Prefab not found");
+            return;
         }
-        else
+
+        Undo.IncrementCurrentGroup();
+        var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+        if (parent == null) parent = Selection.activeGameObject;
+        
+        Undo.RegisterCreatedObjectUndo(instance, "Create " + instance.name);
+        instance.transform.SetParent(parent.transform, false);
+        
+        if (isFirstSibling)
         {
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            if (parent == null) parent = Selection.activeGameObject;
-            instance.transform.SetParent(parent.transform, false);
-            if (isFirstSibling)
-            {
-                instance.transform.SetAsFirstSibling();
-            }
-            if (unpackRoot)
-            {
-                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
-            }
-            Selection.activeObject = instance;
+            instance.transform.SetAsFirstSibling();
         }
+        
+        if (unpackRoot)
+        {
+            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
+        }
+        
+        Selection.activeObject = instance;
+        Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
     }
     
     // Sample
