@@ -54,6 +54,8 @@ internal class FacialShapesEditor : EditorWindow
     private AnimationClip? _sourceClip = null;
     private ClipExcludeOption _clipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
+    private int _previousUndoGroup = -1;
+
     public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
     {
         if (HasOpenInstances<FacialShapesEditor>())
@@ -102,6 +104,9 @@ internal class FacialShapesEditor : EditorWindow
 
         saveChangesMessage = "This window may have unsaved changes. Would you like to save?";
         hasUnsavedChanges = false;
+
+        _previousUndoGroup = Undo.GetCurrentGroup();
+        Undo.IncrementCurrentGroup();
 
         _previewShapes.Value = GetResult();
         EditingShapesPreview.Start(renderer, _previewShapes);
@@ -175,8 +180,18 @@ internal class FacialShapesEditor : EditorWindow
 
     void OnDisable()
     {
-        _selector.Dispose();
+        _selector?.Dispose();
         EditingShapesPreview.Stop();
+        CollapseUndoGroup();
+    }
+
+    private void CollapseUndoGroup()
+    {
+        if (_previousUndoGroup != -1)
+        {
+            Undo.CollapseUndoOperations(_previousUndoGroup);
+            _previousUndoGroup = -1;
+        }
     }
 
     public virtual void OnGUI()
