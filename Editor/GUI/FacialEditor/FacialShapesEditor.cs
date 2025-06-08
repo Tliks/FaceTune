@@ -196,6 +196,8 @@ internal class FacialShapesEditor : EditorWindow
 
     public virtual void OnGUI()
     {
+        if (HandleKeyboardEvents()) return;
+
         _serializedObject.Update();
 
         _horizontalSplitView.BeginSplitView();
@@ -216,6 +218,25 @@ internal class FacialShapesEditor : EditorWindow
         Repaint();
 
         _serializedObject.ApplyModifiedProperties();
+    }
+
+    private bool HandleKeyboardEvents()
+    {
+        if (Event.current.type != EventType.KeyDown) return false;
+
+        // Ctrl+S（WindowsまたはLinux）またはCmd+S（Mac）で保存
+        if (Event.current.keyCode == KeyCode.S)
+        {
+            if ((Event.current.control && Application.platform != RuntimePlatform.OSXEditor) || 
+                (Event.current.command && Application.platform == RuntimePlatform.OSXEditor))
+            {
+                SaveChanges();
+                Event.current.Use();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void DrawSettingsView()
