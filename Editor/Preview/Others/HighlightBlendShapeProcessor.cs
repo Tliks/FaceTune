@@ -1,7 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using nadena.dev.ndmf.preview;
-using UnityEditor.SceneManagement;
 
 namespace com.aoyon.facetune.preview;
 
@@ -44,13 +42,7 @@ internal class HighlightBlendShapeProcessor : IDisposable
     {
         if (hlighter != null) return;
 
-        var scene = NDMFPreviewSceneManager.GetPreviewScene();
-        if (scene == null) scene = _renderer.gameObject.scene;
-
-        var tmpObj = new GameObject("HilightBlendShape");
-        EditorSceneManager.MoveGameObjectToScene(tmpObj, scene);
-
-        hlighter = tmpObj.AddComponent<HilightBlendShape>();
+        hlighter = _renderer.gameObject.AddComponent<HilightBlendShape>();
 
         _bakedMesh = new Mesh();
         Debug.Log($"BakeMesh: {_renderer.name}");
@@ -147,7 +139,7 @@ internal class HighlightBlendShapeProcessor : IDisposable
         if (_bakedMesh != null) Object.DestroyImmediate(_bakedMesh);
         _bakedMesh = null;
 
-        if (hlighter != null) Object.DestroyImmediate(hlighter.gameObject);
+        if (hlighter != null) Object.DestroyImmediate(hlighter);
         hlighter = null;
     }
 }
