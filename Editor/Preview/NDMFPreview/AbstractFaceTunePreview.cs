@@ -58,8 +58,19 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
         if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Empty();
 
-        var blendShapeWeights = blendShapeSet.ToArrayForMesh(proxyMesh, _ => -1) // 対象外の場合はフラグとして-1を代入しNode側で除外
-            .Select(b => b.Weight).ToArray();
+        var blendShapeWeights = FloatArrayPool.Get(proxyMesh.blendShapeCount);
+        for (int i = 0; i < proxyMesh.blendShapeCount; i++)
+        {
+            var name = proxyMesh.GetBlendShapeName(i);
+            if (blendShapeSet.Mapping.TryGetValue(name, out var blendShape))
+            {
+                blendShapeWeights[i] = blendShape.Weight;
+            }
+            else
+            {
+                blendShapeWeights[i] = -1; // 対象外の場合はフラグとして-1を代入しNode側で除外
+            }
+        }
 
         return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(blendShapeWeights));
         
@@ -106,6 +117,11 @@ internal class BlendShapePreviewNode : IRenderFilterNode
             if (_blendShapeWeights[i] == -1) continue; // 対象外
             smr.SetBlendShapeWeight(i, _blendShapeWeights[i]);
         }
+    }
+
+    public void Dispose()
+    {
+        FloatArrayPool.Return(_blendShapeWeights);
     }
 }
 
