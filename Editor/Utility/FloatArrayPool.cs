@@ -6,7 +6,6 @@ internal static class FloatArrayPool
 
     public static float[] Get(int length)
     {
-        Debug.Log($"Get: {length}");
         if (_pools.TryGetValue(length, out var stack) && stack.Count > 0)
         {
             return stack.Pop();
@@ -16,7 +15,6 @@ internal static class FloatArrayPool
 
     public static void Return(float[] array)
     {
-        Debug.Log($"Return: {array.Length}");
-        _pools.GetOrAdd(array.Length, _ => new Stack<float[]>()).Push(array);
+        _pools.GetOrAddNew(array.Length).Push(array);
     }
 }
