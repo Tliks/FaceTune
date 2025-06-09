@@ -144,26 +144,9 @@ namespace com.aoyon.facetune.ui
             EditorGUILayout.EndVertical();
         }
 
-        internal void CreatePatternImpl(PatternInfo patternInfo)
+        private void CreatePatternImpl(PatternInfo patternInfo)
         {
-            var patternGuid = patternInfo.Guid;
-            var patternPath = AssetDatabase.GUIDToAssetPath(patternGuid);
-            var patternObject = AssetDatabase.LoadAssetAtPath<GameObject>(patternPath);
-            if (patternObject == null)
-            {
-                Debug.LogError($"failed to load pattern: {patternGuid}");
-                return;
-            }
-
-
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(patternObject);
-            instance.transform.SetParent(Component.transform, false);
-            if (patternInfo.ShouldUnpack)
-            {
-                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
-            }
-            Undo.RegisterCreatedObjectUndo(instance, "Create Pattern");
-            Selection.activeObject = instance;
+            FTPrefabUtility.InstantiatePrefab(patternInfo.Guid, patternInfo.ShouldUnpack, Component.gameObject);
         }
     }
 }
