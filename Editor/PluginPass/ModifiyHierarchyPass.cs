@@ -18,8 +18,6 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
         // Add Condition Component Phase
         NegotiateMAMenuItem(context.AvatarRootObject);
-        // Edit Condition Component  Phase
-        ProcessCommonCondition(context.AvatarRootObject);
         // PostProcess Phase
         NormalizeData(context.AvatarRootObject);
     }
@@ -33,23 +31,12 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         {
             if (!expressionComponent.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)) continue;
 
-            if (expressionComponent.TryGetComponent<CommonConditionComponent>(out var _)) continue;
-
             var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
             if (parameterName == null) continue;
 
             var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
             conditionComponent.ParameterConditions.Add(parameterCondition!);
             expressionComponent.ExpressionFromSelfOnly = true;
-        }
-    }
-
-    private void ProcessCommonCondition(GameObject root)
-    {
-        var commonConditionComponents = root.GetComponentsInChildren<CommonConditionComponent>(true);
-        foreach (var commonConditionComponent in commonConditionComponents)
-        {
-            commonConditionComponent.AddConditions();
         }
     }
 
