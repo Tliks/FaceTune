@@ -39,9 +39,9 @@ internal class ProcessPresetPass : Pass<ProcessPresetPass>
             var menuTarget = preset.MenuTarget;
             if (menuTarget == null) continue;
             var menuItem = menuTarget.EnsureComponent<ModularAvatarMenuItem>();
-            platform.PlatformSupport.EnsureMenuItemIsToggle(menuTarget.transform, menuItem);
-            platform.PlatformSupport.AssignParameterName(menuTarget.transform, menuItem, parameterName); // Todo 上書きしていいかどうか。
-            platform.PlatformSupport.AssignParameterValue(menuTarget.transform, menuItem, index);
+            platform.PlatformSupport.EnsureMenuItemIsToggle(context.AvatarRootTransform, menuItem);
+            platform.PlatformSupport.AssignParameterName(context.AvatarRootTransform, menuItem, parameterName); // Todo 上書きしていいかどうか。
+            platform.PlatformSupport.AssignParameterValue(context.AvatarRootTransform, menuItem, index);
         }
     }
 }
