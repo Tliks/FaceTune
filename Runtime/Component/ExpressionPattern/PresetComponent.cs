@@ -24,7 +24,7 @@ namespace com.aoyon.facetune
         {
             // デフォルトは同階層にPresetのトグルを作る。
             // Todo: option to override
-            var menuTarget = new GameObject();
+            var menuTarget = new GameObject(name);
             menuTarget.transform.SetParent(transform.parent);
             return menuTarget;
         }

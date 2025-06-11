@@ -189,7 +189,7 @@ internal class VRChatSuport : IPlatformSupport
     }
     public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
     {
-        menuItem.Control.parameter.name = parameterName;
+        menuItem.Control.parameter = new() { name = parameterName };
     }
     public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
     {
