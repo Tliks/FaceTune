@@ -9,7 +9,7 @@ public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressio
 {
     internal bool ExpressionFromSelfOnly = false;
 
-    internal IEnumerable<ExpressionWithCondition> GetExpressionWithConditions(FacialExpression defaultExpression)
+    internal IEnumerable<IEnumerable<Condition>> GetConditions()
     {
         // 親の GameObject ごとの Condition を取得する (OR の AND)
         var conditionComponentsByGameObject = new List<ConditionComponent[]>();
@@ -25,22 +25,11 @@ public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressio
         }
 
         // 親の GameObject ごとの Condition の直積を求める (AND の OR)
-        var conditionComponentsByExpression = conditionComponentsByGameObject
-            .Aggregate(
-                Enumerable.Repeat(Enumerable.Empty<ConditionComponent>(), 1),
-                (acc, set) => acc.SelectMany(_ => set, (x, y) => x.Append(y))
-            );
-
-        foreach (var conditionComponents in conditionComponentsByExpression)
-        {
-            var conditions = conditionComponents
-                .SelectMany(x => Enumerable.Concat<Condition>(
-                    x.HandGestureConditions.Select(y => y with { }),
-                    x.ParameterConditions.Select(y => y with { })))
-                .ToList();
-            var expressions = new[] { ToExpression(defaultExpression, new NonObserveContext()) };
-            yield return new(conditions, expressions);
-        }
+        return conditionComponentsByGameObject
+            .Aggregate(Enumerable.Repeat(Enumerable.Empty<Condition>(), 1), (conditions, components) => conditions
+                .SelectMany(_ => components, (x, y) => x
+                    .Concat(y.HandGestureConditions.Select(z => z with { }))
+                    .Concat(y.ParameterConditions.Select(z => z with { }))));
     }
 
     internal abstract Expression ToExpression(FacialExpression defaultExpression, IObserveContext observeContext);
