@@ -74,19 +74,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             return GetBlendShapeSet(expressionComponents, defaultExpression, observeContext);
         }
 
-        var conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ConditionComponent>(targetGameObject) : null, (a, b) =>
-        {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.SequenceEqual(b);
-        });
-        if (conditionComponents != null && conditionComponents.Length == 1)
-        {
-            var conditionComponent = conditionComponents.First();
-            var expressionComponents_ = conditionComponent.GetExpressionComponents(observeContext);
-            return GetBlendShapeSet(expressionComponents_, defaultExpression, observeContext);
-        }
-
         var globalDefaultExpression = dfc.GetGlobalDefaultExpression();
         if (!defaultExpression.Equals(globalDefaultExpression))
         {
