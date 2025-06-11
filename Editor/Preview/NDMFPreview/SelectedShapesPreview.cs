@@ -83,10 +83,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         if (conditionComponents != null && conditionComponents.Length > 0)
         {
             var conditionComponent = conditionComponents.First();
-            var parentConditionComponents = conditionComponent.GetComponentsInParent<ConditionComponent>(true);
             var childrenConditionComponents = conditionComponent.GetComponentsInChildren<ConditionComponent>(true);
-            if (parentConditionComponents.All(x => x.gameObject == conditionComponent.gameObject) &&
-                childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
+            if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
                 return GetBlendShapeSet(conditionComponent.GetComponentsInChildren<ExpressionComponentBase>(true), defaultExpression, observeContext);
             }
