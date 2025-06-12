@@ -181,6 +181,7 @@ internal class FacialShapesEditor : EditorWindow
     void OnDisable()
     {
         _selector?.Dispose();
+        _highlightBlendShapeProcessor?.Dispose();
         EditingShapesPreview.Stop();
         CollapseUndoGroup();
     }
