@@ -71,7 +71,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         });
         if (expressionComponents != null && expressionComponents.Length > 0)
         {
-            return GetBlendShapeSet(expressionComponents, defaultExpression, observeContext);
+            return GetBlendShapeSet(expressionComponents, sessionContext, defaultExpression, observeContext);
         }
 
         var conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ConditionComponent>(targetGameObject) : null, (a, b) =>
@@ -84,20 +84,20 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         {
             var conditionComponent = conditionComponents.First();
             var expressionComponents_ = conditionComponent.GetExpressionComponents(observeContext);
-            return GetBlendShapeSet(expressionComponents_, defaultExpression, observeContext);
+            return GetBlendShapeSet(expressionComponents_, sessionContext, defaultExpression, observeContext);
         }
 
         var globalDefaultExpression = dfc.GetGlobalDefaultExpression();
         if (!defaultExpression.Equals(globalDefaultExpression))
         {
             // PresetdefaultExpression
-            return defaultExpression.BlendShapeSet;
+            return defaultExpression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
         }
         else
         {
             // GlobalDefaultExpression
             // DefaultPreviewと重複するが、DefaultPreviewがOFFの場合でも選択時はプレビューはして良いと思う。
-            return globalDefaultExpression.BlendShapeSet;
+            return globalDefaultExpression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
         }
     }
 
@@ -106,15 +106,15 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         return clip.GetBlendShapes().ToSet();
     }
 
-    private static BlendShapeSet GetBlendShapeSet(IEnumerable<ExpressionComponentBase> expressionComponents, FacialExpression defaultExpression, IObserveContext observeContext)
+    private static BlendShapeSet GetBlendShapeSet(IEnumerable<ExpressionComponentBase> expressionComponents, SessionContext sessionContext, Expression defaultExpression, IObserveContext observeContext)
     {
         var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
         {
-            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(defaultExpression, observeContext), (a, b) => a.Equals(b));
-            blendShapes.Add(expression.GetBlendShapeSet());
+            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(sessionContext, observeContext), (a, b) => a.Equals(b));
+            blendShapes.Add(expression.AnimationIndex.GetAllFirstFrameBlendShapeSet());
         }
-        if (blendShapes.Count == 0) return defaultExpression.BlendShapeSet;
+        if (blendShapes.Count == 0) return defaultExpression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
         return blendShapes;
     }
 }

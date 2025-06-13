@@ -16,12 +16,17 @@ namespace com.aoyon.facetune
             return gameObject;
         }
 
-        internal ExpressionWithCondition? GetExpressionWithCondition(FacialExpression defaultExpression)
+        internal ExpressionWithConditions? GetExpressionWithCondition(SessionContext sessionContext)
         {
             var conditions = GetConditions();
-            var expressions = GetExpressions(defaultExpression, new NonObserveContext());
+            var expressions = GetExpressions(sessionContext, new NonObserveContext());
             if (conditions.Count() == 0 || expressions.Count() == 0) return null;
-            return new ExpressionWithCondition(conditions.ToList(), expressions.ToList());
+            var expression = expressions.Aggregate((a, b) => 
+            {
+                a.MergeExpression(b);
+                return a;
+            });
+            return new ExpressionWithConditions(conditions.ToList(), expression);
         }
 
         internal IEnumerable<Condition> GetConditions()
@@ -31,11 +36,11 @@ namespace com.aoyon.facetune
                     .Select(x => x with { }).Cast<Condition>());
         }
 
-        internal IEnumerable<Expression> GetExpressions(FacialExpression defaultExpression, IObserveContext observeContext)
+        internal IEnumerable<Expression> GetExpressions(SessionContext sessionContext, IObserveContext observeContext)
         {
             return GetExpressionComponents(observeContext)
                 .Select(c => c as IExpressionProvider)
-                .Select(c => c!.ToExpression(defaultExpression, observeContext))
+                .Select(c => c!.ToExpression(sessionContext, observeContext))
                 .ToList();
         }
 

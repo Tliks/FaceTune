@@ -47,5 +47,19 @@ internal static class VirtualAnimationUtility
         clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
         return clip;
     }
+
+    public static void SetAnimation(this VirtualClip clip, GenericAnimation animation)
+    {
+        var binding = animation.CurveBinding.ToEditorCurveBinding();
+        clip.SetFloatCurve(binding.path, binding.type, binding.propertyName, animation.GetCurve());
+    }
+
+    public static void SetAnimations(this VirtualClip clip, IEnumerable<GenericAnimation> animations)
+    {
+        foreach (var animation in animations)
+        {
+            SetAnimation(clip, animation);
+        }
+    }
 }
 

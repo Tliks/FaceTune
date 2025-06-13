@@ -1,3 +1,5 @@
+using nadena.dev.ndmf.runtime;
+
 namespace com.aoyon.facetune;
 
 internal static class SessionContextBuilder
@@ -16,12 +18,14 @@ internal static class SessionContextBuilder
 
         var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
         if (faceMesh == null) return false;
+
+        var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
         
         // context.Observe(faceRenderer, r => r.GetBlendShapes(faceMesh).ToSet(), (a, b) => a == b);
         var sceneShapes = faceRenderer.GetBlendShapes(faceMesh).ToSet();
-        var dec = BuildDefaultExpressionContext(root, sceneShapes, context);
+        var dec = BuildDefaultExpressionContext(root, bodyPath, sceneShapes, context);
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, dec);
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, dec);
         return true;
     }
 
@@ -48,14 +52,14 @@ internal static class SessionContextBuilder
         }
     }
 
-    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, BlendShapeSet sceneShapes, IObserveContext? context = null)
+    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, string bodyPath, BlendShapeSet sceneShapes, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
 
         var defaultExpressionComponents = context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true);
         var presetComponents = context.GetComponentsInChildren<PresetComponent>(root.gameObject, true);
 
-        var presetExpressions = new Dictionary<PresetComponent, FacialExpression?>();
+        var presetExpressions = new Dictionary<PresetComponent, Expression?>();
         var usedExpressionComponents = new HashSet<DefaultFacialExpressionComponent>();
 
         // presetExpression
@@ -68,8 +72,8 @@ internal static class SessionContextBuilder
             var OverrideDefaultExpressionComponent = context.Observe(presetComponent, pc => pc.OverrideDefaultExpressionComponent, (a, b) => a == b);
             if (OverrideDefaultExpressionComponent != null)
             {
-                var presetDefaultExpression = OverrideDefaultExpressionComponent.GetDefaultExpression(context);
-                EnsureHasAllShapes(presetDefaultExpression, sceneShapes);
+                var presetDefaultExpression = OverrideDefaultExpressionComponent.GetDefaultExpression(bodyPath, context);
+                EnsureHasAllShapes(presetDefaultExpression, sceneShapes, bodyPath);
                 presetExpressions.Add(presetComponent, presetDefaultExpression);
                 usedExpressionComponents.Add(OverrideDefaultExpressionComponent);
             }
@@ -82,23 +86,30 @@ internal static class SessionContextBuilder
         // defaultExpression
         var defaultExpression = defaultExpressionComponents
             .Where(c => !usedExpressionComponents.Contains(c))
-            .Select(c => c.GetDefaultExpression(context))
+            .Select(c => c.GetDefaultExpression(bodyPath, context))
             .FirstOrNull();
         if (defaultExpression == null) 
         {
-            defaultExpression = new FacialExpression(sceneShapes, TrackingPermission.Allow, TrackingPermission.Allow, "Default");
+            var defaultAnimations = sceneShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight).GetGeneric(bodyPath)).ToList();
+            defaultExpression = new Expression("Default", defaultAnimations, new FacialSettings());
         }
         else
         {
-            EnsureHasAllShapes(defaultExpression, sceneShapes);
+            EnsureHasAllShapes(defaultExpression, sceneShapes, bodyPath);
         }
 
         return new DefaultExpressionContext(defaultExpression, presetExpressions);
 
-        static void EnsureHasAllShapes(FacialExpression expression, BlendShapeSet fallback)
+        static void EnsureHasAllShapes(Expression expression, BlendShapeSet fallback, string bodyPath)
         {
-            var defaultShapes = fallback.Duplicate().Add(expression.BlendShapeSet);
-            expression.ReplaceShapeSet(defaultShapes);
+            var shapes = expression.AnimationIndex.GetAllFirstFrameBlendShapeSet().GetMapping();
+            foreach (var fallbackShape in fallback)
+            {
+                if (!shapes.ContainsKey(fallbackShape.Name))
+                {
+                    expression.AnimationIndex.AddSingleFrameBlendShapeAnimation(bodyPath, fallbackShape.Name, fallbackShape.Weight);
+                }
+            }
         }
     }
 }

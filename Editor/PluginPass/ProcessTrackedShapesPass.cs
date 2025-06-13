@@ -29,7 +29,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             _ = shapesToClone;
             if (!shapesToClone.Any()) return;
             var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
-            ModifyData(allExpressions, mapping);
+            ModifyData(allExpressions, sessionContext.BodyPath, mapping);
         }
         else
         {
@@ -47,11 +47,11 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         return mapping;
     }
 
-    private void ModifyData(IEnumerable<Expression> expressions, Dictionary<string, string> mapping)
+    private void ModifyData(IEnumerable<Expression> expressions, string targetPath, Dictionary<string, string> mapping)
     {
         foreach (var expression in expressions)
         {
-            expression.ReplaceBlendShapeNames(mapping);
+            expression.AnimationIndex.ReplaceBlendShapeNames(targetPath, mapping);
         }
     }
 
@@ -62,7 +62,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         foreach (var expression in expressions)
         {
-            var shapes = expression.GetBlendShapeSet();
+            var shapes = expression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
             foreach (var shape in shapes.BlendShapes)
             {
                 if (trackedShapes.Contains(shape.Name))
@@ -75,7 +75,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
                 }
             }
 
-            expression.RemoveShapes(shapesToRemove.Select(s => s.Name));
+            expression.AnimationIndex.RemoveBlendShapes(shapesToRemove.Select(s => s.Name));
 
             if (shapesToWarning.Any())
             {

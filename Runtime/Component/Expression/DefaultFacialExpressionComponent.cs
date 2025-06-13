@@ -6,15 +6,22 @@ namespace com.aoyon.facetune
         internal const string ComponentName = "FT Default Facial Expression";
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
-        public TrackingPermission AllowEyeBlink = TrackingPermission.Disallow;
-        public TrackingPermission AllowLipSync = TrackingPermission.Allow;
-        public List<BlendShape> BlendShapes = new();
+        public FacialSettings FacialSettings = new();
+        public List<BlendShapeAnimation> BlendShapeAnimations = new();
 
-        internal FacialExpression GetDefaultExpression(IObserveContext observeContext)
+        internal Expression GetDefaultExpression(string bodyPath, IObserveContext observeContext)
         {
-            var set = observeContext.Observe(this, c => c.BlendShapes.ToSet(), (a, b) => a == b);
-            // if (set == null || set.BlendShapes.Count() == 0) return null;
-            return new FacialExpression(set, AllowEyeBlink, AllowLipSync, name);
+            var animations = observeContext.Observe(this, c => new List<BlendShapeAnimation>(c.BlendShapeAnimations), (a, b) => a.SequenceEqual(b))
+                .Select(ba => ba.GetGeneric(bodyPath))
+                .ToList();
+            var settings = observeContext.Observe(this, c => c.FacialSettings with {}, (a, b) => a.Equals(b));
+            return new Expression(name, animations, settings);
+        }
+
+        internal BlendShapeSet GetFirstFrameBlendShapeSet(SessionContext sessionContext, IObserveContext? observeContext = null)
+        {
+            var expression = GetDefaultExpression(sessionContext.BodyPath, observeContext ?? new NonObserveContext());
+            return expression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
         }
     }
 }

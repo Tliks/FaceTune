@@ -4,25 +4,19 @@ namespace com.aoyon.facetune.ui;
 [CustomEditor(typeof(FacialExpressionComponent))]
 internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressionComponent>
 {
-    private SerializedProperty _allowLipSyncProperty = null!;
-    private SerializedProperty _allowEyeBlinkProperty = null!;
-    private SerializedProperty _enableBlendingProperty = null!;
 
-    private SerializedProperty _expressionTypeProperty = null!;
-
-    private SerializedProperty _blendShapesProperty = null!;
-
+    private SerializedProperty _facialSettingsProperty = null!;
+    private SerializedProperty _sourceModeProperty = null!;
+    private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipExcludeOptionProperty = null!;
 
     public override void OnEnable()
     {
         base.OnEnable();
-        _blendShapesProperty = serializedObject.FindProperty("_blendShapes");
-        _expressionTypeProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ExpressionType));
-        _enableBlendingProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.EnableBlending));
-        _allowLipSyncProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AllowLipSync));
-        _allowEyeBlinkProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.AllowEyeBlink));
+        _facialSettingsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.FacialSettings));
+        _sourceModeProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.SourceMode));
+        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.BlendShapeAnimations));
         _clipProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.Clip));
         _clipExcludeOptionProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ClipExcludeOption));
     }
@@ -31,29 +25,27 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         serializedObject.Update();
 
-        EditorGUILayout.PropertyField(_allowEyeBlinkProperty);
-        EditorGUILayout.PropertyField(_allowLipSyncProperty);
-        EditorGUILayout.PropertyField(_enableBlendingProperty);
-        EditorGUILayout.PropertyField(_expressionTypeProperty);
-        if (_expressionTypeProperty.enumValueIndex == (int)FacialExpressionType.Manual)
+        EditorGUILayout.PropertyField(_facialSettingsProperty);
+        EditorGUILayout.PropertyField(_sourceModeProperty);
+        if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.Manual)
         {
-            EditorGUILayout.PropertyField(_blendShapesProperty);
+            EditorGUILayout.PropertyField(_blendShapeAnimationsProperty);
         }
-        else if (_expressionTypeProperty.enumValueIndex == (int)FacialExpressionType.FromClip)
+        else if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.FromAnimationClip)
         {
             EditorGUILayout.PropertyField(_clipProperty);
             EditorGUILayout.PropertyField(_clipExcludeOptionProperty);
         }
         serializedObject.ApplyModifiedProperties();
 
-        if (_expressionTypeProperty.enumValueIndex == (int)FacialExpressionType.Manual)
-        {
+        if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.Manual)
+        {   
             if (GUILayout.Button("Open Editor"))
             {
                 OpenFacialShapesEditor();
             }
         }
-        else if (_expressionTypeProperty.enumValueIndex == (int)FacialExpressionType.FromClip)
+        else if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.FromAnimationClip)
         {
             if (GUILayout.Button("Convert to Manual"))
             {
@@ -66,7 +58,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
         var defaultBlendShapes = context.DEC.GetDefaultBlendShapeSet(Component.gameObject);
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.BlendShapes));
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.GetFirstFrameBlendShapeSet(context).BlendShapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }
@@ -83,18 +75,16 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     private static void ToClip(MenuCommand command)
     {
         var component = (command.context as FacialExpressionComponent)!;
-        CustomEditorUtility.ToClip(component.gameObject, dfc => (component as IExpressionProvider)!.ToExpression(dfc.GetDefaultExpression(component.gameObject), new NonObserveContext())?.GetBlendShapeSet().BlendShapes);
+        CustomEditorUtility.ToClip(component.gameObject, context => component.GetFirstFrameBlendShapeSet(context).BlendShapes);
     }
 
     private void ConvertToManual()
     {
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
         Undo.RecordObject(Component, "ConvertToManual");
-        var defaultExpression = context.DEC.GetDefaultExpression(Component.gameObject);
-        var shapes = Component.GetBlendShapeSet(defaultExpression.BlendShapeSet, new NonObserveContext());
-        if (shapes == null) return;
+        var shapes = Component.GetFirstFrameBlendShapeSet(context);
         FacialExpressionEditorUtility.UpdateShapes(Component, shapes.BlendShapes.ToList());
-        Component.ExpressionType = FacialExpressionType.Manual;
+        Component.SourceMode = AnimationSourceMode.Manual;
     }
 }
 
@@ -102,27 +92,8 @@ public class FacialExpressionEditorUtility
 {
     public static void UpdateShapes(FacialExpressionComponent component, IReadOnlyList<BlendShape> newShapes)
     {
-        var serializedObject = new SerializedObject(component);
-        var blendShapesProperty = serializedObject.FindProperty("_blendShapes");
-        UpdateShapes(blendShapesProperty, newShapes);
-        serializedObject.ApplyModifiedProperties();
-    }
-
-    internal static void UpdateShapes(SerializedProperty blendShapesProperty, IReadOnlyList<BlendShape> newShapes)
-    {
-        blendShapesProperty.ClearArray();
-
-        for (int i = 0; i < newShapes.Count; i++)
-        {
-            blendShapesProperty.InsertArrayElementAtIndex(i);
-            SerializedProperty elementProperty = blendShapesProperty.GetArrayElementAtIndex(i);
-            BlendShape currentShape = newShapes[i];
-
-            SerializedProperty nameProp = elementProperty.FindPropertyRelative(nameof(BlendShape.Name));
-            nameProp.stringValue = currentShape.Name;
-
-            SerializedProperty weightProp = elementProperty.FindPropertyRelative(nameof(BlendShape.Weight));
-            weightProp.floatValue = currentShape.Weight;
-        }
+        Undo.RecordObject(component, "UpdateShapes");
+        var animations = newShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight)).ToList();
+        component.BlendShapeAnimations = animations;
     }
 }

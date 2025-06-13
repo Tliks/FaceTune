@@ -4,48 +4,51 @@ internal record SessionContext
 {
     public GameObject Root { get; }
     public SkinnedMeshRenderer FaceRenderer { get; }
-    public Mesh FaceMesh { get; }
-
     public DefaultExpressionContext DEC { get; }
+
+    public Mesh FaceMesh { get; }
+    public string BodyPath { get; }
 
     public SessionContext(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
         Mesh faceMesh,
+        string bodyPath,
         DefaultExpressionContext dec
     )
     {
         Root = root;
         FaceRenderer = faceRenderer;
         FaceMesh = faceMesh;
+        BodyPath = bodyPath;
         DEC = dec;
     }
 }
 
 internal record DefaultExpressionContext
 {
-    private readonly FacialExpression defaultExpression;
-    private readonly Dictionary<PresetComponent, FacialExpression?> presetDefaultExpressions;
+    private readonly Expression defaultExpression;
+    private readonly Dictionary<PresetComponent, Expression?> presetDefaultExpressions;
     private readonly HashSet<PresetComponent> presetComponents;
 
-    public DefaultExpressionContext(FacialExpression defaultExpression, Dictionary<PresetComponent, FacialExpression?> presetDefaultExpressions)
+    public DefaultExpressionContext(Expression defaultExpression, Dictionary<PresetComponent, Expression?> presetDefaultExpressions)
     {
         this.defaultExpression = defaultExpression;
         this.presetDefaultExpressions = presetDefaultExpressions;
         presetComponents = presetDefaultExpressions.Keys.ToHashSet();
     }
 
-    public FacialExpression GetGlobalDefaultExpression()
+    public Expression GetGlobalDefaultExpression()
     {
         return defaultExpression;
     }
 
     public BlendShapeSet GetGlobalDefaultBlendShapeSet()
     {
-        return defaultExpression.BlendShapeSet;
+        return defaultExpression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
     }
 
-    public FacialExpression GetPresetDefaultExpression(PresetComponent preset)
+    public Expression GetPresetDefaultExpression(PresetComponent preset)
     {
         if (presetDefaultExpressions.TryGetValue(preset, out var expression) && expression != null)
         {
@@ -56,10 +59,10 @@ internal record DefaultExpressionContext
 
     public BlendShapeSet GetPresetDefaultBlendShapeSet(PresetComponent preset)
     {
-        return GetPresetDefaultExpression(preset).BlendShapeSet;
+        return GetPresetDefaultExpression(preset).AnimationIndex.GetAllFirstFrameBlendShapeSet();
     }
 
-    public FacialExpression GetDefaultExpression(GameObject target)
+    public Expression GetDefaultExpression(GameObject target)
     {
         if (presetComponents.Contains(target.GetComponent<PresetComponent>()))
         {
@@ -81,10 +84,10 @@ internal record DefaultExpressionContext
 
     public BlendShapeSet GetDefaultBlendShapeSet(GameObject target)
     {
-        return GetDefaultExpression(target).BlendShapeSet;
+        return GetDefaultExpression(target).AnimationIndex.GetAllFirstFrameBlendShapeSet();
     }
 
-    public IEnumerable<FacialExpression> GetAllExpressions()
+    public IEnumerable<Expression> GetAllExpressions()
     {
         return presetDefaultExpressions.Values
             .Where(expr => expr != null)

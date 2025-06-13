@@ -62,7 +62,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         for (int i = 0; i < proxyMesh.blendShapeCount; i++)
         {
             var name = proxyMesh.GetBlendShapeName(i);
-            if (blendShapeSet.Mapping.TryGetValue(name, out var blendShape))
+            if (blendShapeSet.GetMapping().TryGetValue(name, out var blendShape))
             {
                 blendShapeWeights[i] = blendShape.Weight;
             }

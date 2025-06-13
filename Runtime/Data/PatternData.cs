@@ -1,19 +1,14 @@
 namespace com.aoyon.facetune;
 
-internal record class ExpressionWithCondition
+internal record class ExpressionWithConditions
 {
     public IReadOnlyList<Condition> Conditions { get; private set; }
-    public IReadOnlyList<Expression> Expressions { get; private set; }
+    public Expression Expression { get; private set; }
 
-    public ExpressionWithCondition(IReadOnlyList<Condition> conditions, IReadOnlyList<Expression> expressions)
+    public ExpressionWithConditions(IReadOnlyList<Condition> conditions, Expression expression)
     {
         Conditions = conditions;
-        Expressions = expressions;
-    }
-
-    public void SetExpressions(IReadOnlyList<Expression> expressions)
-    {
-        Expressions = expressions;
+        Expression = expression;
     }
 
     public void SetConditions(IReadOnlyList<Condition> conditions)
@@ -21,52 +16,27 @@ internal record class ExpressionWithCondition
         Conditions = conditions;
     }
 
-    internal Expression GetResolvedExpression()
+    public void SetExpression(Expression expression)
     {
-        var facialExpressions = Expressions.UnityOfType<FacialExpression>();
-        var animationExpressions = Expressions.UnityOfType<AnimationExpression>();
-
-        if (animationExpressions.Any())
-        {
-            return animationExpressions.First() with { };
-        }
-        else
-        {
-            var set = new BlendShapeSet();
-            TrackingPermission allowEyeBlink = TrackingPermission.Keep;
-            TrackingPermission allowLipSync = TrackingPermission.Keep;
-            foreach (var expression in facialExpressions)
-            {
-                set.Add(expression.BlendShapeSet);
-                if (expression.AllowEyeBlink != TrackingPermission.Keep)
-                {
-                    allowEyeBlink = expression.AllowEyeBlink;
-                }
-                if (expression.AllowLipSync != TrackingPermission.Keep)
-                {
-                    allowLipSync = expression.AllowLipSync;
-                }
-            }
-            return new FacialExpression(set, allowEyeBlink, allowLipSync, facialExpressions.First().Name);
-        }
+        Expression = expression;
     }
 }
 
 internal interface IPatternElement {
     public string Name { get; }
-    public IEnumerable<ExpressionWithCondition> AllExpressionWithConditions { get; }
+    public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions { get; }
 }
 
 internal record class ExpressionPattern
 {
-    public IReadOnlyList<ExpressionWithCondition> ExpressionWithConditions { get; private set; }
+    public IReadOnlyList<ExpressionWithConditions> ExpressionWithConditions { get; private set; }
 
-    public ExpressionPattern(IReadOnlyList<ExpressionWithCondition> expressionWithConditions)
+    public ExpressionPattern(IReadOnlyList<ExpressionWithConditions> expressionWithConditions)
     {
         ExpressionWithConditions = expressionWithConditions;
     }
 
-    public IEnumerable<ExpressionWithCondition> AllExpressionWithConditions => ExpressionWithConditions;
+    public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions => ExpressionWithConditions;
 }
 
 internal record class SingleExpressionPattern : IPatternElement
@@ -80,19 +50,19 @@ internal record class SingleExpressionPattern : IPatternElement
         ExpressionPattern = expressionPattern;
     }
 
-    public IEnumerable<ExpressionWithCondition> AllExpressionWithConditions => ExpressionPattern.AllExpressionWithConditions;
+    public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions => ExpressionPattern.AllExpressionWithConditions;
 }
 
 internal record class Preset : IPatternElement
 {
     public string Name { get; private set; }
     public readonly IReadOnlyList<ExpressionPattern> Patterns;
-    public readonly FacialExpression DefaultExpression;
+    public readonly Expression DefaultExpression;
 
     public readonly ParameterCondition PresetCondition;
     public GameObject? MenuTarget { get; private set; }
 
-    public Preset(string presetName, IReadOnlyList<ExpressionPattern> patterns, FacialExpression defaultExpression, ParameterCondition presetCondition)
+    public Preset(string presetName, IReadOnlyList<ExpressionPattern> patterns, Expression defaultExpression, ParameterCondition presetCondition)
     {
         Name = presetName;
         Patterns = patterns;
@@ -105,7 +75,7 @@ internal record class Preset : IPatternElement
         MenuTarget = menuTarget;
     }
 
-    public IEnumerable<ExpressionWithCondition> AllExpressionWithConditions => Patterns.SelectMany(p => p.AllExpressionWithConditions);
+    public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions => Patterns.SelectMany(p => p.AllExpressionWithConditions);
 }
 
 internal record PatternData
@@ -136,7 +106,7 @@ internal record PatternData
             if (component is PresetComponent presetComponent)
             {
                 var presetCondition = new ParameterCondition(Peset_Index_Parameter, IntComparisonType.Equal, presetIndex++);
-                var preset = presetComponent.GetPreset(context.DEC.GetPresetDefaultExpression(presetComponent), presetCondition);
+                var preset = presetComponent.GetPreset(context, presetCondition);
                 if (preset == null) continue;
                 preset.SetMenuTarget(presetComponent.GetMenuTarget());
                 orderedItems.Add(preset);
@@ -149,7 +119,7 @@ internal record PatternData
             }
             else if (component is PatternComponent patternComponent)
             {
-                var pattern = patternComponent.GetPattern(context.DEC.GetGlobalDefaultExpression());
+                var pattern = patternComponent.GetPattern(context);
                 if (pattern == null) continue;
                 orderedItems.Add(new SingleExpressionPattern(patternComponent.gameObject.name, pattern));
                 processedGameObjects.Add(patternComponent.gameObject);
@@ -181,7 +151,7 @@ internal record PatternData
         {
             foreach (var expressionWithCondition in orderedItem.AllExpressionWithConditions)
             {
-                expressions.AddRange(expressionWithCondition.Expressions);
+                expressions.Add(expressionWithCondition.Expression);
             }
         }
         return expressions;

@@ -1,76 +1,59 @@
 namespace com.aoyon.facetune;
 
-internal abstract record class Expression
+internal class Expression : IEqualityComparer<Expression>
 {
     public string Name { get; private set; }
-    public TrackingPermission AllowEyeBlink { get; private set; }
-    public TrackingPermission AllowLipSync { get; private set; }
+    public IReadOnlyList<GenericAnimation> Animations
+    {
+        get => _animationIndex.Animations;
+        private set => _animationIndex = new AnimationIndex(value);
+    }
+    private FacialSettings? _facialSettings;
+    public FacialSettings? FacialSettings { get => _facialSettings; private set => _facialSettings = value; }
 
-    public Expression(string name, TrackingPermission allowEyeBlink, TrackingPermission allowLipSync)
+    private AnimationIndex _animationIndex;
+    public AnimationIndex AnimationIndex => _animationIndex;
+
+    public Expression(string name, List<GenericAnimation> animations, FacialSettings? settings = null)
     {
         Name = name;
-        AllowEyeBlink = allowEyeBlink;
-        AllowLipSync = allowLipSync;
+        _animationIndex = new AnimationIndex(animations);
+        _facialSettings = settings;
+    }
+    
+    public void MergeExpression(Expression other)
+    {
+        MergeAnimation(other.Animations);
+        MergeFacialSettings(other.FacialSettings);
+    }
+    public void MergeAnimation(IEnumerable<GenericAnimation> others) => _animationIndex.MergeAnimation(others);
+    public void MergeFacialSettings(FacialSettings? other)
+    {
+        if (other == null) return;
+        
+        if (_facialSettings == null) _facialSettings = FacialSettings.Keep;
+
+        if (other.AllowEyeBlink != TrackingPermission.Keep)
+        {
+            _facialSettings.AllowEyeBlink = other.AllowEyeBlink;
+        }
+        if (other.AllowLipSync != TrackingPermission.Keep)
+        {
+            _facialSettings.AllowLipSync = other.AllowLipSync;
+        }
+        if (other.BlendingPermission != BlendingPermission.Keep)
+        {
+            _facialSettings.BlendingPermission = other.BlendingPermission;
+        }
     }
 
-    public abstract BlendShapeSet GetBlendShapeSet();
-    public abstract IEnumerable<string> BlendShapeNames { get; }
-    public abstract void ReplaceShapeSet(BlendShapeSet set);
-    public abstract void ReplaceBlendShapeNames(Dictionary<string, string> mapping);
-    public abstract void RemoveShapes(IEnumerable<string> names);
-}
-
-internal record class FacialExpression : Expression
-{
-    private BlendShapeSet _blendShapeSet;
-    public BlendShapeSet BlendShapeSet { get => _blendShapeSet.Duplicate(); private set => _blendShapeSet = value; }
-    public FacialExpression(BlendShapeSet blendShapes, TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, string name) : base(name, allowEyeBlink, allowLipSync)
+    public bool Equals(Expression x, Expression y)
     {
-        _blendShapeSet = blendShapes;
+        return x.Name == y.Name && x.Animations.SequenceEqual(y.Animations) && x.FacialSettings == y.FacialSettings;
     }
 
-    public override BlendShapeSet GetBlendShapeSet() => _blendShapeSet.Duplicate();
-    public override IEnumerable<string> BlendShapeNames => _blendShapeSet.Names;
-    public override void ReplaceShapeSet(BlendShapeSet set)
+    public int GetHashCode(Expression obj)
     {
-        _blendShapeSet = set;
-    }
-
-    public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
-    {
-        _blendShapeSet.ReplaceNames(mapping);
-    }
-
-    public override void RemoveShapes(IEnumerable<string> names)
-    {
-        _blendShapeSet.Remove(names);
-    }
-}
-
-internal record class AnimationExpression : Expression
-{
-    public AnimationClip Clip { get; private set; }
-
-    public AnimationExpression(AnimationClip clip, TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, string name) : base(name, allowEyeBlink, allowLipSync)
-    {
-        Clip = clip;
-    }
-
-    public override BlendShapeSet GetBlendShapeSet() => new(); // Todo
-    public override IEnumerable<string> BlendShapeNames => new string[0]; // Todo
-
-    public override void ReplaceShapeSet(BlendShapeSet set)
-    {
-        return; // Todo
-    }
-
-    public override void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
-    {
-        return; // Todo
-    }
-
-    public override void RemoveShapes(IEnumerable<string> names)
-    {
-        return; // Todo
+        return Name.GetHashCode() ^ Animations.GetHashCode() ^ (FacialSettings?.GetHashCode() ?? 0);
     }
 }
