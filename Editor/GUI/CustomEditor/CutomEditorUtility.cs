@@ -21,4 +21,13 @@ internal static class CustomEditorUtility
         if (string.IsNullOrEmpty(path)) return;
         AssetDatabase.CreateAsset(clip, path);
     }
+
+    public static void ToClip(List<GenericAnimation> genericAnimations)
+    {
+        var clip = new AnimationClip();
+        clip.SetGenericAnimations(genericAnimations);
+        var path = EditorUtility.SaveFilePanelInProject("Save GenericAnimations as Clip", "GenericAnimations", "anim", "Please enter the name of the animation clip.");
+        if (string.IsNullOrEmpty(path)) return;
+        AssetDatabase.CreateAsset(clip, path);
+    }
 }

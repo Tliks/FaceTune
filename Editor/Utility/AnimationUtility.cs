@@ -32,4 +32,13 @@ internal static class AnimationUtility
             UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, curve);
         }
     }
+
+    public static void SetGenericAnimations(this AnimationClip clip, IEnumerable<GenericAnimation> genericAnimations)
+    {
+        foreach (var genericAnimation in genericAnimations)
+        {
+            var binding = genericAnimation.CurveBinding.ToEditorCurveBinding();
+            UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, genericAnimation.GetCurve());
+        }
+    }
 }
