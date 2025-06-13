@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune;
 
-internal static class AnimationUtility
+internal static class FTAnimationUtility
 {
     private static readonly string BlendShapePrefix = "blendShape.";
 

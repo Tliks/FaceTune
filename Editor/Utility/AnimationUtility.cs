@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune;
 
 // 遅いのでビルドではVirtualAnimationUtilityを使うように
-internal static class AnimationUtility
+internal static class EditorAnimationUtility
 {
     public static List<BlendShape> GetBlendShapes(this AnimationClip clip, bool first = true)
     {
