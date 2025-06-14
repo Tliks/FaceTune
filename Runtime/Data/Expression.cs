@@ -51,7 +51,9 @@ internal class Expression : IEquatable<Expression>
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return Name == other.Name && Animations.SequenceEqual(other.Animations) && FacialSettings == other.FacialSettings;
+        return Name == other.Name 
+        && Animations.SequenceEqual(other.Animations, new GenericAnimationEqualityComparer()) 
+        && FacialSettings == other.FacialSettings;
     }
 
     public override bool Equals(object? obj)

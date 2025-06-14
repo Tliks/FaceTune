@@ -61,4 +61,26 @@ public record GenericAnimation // Immutable
         return animations;
     }
 #endif
+
+    public bool ValueEquals(GenericAnimation other)
+    {
+        return CurveBinding.Equals(other.CurveBinding) 
+        && _curve.keys.SequenceEqual(other._curve.keys) 
+        && _objectReferenceCurve.SequenceEqual(other._objectReferenceCurve);
+    }
+}
+
+internal class GenericAnimationEqualityComparer : IEqualityComparer<GenericAnimation>
+{
+    public bool Equals(GenericAnimation? x, GenericAnimation? y)
+    {
+        if (x is null && y is null) return true;
+        if (x is null || y is null) return false;
+        return x.ValueEquals(y);
+    }
+
+    public int GetHashCode(GenericAnimation obj)
+    {
+        return obj.GetHashCode();
+    }
 }
