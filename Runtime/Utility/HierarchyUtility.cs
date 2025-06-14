@@ -39,7 +39,7 @@ internal static class HierarchyUtility
 
     public static T? GetComponentInParentNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
     {
-        return gameObject.GetComponentInParent<T>(includeInactive).NullCast();
+        return gameObject.GetComponentInParent<T>(includeInactive).DestroyedAsNull();
     }
 
     public static T? GetComponentInParentNullable<T>(this Component component, bool includeInactive = false) where T : Component
@@ -49,7 +49,7 @@ internal static class HierarchyUtility
 
     public static T? GetComponentInChildrenNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
     {
-        return gameObject.GetComponentInChildren<T>(includeInactive).NullCast();
+        return gameObject.GetComponentInChildren<T>(includeInactive).DestroyedAsNull();
     }
 
     public static T? GetComponentInChildrenNullable<T>(this Component component, bool includeInactive = false) where T : Component
@@ -62,7 +62,7 @@ internal static class HierarchyUtility
     {
         return gameObject
             .GetComponentsInChildren<TComponent>(includeInactive)
-            .UnityOfType<TInterface>()
+            .OfType<TInterface>()
             .ToList();
     }
 

@@ -13,7 +13,7 @@ namespace com.aoyon.facetune
         {
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(true)
                 .Select(c => c.GetPattern(defaultExpression))
-                .UnityOfType<ExpressionPattern>()
+                .OfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;
             var presetName = string.IsNullOrWhiteSpace(OverridePresetName) ? gameObject.name : OverridePresetName;
