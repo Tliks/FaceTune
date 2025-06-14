@@ -14,7 +14,7 @@ public record SerializableCurveBinding // Immutable
 
     [SerializeField] private bool _isPPtrCurve;
     public bool IsPPtrCurve { get => _isPPtrCurve; init => _isPPtrCurve = value; }
-    
+
     [SerializeField] private bool _isDiscreteCurve;
     public bool IsDiscreteCurve { get => _isDiscreteCurve; init => _isDiscreteCurve = value; }
 
@@ -34,7 +34,7 @@ public record SerializableCurveBinding // Immutable
         _isPPtrCurve = isPPtrCurve;
         _isDiscreteCurve = isDiscreteCurve;
     }
-    
+
     public static SerializableCurveBinding FloatCurve(string path, Type type, string propertyName)
     {
         return new SerializableCurveBinding(path, type, propertyName, false, false);
@@ -49,21 +49,21 @@ public record SerializableCurveBinding // Immutable
     {
         return new SerializableCurveBinding(path, type, propertyName, false, true);
     }
-    
+
 #if UNITY_EDITOR
     public static SerializableCurveBinding FromEditorCurveBinding(UnityEditor.EditorCurveBinding binding)
     {
         return new SerializableCurveBinding(
-            binding.path, 
-            binding.type, 
-            binding.propertyName, 
-            binding.isPPtrCurve, 
+            binding.path,
+            binding.type,
+            binding.propertyName,
+            binding.isPPtrCurve,
             binding.isDiscreteCurve
         );
     }
 
     public UnityEditor.EditorCurveBinding ToEditorCurveBinding()
-    {   
+    {
         if (IsDiscreteCurve)
         {
             return UnityEditor.EditorCurveBinding.DiscreteCurve(Path, Type, PropertyName);
@@ -78,4 +78,14 @@ public record SerializableCurveBinding // Immutable
         }
     }
 #endif
+
+    public bool ValueEquals(SerializableCurveBinding other)
+    {
+        if (_path != other._path) { return false; }
+        if (_type.Name != other._type.Name) { return false; }
+        if (_propertyName != other._propertyName) { return false; }
+        if (_isPPtrCurve != other._isPPtrCurve) { return false; }
+        if (_isDiscreteCurve != other._isDiscreteCurve) { return false; }
+        return true;
+    }
 }

@@ -36,7 +36,7 @@ namespace com.aoyon.facetune
 
                     var blendShapeAnimations_ = FTAnimationUtility.FilterBlendShapeAnimations(GenericAnimation.FromAnimationClip(clip)).ToList();
                     var animationIndex = new AnimationIndex(blendShapeAnimations_);
-                    
+
                     var excludeOption = observeContext.Observe(this, c => c.ClipExcludeOption, (a, b) => a == b);
                     var defaultSet = defaultExpression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
 
