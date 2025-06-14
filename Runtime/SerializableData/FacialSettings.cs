@@ -7,7 +7,7 @@ public record class FacialSettings
     public TrackingPermission AllowLipSync;
 
     public BlendingPermission BlendingPermission;
-    
+
     public FacialSettings()
     {
         AllowEyeBlink = TrackingPermission.Disallow;
@@ -23,4 +23,5 @@ public record class FacialSettings
     }
 
     internal static FacialSettings Keep = new FacialSettings(TrackingPermission.Keep, TrackingPermission.Keep, BlendingPermission.Keep);
+
 }

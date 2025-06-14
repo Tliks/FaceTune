@@ -31,4 +31,11 @@ public struct SerializableObjectReferenceKeyframe // Immutable
         };
     }
 #endif
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not SerializableObjectReferenceKeyframe o) { return false; }
+        if (Mathf.Approximately(_time, o._time) is false) { return false; }
+        return _value == o._value;
+    }
 }

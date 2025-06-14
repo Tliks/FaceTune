@@ -43,19 +43,17 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         if (!IsEnabled(context)) return null;
 
         var dfc = sessionContext.DEC;
-        
-        var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
-        if (clip != null)
+
+        var targetObject = context.Observe(_targetObject, t => t, (l, r) => l == r);
+        GameObject? targetGameObject = targetObject as GameObject;
+        AnimationClip? targetClip = targetObject as AnimationClip;
+
+        if (targetClip != null)
         {
-            return GetBlendShapeSet(clip);
+            return GetBlendShapeSet(targetClip);
         }
 
-        var defaultExpression = context.Observe(_targetObject, o => o is GameObject targetGameObject ? dfc.GetDefaultExpression(targetGameObject) : null, (a, b) =>
-        {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.Equals(b);
-        });
+        var defaultExpression = targetGameObject != null ? dfc.GetDefaultExpression(targetGameObject) : null;
         if (defaultExpression == null)
         {
             return null;
@@ -63,23 +61,13 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
 
         // 何らかのGameObjcetを触っており、defaultExpressionはglobalもしくはpreset
 
-        var expressionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ExpressionComponentBase>(targetGameObject) : null, (a, b) =>
-        {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.SequenceEqual(b);
-        });
+        var expressionComponents = targetGameObject != null ? context.GetComponents<ExpressionComponentBase>(targetGameObject) : null;
         if (expressionComponents != null && expressionComponents.Length > 0)
         {
             return GetBlendShapeSet(expressionComponents, sessionContext, defaultExpression, observeContext);
         }
 
-        var conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ConditionComponent>(targetGameObject) : null, (a, b) =>
-        {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.SequenceEqual(b);
-        });
+        var conditionComponents = targetGameObject != null ? context.GetComponents<ConditionComponent>(targetGameObject) : null;
         if (conditionComponents != null && conditionComponents.Length == 1)
         {
             var conditionComponent = conditionComponents.First();
@@ -111,7 +99,11 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
         {
-            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(sessionContext, observeContext), (a, b) => a.Equals(b));
+            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(sessionContext, observeContext), (a, b) =>
+            {
+                var val = Expression.ValueEquals(a, b);
+                return val;
+            });
             blendShapes.Add(expression.AnimationIndex.GetAllFirstFrameBlendShapeSet());
         }
         if (blendShapes.Count == 0) return defaultExpression.AnimationIndex.GetAllFirstFrameBlendShapeSet();

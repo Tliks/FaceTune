@@ -21,21 +21,21 @@ public record GenericAnimation // Immutable
 
     public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve)
     {
-        _curveBinding = curveBinding with {};
+        _curveBinding = curveBinding with { };
         _curve = curve.Clone();
         _objectReferenceCurve = new();
     }
 
     public GenericAnimation(SerializableCurveBinding curveBinding, IEnumerable<SerializableObjectReferenceKeyframe> objectReferenceCurve)
     {
-        _curveBinding = curveBinding with {};
+        _curveBinding = curveBinding with { };
         _curve = new();
         _objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
     public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve, IEnumerable<SerializableObjectReferenceKeyframe> objectReferenceCurve)
     {
-        _curveBinding = curveBinding with {};
+        _curveBinding = curveBinding with { };
         _curve = curve.Clone();
         _objectReferenceCurve = objectReferenceCurve.ToList();
     }
@@ -61,4 +61,14 @@ public record GenericAnimation // Immutable
         return animations;
     }
 #endif
+
+    // こんなのが必要になる時点で record である意義はあるのだろうか ?
+    public bool ValueEquals(GenericAnimation? other)
+    {
+        if (other is null) { return false; }
+        if (_curveBinding.ValueEquals(other._curveBinding) is false) { return false; }
+        if (_objectReferenceCurve.SequenceEqual(other._objectReferenceCurve) is false) { return false; }
+        if (_curve.keys.SequenceEqual(other._curve.keys) is false) { return false; }
+        return true;
+    }
 }

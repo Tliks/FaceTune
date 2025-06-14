@@ -20,7 +20,7 @@ internal class Expression : IEqualityComparer<Expression>
         _animationIndex = new AnimationIndex(animations);
         _facialSettings = settings;
     }
-    
+
     public void MergeExpression(Expression other)
     {
         MergeAnimation(other.Animations);
@@ -30,7 +30,7 @@ internal class Expression : IEqualityComparer<Expression>
     public void MergeFacialSettings(FacialSettings? other)
     {
         if (other == null) return;
-        
+
         if (_facialSettings == null) _facialSettings = FacialSettings.Keep;
 
         if (other.AllowEyeBlink != TrackingPermission.Keep)
@@ -49,7 +49,27 @@ internal class Expression : IEqualityComparer<Expression>
 
     public bool Equals(Expression x, Expression y)
     {
-        return x.Name == y.Name && x.Animations.SequenceEqual(y.Animations) && x.FacialSettings == y.FacialSettings;
+        return Expression.ValueEquals(x, y);
+    }
+    public static bool ValueEquals(Expression x, Expression y)
+    {
+        if (x.Name != y.Name) { return false; }
+        if (x.FacialSettings != y.FacialSettings) { return false; }
+
+        var xAni = x.Animations;
+        var yAni = y.Animations;
+
+        if (xAni.Count != yAni.Count) { return false; }
+
+        for (var i = 0; xAni.Count > i; i += 1)
+        {
+            var xa = xAni[i];
+            var ya = yAni[i];
+
+            var isDifferent = xa.ValueEquals(ya) is false;
+            if (isDifferent) { return false; }
+        }
+        return true;
     }
 
     public int GetHashCode(Expression obj)
