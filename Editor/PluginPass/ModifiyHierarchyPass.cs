@@ -18,8 +18,6 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
         // Add Condition Component Phase
         NegotiateMAMenuItem(context.AvatarRootObject);
-        // Edit Condition Component  Phase
-        ProcessCommonCondition(context.AvatarRootObject);
         // PostProcess Phase
         NormalizeData(context.AvatarRootObject);
     }
@@ -33,35 +31,24 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         {
             if (!expressionComponent.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)) continue;
 
-            if (expressionComponent.TryGetComponent<CommonConditionComponent>(out var _)) continue;
-
             var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
             if (parameterName == null) continue;
 
             var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
             conditionComponent.ParameterConditions.Add(parameterCondition!);
-            conditionComponent.ExpressionFromSelfOnly = true;
-        }
-    }
-
-    private void ProcessCommonCondition(GameObject root)
-    {
-        var commonConditionComponents = root.GetComponentsInChildren<CommonConditionComponent>(true);
-        foreach (var commonConditionComponent in commonConditionComponents)
-        {
-            commonConditionComponent.AddConditions();
+            expressionComponent.ExpressionFromSelfOnly = true;
         }
     }
 
     private void NormalizeData(GameObject root)
     {
         // 単一の条件をPatternとして扱うことでデータを正規化する
-        var conditionComponents = root.GetComponentsInChildren<ConditionComponent>(true);
-        foreach (var conditionComponent in conditionComponents)
+        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        foreach (var expressionComponent in expressionComponents)
         {
-            if (conditionComponent.GetComponentInParentNullable<PatternComponent>() == null)
+            if (expressionComponent.GetComponentInParentNullable<PatternComponent>() == null)
             {
-                conditionComponent.gameObject.EnsureComponent<PatternComponent>();
+                expressionComponent.gameObject.EnsureComponent<PatternComponent>();
             }
         }
     }

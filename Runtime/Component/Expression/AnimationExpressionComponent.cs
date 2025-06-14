@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class AnimationExpressionComponent : ExpressionComponentBase, IExpressionProvider
+    public class AnimationExpressionComponent : ExpressionComponentBase
     {
         internal const string ComponentName = "FT AnimationExpression";
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
@@ -9,7 +9,7 @@ namespace com.aoyon.facetune
         public PathType PathType = PathType.Absolute;
         public AnimationClip? Clip = null;
 
-        Expression IExpressionProvider.ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
+        internal override Expression ToExpression(FacialExpression defaultExpression, IObserveContext observeContext)
         {            
             var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
             if (clip == null) return new FacialExpression(new BlendShapeSet(), TrackingPermission.Keep, TrackingPermission.Keep, name); // Todo

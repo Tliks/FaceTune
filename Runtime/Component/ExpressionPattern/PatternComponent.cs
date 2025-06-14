@@ -8,10 +8,22 @@ namespace com.aoyon.facetune
         
         internal ExpressionPattern? GetPattern(FacialExpression defaultExpression)
         {
-            var expressionWithConditions = gameObject.GetComponentsInChildren<ConditionComponent>(true)
-                .Select(c => c.GetExpressionWithCondition(defaultExpression))
-                .UnityOfType<ExpressionWithCondition>()
-                .ToList();
+            var expressionWithConditions = new List<ExpressionWithCondition>();
+            foreach (var (expression, conditions) in gameObject.GetComponentsInChildren<ExpressionComponentBase>(true)
+                .SelectMany(x => x.GetConditions(), (x, y) => (x.ToExpression(defaultExpression, new NonObserveContext()), y)))
+            {
+                var expressionWithCondition = expressionWithConditions.SingleOrDefault(x => x.Conditions.SequenceEqual(conditions));
+                if (expressionWithCondition == null)
+                {
+                    expressionWithConditions.Add(new(conditions.ToList(), new[] { expression }));
+                }
+                else
+                {
+                    var expressions = expressionWithCondition.Expressions.ToList();
+                    expressions.Add(expression);
+                    expressionWithCondition.SetExpressions(expressions);
+                }
+            }
             if (expressionWithConditions.Count == 0) return null;
             return new ExpressionPattern(expressionWithConditions);
         }
