@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune;
 
 [Serializable]
-public struct SerializableObjectReferenceKeyframe // Immutable
+public record struct SerializableObjectReferenceKeyframe // Immutable
 {
     [SerializeField] private float _time;
     public float Time { get => _time; init => _time = value; }

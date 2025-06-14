@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune;
 
 [Serializable]
-public struct SerializableType // Immutable
+public record struct SerializableType // Immutable
 {
     [SerializeField] private string _name;
     public string Name { get => _name; init => _name = value; }
