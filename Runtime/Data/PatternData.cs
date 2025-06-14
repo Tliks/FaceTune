@@ -20,6 +20,36 @@ internal record class ExpressionWithCondition
     {
         Conditions = conditions;
     }
+
+    internal Expression GetResolvedExpression()
+    {
+        var facialExpressions = Expressions.UnityOfType<FacialExpression>();
+        var animationExpressions = Expressions.UnityOfType<AnimationExpression>();
+
+        if (animationExpressions.Any())
+        {
+            return animationExpressions.First() with { };
+        }
+        else
+        {
+            var set = new BlendShapeSet();
+            TrackingPermission allowEyeBlink = TrackingPermission.Keep;
+            TrackingPermission allowLipSync = TrackingPermission.Keep;
+            foreach (var expression in facialExpressions)
+            {
+                set.Add(expression.BlendShapeSet);
+                if (expression.AllowEyeBlink != TrackingPermission.Keep)
+                {
+                    allowEyeBlink = expression.AllowEyeBlink;
+                }
+                if (expression.AllowLipSync != TrackingPermission.Keep)
+                {
+                    allowLipSync = expression.AllowLipSync;
+                }
+            }
+            return new FacialExpression(set, allowEyeBlink, allowLipSync, facialExpressions.First().Name);
+        }
+    }
 }
 
 internal interface IPatternElement {

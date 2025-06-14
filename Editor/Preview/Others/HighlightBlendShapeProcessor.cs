@@ -1,7 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using nadena.dev.ndmf.preview;
-using UnityEditor.SceneManagement;
 
 namespace com.aoyon.facetune.preview;
 
@@ -12,6 +10,7 @@ internal class HighlightBlendShapeProcessor : IDisposable
     private readonly SkinnedMeshRenderer _renderer;
     private readonly Mesh _mesh;
     private readonly CancellationTokenSource cancellationTokenSource;
+    private Mesh? _bakedMesh;
     private Task<int[][]>? latestTask;
     private HilightBlendShape? hlighter;
     private static readonly int[] emptyArray = new int[0];
@@ -43,17 +42,12 @@ internal class HighlightBlendShapeProcessor : IDisposable
     {
         if (hlighter != null) return;
 
-        var scene = NDMFPreviewSceneManager.GetPreviewScene();
-        if (scene == null) scene = _renderer.gameObject.scene;
+        hlighter = _renderer.gameObject.AddComponent<HilightBlendShape>();
 
-        var tmpObj = new GameObject("HilightBlendShape");
-        EditorSceneManager.MoveGameObjectToScene(tmpObj, scene);
-
-        hlighter = tmpObj.AddComponent<HilightBlendShape>();
-
-        var baked = new Mesh();
-        _renderer.BakeMesh(baked);
-        hlighter.Mesh = baked;
+        _bakedMesh = new Mesh();
+        Debug.Log($"BakeMesh: {_renderer.name}");
+        _renderer.BakeMesh(_bakedMesh);
+        hlighter.Mesh = _bakedMesh;
         hlighter.Position = _renderer.transform.position;
     }
 
@@ -142,7 +136,10 @@ internal class HighlightBlendShapeProcessor : IDisposable
         cancellationTokenSource.Cancel();
         latestTask = null;
 
-        if (hlighter != null) Object.DestroyImmediate(hlighter.gameObject);
+        if (_bakedMesh != null) Object.DestroyImmediate(_bakedMesh);
+        _bakedMesh = null;
+
+        if (hlighter != null) Object.DestroyImmediate(hlighter);
         hlighter = null;
     }
 }

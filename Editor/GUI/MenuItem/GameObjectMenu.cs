@@ -8,31 +8,11 @@ internal static class GameObjectMenu
     private const int PRIORITY = 21;
 
     private static void IP(string guid, 
-        bool unpackRoot = false,
-        GameObject? parent = null, 
-        bool isFirstSibling = false
+        bool unpackRoot = false
     )
     {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
-        if (prefab == null)
-        {
-            Debug.LogError("Prefab not found");
-        }
-        else
-        {
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            if (parent == null) parent = Selection.activeGameObject;
-            instance.transform.SetParent(parent.transform, false);
-            if (isFirstSibling)
-            {
-                instance.transform.SetAsFirstSibling();
-            }
-            if (unpackRoot)
-            {
-                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
-            }
-            Selection.activeObject = instance;
-        }
+        var parent = Selection.activeGameObject;
+        FTPrefabUtility.InstantiatePrefab(guid, unpackRoot, parent);
     }
     
     // Sample

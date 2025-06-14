@@ -9,6 +9,7 @@ internal class HilightBlendShape : FaceTuneTagComponent
     public void Init(Mesh mesh)
     {
         Mesh = mesh;
+        hideFlags = HideFlags.DontSave;
     }
 
     void OnDrawGizmos()

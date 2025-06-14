@@ -54,6 +54,8 @@ internal class FacialShapesEditor : EditorWindow
     private AnimationClip? _sourceClip = null;
     private ClipExcludeOption _clipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
+    private int _previousUndoGroup = -1;
+
     public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
     {
         if (HasOpenInstances<FacialShapesEditor>())
@@ -102,6 +104,9 @@ internal class FacialShapesEditor : EditorWindow
 
         saveChangesMessage = "This window may have unsaved changes. Would you like to save?";
         hasUnsavedChanges = false;
+
+        _previousUndoGroup = Undo.GetCurrentGroup();
+        Undo.IncrementCurrentGroup();
 
         _previewShapes.Value = GetResult();
         EditingShapesPreview.Start(renderer, _previewShapes);
@@ -175,12 +180,25 @@ internal class FacialShapesEditor : EditorWindow
 
     void OnDisable()
     {
-        _selector.Dispose();
+        _selector?.Dispose();
+        _highlightBlendShapeProcessor?.Dispose();
         EditingShapesPreview.Stop();
+        CollapseUndoGroup();
+    }
+
+    private void CollapseUndoGroup()
+    {
+        if (_previousUndoGroup != -1)
+        {
+            Undo.CollapseUndoOperations(_previousUndoGroup);
+            _previousUndoGroup = -1;
+        }
     }
 
     public virtual void OnGUI()
     {
+        if (HandleKeyboardEvents()) return;
+
         _serializedObject.Update();
 
         _horizontalSplitView.BeginSplitView();
@@ -201,6 +219,25 @@ internal class FacialShapesEditor : EditorWindow
         Repaint();
 
         _serializedObject.ApplyModifiedProperties();
+    }
+
+    private bool HandleKeyboardEvents()
+    {
+        if (Event.current.type != EventType.KeyDown) return false;
+
+        // Ctrl+S（WindowsまたはLinux）またはCmd+S（Mac）で保存
+        if (Event.current.keyCode == KeyCode.S)
+        {
+            if ((Event.current.control && Application.platform != RuntimePlatform.OSXEditor) || 
+                (Event.current.command && Application.platform == RuntimePlatform.OSXEditor))
+            {
+                SaveChanges();
+                Event.current.Use();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void DrawSettingsView()

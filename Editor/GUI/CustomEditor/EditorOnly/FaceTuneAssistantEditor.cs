@@ -4,7 +4,8 @@ namespace com.aoyon.facetune.ui
     {
         LeftOnly,
         RightOnly,
-        Basic,
+        BasicRight,
+        BasicLeft,
         Blending,
         FaceMorphFirst,
         HandSign
@@ -36,7 +37,8 @@ namespace com.aoyon.facetune.ui
     {
         internal const string LeftOnlyPatternGuid = "8321eef2d75950543bc39fcdc9709128";
         internal const string RightOnlyPatternGuid = "82eca51c1b5f4374da399ddf321509cb";
-        internal const string BasicPatternGuid = "c259edc6efd4aaa4bba3b1636557cc3b";
+        internal const string BasicRightPatternGuid = "c259edc6efd4aaa4bba3b1636557cc3b";
+        internal const string BasicLeftPatternGuid = "376099cca4d264b4fbfbeeb7901dc770";
         internal const string BlendingPatternGuid = "9eb5bf9eeb8dc81488fb9453d21f3510";
         internal const string FaceMorphFirstPatternGuid = "618bf06062904004f99355468c34ac7c";
         internal const string HandSignPatternGuid = "e7a261d8cf051454ea0c41e427463276";
@@ -45,7 +47,8 @@ namespace com.aoyon.facetune.ui
         {
             { HandGesturePatternType.LeftOnly, new PatternInfo("左手のみのパターンです。", LeftOnlyPatternGuid) },
             { HandGesturePatternType.RightOnly, new PatternInfo("右手のみのパターンです。", RightOnlyPatternGuid) },
-            { HandGesturePatternType.Basic, new PatternInfo("片手が優先される基本的なパターンです。", BasicPatternGuid, true) },
+            { HandGesturePatternType.BasicRight, new PatternInfo("右手が優先される基本的なパターンです。", BasicRightPatternGuid, true) },
+            { HandGesturePatternType.BasicLeft, new PatternInfo("左手が優先される基本的なパターンです。", BasicLeftPatternGuid, true) },
             { HandGesturePatternType.Blending, new PatternInfo("片手ごとのアニメーションがブレンドさせるパターンです。目と口の制御をそれぞれの手に割り当てる際などに便利です。", BlendingPatternGuid) },
             { HandGesturePatternType.FaceMorphFirst, new PatternInfo("右手と左手に優先度を付けず、最初に実行したジェスチャーを優先させるパターンです。", FaceMorphFirstPatternGuid) },
             { HandGesturePatternType.HandSign, new PatternInfo("左手と右手の組み合わせで最大64通りのジェスチャーを作成できるパターンです。", HandSignPatternGuid) },
@@ -58,7 +61,7 @@ namespace com.aoyon.facetune.ui
             { OtherPatternType.HeadContact, new PatternInfo("コンタクトを用いたサンプルです。撫でられた際の表情を指定する際などに便利です。", "def9fc6b2a3e6204abe8182548963b41") },
         };
 
-        private HandGesturePatternType _selectedHandGesturePattern = HandGesturePatternType.Basic;
+        private HandGesturePatternType _selectedHandGesturePattern = HandGesturePatternType.BasicRight;
         private OtherPatternType _selectedOtherPattern = OtherPatternType.ExclusiveMenu;
 
         private PresetComponent[] _presets = Array.Empty<PresetComponent>();
@@ -141,23 +144,9 @@ namespace com.aoyon.facetune.ui
             EditorGUILayout.EndVertical();
         }
 
-        internal void CreatePatternImpl(PatternInfo patternInfo)
+        private void CreatePatternImpl(PatternInfo patternInfo)
         {
-            var patternGuid = patternInfo.Guid;
-            var patternPath = AssetDatabase.GUIDToAssetPath(patternGuid);
-            var patternObject = AssetDatabase.LoadAssetAtPath<GameObject>(patternPath);
-            if (patternObject == null)
-            {
-                Debug.LogError($"failed to load pattern: {patternGuid}");
-            }
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(patternObject);
-            if (patternInfo.ShouldUnpack)
-            {
-                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
-            }
-            instance.transform.SetParent(Component.transform, false);
-            Undo.RegisterCreatedObjectUndo(instance, "Create Pattern");
-            Selection.activeObject = instance;
+            FTPrefabUtility.InstantiatePrefab(patternInfo.Guid, patternInfo.ShouldUnpack, Component.gameObject);
         }
     }
 }
