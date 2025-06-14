@@ -2,7 +2,7 @@ namespace com.aoyon.facetune;
 
 internal static class DestroyedUnityObjectHelpers
 {
-    public static T? NullCast<T>(this T? obj) where T : notnull, UnityEngine.Object
+    public static T? DestroyedAsNull<T>(this T? obj) where T : notnull, UnityEngine.Object
     {
         return (obj == null) ? null : obj;
     }

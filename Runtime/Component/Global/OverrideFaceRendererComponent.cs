@@ -10,7 +10,7 @@ namespace com.aoyon.facetune
 
         [SerializeField]
         internal AvatarObjectReference m_faceObjectReference = new();
-        public GameObject? FaceObject { get => m_faceObjectReference.Get(this).NullCast(); set => m_faceObjectReference.Set(value); }
+        public GameObject? FaceObject { get => m_faceObjectReference.Get(this).DestroyedAsNull(); set => m_faceObjectReference.Set(value); }
 
         public void ResolveReferences() => m_faceObjectReference?.Get(this);
     }

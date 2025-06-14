@@ -28,7 +28,7 @@ internal class NDMFPreviewObserveContext : IObserveContext
 
     public C? GetComponentNullable<C>(GameObject obj) where C : Component
     {
-        return _context.GetComponent<C>(obj).NullCast();
+        return _context.GetComponent<C>(obj).DestroyedAsNull();
     }
 
     public C[] GetComponents<C>(GameObject obj) where C : Component
