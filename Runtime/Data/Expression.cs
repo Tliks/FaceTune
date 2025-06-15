@@ -23,13 +23,13 @@ internal abstract record class Expression
 internal record class FacialExpression : Expression
 {
     private BlendShapeSet _blendShapeSet;
-    public BlendShapeSet BlendShapeSet { get => _blendShapeSet.Duplicate(); private set => _blendShapeSet = value; }
+    public BlendShapeSet BlendShapeSet { get => _blendShapeSet.Clone(); private set => _blendShapeSet = value; }
     public FacialExpression(BlendShapeSet blendShapes, TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, string name) : base(name, allowEyeBlink, allowLipSync)
     {
         _blendShapeSet = blendShapes;
     }
 
-    public override BlendShapeSet GetBlendShapeSet() => _blendShapeSet.Duplicate();
+    public override BlendShapeSet GetBlendShapeSet() => _blendShapeSet.Clone();
     public override IEnumerable<string> BlendShapeNames => _blendShapeSet.Names;
     public override void ReplaceShapeSet(BlendShapeSet set)
     {
@@ -43,7 +43,7 @@ internal record class FacialExpression : Expression
 
     public override void RemoveShapes(IEnumerable<string> names)
     {
-        _blendShapeSet.Remove(names);
+        _blendShapeSet.RemoveRange(names);
     }
 }
 

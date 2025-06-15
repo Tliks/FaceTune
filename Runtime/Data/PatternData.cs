@@ -37,7 +37,7 @@ internal record class ExpressionWithCondition
             TrackingPermission allowLipSync = TrackingPermission.Keep;
             foreach (var expression in facialExpressions)
             {
-                set.Add(expression.BlendShapeSet);
+                set.AddRange(expression.BlendShapeSet);
                 if (expression.AllowEyeBlink != TrackingPermission.Keep)
                 {
                     allowEyeBlink = expression.AllowEyeBlink;

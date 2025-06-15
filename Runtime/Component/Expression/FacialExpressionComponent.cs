@@ -28,7 +28,7 @@ namespace com.aoyon.facetune
             var enableBlending = observeContext.Observe(this, c => c.EnableBlending, (a, b) => a == b);
             if (!enableBlending)
             {
-                set.Add(defaultSet);
+                set.AddRange(defaultSet);
             }
 
             BlendShapeSet? newSet = null;
@@ -37,7 +37,7 @@ namespace com.aoyon.facetune
 #endif 
             if (newSet != null)
             {
-                set.Add(newSet);
+                set.AddRange(newSet);
             }
 
             return new FacialExpression(set, AllowEyeBlink, AllowLipSync, name);

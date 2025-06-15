@@ -31,7 +31,7 @@ internal static class BlendShapeUtility
                 blendShapes.RemoveZeroWeight();
                 break;
             case ClipExcludeOption.ExcludeDefault:
-                blendShapes = blendShapes.ToDiff(defaultSet);
+                blendShapes = blendShapes.Except(defaultSet);
                 break;
         }
         return blendShapes;

@@ -272,7 +272,7 @@ internal class FacialShapesEditor : EditorWindow
 
         var newBlendShapes = BlendShapeUtility.GetBlendShapeSetFromClip(_sourceClip, _clipExcludeOption, new BlendShapeSet(BaseShapes));
 
-        var mapping = new BlendShapeSet(BaseShapes).Add(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
+        var mapping = new BlendShapeSet(BaseShapes).AddRange(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
         foreach (var blendShape in newBlendShapes.BlendShapes)
         {
             if (mapping.TryGetValue(blendShape.Name, out var index))
