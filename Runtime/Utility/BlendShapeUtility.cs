@@ -20,6 +20,7 @@ internal static class BlendShapeUtility
     }
 
 #if UNITY_EDITOR
+    // Todo: 置き換え
     public static BlendShapeSet GetBlendShapeSetFromClip(AnimationClip clip, ClipExcludeOption clipExcludeOption, BlendShapeSet defaultSet)
     {
         var blendShapes = new BlendShapeSet(GetBlendShapesFromClip(clip));

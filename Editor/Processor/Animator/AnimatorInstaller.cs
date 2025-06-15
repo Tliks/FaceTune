@@ -13,7 +13,7 @@ internal class AnimatorInstaller
     private readonly Dictionary<string, AnimatorControllerParameter> _parameterCache;
 
     private readonly DefaultExpressionContext _defaultExpressionContext;
-    private readonly FacialExpression _globalDefaultExpression;
+    private readonly Expression _globalDefaultExpression;
 
     private readonly IPlatformSupport _platformSupport;
 
@@ -92,18 +92,13 @@ internal class AnimatorInstaller
 
     private void AddExpressionToState(VirtualState state, Expression expression)
     {
-        if (expression is AnimationExpression animationExpression)
+        var motion = state.Motion as VirtualClip;
+        if (motion == null)
         {
-            state.Motion = _vcc.Clone(animationExpression.Clip);
+            motion = VirtualClip.Create(expression.Name);
+            state.Motion = motion;
         }
-        else
-        {
-            var name = expression.Name;
-            var newAnimationClip = VirtualClip.Create(name);
-            var shapes = expression.GetBlendShapeSet().BlendShapes;
-            newAnimationClip.SetBlendShapes(_relativePath, shapes);
-            state.Motion = newAnimationClip;
-        }
+        motion.SetAnimations(expression.Animations);
     }
 
     public void InstallPatternData(PatternData patternData)
@@ -126,7 +121,7 @@ internal class AnimatorInstaller
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
 
-        SetTracks(defaultState, _globalDefaultExpression);
+        SetTracks(defaultState, _globalDefaultExpression.FacialSettings);
         AddDefaultForPattern(patternData, defaultLayer, defaultState);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
@@ -162,7 +157,7 @@ internal class AnimatorInstaller
                 var presetState = presetStates[i];
                 presetState.Name = preset.Name;
                 AddExpressionToState(presetState, preset.DefaultExpression);
-                SetTracks(presetState, preset.DefaultExpression);
+                SetTracks(presetState, preset.DefaultExpression.FacialSettings);
             }
         }
     }
@@ -212,7 +207,7 @@ internal class AnimatorInstaller
         }
     }
 
-    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 basePosition)
+    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
     {
         var expressionWithConditionList = expressionWithConditions.ToList();
         var duration = TransitionDurationSeconds;
@@ -222,10 +217,9 @@ internal class AnimatorInstaller
         {
             var expressionWithCondition = expressionWithConditionList[i];
             var state = states[i];
-            state.Name = expressionWithCondition.Expressions.First().Name;
-            var expression = expressionWithCondition.GetResolvedExpression();
-            AddExpressionToState(state, expression);
-            SetTracks(state, expression);
+            state.Name = expressionWithCondition.Expression.Name;
+            AddExpressionToState(state, expressionWithCondition.Expression);
+            SetTracks(state, expressionWithCondition.Expression.FacialSettings);
         }
     }
 
@@ -380,17 +374,18 @@ internal class AnimatorInstaller
         return _parameterCache[parameter];
     }
 
-    private void SetTracks(VirtualState state, Expression expression)
+    private void SetTracks(VirtualState state, FacialSettings? facialSettings)
     {
+        if (facialSettings == null) return;
         bool? allowEyeBlink = null;
         bool? allowLipSync = null;
-        if (expression.AllowEyeBlink != TrackingPermission.Keep)
+        if (facialSettings.AllowEyeBlink != TrackingPermission.Keep)
         {
-            allowEyeBlink = expression.AllowEyeBlink == TrackingPermission.Allow;
+            allowEyeBlink = facialSettings.AllowEyeBlink == TrackingPermission.Allow;
         }
-        if (expression.AllowLipSync != TrackingPermission.Keep)
+        if (facialSettings.AllowLipSync != TrackingPermission.Keep)
         {
-            allowLipSync = expression.AllowLipSync == TrackingPermission.Allow;
+            allowLipSync = facialSettings.AllowLipSync == TrackingPermission.Allow;
         }
         SetTracks(state, allowEyeBlink, allowLipSync);
     }

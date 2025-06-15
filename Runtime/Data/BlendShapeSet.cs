@@ -6,7 +6,7 @@ namespace com.aoyon.facetune;
 /// 同名のBlendShapeを許容しないグループ
 /// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet
+internal class BlendShapeSet : IEnumerable<BlendShape>
 {
     readonly Dictionary<string, BlendShape> map;
     public Dictionary<string, BlendShape>.ValueCollection BlendShapes => map.Values;
@@ -23,6 +23,16 @@ internal class BlendShapeSet
     public BlendShapeSet(IEnumerable<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter) : this()
     {
         AddRange(blendShapes, options);
+    }
+
+    public IEnumerator<BlendShape> GetEnumerator()
+    {
+        return map.Values.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 
     public BlendShapeSet Clone()

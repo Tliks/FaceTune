@@ -35,8 +35,7 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
     {
         if (_context == null) return;
         var defaultBlendShapes = _context.FaceRenderer.GetBlendShapes(_context.FaceMesh);
-        var blendShapesProperty = serializedObject.FindProperty(nameof(DefaultFacialExpressionComponent.BlendShapes));
-        FacialExpressionEditorUtility.UpdateShapes(blendShapesProperty, defaultBlendShapes);
+        DefaultFacialExpressionEditorUtility.UpdateShapes(Component, defaultBlendShapes);
         serializedObject.ApplyModifiedProperties();
     }
 
@@ -44,7 +43,7 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
     {
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
         var defaultBlendShapes = context.DEC.GetDefaultBlendShapeSet(Component.gameObject);
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.BlendShapes));
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.GetFirstFrameBlendShapeSet(context).BlendShapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }
@@ -52,8 +51,7 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
     private void RecieveEditorResult(BlendShapeSet result)
     {
         serializedObject.Update();
-        var blendShapesProperty = serializedObject.FindProperty(nameof(DefaultFacialExpressionComponent.BlendShapes));
-        FacialExpressionEditorUtility.UpdateShapes(blendShapesProperty, result.BlendShapes.ToList());
+        DefaultFacialExpressionEditorUtility.UpdateShapes(Component, result.BlendShapes.ToList());
         serializedObject.ApplyModifiedProperties();
     }
 
@@ -61,6 +59,16 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
     private static void ToClip(MenuCommand command)
     {
         var component = (command.context as DefaultFacialExpressionComponent)!;
-        CustomEditorUtility.ToClip(component.gameObject, _ => component.BlendShapes);
+        CustomEditorUtility.ToClip(component.gameObject, context => component.GetFirstFrameBlendShapeSet(context).BlendShapes);
+    }
+}
+
+internal static class DefaultFacialExpressionEditorUtility
+{
+    public static void UpdateShapes(DefaultFacialExpressionComponent component, IReadOnlyList<BlendShape> newShapes)
+    {
+        Undo.RecordObject(component, "Update Default Shapes");
+        var animations = newShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight)).ToList();
+        component.BlendShapeAnimations = animations;
     }
 }
