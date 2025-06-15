@@ -61,4 +61,18 @@ public record GenericAnimation // Immutable
         return animations;
     }
 #endif
+
+    public virtual bool Equals(GenericAnimation other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return _curveBinding.Equals(other._curveBinding)
+            && _curve.Equals(other._curve)
+            && _objectReferenceCurve.SequenceEqual(other._objectReferenceCurve);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_curveBinding, _curve, _objectReferenceCurve);
+    }
 }

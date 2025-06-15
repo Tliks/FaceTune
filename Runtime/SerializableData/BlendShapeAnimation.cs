@@ -38,4 +38,17 @@ public record BlendShapeAnimation // Immutable
         var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), "blendShape." + Name);
         return new GenericAnimation(binding, _curve);
     }
+
+    public virtual bool Equals(BlendShapeAnimation other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return _name.Equals(other._name)
+            && _curve.Equals(other._curve);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_name, _curve);
+    }
 }

@@ -78,4 +78,19 @@ public record SerializableCurveBinding // Immutable
         }
     }
 #endif
+
+    public virtual bool Equals(SerializableCurveBinding other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return _path.Equals(other._path)
+            && _type.Equals(other._type)
+            && _propertyName.Equals(other._propertyName)
+            && _isPPtrCurve.Equals(other._isPPtrCurve)
+            && _isDiscreteCurve.Equals(other._isDiscreteCurve);
+    }
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_path, _type, _propertyName, _isPPtrCurve, _isDiscreteCurve);
+    }
 }

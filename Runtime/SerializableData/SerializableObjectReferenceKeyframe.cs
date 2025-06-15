@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune;
 
 [Serializable]
-public struct SerializableObjectReferenceKeyframe // Immutable
+public record struct SerializableObjectReferenceKeyframe // Immutable
 {
     [SerializeField] private float _time;
     public float Time { get => _time; init => _time = value; }
@@ -31,4 +31,14 @@ public struct SerializableObjectReferenceKeyframe // Immutable
         };
     }
 #endif
+
+    public bool Equals(SerializableObjectReferenceKeyframe other)
+    {
+        return Mathf.Approximately(Time, other.Time) && Value.Equals(other.Value);
+    }
+    
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Time, Value);
+    }
 }
