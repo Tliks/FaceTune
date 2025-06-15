@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune;
 
-internal class Expression : IEqualityComparer<Expression>
+internal class Expression : IEquatable<Expression>
 {
     public string Name { get; private set; }
     public IReadOnlyList<GenericAnimation> Animations
@@ -47,12 +47,19 @@ internal class Expression : IEqualityComparer<Expression>
         }
     }
 
-    public bool Equals(Expression x, Expression y)
+    public bool Equals(Expression other)
     {
-        return x.Name == y.Name && x.Animations.SequenceEqual(y.Animations) && x.FacialSettings == y.FacialSettings;
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Name == other.Name && Animations.SequenceEqual(other.Animations) && FacialSettings == other.FacialSettings;
     }
 
-    public int GetHashCode(Expression obj)
+    public override bool Equals(object? obj)
+    {
+        return obj is Expression expression && Equals(expression);
+    }
+
+    public override int GetHashCode()
     {
         return Name.GetHashCode() ^ Animations.GetHashCode() ^ (FacialSettings?.GetHashCode() ?? 0);
     }

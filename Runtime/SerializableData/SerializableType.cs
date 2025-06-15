@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune;
 
 [Serializable]
-public struct SerializableType // Immutable
+public record struct SerializableType // Immutable
 {
     [SerializeField] private string _name;
     public string Name { get => _name; init => _name = value; }
@@ -24,7 +24,7 @@ public struct SerializableType // Immutable
         _targetType = null;
     }
 
-    [NonSerialized] private Type? _targetType;
+    private Type? _targetType;
     public Type? TargetType
     {
         get
@@ -41,5 +41,15 @@ public struct SerializableType // Immutable
 
             return _targetType;
         }
+    }
+
+    public bool Equals(SerializableType other)
+    {
+        return Name == other.Name;
+    }
+    
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name);
     }
 }
