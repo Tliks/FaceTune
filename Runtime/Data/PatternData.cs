@@ -23,8 +23,8 @@ internal record class ExpressionWithCondition
 
     internal Expression GetResolvedExpression()
     {
-        var facialExpressions = Expressions.UnityOfType<FacialExpression>();
-        var animationExpressions = Expressions.UnityOfType<AnimationExpression>();
+        var facialExpressions = Expressions.OfType<FacialExpression>();
+        var animationExpressions = Expressions.OfType<AnimationExpression>();
 
         if (animationExpressions.Any())
         {
