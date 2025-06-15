@@ -97,7 +97,7 @@ internal static class SessionContextBuilder
 
         static void EnsureHasAllShapes(FacialExpression expression, BlendShapeSet fallback)
         {
-            var defaultShapes = fallback.Duplicate().Add(expression.BlendShapeSet);
+            var defaultShapes = fallback.Clone().AddRange(expression.BlendShapeSet);
             expression.ReplaceShapeSet(defaultShapes);
         }
     }
