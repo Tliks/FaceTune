@@ -34,7 +34,7 @@ namespace com.aoyon.facetune
                     var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
                     if (clip == null) break;
 
-                    var blendShapeAnimations_ = AnimationUtility.FilterBlendShapeAnimations(GenericAnimation.FromAnimationClip(clip)).ToList();
+                    var blendShapeAnimations_ = FTAnimationUtility.FilterBlendShapeAnimations(GenericAnimation.FromAnimationClip(clip)).ToList();
                     var animationIndex = new AnimationIndex(blendShapeAnimations_);
                     
                     var excludeOption = observeContext.Observe(this, c => c.ClipExcludeOption, (a, b) => a == b);

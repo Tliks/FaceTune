@@ -9,16 +9,35 @@ public record GenericAnimation // Immutable
     [SerializeField] private AnimationCurve _curve;
     public AnimationCurve GetCurve() => _curve.Clone();
 
+    [SerializeField] private List<SerializableObjectReferenceKeyframe> _objectReferenceCurve;
+    public IReadOnlyList<SerializableObjectReferenceKeyframe> ObjectReferenceCurve { get => _objectReferenceCurve.AsReadOnly(); init => _objectReferenceCurve = value.ToList(); }
+
     public GenericAnimation()
     {
         _curveBinding = new SerializableCurveBinding();
         _curve = new AnimationCurve();
+        _objectReferenceCurve = new List<SerializableObjectReferenceKeyframe>();
     }
 
     public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve)
     {
         _curveBinding = curveBinding with {};
         _curve = curve.Clone();
+        _objectReferenceCurve = new();
+    }
+
+    public GenericAnimation(SerializableCurveBinding curveBinding, IEnumerable<SerializableObjectReferenceKeyframe> objectReferenceCurve)
+    {
+        _curveBinding = curveBinding with {};
+        _curve = new();
+        _objectReferenceCurve = objectReferenceCurve.ToList();
+    }
+
+    public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve, IEnumerable<SerializableObjectReferenceKeyframe> objectReferenceCurve)
+    {
+        _curveBinding = curveBinding with {};
+        _curve = curve.Clone();
+        _objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
 #if UNITY_EDITOR
@@ -28,9 +47,16 @@ public record GenericAnimation // Immutable
         var animations = new List<GenericAnimation>();
         foreach (var binding in bindings)
         {
+            var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
+
             var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
-            if (curve != null)
-            animations.Add(new GenericAnimation(SerializableCurveBinding.FromEditorCurveBinding(binding), curve));
+            var objectReferenceCurve = UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip, binding);
+
+            curve ??= new AnimationCurve();
+            objectReferenceCurve ??= new UnityEditor.ObjectReferenceKeyframe[0];
+            var serializableObjectReferenceCurve = objectReferenceCurve.Select(SerializableObjectReferenceKeyframe.FromEditorObjectReferenceKeyframe);
+
+            animations.Add(new GenericAnimation(serializableCurveBinding, curve, serializableObjectReferenceCurve));
         }
         return animations;
     }

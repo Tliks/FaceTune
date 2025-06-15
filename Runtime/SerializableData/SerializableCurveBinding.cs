@@ -6,8 +6,8 @@ public record SerializableCurveBinding // Immutable
     [SerializeField] private string _path;
     public string Path { get => _path; init => _path = value; }
 
-    [SerializeField] private Type _type;
-    public Type Type { get => _type; init => _type = value; }
+    [SerializeField] private SerializableType _type;
+    public Type? Type { get => _type.TargetType; init => _type = value != null ? new SerializableType(value) : _type; }
 
     [SerializeField] private string _propertyName;
     public string PropertyName { get => _propertyName; init => _propertyName = value; }
@@ -21,7 +21,7 @@ public record SerializableCurveBinding // Immutable
     public SerializableCurveBinding()
     {
         _path = "";
-        _type = typeof(Transform);
+        _type = new SerializableType();
         _propertyName = "";
         _isPPtrCurve = false;
     }
@@ -29,7 +29,7 @@ public record SerializableCurveBinding // Immutable
     public SerializableCurveBinding(string path, Type type, string propertyName, bool isPPtrCurve, bool isDiscreteCurve)
     {
         _path = path;
-        _type = type;
+        _type = new SerializableType(type);
         _propertyName = propertyName;
         _isPPtrCurve = isPPtrCurve;
         _isDiscreteCurve = isDiscreteCurve;

@@ -1,56 +1,220 @@
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
+
 namespace com.aoyon.facetune.ui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(AnimationExpressionComponent))]
 internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExpressionComponent>
 {
+    private PropertyField? _curveBindingField;
+    private PropertyField? _curveField;
+    private PropertyField? _objectReferenceCurveField;
 
-    private SerializedProperty _sourceModeProperty = null!;
-    private SerializedProperty _genericAnimationsProperty = null!;
-    private SerializedProperty _clipProperty = null!;
-
-    public override void OnEnable()
+    public override VisualElement CreateInspectorGUI()
     {
-        base.OnEnable();
-        _sourceModeProperty = serializedObject.FindProperty(nameof(AnimationExpressionComponent.SourceMode));
-        _genericAnimationsProperty = serializedObject.FindProperty(nameof(AnimationExpressionComponent.GenericAnimations));
-        _clipProperty = serializedObject.FindProperty(nameof(AnimationExpressionComponent.Clip));
-    }
+        var root = new VisualElement();
+        root.Bind(serializedObject);
 
-    public override void OnInspectorGUI()
-    {
-        serializedObject.Update();
+        var sourceModeField = new PropertyField(serializedObject.FindProperty(nameof(AnimationExpressionComponent.SourceMode)));
+        root.Add(sourceModeField);
 
-        EditorGUILayout.PropertyField(_sourceModeProperty);
-        if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.Manual)
+        var manualContent = new VisualElement();
+        var clipContent = new VisualElement();
+
+        var genericAnimationsProp = serializedObject.FindProperty(nameof(AnimationExpressionComponent.GenericAnimations));
+        var genericAnimationsListView = new ListView
         {
-            EditorGUILayout.PropertyField(_genericAnimationsProperty);
-        }
-        else if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.FromAnimationClip)
-        {
-            EditorGUILayout.PropertyField(_clipProperty);
-        }
-        serializedObject.ApplyModifiedProperties();
+            bindingPath = genericAnimationsProp.propertyPath,
+            headerTitle = "Generic Animations",
+            showBorder = true,
+            showAddRemoveFooter = true,
+            showBoundCollectionSize = false,
+            reorderable = false,
+            selectionType = SelectionType.Single,
+            fixedItemHeight = EditorGUIUtility.singleLineHeight,
+            style =
+            {
+                maxHeight = 200
+            }
+        };
 
-        if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.Manual)
-        {   
-            if (GUILayout.Button("Open Editor"))
+        genericAnimationsListView.makeItem = () => new Label { style = { unityTextAlign = TextAnchor.MiddleLeft, paddingLeft = 5 }};
+
+        genericAnimationsListView.bindItem = (element, i) =>
+        {
+            var label = (Label)element;
+            var elementProp = genericAnimationsProp.GetArrayElementAtIndex(i);
+            var curveBindingProp = elementProp.FindPropertyRelative("_curveBinding");
+            var propertyNameProp = curveBindingProp.FindPropertyRelative("_propertyName");
+            label.text = propertyNameProp.stringValue;
+        };
+        manualContent.Add(genericAnimationsListView);
+
+        var selectedAnimationDetails = new VisualElement
+        {
+            style =
+            {
+                marginTop = 10,
+                borderLeftColor = Color.grey,
+                borderLeftWidth = 1,
+                paddingLeft = 5
+            }
+        };
+
+        _curveBindingField = new PropertyField();
+        _curveField = new PropertyField();
+        _objectReferenceCurveField = new PropertyField();
+
+        selectedAnimationDetails.Add(_curveBindingField);
+        selectedAnimationDetails.Add(_curveField);
+        selectedAnimationDetails.Add(_objectReferenceCurveField);
+        manualContent.Add(selectedAnimationDetails);
+
+        var clipField = new PropertyField(serializedObject.FindProperty(nameof(AnimationExpressionComponent.Clip)));
+        clipContent.Add(clipField);
+
+        genericAnimationsListView.selectionChanged += _ =>
+        {
+            var selectedIndex = genericAnimationsListView.selectedIndex;
+            if (selectedIndex >= 0 && selectedIndex < genericAnimationsProp.arraySize)
+            {
+                var selectedProp = genericAnimationsProp.GetArrayElementAtIndex(selectedIndex);
+                UpdateSelectedAnimationDetails(selectedProp);
+            }
+            else
+            {
+                UpdateSelectedAnimationDetails(null);
+            }
+        };
+
+        var toggleAnimationWindowButton = new Button(() =>
+        {
+            if (GenericAnimationEditor.IsEditing())
+            {
+                GenericAnimationEditor.StopEditing();
+            }
+            else
             {
                 OpenGenericAnimationsEditor();
             }
-        }
-        else if (_sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.FromAnimationClip)
+        });
+        manualContent.Add(toggleAnimationWindowButton);
+        clipContent.Add(toggleAnimationWindowButton);
+        
+        toggleAnimationWindowButton.schedule.Execute(() =>
         {
-            if (GUILayout.Button("Convert to Manual"))
+            toggleAnimationWindowButton.text = GenericAnimationEditor.IsEditing() ? "Stop Animation Window" : "Start Animation Window";
+        }).Every(200);
+
+        var convertToManualButton = new Button(ConvertToManual) { text = "Convert to Manual" };
+        clipContent.Add(convertToManualButton);
+
+        root.Add(manualContent);
+        root.Add(clipContent);
+
+        void UpdateVisibility(AnimationSourceMode mode)
+        {
+            manualContent.style.display = mode == AnimationSourceMode.Manual ? DisplayStyle.Flex : DisplayStyle.None;
+            clipContent.style.display = mode != AnimationSourceMode.Manual ? DisplayStyle.Flex : DisplayStyle.None;
+            
+            if (mode == AnimationSourceMode.Manual)
             {
-                ConvertToManual();
+                if (genericAnimationsProp.arraySize > 0 && genericAnimationsListView.selectedIndex < 0)
+                {
+                    genericAnimationsListView.selectedIndex = 0;
+                }
+                else if (genericAnimationsListView.selectedIndex >= 0 && genericAnimationsListView.selectedIndex < genericAnimationsProp.arraySize)
+                {
+                    UpdateSelectedAnimationDetails(genericAnimationsProp.GetArrayElementAtIndex(genericAnimationsListView.selectedIndex));
+                }
+                else
+                {
+                    UpdateSelectedAnimationDetails(null);
+                }
+            }
+            else
+            {
+                UpdateSelectedAnimationDetails(null);
             }
         }
+
+        sourceModeField.RegisterValueChangeCallback(evt =>
+        {
+            var mode = (AnimationSourceMode)evt.changedProperty.enumValueIndex;
+            UpdateVisibility(mode);
+        });
+
+        UpdateVisibility((AnimationSourceMode)serializedObject.FindProperty(nameof(AnimationExpressionComponent.SourceMode)).enumValueIndex);
+
+        return root;
+    }
+
+    private void UpdateSelectedAnimationDetails(SerializedProperty? selectedProp)
+    {
+        var detailsContainer = _curveBindingField?.parent;
+        if (detailsContainer == null) return;
+
+        if (selectedProp == null)
+        {
+            detailsContainer.style.display = DisplayStyle.None;
+            return;
+        }
+
+        detailsContainer.style.display = DisplayStyle.Flex;
+
+        _curveBindingField.BindProperty(selectedProp.FindPropertyRelative("_curveBinding"));
+        _curveField.BindProperty(selectedProp.FindPropertyRelative("_curve"));
+        _objectReferenceCurveField.BindProperty(selectedProp.FindPropertyRelative("_objectReferenceCurve"));
     }
 
     private void OpenGenericAnimationsEditor()
     {
-        // TODO:
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
+        var animator = context.Root.GetComponent<Animator>();
+        if (animator == null)
+        {
+            Debug.LogError("Animator component not found on the avatar root.");
+            return;
+        }
+
+        AnimationClip clipToEdit;
+        Action<AnimationClip>? onClipModified;
+        Action<GenericAnimationEditor.AnimationWindowSession>? onSessionEnded;
+
+        if (Component.SourceMode == AnimationSourceMode.Manual)
+        {
+            var tmpClip = new AnimationClip { name = "FaceTune Temporary Clip" };
+            tmpClip.SetGenericAnimations(Component.GenericAnimations);
+            clipToEdit = tmpClip;
+
+            onClipModified = clip =>
+            {
+                Undo.RecordObject(Component, "Update Animations from Editor");
+                Component.GenericAnimations = GenericAnimation.FromAnimationClip(clip).ToList();
+                EditorUtility.SetDirty(Component);
+            };
+            onSessionEnded = session =>
+            {
+                if (tmpClip != null)
+                {
+                    Object.DestroyImmediate(tmpClip);
+                }
+            };
+        }
+        else
+        {
+            if (Component.Clip == null)
+            {
+                Debug.LogWarning("No Animation Clip assigned.");
+                return;
+            }
+            clipToEdit = Component.Clip;
+            onClipModified = null;
+            onSessionEnded = null;
+        }
+
+        GenericAnimationEditor.StartEditing(animator, clipToEdit, onClipModified, onSessionEnded);
     }
 
     [MenuItem($"CONTEXT/{nameof(AnimationExpressionComponent)}/ToClip")]
@@ -62,20 +226,13 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
 
     private void ConvertToManual()
     {
-        var clip = Component.Clip;
+        var component = (target as AnimationExpressionComponent)!;
+        var clip = component.Clip;
         if (clip == null) return;
 
-        var genericAnimations = GenericAnimation.FromAnimationClip(clip);
-        AnimationExpressionEditorUtility.UpdateAnimations(Component, genericAnimations);
-        Component.SourceMode = AnimationSourceMode.Manual;
-    }
-}
-
-public class AnimationExpressionEditorUtility
-{
-    public static void UpdateAnimations(AnimationExpressionComponent component, IReadOnlyList<GenericAnimation> newAnimations)
-    {
-        Undo.RecordObject(component, "UpdateAnimations");
-        component.GenericAnimations = newAnimations.ToList();
+        Undo.RecordObject(component, "Convert To Manual");
+        component.GenericAnimations = GenericAnimation.FromAnimationClip(clip).ToList();
+        component.SourceMode = AnimationSourceMode.Manual;
+        EditorUtility.SetDirty(component);
     }
 }
