@@ -52,6 +52,21 @@ internal static class GenericAnimationEditor
         return IsEditing() && s_CurrentSession?.EditedAnimator == animator;
     }
 
+    public static void StartEditingWithAnimations(Animator animator, IReadOnlyList<GenericAnimation> animations, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
+    {
+        var tmpClip = new AnimationClip { name = "FaceTune Temporary Clip" };
+        tmpClip.SetGenericAnimations(animations);
+        Action<AnimationWindowSession> onSessionEnded_ = session =>
+        {
+            if (tmpClip != null)
+            {
+                Object.DestroyImmediate(tmpClip);
+            }
+            onSessionEnded?.Invoke(session);
+        };
+        StartEditing(animator, tmpClip, onClipModified, onSessionEnded_);
+    }
+
     public static void StartEditing(Animator animator, AnimationClip clipToEdit, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
     {
         if (animator == null)
@@ -98,6 +113,13 @@ internal static class GenericAnimationEditor
         var session = s_CurrentSession!;
         s_CurrentSession = null;
 
+        if (s_AnimationWindow != null)
+        {
+            s_AnimationWindow.animationClip = null;
+            s_AnimationWindow.playing = false;
+            s_AnimationWindow.recording = false;
+        }
+
         if (session.EditedAnimator != null)
         {
             var so = new SerializedObject(session.EditedAnimator);
@@ -116,12 +138,6 @@ internal static class GenericAnimationEditor
         }
 
         s_OnSessionEnded?.Invoke(session);
-        if (s_AnimationWindow != null)
-        {
-            s_AnimationWindow.animationClip = null;
-            s_AnimationWindow.playing = false;
-            s_AnimationWindow.recording = false;
-        }
     }
     
     private static void OnCurveModified(AnimationClip clip, EditorCurveBinding binding, AnimationUtility.CurveModifiedType type)

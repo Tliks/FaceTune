@@ -40,14 +40,9 @@ internal static class PlatformSupport
         return GetSupports(root).Select(s => s.GetFaceRenderer()).FirstOrNull(r => r != null);
     }
 
-    public static void DisableExistingControl(FTPassContext passContext)
+    public static void DisableExistingControlAndInstallPatternData(FTPassContext passContext, bool overrideShapes, bool overrideProperties, PatternData patternData)
     {
-        GetSupports(passContext.BuildContext.AvatarRootObject.transform).First().DisableExistingControl(passContext);
-    }
-
-    public static void InstallPatternData(FTPassContext passContext, PatternData patternData)
-    {
-        GetSupports(passContext.BuildContext.AvatarRootObject.transform).First().InstallPatternData(passContext, patternData);
+        GetSupports(passContext.BuildContext.AvatarRootObject.transform).First().DisableExistingControlAndInstallPatternData(passContext, overrideShapes, overrideProperties, patternData);
     }
 
     public static IEnumerable<string> GetTrackedBlendShape(Transform root)

@@ -13,11 +13,7 @@ internal interface IPlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void DisableExistingControl(FTPassContext passContext)
-    {
-        return;
-    }
-    public void InstallPatternData(FTPassContext passContext, PatternData patternData)
+    public void DisableExistingControlAndInstallPatternData(FTPassContext passContext, bool overrideShapes, bool overrideProperties, PatternData patternData)
     {
         return;
     }

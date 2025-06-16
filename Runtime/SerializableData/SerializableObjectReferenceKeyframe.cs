@@ -6,8 +6,8 @@ public record struct SerializableObjectReferenceKeyframe // Immutable
     [SerializeField] private float _time;
     public float Time { get => _time; init => _time = value; }
 
-    [SerializeField] private Object _value;
-    public Object Value { get => _value; init => _value = value; }
+    [SerializeField] private Object? _value;
+    public Object? Value { get => _value; init => _value = value; }
 
     public SerializableObjectReferenceKeyframe(float time, Object value)
     {
@@ -34,11 +34,11 @@ public record struct SerializableObjectReferenceKeyframe // Immutable
 
     public bool Equals(SerializableObjectReferenceKeyframe other)
     {
-        return Mathf.Approximately(Time, other.Time) && Value.Equals(other.Value);
+        return Mathf.Approximately(_time, other._time) && _value == other._value;
     }
     
     public override int GetHashCode()
     {
-        return HashCode.Combine(Time, Value);
+        return HashCode.Combine(_time, _value);
     }
 }

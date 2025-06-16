@@ -48,6 +48,22 @@ public record GenericAnimation // Immutable
         return new GenericAnimation(_curveBinding, curve, new[] { objectReferenceCurve });
     }
 
+    private static readonly string BlendShapePrefix = "blendShape.";
+    internal bool IsBlendShapeAnimation()
+    {
+        return _curveBinding.Type == typeof(SkinnedMeshRenderer) && _curveBinding.PropertyName.StartsWith(BlendShapePrefix);
+    }
+    internal bool TryToBlendShapeAnimation([NotNullWhen(true)] out BlendShapeAnimation? animation)
+    {
+        if (IsBlendShapeAnimation())
+        {
+            animation = new BlendShapeAnimation(_curveBinding.PropertyName, _curve);
+            return true;
+        }
+        animation = null;
+        return false;
+    }
+
 #if UNITY_EDITOR
     internal static List<GenericAnimation> FromAnimationClip(AnimationClip clip)
     {

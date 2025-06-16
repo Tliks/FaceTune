@@ -35,23 +35,23 @@ public record SerializableCurveBinding // Immutable
         _isDiscreteCurve = isDiscreteCurve;
     }
     
-    public static SerializableCurveBinding FloatCurve(string path, Type type, string propertyName)
+    internal static SerializableCurveBinding FloatCurve(string path, Type type, string propertyName)
     {
         return new SerializableCurveBinding(path, type, propertyName, false, false);
     }
 
-    public static SerializableCurveBinding PPtrCurve(string path, Type type, string propertyName)
+    internal static SerializableCurveBinding PPtrCurve(string path, Type type, string propertyName)
     {
         return new SerializableCurveBinding(path, type, propertyName, true, true);
     }
 
-    public static SerializableCurveBinding DiscreteCurve(string path, Type type, string propertyName)
+    internal static SerializableCurveBinding DiscreteCurve(string path, Type type, string propertyName)
     {
         return new SerializableCurveBinding(path, type, propertyName, false, true);
     }
     
 #if UNITY_EDITOR
-    public static SerializableCurveBinding FromEditorCurveBinding(UnityEditor.EditorCurveBinding binding)
+    internal static SerializableCurveBinding FromEditorCurveBinding(UnityEditor.EditorCurveBinding binding)
     {
         return new SerializableCurveBinding(
             binding.path, 
@@ -62,7 +62,7 @@ public record SerializableCurveBinding // Immutable
         );
     }
 
-    public UnityEditor.EditorCurveBinding ToEditorCurveBinding()
+    internal UnityEditor.EditorCurveBinding ToEditorCurveBinding()
     {   
         if (IsDiscreteCurve)
         {

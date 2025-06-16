@@ -11,6 +11,7 @@ internal class AnimationIndex
     private Dictionary<string, Dictionary<string, AnimationCurve>>? _pathNameCurves;
     private Dictionary<string, Dictionary<string, AnimationCurve>>? _pathNameBlendShapeCurves;
     private Dictionary<string, BlendShapeSet>? _pathFirstFrameBlendShapeSets; 
+    private BlendShapeSet? _allFirstFrameBlendShapeSet;
     private bool _cacheValid = false;
 
     private static readonly string BlendShapePrefix = "blendShape.";
@@ -93,14 +94,18 @@ internal class AnimationIndex
             _pathFirstFrameBlendShapeSets = new Dictionary<string, BlendShapeSet> { { path, new BlendShapeSet(blendShapes) } };
             _cacheValid = true;
         }
-        blendShapeSet = _pathFirstFrameBlendShapeSets[path!];
+        blendShapeSet = _pathFirstFrameBlendShapeSets[path!].Clone();
         return true;
     }
 
     public BlendShapeSet GetAllFirstFrameBlendShapeSet()
     {
-        var blendShapes = GetPathNameBlendShapeCurves().SelectMany(x => x.Value.Select(y => new BlendShape(y.Key, y.Value.Evaluate(0)))).ToList();
-        return new BlendShapeSet(blendShapes);
+        if (_allFirstFrameBlendShapeSet == null)
+        {
+            var blendShapes = GetPathNameBlendShapeCurves().SelectMany(x => x.Value.Select(y => new BlendShape(y.Key, y.Value.Evaluate(0)))).ToList();
+            _allFirstFrameBlendShapeSet = new BlendShapeSet(blendShapes);
+        }
+        return _allFirstFrameBlendShapeSet.Clone();
     }
 
     private Dictionary<string, Dictionary<string, AnimationCurve>> GetPathNameCurves()
@@ -151,7 +156,7 @@ internal class AnimationIndex
 
     public void AddSingleFrameBlendShapeAnimation(string path, string name, float weight)
     {
-        var animation = BlendShapeAnimation.SingleFrame(name, weight).GetGeneric(path);
+        var animation = BlendShapeAnimation.SingleFrame(name, weight).ToGeneric(path);
         _animations.Add(animation);
         InvalidateCache();
     }

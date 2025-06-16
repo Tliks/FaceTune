@@ -75,32 +75,15 @@ internal class VRChatSuport : IPlatformSupport
         return new AnimatorInstaller(context, cc, fx, useWriteDefaults);
     }
 
-    private AnimatorInstaller InitializeAnimatorInstallerIfNull(FTPassContext passContext)
+    public void DisableExistingControlAndInstallPatternData(FTPassContext passContext, bool overrideShapes, bool overrideProperties, PatternData patternData)
     {
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null)
         {
             throw new Exception("SessionContext is not set");
         }
-        var installer = passContext.AnimatorInstaller;
-        if (installer == null)
-        {
-            installer = InitializeAnimatorInstaller(passContext.BuildContext, sessionContext);
-            passContext.SetAnimatorInstaller(installer);
-        }
-        return installer;
-    }
-
-    public void DisableExistingControl(FTPassContext passContext)
-    {
-        var installer = InitializeAnimatorInstallerIfNull(passContext);
-        installer.DisableExistingControl();
-    }
-
-    public void InstallPatternData(FTPassContext passContext, PatternData patternData)
-    {
-        var installer = InitializeAnimatorInstallerIfNull(passContext);
-        installer.InstallPatternData(patternData);
+        var installer = InitializeAnimatorInstaller(passContext.BuildContext, sessionContext);
+        installer.DisableExistingControlAndInstallPatternData(overrideShapes, overrideProperties, patternData);
     }
 
     public IEnumerable<string> GetTrackedBlendShape()

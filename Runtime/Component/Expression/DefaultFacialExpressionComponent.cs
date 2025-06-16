@@ -12,7 +12,7 @@ namespace com.aoyon.facetune
         internal Expression GetDefaultExpression(string bodyPath, IObserveContext observeContext)
         {
             var animations = observeContext.Observe(this, c => new List<BlendShapeAnimation>(c.BlendShapeAnimations), (a, b) => a.SequenceEqual(b))
-                .Select(ba => ba.GetGeneric(bodyPath))
+                .Select(ba => ba.ToGeneric(bodyPath))
                 .ToList();
             var settings = observeContext.Observe(this, c => c.FacialSettings with {}, (a, b) => a.Equals(b));
             return new Expression(name, animations, settings);

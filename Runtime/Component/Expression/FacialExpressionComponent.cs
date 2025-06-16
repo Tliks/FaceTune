@@ -27,15 +27,15 @@ namespace com.aoyon.facetune
             switch (sourceMode)
             {
                 case AnimationSourceMode.Manual:
-                    var blendShapeAnimations = observeContext.Observe(this, c => c.BlendShapeAnimations, (a, b) => a == b);
-                    diffAnimations.AddRange(blendShapeAnimations.Select(ba => ba.GetGeneric(sessionContext.BodyPath)));
+                    var blendShapeAnimations = observeContext.Observe(this, c => new List<BlendShapeAnimation>(c.BlendShapeAnimations), (a, b) => a.SequenceEqual(b));
+                    diffAnimations.AddRange(blendShapeAnimations.Select(ba => ba.ToGeneric(sessionContext.BodyPath)));
                     break;
                 case AnimationSourceMode.FromAnimationClip:
 #if UNITY_EDITOR
                     var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
                     if (clip == null) break;
 
-                    var blendShapeAnimations_ = FTAnimationUtility.FilterBlendShapeAnimations(GenericAnimation.FromAnimationClip(clip)).ToList();
+                    var blendShapeAnimations_ = GenericAnimation.FromAnimationClip(clip).Where(a => a.IsBlendShapeAnimation()).ToList();
                     var animationIndex = new AnimationIndex(blendShapeAnimations_);
                     
                     var excludeOption = observeContext.Observe(this, c => c.ClipExcludeOption, (a, b) => a == b);
@@ -77,7 +77,7 @@ namespace com.aoyon.facetune
             var blendingPermission = observeContext.Observe(this, c => c.FacialSettings.BlendingPermission, (a, b) => a == b);
             if (blendingPermission == BlendingPermission.Disallow)
             {
-                ret = diffAnimations.Select(ga => ga with {}).ToList();
+                ret = diffAnimations;
             }
             else
             {

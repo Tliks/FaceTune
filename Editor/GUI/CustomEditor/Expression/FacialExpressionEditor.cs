@@ -104,9 +104,28 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         }
         _blendShapeAnimationList!.DoLayoutList();
         
-        if (GUILayout.Button("Open Editor"))
+        if (_isSingleFrameProperty.boolValue)
         {
-            OpenFacialShapesEditor();
+            if (GUILayout.Button("Open Editor"))
+            {
+                OpenFacialShapesEditor();
+            }
+        }
+        else
+        {
+            var isEditing = GenericAnimationEditor.IsEditing();
+            var label = isEditing ? "Stop Animation Window" : "Start Animation Window";
+            if (GUILayout.Button(label))
+            {
+                if (isEditing)
+                {
+                    GenericAnimationEditor.StopEditing();
+                }
+                else
+                {
+                    StartAnimationWindow();
+                }
+            }
         }
     }
     
@@ -137,6 +156,32 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, result.BlendShapes.ToList().AsReadOnly());
         so.ApplyModifiedProperties();
     }
+
+    private void StartAnimationWindow()
+    {
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
+        var animator = context.Root.GetComponent<Animator>();
+        if (animator == null)
+        {
+            Debug.LogError("Animator component not found on the avatar root.");
+            return;
+        }
+
+        Action<AnimationClip> onClipModified = clip =>
+        {
+            Undo.RecordObject(Component, "Update Animations from Editor");
+            Component.BlendShapeAnimations = GenericAnimation.FromAnimationClip(clip).Select(a =>
+            {
+                if (a.TryToBlendShapeAnimation(out var animation))
+                {
+                    return animation;
+                }
+                return null;
+            }).OfType<BlendShapeAnimation>().ToList();
+        };
+        GenericAnimationEditor.StartEditingWithAnimations(animator, Component.BlendShapeAnimations.Select(a => a.ToGeneric(context.BodyPath)).ToList(), onClipModified);
+    }
+
 
     [MenuItem($"CONTEXT/{nameof(FacialExpressionComponent)}/ToClip")]
     private static void ToClip(MenuCommand command)
@@ -184,7 +229,7 @@ public class FacialExpressionEditorUtility
             var nameProp = element.FindPropertyRelative("_name");
             var curveProp = element.FindPropertyRelative("_curve");
             nameProp.stringValue = animations[i].Name;
-            curveProp.animationCurveValue = animations[i].Curve;
+            curveProp.animationCurveValue = animations[i].GetCurve();
         }
     }
 
@@ -200,7 +245,7 @@ public class FacialExpressionEditorUtility
         {
             var element = animationsProperty.GetArrayElementAtIndex(i);
             element.FindPropertyRelative("_name").stringValue = newAnimations[i].Name;
-            element.FindPropertyRelative("_curve").animationCurveValue = newAnimations[i].Curve;
+            element.FindPropertyRelative("_curve").animationCurveValue = newAnimations[i].GetCurve();
         }
     }
 }

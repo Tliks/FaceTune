@@ -48,24 +48,6 @@ internal class AnimatorInstaller
         _relativePath = HierarchyUtility.GetRelativePath(_sessionContext.Root, _sessionContext.FaceRenderer.gameObject)!;
     }
 
-    public VirtualLayer DisableExistingControl()
-    {
-        var (defaultLayer, defaultState) = AddDefaultLayer(LayerPriority);
-        defaultLayer.Name = $"{SystemName}: Disable Existing Control";
-        _disableExistingControlLayer = defaultLayer;
-        _defaultState = defaultState;
-        return _disableExistingControlLayer;
-    }
-
-    public (VirtualLayer defaultLayer, VirtualState defaultState) AddDefaultLayer(int priority)
-    {
-        var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
-        var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
-        AddExpressionToState(defaultState, _globalDefaultExpression);
-        // SetTracks(defaultState, _globalDefaultExpression);
-        return (defaultLayer, defaultState);
-    }
-
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
     {
         var layerPriority = new LayerPriority(priority);
@@ -90,39 +72,93 @@ internal class AnimatorInstaller
         return state;
     }
 
-    private void AddExpressionToState(VirtualState state, Expression expression)
+    private void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations, bool clone = true)
     {
-        var motion = state.Motion as VirtualClip;
-        if (motion == null)
+        var motion = state.GetOrCreateClip(state.Name);
+        if (clone)
         {
-            motion = VirtualClip.Create(expression.Name);
-            state.Motion = motion;
+            motion = motion.Clone();
         }
-        motion.SetAnimations(expression.Animations);
+        motion.Name = state.Name;
+        motion.SetAnimations(animations);
+        state.Motion = motion;
     }
 
-    public void InstallPatternData(PatternData patternData)
+    private void CreateDefaultLayer(bool overrideShapes, bool overrideProperties, PatternData patternData)
     {
-        if (patternData.Count == 0) return;
+        VirtualLayer defaultLayer;
+        VirtualState defaultState;
 
-        VirtualLayer? defaultLayer = null;
-        VirtualState? defaultState = null;
-        if (_disableExistingControlLayer != null && _defaultState != null)
+        var defaultExpression = _globalDefaultExpression;
+
+        var shapesLayerPriority = overrideShapes ? LayerPriority : WDLayerPriority;
+        var propertiesLayerPriority = overrideProperties ? LayerPriority : WDLayerPriority;
+
+        // ブレンドシェイプの初期化レイヤー
+        var shapesLayerName = overrideShapes ? "Default (Override Shapes)" : "Default (Shapes)";
+        var shapesLayer = AddFTLayer(_virtualController, shapesLayerName, shapesLayerPriority);
+        var shapesState = AddFTState(shapesLayer, "Default", DefaultStatePosition);
+        AddAnimationToState(shapesState, defaultExpression.Animations);
+        SetTracks(shapesState, defaultExpression.FacialSettings);
+
+        List<VirtualState> presetStates = new();
+        if (!patternData.IsEmpty)
         {
-            defaultLayer = _disableExistingControlLayer;
-            defaultState = _defaultState;
+            var presets = patternData.GetAllPresets().ToList();
+            if (presets.Count > 0)
+            {
+                var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
+                var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+                presetStates.AddRange(AddExclusiveStates(shapesLayer, shapesState, presetConditions, 0f, basePosition));
+                for (int i = 0; i < presets.Count; i++)
+                {
+                    var preset = presets[i];
+                    var presetState = presetStates[i];
+                    presetState.Name = preset.Name;
+                    AddAnimationToState(presetState, preset.DefaultExpression.Animations);
+                    SetTracks(presetState, preset.DefaultExpression.FacialSettings);
+                }
+            }
+        }
+
+        var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
+
+        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), "blendShape.");
+        var nonFacialBindings = bindings.Where(b => b != facialBinding);
+        if (!nonFacialBindings.Any()) return;
+
+        var defaultPropertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
+        if (!defaultPropertiesAnimations.Any()) return;
+
+        if (shapesLayerPriority == propertiesLayerPriority)
+        {
+            var layerName = shapesLayerPriority == LayerPriority ? "Default (Override Shapes and Properties)" : "Default (Shapes and Properties)";
+            shapesLayer.Name = layerName;
+            foreach (var state in presetStates.Concat(new[] { shapesState }))
+            {
+                AddAnimationToState(state, defaultPropertiesAnimations, false);
+            }
         }
         else
         {
-            (defaultLayer, defaultState) = AddDefaultLayer(WDLayerPriority);
+            var propertiesLayerName = overrideProperties ? "Default (Override Properties)" : "Default (Properties)";
+            var propertiesLayer = AddFTLayer(_virtualController, propertiesLayerName, propertiesLayerPriority);
+            var propertiesState = AddFTState(propertiesLayer, "Default", DefaultStatePosition);
+            AddAnimationToState(propertiesState, defaultPropertiesAnimations, false);
         }
-        defaultLayer.Name = $"{SystemName}: Default";
+
+        defaultLayer = shapesLayer;
+        defaultState = shapesState;
+    }
+
+    public void DisableExistingControlAndInstallPatternData(bool overrideShapes, bool overrideProperties, PatternData patternData)
+    {
+        if (patternData.IsEmpty) return;
+
+        CreateDefaultLayer(overrideShapes, overrideProperties, patternData);
 
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
-
-        SetTracks(defaultState, _globalDefaultExpression.FacialSettings);
-        AddDefaultForPattern(patternData, defaultLayer, defaultState);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -141,25 +177,6 @@ internal class AnimatorInstaller
 
         AddEyeBlinkLayer();
         AddLipSyncLayer();
-    }
-
-    private void AddDefaultForPattern(PatternData patternData, VirtualLayer defaultLayer, VirtualState defaultState)
-    {
-        var presets = patternData.GetAllPresets().ToList();
-        if (presets.Count > 0)
-        {
-            var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
-            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-            var presetStates = AddExclusiveStates(defaultLayer, defaultState, presetConditions, 0f, basePosition);
-            for (int i = 0; i < presets.Count; i++)
-            {
-                var preset = presets[i];
-                var presetState = presetStates[i];
-                presetState.Name = preset.Name;
-                AddExpressionToState(presetState, preset.DefaultExpression);
-                SetTracks(presetState, preset.DefaultExpression.FacialSettings);
-            }
-        }
     }
 
     private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
@@ -218,7 +235,7 @@ internal class AnimatorInstaller
             var expressionWithCondition = expressionWithConditionList[i];
             var state = states[i];
             state.Name = expressionWithCondition.Expression.Name;
-            AddExpressionToState(state, expressionWithCondition.Expression);
+            AddAnimationToState(state, expressionWithCondition.Expression.Animations);
             SetTracks(state, expressionWithCondition.Expression.FacialSettings);
         }
     }

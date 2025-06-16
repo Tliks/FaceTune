@@ -108,6 +108,16 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         var convertToManualButton = new Button(ConvertToManual) { text = "Convert to Manual" };
         clipContent.Add(convertToManualButton);
 
+        void UpdateButtonStates()
+        {
+            var hasClip = Component.Clip != null;
+            convertToManualButton.SetEnabled(hasClip);
+            toggleAnimationWindowButton.SetEnabled(hasClip || Component.SourceMode == AnimationSourceMode.Manual);
+        }
+
+        clipField.RegisterValueChangeCallback(_ => UpdateButtonStates());
+        UpdateButtonStates();
+
         root.Add(manualContent);
         root.Add(clipContent);
         root.Add(toggleAnimationWindowButton);
@@ -142,6 +152,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         {
             var mode = (AnimationSourceMode)evt.changedProperty.enumValueIndex;
             UpdateVisibility(mode);
+            UpdateButtonStates();
         });
 
         UpdateVisibility((AnimationSourceMode)serializedObject.FindProperty(nameof(AnimationExpressionComponent.SourceMode)).enumValueIndex);
@@ -177,29 +188,14 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
             return;
         }
 
-        AnimationClip clipToEdit;
-        Action<AnimationClip>? onClipModified;
-        Action<GenericAnimationEditor.AnimationWindowSession>? onSessionEnded;
-
         if (Component.SourceMode == AnimationSourceMode.Manual)
         {
-            var tmpClip = new AnimationClip { name = "FaceTune Temporary Clip" };
-            tmpClip.SetGenericAnimations(Component.GenericAnimations);
-            clipToEdit = tmpClip;
-
-            onClipModified = clip =>
+            Action<AnimationClip> onClipModified = clip =>
             {
                 Undo.RecordObject(Component, "Update Animations from Editor");
                 Component.GenericAnimations = GenericAnimation.FromAnimationClip(clip).ToList();
-                EditorUtility.SetDirty(Component);
             };
-            onSessionEnded = session =>
-            {
-                if (tmpClip != null)
-                {
-                    Object.DestroyImmediate(tmpClip);
-                }
-            };
+            GenericAnimationEditor.StartEditingWithAnimations(animator, Component.GenericAnimations, onClipModified);
         }
         else
         {
@@ -208,12 +204,9 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
                 Debug.LogWarning("No Animation Clip assigned.");
                 return;
             }
-            clipToEdit = Component.Clip;
-            onClipModified = null;
-            onSessionEnded = null;
-        }
 
-        GenericAnimationEditor.StartEditing(animator, clipToEdit, onClipModified, onSessionEnded);
+            GenericAnimationEditor.StartEditing(animator, Component.Clip);
+        }
     }
 
     [MenuItem($"CONTEXT/{nameof(AnimationExpressionComponent)}/ToClip")]

@@ -27,12 +27,6 @@ internal static class FTAnimationUtility
     }
 #endif
 
-    // GenericAnimation
-    public static IEnumerable<GenericAnimation> FilterBlendShapeAnimations(IEnumerable<GenericAnimation> animations)
-    {
-        return animations.Where(a => a.CurveBinding.Type == typeof(SkinnedMeshRenderer) && a.CurveBinding.PropertyName.StartsWith(BlendShapePrefix));
-    }
-
 
     // AnimationCurve
     public static AnimationCurve Clone(this AnimationCurve curve)

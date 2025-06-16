@@ -7,5 +7,6 @@ namespace com.aoyon.facetune
         internal const string MenuPath = FaceTune + "/" + Global + "/" + ComponentName;
 
         public bool OverrideBlendShapes = true;
+        public bool OverrideProperties = true;
     }
 }
