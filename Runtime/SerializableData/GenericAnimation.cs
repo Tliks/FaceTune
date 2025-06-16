@@ -40,8 +40,16 @@ public record GenericAnimation // Immutable
         _objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
+    internal GenericAnimation ToSingleFrame()
+    {
+        var curve = new AnimationCurve();
+        curve.AddKey(0, _curve.Evaluate(0));
+        var objectReferenceCurve = _objectReferenceCurve.OrderBy(k => k.Time).FirstOrDefault();
+        return new GenericAnimation(_curveBinding, curve, new[] { objectReferenceCurve });
+    }
+
 #if UNITY_EDITOR
-    public static List<GenericAnimation> FromAnimationClip(AnimationClip clip)
+    internal static List<GenericAnimation> FromAnimationClip(AnimationClip clip)
     {
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
         var animations = new List<GenericAnimation>();

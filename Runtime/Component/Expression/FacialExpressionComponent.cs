@@ -11,6 +11,7 @@ namespace com.aoyon.facetune
         public AnimationSourceMode SourceMode = AnimationSourceMode.Manual;
 
         // Manual
+        public bool IsSingleFrame = true;
         public List<BlendShapeAnimation> BlendShapeAnimations = new();
 
         // FromAnimationClip
@@ -82,7 +83,16 @@ namespace com.aoyon.facetune
             {
                 var animationIndex = defaultExpression.AnimationIndex;
                 animationIndex.MergeAnimation(diffAnimations);
-                ret = animationIndex.Animations.Select(ga => ga with {}).ToList();
+                ret = animationIndex.Animations.ToList();
+            }
+
+            var isSingleFrame = observeContext.Observe(this, c => c.IsSingleFrame, (a, b) => a == b);
+            if (isSingleFrame)
+            {
+                for (int i = 0; i < ret.Count; i++)
+                {
+                    ret[i] = ret[i].ToSingleFrame();
+                }
             }
 
             return new Expression(name, ret, FacialSettings with {});

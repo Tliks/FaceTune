@@ -33,7 +33,14 @@ public record BlendShapeAnimation // Immutable
         return new BlendShapeAnimation(name, curve);
     }
 
-    internal GenericAnimation GetGeneric(string path)
+    internal BlendShapeAnimation ToSingleFrame()
+    {
+        var curve = new AnimationCurve();
+        curve.AddKey(0, _curve.Evaluate(0));
+        return new BlendShapeAnimation(Name, curve);
+    }
+
+    internal GenericAnimation ToGeneric(string path)
     {
         var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), "blendShape." + Name);
         return new GenericAnimation(binding, _curve);
