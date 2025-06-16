@@ -99,8 +99,6 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
                 OpenGenericAnimationsEditor();
             }
         });
-        manualContent.Add(toggleAnimationWindowButton);
-        clipContent.Add(toggleAnimationWindowButton);
         
         toggleAnimationWindowButton.schedule.Execute(() =>
         {
@@ -112,6 +110,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
 
         root.Add(manualContent);
         root.Add(clipContent);
+        root.Add(toggleAnimationWindowButton);
 
         void UpdateVisibility(AnimationSourceMode mode)
         {
