@@ -100,7 +100,7 @@ namespace com.aoyon.facetune
             }
 
             FacialSettings facialSettings;
-            ExpressionSettings expressionSettings;
+            ExpressionSettings expressionSettings = new();
 
             facialSettings = FacialSettings;
             switch (sourceMode)
@@ -109,8 +109,9 @@ namespace com.aoyon.facetune
                     expressionSettings = ExpressionSettings;
                     break;
                 case AnimationSourceMode.FromAnimationClip:
-                    if (Clip == null) expressionSettings = new ExpressionSettings();
-                    else expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
+#if UNITY_EDITOR
+                    if (Clip != null) expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
+#endif
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);

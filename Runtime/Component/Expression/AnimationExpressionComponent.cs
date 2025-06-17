@@ -19,7 +19,7 @@ namespace com.aoyon.facetune
         Expression IExpressionProvider.ToExpression(SessionContext sessionContext, IObserveContext observeContext)
         {
             var animations = new List<GenericAnimation>();
-            ExpressionSettings expressionSettings;
+            ExpressionSettings expressionSettings = new();
 
             var sourceMode = observeContext.Observe(this, c => c.SourceMode, (a, b) => a == b);
             switch (sourceMode)
@@ -35,8 +35,8 @@ namespace com.aoyon.facetune
                     {
 #if UNITY_EDITOR
                         animations.AddRange(GenericAnimation.FromAnimationClip(clip));
-#endif
                         expressionSettings = ExpressionSettings.FromAnimationClip(clip);
+#endif
                     }
                     else
                     {

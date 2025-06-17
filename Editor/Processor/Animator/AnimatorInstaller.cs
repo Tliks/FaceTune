@@ -80,7 +80,12 @@ internal class AnimatorInstaller
     private void AddSettingsToState(VirtualState state, ExpressionSettings expressionSettings)
     {
         var motion = state.GetOrCreateClip(state.Name);
-        motion.WrapMode = expressionSettings.IsLoop ? WrapMode.Loop : WrapMode.Once;
+        if (expressionSettings.LoopTime)
+        {
+            var settings = motion.Settings;
+            settings.loopTime = true;
+            motion.Settings = settings;
+        }
         if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
         {
             state.TimeParameter = expressionSettings.MotionTimeParameterName;

@@ -240,6 +240,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         CustomEditorUtility.ToClip(component.GenericAnimations);
     }
 
+    // Todo: use SerializedObject
     private void ConvertToManual()
     {
         var component = (target as AnimationExpressionComponent)!;

@@ -4,37 +4,33 @@ namespace com.aoyon.facetune;
 public record class ExpressionSettings // Immutable
 {
     // Advanced
-    public bool IsLoop;
-    public string MotionTimeParameterName; // IsLoop == false && != empty
+    public bool LoopTime;
+    public string MotionTimeParameterName; // LoopTime == false && != empty
 
     public ExpressionSettings()
     {
-        IsLoop = false;
+        LoopTime = false;
         MotionTimeParameterName = string.Empty;
     }
 
-    public ExpressionSettings(bool isLoop, string motionTimeParameterName)
+    public ExpressionSettings(bool loopTime, string motionTimeParameterName)
     {
-        IsLoop = isLoop;
+        LoopTime = loopTime;
         MotionTimeParameterName = motionTimeParameterName;
     }
 
+#if UNITY_EDITOR
     internal static ExpressionSettings FromAnimationClip(AnimationClip clip)
     {
-        // 若干の損失が発生している
-        switch (clip.wrapMode)
-        {
-            case WrapMode.Loop:
-                return new ExpressionSettings(true, string.Empty);
-            default:
-                return new ExpressionSettings(false, string.Empty);
-        }
+        var settings = UnityEditor.AnimationUtility.GetAnimationClipSettings(clip);
+        return new ExpressionSettings(settings.loopTime, "");
     }
+#endif
 
     internal ExpressionSettings Merge(ExpressionSettings other)
     {
-        var isLoop = IsLoop || other.IsLoop;
+        var loopTime = LoopTime || other.LoopTime;
         var motionTimeParameterName = string.IsNullOrEmpty(other.MotionTimeParameterName) ? MotionTimeParameterName : other.MotionTimeParameterName;
-        return new ExpressionSettings(isLoop, motionTimeParameterName);
+        return new ExpressionSettings(loopTime, motionTimeParameterName);
     }
 }

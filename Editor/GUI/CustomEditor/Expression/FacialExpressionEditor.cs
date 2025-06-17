@@ -220,7 +220,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
             so.FindProperty(nameof(FacialExpressionComponent.IsSingleFrame)).boolValue = true;
             var expressionSettingsProperty = so.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
             var settings = ExpressionSettings.FromAnimationClip(component.Clip);
-            expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.IsLoop)).boolValue = settings.IsLoop;
+            expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.LoopTime)).boolValue = settings.LoopTime;
             expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.MotionTimeParameterName)).stringValue = settings.MotionTimeParameterName;
             so.ApplyModifiedProperties();
         }
