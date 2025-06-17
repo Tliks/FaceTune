@@ -109,8 +109,7 @@ internal class AnimatorInstaller
         var propertiesLayerPriority = overrideProperties ? LayerPriority : WDLayerPriority;
 
         // ブレンドシェイプの初期化レイヤー
-        var shapesLayerName = overrideShapes ? "Default (Override Shapes)" : "Default (Shapes)";
-        var shapesLayer = AddFTLayer(_virtualController, shapesLayerName, shapesLayerPriority);
+        var shapesLayer = AddFTLayer(_virtualController, "Default", shapesLayerPriority);
         var shapesState = AddFTState(shapesLayer, "Default", DefaultStatePosition);
         AddExpressionToState(shapesState, defaultExpression);
 
@@ -144,8 +143,6 @@ internal class AnimatorInstaller
 
         if (shapesLayerPriority == propertiesLayerPriority)
         {
-            var layerName = shapesLayerPriority == LayerPriority ? "Default (Override Shapes and Properties)" : "Default (Shapes and Properties)";
-            shapesLayer.Name = layerName;
             foreach (var state in presetStates.Concat(new[] { shapesState }))
             {
                 AddAnimationToState(state, defaultPropertiesAnimations);
@@ -153,8 +150,7 @@ internal class AnimatorInstaller
         }
         else
         {
-            var propertiesLayerName = overrideProperties ? "Default (Override Properties)" : "Default (Properties)";
-            var propertiesLayer = AddFTLayer(_virtualController, propertiesLayerName, propertiesLayerPriority);
+            var propertiesLayer = AddFTLayer(_virtualController, "Default", propertiesLayerPriority);
             var propertiesState = AddFTState(propertiesLayer, "Default", DefaultStatePosition);
             AddAnimationToState(propertiesState, defaultPropertiesAnimations);
         }
