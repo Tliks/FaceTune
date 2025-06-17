@@ -13,12 +13,11 @@ internal class AnimatorInstaller
     private readonly Dictionary<string, AnimatorControllerParameter> _parameterCache;
 
     private readonly DefaultExpressionContext _defaultExpressionContext;
-    private readonly FacialExpression _globalDefaultExpression;
+    private readonly Expression _globalDefaultExpression;
 
     private readonly IPlatformSupport _platformSupport;
 
-    private readonly VirtualClip _emptyClip;
-    private readonly string _relativePath;
+    private readonly List<VirtualState> _allStates = new();
 
     private const string SystemName = "FaceTune";
     private readonly bool _useWriteDefaults;
@@ -44,26 +43,6 @@ internal class AnimatorInstaller
         _useWriteDefaults = useWriteDefaults;
         _defaultExpressionContext = sessionContext.DEC;
         _globalDefaultExpression = _defaultExpressionContext.GetGlobalDefaultExpression();
-        _emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
-        _relativePath = HierarchyUtility.GetRelativePath(_sessionContext.Root, _sessionContext.FaceRenderer.gameObject)!;
-    }
-
-    public VirtualLayer DisableExistingControl()
-    {
-        var (defaultLayer, defaultState) = AddDefaultLayer(LayerPriority);
-        defaultLayer.Name = $"{SystemName}: Disable Existing Control";
-        _disableExistingControlLayer = defaultLayer;
-        _defaultState = defaultState;
-        return _disableExistingControlLayer;
-    }
-
-    public (VirtualLayer defaultLayer, VirtualState defaultState) AddDefaultLayer(int priority)
-    {
-        var defaultLayer = AddFTLayer(_virtualController, "Default", priority);
-        var defaultState = AddFTState(defaultLayer, "Default", DefaultStatePosition);
-        AddExpressionToState(defaultState, _globalDefaultExpression);
-        // SetTracks(defaultState, _globalDefaultExpression);
-        return (defaultLayer, defaultState);
     }
 
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
@@ -78,56 +57,116 @@ internal class AnimatorInstaller
     {
         var state = layer.StateMachine!.AddState(stateName, position: position);
         state.WriteDefaultValues = _useWriteDefaults;
-        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
-        if (_useWriteDefaults)
-        {
-            state.Motion = null; 
-        }
-        else
-        {
-            state.Motion = _emptyClip;
-        }
+        _allStates.Add(state);
         return state;
+    }
+
+    private void AssignEmptyClipIfStateIsEmpty()
+    {
+        var emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
+        foreach (var state in _allStates)
+        {
+            state.Motion ??= emptyClip;
+        }
     }
 
     private void AddExpressionToState(VirtualState state, Expression expression)
     {
-        if (expression is AnimationExpression animationExpression)
+        AddSettingsToState(state, expression.ExpressionSettings);
+        AddAnimationToState(state, expression.Animations);
+        SetFacialSettings(state, expression.FacialSettings);
+    }
+
+    private void AddSettingsToState(VirtualState state, ExpressionSettings expressionSettings)
+    {
+        var motion = state.GetOrCreateClip(state.Name);
+        if (expressionSettings.LoopTime)
         {
-            state.Motion = _vcc.Clone(animationExpression.Clip);
+            var settings = motion.Settings;
+            settings.loopTime = true;
+            motion.Settings = settings;
         }
-        else
+        if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
         {
-            var name = expression.Name;
-            var newAnimationClip = VirtualClip.Create(name);
-            var shapes = expression.GetBlendShapeSet().BlendShapes;
-            newAnimationClip.SetBlendShapes(_relativePath, shapes);
-            state.Motion = newAnimationClip;
+            state.TimeParameter = expressionSettings.MotionTimeParameterName;
         }
     }
 
-    public void InstallPatternData(PatternData patternData)
+    private void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
     {
-        if (patternData.Count == 0) return;
+        var motion = state.GetOrCreateClip(state.Name);
+        motion.SetAnimations(animations);
+    }
 
-        VirtualLayer? defaultLayer = null;
-        VirtualState? defaultState = null;
-        if (_disableExistingControlLayer != null && _defaultState != null)
+    private void CreateDefaultLayer(bool overrideShapes, bool overrideProperties, PatternData patternData)
+    {
+        VirtualLayer defaultLayer;
+        VirtualState defaultState;
+
+        var defaultExpression = _globalDefaultExpression;
+
+        var shapesLayerPriority = overrideShapes ? LayerPriority : WDLayerPriority;
+        var propertiesLayerPriority = overrideProperties ? LayerPriority : WDLayerPriority;
+
+        // ブレンドシェイプの初期化レイヤー
+        var shapesLayer = AddFTLayer(_virtualController, "Default", shapesLayerPriority);
+        var shapesState = AddFTState(shapesLayer, "Default", DefaultStatePosition);
+        AddExpressionToState(shapesState, defaultExpression);
+
+        List<VirtualState> presetStates = new();
+        if (!patternData.IsEmpty)
         {
-            defaultLayer = _disableExistingControlLayer;
-            defaultState = _defaultState;
+            var presets = patternData.GetAllPresets().ToList();
+            if (presets.Count > 0)
+            {
+                var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
+                var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+                presetStates.AddRange(AddExclusiveStates(shapesLayer, shapesState, presetConditions, 0f, basePosition));
+                for (int i = 0; i < presets.Count; i++)
+                {
+                    var preset = presets[i];
+                    var presetState = presetStates[i];
+                    presetState.Name = preset.Name;
+                    AddExpressionToState(presetState, preset.DefaultExpression);
+                }
+            }
+        }
+
+        var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
+
+        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), "blendShape.");
+        var nonFacialBindings = bindings.Where(b => b != facialBinding);
+        if (!nonFacialBindings.Any()) return;
+
+        var defaultPropertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
+        if (!defaultPropertiesAnimations.Any()) return;
+
+        if (shapesLayerPriority == propertiesLayerPriority)
+        {
+            foreach (var state in presetStates.Concat(new[] { shapesState }))
+            {
+                AddAnimationToState(state, defaultPropertiesAnimations);
+            }
         }
         else
         {
-            (defaultLayer, defaultState) = AddDefaultLayer(WDLayerPriority);
+            var propertiesLayer = AddFTLayer(_virtualController, "Default", propertiesLayerPriority);
+            var propertiesState = AddFTState(propertiesLayer, "Default", DefaultStatePosition);
+            AddAnimationToState(propertiesState, defaultPropertiesAnimations);
         }
-        defaultLayer.Name = $"{SystemName}: Default";
+
+        defaultLayer = shapesLayer;
+        defaultState = shapesState;
+    }
+
+    public void DisableExistingControlAndInstallPatternData(bool overrideShapes, bool overrideProperties, PatternData patternData)
+    {
+        if (patternData.IsEmpty) return;
+
+        CreateDefaultLayer(overrideShapes, overrideProperties, patternData);
 
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
-
-        SetTracks(defaultState, _globalDefaultExpression);
-        AddDefaultForPattern(patternData, defaultLayer, defaultState);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -146,24 +185,13 @@ internal class AnimatorInstaller
 
         AddEyeBlinkLayer();
         AddLipSyncLayer();
-    }
 
-    private void AddDefaultForPattern(PatternData patternData, VirtualLayer defaultLayer, VirtualState defaultState)
-    {
-        var presets = patternData.GetAllPresets().ToList();
-        if (presets.Count > 0)
+
+        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
+        // そのため、WD OFFの場合のみ空のClipを入れる
+        if (!_useWriteDefaults)
         {
-            var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
-            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-            var presetStates = AddExclusiveStates(defaultLayer, defaultState, presetConditions, 0f, basePosition);
-            for (int i = 0; i < presets.Count; i++)
-            {
-                var preset = presets[i];
-                var presetState = presetStates[i];
-                presetState.Name = preset.Name;
-                AddExpressionToState(presetState, preset.DefaultExpression);
-                SetTracks(presetState, preset.DefaultExpression);
-            }
+            AssignEmptyClipIfStateIsEmpty();
         }
     }
 
@@ -212,7 +240,7 @@ internal class AnimatorInstaller
         }
     }
 
-    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithCondition> expressionWithConditions, Vector3 basePosition)
+    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
     {
         var expressionWithConditionList = expressionWithConditions.ToList();
         var duration = TransitionDurationSeconds;
@@ -222,10 +250,8 @@ internal class AnimatorInstaller
         {
             var expressionWithCondition = expressionWithConditionList[i];
             var state = states[i];
-            state.Name = expressionWithCondition.Expressions.First().Name;
-            var expression = expressionWithCondition.GetResolvedExpression();
-            AddExpressionToState(state, expression);
-            SetTracks(state, expression);
+            state.Name = expressionWithCondition.Expression.Name;
+            AddExpressionToState(state, expressionWithCondition.Expression);
         }
     }
 
@@ -254,7 +280,7 @@ internal class AnimatorInstaller
             {
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.GetNegate()));
+                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.ToNegation()));
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -380,22 +406,23 @@ internal class AnimatorInstaller
         return _parameterCache[parameter];
     }
 
-    private void SetTracks(VirtualState state, Expression expression)
+    private void SetFacialSettings(VirtualState state, FacialSettings? facialSettings)
     {
+        if (facialSettings == null) return;
         bool? allowEyeBlink = null;
         bool? allowLipSync = null;
-        if (expression.AllowEyeBlink != TrackingPermission.Keep)
+        if (facialSettings.AllowEyeBlink != TrackingPermission.Keep)
         {
-            allowEyeBlink = expression.AllowEyeBlink == TrackingPermission.Allow;
+            allowEyeBlink = facialSettings.AllowEyeBlink == TrackingPermission.Allow;
         }
-        if (expression.AllowLipSync != TrackingPermission.Keep)
+        if (facialSettings.AllowLipSync != TrackingPermission.Keep)
         {
-            allowLipSync = expression.AllowLipSync == TrackingPermission.Allow;
+            allowLipSync = facialSettings.AllowLipSync == TrackingPermission.Allow;
         }
-        SetTracks(state, allowEyeBlink, allowLipSync);
+        SetFacialSettings(state, allowEyeBlink, allowLipSync);
     }
 
-    private void SetTracks(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
+    private void SetFacialSettings(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
     {
         var clip = state.Motion as VirtualClip;
         if (clip == null)

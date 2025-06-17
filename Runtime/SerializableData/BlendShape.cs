@@ -18,4 +18,14 @@ public record struct BlendShape
         Weight = weight;
     }    
 
+    public readonly bool Equals(BlendShape other)
+    {
+        return Name.Equals(other.Name)
+            && Mathf.Approximately(Weight, other.Weight);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name, Weight);
+    }
 }

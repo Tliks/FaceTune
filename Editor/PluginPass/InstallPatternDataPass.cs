@@ -2,10 +2,10 @@ using nadena.dev.ndmf;
 
 namespace com.aoyon.facetune.pass;
 
-internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
+internal class DisableExistingControlAndInstallPatternDataPass : Pass<DisableExistingControlAndInstallPatternDataPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.install-pattern-data";
-    public override string DisplayName => "Install PatternData";
+    public override string QualifiedName => "com.aoyon.facetune.disable-existing-control-and-install-pattern-data";
+    public override string DisplayName => "Disable Existing Control and Install PatternData";
 
     protected override void Execute(BuildContext context)
     {
@@ -14,10 +14,29 @@ internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
         if (sessionContext == null) return;
         var presetData = passContext.PatternData;
         if (presetData == null) throw new InvalidOperationException("PatternData is null");
-        if (presetData.IsEmpty) return;
+
+        var settings = sessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true);
+        bool overrideShapes;
+        bool overrideProperties;
+        if (settings.Length == 0)
+        {
+            overrideShapes = false;
+            overrideProperties = false;
+        }
+        else if (settings.Length == 1)
+        {
+            overrideShapes = settings[0].OverrideBlendShapes;
+            overrideProperties = settings[0].OverrideProperties;
+        }
+        else
+        {
+            Debug.LogWarning("Multiple DisableExistingControlComponent is not supported");
+            overrideShapes = settings[0].OverrideBlendShapes;
+            overrideProperties = settings[0].OverrideProperties;
+        }
 
         Profiler.BeginSample("InstallPatternData");
-        platform.PlatformSupport.InstallPatternData(passContext, presetData);
+        platform.PlatformSupport.DisableExistingControlAndInstallPatternData(passContext, overrideShapes, overrideProperties, presetData);
         Profiler.EndSample();
     }
 }

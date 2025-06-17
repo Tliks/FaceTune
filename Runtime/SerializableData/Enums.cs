@@ -58,6 +58,13 @@ public enum TrackingPermission
     Keep
 }
 
+public enum BlendingPermission
+{
+    Allow,
+    Disallow,
+    Keep
+}
+
 public enum ClipExcludeOption
 {
     None,
@@ -65,8 +72,8 @@ public enum ClipExcludeOption
     ExcludeDefault
 }
 
-public enum FacialExpressionType
+public enum AnimationSourceMode
 {
     Manual,
-    FromClip
+    FromAnimationClip
 }

@@ -31,8 +31,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
             .WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
             {
                 sq1
-                .Run(DisableExistingControlPass.Instance).Then
-                .Run(InstallPatternDataPass.Instance);
+                .Run(DisableExistingControlAndInstallPatternDataPass.Instance);
             });
         });
 

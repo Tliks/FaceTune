@@ -62,4 +62,66 @@ internal static class AnimatorHelper
         transition.Duration = duration;
         return transition;
     }
+
+    // https://gist.github.com/nekobako/5a38c040261e2eb815330535857003ca
+    public static List<GenericAnimation> GetDefaultValueAnimations(GameObject root, IEnumerable<SerializableCurveBinding> curveBindings)
+    {
+        var animations = new List<GenericAnimation>();
+        foreach (var curveBinding_ in curveBindings)
+        {
+            var curveBinding = curveBinding_.ToEditorCurveBinding();
+            var target = AnimationUtility.GetAnimatedObject(root, curveBinding);
+            switch (target)
+            {
+                case null:
+                    // Debug.LogWarning($"Target is null: {curveBinding}");
+                    break;
+                case Animator:
+                    //Debug.Log($"{curveBinding.path}, {curveBinding.type}, {curveBinding.propertyName}, AAP");
+                    continue;
+                case SkinnedMeshRenderer renderer when curveBinding.type == typeof(SkinnedMeshRenderer) && curveBinding.propertyName.StartsWith("blendShape."):
+                    var index = renderer.sharedMesh.GetBlendShapeIndex(curveBinding.propertyName);
+                    var weight = renderer.GetBlendShapeWeight(index);
+                    animations.Add(new GenericAnimation(curveBinding_, new AnimationCurve(new Keyframe(0, weight))));
+                    break;
+            }
+
+            using var so = new SerializedObject(target);
+            using var prop = so.FindProperty(curveBinding.propertyName);
+            if (prop == null) { Debug.LogWarning($"Property is null: {curveBinding}"); continue; }
+            switch (prop.propertyType)
+            {
+                case SerializedPropertyType.Boolean:
+                    var value = prop.boolValue ? 1f : 0f;
+                    animations.Add(new GenericAnimation(curveBinding_, new AnimationCurve(new Keyframe(0, value))));
+                    break;
+                case SerializedPropertyType.Float:
+                    animations.Add(new GenericAnimation(curveBinding_, new AnimationCurve(new Keyframe(0, prop.floatValue))));
+                    break;
+                case SerializedPropertyType.ObjectReference:
+                    var objectReference = prop.objectReferenceValue;
+                    if (objectReference == null) { continue; }
+                    animations.Add(new GenericAnimation(curveBinding_, new List<SerializableObjectReferenceKeyframe>(){ new(0, objectReference) }));
+                    break;
+                default:
+                    continue;
+            }
+        }
+        return animations;
+    }
+
+    public static VirtualClip GetOrCreateClip(this VirtualState state, string name)
+    {
+        var motion = state.Motion as VirtualClip;
+        if (motion == null)
+        {
+            motion = VirtualClip.Create(name);
+            state.Motion = motion;
+        }
+        else
+        {
+            motion.Name = name;
+        }
+        return motion;
+    }
 }

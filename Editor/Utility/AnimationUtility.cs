@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune;
 
 // 遅いのでビルドではVirtualAnimationUtilityを使うように
-internal static class AnimationUtility
+internal static class EditorAnimationUtility
 {
     public static List<BlendShape> GetBlendShapes(this AnimationClip clip, bool first = true)
     {
@@ -30,6 +30,15 @@ internal static class AnimationUtility
             curve.AddKey(0, blendShape.Weight);
             var binding = EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), "blendShape." + blendShape.Name);
             UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, curve);
+        }
+    }
+
+    public static void SetGenericAnimations(this AnimationClip clip, IEnumerable<GenericAnimation> genericAnimations)
+    {
+        foreach (var genericAnimation in genericAnimations)
+        {
+            var binding = genericAnimation.CurveBinding.ToEditorCurveBinding();
+            UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, genericAnimation.GetCurve());
         }
     }
 }

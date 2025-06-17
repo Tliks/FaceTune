@@ -3,6 +3,9 @@ namespace com.aoyon.facetune.ui;
 [CustomPropertyDrawer(typeof(BlendShape))]
 internal class BlendShapeDrawer : PropertyDrawer
 {
+    private static readonly GUIContent NameContent = new("Name");
+    private static readonly GUIContent WeightContent = new("Weight");
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
@@ -14,9 +17,9 @@ internal class BlendShapeDrawer : PropertyDrawer
         
         position.height = EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(position, propName, new GUIContent("Name"));
+        EditorGUI.PropertyField(position, propName, NameContent);
         position.y += EditorGUIUtility.singleLineHeight;
-        EditorGUI.Slider(position, propWeight, 0f, 100f, new GUIContent("Weight"));
+        EditorGUI.Slider(position, propWeight, 0f, 100f, WeightContent);
         position.y += EditorGUIUtility.singleLineHeight;
 
         EditorGUI.EndProperty();
