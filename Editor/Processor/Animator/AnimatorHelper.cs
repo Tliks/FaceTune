@@ -118,6 +118,10 @@ internal static class AnimatorHelper
             motion = VirtualClip.Create(name);
             state.Motion = motion;
         }
+        else
+        {
+            motion.Name = name;
+        }
         return motion;
     }
 }

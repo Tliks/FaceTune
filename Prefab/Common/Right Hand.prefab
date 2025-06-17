@@ -165,9 +165,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 1
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 1
   ParameterConditions: []
 --- !u!114 &1704227186460256230
 MonoBehaviour:
@@ -181,13 +181,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &719036594373005496 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -207,9 +213,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 7
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 7
   ParameterConditions: []
 --- !u!114 &4684944566820409495
 MonoBehaviour:
@@ -223,13 +229,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &1283242355045987396 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -249,9 +261,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 3
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 3
   ParameterConditions: []
 --- !u!114 &6666964804576130187
 MonoBehaviour:
@@ -265,13 +277,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &1593333329699954376 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1391225575274008053, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -291,9 +309,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 4
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 4
   ParameterConditions: []
 --- !u!114 &1930796234532467644
 MonoBehaviour:
@@ -307,13 +325,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &1887829009709415210 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -333,9 +357,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 2
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 2
   ParameterConditions: []
 --- !u!114 &3472275454412260610
 MonoBehaviour:
@@ -349,13 +373,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &5129038026141425213 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -393,9 +423,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 0
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 1
   ParameterConditions: []
 --- !u!114 &8899474392035475652
 MonoBehaviour:
@@ -409,13 +439,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &6467650993244730529 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -435,9 +471,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 6
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 6
   ParameterConditions: []
 --- !u!114 &5160402723131478131
 MonoBehaviour:
@@ -451,13 +487,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 
 --- !u!1 &9153813716057836039 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
@@ -477,9 +519,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 5
+  - _hand: 0
+    _comparisonType: 0
+    _handGesture: 5
   ParameterConditions: []
 --- !u!114 &9117185088660386367
 MonoBehaviour:
@@ -493,10 +535,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  FacialSettings:
+    AllowEyeBlink: 1
+    AllowLipSync: 0
+    BlendingPermission: 1
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
+  ExpressionSettings:
+    IsLoop: 0
+    LoopOffset: 0
+    MotionTimeParameterName: 

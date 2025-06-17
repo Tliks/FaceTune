@@ -6,6 +6,10 @@ namespace com.aoyon.facetune.ui
     [CustomPropertyDrawer(typeof(GenericAnimation))]
     internal class GenericAnimationDrawer : PropertyDrawer
     {
+        private const string CurveBindingPropName = "_curveBinding";
+        private const string CurvePropName = "_curve";
+        private const string ObjectReferenceCurvePropName = "_objectReferenceCurve";
+        private const string PropertyNamePropName = "_propertyName";
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             // ルートとなるVisualElementを作成
@@ -14,13 +18,13 @@ namespace com.aoyon.facetune.ui
             container.style.alignItems = Align.Center; // 中央揃え
             container.style.height = EditorGUIUtility.singleLineHeight; // 高さを固定
 
-            SerializedProperty curveBindingProperty = property.FindPropertyRelative("_curveBinding");
-            SerializedProperty curveProperty = property.FindPropertyRelative("_curve");
-            SerializedProperty objectReferenceCurveProperty = property.FindPropertyRelative("_objectReferenceCurve");
+            SerializedProperty curveBindingProperty = property.FindPropertyRelative(CurveBindingPropName);
+            SerializedProperty curveProperty = property.FindPropertyRelative(CurvePropName);
+            SerializedProperty objectReferenceCurveProperty = property.FindPropertyRelative(ObjectReferenceCurvePropName);
 
             // GenericAnimationのサマリー表示
             // 例えば、CurveBindingのPropertyNameを表示
-            PropertyField propertyNameField = new PropertyField(curveBindingProperty.FindPropertyRelative("_propertyName"));
+            PropertyField propertyNameField = new PropertyField(curveBindingProperty.FindPropertyRelative(PropertyNamePropName));
             propertyNameField.label = ""; // ラベルを非表示にして、フィールド値のみ表示
             propertyNameField.style.flexGrow = 1; // スペースを埋める
             propertyNameField.style.minWidth = 50; // 最小幅を設定

@@ -11,7 +11,7 @@ public record BlendShapeAnimation // Immutable
     [SerializeField] private string _name;
     public string Name { get => _name; init => _name = value; }
 
-    [SerializeField] private AnimationCurve _curve;
+    [SerializeField] private AnimationCurve _curve; // 可変
     public AnimationCurve GetCurve() => _curve.Clone();
 
     public BlendShapeAnimation()
@@ -43,7 +43,7 @@ public record BlendShapeAnimation // Immutable
     internal GenericAnimation ToGeneric(string path)
     {
         var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), "blendShape." + Name);
-        return new GenericAnimation(binding, _curve);
+        return new GenericAnimation(binding, _curve.Clone());
     }
 
     public virtual bool Equals(BlendShapeAnimation other)

@@ -8,14 +8,13 @@ namespace com.aoyon.facetune
 
         public FacialSettings FacialSettings = new();
         public List<BlendShapeAnimation> BlendShapeAnimations = new();
+        public ExpressionSettings ExpressionSettings = new();
 
         internal Expression GetDefaultExpression(string bodyPath, IObserveContext observeContext)
         {
-            var animations = observeContext.Observe(this, c => new List<BlendShapeAnimation>(c.BlendShapeAnimations), (a, b) => a.SequenceEqual(b))
-                .Select(ba => ba.ToGeneric(bodyPath))
-                .ToList();
-            var settings = observeContext.Observe(this, c => c.FacialSettings with {}, (a, b) => a.Equals(b));
-            return new Expression(name, animations, settings);
+            observeContext.Observe(this);
+            var animations = BlendShapeAnimations.Select(ba => ba.ToGeneric(bodyPath)).ToList();
+            return new Expression(name, animations, ExpressionSettings, FacialSettings);
         }
 
         internal BlendShapeSet GetFirstFrameBlendShapeSet(SessionContext sessionContext, IObserveContext? observeContext = null)

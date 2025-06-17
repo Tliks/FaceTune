@@ -14,29 +14,40 @@ namespace com.aoyon.facetune
         // FromAnimationClip
         public AnimationClip? Clip = null;
 
+        public ExpressionSettings ExpressionSettings = new();
+
         Expression IExpressionProvider.ToExpression(SessionContext sessionContext, IObserveContext observeContext)
         {
             var animations = new List<GenericAnimation>();
+            ExpressionSettings expressionSettings;
 
             var sourceMode = observeContext.Observe(this, c => c.SourceMode, (a, b) => a == b);
             switch (sourceMode)
             {
                 case AnimationSourceMode.Manual:
                     var genericAnimations = observeContext.Observe(this, c => c.GenericAnimations, (a, b) => a == b);
-                    animations.AddRange(genericAnimations.Select(ga => ga with {}));
+                    animations.AddRange(genericAnimations);
+                    expressionSettings = ExpressionSettings;
                     break;
                 case AnimationSourceMode.FromAnimationClip:
-#if UNITY_EDITOR
                     var clip = observeContext.Observe(this, c => c.Clip, (a, b) => a == b);
-                    if (clip == null) break;
-                    animations.AddRange(GenericAnimation.FromAnimationClip(clip).Select(ga => ga with {}));
+                    if (clip != null)
+                    {
+#if UNITY_EDITOR
+                        animations.AddRange(GenericAnimation.FromAnimationClip(clip));
 #endif
+                        expressionSettings = ExpressionSettings.FromAnimationClip(clip);
+                    }
+                    else
+                    {
+                        expressionSettings = new ExpressionSettings();
+                    }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);
             }
 
-            return new Expression(name, animations);
+            return new Expression(name, animations, expressionSettings);
         }
     }
 }

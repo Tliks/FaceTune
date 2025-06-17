@@ -18,8 +18,13 @@ namespace com.aoyon.facetune
         public AnimationClip? Clip;
         public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
+        public ExpressionSettings ExpressionSettings = new();
+
+        // Todo: Refactor
         Expression IExpressionProvider.ToExpression(SessionContext sessionContext, IObserveContext observeContext)
         {
+            List<GenericAnimation> animations;
+            
             var defaultExpression = sessionContext.DEC.GetDefaultExpression(gameObject);
 
             var diffAnimations = new List<GenericAnimation>();
@@ -65,37 +70,53 @@ namespace com.aoyon.facetune
                     }
                     animationIndex.RemoveBlendShapes(namesToRemove);
 
-                    diffAnimations.AddRange(animationIndex.Animations.Select(ga => ga with {}));
+                    diffAnimations.AddRange(animationIndex.Animations);
 #endif
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);
             }
 
-            List<GenericAnimation> ret;
 
             var blendingPermission = observeContext.Observe(this, c => c.FacialSettings.BlendingPermission, (a, b) => a == b);
             if (blendingPermission == BlendingPermission.Disallow)
             {
-                ret = diffAnimations;
+                animations = diffAnimations;
             }
             else
             {
                 var animationIndex = defaultExpression.AnimationIndex;
                 animationIndex.MergeAnimation(diffAnimations);
-                ret = animationIndex.Animations.ToList();
+                animations = animationIndex.Animations.ToList();
             }
 
             var isSingleFrame = observeContext.Observe(this, c => c.IsSingleFrame, (a, b) => a == b);
             if (isSingleFrame)
             {
-                for (int i = 0; i < ret.Count; i++)
+                for (int i = 0; i < animations.Count; i++)
                 {
-                    ret[i] = ret[i].ToSingleFrame();
+                    animations[i] = animations[i].ToSingleFrame();
                 }
             }
 
-            return new Expression(name, ret, FacialSettings with {});
+            FacialSettings facialSettings;
+            ExpressionSettings expressionSettings;
+
+            facialSettings = FacialSettings;
+            switch (sourceMode)
+            {
+                case AnimationSourceMode.Manual:
+                    expressionSettings = ExpressionSettings;
+                    break;
+                case AnimationSourceMode.FromAnimationClip:
+                    if (Clip == null) expressionSettings = new ExpressionSettings();
+                    else expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);
+            }
+
+            return new Expression(name, animations, expressionSettings, facialSettings);
         }
 
         internal BlendShapeSet GetFirstFrameBlendShapeSet(SessionContext sessionContext, IObserveContext? observeContext = null)

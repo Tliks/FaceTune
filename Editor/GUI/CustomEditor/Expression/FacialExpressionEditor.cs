@@ -14,6 +14,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipExcludeOptionProperty = null!;
+    private SerializedProperty _expressionSettingsProperty = null!;
 
     private ReorderableList? _blendShapeAnimationList;
 
@@ -26,12 +27,13 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.BlendShapeAnimations));
         _clipProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.Clip));
         _clipExcludeOptionProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ClipExcludeOption));
+        _expressionSettingsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
         _blendShapeAnimationList = null;
     }
     
     private void SetupReorderableList()
     {
-        _blendShapeAnimationList = new ReorderableList(serializedObject, _blendShapeAnimationsProperty, true, true, true, true);
+        _blendShapeAnimationList = new ReorderableList(serializedObject, _blendShapeAnimationsProperty, false, true, true, true);
 
         _blendShapeAnimationList.drawHeaderCallback = rect =>
         {
@@ -73,13 +75,13 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         };
     }
 
+    private bool _showExpressionSettings = false;
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
 
         EditorGUILayout.PropertyField(_facialSettingsProperty);
         EditorGUILayout.PropertyField(_sourceModeProperty);
-
         var sourceMode = (AnimationSourceMode)_sourceModeProperty.enumValueIndex;
         switch (sourceMode)
         {
@@ -90,7 +92,6 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
                 DrawFromAnimationClipModeGUI();
                 break;
         }
-
         serializedObject.ApplyModifiedProperties();
     }
     
@@ -126,6 +127,13 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
                     StartAnimationWindow();
                 }
             }
+            _showExpressionSettings = EditorGUILayout.Foldout(_showExpressionSettings, "Advanced");
+            if (_showExpressionSettings)
+            {
+                EditorGUI.indentLevel++;
+                ExpressionSettingsDrawer.Draw(_expressionSettingsProperty);
+                EditorGUI.indentLevel--;
+            }
         }
     }
     
@@ -137,6 +145,13 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         if (GUILayout.Button("Convert to Manual"))
         {
             ConvertToManual();
+        }
+        _showExpressionSettings = EditorGUILayout.Foldout(_showExpressionSettings, "Advanced");
+        if (_showExpressionSettings)
+        {
+            EditorGUI.indentLevel++;
+            ExpressionSettingsDrawer.DrawMotionTimeParameterName(_expressionSettingsProperty);
+            EditorGUI.indentLevel--;
         }
     }
 
@@ -195,6 +210,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         var components = targets.Select(t => t as FacialExpressionComponent).OfType<FacialExpressionComponent>().ToArray();
         foreach (var component in components)
         {
+            if (component.Clip == null) continue;
             if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) continue;
             var shapes = component.GetFirstFrameBlendShapeSet(context);
             var so = new SerializedObject(component);
@@ -202,6 +218,10 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
             FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, shapes.BlendShapes.ToList(), true);
             so.FindProperty(nameof(FacialExpressionComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
             so.FindProperty(nameof(FacialExpressionComponent.IsSingleFrame)).boolValue = true;
+            var expressionSettingsProperty = so.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
+            var settings = ExpressionSettings.FromAnimationClip(component.Clip);
+            expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.IsLoop)).boolValue = settings.IsLoop;
+            expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.MotionTimeParameterName)).stringValue = settings.MotionTimeParameterName;
             so.ApplyModifiedProperties();
         }
     }

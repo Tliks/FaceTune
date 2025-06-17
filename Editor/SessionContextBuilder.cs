@@ -91,7 +91,7 @@ internal static class SessionContextBuilder
         if (defaultExpression == null) 
         {
             var defaultAnimations = sceneShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight).ToGeneric(bodyPath)).ToList();
-            defaultExpression = new Expression("Default", defaultAnimations, new FacialSettings());
+            defaultExpression = new Expression("Default", defaultAnimations, new ExpressionSettings(), new FacialSettings());
         }
         else
         {

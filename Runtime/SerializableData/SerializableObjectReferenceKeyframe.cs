@@ -7,7 +7,9 @@ public record struct SerializableObjectReferenceKeyframe // Immutable
     public float Time { get => _time; init => _time = value; }
 
     [SerializeField] private Object? _value;
-    public Object? Value { get => _value; init => _value = value; }
+    // 可変ではあるけどクローンする訳にもいかないので無視
+    // そもそもここで取得したObject(eg. Material)に対する編集は破壊的
+    public Object? Value { get => _value; init => _value = value; } 
 
     public SerializableObjectReferenceKeyframe(float time, Object value)
     {

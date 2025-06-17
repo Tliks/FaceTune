@@ -7,13 +7,15 @@ namespace com.aoyon.facetune;
 [CustomPropertyDrawer(typeof(SerializableType))]
 public class SerializableTypeDrawer : PropertyDrawer
 {
+    private const string NamePropName = "_name";
+
     private static List<Type>? s_cachedTypes; // 型をキャッシュするための静的フィールド
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        SerializedProperty nameProperty = property.FindPropertyRelative("_name");
+        SerializedProperty nameProperty = property.FindPropertyRelative(NamePropName);
 
         string currentTypeName = GetCurrentTypeName(nameProperty.stringValue);
         

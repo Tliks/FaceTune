@@ -16,6 +16,11 @@ internal class NDMFPreviewObserveContext : IObserveContext
         return _context.GetAvatarRoot(obj);
     }
 
+    public T Observe<T>(T obj) where T : Object
+    {
+        return _context.Observe(obj);
+    }
+
     public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object
     {
         return _context.Observe(obj, extract, compare);

@@ -17,8 +17,7 @@ internal class AnimatorInstaller
 
     private readonly IPlatformSupport _platformSupport;
 
-    private readonly VirtualClip _emptyClip;
-    private readonly string _relativePath;
+    private readonly List<VirtualState> _allStates = new();
 
     private const string SystemName = "FaceTune";
     private readonly bool _useWriteDefaults;
@@ -44,8 +43,6 @@ internal class AnimatorInstaller
         _useWriteDefaults = useWriteDefaults;
         _defaultExpressionContext = sessionContext.DEC;
         _globalDefaultExpression = _defaultExpressionContext.GetGlobalDefaultExpression();
-        _emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
-        _relativePath = HierarchyUtility.GetRelativePath(_sessionContext.Root, _sessionContext.FaceRenderer.gameObject)!;
     }
 
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
@@ -60,28 +57,40 @@ internal class AnimatorInstaller
     {
         var state = layer.StateMachine!.AddState(stateName, position: position);
         state.WriteDefaultValues = _useWriteDefaults;
-        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
-        if (_useWriteDefaults)
-        {
-            state.Motion = null; 
-        }
-        else
-        {
-            state.Motion = _emptyClip;
-        }
+        _allStates.Add(state);
         return state;
     }
 
-    private void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations, bool clone = true)
+    private void AssignEmptyClipIfStateIsEmpty()
+    {
+        var emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
+        foreach (var state in _allStates)
+        {
+            state.Motion ??= emptyClip;
+        }
+    }
+
+    private void AddExpressionToState(VirtualState state, Expression expression)
+    {
+        AddSettingsToState(state, expression.ExpressionSettings);
+        AddAnimationToState(state, expression.Animations);
+        SetFacialSettings(state, expression.FacialSettings);
+    }
+
+    private void AddSettingsToState(VirtualState state, ExpressionSettings expressionSettings)
     {
         var motion = state.GetOrCreateClip(state.Name);
-        if (clone)
+        motion.WrapMode = expressionSettings.IsLoop ? WrapMode.Loop : WrapMode.Once;
+        if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
         {
-            motion = motion.Clone();
+            state.TimeParameter = expressionSettings.MotionTimeParameterName;
         }
-        motion.Name = state.Name;
+    }
+
+    private void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
+    {
+        var motion = state.GetOrCreateClip(state.Name);
         motion.SetAnimations(animations);
-        state.Motion = motion;
     }
 
     private void CreateDefaultLayer(bool overrideShapes, bool overrideProperties, PatternData patternData)
@@ -98,8 +107,7 @@ internal class AnimatorInstaller
         var shapesLayerName = overrideShapes ? "Default (Override Shapes)" : "Default (Shapes)";
         var shapesLayer = AddFTLayer(_virtualController, shapesLayerName, shapesLayerPriority);
         var shapesState = AddFTState(shapesLayer, "Default", DefaultStatePosition);
-        AddAnimationToState(shapesState, defaultExpression.Animations);
-        SetTracks(shapesState, defaultExpression.FacialSettings);
+        AddExpressionToState(shapesState, defaultExpression);
 
         List<VirtualState> presetStates = new();
         if (!patternData.IsEmpty)
@@ -115,8 +123,7 @@ internal class AnimatorInstaller
                     var preset = presets[i];
                     var presetState = presetStates[i];
                     presetState.Name = preset.Name;
-                    AddAnimationToState(presetState, preset.DefaultExpression.Animations);
-                    SetTracks(presetState, preset.DefaultExpression.FacialSettings);
+                    AddExpressionToState(presetState, preset.DefaultExpression);
                 }
             }
         }
@@ -136,7 +143,7 @@ internal class AnimatorInstaller
             shapesLayer.Name = layerName;
             foreach (var state in presetStates.Concat(new[] { shapesState }))
             {
-                AddAnimationToState(state, defaultPropertiesAnimations, false);
+                AddAnimationToState(state, defaultPropertiesAnimations);
             }
         }
         else
@@ -144,7 +151,7 @@ internal class AnimatorInstaller
             var propertiesLayerName = overrideProperties ? "Default (Override Properties)" : "Default (Properties)";
             var propertiesLayer = AddFTLayer(_virtualController, propertiesLayerName, propertiesLayerPriority);
             var propertiesState = AddFTState(propertiesLayer, "Default", DefaultStatePosition);
-            AddAnimationToState(propertiesState, defaultPropertiesAnimations, false);
+            AddAnimationToState(propertiesState, defaultPropertiesAnimations);
         }
 
         defaultLayer = shapesLayer;
@@ -177,6 +184,14 @@ internal class AnimatorInstaller
 
         AddEyeBlinkLayer();
         AddLipSyncLayer();
+
+
+        // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
+        // そのため、WD OFFの場合のみ空のClipを入れる
+        if (!_useWriteDefaults)
+        {
+            AssignEmptyClipIfStateIsEmpty();
+        }
     }
 
     private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
@@ -235,8 +250,7 @@ internal class AnimatorInstaller
             var expressionWithCondition = expressionWithConditionList[i];
             var state = states[i];
             state.Name = expressionWithCondition.Expression.Name;
-            AddAnimationToState(state, expressionWithCondition.Expression.Animations);
-            SetTracks(state, expressionWithCondition.Expression.FacialSettings);
+            AddExpressionToState(state, expressionWithCondition.Expression);
         }
     }
 
@@ -265,7 +279,7 @@ internal class AnimatorInstaller
             {
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.GetNegate()));
+                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.ToNegation()));
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -391,7 +405,7 @@ internal class AnimatorInstaller
         return _parameterCache[parameter];
     }
 
-    private void SetTracks(VirtualState state, FacialSettings? facialSettings)
+    private void SetFacialSettings(VirtualState state, FacialSettings? facialSettings)
     {
         if (facialSettings == null) return;
         bool? allowEyeBlink = null;
@@ -404,10 +418,10 @@ internal class AnimatorInstaller
         {
             allowLipSync = facialSettings.AllowLipSync == TrackingPermission.Allow;
         }
-        SetTracks(state, allowEyeBlink, allowLipSync);
+        SetFacialSettings(state, allowEyeBlink, allowLipSync);
     }
 
-    private void SetTracks(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
+    private void SetFacialSettings(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
     {
         var clip = state.Motion as VirtualClip;
         if (clip == null)

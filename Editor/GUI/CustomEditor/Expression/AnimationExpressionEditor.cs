@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 
 namespace com.aoyon.facetune.ui;
 
+// Todo: Refactor
 [CanEditMultipleObjects]
 [CustomEditor(typeof(AnimationExpressionComponent))]
 internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExpressionComponent>
@@ -10,6 +11,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
     private PropertyField? _curveBindingField;
     private PropertyField? _curveField;
     private PropertyField? _objectReferenceCurveField;
+    private bool _showExpressionSettings = false;
 
     public override VisualElement CreateInspectorGUI()
     {
@@ -122,6 +124,28 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         root.Add(clipContent);
         root.Add(toggleAnimationWindowButton);
 
+        var expressionSettingsProp = serializedObject.FindProperty(nameof(AnimationExpressionComponent.ExpressionSettings));
+        root.Add(new IMGUIContainer(() =>
+        {
+            serializedObject.Update();
+            _showExpressionSettings = EditorGUILayout.Foldout(_showExpressionSettings, "Advanced");
+            if (_showExpressionSettings)
+            {
+                EditorGUI.indentLevel++;
+                var sourceMode = (AnimationSourceMode)serializedObject.FindProperty(nameof(AnimationExpressionComponent.SourceMode)).enumValueIndex;
+                if (sourceMode == AnimationSourceMode.Manual)
+                {
+                    ExpressionSettingsDrawer.Draw(expressionSettingsProp);
+                }
+                else
+                {
+                    ExpressionSettingsDrawer.DrawMotionTimeParameterName(expressionSettingsProp);
+                }
+                EditorGUI.indentLevel--;
+            }
+            serializedObject.ApplyModifiedProperties();
+        }));
+
         void UpdateVisibility(AnimationSourceMode mode)
         {
             manualContent.style.display = mode == AnimationSourceMode.Manual ? DisplayStyle.Flex : DisplayStyle.None;
@@ -225,6 +249,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         Undo.RecordObject(component, "Convert To Manual");
         component.GenericAnimations = GenericAnimation.FromAnimationClip(clip).ToList();
         component.SourceMode = AnimationSourceMode.Manual;
+        component.ExpressionSettings = ExpressionSettings.FromAnimationClip(clip);
         EditorUtility.SetDirty(component);
     }
 }

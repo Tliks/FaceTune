@@ -6,7 +6,7 @@ public record GenericAnimation // Immutable
     [SerializeField] private SerializableCurveBinding _curveBinding;
     public SerializableCurveBinding CurveBinding { get => _curveBinding; init => _curveBinding = value; }
 
-    [SerializeField] private AnimationCurve _curve;
+    [SerializeField] private AnimationCurve _curve; // 可変
     public AnimationCurve GetCurve() => _curve.Clone();
 
     [SerializeField] private List<SerializableObjectReferenceKeyframe> _objectReferenceCurve;
@@ -21,21 +21,21 @@ public record GenericAnimation // Immutable
 
     public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve)
     {
-        _curveBinding = curveBinding with {};
+        _curveBinding = curveBinding;
         _curve = curve.Clone();
-        _objectReferenceCurve = new();
+        _objectReferenceCurve = new List<SerializableObjectReferenceKeyframe>();
     }
 
-    public GenericAnimation(SerializableCurveBinding curveBinding, IEnumerable<SerializableObjectReferenceKeyframe> objectReferenceCurve)
+    public GenericAnimation(SerializableCurveBinding curveBinding, IReadOnlyList<SerializableObjectReferenceKeyframe> objectReferenceCurve)
     {
-        _curveBinding = curveBinding with {};
+        _curveBinding = curveBinding;
         _curve = new();
         _objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
-    public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve, IEnumerable<SerializableObjectReferenceKeyframe> objectReferenceCurve)
+    public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve, IReadOnlyList<SerializableObjectReferenceKeyframe> objectReferenceCurve)
     {
-        _curveBinding = curveBinding with {};
+        _curveBinding = curveBinding;
         _curve = curve.Clone();
         _objectReferenceCurve = objectReferenceCurve.ToList();
     }
@@ -57,7 +57,7 @@ public record GenericAnimation // Immutable
     {
         if (IsBlendShapeAnimation())
         {
-            animation = new BlendShapeAnimation(_curveBinding.PropertyName, _curve);
+            animation = new BlendShapeAnimation(_curveBinding.PropertyName, _curve.Clone());
             return true;
         }
         animation = null;
@@ -80,7 +80,7 @@ public record GenericAnimation // Immutable
             objectReferenceCurve ??= new UnityEditor.ObjectReferenceKeyframe[0];
             var serializableObjectReferenceCurve = objectReferenceCurve.Select(SerializableObjectReferenceKeyframe.FromEditorObjectReferenceKeyframe);
 
-            animations.Add(new GenericAnimation(serializableCurveBinding, curve, serializableObjectReferenceCurve));
+            animations.Add(new GenericAnimation(serializableCurveBinding, curve, serializableObjectReferenceCurve.ToList()));
         }
         return animations;
     }

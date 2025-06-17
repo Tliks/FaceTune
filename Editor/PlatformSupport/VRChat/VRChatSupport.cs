@@ -187,14 +187,14 @@ internal class VRChatSuport : IPlatformSupport
         var existingParameterName = menuItem.Control.parameter.name;
         if (!string.IsNullOrWhiteSpace(existingParameterName)) 
         {
-            return (existingParameterName, new ParameterCondition(existingParameterName, true));
+            return (existingParameterName, ParameterCondition.Bool(existingParameterName, true));
         }
         if (menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Toggle ||
             menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Button)
         {
             var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
             menuItem.Control.parameter.name = parameterName;
-            return (parameterName, new ParameterCondition(parameterName, true));
+            return (parameterName, ParameterCondition.Bool(parameterName, true));
         }
         return (null, null);
     }
