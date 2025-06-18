@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class FacialExpressionComponent : ExpressionComponentBase, IExpressionProvider
+    public class FacialExpressionComponent : ExpressionComponentBase
     {
         internal const string ComponentName = "FT Facial Expression";
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
@@ -21,7 +21,7 @@ namespace com.aoyon.facetune
         public ExpressionSettings ExpressionSettings = new();
 
         // Todo: Refactor
-        Expression IExpressionProvider.ToExpression(SessionContext sessionContext, IObserveContext observeContext)
+        internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
         {
             List<GenericAnimation> animations;
             

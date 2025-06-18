@@ -40,7 +40,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
             var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
             conditionComponent.ParameterConditions.Add(parameterCondition!);
-            conditionComponent.ExpressionFromSelfOnly = true;
+            expressionComponent.ExpressionFromSelfOnly = true;
         }
     }
 
@@ -56,12 +56,12 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     private void NormalizeData(GameObject root)
     {
         // 単一の条件をPatternとして扱うことでデータを正規化する
-        var conditionComponents = root.GetComponentsInChildren<ConditionComponent>(true);
-        foreach (var conditionComponent in conditionComponents)
+        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        foreach (var expressionComponent in expressionComponents)
         {
-            if (conditionComponent.GetComponentInParentNullable<PatternComponent>() == null)
+            if (expressionComponent.GetComponentInParentNullable<PatternComponent>() == null)
             {
-                conditionComponent.gameObject.EnsureComponent<PatternComponent>();
+                expressionComponent.gameObject.EnsureComponent<PatternComponent>();
             }
         }
     }

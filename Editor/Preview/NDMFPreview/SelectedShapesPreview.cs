@@ -80,11 +80,14 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             if (a == null || b == null) return false;
             return a.SequenceEqual(b);
         });
-        if (conditionComponents != null && conditionComponents.Length == 1)
+        if (conditionComponents != null && conditionComponents.Length > 0)
         {
             var conditionComponent = conditionComponents.First();
-            var expressionComponents_ = conditionComponent.GetExpressionComponents(observeContext);
-            return GetBlendShapeSet(expressionComponents_, sessionContext, defaultExpression, observeContext);
+            var childrenConditionComponents = conditionComponent.GetComponentsInChildren<ConditionComponent>(true);
+            if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
+            {
+                return GetBlendShapeSet(conditionComponent.GetComponentsInChildren<ExpressionComponentBase>(true), sessionContext, defaultExpression, observeContext);
+            }
         }
 
         var globalDefaultExpression = dfc.GetGlobalDefaultExpression();
