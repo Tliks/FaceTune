@@ -36,7 +36,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
             if (parameterName == null) continue;
 
-            var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
+            var conditionComponent = expressionComponent.gameObject.AddComponent<ConditionComponent>(); // OR
             conditionComponent.ParameterConditions.Add(parameterCondition!);
         }
     }
