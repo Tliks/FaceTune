@@ -38,7 +38,6 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
             var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
             conditionComponent.ParameterConditions.Add(parameterCondition!);
-            expressionComponent.ExpressionFromSelfOnly = true;
         }
     }
 

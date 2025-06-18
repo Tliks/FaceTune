@@ -9,14 +9,12 @@ public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressio
 {
     public ExpressionSettings ExpressionSettings = new();
     
-    internal bool ExpressionFromSelfOnly = false;
-
     internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)
     {
         // 親の GameObject ごとの Condition を取得する (OR の AND)
         var conditionComponentsByGameObject = new List<ConditionComponent[]>();
         var current = transform;
-        while (current != null && (current == transform || !ExpressionFromSelfOnly))
+        while (current != null)
         {
             var conditionComponents = current.GetComponents<ConditionComponent>();
             if (conditionComponents.Length > 0)
