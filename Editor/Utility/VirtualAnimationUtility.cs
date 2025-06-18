@@ -51,7 +51,7 @@ internal static class VirtualAnimationUtility
     public static void SetAnimation(this VirtualClip clip, GenericAnimation animation)
     {
         var binding = animation.CurveBinding.ToEditorCurveBinding();
-        clip.SetFloatCurve(binding.path, binding.type, binding.propertyName, animation.GetCurve());
+        clip.SetFloatCurve(binding.path, binding.type, binding.propertyName, animation.Curve);
     }
 
     public static void SetAnimations(this VirtualClip clip, IEnumerable<GenericAnimation> animations)

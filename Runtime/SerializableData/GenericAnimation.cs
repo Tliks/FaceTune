@@ -6,8 +6,8 @@ public record GenericAnimation // Immutable
     [SerializeField] private SerializableCurveBinding _curveBinding;
     public SerializableCurveBinding CurveBinding { get => _curveBinding; init => _curveBinding = value; }
 
-    [SerializeField] private AnimationCurve _curve; // 可変
-    public AnimationCurve GetCurve() => _curve.Clone();
+    [SerializeField] private AnimationCurve _curve; // AnimationCurveは可変
+    public AnimationCurve Curve { get => _curve.Clone(); init => _curve = value.Clone(); }
 
     [SerializeField] private List<SerializableObjectReferenceKeyframe> _objectReferenceCurve;
     public IReadOnlyList<SerializableObjectReferenceKeyframe> ObjectReferenceCurve { get => _objectReferenceCurve.AsReadOnly(); init => _objectReferenceCurve = value.ToList(); }
