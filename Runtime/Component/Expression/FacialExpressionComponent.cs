@@ -18,7 +18,6 @@ namespace com.aoyon.facetune
         public AnimationClip? Clip;
         public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
-        public ExpressionSettings ExpressionSettings = new();
 
         // Todo: Refactor
         internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)

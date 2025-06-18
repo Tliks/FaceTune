@@ -7,6 +7,8 @@ internal interface IExpressionProvider
 
 public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressionProvider
 {
+    public ExpressionSettings ExpressionSettings = new();
+    
     internal bool ExpressionFromSelfOnly = false;
 
     internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)

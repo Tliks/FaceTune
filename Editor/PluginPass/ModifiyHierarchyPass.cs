@@ -15,10 +15,12 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         var passContext = context.Extension<FTPassContext>()!;
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-
-        // Add Condition Component Phase
+        
+        // Condition
         NegotiateMAMenuItem(context.AvatarRootObject);
-        // PostProcess Phase
+        // Expression
+        MergeExpression(sessionContext);
+        // Pattern
         NormalizeData(context.AvatarRootObject);
     }
 
@@ -40,9 +42,18 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         }
     }
 
+    private void MergeExpression(SessionContext sessionContext)
+    {
+        var mergeExpressionComponents = sessionContext.Root.GetComponentsInChildren<MergeExpressionComponent>(true);
+        foreach (var mergeExpressionComponent in mergeExpressionComponents)
+        {
+            mergeExpressionComponent.Merge(sessionContext);
+        }
+    }
+
     private void NormalizeData(GameObject root)
     {
-        // 単一の条件をPatternとして扱うことでデータを正規化する
+        // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
         var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
         foreach (var expressionComponent in expressionComponents)
         {
