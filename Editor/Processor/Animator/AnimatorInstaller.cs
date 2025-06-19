@@ -30,6 +30,7 @@ internal class AnimatorInstaller
     private VirtualLayer? _disableExistingControlLayer;
     private VirtualState? _defaultState;
 
+    private const string TrueParameterName = "FT/True";
     private const string AllowEyeBlinkAAP = "FT/AllowEyeBlinkAAP";
     private const string AllowLipSyncAAP = "FT/AllowLipSyncAAP";
 
@@ -164,6 +165,8 @@ internal class AnimatorInstaller
     {
         if (patternData.IsEmpty) return;
 
+        EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
+
         CreateDefaultLayer(overrideShapes, overrideProperties, patternData);
 
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
@@ -243,7 +246,15 @@ internal class AnimatorInstaller
 
     private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
     {
-        var expressionWithConditionList = expressionWithConditions.ToList();
+        var trueCondition = new[] { ParameterCondition.Bool(TrueParameterName, true) };
+        var expressionWithConditionList = expressionWithConditions.Select(e => 
+        {
+            if (!e.Conditions.Any())
+            {
+                e.SetConditions(e.Conditions.Concat(trueCondition).ToList());
+            }
+            return e;
+        }).ToList();
         var duration = TransitionDurationSeconds;
         var conditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.Conditions).ToArray();
         var states = AddExclusiveStates(layer, defaultState, conditionsPerState, duration, basePosition);
