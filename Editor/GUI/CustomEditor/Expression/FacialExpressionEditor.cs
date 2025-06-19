@@ -268,7 +268,7 @@ public class FacialExpressionEditorUtility
             var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
             var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
             nameProp.stringValue = animations[i].Name;
-            curveProp.animationCurveValue = animations[i].GetCurve();
+            curveProp.animationCurveValue = animations[i].Curve;
         }
     }
 
@@ -284,7 +284,7 @@ public class FacialExpressionEditorUtility
         {
             var element = animationsProperty.GetArrayElementAtIndex(i);
             element.FindPropertyRelative(BlendShapeAnimation.NamePropName).stringValue = newAnimations[i].Name;
-            element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].GetCurve();
+            element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
         }
     }
 }

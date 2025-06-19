@@ -4,7 +4,7 @@ namespace com.aoyon.facetune;
 /// 同名のBlendShapeを許容しないグループ
 /// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet : IEnumerable<BlendShape>, ICollection<BlendShape>
+internal class BlendShapeSet : ICollection<BlendShape>
 {
     readonly Dictionary<string, BlendShape> map;
     public Dictionary<string, BlendShape>.ValueCollection BlendShapes => map.Values;

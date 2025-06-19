@@ -161,7 +161,7 @@ internal static class SessionContextBuilder
             var OverrideDefaultExpressionComponent = context.Observe(presetComponent, pc => pc.OverrideDefaultExpressionComponent, (a, b) => a == b);
             if (OverrideDefaultExpressionComponent != null)
             {
-                using var presetDefaultBlendShapeSet = BlendShapeSetPool.Get(out _); // ctr
+                var presetDefaultBlendShapeSet = BlendShapeSetPool.Get(out _); // ctr
                 (OverrideDefaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(presetDefaultBlendShapeSet.Value, EmptyBlendShapeSet);
                 presetBlendShapeSets.Value.Add(presetComponent, presetDefaultBlendShapeSet);
                 usedExpressionComponents.Add(OverrideDefaultExpressionComponent);
@@ -175,7 +175,7 @@ internal static class SessionContextBuilder
         using var _sceneShapes = BlendShapeSetPool.Get(out var sceneShapes);
         renderer.GetBlendShapes(sceneShapes);
 
-        using var defaultBlendShapes = BlendShapeSetPool.Get(out _);
+        var defaultBlendShapes = BlendShapeSetPool.Get(out _); // ctr
 
         foreach (var defaultExpressionComponent in defaultExpressionComponents)
         {
