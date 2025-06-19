@@ -34,11 +34,19 @@ internal interface IPlatformSupport
     {
         return string.Empty;
     }
-    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames, string suffix)
     {
         return Guid.NewGuid().ToString();
     }
     public void SetParameterName(ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        return;
+    }
+    public string GetRadialParameterName(ModularAvatarMenuItem menuItem)
+    {
+        return string.Empty;
+    }
+    public void SetRadialParameterName(ModularAvatarMenuItem menuItem, string parameterName)
     {
         return;
     }
@@ -49,11 +57,6 @@ internal interface IPlatformSupport
     public void SetParameterValue(ModularAvatarMenuItem menuItem, float value)
     {
         return;
-    }
-
-    public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        return (null, null);
     }
 
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)

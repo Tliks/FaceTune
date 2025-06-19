@@ -188,21 +188,29 @@ internal class VRChatSuport : IPlatformSupport
     {
         return menuItem.Control.parameter.name;
     }
-    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    public string GetRadialParameterName(ModularAvatarMenuItem menuItem)
+    {
+        return menuItem.Control.subParameters[0].name;
+    }
+    public void SetRadialParameterName(ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        menuItem.Control.subParameters = new VRCExpressionsMenu.Control.Parameter[] { new() { name = parameterName } };
+    }
+    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames, string suffix)
     {
         var baseName = menuItem.gameObject.name.Replace(" ", "_");
-        var parameterName = $"facetune/{baseName}/toggle";
+        var parameterName = $"facetune/{baseName}/{suffix}";
         int index = 1;
         while (usedNames.Contains(parameterName))
         {
-            parameterName = $"facetune/{baseName}_{index}/toggle";
+            parameterName = $"facetune/{baseName}_{index}/{suffix}";
             index++;
         }
         return parameterName;
     }
     public void SetParameterName(ModularAvatarMenuItem menuItem, string parameterName)
     {
-        menuItem.Control.parameter.name = parameterName;
+        menuItem.Control.parameter = new() { name = parameterName };
     }
     public float GetParameterValue(ModularAvatarMenuItem menuItem)
     {
@@ -213,42 +221,6 @@ internal class VRChatSuport : IPlatformSupport
         menuItem.Control.value = value;
     }
 
-    public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        var parameterName = GetUniqueParameterName(menuItem, usedNames);
-        usedNames.Add(parameterName);
-        var control = new VRCExpressionsMenu.Control()
-        {
-            name = menuItem.gameObject.name,
-            type = VRCExpressionsMenu.Control.ControlType.Toggle,
-            parameter = new VRCExpressionsMenu.Control.Parameter()
-            {
-                name = parameterName,
-            },
-            subParameters = new VRCExpressionsMenu.Control.Parameter[] { },
-            value = 0,
-            labels = new VRCExpressionsMenu.Control.Label[] { },
-            icon = null,
-        };
-        menuItem.Control = control;
-        return parameterName;
-    }
-    public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        var existingParameterName = menuItem.Control.parameter.name;
-        if (!string.IsNullOrWhiteSpace(existingParameterName)) 
-        {
-            return (existingParameterName, ParameterCondition.Bool(existingParameterName, true));
-        }
-        if (menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Toggle ||
-            menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Button)
-        {
-            var parameterName = GetUniqueParameterName(menuItem, usedNames);
-            menuItem.Control.parameter.name = parameterName;
-            return (parameterName, ParameterCondition.Bool(parameterName, true));
-        }
-        return (null, null);
-    }
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
     {
         var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();

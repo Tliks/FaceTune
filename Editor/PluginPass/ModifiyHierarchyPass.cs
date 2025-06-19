@@ -1,3 +1,4 @@
+using com.aoyon.facetune.platform;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 
@@ -26,18 +27,77 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
     private void NegotiateMAMenuItem(FTPassContext passContext)
     {
-        var expressionComponents = passContext.BuildContext.AvatarRootObject.GetComponentsInChildren<ExpressionComponentBase>(true);
+        var root = passContext.BuildContext.AvatarRootObject;
+        var platformSupport = passContext.PlatformSupport;
+
         var usedParameterNames = new HashSet<string>();
-
-        foreach (var expressionComponent in expressionComponents)
+        var menuItems = root.GetComponentsInChildren<ModularAvatarMenuItem>(true);
+        foreach (var menuItem in menuItems)
         {
-            if (!expressionComponent.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)) continue;
+            var parameterName = platformSupport.GetParameterName(menuItem);
+            if (string.IsNullOrWhiteSpace(parameterName)) continue;
+            usedParameterNames.Add(parameterName);
+        }
 
-            var (parameterName, parameterCondition) = passContext.PlatformSupport.MenuItemAsCondition(menuItem, usedParameterNames);
-            if (parameterName == null) continue;
+        foreach (var menuItem in menuItems)
+        {    
+            using var _ = ListPool<ExpressionComponentBase>.Get(out var expressionComponents);
+            expressionComponents.AddRange(menuItem.GetComponentsInChildren<ExpressionComponentBase>(true));
+            if (expressionComponents.Any() is false) continue;
 
-            var conditionComponent = expressionComponent.gameObject.AddComponent<ConditionComponent>(); // OR
-            conditionComponent.ParameterConditions.Add(parameterCondition!);
+            var menuItemType = platformSupport.GetMenuItemType(menuItem);
+
+            switch (menuItemType)
+            {
+                case MenuItemType.Toggle:
+                case MenuItemType.Button:
+                    var parameterName = EnsureParameter(menuItem, usedParameterNames, platformSupport);
+                    platformSupport.SetParameterValue(menuItem, 1);
+                    var conditionComponent = menuItem.gameObject.AddComponent<ConditionComponent>(); // OR
+                    conditionComponent.ParameterConditions.Add(ParameterCondition.Bool(parameterName, true));
+                    break;
+                case MenuItemType.RadialPuppet:
+                    var radialParameterName = EnsureRadialParameter(menuItem, usedParameterNames, platformSupport);
+                    foreach (var expressionComponent in expressionComponents)
+                    {
+                        var settings = expressionComponent.ExpressionSettings;
+                        expressionComponent.ExpressionSettings = settings with { LoopTime = false, MotionTimeParameterName = radialParameterName };
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        static string EnsureParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
+        {
+            string parameterName = platformSupport.GetParameterName(menuItem);
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                parameterName = platformSupport.GetUniqueParameterName(menuItem, usedParameterNames, "toggle");
+                usedParameterNames.Add(parameterName);
+                platformSupport.SetParameterName(menuItem, parameterName);
+            }
+            return parameterName;
+        }
+
+        static string EnsureRadialParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
+        {
+            string parameterName = platformSupport.GetRadialParameterName(menuItem);
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                parameterName = platformSupport.GetUniqueParameterName(menuItem, usedParameterNames, "radial");
+                usedParameterNames.Add(parameterName);
+                platformSupport.SetRadialParameterName(menuItem, parameterName);
+            }
+            var parameters = menuItem.gameObject.EnsureComponent<ModularAvatarParameters>();
+            parameters.parameters.Add(new ParameterConfig()
+            {
+                nameOrPrefix = parameterName,
+                syncType = ParameterSyncType.Float,
+                defaultValue = 0,
+            });
+            return parameterName;
         }
     }
 
