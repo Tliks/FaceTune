@@ -44,7 +44,8 @@ internal static class SessionContextBuilder
         var faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null);
         if (faceRenderer == null)
         {
-            return platform.PlatformSupport.GetFaceRenderer(root.transform);
+            var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
+            return platformSupport.GetFaceRenderer();
         }
         else
         {

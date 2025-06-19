@@ -1,4 +1,3 @@
-using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
 using com.aoyon.facetune.pass;
@@ -23,22 +22,35 @@ internal interface IPlatformSupport
     }
 
     // ModularAvatarMenuItem
-    public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    public MenuItemType GetMenuItemType(ModularAvatarMenuItem menuItem)
+    {
+        return MenuItemType.Button;
+    }
+    public void SetMenuItemType(ModularAvatarMenuItem menuItem, MenuItemType type)
+    {
+        return;
+    }
+    public string GetParameterName(ModularAvatarMenuItem menuItem)
     {
         return string.Empty;
     }
-    public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
+    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        return Guid.NewGuid().ToString();
+    }
+    public void SetParameterName(ModularAvatarMenuItem menuItem, string parameterName)
     {
         return;
     }
-    public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
+    public float GetParameterValue(ModularAvatarMenuItem menuItem)
+    {
+        return 0;
+    }
+    public void SetParameterValue(ModularAvatarMenuItem menuItem, float value)
     {
         return;
     }
-    public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
-    {
-        return;
-    }
+
     public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         return (null, null);
@@ -52,4 +64,15 @@ internal interface IPlatformSupport
     {
         return;
     }
+}
+
+
+internal enum MenuItemType
+{
+    Button,
+    Toggle,
+    SubMenu,
+    TwoAxisPuppet,
+    FourAxisPuppet,
+    RadialPuppet,
 }

@@ -39,7 +39,7 @@ internal class AnimatorInstaller
         _vcc = vcc;
         _virtualController = virtualController;
         _parameterCache = virtualController.Parameters.Values.ToDictionary(p => p.name, p => p);
-        _platformSupport = platform.PlatformSupport.GetSupports(_sessionContext.Root.transform).First();
+        _platformSupport = platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
         _defaultExpressionContext = sessionContext.DEC;
         _globalDefaultExpression = _defaultExpressionContext.GetGlobalDefaultExpression();

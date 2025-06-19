@@ -17,23 +17,23 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         if (sessionContext == null) return;
         
         // Condition
-        NegotiateMAMenuItem(context.AvatarRootObject);
+        NegotiateMAMenuItem(passContext);
         // Expression
         MergeExpression(sessionContext);
         // Pattern
         NormalizeData(context.AvatarRootObject);
     }
 
-    private void NegotiateMAMenuItem(GameObject root)
+    private void NegotiateMAMenuItem(FTPassContext passContext)
     {
-        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        var expressionComponents = passContext.BuildContext.AvatarRootObject.GetComponentsInChildren<ExpressionComponentBase>(true);
         var usedParameterNames = new HashSet<string>();
 
         foreach (var expressionComponent in expressionComponents)
         {
             if (!expressionComponent.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)) continue;
 
-            var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
+            var (parameterName, parameterCondition) = passContext.PlatformSupport.MenuItemAsCondition(menuItem, usedParameterNames);
             if (parameterName == null) continue;
 
             var conditionComponent = expressionComponent.gameObject.AddComponent<ConditionComponent>(); // OR

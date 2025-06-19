@@ -1,5 +1,6 @@
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
+using com.aoyon.facetune.platform;
 
 namespace com.aoyon.facetune.pass;
 
@@ -16,6 +17,8 @@ internal class ProcessPresetPass : Pass<ProcessPresetPass>
         var presetData = passContext.PatternData;
         if (presetData == null) throw new InvalidOperationException("PatternData is null");
         if (presetData.IsEmpty) return;
+
+        var platformSupport = passContext.PlatformSupport;
 
         // 単一のPresetを変換
         // presetData.ConvertSinglePresetToSingleExpressionPattern();
@@ -39,9 +42,9 @@ internal class ProcessPresetPass : Pass<ProcessPresetPass>
             var menuTarget = preset.MenuTarget;
             if (menuTarget == null) continue;
             var menuItem = menuTarget.EnsureComponent<ModularAvatarMenuItem>();
-            platform.PlatformSupport.EnsureMenuItemIsToggle(context.AvatarRootTransform, menuItem);
-            platform.PlatformSupport.AssignParameterName(context.AvatarRootTransform, menuItem, parameterName); // Todo 上書きしていいかどうか。
-            platform.PlatformSupport.AssignParameterValue(context.AvatarRootTransform, menuItem, index);
+            platformSupport.SetMenuItemType(menuItem, MenuItemType.Toggle);
+            platformSupport.SetParameterName(menuItem, parameterName); // Todo 上書きしていいかどうか。
+            platformSupport.SetParameterValue(menuItem, index);
         }
     }
 }

@@ -138,9 +138,84 @@ internal class VRChatSuport : IPlatformSupport
         return ret;
     }
 
+    public MenuItemType GetMenuItemType(ModularAvatarMenuItem menuItem)
+    {
+        switch (menuItem.Control.type)
+        {
+            case VRCExpressionsMenu.Control.ControlType.Toggle:
+                return MenuItemType.Toggle;
+            case VRCExpressionsMenu.Control.ControlType.Button:
+                return MenuItemType.Button;
+            case VRCExpressionsMenu.Control.ControlType.SubMenu:
+                return MenuItemType.SubMenu;
+            case VRCExpressionsMenu.Control.ControlType.TwoAxisPuppet:
+                return MenuItemType.TwoAxisPuppet;
+            case VRCExpressionsMenu.Control.ControlType.FourAxisPuppet:
+                return MenuItemType.FourAxisPuppet;
+            case VRCExpressionsMenu.Control.ControlType.RadialPuppet:
+                return MenuItemType.RadialPuppet;
+            default:
+                throw new Exception($"Unknown menu item type: {menuItem.Control.type}");
+        }
+    }
+    public void SetMenuItemType(ModularAvatarMenuItem menuItem, MenuItemType type)
+    {
+        switch (type)
+        {
+            case MenuItemType.Toggle:
+                menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
+                break;
+            case MenuItemType.Button:
+                menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.Button;
+                break;
+            case MenuItemType.SubMenu:
+                menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.SubMenu;
+                break;
+            case MenuItemType.TwoAxisPuppet:
+                menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.TwoAxisPuppet;
+                break;
+            case MenuItemType.FourAxisPuppet:
+                menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.FourAxisPuppet;
+                break;
+            case MenuItemType.RadialPuppet:
+                menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.RadialPuppet;
+                break;
+            default:
+                throw new Exception($"Unknown menu item type: {type}");
+        }
+    }
+    public string GetParameterName(ModularAvatarMenuItem menuItem)
+    {
+        return menuItem.Control.parameter.name;
+    }
+    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
+    {
+        var baseName = menuItem.gameObject.name.Replace(" ", "_");
+        var parameterName = $"facetune/{baseName}/toggle";
+        int index = 1;
+        while (usedNames.Contains(parameterName))
+        {
+            parameterName = $"facetune/{baseName}_{index}/toggle";
+            index++;
+        }
+        return parameterName;
+    }
+    public void SetParameterName(ModularAvatarMenuItem menuItem, string parameterName)
+    {
+        menuItem.Control.parameter.name = parameterName;
+    }
+    public float GetParameterValue(ModularAvatarMenuItem menuItem)
+    {
+        return menuItem.Control.value;
+    }
+    public void SetParameterValue(ModularAvatarMenuItem menuItem, float value)
+    {
+        menuItem.Control.value = value;
+    }
+
     public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
-        var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
+        var parameterName = GetUniqueParameterName(menuItem, usedNames);
         usedNames.Add(parameterName);
         var control = new VRCExpressionsMenu.Control()
         {
@@ -158,30 +233,6 @@ internal class VRChatSuport : IPlatformSupport
         menuItem.Control = control;
         return parameterName;
     }
-    private string GenerateUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        var baseName = menuItem.gameObject.name.Replace(" ", "_");
-        var parameterName = $"facetune/{baseName}/toggle";
-        int index = 1;
-        while (usedNames.Contains(parameterName))
-        {
-            parameterName = $"facetune/{baseName}_{index}/toggle";
-            index++;
-        }
-        return parameterName;
-    }
-    public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
-    {
-        menuItem.Control.parameter = new() { name = parameterName };
-    }
-    public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
-    {
-        menuItem.Control.value = value;
-    }
-    public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
-    {
-        menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
-    }
     public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
     {
         var existingParameterName = menuItem.Control.parameter.name;
@@ -192,7 +243,7 @@ internal class VRChatSuport : IPlatformSupport
         if (menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Toggle ||
             menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Button)
         {
-            var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
+            var parameterName = GetUniqueParameterName(menuItem, usedNames);
             menuItem.Control.parameter.name = parameterName;
             return (parameterName, ParameterCondition.Bool(parameterName, true));
         }

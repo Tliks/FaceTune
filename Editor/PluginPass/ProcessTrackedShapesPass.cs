@@ -20,7 +20,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             allExpressions.AddRange(passContext.PatternData.GetAllExpressions());
         }
 
-        var trackedShapes = platform.PlatformSupport.GetTrackedBlendShape(sessionContext.Root.transform).ToHashSet();
+        var trackedShapes = passContext.PlatformSupport.GetTrackedBlendShape().ToHashSet();
 
         if (sessionContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
