@@ -159,7 +159,9 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
         var defaultBlendShapes = context.DEC.GetDefaultBlendShapeSet(Component.gameObject);
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.GetFirstFrameBlendShapeSet(context).BlendShapes));
+        var shapes = new List<BlendShape>();
+        Component.GetFirstFrameBlendShapeSet(context, shapes);
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes, new(shapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }
@@ -168,7 +170,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     {
         var so = new SerializedObject(Component);
         so.Update();
-        FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, result.BlendShapes.ToList().AsReadOnly());
+        FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, result.BlendShapes.ToList());
         so.ApplyModifiedProperties();
     }
 
@@ -202,7 +204,12 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     private static void ToClip(MenuCommand command)
     {
         var component = (command.context as FacialExpressionComponent)!;
-        CustomEditorUtility.ToClip(component.gameObject, context => component.GetFirstFrameBlendShapeSet(context).BlendShapes);
+        CustomEditorUtility.ToClip(component.gameObject, context =>
+        {
+            var shapes = new List<BlendShape>();
+            component.GetFirstFrameBlendShapeSet(context, shapes);
+            return shapes;
+        });
     }
 
     private void ConvertToManual()
@@ -212,16 +219,18 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         {
             if (component.Clip == null) continue;
             if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) continue;
-            var shapes = component.GetFirstFrameBlendShapeSet(context);
+            var defaultSet = context.DEC.GetDefaultBlendShapeSet(component.gameObject);
+            var shapes = new List<BlendShape>();
+            component.GetBlendShapes(shapes, defaultSet);
             var so = new SerializedObject(component);
             so.Update();
-            FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, shapes.BlendShapes.ToList(), true);
+            FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, shapes, true);
             so.FindProperty(nameof(FacialExpressionComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
             so.FindProperty(nameof(FacialExpressionComponent.IsSingleFrame)).boolValue = true;
             var expressionSettingsProperty = so.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
             var settings = ExpressionSettings.FromAnimationClip(component.Clip);
-            expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.LoopTime)).boolValue = settings.LoopTime;
-            expressionSettingsProperty.FindPropertyRelative(nameof(ExpressionSettings.MotionTimeParameterName)).stringValue = settings.MotionTimeParameterName;
+            expressionSettingsProperty.FindPropertyRelative(ExpressionSettings.LoopTimePropName).boolValue = settings.LoopTime;
+            expressionSettingsProperty.FindPropertyRelative(ExpressionSettings.MotionTimeParameterNamePropName).stringValue = settings.MotionTimeParameterName;
             so.ApplyModifiedProperties();
         }
     }
@@ -246,8 +255,8 @@ public class FacialExpressionEditorUtility
         for (var i = 0; i < animations.Count; i++)
         {
             var element = animationsProperty.GetArrayElementAtIndex(i);
-            var nameProp = element.FindPropertyRelative("_name");
-            var curveProp = element.FindPropertyRelative("_curve");
+            var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
+            var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
             nameProp.stringValue = animations[i].Name;
             curveProp.animationCurveValue = animations[i].GetCurve();
         }
@@ -264,8 +273,8 @@ public class FacialExpressionEditorUtility
         for (var i = 0; i < newAnimations.Count; i++)
         {
             var element = animationsProperty.GetArrayElementAtIndex(i);
-            element.FindPropertyRelative("_name").stringValue = newAnimations[i].Name;
-            element.FindPropertyRelative("_curve").animationCurveValue = newAnimations[i].GetCurve();
+            element.FindPropertyRelative(BlendShapeAnimation.NamePropName).stringValue = newAnimations[i].Name;
+            element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].GetCurve();
         }
     }
 }

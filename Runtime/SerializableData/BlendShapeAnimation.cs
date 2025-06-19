@@ -9,9 +9,11 @@ namespace com.aoyon.facetune;
 public record BlendShapeAnimation // Immutable
 {
     [SerializeField] private string _name;
+    public const string NamePropName = "_name";
     public string Name { get => _name; init => _name = value; }
 
     [SerializeField] private AnimationCurve _curve; // 可変
+    public const string CurvePropName = "_curve";
     public AnimationCurve GetCurve() => _curve.Clone();
 
     public BlendShapeAnimation()
@@ -46,6 +48,10 @@ public record BlendShapeAnimation // Immutable
         return new GenericAnimation(binding, _curve.Clone());
     }
 
+    internal BlendShape ToFirstFrameBlendShape()
+    {
+        return new BlendShape(Name, _curve.Evaluate(0));
+    }
     public virtual bool Equals(BlendShapeAnimation other)
     {
         if (other is null) return false;

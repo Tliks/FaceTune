@@ -1,28 +1,21 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace com.aoyon.facetune.ui
+namespace com.aoyon.facetune.ui;
+
+[CustomPropertyDrawer(typeof(SerializableCurveBinding))]
+public class SerializableCurveBindingDrawer : PropertyDrawer
 {
-    [CustomPropertyDrawer(typeof(SerializableCurveBinding))]
-    public class SerializableCurveBindingDrawer : PropertyDrawer
+    public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
-        private const string PathPropName = "_path";
-        private const string TypePropName = "_type";
-        private const string PropertyNamePropName = "_propertyName";
-        private const string IsPPtrCurvePropName = "_isPPtrCurve";
-        private const string IsDiscreteCurvePropName = "_isDiscreteCurve";
+        var container = new VisualElement();
 
-        public override VisualElement CreatePropertyGUI(SerializedProperty property)
-        {
-            var container = new VisualElement();
-
-            container.Add(new PropertyField(property.FindPropertyRelative(PathPropName)));
-            container.Add(new PropertyField(property.FindPropertyRelative(TypePropName)));
-            container.Add(new PropertyField(property.FindPropertyRelative(PropertyNamePropName)));
-            container.Add(new PropertyField(property.FindPropertyRelative(IsPPtrCurvePropName)));
-            container.Add(new PropertyField(property.FindPropertyRelative("_isDiscreteCurve")));
-            
-            return container;
-        }
+        container.Add(new PropertyField(property.FindPropertyRelative(SerializableCurveBinding.PathPropName)));
+        container.Add(new PropertyField(property.FindPropertyRelative(SerializableCurveBinding.TypePropName)));
+        container.Add(new PropertyField(property.FindPropertyRelative(SerializableCurveBinding.PropertyNamePropName)));
+        container.Add(new PropertyField(property.FindPropertyRelative(SerializableCurveBinding.IsPPtrCurvePropName)));
+        container.Add(new PropertyField(property.FindPropertyRelative(SerializableCurveBinding.IsDiscreteCurvePropName)));
+        
+        return container;
     }
-} 
+}

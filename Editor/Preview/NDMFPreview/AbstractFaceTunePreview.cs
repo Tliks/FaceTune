@@ -39,40 +39,46 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
-        var pair = proxyPairs.First();
-        if (pair.Item1 is not SkinnedMeshRenderer original) return Error();
-        if (pair.Item2 is not SkinnedMeshRenderer proxy) return Error();
-
-        var originalMesh = original.sharedMesh;
-        if (originalMesh == null) return Error();
-        var proxyMesh = proxy.sharedMesh;
-        if (proxyMesh == null) return Error();
-
-        var root = group.GetData<GameObject>();
-        if (root == null) return Error();
-
-        var observeContext = new NDMFPreviewObserveContext(context);
-        if (!SessionContextBuilder.TryBuild(root, out var sessionContext, observeContext)) return Empty();
-
-        var blendShapeSet = QueryBlendShapeSet(original, proxy, sessionContext, context);
-        // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
-        if (blendShapeSet == null || blendShapeSet.BlendShapes.Count() == 0) return Empty();
-
-        var blendShapeWeights = FloatArrayPool.Get(proxyMesh.blendShapeCount);
-        for (int i = 0; i < proxyMesh.blendShapeCount; i++)
+        try
         {
-            var name = proxyMesh.GetBlendShapeName(i);
-            if (blendShapeSet.TryGetValue(name, out var blendShape))
-            {
-                blendShapeWeights[i] = blendShape.Weight;
-            }
-            else
-            {
-                blendShapeWeights[i] = -1; // 対象外の場合はフラグとして-1を代入しNode側で除外
-            }
-        }
+            var pair = proxyPairs.First();
+            if (pair.Item1 is not SkinnedMeshRenderer original) return Error("SkinnedMeshRenderer not found");
+            if (pair.Item2 is not SkinnedMeshRenderer proxy) return Error("SkinnedMeshRenderer not found");
 
-        return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(blendShapeWeights));
+            var originalMesh = original.sharedMesh;
+            if (originalMesh == null) return Error("SkinnedMeshRenderer.sharedMesh is null");
+            var proxyMesh = proxy.sharedMesh;
+            if (proxyMesh == null) return Error("SkinnedMeshRenderer.sharedMesh is null");
+
+            var root = group.GetData<GameObject>();
+            if (root == null) return Error("GameObject not found");
+
+            using var _set = BlendShapeSetPool.Get(out var set);
+            QueryBlendShapes(original, proxy, root, context, set);
+
+            // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
+            if (set.Count == 0) return Empty();
+
+            var _blendShapeWeights = ListPool<float>.Get(out var blendShapeWeights);
+            for (int i = 0; i < proxyMesh.blendShapeCount; i++)
+            {
+                var name = proxyMesh.GetBlendShapeName(i);
+                if (set.TryGetValue(name, out var blendShape))
+                {
+                    blendShapeWeights.Add(blendShape.Weight);
+                }
+                else
+                {
+                    blendShapeWeights.Add(-1); // 対象外の場合はフラグとして-1を代入しNode側で除外
+                }
+            }
+
+            return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(_blendShapeWeights));
+        }
+        catch (Exception e)
+        {
+            return Error(e.Message);
+        }
         
         static Task<IRenderFilterNode> Empty()
         {
@@ -80,8 +86,9 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         }
 
         // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
-        static Task<IRenderFilterNode> Error()
+        static Task<IRenderFilterNode> Error(string? message = null)
         {
+            if (message != null) Debug.LogError(message);
             Debug.LogError("Failed to instantiate preview filter");
             return Task.FromResult<IRenderFilterNode>(new EmptyNode());
         }
@@ -91,15 +98,15 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
     /// プレビューするブレンドシェイプを取得する
     /// IRenderFilter.Instantiate内で呼ばれるので適時Observe
     /// </summary>
-    protected abstract BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context);
+    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result);
 }
 
 internal class BlendShapePreviewNode : IRenderFilterNode
 {
     public RenderAspects WhatChanged => RenderAspects.Shapes;
-    private readonly float[] _blendShapeWeights; 
+    private readonly PooledObject<List<float>> _blendShapeWeights; 
 
-    public BlendShapePreviewNode(float[] blendShapeWeights)
+    public BlendShapePreviewNode(PooledObject<List<float>> blendShapeWeights)
     {
         _blendShapeWeights = blendShapeWeights;
     }
@@ -112,16 +119,19 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         var mesh = smr.sharedMesh;
         if (mesh == null) return;
 
-        for (int i = 0; i < mesh.blendShapeCount; i++)
+        var weights = _blendShapeWeights.Value;
+        var count = weights.Count;
+
+        for (int i = 0; i < count; i++)
         {
-            if (_blendShapeWeights[i] == -1) continue; // 対象外
-            smr.SetBlendShapeWeight(i, _blendShapeWeights[i]);
+            if (weights[i] == -1) continue; // 対象外
+            smr.SetBlendShapeWeight(i, weights[i]);
         }
     }
 
     public void Dispose()
     {
-        FloatArrayPool.Return(_blendShapeWeights);
+        _blendShapeWeights.Dispose();
     }
 }
 

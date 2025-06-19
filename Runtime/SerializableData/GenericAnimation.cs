@@ -4,12 +4,15 @@ namespace com.aoyon.facetune;
 public record GenericAnimation // Immutable
 {
     [SerializeField] private SerializableCurveBinding _curveBinding;
+    public const string CurveBindingPropName = "_curveBinding";
     public SerializableCurveBinding CurveBinding { get => _curveBinding; init => _curveBinding = value; }
 
-    [SerializeField] private AnimationCurve _curve; // 可変
-    public AnimationCurve GetCurve() => _curve.Clone();
+    [SerializeField] private AnimationCurve _curve; // AnimationCurveは可変
+    public const string CurvePropName = "_curve";
+    public AnimationCurve Curve { get => _curve.Clone(); init => _curve = value.Clone(); }
 
     [SerializeField] private List<SerializableObjectReferenceKeyframe> _objectReferenceCurve;
+    public const string ObjectReferenceCurvePropName = "_objectReferenceCurve";
     public IReadOnlyList<SerializableObjectReferenceKeyframe> ObjectReferenceCurve { get => _objectReferenceCurve.AsReadOnly(); init => _objectReferenceCurve = value.ToList(); }
 
     public GenericAnimation()

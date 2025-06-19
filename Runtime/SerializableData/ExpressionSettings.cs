@@ -4,19 +4,24 @@ namespace com.aoyon.facetune;
 public record class ExpressionSettings // Immutable
 {
     // Advanced
-    public bool LoopTime;
-    public string MotionTimeParameterName; // LoopTime == false && != empty
+    [SerializeField] private bool _loopTime;
+    public const string LoopTimePropName = "_loopTime";
+    public bool LoopTime { get => _loopTime; init => _loopTime = value; }
+
+    [SerializeField] private string _motionTimeParameterName;
+    public const string MotionTimeParameterNamePropName = "_motionTimeParameterName";
+    public string MotionTimeParameterName { get => _motionTimeParameterName; init => _motionTimeParameterName = value; } // LoopTime == false && != empty
 
     public ExpressionSettings()
     {
-        LoopTime = false;
-        MotionTimeParameterName = string.Empty;
+        _loopTime = false;
+        _motionTimeParameterName = string.Empty;
     }
 
     public ExpressionSettings(bool loopTime, string motionTimeParameterName)
     {
-        LoopTime = loopTime;
-        MotionTimeParameterName = motionTimeParameterName;
+        _loopTime = loopTime;
+        _motionTimeParameterName = motionTimeParameterName;
     }
 
 #if UNITY_EDITOR
@@ -27,10 +32,11 @@ public record class ExpressionSettings // Immutable
     }
 #endif
 
+    // Todo
     internal ExpressionSettings Merge(ExpressionSettings other)
     {
-        var loopTime = LoopTime || other.LoopTime;
-        var motionTimeParameterName = string.IsNullOrEmpty(other.MotionTimeParameterName) ? MotionTimeParameterName : other.MotionTimeParameterName;
+        var loopTime = _loopTime || other._loopTime;
+        var motionTimeParameterName = string.IsNullOrEmpty(other._motionTimeParameterName) ? _motionTimeParameterName : other._motionTimeParameterName;
         return new ExpressionSettings(loopTime, motionTimeParameterName);
     }
 }

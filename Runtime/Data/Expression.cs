@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune;
 
-internal class Expression : IEquatable<Expression>
+internal class Expression : IEquatable<Expression> // 可変
 {
     public string Name { get; private set; }
     public IReadOnlyList<GenericAnimation> Animations

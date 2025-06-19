@@ -13,9 +13,12 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
 
     protected override TogglablePreviewNode? ControlNode => ToggleNode;
 
-    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
-        if (!IsEnabled(context)) return null;
-        return sessionContext.DEC.GetGlobalDefaultBlendShapeSet();
+        if (!IsEnabled(context)) return;
+
+        using var defaultBlendShapeContext = SessionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, new NDMFPreviewObserveContext(context));
+        var blendShapes = defaultBlendShapeContext.GetGlobalDefaultBlendShapes();
+        result.AddRange(blendShapes);
     }
 }

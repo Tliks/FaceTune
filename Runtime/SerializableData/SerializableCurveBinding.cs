@@ -4,18 +4,23 @@ namespace com.aoyon.facetune;
 public record SerializableCurveBinding // Immutable
 {
     [SerializeField] private string _path;
+    public const string PathPropName = "_path";
     public string Path { get => _path; init => _path = value; }
 
     [SerializeField] private SerializableType _type;
+    public const string TypePropName = "_type";
     public Type? Type { get => _type.TargetType; init => _type = value != null ? new SerializableType(value) : _type; }
 
     [SerializeField] private string _propertyName;
+    public const string PropertyNamePropName = "_propertyName";
     public string PropertyName { get => _propertyName; init => _propertyName = value; }
 
     [SerializeField] private bool _isPPtrCurve;
+    public const string IsPPtrCurvePropName = "_isPPtrCurve";
     public bool IsPPtrCurve { get => _isPPtrCurve; init => _isPPtrCurve = value; }
     
     [SerializeField] private bool _isDiscreteCurve;
+    public const string IsDiscreteCurvePropName = "_isDiscreteCurve";
     public bool IsDiscreteCurve { get => _isDiscreteCurve; init => _isDiscreteCurve = value; }
 
     public SerializableCurveBinding()

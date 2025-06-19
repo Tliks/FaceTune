@@ -95,3 +95,70 @@ internal record DefaultExpressionContext
             .Concat(new[] { defaultExpression })!;
     }
 }
+
+// プレビュー用
+internal class DefaultBlendShapesContext : IDisposable
+{
+    private readonly PooledObject<BlendShapeSet> defaultBlendShapes;
+    private readonly PooledObject<Dictionary<PresetComponent, PooledObject<BlendShapeSet>?>> presetDefaultBlendShapes;
+    private readonly PooledObject<HashSet<PresetComponent>> presetComponents;
+    public bool Disposed { private set; get; } = false;
+
+    public DefaultBlendShapesContext(PooledObject<BlendShapeSet> defaultBlendShapes, PooledObject<Dictionary<PresetComponent, PooledObject<BlendShapeSet>?>> presetDefaultBlendShapes)
+    {
+        this.defaultBlendShapes = defaultBlendShapes;
+        this.presetDefaultBlendShapes = presetDefaultBlendShapes;
+        presetComponents = HashSetPool<PresetComponent>.Get(out _);
+        presetComponents.Value.UnionWith(presetDefaultBlendShapes.Value.Keys);
+    }
+
+    public BlendShapeSet GetGlobalDefaultBlendShapes()
+    {
+        return defaultBlendShapes.Value;
+    }
+
+    public BlendShapeSet GetPresetDefaultBlendShapes(PresetComponent preset)
+    {
+        if (presetDefaultBlendShapes.Value.TryGetValue(preset, out var pooledBlendShapes) && pooledBlendShapes != null)
+        {
+            return pooledBlendShapes.Value;
+        }
+        return defaultBlendShapes.Value;
+    }
+
+    public BlendShapeSet GetDefaultBlendShapes(GameObject target)
+    {
+        if (target.TryGetComponent<PresetComponent>(out var preset) && presetComponents.Value.Contains(preset))
+        {
+            return GetPresetDefaultBlendShapes(preset);
+        }
+        else
+        {
+            using var _ = ListPool<PresetComponent>.Get(out var parentPresets);
+            target.GetComponentsInParent<PresetComponent>(true, parentPresets);
+            foreach (var parentPreset in parentPresets)
+            {
+                if (presetDefaultBlendShapes.Value.TryGetValue(parentPreset, out var blendShapes) && blendShapes != null)
+                {
+                    return blendShapes.Value;
+                }
+            }
+            return defaultBlendShapes.Value;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!Disposed)
+        {
+            defaultBlendShapes.Dispose();
+            foreach (var presetDefaultBlendShapes in presetDefaultBlendShapes.Value.Values)
+            {
+                presetDefaultBlendShapes?.Dispose();
+            }
+            presetDefaultBlendShapes.Dispose();
+            presetComponents.Dispose();
+            Disposed = true;
+        }
+    }
+}

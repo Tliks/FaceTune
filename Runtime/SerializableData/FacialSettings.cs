@@ -4,10 +4,15 @@ namespace com.aoyon.facetune;
 public record class FacialSettings // Immutable
 {
     [SerializeField] private TrackingPermission _allowEyeBlink;
+    public const string AllowEyeBlinkPropName = "_allowEyeBlink";
     public TrackingPermission AllowEyeBlink { get => _allowEyeBlink; init => _allowEyeBlink = value; }
+
     [SerializeField] private TrackingPermission _allowLipSync;
+    public const string AllowLipSyncPropName = "_allowLipSync";
     public TrackingPermission AllowLipSync { get => _allowLipSync; init => _allowLipSync = value; }
+    
     [SerializeField] private BlendingPermission _blendingPermission;
+    public const string BlendingPermissionPropName = "_blendingPermission";
     public BlendingPermission BlendingPermission { get => _blendingPermission; init => _blendingPermission = value; }
     
     public FacialSettings()

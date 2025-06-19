@@ -3,29 +3,34 @@ namespace com.aoyon.facetune;
 [Serializable]
 public record struct BlendShape
 {
-    public string Name;
-    public float Weight;
+    [SerializeField] private string _name;
+    public const string NamePropName = "_name";
+    public string Name { readonly get => _name; init => _name = value; }
+
+    [SerializeField] private float _weight;
+    public const string WeightPropName = "_weight";
+    public float Weight { readonly get => _weight; init => _weight = value; }
 
     public BlendShape()
     {
-        Name = "";
-        Weight = 0.0f;
+        _name = "";
+        _weight = 0.0f;
     }
 
     public BlendShape(string name, float weight)
     {
-        Name = name;
-        Weight = weight;
+        _name = name;
+        _weight = weight;
     }    
 
     public readonly bool Equals(BlendShape other)
     {
-        return Name.Equals(other.Name)
-            && Mathf.Approximately(Weight, other.Weight);
+        return _name.Equals(other._name)
+            && Mathf.Approximately(_weight, other._weight);
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Name, Weight);
+        return HashCode.Combine(_name, _weight);
     }
 }
