@@ -2,7 +2,7 @@ namespace com.aoyon.facetune;
 
 internal interface IExpressionProvider
 {
-    Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext);
+    Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext); // ビルドでのみ呼ぶ
 }
 
 internal interface IHasBlendShapes

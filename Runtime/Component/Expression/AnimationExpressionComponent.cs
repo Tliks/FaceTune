@@ -3,7 +3,7 @@ namespace com.aoyon.facetune
     [AddComponentMenu(MenuPath)]
     public class AnimationExpressionComponent : ExpressionComponentBase
     {
-        internal const string ComponentName = "FT AnimationExpression";
+        internal const string ComponentName = "FT Animation Expression";
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
 
         public AnimationSourceMode SourceMode = AnimationSourceMode.FromAnimationClip;
