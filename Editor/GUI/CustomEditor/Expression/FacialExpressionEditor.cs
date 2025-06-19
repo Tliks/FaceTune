@@ -18,6 +18,8 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
 
     private ReorderableList? _blendShapeAnimationList;
 
+    private bool _underMerge = false;
+
     public override void OnEnable()
     {
         base.OnEnable();
@@ -29,6 +31,8 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         _clipExcludeOptionProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ClipExcludeOption));
         _expressionSettingsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
         _blendShapeAnimationList = null;
+
+        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>() != null;
     }
     
     private void SetupReorderableList()
@@ -79,8 +83,10 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
-
+        
+        GUI.enabled = !_underMerge;
         EditorGUILayout.PropertyField(_facialSettingsProperty);
+        GUI.enabled = true;
         EditorGUILayout.PropertyField(_sourceModeProperty);
         var sourceMode = (AnimationSourceMode)_sourceModeProperty.enumValueIndex;
         switch (sourceMode)
@@ -131,7 +137,9 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
             if (_showExpressionSettings)
             {
                 EditorGUI.indentLevel++;
+                GUI.enabled = !_underMerge;
                 ExpressionSettingsDrawer.Draw(_expressionSettingsProperty);
+                GUI.enabled = true;
                 EditorGUI.indentLevel--;
             }
         }
@@ -150,7 +158,9 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         if (_showExpressionSettings)
         {
             EditorGUI.indentLevel++;
+            GUI.enabled = !_underMerge;
             ExpressionSettingsDrawer.DrawMotionTimeParameterName(_expressionSettingsProperty);
+            GUI.enabled = true;
             EditorGUI.indentLevel--;
         }
     }
