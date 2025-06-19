@@ -1,6 +1,7 @@
 namespace com.aoyon.facetune;
 
 // GenericAnimationのコレクションに対する高速なアクセス・簡易な編集を行うためのラッパーオブジェクト
+// Todo: 重複のハンドリング
 internal class AnimationIndex
 {
     private List<GenericAnimation> _animations;
@@ -132,7 +133,7 @@ internal class AnimationIndex
                 var binding = animation.CurveBinding;
                 var path = binding.Path;
                 var name = binding.PropertyName;
-                pathNameCurveMap.GetOrAddNew(path).GetOrAddNew(name).Add(animation.GetCurve());
+                pathNameCurveMap.GetOrAddNew(path).GetOrAddNew(name).Add(animation.Curve);
             }
             _pathNameCurves = pathNameCurveMap;
             _cacheValid = true;
@@ -152,7 +153,7 @@ internal class AnimationIndex
                 {
                     var path = binding.Path;
                     var name = binding.PropertyName.Replace(BlendShapePrefix, string.Empty);
-                    pathNameCurveMap.GetOrAddNew(path).GetOrAddNew(name).Add(animation.GetCurve());
+                    pathNameCurveMap.GetOrAddNew(path).GetOrAddNew(name).Add(animation.Curve);
                 }
             }
             _pathNameBlendShapeCurves = pathNameCurveMap;

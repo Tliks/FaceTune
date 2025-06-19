@@ -33,9 +33,4 @@ internal static class ConditionUtility
             _ => type
         };
     }
-
-    public static bool Negate(this bool value)
-    {
-        return !value;
-    }
 }

@@ -38,7 +38,7 @@ internal static class EditorAnimationUtility
         foreach (var genericAnimation in genericAnimations)
         {
             var binding = genericAnimation.CurveBinding.ToEditorCurveBinding();
-            UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, genericAnimation.GetCurve());
+            UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, genericAnimation.Curve);
         }
     }
 }

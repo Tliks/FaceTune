@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class FacialExpressionComponent : ExpressionComponentBase
+    public class FacialExpressionComponent : ExpressionComponentBase, IHasBlendShapes
     {
         internal const string ComponentName = "FT Facial Expression";
         internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
@@ -119,10 +119,37 @@ namespace com.aoyon.facetune
             return new Expression(name, animations, expressionSettings, facialSettings);
         }
 
-        internal BlendShapeSet GetFirstFrameBlendShapeSet(SessionContext sessionContext, IObserveContext? observeContext = null)
+        internal void GetFirstFrameBlendShapeSet(SessionContext sessionContext, ICollection<BlendShape> resultToAdd)
         {
-            var expression = (this as IExpressionProvider)!.ToExpression(sessionContext, observeContext ?? new NonObserveContext());
-            return expression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
+            var defaultSet = sessionContext.DEC.GetDefaultBlendShapeSet(gameObject);
+            GetBlendShapes(resultToAdd, defaultSet);
+        }
+
+        // defaultsetは結合されていない
+        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet)
+        {
+            switch (SourceMode)
+            {
+                case AnimationSourceMode.Manual:
+                    foreach (var animation in BlendShapeAnimations)
+                    {
+                        resultToAdd.Add(animation.ToFirstFrameBlendShape());
+                    }
+                    break;
+                case AnimationSourceMode.FromAnimationClip:
+                    if (Clip == null) break;
+#if UNITY_EDITOR
+                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipExcludeOption, defaultSet);
+#endif
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
+            }
+        }
+
+        void IHasBlendShapes.GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet)
+        {
+            GetBlendShapes(resultToAdd, defaultSet);
         }
     }
 }

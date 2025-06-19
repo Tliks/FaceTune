@@ -5,17 +5,15 @@ namespace com.aoyon.facetune;
 /// ドラッグ＆ドロップとドロップダウンメニューによる型選択に対応
 /// </summary>
 [CustomPropertyDrawer(typeof(SerializableType))]
-public class SerializableTypeDrawer : PropertyDrawer
+internal class SerializableTypeDrawer : PropertyDrawer
 {
-    private const string NamePropName = "_name";
-
     private static List<Type>? s_cachedTypes; // 型をキャッシュするための静的フィールド
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        SerializedProperty nameProperty = property.FindPropertyRelative(NamePropName);
+        SerializedProperty nameProperty = property.FindPropertyRelative(SerializableType.NamePropName);
 
         string currentTypeName = GetCurrentTypeName(nameProperty.stringValue);
         

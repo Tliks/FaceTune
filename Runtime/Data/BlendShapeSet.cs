@@ -1,18 +1,17 @@
-using UnityEngine.Pool;
-
 namespace com.aoyon.facetune;
 
 /// <summary>
 /// 同名のBlendShapeを許容しないグループ
 /// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet : IEnumerable<BlendShape>
+internal class BlendShapeSet : IEnumerable<BlendShape>, ICollection<BlendShape>
 {
     readonly Dictionary<string, BlendShape> map;
     public Dictionary<string, BlendShape>.ValueCollection BlendShapes => map.Values;
     public Dictionary<string, BlendShape>.KeyCollection Names => map.Keys;
     public int Count => map.Count;
 
+    public bool IsReadOnly => false;
 
     private BlendShapeSet(Dictionary<string, BlendShape> map)
     {
@@ -35,10 +34,18 @@ internal class BlendShapeSet : IEnumerable<BlendShape>
         return GetEnumerator();
     }
 
+    public void Clear()
+    {
+        map.Clear();
+    }
+
     public BlendShapeSet Clone()
     {
         return new BlendShapeSet(new(map));
     }
+
+    public bool Contains(string name) => map.ContainsKey(name);
+    public bool Contains(BlendShape item) => map.TryGetValue(item.Name, out var value) && value.Weight == item.Weight;
     public bool TryGetValue(string key, out BlendShape value) => map.TryGetValue(key, out value);
     public BlendShapeSet Add(BlendShape blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
@@ -65,6 +72,11 @@ internal class BlendShapeSet : IEnumerable<BlendShape>
         return this;
     }
 
+    public void Add(BlendShape item)
+    {
+        Add(item, BlendShapeSetOptions.PreferLatter); 
+    }
+
     // otherが不変な保証がない
     public BlendShapeSet AddRange(BlendShapeSet other, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
@@ -82,6 +94,11 @@ internal class BlendShapeSet : IEnumerable<BlendShape>
             Add(blendShape, options);
         }
         return this;
+    }
+
+    bool ICollection<BlendShape>.Remove(BlendShape item)
+    {
+        return map.Remove(item.Name);
     }
 
     public BlendShapeSet Remove(string name)
@@ -143,19 +160,6 @@ internal class BlendShapeSet : IEnumerable<BlendShape>
         return this;
     }
 
-    public BlendShape[] ToArrayForMesh(Mesh mesh, Func<int, float> defaultValueFactory)
-    {
-        var mapping = map.Clone();
-        var blendShapeCount = mesh.blendShapeCount;
-        var blendShapes = new BlendShape[blendShapeCount];
-        for (int i = 0; i < blendShapeCount; i++)
-        {
-            var name = mesh.GetBlendShapeName(i);
-            blendShapes[i] = mapping.GetOrAdd(name, new BlendShape(name, defaultValueFactory(i)));
-        }
-        return blendShapes;
-    }
-
     public BlendShapeSet Except(BlendShapeSet baseSet, bool includeEqualOverride = false)
     {
         var diff = new BlendShapeSet();
@@ -175,11 +179,14 @@ internal class BlendShapeSet : IEnumerable<BlendShape>
         }
         return diff;
     }
+
+    public void CopyTo(BlendShape[] array, int arrayIndex)
+    {
+        map.Values.CopyTo(array, arrayIndex);
+    }
+
 }
 
-/// <summary>
-/// 同名のBlendShapeがあった際に前後どちらを優先するか、エラーを出すか
-/// </summary>
 internal enum BlendShapeSetOptions
 {
     PreferFormer,

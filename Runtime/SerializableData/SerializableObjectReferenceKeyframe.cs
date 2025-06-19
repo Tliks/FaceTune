@@ -4,12 +4,14 @@ namespace com.aoyon.facetune;
 public record struct SerializableObjectReferenceKeyframe // Immutable
 {
     [SerializeField] private float _time;
-    public float Time { get => _time; init => _time = value; }
+    public const string TimePropName = "_time";
+    public float Time { readonly get => _time; init => _time = value; }
 
     [SerializeField] private Object? _value;
     // 可変ではあるけどクローンする訳にもいかないので無視
     // そもそもここで取得したObject(eg. Material)に対する編集は破壊的
-    public Object? Value { get => _value; init => _value = value; } 
+    public const string ValuePropName = "_value";
+    public Object? Value { readonly get => _value; init => _value = value; } 
 
     public SerializableObjectReferenceKeyframe(float time, Object value)
     {
@@ -34,12 +36,12 @@ public record struct SerializableObjectReferenceKeyframe // Immutable
     }
 #endif
 
-    public bool Equals(SerializableObjectReferenceKeyframe other)
+    public readonly bool Equals(SerializableObjectReferenceKeyframe other)
     {
         return Mathf.Approximately(_time, other._time) && _value == other._value;
     }
     
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
     {
         return HashCode.Combine(_time, _value);
     }
