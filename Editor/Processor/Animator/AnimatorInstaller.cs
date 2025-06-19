@@ -186,10 +186,20 @@ internal class AnimatorInstaller
                 InstallSingleExpressionPatternGroup(singleExpressionPatterns, LayerPriority);
             }
         }
+        
+        var defaultExpression = _defaultExpressionContext.GetAllExpressions();
+        var patternExpressions = patternData.GetAllExpressions();
 
-        AddEyeBlinkLayer();
-        AddLipSyncLayer();
-
+        if (defaultExpression.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow) ||
+            patternExpressions.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow))
+        {
+            AddEyeBlinkLayer();
+        }
+        if (defaultExpression.Any(e => e.FacialSettings.AllowLipSync == TrackingPermission.Disallow) ||
+            patternExpressions.Any(e => e.FacialSettings.AllowLipSync == TrackingPermission.Disallow))
+        {
+            AddLipSyncLayer();
+        }
 
         // Transitionを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClipのままで問題ないが、WD ONの場合はNoneである必要がある
         // そのため、WD OFFの場合のみ空のClipを入れる
