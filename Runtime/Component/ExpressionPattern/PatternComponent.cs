@@ -8,9 +8,8 @@ namespace com.aoyon.facetune
         
         internal ExpressionPattern? GetPattern(SessionContext sessionContext)
         {
-            var expressionWithConditions = gameObject.GetComponentsInChildren<ConditionComponent>(true)
-                .Select(c => c.GetExpressionWithCondition(sessionContext))
-                .OfType<ExpressionWithConditions>()
+            var expressionWithConditions = gameObject.GetComponentsInChildren<ExpressionComponentBase>(true)
+                .SelectMany(c => c.GetExpressionWithConditions(sessionContext))
                 .ToList();
             if (expressionWithConditions.Count == 0) return null;
             return new ExpressionPattern(expressionWithConditions);

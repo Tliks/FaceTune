@@ -68,6 +68,7 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 ### Condition
 
 条件を設定します。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。アタッチされたGameObject以下のExpressionがこのConditionと紐付きます。
+同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
 ### Facial Expression
 
@@ -96,11 +97,6 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 ### Override Face Renderer
 
 適用対象のSkinnedMeshRendererを明示的に指定します。このコンポーネントが設定されていない場合、自動的に選定されます。
-
-
-### Common Condition
-
-設定された条件を直下の`Condition`に一括で追加します。共通の条件をまとめたい際に便利です。
 
 ### FaceTune Assistant
 

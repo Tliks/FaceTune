@@ -15,12 +15,12 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         var passContext = context.Extension<FTPassContext>()!;
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-
-        // Add Condition Component Phase
+        
+        // Condition
         NegotiateMAMenuItem(context.AvatarRootObject);
-        // Edit Condition Component  Phase
-        ProcessCommonCondition(context.AvatarRootObject);
-        // PostProcess Phase
+        // Expression
+        MergeExpression(sessionContext);
+        // Pattern
         NormalizeData(context.AvatarRootObject);
     }
 
@@ -33,35 +33,32 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         {
             if (!expressionComponent.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)) continue;
 
-            if (expressionComponent.TryGetComponent<CommonConditionComponent>(out var _)) continue;
-
             var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
             if (parameterName == null) continue;
 
-            var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
+            var conditionComponent = expressionComponent.gameObject.AddComponent<ConditionComponent>(); // OR
             conditionComponent.ParameterConditions.Add(parameterCondition!);
-            conditionComponent.ExpressionFromSelfOnly = true;
         }
     }
 
-    private void ProcessCommonCondition(GameObject root)
+    private void MergeExpression(SessionContext sessionContext)
     {
-        var commonConditionComponents = root.GetComponentsInChildren<CommonConditionComponent>(true);
-        foreach (var commonConditionComponent in commonConditionComponents)
+        var mergeExpressionComponents = sessionContext.Root.GetComponentsInChildren<MergeExpressionComponent>(true);
+        foreach (var mergeExpressionComponent in mergeExpressionComponents)
         {
-            commonConditionComponent.AddConditions();
+            mergeExpressionComponent.Merge(sessionContext);
         }
     }
 
     private void NormalizeData(GameObject root)
     {
-        // 単一の条件をPatternとして扱うことでデータを正規化する
-        var conditionComponents = root.GetComponentsInChildren<ConditionComponent>(true);
-        foreach (var conditionComponent in conditionComponents)
+        // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
+        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        foreach (var expressionComponent in expressionComponents)
         {
-            if (conditionComponent.GetComponentInParentNullable<PatternComponent>() == null)
+            if (expressionComponent.GetComponentInParentNullable<PatternComponent>() == null)
             {
-                conditionComponent.gameObject.EnsureComponent<PatternComponent>();
+                expressionComponent.gameObject.EnsureComponent<PatternComponent>();
             }
         }
     }

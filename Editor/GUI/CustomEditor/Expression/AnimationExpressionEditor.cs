@@ -12,7 +12,14 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
     private PropertyField? _curveField;
     private PropertyField? _objectReferenceCurveField;
     private bool _showExpressionSettings = false;
+    private bool _underMerge = false;
 
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>() != null;
+    }
+    
     public override VisualElement CreateInspectorGUI()
     {
         var root = new VisualElement();
@@ -132,6 +139,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
             if (_showExpressionSettings)
             {
                 EditorGUI.indentLevel++;
+                GUI.enabled = !_underMerge;
                 var sourceMode = (AnimationSourceMode)serializedObject.FindProperty(nameof(AnimationExpressionComponent.SourceMode)).enumValueIndex;
                 if (sourceMode == AnimationSourceMode.Manual)
                 {
@@ -141,6 +149,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
                 {
                     ExpressionSettingsDrawer.DrawMotionTimeParameterName(expressionSettingsProp);
                 }
+                GUI.enabled = true;
                 EditorGUI.indentLevel--;
             }
             serializedObject.ApplyModifiedProperties();
