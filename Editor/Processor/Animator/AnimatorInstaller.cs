@@ -86,8 +86,9 @@ internal class AnimatorInstaller
             settings.loopTime = true;
             motion.Settings = settings;
         }
-        if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
+        else if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
         {
+            EnsureParameterExists(AnimatorControllerParameterType.Float, expressionSettings.MotionTimeParameterName);
             state.TimeParameter = expressionSettings.MotionTimeParameterName;
         }
     }

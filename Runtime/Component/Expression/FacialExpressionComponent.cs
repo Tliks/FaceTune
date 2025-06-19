@@ -109,7 +109,16 @@ namespace com.aoyon.facetune
                     break;
                 case AnimationSourceMode.FromAnimationClip:
 #if UNITY_EDITOR
-                    if (Clip != null) expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
+                    if (Clip == null) break;
+
+                    if (!ExpressionSettings.LoopTime && !string.IsNullOrEmpty(ExpressionSettings.MotionTimeParameterName))
+                    {
+                        expressionSettings = ExpressionSettings;
+                    }
+                    else
+                    {
+                        expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
+                    }
 #endif
                     break;
                 default:

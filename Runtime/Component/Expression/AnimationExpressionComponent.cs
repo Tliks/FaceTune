@@ -33,7 +33,14 @@ namespace com.aoyon.facetune
                     {
 #if UNITY_EDITOR
                         animations.AddRange(GenericAnimation.FromAnimationClip(clip));
-                        expressionSettings = ExpressionSettings.FromAnimationClip(clip);
+                        if (!ExpressionSettings.LoopTime && !string.IsNullOrEmpty(ExpressionSettings.MotionTimeParameterName))
+                        {
+                            expressionSettings = ExpressionSettings;
+                        }
+                        else
+                        {
+                            expressionSettings = ExpressionSettings.FromAnimationClip(clip);
+                        }
 #endif
                     }
                     else
