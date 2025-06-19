@@ -262,4 +262,10 @@ internal class AnimationIndex
 
         InvalidateCache();
     }
+    
+    public void AllToSingleFrame()
+    {
+        _animations = _animations.Select(a => a.ToSingleFrame()).ToList();
+        InvalidateCache();
+    }
 }

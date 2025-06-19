@@ -22,12 +22,45 @@ namespace com.aoyon.facetune
         // Todo: Refactor
         internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
         {
-            List<GenericAnimation> animations;
+            FacialSettings facialSettings;
+            ExpressionSettings expressionSettings = new();
+
+            facialSettings = FacialSettings;
+            var sourceMode = observeContext.Observe(this, c => c.SourceMode, (a, b) => a == b);
+            switch (sourceMode)
+            {
+                case AnimationSourceMode.Manual:
+                    expressionSettings = ExpressionSettings;
+                    break;
+                case AnimationSourceMode.FromAnimationClip:
+#if UNITY_EDITOR
+                    if (Clip == null) break;
+
+                    if (!ExpressionSettings.LoopTime && !string.IsNullOrEmpty(ExpressionSettings.MotionTimeParameterName))
+                    {
+                        expressionSettings = ExpressionSettings;
+                    }
+                    else
+                    {
+                        expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
+                    }
+#endif
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);
+            }
+
+            var expression = new Expression(name, new List<GenericAnimation>(), expressionSettings, facialSettings);
             
             var defaultExpression = sessionContext.DEC.GetDefaultExpression(gameObject);
 
+            var enableBlending = observeContext.Observe(this, c => c.FacialSettings.EnableBlending, (a, b) => a == b);
+            if (!enableBlending)
+            {
+                expression.MergeAnimation(defaultExpression.Animations);
+            }
+
             var diffAnimations = new List<GenericAnimation>();
-            var sourceMode = observeContext.Observe(this, c => c.SourceMode, (a, b) => a == b);
             switch (sourceMode)
             {
                 case AnimationSourceMode.Manual:
@@ -76,56 +109,15 @@ namespace com.aoyon.facetune
                     throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);
             }
 
-
-            var enableBlending = observeContext.Observe(this, c => c.FacialSettings.EnableBlending, (a, b) => a == b);
-            if (enableBlending)
-            {
-                animations = diffAnimations;
-            }
-            else
-            {
-                var animationIndex = defaultExpression.AnimationIndex;
-                animationIndex.MergeAnimation(diffAnimations);
-                animations = animationIndex.Animations.ToList();
-            }
+            expression.MergeAnimation(diffAnimations);
 
             var isSingleFrame = observeContext.Observe(this, c => c.IsSingleFrame, (a, b) => a == b);
             if (isSingleFrame)
             {
-                for (int i = 0; i < animations.Count; i++)
-                {
-                    animations[i] = animations[i].ToSingleFrame();
-                }
+                expression.AnimationIndex.AllToSingleFrame();
             }
 
-            FacialSettings facialSettings;
-            ExpressionSettings expressionSettings = new();
-
-            facialSettings = FacialSettings;
-            switch (sourceMode)
-            {
-                case AnimationSourceMode.Manual:
-                    expressionSettings = ExpressionSettings;
-                    break;
-                case AnimationSourceMode.FromAnimationClip:
-#if UNITY_EDITOR
-                    if (Clip == null) break;
-
-                    if (!ExpressionSettings.LoopTime && !string.IsNullOrEmpty(ExpressionSettings.MotionTimeParameterName))
-                    {
-                        expressionSettings = ExpressionSettings;
-                    }
-                    else
-                    {
-                        expressionSettings = ExpressionSettings.FromAnimationClip(Clip);
-                    }
-#endif
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(sourceMode), sourceMode, null);
-            }
-
-            return new Expression(name, animations, expressionSettings, facialSettings);
+            return expression;
         }
 
         internal void GetFirstFrameBlendShapeSet(SessionContext sessionContext, ICollection<BlendShape> resultToAdd)
