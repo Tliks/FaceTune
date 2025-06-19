@@ -8,12 +8,14 @@ namespace com.aoyon.facetune
 
         public FacialSettings FacialSettings = new(); // 影響下にFacialExpressionComponentがある場合のみ有効
 
+        internal Expression? MergedExpression { get; private set; }
+
         internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
         {
-            return Merge(sessionContext);
+            return MergedExpression ?? throw new InvalidOperationException("MergedExpression is not set");
         }
 
-        internal Expression Merge(SessionContext sessionContext)
+        internal void Merge(SessionContext sessionContext)
         {
             var facialSettings = gameObject.GetComponentsInChildren<FacialExpressionComponent>(true).Any() ? FacialSettings : FacialSettings.Keep;
             var mergedExpression = new Expression(name, new List<GenericAnimation>(), ExpressionSettings, facialSettings);
@@ -27,7 +29,7 @@ namespace com.aoyon.facetune
                 mergedExpression.MergeAnimation(expression.Animations);
                 Object.DestroyImmediate(expressionComponent);
             }
-            return mergedExpression;
+            MergedExpression = mergedExpression;
         }
     }
 }
