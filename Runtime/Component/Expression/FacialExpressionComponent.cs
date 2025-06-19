@@ -77,8 +77,8 @@ namespace com.aoyon.facetune
             }
 
 
-            var blendingPermission = observeContext.Observe(this, c => c.FacialSettings.BlendingPermission, (a, b) => a == b);
-            if (blendingPermission == BlendingPermission.Disallow)
+            var enableBlending = observeContext.Observe(this, c => c.FacialSettings.EnableBlending, (a, b) => a == b);
+            if (enableBlending)
             {
                 animations = diffAnimations;
             }

@@ -9,14 +9,14 @@ internal class FacialSettingsDrawer : PropertyDrawer
 
         var propAllowLipSync = property.FindPropertyRelative(FacialSettings.AllowLipSyncPropName);
         var propAllowEyeBlink = property.FindPropertyRelative(FacialSettings.AllowEyeBlinkPropName);
-        var propBlendingPermission = property.FindPropertyRelative(FacialSettings.BlendingPermissionPropName);
+        var propEnableBlending = property.FindPropertyRelative(FacialSettings.EnableBlendingPropName);
 
         position.height = EditorGUIUtility.singleLineHeight;
         EditorGUI.PropertyField(position, propAllowLipSync);
         position.y += EditorGUIUtility.singleLineHeight;
         EditorGUI.PropertyField(position, propAllowEyeBlink);
         position.y += EditorGUIUtility.singleLineHeight;
-        EditorGUI.PropertyField(position, propBlendingPermission);
+        EditorGUI.PropertyField(position, propEnableBlending);
 
         EditorGUI.EndProperty();
     }

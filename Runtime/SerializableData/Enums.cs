@@ -58,13 +58,6 @@ public enum TrackingPermission
     Keep
 }
 
-public enum BlendingPermission
-{
-    Allow,
-    Disallow,
-    Keep
-}
-
 public enum ClipExcludeOption
 {
     None,
