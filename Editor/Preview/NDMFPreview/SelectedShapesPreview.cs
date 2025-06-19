@@ -91,7 +91,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             var childrenConditionComponents = conditionComponent.GetComponentsInChildren<ConditionComponent>(true);
             if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
-                GetBlendShapes(conditionComponent.GetComponentsInChildren<ExpressionComponentBase>(true), defaultSet, observeContext, result);
+                expressionComponents = context.GetComponentsInChildren<ExpressionComponentBase>(conditionComponent.gameObject, true);
+                GetBlendShapes(expressionComponents, defaultSet, observeContext, result);
                 return;
             }
         }
