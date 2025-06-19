@@ -1,6 +1,7 @@
 namespace com.aoyon.facetune;
 
 // GenericAnimationのコレクションに対する高速なアクセス・簡易な編集を行うためのラッパーオブジェクト
+// Todo: 重複のハンドリング
 internal class AnimationIndex
 {
     private List<GenericAnimation> _animations;

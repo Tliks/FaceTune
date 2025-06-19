@@ -10,12 +10,15 @@ public abstract record class Condition // Immutable
 public record class HandGestureCondition : Condition // Immutable
 {
     [SerializeField] private Hand _hand;
+    public const string HandPropName = "_hand";
     public Hand Hand { get => _hand; init => _hand = value; }
 
     [SerializeField] private BoolComparisonType _comparisonType;
+    public const string ComparisonTypePropName = "_comparisonType";
     public BoolComparisonType ComparisonType { get => _comparisonType; init => _comparisonType = value; }
 
     [SerializeField] private HandGesture _handGesture;
+    public const string HandGesturePropName = "_handGesture";
     public HandGesture HandGesture { get => _handGesture; init => _handGesture = value; }
 
     public HandGestureCondition()
@@ -56,24 +59,31 @@ public record class HandGestureCondition : Condition // Immutable
 public record class ParameterCondition : Condition // Immutable
 {
     [SerializeField] private string _parameterName;
+    public const string ParameterNamePropName = "_parameterName";
     public string ParameterName { get => _parameterName; init => _parameterName = value; }
 
     [SerializeField] private ParameterType _parameterType;
+    public const string ParameterTypePropName = "_parameterType";
     public ParameterType ParameterType { get => _parameterType; init => _parameterType = value; }
 
     [SerializeField] private FloatComparisonType _floatComparisonType;
+    public const string FloatComparisonTypePropName = "_floatComparisonType";
     public FloatComparisonType FloatComparisonType { get => _floatComparisonType; init => _floatComparisonType = value; }
 
     [SerializeField] private IntComparisonType _intComparisonType;
+    public const string IntComparisonTypePropName = "_intComparisonType";
     public IntComparisonType IntComparisonType { get => _intComparisonType; init => _intComparisonType = value; }
 
     [SerializeField] private float _floatValue;
+    public const string FloatValuePropName = "_floatValue";
     public float FloatValue { get => _floatValue; init => _floatValue = value; }
 
     [SerializeField] private int _intValue;
+    public const string IntValuePropName = "_intValue";
     public int IntValue { get => _intValue; init => _intValue = value; }
 
     [SerializeField] private bool _boolValue;
+    public const string BoolValuePropName = "_boolValue";
     public bool BoolValue { get => _boolValue; init => _boolValue = value; }
 
     public ParameterCondition()
@@ -84,6 +94,7 @@ public record class ParameterCondition : Condition // Immutable
         _intComparisonType = IntComparisonType.Equal;
         _floatValue = 0;
         _intValue = 0;
+        _boolValue = false;
     }
 
     public ParameterCondition(string parameterName, ParameterType parameterType, FloatComparisonType floatComparisonType, IntComparisonType intComparisonType, float floatValue, int intValue, bool boolValue)

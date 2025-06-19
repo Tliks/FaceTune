@@ -2,6 +2,18 @@ namespace com.aoyon.facetune;
 
 internal static class BlendShapeUtility
 {
+    private const string BlendShapePropertyName = "blendShape.";
+
+    public static void GetBlendShapes(this SkinnedMeshRenderer renderer, ICollection<BlendShape> resultToAdd)
+    {
+        for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
+        {
+            var name = renderer.sharedMesh.GetBlendShapeName(i);
+            var weight = renderer.GetBlendShapeWeight(i);
+            resultToAdd.Add(new BlendShape(name, weight));
+        }
+    }
+
     public static BlendShape[] GetBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh)
     {
         var blendShapes = new BlendShape[mesh.blendShapeCount];
@@ -13,49 +25,49 @@ internal static class BlendShapeUtility
         }
         return blendShapes;
     }
-
-    public static BlendShapeSet ToSet(this IEnumerable<BlendShape> blendShapes)
-    {
-        return new BlendShapeSet(blendShapes);
-    }
-
+    
 #if UNITY_EDITOR
-    // Todo: 置き換え
-    public static BlendShapeSet GetBlendShapeSetFromClip(AnimationClip clip, ClipExcludeOption clipExcludeOption, BlendShapeSet defaultSet)
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? defaultSet = null)
     {
-        var blendShapes = new BlendShapeSet(GetBlendShapesFromClip(clip));
-        switch (clipExcludeOption)
-        {
-            case ClipExcludeOption.None:
-                break;
-            case ClipExcludeOption.ExcludeZeroWeight:
-                blendShapes.RemoveZeroWeight();
-                break;
-            case ClipExcludeOption.ExcludeDefault:
-                blendShapes = blendShapes.Except(defaultSet);
-                break;
-        }
-        return blendShapes;
+        GetBlendShapes(clip, 0, resultToAdd, option, defaultSet);
     }
 
-    // AnimationUtilityからコピー
-    public static List<BlendShape> GetBlendShapesFromClip(AnimationClip clip, bool first = true)
+    public static void GetBlendShapes(this AnimationClip clip, float time, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? defaultSet = null)
     {
-        var blendShapes = new List<BlendShape>();
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
         foreach (var binding in bindings)
         {
-            if (binding.type != typeof(SkinnedMeshRenderer) || !binding.propertyName.StartsWith("blendShape.")) continue;
+            if (binding.type != typeof(SkinnedMeshRenderer) || !binding.propertyName.StartsWith(BlendShapePropertyName)) continue;
 
             var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
             if (curve != null && curve.keys.Length > 0)
             {
-                var name = binding.propertyName.Replace("blendShape.", string.Empty);
-                var weight = first ? curve.keys[0].value : curve.keys[curve.keys.Length - 1].value;
-                blendShapes.Add(new BlendShape(name, weight));
+                var name = binding.propertyName.Replace(BlendShapePropertyName, string.Empty);
+                var weight = curve.Evaluate(time);
+                switch (option)
+                {
+                    case null:
+                    case ClipExcludeOption.None:
+                        resultToAdd.Add(new BlendShape(name, weight));
+                        break;
+                    case ClipExcludeOption.ExcludeZeroWeight:
+                        if (weight != 0)
+                        {
+                            resultToAdd.Add(new BlendShape(name, weight));
+                        }
+                        break;
+                    case ClipExcludeOption.ExcludeDefault:
+                        if (defaultSet == null) throw new InvalidOperationException("defaultSet is null");
+                        if (defaultSet.TryGetValue(name, out var defaultBlendShape) is false || defaultBlendShape.Weight != weight)
+                        {
+                            resultToAdd.Add(new BlendShape(name, weight));
+                        }
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(option), option, null);
+                }
             }
         }
-        return blendShapes;
     }
 #endif
 }

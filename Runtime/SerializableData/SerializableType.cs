@@ -4,7 +4,8 @@ namespace com.aoyon.facetune;
 public record struct SerializableType // Immutable
 {
     [SerializeField] private string _name;
-    public string Name { get => _name; init => _name = value; }
+    public const string NamePropName = "_name";
+    public string Name { readonly get => _name; init => _name = value; }
 
     public SerializableType()
     {
@@ -43,12 +44,12 @@ public record struct SerializableType // Immutable
         }
     }
 
-    public bool Equals(SerializableType other)
+    public readonly bool Equals(SerializableType other)
     {
         return Name == other.Name;
     }
     
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
     {
         return HashCode.Combine(Name);
     }

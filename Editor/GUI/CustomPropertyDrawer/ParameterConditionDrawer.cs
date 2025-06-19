@@ -3,22 +3,6 @@ namespace com.aoyon.facetune.ui;
 [CustomPropertyDrawer(typeof(ParameterCondition))]
 internal class ParameterConditionDrawer : PropertyDrawer
 {
-    private const string ParameterNamePropName = "_parameterName";
-    private const string ParameterTypePropName = "_parameterType";
-    private const string FloatComparisonTypePropName = "_floatComparisonType";
-    private const string IntComparisonTypePropName = "_intComparisonType";
-    private const string FloatValuePropName = "_floatValue";
-    private const string IntValuePropName = "_intValue";
-    private const string BoolValuePropName = "_boolValue";
-
-    private static readonly GUIContent ParameterNameContent = new("Parameter Name");
-    private static readonly GUIContent ParameterTypeContent = new("Parameter Type");
-    private static readonly GUIContent FloatComparisonTypeContent = new("Comparison");
-    private static readonly GUIContent IntComparisonTypeContent = new("Comparison");
-    private static readonly GUIContent FloatValueContent = new("Value");
-    private static readonly GUIContent IntValueContent = new("Value");
-    private static readonly GUIContent BoolValueContent = new("Value");
-
     private SerializedProperty? _floatComparisonTypeProp;
     private SerializedProperty? _intComparisonTypeProp;
     private SerializedProperty? _floatValueProp;
@@ -29,16 +13,16 @@ internal class ParameterConditionDrawer : PropertyDrawer
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        var parameterNameProp = property.FindPropertyRelative(ParameterNamePropName);
-        var parameterTypeProp = property.FindPropertyRelative(ParameterTypePropName);
+        var parameterNameProp = property.FindPropertyRelative(ParameterCondition.ParameterNamePropName);
+        var parameterTypeProp = property.FindPropertyRelative(ParameterCondition.ParameterTypePropName);
         
         Rect currentPosition = position;
         currentPosition.height = EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(currentPosition, parameterNameProp, ParameterNameContent);
+        EditorGUI.PropertyField(currentPosition, parameterNameProp);
         currentPosition.y += EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(currentPosition, parameterTypeProp, ParameterTypeContent);
+        EditorGUI.PropertyField(currentPosition, parameterTypeProp);
         currentPosition.y += EditorGUIUtility.singleLineHeight;
 
         ParameterType paramType = (ParameterType)parameterTypeProp.enumValueIndex;
@@ -46,22 +30,22 @@ internal class ParameterConditionDrawer : PropertyDrawer
         switch (paramType)
         {
             case ParameterType.Int:
-                _intComparisonTypeProp ??= property.FindPropertyRelative(IntComparisonTypePropName);
-                _intValueProp ??= property.FindPropertyRelative(IntValuePropName);
-                EditorGUI.PropertyField(currentPosition, _intComparisonTypeProp, IntComparisonTypeContent);
+                _intComparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.IntComparisonTypePropName);
+                _intValueProp ??= property.FindPropertyRelative(ParameterCondition.IntValuePropName);
+                EditorGUI.PropertyField(currentPosition, _intComparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
-                EditorGUI.PropertyField(currentPosition, _intValueProp, IntValueContent);
+                EditorGUI.PropertyField(currentPosition, _intValueProp);
                 break;
             case ParameterType.Float:
-                _floatComparisonTypeProp ??= property.FindPropertyRelative(FloatComparisonTypePropName);
-                _floatValueProp ??= property.FindPropertyRelative(FloatValuePropName);
-                EditorGUI.PropertyField(currentPosition, _floatComparisonTypeProp, FloatComparisonTypeContent);
+                _floatComparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.FloatComparisonTypePropName);
+                _floatValueProp ??= property.FindPropertyRelative(ParameterCondition.FloatValuePropName);
+                EditorGUI.PropertyField(currentPosition, _floatComparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
-                EditorGUI.PropertyField(currentPosition, _floatValueProp, FloatValueContent);
+                EditorGUI.PropertyField(currentPosition, _floatValueProp);
                 break;
             case ParameterType.Bool:
-                _boolValueProp ??= property.FindPropertyRelative(nameof(ParameterCondition.BoolValue));
-                EditorGUI.PropertyField(currentPosition, _boolValueProp, BoolValueContent);
+                _boolValueProp ??= property.FindPropertyRelative(ParameterCondition.BoolValuePropName);
+                EditorGUI.PropertyField(currentPosition, _boolValueProp);
                 break;
         }
 
@@ -70,7 +54,7 @@ internal class ParameterConditionDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var parameterTypeProp = property.FindPropertyRelative(nameof(ParameterCondition.ParameterType));
+        var parameterTypeProp = property.FindPropertyRelative(ParameterCondition.ParameterTypePropName);
         ParameterType paramType = (ParameterType)parameterTypeProp.enumValueIndex;
 
         // ParameterName, ParameterTypeは必ず表示

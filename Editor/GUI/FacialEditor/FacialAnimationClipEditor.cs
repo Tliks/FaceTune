@@ -5,7 +5,7 @@ internal class FacialAnimationClipEditor : FacialShapesEditor
     private GameObject? _root;
     private AnimationClip? _clip = null!;
 
-    public static FacialAnimationClipEditor OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, BlendShape[] defaultShapes, BlendShapeSet defaultOverrides, AnimationClip clip)
+    public static FacialAnimationClipEditor OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet defaultShapes, BlendShapeSet defaultOverrides, AnimationClip clip)
     {
         var window = GetWindow<FacialAnimationClipEditor>();
         window.Init(renderer, mesh, defaultShapes, defaultOverrides);
@@ -23,14 +23,15 @@ internal class FacialAnimationClipEditor : FacialShapesEditor
         GUI.enabled = _root != null && _clip != null;
         if (GUILayout.Button("Save"))
         {
-            var result = GetResult();
-            SaveClip(_root!, _clip!, Renderer, result.BlendShapes.ToArray());
+            var result = new BlendShapeSet();
+            GetResult(result);
+            SaveClip(_root!, _clip!, Renderer, result.BlendShapes);
             ForceClose();
         }
         GUI.enabled = true;
     }
 
-    private static void SaveClip(GameObject root, AnimationClip clip, SkinnedMeshRenderer renderer, BlendShape[] blendShapes)
+    private static void SaveClip(GameObject root, AnimationClip clip, SkinnedMeshRenderer renderer, IEnumerable<BlendShape> blendShapes)
     {
         clip.ClearCurves(); // 消す以外のオプション
         var relativePath = HierarchyUtility.GetRelativePath(root, renderer.gameObject) ?? throw new Exception("Failed to get relative path");

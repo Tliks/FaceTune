@@ -22,7 +22,7 @@ internal static class SessionContextBuilder
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
         
         // context.Observe(faceRenderer, r => r.GetBlendShapes(faceMesh).ToSet(), (a, b) => a == b);
-        var sceneShapes = faceRenderer.GetBlendShapes(faceMesh).ToSet();
+        var sceneShapes = new BlendShapeSet(faceRenderer.GetBlendShapes(faceMesh));
         var dec = BuildDefaultExpressionContext(root, bodyPath, sceneShapes, context);
 
         sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, dec);
@@ -55,19 +55,32 @@ internal static class SessionContextBuilder
     public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, string bodyPath, BlendShapeSet sceneShapes, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
+        
+        using var _defaultExpressionComponents = ListPool<DefaultFacialExpressionComponent>.Get(out var defaultExpressionComponents);
+        defaultExpressionComponents.AddRange(context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true)); // Todo: NDMF
 
-        var defaultExpressionComponents = context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true);
-        var presetComponents = context.GetComponentsInChildren<PresetComponent>(root.gameObject, true);
+        using var _presetComponents = ListPool<PresetComponent>.Get(out var presetComponents);
+        presetComponents.AddRange(context.GetComponentsInChildren<PresetComponent>(root.gameObject, true)); // Todo: NDMF
+
 
         var presetExpressions = new Dictionary<PresetComponent, Expression?>();
         var usedExpressionComponents = new HashSet<DefaultFacialExpressionComponent>();
 
         // presetExpression
         // PresetComponentの子にあるpresetは無視する
-        var validPresetComponents = presetComponents
-            .Where(pc => !pc.gameObject.GetComponentsInParent<PresetComponent>(true).Except(new[] { pc }).Any())
-            .ToArray();
-        foreach (var presetComponent in validPresetComponents)
+        for (int i = presetComponents.Count - 1; i >= 0; i--)
+        {
+            var presetComponent = presetComponents[i];
+            using var _parentPresetComponents = ListPool<PresetComponent>.Get(out var parentPresetComponents);
+            presetComponent.gameObject.GetComponentsInParent<PresetComponent>(true, parentPresetComponents);
+            if (parentPresetComponents.Any(pc => pc == presetComponent))
+            {
+                presetComponents.RemoveAt(i);
+            }
+        }
+        var validPresetComponents = presetComponents;
+
+        foreach (var presetComponent in presetComponents)
         {
             var OverrideDefaultExpressionComponent = context.Observe(presetComponent, pc => pc.OverrideDefaultExpressionComponent, (a, b) => a == b);
             if (OverrideDefaultExpressionComponent != null)
@@ -111,5 +124,81 @@ internal static class SessionContextBuilder
                 }
             }
         }
+    }
+
+
+    private static readonly BlendShapeSet EmptyBlendShapeSet = new();
+    private static readonly IObserveContext NonObserveContext = new NonObserveContext();
+
+    public static DefaultBlendShapesContext BuildDefaultBlendShapeSetContext(GameObject root, SkinnedMeshRenderer renderer, IObserveContext? context = null)
+    {
+        context ??= NonObserveContext;
+        
+        using var _defaultExpressionComponents = ListPool<DefaultFacialExpressionComponent>.Get(out var defaultExpressionComponents);
+        defaultExpressionComponents.AddRange(context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true)); // Todo: NDMF
+
+        using var _presetComponents = ListPool<PresetComponent>.Get(out var presetComponents);
+        presetComponents.AddRange(context.GetComponentsInChildren<PresetComponent>(root.gameObject, true)); // Todo: NDMF
+
+        var presetBlendShapeSets = DictionaryPool<PresetComponent, PooledObject<BlendShapeSet>?>.Get(out _); // ctr
+        using var _usedExpressionComponents = HashSetPool<DefaultFacialExpressionComponent>.Get(out var usedExpressionComponents);
+
+        // presetExpression
+        // PresetComponentの子にあるpresetは無視する
+        for (int i = presetComponents.Count - 1; i >= 0; i--)
+        {
+            var presetComponent = presetComponents[i];
+            using var _parentPresetComponents = ListPool<PresetComponent>.Get(out var parentPresetComponents);
+            presetComponent.gameObject.GetComponentsInParent<PresetComponent>(true, parentPresetComponents);
+            if (parentPresetComponents.Any(pc => pc == presetComponent))
+            {
+                presetComponents.RemoveAt(i);
+            }
+        }
+
+        foreach (var presetComponent in presetComponents)
+        {
+            var OverrideDefaultExpressionComponent = context.Observe(presetComponent, pc => pc.OverrideDefaultExpressionComponent, (a, b) => a == b);
+            if (OverrideDefaultExpressionComponent != null)
+            {
+                using var presetDefaultBlendShapeSet = BlendShapeSetPool.Get(out _); // ctr
+                (OverrideDefaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(presetDefaultBlendShapeSet.Value, EmptyBlendShapeSet);
+                presetBlendShapeSets.Value.Add(presetComponent, presetDefaultBlendShapeSet);
+                usedExpressionComponents.Add(OverrideDefaultExpressionComponent);
+            }
+            else
+            {
+                presetBlendShapeSets.Value.Add(presetComponent, null);
+            }
+        }
+
+        using var _sceneShapes = BlendShapeSetPool.Get(out var sceneShapes);
+        renderer.GetBlendShapes(sceneShapes);
+
+        using var defaultBlendShapes = BlendShapeSetPool.Get(out _);
+
+        foreach (var defaultExpressionComponent in defaultExpressionComponents)
+        {
+            if (!usedExpressionComponents.Contains(defaultExpressionComponent))
+            {
+                (defaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(defaultBlendShapes.Value, EmptyBlendShapeSet);
+
+                // defaultBlendShapesに全ブレンドシェイプを持たせる 
+                foreach (var fallbackShape in sceneShapes)
+                {
+                    if (!defaultBlendShapes.Value.Contains(fallbackShape.Name))
+                    {
+                        defaultBlendShapes.Value.Add(fallbackShape);
+                    }
+                }
+                break;
+            }
+        }
+        if (defaultBlendShapes.Value.Count == 0)
+        {
+            defaultBlendShapes.Value.AddRange(sceneShapes);
+        }
+
+        return new DefaultBlendShapesContext(defaultBlendShapes, presetBlendShapeSets);
     }
 }

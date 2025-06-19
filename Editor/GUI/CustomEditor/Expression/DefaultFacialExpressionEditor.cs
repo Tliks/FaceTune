@@ -43,7 +43,7 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
     {
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
         var defaultBlendShapes = context.DEC.GetDefaultBlendShapeSet(Component.gameObject);
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes.BlendShapes, new(Component.GetFirstFrameBlendShapeSet(context).BlendShapes));
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes, new(Component.GetFirstFrameBlendShapeSet(context).BlendShapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
     }
