@@ -48,6 +48,16 @@ internal class Expression : IEquatable<Expression> // 可変
 
     public override int GetHashCode()
     {
-        return Name.GetHashCode() ^ Animations.GetHashCode() ^ FacialSettings.GetHashCode();
+        var hash = Name.GetHashCode();
+        
+        foreach (var animation in Animations)
+        {
+            hash ^= animation.GetHashCode();
+        }
+        
+        hash ^= FacialSettings.GetHashCode();
+        hash ^= ExpressionSettings.GetHashCode();
+        
+        return hash;
     }
 }

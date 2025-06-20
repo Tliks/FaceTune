@@ -100,6 +100,12 @@ public record GenericAnimation // Immutable
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(_curveBinding, _curve, _objectReferenceCurve);
+        var hash = _curveBinding.GetHashCode();
+        hash ^= _curve.GetHashCode();
+        foreach (var keyframe in _objectReferenceCurve)
+        {
+            hash ^= keyframe.GetHashCode();
+        }
+        return hash;
     }
 }
