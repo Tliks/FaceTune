@@ -34,7 +34,7 @@
 ### Fixed
 - Blendingが正常に動作していなかった問題を修正。
 
-## [0.1.0-beta.3] - 2025-06-03
+## [0.1.0-beta.3] - 2025-06-14
 ### Changed
 - Prefabを更新。
 - FacialShapesEditorの終了時にUndoを単一イベントとしてまとめるように変更。
