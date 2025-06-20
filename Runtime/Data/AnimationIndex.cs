@@ -9,8 +9,7 @@ internal class AnimationIndex
 
     // cache
     private Dictionary<string, Dictionary<string, List<GenericAnimation>>>? _pathNameAnimationMap;
-    private Dictionary<string, Dictionary<string, List<AnimationCurve>>>? _pathNameCurves;
-    private Dictionary<string, Dictionary<string, List<AnimationCurve>>>? _pathNameBlendShapeCurves;
+    private Dictionary<string, Dictionary<string, List<BlendShapeAnimation>>>? _pathNameBlendShapeAnimationMap;
     private Dictionary<string, BlendShapeSet>? _pathFirstFrameBlendShapeSets; 
     private BlendShapeSet? _allFirstFrameBlendShapeSet;
     private bool _cacheValid = false;
@@ -37,75 +36,70 @@ internal class AnimationIndex
         return _pathNameAnimationMap;
     }
 
+    private Dictionary<string, Dictionary<string, List<BlendShapeAnimation>>> GetPathNameToBlendShapeAnimationsMap()
+    {
+        if (!_cacheValid || _pathNameBlendShapeAnimationMap == null)
+        {
+            var mapping = new Dictionary<string, Dictionary<string, List<BlendShapeAnimation>>>();
+            foreach (var animation in _animations)
+            {
+                if (animation.TryToBlendShapeAnimation(out var blendShapeAnimation))
+                {
+                    mapping.GetOrAddNew(animation.CurveBinding.Path).GetOrAddNew(animation.CurveBinding.PropertyName).Add(blendShapeAnimation);
+                }
+            }
+            _pathNameBlendShapeAnimationMap = mapping;
+            _cacheValid = true;
+        }
+        return _pathNameBlendShapeAnimationMap;
+    }
+
     private void InvalidateCache()
     {
         _cacheValid = false;
         _pathNameAnimationMap = null;
-        _pathNameBlendShapeCurves = null;
         _pathFirstFrameBlendShapeSets = null;
     }
 
 
     // get
-    public bool TryGetNameToCurvesMap(string path, [NotNullWhen(true)] out Dictionary<string, List<AnimationCurve>>? nameToCurvesMap)
+    public bool TryGetAnimations(string path, string name, [NotNullWhen(true)] out List<GenericAnimation>? animations)
     {
-        return GetPathNameToCurvesMap().TryGetValue(path, out nameToCurvesMap);
+        animations = null;
+        var pathNameToAnimationsMap = GetPathNameToAnimationsMap();
+        return pathNameToAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) && nameToAnimationsMap.TryGetValue(name, out animations);
     }
 
-    public bool TryGetBlendShapeNameToCurvesMap(string path, [NotNullWhen(true)] out Dictionary<string, List<AnimationCurve>>? nameToCurvesMap)
+    public bool TryGetBlendShapeAnimations(string path, string name, [NotNullWhen(true)] out List<BlendShapeAnimation>? animations)
     {
-        return GetPathNameBlendShapeCurves().TryGetValue(path, out nameToCurvesMap);
-    }
-
-    public Dictionary<string, List<AnimationCurve>> GetAllNameToCurvesMap() //ignore path
-    {
-        var nameToCurvesMap = new Dictionary<string, List<AnimationCurve>>();
-        foreach (var nameToCurvesMap_ in GetPathNameToCurvesMap().Values)
-        {
-            foreach (var (name, curves) in nameToCurvesMap_)
-            {
-                nameToCurvesMap.GetOrAddNew(name).AddRange(curves);
-            }
-        }
-        return nameToCurvesMap;
-    }
-
-    public bool TryGetCurves(string path, string name, [NotNullWhen(true)] out List<AnimationCurve>? curves)
-    {
-        curves = null;
-        if (!TryGetNameToCurvesMap(path, out var nameToCurvesMap)) return false;
-        return nameToCurvesMap.TryGetValue(name, out curves);
-    }
-
-    public bool TryGetBlendShapeCurves(string path, string name, [NotNullWhen(true)] out List<AnimationCurve>? curves)
-    {
-        curves = null;
-        if (!TryGetBlendShapeNameToCurvesMap(path, out var nameToCurvesMap)) return false;
-        return nameToCurvesMap.TryGetValue(name, out curves);
+        animations = null;
+        var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
+        return pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) && nameToAnimationsMap.TryGetValue(name, out animations);
     }
 
     public IEnumerable<string> GetBlendShapeNames(string path)
     {
-        if (!TryGetBlendShapeNameToCurvesMap(path, out var nameToCurvesMap)) return Enumerable.Empty<string>();
-        return nameToCurvesMap.Keys;
+        var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
+        return pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) ? nameToAnimationsMap.Keys : Array.Empty<string>();
     }
-
+    
     public IEnumerable<string> GetAllBlendShapeNames()
     {
-        var nameToCurvesMap = GetAllNameToCurvesMap();
-        return nameToCurvesMap.Keys;
+        var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
+        return pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.SelectMany(y => y.Value.Select(z => z.Name))).Distinct();
     }
 
     public bool TryGetFirstFrameBlendShapeSet(string path, [NotNullWhen(true)] out BlendShapeSet? blendShapeSet)
     {
         if (!_cacheValid || _pathFirstFrameBlendShapeSets == null)
         {
-            if (!TryGetBlendShapeNameToCurvesMap(path, out var nameToCurvesMap))
+            var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
+            if (!pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap))
             {
                 blendShapeSet = null;
                 return false;
             }
-            var blendShapes = nameToCurvesMap.Select(x => new BlendShape(x.Key, x.Value.Last().Evaluate(0))).ToList(); // Todo : 重複のハンドリング
+            var blendShapes = nameToAnimationsMap.Values.SelectMany(x => x.Select(y => y.ToFirstFrameBlendShape())).ToList(); // Todo : 重複のハンドリング
             _pathFirstFrameBlendShapeSets = new Dictionary<string, BlendShapeSet> { { path, new BlendShapeSet(blendShapes) } };
             _cacheValid = true;
         }
@@ -117,51 +111,13 @@ internal class AnimationIndex
     {
         if (_allFirstFrameBlendShapeSet == null)
         {
-            var blendShapes = GetAllNameToCurvesMap().Select(x => new BlendShape(x.Key, x.Value.Last().Evaluate(0))).ToList(); // Todo : 重複のハンドリング
+            var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
+            var blendShapes = pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.SelectMany(y => y.Value.Select(z => z.ToFirstFrameBlendShape()))).ToList(); // Todo : 重複のハンドリング
             _allFirstFrameBlendShapeSet = new BlendShapeSet(blendShapes);
         }
         return _allFirstFrameBlendShapeSet.Clone();
     }
 
-    private Dictionary<string, Dictionary<string, List<AnimationCurve>>> GetPathNameToCurvesMap()
-    {
-        if (!_cacheValid || _pathNameCurves == null)
-        {
-            var pathNameCurveMap = new Dictionary<string, Dictionary<string, List<AnimationCurve>>>();
-            foreach (var animation in _animations)
-            {
-                var binding = animation.CurveBinding;
-                var path = binding.Path;
-                var name = binding.PropertyName;
-                pathNameCurveMap.GetOrAddNew(path).GetOrAddNew(name).Add(animation.Curve);
-            }
-            _pathNameCurves = pathNameCurveMap;
-            _cacheValid = true;
-        }
-        return _pathNameCurves;
-    }
-
-    private Dictionary<string, Dictionary<string, List<AnimationCurve>>> GetPathNameBlendShapeCurves() 
-    {
-        if (!_cacheValid || _pathNameBlendShapeCurves == null)
-        {
-            var pathNameCurveMap = new Dictionary<string, Dictionary<string, List<AnimationCurve>>>();
-            foreach (var animation in _animations)
-            {
-                var binding = animation.CurveBinding;
-                if (binding.Type == typeof(SkinnedMeshRenderer) && binding.PropertyName.StartsWith(BlendShapePrefix))
-                {
-                    var path = binding.Path;
-                    var name = binding.PropertyName.Replace(BlendShapePrefix, string.Empty);
-                    pathNameCurveMap.GetOrAddNew(path).GetOrAddNew(name).Add(animation.Curve);
-                }
-            }
-            _pathNameBlendShapeCurves = pathNameCurveMap;
-            _cacheValid = true;
-        }
-
-        return _pathNameBlendShapeCurves;
-    }
 
     // add
     public void AddAnimation(GenericAnimation animation)

@@ -60,7 +60,8 @@ public record GenericAnimation // Immutable
     {
         if (IsBlendShapeAnimation())
         {
-            animation = new BlendShapeAnimation(_curveBinding.PropertyName, _curve.Clone());
+            var name = _curveBinding.PropertyName.Substring(BlendShapePrefix.Length);
+            animation = new BlendShapeAnimation(name, _curve.Clone());
             return true;
         }
         animation = null;
