@@ -177,18 +177,28 @@ internal static class AnimatorHelper
         return new GenericAnimation(binding, new AnimationCurve(new Keyframe(0, value)));
     }
 
-    public static VirtualClip GetOrCreateClip(this VirtualState state, string name)
+    public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)
     {
         var motion = state.Motion as VirtualClip;
-        if (motion == null)
+        clip = motion;
+        return motion != null;
+    }
+
+    public static VirtualClip CreateClip(this VirtualState state, string name)
+    {
+        var clip = VirtualClip.Create(name);
+        state.Motion = clip;
+        return clip;
+    }
+
+    public static VirtualClip GetOrCreateClip(this VirtualState state, string name)
+    {
+        if (state.TryGetClip(out var clip))
         {
-            motion = VirtualClip.Create(name);
-            state.Motion = motion;
+            clip.Name = name;
+            return clip;
         }
-        else
-        {
-            motion.Name = name;
-        }
-        return motion;
+        clip = CreateClip(state, name);
+        return clip;
     }
 }

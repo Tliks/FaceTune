@@ -18,6 +18,7 @@ internal class AnimatorInstaller
     private readonly IPlatformSupport _platformSupport;
 
     private readonly List<VirtualState> _allStates = new();
+    private readonly Dictionary<Expression, VirtualClip> _expressionClipCache = new();
 
     private const string SystemName = "FaceTune";
     private readonly bool _useWriteDefaults;
@@ -70,22 +71,45 @@ internal class AnimatorInstaller
             state.Motion ??= emptyClip;
         }
     }
-
+    
     private void AddExpressionToState(VirtualState state, Expression expression)
     {
-        AddSettingsToState(state, expression.ExpressionSettings);
-        AddAnimationToState(state, expression.Animations);
-        SetFacialSettings(state, expression.FacialSettings);
+        if (state.TryGetClip(out var clip))
+        {
+            var duplicate = clip.Clone();
+            Impl(duplicate);
+            state.Motion = duplicate;
+        }
+        else
+        {
+            if (_expressionClipCache.TryGetValue(expression, out var cachedClip))
+            {
+                clip = cachedClip;
+                state.Motion = clip;
+            }
+            else
+            {
+                clip = state.CreateClip(state.Name);
+                Impl(clip);
+                _expressionClipCache[expression] = clip;
+            }
+        }
+
+        void Impl(VirtualClip clip)
+        {
+            AddSettingsToState(state, clip, expression.ExpressionSettings);
+            AddAnimationToState(clip, expression.Animations);
+            SetFacialSettings(clip, expression.FacialSettings);
+        }
     }
 
-    private void AddSettingsToState(VirtualState state, ExpressionSettings expressionSettings)
+    private void AddSettingsToState(VirtualState state, VirtualClip clip, ExpressionSettings expressionSettings)
     {
-        var motion = state.GetOrCreateClip(state.Name);
         if (expressionSettings.LoopTime)
         {
-            var settings = motion.Settings;
+            var settings = clip.Settings;
             settings.loopTime = true;
-            motion.Settings = settings;
+            clip.Settings = settings;
         }
         else if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
         {
@@ -96,8 +120,13 @@ internal class AnimatorInstaller
 
     private void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
     {
-        var motion = state.GetOrCreateClip(state.Name);
-        motion.SetAnimations(animations);
+        var clip = state.GetOrCreateClip(state.Name);
+        AddAnimationToState(clip, animations);
+    }
+
+    private void AddAnimationToState(VirtualClip clip, IEnumerable<GenericAnimation> animations)
+    {
+        clip.SetAnimations(animations);
     }
 
     private void CreateDefaultLayer(bool overrideShapes, bool overrideProperties, PatternData patternData)
@@ -428,7 +457,7 @@ internal class AnimatorInstaller
         return _parameterCache[parameter];
     }
 
-    private void SetFacialSettings(VirtualState state, FacialSettings? facialSettings)
+    private void SetFacialSettings(VirtualClip clip, FacialSettings? facialSettings)
     {
         if (facialSettings == null) return;
         bool? allowEyeBlink = null;
@@ -441,19 +470,11 @@ internal class AnimatorInstaller
         {
             allowLipSync = facialSettings.AllowLipSync == TrackingPermission.Allow;
         }
-        SetFacialSettings(state, allowEyeBlink, allowLipSync);
+        SetFacialSettings(clip, allowEyeBlink, allowLipSync);
     }
 
-    private void SetFacialSettings(VirtualState state, bool? allowEyeBlink, bool? allowLipSync)
+    private void SetFacialSettings(VirtualClip clip, bool? allowEyeBlink, bool? allowLipSync)
     {
-        var clip = state.Motion as VirtualClip;
-        if (clip == null)
-        {
-            clip = VirtualClip.Create(state.Name);
-            state.Motion = clip;
-        }
-        if (clip.IsMarkerClip) throw new Exception("clip is marker clip");
-
         // AAP
         if (allowEyeBlink != null)
         {
