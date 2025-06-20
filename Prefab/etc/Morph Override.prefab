@@ -79,13 +79,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HandGestureConditions: []
   ParameterConditions:
-  - ParameterName: AFK
-    ParameterType: 2
-    FloatComparisonType: 0
-    IntComparisonType: 0
-    FloatValue: 0
-    IntValue: 0
-    BoolValue: 1
+  - _parameterName: AFK
+    _parameterType: 2
+    _floatComparisonType: 0
+    _intComparisonType: 0
+    _floatValue: 0
+    _intValue: 0
+    _boolValue: 1
 --- !u!114 &6358615508912770849
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -98,10 +98,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
+  FacialSettings:
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1

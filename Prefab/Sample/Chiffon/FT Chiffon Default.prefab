@@ -75,12 +75,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
   FacialSettings:
-    AllowEyeBlink: 1
-    AllowLipSync: 0
-    BlendingPermission: 1
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
   SourceMode: 0
-  BlendShapeAnimations: []
+  IsSingleFrame: 1
+  BlendShapeAnimations:
+  - _name: Option_shy_1
+    _curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 100
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &1475272966827970205
@@ -158,12 +178,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
   FacialSettings:
-    AllowEyeBlink: 1
-    AllowLipSync: 0
-    BlendingPermission: 1
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
   SourceMode: 0
-  BlendShapeAnimations: []
+  IsSingleFrame: 1
+  BlendShapeAnimations:
+  - _name: Option_heart
+    _curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 100
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &2777280736154335863
@@ -241,12 +281,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
   FacialSettings:
-    AllowEyeBlink: 1
-    AllowLipSync: 0
-    BlendingPermission: 1
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
   SourceMode: 0
-  BlendShapeAnimations: []
+  IsSingleFrame: 1
+  BlendShapeAnimations:
+  - _name: Option_shiitake
+    _curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 100
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &4819926136969183126
@@ -324,12 +384,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
   FacialSettings:
-    AllowEyeBlink: 1
-    AllowLipSync: 0
-    BlendingPermission: 1
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
   SourceMode: 0
-  BlendShapeAnimations: []
+  IsSingleFrame: 1
+  BlendShapeAnimations:
+  - _name: Option_pale_blue
+    _curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 100
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &7976892727422302798
@@ -475,12 +555,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
   FacialSettings:
-    AllowEyeBlink: 1
-    AllowLipSync: 0
-    BlendingPermission: 1
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
   SourceMode: 0
-  BlendShapeAnimations: []
+  IsSingleFrame: 1
+  BlendShapeAnimations:
+  - _name: Option_guruguru
+    _curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 100
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &9101384593797332784
@@ -558,12 +658,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExpressionSettings:
+    _loopTime: 0
+    _motionTimeParameterName: 
   FacialSettings:
-    AllowEyeBlink: 1
-    AllowLipSync: 0
-    BlendingPermission: 1
+    _allowEyeBlink: 1
+    _allowLipSync: 0
+    _enableBlending: 0
   SourceMode: 0
-  BlendShapeAnimations: []
+  IsSingleFrame: 1
+  BlendShapeAnimations:
+  - _name: Option_hoppe
+    _curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 100
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1001 &4665618647375175668
