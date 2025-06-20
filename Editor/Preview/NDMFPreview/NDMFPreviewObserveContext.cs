@@ -36,13 +36,13 @@ internal class NDMFPreviewObserveContext : IObserveContext
         return _context.GetComponent<C>(obj).DestroyedAsNull();
     }
 
-    public void GetComponents<C>(GameObject obj, List<C> results) where C : Component
+    public C[] GetComponents<C>(GameObject obj) where C : Component
     {
-        _context.GetComponents<C>(obj, results);
+        return _context.GetComponents<C>(obj);
     }
 
-    public void GetComponentsInChildren<C>(GameObject obj, bool includeInactive, List<C> results) where C : Component
+    public C[] GetComponentsInChildren<C>(GameObject obj, bool includeInactive) where C : Component
     {
-        _context.GetComponentsInChildren<C>(obj, includeInactive, results);
+        return _context.GetComponentsInChildren<C>(obj, includeInactive);
     }
 }

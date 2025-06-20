@@ -29,13 +29,13 @@ internal class NonObserveContext : IObserveContext
         return obj.GetComponentNullable<C>();
     }
 
-    public void GetComponents<C>(GameObject obj, List<C> results) where C : Component
+    public C[] GetComponents<C>(GameObject obj) where C : Component
     {
-        obj.GetComponents<C>(results);
+        return obj.GetComponents<C>();
     }
 
-    public void GetComponentsInChildren<C>(GameObject obj, bool includeInactive, List<C> results) where C : Component
+    public C[] GetComponentsInChildren<C>(GameObject obj, bool includeInactive) where C : Component
     {
-        obj.GetComponentsInChildren<C>(includeInactive, results);
+        return obj.GetComponentsInChildren<C>(includeInactive);
     }
 }

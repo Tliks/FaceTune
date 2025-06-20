@@ -33,11 +33,10 @@ internal static class SessionContextBuilder
     {
         context ??= new NonObserveContext();
 
-        using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
-        context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
-        if (overrideFaceRenderers.Count > 1)
+        var overrideFaceRenderers = context.GetComponents<OverrideFaceRendererComponent>(root.gameObject);
+        if (overrideFaceRenderers.Length > 1)
         {
-            Debug.LogWarning($"Found {overrideFaceRenderers.Count} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
+            Debug.LogWarning($"Found {overrideFaceRenderers.Length} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
         }
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
@@ -59,10 +58,10 @@ internal static class SessionContextBuilder
         context ??= new NonObserveContext();
         
         using var _defaultExpressionComponents = ListPool<DefaultFacialExpressionComponent>.Get(out var defaultExpressionComponents);
-        context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true, defaultExpressionComponents);
+        defaultExpressionComponents.AddRange(context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true)); // Todo: NDMF
 
         using var _presetComponents = ListPool<PresetComponent>.Get(out var presetComponents);
-        context.GetComponentsInChildren<PresetComponent>(root.gameObject, true, presetComponents);
+        presetComponents.AddRange(context.GetComponentsInChildren<PresetComponent>(root.gameObject, true)); // Todo: NDMF
 
 
         var presetExpressions = new Dictionary<PresetComponent, Expression?>();
@@ -137,10 +136,10 @@ internal static class SessionContextBuilder
         context ??= NonObserveContext;
         
         using var _defaultExpressionComponents = ListPool<DefaultFacialExpressionComponent>.Get(out var defaultExpressionComponents);
-        context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true, defaultExpressionComponents);
+        defaultExpressionComponents.AddRange(context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true)); // Todo: NDMF
 
         using var _presetComponents = ListPool<PresetComponent>.Get(out var presetComponents);
-        context.GetComponentsInChildren<PresetComponent>(root.gameObject, true, presetComponents);
+        presetComponents.AddRange(context.GetComponentsInChildren<PresetComponent>(root.gameObject, true)); // Todo: NDMF
 
         var presetBlendShapeSets = DictionaryPool<PresetComponent, PooledObject<BlendShapeSet>?>.Get(out _); // ctr
         using var _usedExpressionComponents = HashSetPool<DefaultFacialExpressionComponent>.Get(out var usedExpressionComponents);
