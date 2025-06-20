@@ -53,6 +53,7 @@ internal static class SessionContextBuilder
         }
     }
 
+    private static readonly FacialSettings DefaultFacialSettings = new(TrackingPermission.Allow, TrackingPermission.Allow, false);
     public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, string bodyPath, BlendShapeSet sceneShapes, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
@@ -105,7 +106,7 @@ internal static class SessionContextBuilder
         if (defaultExpression == null) 
         {
             var defaultAnimations = sceneShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight).ToGeneric(bodyPath)).ToList();
-            defaultExpression = new Expression("Default", defaultAnimations, new ExpressionSettings(), new FacialSettings());
+            defaultExpression = new Expression("Default", defaultAnimations, new ExpressionSettings(), DefaultFacialSettings);
         }
         else
         {
