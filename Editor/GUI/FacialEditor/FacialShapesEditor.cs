@@ -23,16 +23,15 @@ internal class FacialShapesEditor : EditorWindow
         {
             if (_previewOnHover == value) return;
             _previewOnHover = value;
+            var current = _previewShapes.Value;
+            _previewShapes.Value = _emptySet;
             if (value)
             {
-                var current = _previewShapes.Value;
-                current.Clear();
                 GetResult(current);
                 _previewShapes.Value = current;
             }
             else
             {
-                var current = _previewShapes.Value;
                 current.Clear();
                 _previewShapes.Value = current;
             }
@@ -61,6 +60,7 @@ internal class FacialShapesEditor : EditorWindow
     private SerializedProperty _overrideFlagsProperty = null!;
     private SerializedProperty _overrideWeightsProperty = null!;
 
+    private BlendShapeSet _emptySet = new();
     private readonly PublishedValue<BlendShapeSet> _previewShapes = new(new());
 
     private AnimationClip? _sourceClip = null;
@@ -135,16 +135,15 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (PreviewOnHover)
         {
+            var current = _previewShapes.Value;
+            _previewShapes.Value = _emptySet;
+            GetResult(current);
             if (index == -1)
             {
-                var current = _previewShapes.Value;
-                current.Clear();
-                GetResult(current);
                 _previewShapes.Value = current;
             }
             else
             {
-                var current = _previewShapes.Value;
                 current.Add(new BlendShape(BaseShapes[index].Name, 100f));
                 _previewShapes.Value = current;
             }
@@ -168,7 +167,7 @@ internal class FacialShapesEditor : EditorWindow
         if (PreviewOnHover)
         {
             var current = _previewShapes.Value;
-            current.Clear();
+            _previewShapes.Value = _emptySet;
             GetResult(current);
             _previewShapes.Value = current;
         }
