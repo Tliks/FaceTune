@@ -42,7 +42,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         foreach (var menuItem in menuItems)
         {    
             using var _ = ListPool<ExpressionComponentBase>.Get(out var expressionComponents);
-            expressionComponents.AddRange(menuItem.GetComponentsInChildren<ExpressionComponentBase>(true));
+            menuItem.GetComponentsInChildren<ExpressionComponentBase>(true, expressionComponents);
             if (expressionComponents.Any() is false) continue;
 
             var menuItemType = platformSupport.GetMenuItemType(menuItem);
