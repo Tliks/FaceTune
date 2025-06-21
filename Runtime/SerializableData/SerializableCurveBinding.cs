@@ -3,41 +3,41 @@ namespace com.aoyon.facetune;
 [Serializable]
 public record SerializableCurveBinding // Immutable
 {
-    [SerializeField] private string _path;
-    public const string PathPropName = "_path";
-    public string Path { get => _path; init => _path = value; }
+    [SerializeField] private string path;
+    public string Path { get => path; init => path = value; }
+    public const string PathPropName = nameof(path);
 
-    [SerializeField] private SerializableType _type;
-    public const string TypePropName = "_type";
-    public Type? Type { get => _type.TargetType; init => _type = value != null ? new SerializableType(value) : _type; }
+    [SerializeField] private SerializableType type;
+    public Type? Type { get => type.TargetType; init => type = value != null ? new SerializableType(value) : type; }
+    public const string TypePropName = nameof(type);
 
-    [SerializeField] private string _propertyName;
-    public const string PropertyNamePropName = "_propertyName";
-    public string PropertyName { get => _propertyName; init => _propertyName = value; }
+    [SerializeField] private string propertyName;
+    public string PropertyName { get => propertyName; init => propertyName = value; }
+    public const string PropertyNamePropName = nameof(propertyName);
 
-    [SerializeField] private bool _isPPtrCurve;
-    public const string IsPPtrCurvePropName = "_isPPtrCurve";
-    public bool IsPPtrCurve { get => _isPPtrCurve; init => _isPPtrCurve = value; }
-    
-    [SerializeField] private bool _isDiscreteCurve;
-    public const string IsDiscreteCurvePropName = "_isDiscreteCurve";
-    public bool IsDiscreteCurve { get => _isDiscreteCurve; init => _isDiscreteCurve = value; }
+    [SerializeField] private bool isPPtrCurve;
+    public bool IsPPtrCurve { get => isPPtrCurve; init => isPPtrCurve = value; }
+    public const string IsPPtrCurvePropName = nameof(isPPtrCurve);
+
+    [SerializeField] private bool isDiscreteCurve;
+    public bool IsDiscreteCurve { get => isDiscreteCurve; init => isDiscreteCurve = value; }
+    public const string IsDiscreteCurvePropName = nameof(isDiscreteCurve);
 
     public SerializableCurveBinding()
     {
-        _path = "";
-        _type = new SerializableType();
-        _propertyName = "";
-        _isPPtrCurve = false;
+        path = "";
+        type = new SerializableType();
+        propertyName = "";
+        isPPtrCurve = false;
     }
 
     public SerializableCurveBinding(string path, Type type, string propertyName, bool isPPtrCurve, bool isDiscreteCurve)
     {
-        _path = path;
-        _type = new SerializableType(type);
-        _propertyName = propertyName;
-        _isPPtrCurve = isPPtrCurve;
-        _isDiscreteCurve = isDiscreteCurve;
+        this.path = path;
+        this.type = new SerializableType(type);
+        this.propertyName = propertyName;
+        this.isPPtrCurve = isPPtrCurve;
+        this.isDiscreteCurve = isDiscreteCurve;
     }
     
     internal static SerializableCurveBinding FloatCurve(string path, Type type, string propertyName)
@@ -88,14 +88,14 @@ public record SerializableCurveBinding // Immutable
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return _path.Equals(other._path)
-            && _type.Equals(other._type)
-            && _propertyName.Equals(other._propertyName)
-            && _isPPtrCurve.Equals(other._isPPtrCurve)
-            && _isDiscreteCurve.Equals(other._isDiscreteCurve);
+        return path.Equals(other.path)
+            && type.Equals(other.type)
+            && propertyName.Equals(other.propertyName)
+            && isPPtrCurve.Equals(other.isPPtrCurve)
+            && isDiscreteCurve.Equals(other.isDiscreteCurve);
     }
     public override int GetHashCode()
     {
-        return HashCode.Combine(_path, _type, _propertyName, _isPPtrCurve, _isDiscreteCurve);
+        return HashCode.Combine(path, type, propertyName, isPPtrCurve, isDiscreteCurve);
     }
 }

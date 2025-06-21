@@ -8,24 +8,24 @@ namespace com.aoyon.facetune;
 [Serializable]
 public record BlendShapeAnimation // Immutable
 {
-    [SerializeField] private string _name;
-    public const string NamePropName = "_name";
-    public string Name { get => _name; init => _name = value; }
+    [SerializeField] private string name;
+    public string Name { get => name; init => name = value; }
+    public const string NamePropName = nameof(name);
 
-    [SerializeField] private AnimationCurve _curve; // 可変
-    public const string CurvePropName = "_curve";
-    public AnimationCurve Curve { get => _curve.Clone(); init => _curve = value.Clone(); }
+    [SerializeField] private AnimationCurve curve; // 可変
+    public AnimationCurve Curve { get => curve.Clone(); init => curve = value.Clone(); }
+    public const string CurvePropName = nameof(curve);
 
     public BlendShapeAnimation()
     {
-        _name = "";
-        _curve = new AnimationCurve();
+        name = "";
+        curve = new AnimationCurve();
     }
 
     public BlendShapeAnimation(string name, AnimationCurve other)
     {
-        _name = name;
-        _curve = other.Clone();
+        this.name = name;
+        curve = other.Clone();
     }
 
     internal static BlendShapeAnimation SingleFrame(string name, float weight)
@@ -38,30 +38,30 @@ public record BlendShapeAnimation // Immutable
     internal BlendShapeAnimation ToSingleFrame()
     {
         var curve = new AnimationCurve();
-        curve.AddKey(0, _curve.Evaluate(0));
+        curve.AddKey(0, this.curve.Evaluate(0));
         return new BlendShapeAnimation(Name, curve);
     }
 
     internal GenericAnimation ToGeneric(string path)
     {
         var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), "blendShape." + Name);
-        return new GenericAnimation(binding, _curve);
+        return new GenericAnimation(binding, curve);
     }
 
     internal BlendShape ToFirstFrameBlendShape()
     {
-        return new BlendShape(Name, _curve.Evaluate(0));
+        return new BlendShape(Name, curve.Evaluate(0));
     }
     public virtual bool Equals(BlendShapeAnimation other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return _name.Equals(other._name)
-            && _curve.Equals(other._curve);
+        return name.Equals(other.name)
+            && curve.Equals(other.curve);
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(_name, _curve);
+        return HashCode.Combine(name, curve);
     }
 }

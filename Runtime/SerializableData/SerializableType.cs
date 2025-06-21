@@ -3,25 +3,25 @@ namespace com.aoyon.facetune;
 [Serializable]
 public record struct SerializableType // Immutable
 {
-    [SerializeField] private string _name;
-    public const string NamePropName = "_name";
-    public string Name { readonly get => _name; init => _name = value; }
+    [SerializeField] private string name;
+    public string Name { readonly get => name; init => name = value; }
+    public const string NamePropName = nameof(name);
 
     public SerializableType()
     {
-        _name = "";
+        name = "";
         _targetType = null;
     }
 
     public SerializableType(string name)
     {
-        _name = name;
+        this.name = name;
         _targetType = null;
     }
 
     public SerializableType(Type type)
     {
-        _name = type.AssemblyQualifiedName;
+        name = type.AssemblyQualifiedName;
         _targetType = null;
     }
 
@@ -35,9 +35,9 @@ public record struct SerializableType // Immutable
                 return _targetType;
             }
 
-            if (!string.IsNullOrEmpty(_name))
+            if (!string.IsNullOrEmpty(name))
             {
-                _targetType = Type.GetType(_name);
+                _targetType = Type.GetType(name);
             }
 
             return _targetType;

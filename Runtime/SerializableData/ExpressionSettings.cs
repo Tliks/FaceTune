@@ -4,24 +4,24 @@ namespace com.aoyon.facetune;
 public record class ExpressionSettings // Immutable
 {
     // Advanced
-    [SerializeField] private bool _loopTime;
-    public const string LoopTimePropName = "_loopTime";
-    public bool LoopTime { get => _loopTime; init => _loopTime = value; }
+    [SerializeField] private bool loopTime;
+    public bool LoopTime { get => loopTime; init => loopTime = value; }
+    public const string LoopTimePropName = nameof(loopTime);
 
-    [SerializeField] private string _motionTimeParameterName;
-    public const string MotionTimeParameterNamePropName = "_motionTimeParameterName";
-    public string MotionTimeParameterName { get => _motionTimeParameterName; init => _motionTimeParameterName = value; } // LoopTime == false && != empty
+    [SerializeField] private string motionTimeParameterName;
+    public string MotionTimeParameterName { get => motionTimeParameterName; init => motionTimeParameterName = value; } // LoopTime == false && != empty
+    public const string MotionTimeParameterNamePropName = nameof(motionTimeParameterName);
 
     public ExpressionSettings()
     {
-        _loopTime = false;
-        _motionTimeParameterName = string.Empty;
+        loopTime = false;
+        motionTimeParameterName = string.Empty;
     }
 
     public ExpressionSettings(bool loopTime, string motionTimeParameterName)
     {
-        _loopTime = loopTime;
-        _motionTimeParameterName = motionTimeParameterName;
+        this.loopTime = loopTime;
+        this.motionTimeParameterName = motionTimeParameterName;
     }
 
 #if UNITY_EDITOR
@@ -35,8 +35,8 @@ public record class ExpressionSettings // Immutable
     // Todo
     internal ExpressionSettings Merge(ExpressionSettings other)
     {
-        var loopTime = _loopTime || other._loopTime;
-        var motionTimeParameterName = string.IsNullOrEmpty(other._motionTimeParameterName) ? _motionTimeParameterName : other._motionTimeParameterName;
+        var loopTime = this.loopTime || other.loopTime;
+        var motionTimeParameterName = string.IsNullOrEmpty(other.motionTimeParameterName) ? this.motionTimeParameterName : other.motionTimeParameterName;
         return new ExpressionSettings(loopTime, motionTimeParameterName);
     }
 }

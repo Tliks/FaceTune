@@ -3,65 +3,65 @@ namespace com.aoyon.facetune;
 [Serializable]
 public record GenericAnimation // Immutable
 {
-    [SerializeField] private SerializableCurveBinding _curveBinding;
-    public const string CurveBindingPropName = "_curveBinding";
-    public SerializableCurveBinding CurveBinding { get => _curveBinding; init => _curveBinding = value; }
+    [SerializeField] private SerializableCurveBinding curveBinding;
+    public SerializableCurveBinding CurveBinding { get => curveBinding; init => curveBinding = value; }
+    public const string CurveBindingPropName = nameof(curveBinding);
 
-    [SerializeField] private AnimationCurve _curve; // AnimationCurveは可変
-    public const string CurvePropName = "_curve";
-    public AnimationCurve Curve { get => _curve.Clone(); init => _curve = value.Clone(); }
+    [SerializeField] private AnimationCurve curve; // AnimationCurveは可変
+    public AnimationCurve Curve { get => curve.Clone(); init => curve = value.Clone(); }
+    public const string CurvePropName = nameof(curve);
 
-    [SerializeField] private List<SerializableObjectReferenceKeyframe> _objectReferenceCurve;
-    public const string ObjectReferenceCurvePropName = "_objectReferenceCurve";
-    public IReadOnlyList<SerializableObjectReferenceKeyframe> ObjectReferenceCurve { get => _objectReferenceCurve.AsReadOnly(); init => _objectReferenceCurve = value.ToList(); }
+    [SerializeField] private List<SerializableObjectReferenceKeyframe> objectReferenceCurve;
+    public IReadOnlyList<SerializableObjectReferenceKeyframe> ObjectReferenceCurve { get => objectReferenceCurve.AsReadOnly(); init => objectReferenceCurve = value.ToList(); }
+    public const string ObjectReferenceCurvePropName = nameof(objectReferenceCurve);
 
     public GenericAnimation()
     {
-        _curveBinding = new SerializableCurveBinding();
-        _curve = new AnimationCurve();
-        _objectReferenceCurve = new List<SerializableObjectReferenceKeyframe>();
+        curveBinding = new SerializableCurveBinding();
+        curve = new AnimationCurve();
+        objectReferenceCurve = new List<SerializableObjectReferenceKeyframe>();
     }
 
     public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve)
     {
-        _curveBinding = curveBinding;
-        _curve = curve.Clone();
-        _objectReferenceCurve = new List<SerializableObjectReferenceKeyframe>();
+        this.curveBinding = curveBinding;
+        this.curve = curve.Clone();
+        objectReferenceCurve = new List<SerializableObjectReferenceKeyframe>();
     }
 
     public GenericAnimation(SerializableCurveBinding curveBinding, IReadOnlyList<SerializableObjectReferenceKeyframe> objectReferenceCurve)
     {
-        _curveBinding = curveBinding;
-        _curve = new();
-        _objectReferenceCurve = objectReferenceCurve.ToList();
+        this.curveBinding = curveBinding;
+        curve = new();
+        this.objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
     public GenericAnimation(SerializableCurveBinding curveBinding, AnimationCurve curve, IReadOnlyList<SerializableObjectReferenceKeyframe> objectReferenceCurve)
     {
-        _curveBinding = curveBinding;
-        _curve = curve.Clone();
-        _objectReferenceCurve = objectReferenceCurve.ToList();
+        this.curveBinding = curveBinding;
+        this.curve = curve.Clone();
+        this.objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
     internal GenericAnimation ToSingleFrame()
     {
         var curve = new AnimationCurve();
-        curve.AddKey(0, _curve.Evaluate(0));
-        var objectReferenceCurve = _objectReferenceCurve.OrderBy(k => k.Time).FirstOrDefault();
-        return new GenericAnimation(_curveBinding, curve, new[] { objectReferenceCurve });
+        curve.AddKey(0, this.curve.Evaluate(0));
+        var objectReferenceCurve = new[] { this.objectReferenceCurve.OrderBy(k => k.Time).FirstOrDefault() };
+        return new GenericAnimation(curveBinding, curve, objectReferenceCurve);
     }
 
     private static readonly string BlendShapePrefix = "blendShape.";
     internal bool IsBlendShapeAnimation()
     {
-        return _curveBinding.Type == typeof(SkinnedMeshRenderer) && _curveBinding.PropertyName.StartsWith(BlendShapePrefix);
+        return curveBinding.Type == typeof(SkinnedMeshRenderer) && curveBinding.PropertyName.StartsWith(BlendShapePrefix);
     }
     internal bool TryToBlendShapeAnimation([NotNullWhen(true)] out BlendShapeAnimation? animation)
     {
         if (IsBlendShapeAnimation())
         {
-            var name = _curveBinding.PropertyName.Substring(BlendShapePrefix.Length);
-            animation = new BlendShapeAnimation(name, _curve.Clone());
+            var name = curveBinding.PropertyName.Substring(BlendShapePrefix.Length);
+            animation = new BlendShapeAnimation(name, curve.Clone());
             return true;
         }
         animation = null;
@@ -94,16 +94,16 @@ public record GenericAnimation // Immutable
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return _curveBinding.Equals(other._curveBinding)
-            && _curve.Equals(other._curve)
-            && _objectReferenceCurve.SequenceEqual(other._objectReferenceCurve);
+        return curveBinding.Equals(other.curveBinding)
+            && curve.Equals(other.curve)
+            && objectReferenceCurve.SequenceEqual(other.objectReferenceCurve);
     }
 
     public override int GetHashCode()
     {
-        var hash = _curveBinding.GetHashCode();
-        hash ^= _curve.GetHashCode();
-        foreach (var keyframe in _objectReferenceCurve)
+        var hash = curveBinding.GetHashCode();
+        hash ^= curve.GetHashCode();
+        foreach (var keyframe in objectReferenceCurve)
         {
             hash ^= keyframe.GetHashCode();
         }
