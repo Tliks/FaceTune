@@ -145,12 +145,16 @@ public record class ParameterCondition : Condition // Immutable
         switch (_parameterType)
         {
             case ParameterType.Float:
-                return this with { _floatComparisonType = _floatComparisonType.Negate() };
-            case ParameterType.Int:
-                var (newType, newValue) = _intComparisonType.Negate(_intValue);
+                var (newType_float, newValue_float) = _floatComparisonType.Negate(_floatValue);
                 return this with { 
-                    _intComparisonType = newType, 
-                    _intValue = newValue 
+                    _floatComparisonType = newType_float, 
+                    _floatValue = newValue_float 
+                };
+            case ParameterType.Int:
+                var (newType_int, newValue_int) = _intComparisonType.Negate(_intValue);
+                return this with { 
+                    _intComparisonType = newType_int, 
+                    _intValue = newValue_int 
                 };
             case ParameterType.Bool:
                 return this with { _boolValue = !_boolValue };

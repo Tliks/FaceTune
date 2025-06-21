@@ -14,13 +14,14 @@ internal static class ConditionUtility
         };
     }
 
-    public static FloatComparisonType Negate(this FloatComparisonType type)
+    private const float FloatTolerance = 0.00001f;
+    public static (FloatComparisonType newType, float newValue) Negate(this FloatComparisonType type, float currentValue)
     {
         return type switch
         {
-            FloatComparisonType.GreaterThan => FloatComparisonType.LessThan,
-            FloatComparisonType.LessThan => FloatComparisonType.GreaterThan,
-            _ => type
+            FloatComparisonType.GreaterThan => (FloatComparisonType.LessThan, currentValue + FloatTolerance), // Math.BitIncrement使えなくない？？
+            FloatComparisonType.LessThan => (FloatComparisonType.GreaterThan, currentValue - FloatTolerance),
+            _ => (type, currentValue)
         };
     }
 
