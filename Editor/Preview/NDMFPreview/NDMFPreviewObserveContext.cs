@@ -16,6 +16,11 @@ internal class NDMFPreviewObserveContext : IObserveContext
         return _context.GetAvatarRoot(obj);
     }
 
+    public T Observe<T>(T obj) where T : Object
+    {
+        return _context.Observe(obj);
+    }
+
     public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object
     {
         return _context.Observe(obj, extract, compare);
@@ -28,7 +33,7 @@ internal class NDMFPreviewObserveContext : IObserveContext
 
     public C? GetComponentNullable<C>(GameObject obj) where C : Component
     {
-        return _context.GetComponent<C>(obj).NullCast();
+        return _context.GetComponent<C>(obj).DestroyedAsNull();
     }
 
     public C[] GetComponents<C>(GameObject obj) where C : Component

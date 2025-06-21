@@ -6,7 +6,12 @@ internal class NonObserveContext : IObserveContext
 {
     public GameObject? GetAvatarRoot(GameObject obj)
     {
-        return RuntimeUtil.FindAvatarInParents(obj.transform).NullCast()?.gameObject;
+        return RuntimeUtil.FindAvatarInParents(obj.transform).DestroyedAsNull()?.gameObject;
+    }
+
+    public T Observe<T>(T obj) where T : Object
+    {
+        return obj;
     }
 
     public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object

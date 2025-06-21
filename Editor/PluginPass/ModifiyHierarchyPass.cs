@@ -1,3 +1,4 @@
+using com.aoyon.facetune.platform;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 
@@ -15,53 +16,137 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         var passContext = context.Extension<FTPassContext>()!;
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-
-        // Add Condition Component Phase
-        NegotiateMAMenuItem(context.AvatarRootObject);
-        // Edit Condition Component  Phase
-        ProcessCommonCondition(context.AvatarRootObject);
-        // PostProcess Phase
+        
+        // Condition
+        NegotiateMAMenuItem(passContext);
+        ProcessPreset(passContext);
+        // Expression
+        MergeExpression(sessionContext);
+        // Pattern
         NormalizeData(context.AvatarRootObject);
     }
 
-    private void NegotiateMAMenuItem(GameObject root)
+    private void NegotiateMAMenuItem(FTPassContext passContext)
     {
-        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        var root = passContext.BuildContext.AvatarRootObject;
+        var platformSupport = passContext.PlatformSupport;
+
         var usedParameterNames = new HashSet<string>();
-
-        foreach (var expressionComponent in expressionComponents)
+        var menuItems = root.GetComponentsInChildren<ModularAvatarMenuItem>(true);
+        foreach (var menuItem in menuItems)
         {
-            if (!expressionComponent.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)) continue;
+            var parameterName = platformSupport.GetParameterName(menuItem);
+            if (string.IsNullOrWhiteSpace(parameterName)) continue;
+            usedParameterNames.Add(parameterName);
+        }
 
-            if (expressionComponent.TryGetComponent<CommonConditionComponent>(out var _)) continue;
+        foreach (var menuItem in menuItems)
+        {    
+            using var _ = ListPool<ExpressionComponentBase>.Get(out var expressionComponents);
+            menuItem.GetComponentsInChildren<ExpressionComponentBase>(true, expressionComponents);
+            if (expressionComponents.Any() is false) continue;
 
-            var (parameterName, parameterCondition) = platform.PlatformSupport.MenuItemAsCondition(root.transform, menuItem, usedParameterNames);
-            if (parameterName == null) continue;
+            var menuItemType = platformSupport.GetMenuItemType(menuItem);
 
-            var conditionComponent = expressionComponent.gameObject.EnsureComponent<ConditionComponent>();
-            conditionComponent.ParameterConditions.Add(parameterCondition!);
-            conditionComponent.ExpressionFromSelfOnly = true;
+            switch (menuItemType)
+            {
+                case MenuItemType.Toggle:
+                case MenuItemType.Button:
+                    var parameterName = EnsureParameter(menuItem, usedParameterNames, platformSupport);
+                    platformSupport.SetParameterValue(menuItem, 1);
+                    var conditionComponent = menuItem.gameObject.AddComponent<ConditionComponent>(); // OR
+                    conditionComponent.ParameterConditions.Add(ParameterCondition.Bool(parameterName, true));
+                    break;
+                case MenuItemType.RadialPuppet:
+                    var radialParameterName = EnsureRadialParameter(menuItem, usedParameterNames, platformSupport);
+                    foreach (var expressionComponent in expressionComponents)
+                    {
+                        var settings = expressionComponent.ExpressionSettings;
+                        expressionComponent.ExpressionSettings = settings with { LoopTime = false, MotionTimeParameterName = radialParameterName };
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        static string EnsureParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
+        {
+            string parameterName = platformSupport.GetParameterName(menuItem);
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                parameterName = platformSupport.GetUniqueParameterName(menuItem, usedParameterNames, "toggle");
+                usedParameterNames.Add(parameterName);
+                platformSupport.SetParameterName(menuItem, parameterName);
+            }
+            return parameterName;
+        }
+
+        static string EnsureRadialParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
+        {
+            string parameterName = platformSupport.GetRadialParameterName(menuItem);
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                parameterName = platformSupport.GetUniqueParameterName(menuItem, usedParameterNames, "radial");
+                usedParameterNames.Add(parameterName);
+                platformSupport.SetRadialParameterName(menuItem, parameterName);
+            }
+            var parameters = menuItem.gameObject.EnsureComponent<ModularAvatarParameters>();
+            parameters.parameters.Add(new ParameterConfig()
+            {
+                nameOrPrefix = parameterName,
+                syncType = ParameterSyncType.Float,
+                defaultValue = 0,
+            });
+            return parameterName;
         }
     }
 
-    private void ProcessCommonCondition(GameObject root)
+    internal const string Preset_Index_Parameter = "FaceTune_PresetIndex";
+    private void ProcessPreset(FTPassContext passContext)
     {
-        var commonConditionComponents = root.GetComponentsInChildren<CommonConditionComponent>(true);
-        foreach (var commonConditionComponent in commonConditionComponents)
+        var platformSupport = passContext.PlatformSupport;
+        var presetComponents = passContext.BuildContext.AvatarRootObject.GetComponentsInChildren<PresetComponent>(true);
+        var presetIndex = 0;   
+        foreach (var presetComponent in presetComponents)
         {
-            commonConditionComponent.AddConditions();
+            // indexの条件を生成
+            var presetCondition = ParameterCondition.Int(Preset_Index_Parameter, ComparisonType.Equal, presetIndex++);
+
+            // 配下のExpressionに大してその条件を設定
+            var conditionComponent = presetComponent.gameObject.AddComponent<ConditionComponent>();
+            conditionComponent.ParameterConditions.Add(presetCondition);
+
+            // 条件を発火させるMenuItemを設定
+            var menuTarget = presetComponent.GetMenuTarget();
+            var menuItem = menuTarget.EnsureComponent<ModularAvatarMenuItem>();
+            platformSupport.SetMenuItemType(menuItem, MenuItemType.Toggle);
+            platformSupport.SetParameterName(menuItem, Preset_Index_Parameter);  // Todo 上書きしていいかどうか。
+            platformSupport.SetParameterValue(menuItem, presetIndex);
+
+            // PresetComponentに条件を設定
+            presetComponent.SetAssignedPresetCondition(presetCondition);
+        }
+    }
+
+    private void MergeExpression(SessionContext sessionContext)
+    {
+        var mergeExpressionComponents = sessionContext.Root.GetComponentsInChildren<MergeExpressionComponent>(true);
+        foreach (var mergeExpressionComponent in mergeExpressionComponents)
+        {
+            mergeExpressionComponent.Merge(sessionContext);
         }
     }
 
     private void NormalizeData(GameObject root)
     {
-        // 単一の条件をPatternとして扱うことでデータを正規化する
-        var conditionComponents = root.GetComponentsInChildren<ConditionComponent>(true);
-        foreach (var conditionComponent in conditionComponents)
+        // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
+        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        foreach (var expressionComponent in expressionComponents)
         {
-            if (conditionComponent.GetComponentInParentNullable<PatternComponent>() == null)
+            if (expressionComponent.GetComponentInParentNullable<PatternComponent>() == null)
             {
-                conditionComponent.gameObject.EnsureComponent<PatternComponent>();
+                expressionComponent.gameObject.EnsureComponent<PatternComponent>();
             }
         }
     }
