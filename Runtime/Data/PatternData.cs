@@ -60,7 +60,6 @@ internal record class Preset : IPatternElement
     public readonly Expression DefaultExpression;
 
     public readonly ParameterCondition PresetCondition;
-    public GameObject? MenuTarget { get; private set; }
 
     public Preset(string presetName, IReadOnlyList<ExpressionPattern> patterns, Expression defaultExpression, ParameterCondition presetCondition)
     {
@@ -70,18 +69,12 @@ internal record class Preset : IPatternElement
         PresetCondition = presetCondition;
     }
 
-    public void SetMenuTarget(GameObject menuTarget)
-    {
-        MenuTarget = menuTarget;
-    }
-
     public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions => Patterns.SelectMany(p => p.AllExpressionWithConditions);
 }
 
 internal record PatternData
 {
     public IReadOnlyList<IPatternElement> OrderedItems { get; private set; }
-    internal const string Peset_Index_Parameter = "FaceTune_PresetIndex";
     public int Count => OrderedItems.Count;
     public bool IsEmpty => Count == 0;
 
@@ -97,7 +90,6 @@ internal record PatternData
 
         var allComponents = context.Root.GetComponentsInChildren<Component>(true);
 
-        var presetIndex = 0;    
         foreach (var component in allComponents)
         {
             if (component == null) continue;
@@ -105,10 +97,8 @@ internal record PatternData
 
             if (component is PresetComponent presetComponent)
             {
-                var presetCondition = ParameterCondition.Int(Peset_Index_Parameter, ComparisonType.Equal, presetIndex++);
-                var preset = presetComponent.GetPreset(context, presetCondition);
+                var preset = presetComponent.GetPreset(context);
                 if (preset == null) continue;
-                preset.SetMenuTarget(presetComponent.GetMenuTarget());
                 orderedItems.Add(preset);
                 processedGameObjects.Add(presetComponent.gameObject);
                 var childPatterns = presetComponent.gameObject.GetComponentsInChildren<PatternComponent>(true);

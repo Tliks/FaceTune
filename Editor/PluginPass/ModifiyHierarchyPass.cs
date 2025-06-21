@@ -19,6 +19,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         
         // Condition
         NegotiateMAMenuItem(passContext);
+        ProcessPreset(passContext);
         // Expression
         MergeExpression(sessionContext);
         // Pattern
@@ -98,6 +99,33 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
                 defaultValue = 0,
             });
             return parameterName;
+        }
+    }
+
+    internal const string Preset_Index_Parameter = "FaceTune_PresetIndex";
+    private void ProcessPreset(FTPassContext passContext)
+    {
+        var platformSupport = passContext.PlatformSupport;
+        var presetComponents = passContext.BuildContext.AvatarRootObject.GetComponentsInChildren<PresetComponent>(true);
+        var presetIndex = 0;   
+        foreach (var presetComponent in presetComponents)
+        {
+            // indexの条件を生成
+            var presetCondition = ParameterCondition.Int(Preset_Index_Parameter, ComparisonType.Equal, presetIndex++);
+
+            // 配下のExpressionに大してその条件を設定
+            var conditionComponent = presetComponent.gameObject.AddComponent<ConditionComponent>();
+            conditionComponent.ParameterConditions.Add(presetCondition);
+
+            // 条件を発火させるMenuItemを設定
+            var menuTarget = presetComponent.GetMenuTarget();
+            var menuItem = menuTarget.EnsureComponent<ModularAvatarMenuItem>();
+            platformSupport.SetMenuItemType(menuItem, MenuItemType.Toggle);
+            platformSupport.SetParameterName(menuItem, Preset_Index_Parameter);  // Todo 上書きしていいかどうか。
+            platformSupport.SetParameterValue(menuItem, presetIndex);
+
+            // PresetComponentに条件を設定
+            presetComponent.SetAssignedPresetCondition(presetCondition);
         }
     }
 

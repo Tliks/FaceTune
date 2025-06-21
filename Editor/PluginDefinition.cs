@@ -25,7 +25,6 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
             sq
             .Run(ModifyHierarchyPass.Instance).Then
             .Run(CollectDataPass.Instance).Then
-            .Run(ProcessPresetPass.Instance).Then
             .Run(ProcessTrackedShapesPass.Instance).Then
             .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
             .WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 

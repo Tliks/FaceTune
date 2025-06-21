@@ -9,15 +9,23 @@ namespace com.aoyon.facetune
         public string OverridePresetName = string.Empty;
         public DefaultFacialExpressionComponent? OverrideDefaultExpressionComponent = null;
 
-        internal Preset? GetPreset(SessionContext sessionContext, ParameterCondition presetCondition)
+        internal ParameterCondition? AssignedPresetCondition { get; private set; }
+
+        internal void SetAssignedPresetCondition(ParameterCondition presetCondition)
         {
+            AssignedPresetCondition = presetCondition;
+        }
+
+        internal Preset? GetPreset(SessionContext sessionContext)
+        {
+            if (AssignedPresetCondition == null) return null;
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(true)
                 .Select(c => c.GetPattern(sessionContext))
                 .OfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;
             var presetName = string.IsNullOrWhiteSpace(OverridePresetName) ? gameObject.name : OverridePresetName;
-            return new Preset(presetName, patterns, sessionContext.DEC.GetPresetDefaultExpression(this), presetCondition);
+            return new Preset(presetName, patterns, sessionContext.DEC.GetPresetDefaultExpression(this), AssignedPresetCondition);
         }
 
         internal GameObject GetMenuTarget()
