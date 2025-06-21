@@ -26,10 +26,10 @@ public record struct BlendShape
     public readonly bool Equals(BlendShape other)
     {
         return _name.Equals(other._name)
-            && Mathf.Approximately(_weight, other._weight);
+            && _weight.Equals(other._weight);
     }
 
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
     {
         return HashCode.Combine(_name, _weight);
     }

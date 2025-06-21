@@ -38,7 +38,7 @@ public record struct SerializableObjectReferenceKeyframe // Immutable
 
     public readonly bool Equals(SerializableObjectReferenceKeyframe other)
     {
-        return Mathf.Approximately(_time, other._time) && _value == other._value;
+        return _time.Equals(other._time) && _value == other._value;
     }
     
     public override readonly int GetHashCode()
