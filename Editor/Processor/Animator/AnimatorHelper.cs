@@ -63,6 +63,15 @@ internal static class AnimatorHelper
         return transition;
     }
 
+    public static VirtualStateTransition CreateTransitionWithExitTime(float exitTime = 1f, float duration = 0f)
+    {
+        var transition = VirtualStateTransition.Create();
+        transition.ExitTime = exitTime; 
+        transition.HasFixedDuration = true;
+        transition.Duration = duration;
+        return transition;
+    }
+
     // https://gist.github.com/nekobako/5a38c040261e2eb815330535857003ca
     public static List<GenericAnimation> GetDefaultValueAnimations(GameObject root, IEnumerable<SerializableCurveBinding> curveBindings)
     {
@@ -227,5 +236,17 @@ internal static class AnimatorHelper
         {
             SetAnimation(clip, animation);
         }
+    }
+
+    public static VirtualClip CreateDelayClip(float delay, string clipName = "Delay Clip")
+    {
+        var clip = VirtualClip.Create(clipName);
+
+        var curve = new AnimationCurve();
+        curve.AddKey(0f, 1f);
+        curve.AddKey(delay, 0f);
+
+        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
+        return clip;
     }
 }

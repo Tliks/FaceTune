@@ -23,6 +23,7 @@ internal class AnimatorInstaller
     private const string SystemName = "FaceTune";
     private readonly bool _useWriteDefaults;
     private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
+    private static readonly Vector3 EntryStatePosition = new Vector3(50, 120, 0);
     private static readonly Vector3 DefaultStatePosition = new Vector3(300, 0, 0);
     private const float PositionYStep = 50;
     
@@ -509,6 +510,12 @@ internal class AnimatorInstaller
     {
         var eyeBlinkLayer = AddFTLayer(_virtualController, "EyeBlink", LayerPriority);
 
+        // 最初のフレームでTraking Controlを変更すると直後に巻き戻されるような挙動がある。
+        // そのため、0.2s程度遅延させる
+        var delayState = AddFTState(eyeBlinkLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
+        var delayClip = AnimatorHelper.CreateDelayClip(0.2f);
+        delayState.Motion = delayClip;
+
         var position = DefaultStatePosition;
         var enabled = AddFTState(eyeBlinkLayer, "Enabled", position);
         position.y += 2 * PositionYStep;
@@ -516,6 +523,10 @@ internal class AnimatorInstaller
 
         _platformSupport.SetEyeBlinkTrack(enabled, true);
         _platformSupport.SetEyeBlinkTrack(disabled, false);
+
+        var delayTransition = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
+        delayTransition.SetDestination(enabled);
+        delayState.Transitions = ImmutableList.Create(delayTransition);
 
         var enabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         enabledTransition.SetDestination(enabled);
@@ -542,6 +553,10 @@ internal class AnimatorInstaller
     {
         var lipSyncLayer = AddFTLayer(_virtualController, "LipSync", LayerPriority);
 
+        var delayState = AddFTState(lipSyncLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
+        var delayClip = AnimatorHelper.CreateDelayClip(0.2f);
+        delayState.Motion = delayClip;
+
         var position = DefaultStatePosition;
         var enabled = AddFTState(lipSyncLayer, "Enabled", position);
         position.y += 2 * PositionYStep;
@@ -549,6 +564,10 @@ internal class AnimatorInstaller
 
         _platformSupport.SetLipSyncTrack(enabled, true);
         _platformSupport.SetLipSyncTrack(disabled, false);
+
+        var delayTransition = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
+        delayTransition.SetDestination(enabled);
+        delayState.Transitions = ImmutableList.Create(delayTransition);
 
         var enabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         enabledTransition.SetDestination(enabled);
