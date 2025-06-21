@@ -105,7 +105,7 @@ internal record PatternData
 
             if (component is PresetComponent presetComponent)
             {
-                var presetCondition = ParameterCondition.Int(Peset_Index_Parameter, IntComparisonType.Equal, presetIndex++);
+                var presetCondition = ParameterCondition.Int(Peset_Index_Parameter, ComparisonType.Equal, presetIndex++);
                 var preset = presetComponent.GetPreset(context, presetCondition);
                 if (preset == null) continue;
                 preset.SetMenuTarget(presetComponent.GetMenuTarget());

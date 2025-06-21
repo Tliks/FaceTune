@@ -377,7 +377,7 @@ internal class AnimatorInstaller
             case HandGestureCondition hgc:
                 resolvedParamType = AnimatorControllerParameterType.Int;
                 parameter = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight";
-                mode = hgc.ComparisonType == BoolComparisonType.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual;
+                mode = hgc.IsEqual ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual;
                 threshold = (int)hgc.HandGesture; // 整数値をそのまま使う。
                 break;
             case ParameterCondition pc:
@@ -386,24 +386,37 @@ internal class AnimatorInstaller
                 {
                     case ParameterType.Int:
                         resolvedParamType = AnimatorControllerParameterType.Int;
-                        mode = pc.IntComparisonType switch
+                        mode = pc.ComparisonType switch
                         {
-                            IntComparisonType.Equal => AnimatorConditionMode.Equals,
-                            IntComparisonType.NotEqual => AnimatorConditionMode.NotEqual,
-                            IntComparisonType.GreaterThan => AnimatorConditionMode.Greater,
-                            IntComparisonType.LessThan => AnimatorConditionMode.Less,
+                            ComparisonType.Equal => AnimatorConditionMode.Equals,
+                            ComparisonType.NotEqual => AnimatorConditionMode.NotEqual,
+                            ComparisonType.GreaterThan => AnimatorConditionMode.Greater,
+                            ComparisonType.LessThan => AnimatorConditionMode.Less,
                             _ => mode
                         };
                         threshold = pc.IntValue;
                         break;
                     case ParameterType.Float:
                         resolvedParamType = AnimatorControllerParameterType.Float;
-                        mode = pc.FloatComparisonType switch
+                        switch (pc.ComparisonType)
                         {
-                            FloatComparisonType.GreaterThan => AnimatorConditionMode.Greater,
-                            FloatComparisonType.LessThan => AnimatorConditionMode.Less,
-                            _ => mode
-                        };
+                            case ComparisonType.GreaterThan:
+                                mode = AnimatorConditionMode.Greater;
+                                break;
+                            case ComparisonType.LessThan:
+                                mode = AnimatorConditionMode.Less;
+                                break;
+                            case ComparisonType.Equal:
+                                Debug.LogWarning("Equal is not supported for float parameters. Using Greater instead.");
+                                mode = AnimatorConditionMode.Greater;
+                                break;
+                            case ComparisonType.NotEqual:
+                                Debug.LogWarning("NotEqual is not supported for float parameters. Using Greater instead.");
+                                mode = AnimatorConditionMode.Greater;
+                                break;
+                            default:
+                                throw new NotImplementedException($"Comparison type {pc.ComparisonType} is not implemented");
+                        }
                         threshold = pc.FloatValue;
                         break;
                     case ParameterType.Bool:

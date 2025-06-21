@@ -13,9 +13,9 @@ public record class HandGestureCondition : Condition // Immutable
     public Hand Hand { get => hand; init => hand = value; }
     public const string HandPropName = nameof(hand);
 
-    [SerializeField] private BoolComparisonType comparisonType;
-    public BoolComparisonType ComparisonType { get => comparisonType; init => comparisonType = value; }
-    public const string ComparisonTypePropName = nameof(comparisonType);
+    [SerializeField] private bool isEqual;
+    public bool IsEqual { get => isEqual; init => isEqual = value; }
+    public const string IsEqualPropName = nameof(isEqual);
 
     [SerializeField] private HandGesture handGesture;
     public HandGesture HandGesture { get => handGesture; init => handGesture = value; }
@@ -24,20 +24,20 @@ public record class HandGestureCondition : Condition // Immutable
     public HandGestureCondition()
     {
         hand = Hand.Left;
-        comparisonType = BoolComparisonType.Equal;
+        isEqual = true;
         handGesture = HandGesture.Fist;
     }
 
-    public HandGestureCondition(Hand hand, BoolComparisonType comparisonType, HandGesture handGesture)
+    public HandGestureCondition(Hand hand, bool isEqual, HandGesture handGesture)
     {
         this.hand = hand;
-        this.comparisonType = comparisonType;
+        this.isEqual = isEqual;
         this.handGesture = handGesture;
     }
 
     internal override Condition ToNegation()
     {
-        return this with { comparisonType = comparisonType.Negate() };
+        return this with { isEqual = !isEqual };
     }
 
     public virtual bool Equals(HandGestureCondition other)
@@ -45,13 +45,13 @@ public record class HandGestureCondition : Condition // Immutable
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return hand == other.hand
-            && comparisonType == other.comparisonType
+            && isEqual == other.isEqual
             && handGesture == other.handGesture;
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(hand, comparisonType, handGesture);
+        return HashCode.Combine(hand, isEqual, handGesture);
     }
 }
 
@@ -66,13 +66,9 @@ public record class ParameterCondition : Condition // Immutable
     public ParameterType ParameterType { get => parameterType; init => parameterType = value; }
     public const string ParameterTypePropName = nameof(parameterType);
 
-    [SerializeField] private FloatComparisonType floatComparisonType;
-    public FloatComparisonType FloatComparisonType { get => floatComparisonType; init => floatComparisonType = value; }
-    public const string FloatComparisonTypePropName = nameof(floatComparisonType);
-
-    [SerializeField] private IntComparisonType intComparisonType;
-    public IntComparisonType IntComparisonType { get => intComparisonType; init => intComparisonType = value; }
-    public const string IntComparisonTypePropName = nameof(intComparisonType);
+    [SerializeField] private ComparisonType comparisonType;
+    public ComparisonType ComparisonType { get => comparisonType; init => comparisonType = value; }
+    public const string ComparisonTypePropName = nameof(comparisonType);
 
     [SerializeField] private float floatValue;
     public float FloatValue { get => floatValue; init => floatValue = value; }
@@ -90,42 +86,44 @@ public record class ParameterCondition : Condition // Immutable
     {
         parameterName = string.Empty;
         parameterType = ParameterType.Int;
-        floatComparisonType = FloatComparisonType.GreaterThan;
-        intComparisonType = IntComparisonType.Equal;
+        comparisonType = ComparisonType.Equal;
         floatValue = 0;
         intValue = 0;
         boolValue = false;
     }
 
-    public ParameterCondition(string parameterName, ParameterType parameterType, FloatComparisonType floatComparisonType, IntComparisonType intComparisonType, float floatValue, int intValue, bool boolValue)
+    public ParameterCondition(string parameterName, ParameterType parameterType, ComparisonType comparisonType, float floatValue, int intValue, bool boolValue)
     {
         this.parameterName = parameterName;
         this.parameterType = parameterType;
-        this.floatComparisonType = floatComparisonType;
-        this.intComparisonType = intComparisonType;
+        this.comparisonType = comparisonType;
         this.floatValue = floatValue;
         this.intValue = intValue;
         this.boolValue = boolValue;
     }
 
-    public static ParameterCondition Float(string parameterName, FloatComparisonType comparisonType, float floatValue)
+    public static ParameterCondition Float(string parameterName, ComparisonType comparisonType, float floatValue)
     {
+        if (comparisonType != ComparisonType.GreaterThan && comparisonType != ComparisonType.LessThan)
+        {
+            throw new ArgumentException("Comparison type must be GreaterThan or LessThan for float parameters");
+        }
         return new ParameterCondition()
         {
             parameterName = parameterName,
             parameterType = ParameterType.Float,
-            floatComparisonType = comparisonType,
+            comparisonType = comparisonType,
             floatValue = floatValue
         };
     }
 
-    public static ParameterCondition Int(string parameterName, IntComparisonType comparisonType, int intValue)
+    public static ParameterCondition Int(string parameterName, ComparisonType comparisonType, int intValue)
     {
         return new ParameterCondition()
         {
             parameterName = parameterName,
             parameterType = ParameterType.Int,
-            intComparisonType = comparisonType,
+            comparisonType = comparisonType,
             intValue = intValue
         };
     }
@@ -145,15 +143,15 @@ public record class ParameterCondition : Condition // Immutable
         switch (parameterType)
         {
             case ParameterType.Float:
-                var (newType_float, newValue_float) = floatComparisonType.Negate(floatValue);
+                var (newType_float, newValue_float) = comparisonType.Negate(floatValue);
                 return this with { 
-                    floatComparisonType = newType_float, 
+                    comparisonType = newType_float, 
                     floatValue = newValue_float 
                 };
             case ParameterType.Int:
-                var (newType_int, newValue_int) = intComparisonType.Negate(intValue);
+                var (newType_int, newValue_int) = comparisonType.Negate(intValue);
                 return this with { 
-                    intComparisonType = newType_int, 
+                    comparisonType = newType_int, 
                     intValue = newValue_int 
                 };
             case ParameterType.Bool:
@@ -169,8 +167,7 @@ public record class ParameterCondition : Condition // Immutable
         if (ReferenceEquals(this, other)) return true;
         return parameterName == other.parameterName
             && parameterType == other.parameterType
-            && floatComparisonType == other.floatComparisonType
-            && intComparisonType == other.intComparisonType
+            && comparisonType == other.comparisonType
             && floatValue == other.floatValue
             && intValue == other.intValue
             && boolValue == other.boolValue;
@@ -178,6 +175,6 @@ public record class ParameterCondition : Condition // Immutable
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(parameterName, parameterType, floatComparisonType, intComparisonType, floatValue, intValue, boolValue);
+        return HashCode.Combine(parameterName, parameterType, comparisonType, floatValue, intValue, boolValue);
     }
 }

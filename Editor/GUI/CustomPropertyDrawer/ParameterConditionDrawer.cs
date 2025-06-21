@@ -3,8 +3,10 @@ namespace com.aoyon.facetune.ui;
 [CustomPropertyDrawer(typeof(ParameterCondition))]
 internal class ParameterConditionDrawer : PropertyDrawer
 {
-    private SerializedProperty? _floatComparisonTypeProp;
-    private SerializedProperty? _intComparisonTypeProp;
+    private static readonly string[] FloatComparisonOptions = { "Greater Than", "Less Than" };
+    private static readonly int[] FloatComparisonValues = { (int)ComparisonType.GreaterThan, (int)ComparisonType.LessThan };
+    
+    private SerializedProperty? _comparisonTypeProp;
     private SerializedProperty? _floatValueProp;
     private SerializedProperty? _intValueProp;
     private SerializedProperty? _boolValueProp;
@@ -30,16 +32,29 @@ internal class ParameterConditionDrawer : PropertyDrawer
         switch (paramType)
         {
             case ParameterType.Int:
-                _intComparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.IntComparisonTypePropName);
+                _comparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.ComparisonTypePropName);
                 _intValueProp ??= property.FindPropertyRelative(ParameterCondition.IntValuePropName);
-                EditorGUI.PropertyField(currentPosition, _intComparisonTypeProp);
+                EditorGUI.PropertyField(currentPosition, _comparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(currentPosition, _intValueProp);
                 break;
             case ParameterType.Float:
-                _floatComparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.FloatComparisonTypePropName);
+                _comparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.ComparisonTypePropName);
                 _floatValueProp ??= property.FindPropertyRelative(ParameterCondition.FloatValuePropName);
-                EditorGUI.PropertyField(currentPosition, _floatComparisonTypeProp);
+                
+                // Floatの場合はGreaterThanとLessThanのみ選択可能にする
+                ComparisonType currentComparison = (ComparisonType)_comparisonTypeProp.enumValueIndex;
+                if (currentComparison != ComparisonType.GreaterThan && currentComparison != ComparisonType.LessThan)
+                {
+                    _comparisonTypeProp.enumValueIndex = (int)ComparisonType.GreaterThan;
+                }
+                
+                int selectedIndex = Array.IndexOf(FloatComparisonValues, _comparisonTypeProp.enumValueIndex);
+                if (selectedIndex == -1) selectedIndex = 0;
+                
+                int newIndex = EditorGUI.Popup(currentPosition, "Comparison Type", selectedIndex, FloatComparisonOptions);
+                _comparisonTypeProp.enumValueIndex = FloatComparisonValues[newIndex];
+                
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(currentPosition, _floatValueProp);
                 break;
