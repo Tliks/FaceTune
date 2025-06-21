@@ -201,4 +201,31 @@ internal static class AnimatorHelper
         clip = CreateClip(state, name);
         return clip;
     }
+
+    // 適当なGameObjectのactiveを切り替える2フレームアニメーションを作成
+    public static VirtualClip CreateCustomEmpty(string clipName = "Custom Empty Clip")
+    {
+        var clip = VirtualClip.Create(clipName);
+
+        var curve = new AnimationCurve();
+        curve.AddKey(0f, 1f);
+        curve.AddKey(1f / clip.FrameRate, 0f);
+
+        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
+        return clip;
+    }
+
+    public static void SetAnimation(this VirtualClip clip, GenericAnimation animation)
+    {
+        var binding = animation.CurveBinding.ToEditorCurveBinding();
+        clip.SetFloatCurve(binding.path, binding.type, binding.propertyName, animation.Curve);
+    }
+
+    public static void SetAnimations(this VirtualClip clip, IEnumerable<GenericAnimation> animations)
+    {
+        foreach (var animation in animations)
+        {
+            SetAnimation(clip, animation);
+        }
+    }
 }

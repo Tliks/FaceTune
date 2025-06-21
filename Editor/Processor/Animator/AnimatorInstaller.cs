@@ -65,7 +65,7 @@ internal class AnimatorInstaller
 
     private void AssignEmptyClipIfStateIsEmpty()
     {
-        var emptyClip = VirtualAnimationUtility.CreateCustomEmpty();
+        var emptyClip = AnimatorHelper.CreateCustomEmpty();
         foreach (var state in _allStates)
         {
             state.Motion ??= emptyClip;

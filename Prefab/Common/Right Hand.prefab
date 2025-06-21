@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 1
   ParameterConditions: []
@@ -212,7 +212,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 7
   ParameterConditions: []
@@ -259,7 +259,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 3
   ParameterConditions: []
@@ -306,7 +306,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 4
   ParameterConditions: []
@@ -353,7 +353,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 2
   ParameterConditions: []
@@ -418,7 +418,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 0
   ParameterConditions: []
@@ -465,7 +465,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 6
   ParameterConditions: []
@@ -512,7 +512,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - hand: 0
+  - hand: 1
     isEqual: 1
     handGesture: 5
   ParameterConditions: []

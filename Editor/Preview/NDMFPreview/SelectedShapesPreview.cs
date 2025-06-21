@@ -115,7 +115,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
 
     private static void GetBlendShapes(AnimationClip clip, BlendShapeSet result)
     {
-        result.AddRange(clip.GetBlendShapes());
+        clip.GetFirstFrameBlendShapes(result);
     }
 
     private static void GetBlendShapes(IEnumerable<ExpressionComponentBase> expressionComponents, BlendShapeSet defaultSet, IObserveContext observeContext, BlendShapeSet result)
