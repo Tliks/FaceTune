@@ -165,9 +165,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 1
+  - hand: 0
+    isEqual: 1
+    handGesture: 1
   ParameterConditions: []
 --- !u!114 &1704227186460256230
 MonoBehaviour:
@@ -182,12 +182,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -212,9 +212,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 7
+  - hand: 0
+    isEqual: 1
+    handGesture: 7
   ParameterConditions: []
 --- !u!114 &4684944566820409495
 MonoBehaviour:
@@ -229,12 +229,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -259,9 +259,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 3
+  - hand: 0
+    isEqual: 1
+    handGesture: 3
   ParameterConditions: []
 --- !u!114 &6666964804576130187
 MonoBehaviour:
@@ -276,12 +276,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -306,9 +306,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 4
+  - hand: 0
+    isEqual: 1
+    handGesture: 4
   ParameterConditions: []
 --- !u!114 &1930796234532467644
 MonoBehaviour:
@@ -323,12 +323,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -353,9 +353,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 2
+  - hand: 0
+    isEqual: 1
+    handGesture: 2
   ParameterConditions: []
 --- !u!114 &3472275454412260610
 MonoBehaviour:
@@ -370,12 +370,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -418,9 +418,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 1
+  - hand: 0
+    isEqual: 1
+    handGesture: 0
   ParameterConditions: []
 --- !u!114 &8899474392035475652
 MonoBehaviour:
@@ -435,12 +435,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -465,9 +465,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 6
+  - hand: 0
+    isEqual: 1
+    handGesture: 6
   ParameterConditions: []
 --- !u!114 &5160402723131478131
 MonoBehaviour:
@@ -482,12 +482,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -512,9 +512,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - _hand: 1
-    _comparisonType: 0
-    _handGesture: 5
+  - hand: 0
+    isEqual: 1
+    handGesture: 5
   ParameterConditions: []
 --- !u!114 &9117185088660386367
 MonoBehaviour:
@@ -529,12 +529,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
-    _loopTime: 0
-    _motionTimeParameterName: 
+    loopTime: 0
+    motionTimeParameterName: 
   FacialSettings:
-    _allowEyeBlink: 1
-    _allowLipSync: 0
-    _enableBlending: 0
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
