@@ -50,8 +50,8 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
             var element = _blendShapeAnimationList.serializedProperty.GetArrayElementAtIndex(index);
             rect.y += 2;
 
-            var nameProp = element.FindPropertyRelative("_name");
-            var curveProp = element.FindPropertyRelative("_curve");
+            var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
+            var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
 
             var nameRect = new Rect(rect.x, rect.y, rect.width * 0.35f - 10, EditorGUIUtility.singleLineHeight);
             var valueRect = new Rect(rect.x + rect.width * 0.35f + 10, rect.y, rect.width * 0.65f - 20, EditorGUIUtility.singleLineHeight);

@@ -54,8 +54,8 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         {
             var label = (Label)element;
             var elementProp = genericAnimationsProp.GetArrayElementAtIndex(i);
-            var curveBindingProp = elementProp.FindPropertyRelative("_curveBinding");
-            var propertyNameProp = curveBindingProp.FindPropertyRelative("_propertyName");
+            var curveBindingProp = elementProp.FindPropertyRelative(GenericAnimation.CurveBindingPropName);
+            var propertyNameProp = curveBindingProp.FindPropertyRelative(SerializableCurveBinding.PropertyNamePropName);
             label.text = propertyNameProp.stringValue;
         };
         manualContent.Add(genericAnimationsListView);
@@ -206,9 +206,9 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
 
         detailsContainer.style.display = DisplayStyle.Flex;
 
-        _curveBindingField.BindProperty(selectedProp.FindPropertyRelative("_curveBinding"));
-        _curveField.BindProperty(selectedProp.FindPropertyRelative("_curve"));
-        _objectReferenceCurveField.BindProperty(selectedProp.FindPropertyRelative("_objectReferenceCurve"));
+        _curveBindingField.BindProperty(selectedProp.FindPropertyRelative(GenericAnimation.CurveBindingPropName));
+        _curveField.BindProperty(selectedProp.FindPropertyRelative(GenericAnimation.CurvePropName));
+        _objectReferenceCurveField.BindProperty(selectedProp.FindPropertyRelative(GenericAnimation.ObjectReferenceCurvePropName));
     }
 
     private void OpenGenericAnimationsEditor()
