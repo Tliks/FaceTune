@@ -83,6 +83,11 @@ internal record PatternData
         OrderedItems = orderedItems;
     }
 
+    public PatternData()
+    {
+        OrderedItems = new List<IPatternElement>();
+    }
+
     public static PatternData Collect(SessionContext context)
     {
         var orderedItems = new List<IPatternElement>();

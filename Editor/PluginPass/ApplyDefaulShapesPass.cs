@@ -9,7 +9,7 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.Extension<FTPassContext>()!;
+        var passContext = context.GetState<BuildPassState>();
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
 

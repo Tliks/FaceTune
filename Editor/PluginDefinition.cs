@@ -14,34 +14,28 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
 
     protected override void Configure()
     {
-        InPhase(BuildPhase.Resolving)
-        .Run(ResolveReferencesPass.Instance);
+        var sequence = InPhase(BuildPhase.Resolving);
+        sequence.Run(ResolveReferencesPass.Instance);
 
-        var mainSequence = InPhase(BuildPhase.Transforming)
+        sequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
-        
-        mainSequence.WithRequiredExtension(typeof(FTPassContext), sq =>
+        sequence.Run("Get State", ctx => ctx.GetState(ctx => BuildPassState.Get(ctx)));
+        sequence.Run(ModifyHierarchyPass.Instance);
+        sequence.Run(CollectDataPass.Instance);
+        sequence.Run(ProcessTrackedShapesPass.Instance);
+        sequence.Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview());
+        sequence.WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
         {
-            sq
-            .Run(ModifyHierarchyPass.Instance).Then
-            .Run(CollectDataPass.Instance).Then
-            .Run(ProcessTrackedShapesPass.Instance).Then
-            .Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview()).Then
-            .WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
-            {
-                sq1
-                .Run(DisableExistingControlAndInstallPatternDataPass.Instance);
-            });
+            sq1
+            .Run(DisableExistingControlAndInstallPatternDataPass.Instance);
         });
+        sequence.Run(RemoveFTComponentsPass.Instance);
 
-        mainSequence
-        .Run(RemoveFTComponentsPass.Instance);
-
-        InPhase(BuildPhase.Optimizing)
-        .AfterPlugin("nadena.dev.modular-avatar")
-        .AfterPlugin("net.rs64.tex-trans-tool")
-        .AfterPlugin("com.anatawa12.avatar-optimizer")
-        .Run("Empty Pass", _ => { })
-        .PreviewingWith(new EditingShapesPreview(), new SelectedShapesPreview());
+        sequence = InPhase(BuildPhase.Optimizing)
+            .AfterPlugin("nadena.dev.modular-avatar")
+            .AfterPlugin("net.rs64.tex-trans-tool")
+            .AfterPlugin("com.anatawa12.avatar-optimizer");
+        sequence.Run("Empty Pass", _ => { })
+            .PreviewingWith(new EditingShapesPreview(), new SelectedShapesPreview());
     }
 }

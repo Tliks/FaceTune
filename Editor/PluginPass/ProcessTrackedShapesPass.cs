@@ -9,15 +9,17 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.Extension<FTPassContext>()!;
+        var passContext = context.GetState<BuildPassState>();
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
 
+        var patternData = context.GetState<PatternData>();
+
         List<Expression> allExpressions = new();
         allExpressions.AddRange(sessionContext.DEC.GetAllExpressions());
-        if (passContext.PatternData != null && !passContext.PatternData.IsEmpty)
+        if (!patternData.IsEmpty)
         {
-            allExpressions.AddRange(passContext.PatternData.GetAllExpressions());
+            allExpressions.AddRange(patternData.GetAllExpressions());
         }
 
         var trackedShapes = passContext.PlatformSupport.GetTrackedBlendShape().ToHashSet();

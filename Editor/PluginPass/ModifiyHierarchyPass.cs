@@ -13,7 +13,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.Extension<FTPassContext>()!;
+        var passContext = context.GetState<BuildPassState>();
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
         
@@ -26,7 +26,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         NormalizeData(context.AvatarRootObject);
     }
 
-    private void NegotiateMAMenuItem(FTPassContext passContext)
+    private void NegotiateMAMenuItem(BuildPassState passContext)
     {
         var root = passContext.BuildContext.AvatarRootObject;
         var platformSupport = passContext.PlatformSupport;
@@ -103,7 +103,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     }
 
     private const string Preset_Index_Parameter = $"{FaceTuneConsts.ParameterPrefix}/PresetIndex";
-    private void ProcessPreset(FTPassContext passContext)
+    private void ProcessPreset(BuildPassState passContext)
     {
         var platformSupport = passContext.PlatformSupport;
         var presetComponents = passContext.BuildContext.AvatarRootObject.GetComponentsInChildren<PresetComponent>(true);

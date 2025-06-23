@@ -75,7 +75,7 @@ internal class VRChatSuport : IPlatformSupport
         return new AnimatorInstaller(context, cc, fx, useWriteDefaults);
     }
 
-    public void DisableExistingControlAndInstallPatternData(FTPassContext passContext, bool overrideShapes, bool overrideProperties, PatternData patternData)
+    public void DisableExistingControlAndInstallPatternData(BuildPassState passContext, bool overrideShapes, bool overrideProperties, PatternData patternData)
     {
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null)

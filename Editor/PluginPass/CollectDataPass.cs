@@ -9,14 +9,9 @@ internal class CollectDataPass : Pass<CollectDataPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.Extension<FTPassContext>()!;
+        var passContext = context.GetState<BuildPassState>();
         var sessionContext = passContext.SessionContext;
         if (sessionContext == null) return;
-
-        Profiler.BeginSample("CollectPatternData");
-        var patternData = PatternData.Collect(sessionContext);
-        Profiler.EndSample();
-
-        passContext.SetPatternData(patternData);
+        context.GetState(ctx => PatternData.Collect(sessionContext));
     }
 }
