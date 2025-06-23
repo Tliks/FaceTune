@@ -61,7 +61,7 @@ public record GenericAnimation // Immutable
         if (IsBlendShapeAnimation())
         {
             var name = curveBinding.PropertyName.Substring(BlendShapePrefix.Length);
-            animation = new BlendShapeAnimation(name, curve.Clone());
+            animation = new BlendShapeAnimation(name, curve);
             return true;
         }
         animation = null;

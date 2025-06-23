@@ -23,6 +23,8 @@
 ### Fixed
 - 毎フレームNDMF Previewが更新されていた問題を修正。
 - 不要なTracking用レイヤーが生成されないように修正。
+- floatのParameter Conditionが正常に動作していなかった問題を修正
+- アバターの初期化時にTracking Controlが正常に適用されていなかった問題を修正
 
 ### Security
 
