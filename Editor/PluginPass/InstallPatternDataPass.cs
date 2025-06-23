@@ -4,7 +4,7 @@ namespace com.aoyon.facetune.pass;
 
 internal class DisableExistingControlAndInstallPatternDataPass : Pass<DisableExistingControlAndInstallPatternDataPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.disable-existing-control-and-install-pattern-data";
+    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.disable-existing-control-and-install-pattern-data";
     public override string DisplayName => "Disable Existing Control and Install PatternData";
 
     protected override void Execute(BuildContext context)

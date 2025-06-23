@@ -4,6 +4,6 @@ namespace com.aoyon.facetune
     public class AllowTrackedBlendShapesComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Allow Tracked BlendShapes";
-        internal const string MenuPath = FaceTune + "/" + Global + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + Global + "/" + ComponentName;
     }
 }

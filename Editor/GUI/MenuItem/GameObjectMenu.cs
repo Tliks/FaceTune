@@ -4,7 +4,7 @@ namespace com.aoyon.facetune.ui;
 
 internal static class GameObjectMenu
 {
-    private const string BasePath = "GameObject/FaceTune/";
+    private const string BasePath = $"GameObject/{FaceTuneConsts.Name}/";
     private const int PRIORITY = 21;
 
     private static void IP(string guid, 

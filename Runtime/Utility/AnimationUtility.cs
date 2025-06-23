@@ -10,7 +10,7 @@ internal static class FTAnimationUtility
         return duplicated;
     }
 
-    private const string BlendShapePropertyName = "blendShape.";
+    private const string BlendShapePropertyName = FaceTuneConsts.AnimatedBlendShapePrefix;
 
 #if UNITY_EDITOR
     public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? defaultSet = null)

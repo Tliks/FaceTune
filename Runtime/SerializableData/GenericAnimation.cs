@@ -51,7 +51,7 @@ public record GenericAnimation // Immutable
         return new GenericAnimation(curveBinding, curve, objectReferenceCurve);
     }
 
-    private static readonly string BlendShapePrefix = "blendShape.";
+    private static readonly string BlendShapePrefix = FaceTuneConsts.AnimatedBlendShapePrefix;
     internal bool IsBlendShapeAnimation()
     {
         return curveBinding.Type == typeof(SkinnedMeshRenderer) && curveBinding.PropertyName.StartsWith(BlendShapePrefix);

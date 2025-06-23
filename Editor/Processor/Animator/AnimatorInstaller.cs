@@ -20,7 +20,6 @@ internal class AnimatorInstaller
     private readonly List<VirtualState> _allStates = new();
     private readonly Dictionary<Expression, VirtualClip> _expressionClipCache = new();
 
-    private const string SystemName = "FaceTune";
     private readonly bool _useWriteDefaults;
     private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
     private static readonly Vector3 EntryStatePosition = new Vector3(50, 120, 0);
@@ -32,9 +31,9 @@ internal class AnimatorInstaller
     private VirtualLayer? _disableExistingControlLayer;
     private VirtualState? _defaultState;
 
-    private const string TrueParameterName = "FT/True";
-    private const string AllowEyeBlinkAAP = "FT/AllowEyeBlinkAAP";
-    private const string AllowLipSyncAAP = "FT/AllowLipSyncAAP";
+    private const string TrueParameterName = $"{FaceTuneConsts.ParameterPrefix}/True";
+    private const string AllowEyeBlinkAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowEyeBlinkAAP";
+    private const string AllowLipSyncAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowLipSyncAAP";
 
     public AnimatorInstaller(SessionContext sessionContext, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
@@ -51,7 +50,7 @@ internal class AnimatorInstaller
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
     {
         var layerPriority = new LayerPriority(priority);
-        var layer = controller.AddLayer(layerPriority, $"{SystemName}: {layerName}");
+        var layer = controller.AddLayer(layerPriority, $"{FaceTuneConsts.ShortName}: {layerName}");
         layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
         return layer; 
     }
@@ -166,7 +165,7 @@ internal class AnimatorInstaller
 
         var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
 
-        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), "blendShape.");
+        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), FaceTuneConsts.AnimatedBlendShapePrefix);
         var nonFacialBindings = bindings.Where(b => b != facialBinding);
         if (!nonFacialBindings.Any()) return;
 

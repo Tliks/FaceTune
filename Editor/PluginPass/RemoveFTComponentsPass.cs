@@ -4,7 +4,7 @@ namespace com.aoyon.facetune.pass;
 
 internal class RemoveFTComponentsPass : Pass<RemoveFTComponentsPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.remove-ft-components";
+    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.remove-ft-components";
     public override string DisplayName => "Remove FT Components";
 
     protected override void Execute(BuildContext context)

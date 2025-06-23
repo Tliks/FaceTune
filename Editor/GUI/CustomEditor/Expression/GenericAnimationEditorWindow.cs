@@ -54,7 +54,7 @@ internal static class GenericAnimationEditor
 
     public static void StartEditingWithAnimations(Animator animator, IReadOnlyList<GenericAnimation> animations, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
     {
-        var tmpClip = new AnimationClip { name = "FaceTune Temporary Clip" };
+        var tmpClip = new AnimationClip { name = $"{FaceTuneConsts.ShortName} Temporary Clip" };
         tmpClip.SetGenericAnimations(animations);
         Action<AnimationWindowSession> onSessionEnded_ = session =>
         {
@@ -92,7 +92,7 @@ internal static class GenericAnimationEditor
         s_CurrentSession = new AnimationWindowSession(animator, originalController, clipToEdit, onClipModified);
         s_OnSessionEnded = onSessionEnded;
 
-        var tempController = new AnimatorController { name = "FaceTune Temporary Controller" };
+        var tempController = new AnimatorController { name = $"{FaceTuneConsts.ShortName} Temporary Controller" };
         tempController.AddLayer("TempLayer");
         var state = tempController.layers[0].stateMachine.AddState("TempState");
         state.motion = clipToEdit;

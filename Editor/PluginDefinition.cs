@@ -9,8 +9,8 @@ namespace com.aoyon.facetune;
 
 public sealed class PluginDefinition : Plugin<PluginDefinition>
 {
-    public override string QualifiedName => "com.aoyon.facetune";
-    public override string DisplayName => "FaceTune";
+    public override string QualifiedName => FaceTuneConsts.QualifiedName;
+    public override string DisplayName => FaceTuneConsts.Name;
 
     protected override void Configure()
     {

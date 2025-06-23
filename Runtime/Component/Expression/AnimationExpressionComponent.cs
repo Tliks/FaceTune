@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class AnimationExpressionComponent : ExpressionComponentBase
     {
         internal const string ComponentName = "FT Animation Expression";
-        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         public AnimationSourceMode SourceMode = AnimationSourceMode.FromAnimationClip;
 

@@ -4,7 +4,7 @@ namespace com.aoyon.facetune.pass;
 
 internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.process-tracked-shapes";
+    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.process-tracked-shapes";
     public override string DisplayName => "Process Tracked Shapes";
 
     protected override void Execute(BuildContext context)

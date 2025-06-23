@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class DefaultFacialExpressionComponent : FaceTuneTagComponent, IHasBlendShapes
     {
         internal const string ComponentName = "FT Default Facial Expression";
-        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         public FacialSettings FacialSettings = new();
         public List<BlendShapeAnimation> BlendShapeAnimations = new();

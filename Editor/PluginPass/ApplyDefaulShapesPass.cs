@@ -4,7 +4,7 @@ namespace com.aoyon.facetune.pass;
 
 internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.apply-default-shapes";
+    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.apply-default-shapes";
     public override string DisplayName => "Apply Default Shapes";
 
     protected override void Execute(BuildContext context)

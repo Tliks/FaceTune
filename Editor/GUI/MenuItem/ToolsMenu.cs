@@ -5,7 +5,7 @@ namespace com.aoyon.facetune.ui;
 
 internal static class ToolsMenu
 {
-    private const string BasePath = "Tools/FaceTune/";
+    private const string BasePath = $"Tools/{FaceTuneConsts.Name}/";
 
     private const string Tools_SelectedExpressionPreviewPath = BasePath + "SelectedExpressionPreview";
 

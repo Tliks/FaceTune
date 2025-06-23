@@ -4,7 +4,7 @@ namespace com.aoyon.facetune
     public class MergeExpressionComponent : ExpressionComponentBase
     {
         internal const string ComponentName = "FT Merge Expression";
-        internal const string MenuPath = FaceTune + "/" + Expression + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         public FacialSettings FacialSettings = new(); // 影響下にFacialExpressionComponentがある場合のみ有効
 

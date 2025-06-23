@@ -4,7 +4,7 @@ namespace com.aoyon.facetune.pass;
 
 internal class CollectDataPass : Pass<CollectDataPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.collect-data";
+    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.collect-data";
     public override string DisplayName => "Collect Data";
 
     protected override void Execute(BuildContext context)

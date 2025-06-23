@@ -8,7 +8,7 @@ namespace com.aoyon.facetune.pass;
 // なお、PatternDataを必要とする場合は後続のパス。
 internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 {
-    public override string QualifiedName => "com.aoyon.facetune.modify-hierarchy";
+    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.modify-hierarchy";
     public override string DisplayName => "Modify Hierarchy";
 
     protected override void Execute(BuildContext context)
@@ -102,7 +102,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         }
     }
 
-    internal const string Preset_Index_Parameter = "FaceTune_PresetIndex";
+    private const string Preset_Index_Parameter = $"{FaceTuneConsts.ParameterPrefix}/PresetIndex";
     private void ProcessPreset(FTPassContext passContext)
     {
         var platformSupport = passContext.PlatformSupport;

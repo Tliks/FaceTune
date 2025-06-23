@@ -3,7 +3,7 @@ namespace com.aoyon.facetune
     [AddComponentMenu(MenuPath)]
     public class PresetComponent : FaceTuneTagComponent
     {
-        internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
         internal const string ComponentName = "FT Preset";
 
         public string OverridePresetName = string.Empty;

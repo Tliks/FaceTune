@@ -14,7 +14,7 @@ internal class AnimationIndex
     private BlendShapeSet? _allFirstFrameBlendShapeSet;
     private bool _cacheValid = false;
 
-    private static readonly string BlendShapePrefix = "blendShape.";
+    private static readonly string BlendShapePrefix = FaceTuneConsts.AnimatedBlendShapePrefix;
 
     public AnimationIndex(IReadOnlyList<GenericAnimation> animations)
     {

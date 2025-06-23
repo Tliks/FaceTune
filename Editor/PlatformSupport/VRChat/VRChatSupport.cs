@@ -199,11 +199,11 @@ internal class VRChatSuport : IPlatformSupport
     public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames, string suffix)
     {
         var baseName = menuItem.gameObject.name.Replace(" ", "_");
-        var parameterName = $"facetune/{baseName}/{suffix}";
+        var parameterName = $"{FaceTuneConsts.ParameterPrefix}/{baseName}/{suffix}";
         int index = 1;
         while (usedNames.Contains(parameterName))
         {
-            parameterName = $"facetune/{baseName}_{index}/{suffix}";
+            parameterName = $"{FaceTuneConsts.ParameterPrefix}/{baseName}_{index}/{suffix}";
             index++;
         }
         return parameterName;
