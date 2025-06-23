@@ -36,7 +36,21 @@ internal class DisableExistingControlAndInstallPatternDataPass : Pass<DisableExi
         }
 
         Profiler.BeginSample("InstallPatternData");
-        passContext.PlatformSupport.DisableExistingControlAndInstallPatternData(passContext, overrideShapes, overrideProperties, patternData);
+        passContext.PlatformSupport.DisableExistingControlAndInstallPatternData(passContext, new InstallData(overrideShapes, overrideProperties, patternData));
         Profiler.EndSample();
+    }
+}
+
+internal class InstallData
+{
+    public bool OverrideBlendShapes;
+    public bool OverrideProperties;
+    public PatternData PatternData;
+
+    public InstallData(bool overrideBlendShapes, bool overrideProperties, PatternData patternData)
+    {
+        OverrideBlendShapes = overrideBlendShapes;
+        OverrideProperties = overrideProperties;
+        PatternData = patternData;
     }
 }

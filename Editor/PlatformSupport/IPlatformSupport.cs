@@ -12,7 +12,7 @@ internal interface IPlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void DisableExistingControlAndInstallPatternData(BuildPassState passContext, bool overrideShapes, bool overrideProperties, PatternData patternData)
+    public void DisableExistingControlAndInstallPatternData(BuildPassState passContext, InstallData installData)
     {
         return;
     }

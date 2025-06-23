@@ -2,6 +2,7 @@ using UnityEditor.Animations;
 using nadena.dev.ndmf.animator;
 using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.platform;
+using com.aoyon.facetune.pass;
 
 namespace com.aoyon.facetune.animator;
 
@@ -190,13 +191,14 @@ internal class AnimatorInstaller
         defaultState = shapesState;
     }
 
-    public void DisableExistingControlAndInstallPatternData(bool overrideShapes, bool overrideProperties, PatternData patternData)
+    public void DisableExistingControlAndInstallPatternData(InstallData installData)
     {
+        var patternData = installData.PatternData;
         if (patternData.IsEmpty) return;
 
         EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
 
-        CreateDefaultLayer(overrideShapes, overrideProperties, patternData);
+        CreateDefaultLayer(installData.OverrideBlendShapes, installData.OverrideProperties, patternData);
 
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowEyeBlinkAAP);
         EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
