@@ -24,11 +24,11 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
         SelectedShapesPreview.MayEnable();
     }
 
-    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
-        if (!IsEnabled(context)) return null;
+        if (!IsEnabled(context)) return;
         var target = context.Observe(_target, t => t, (a, b) => a == b);
-        if (target != original) return null;
-        return context.Observe(_previewShapes, s => s, (a, b) => false);
+        if (target != original) return;
+        result.AddRange(context.Observe(_previewShapes, s => s, (a, b) => false));
     }
 }

@@ -3,21 +3,29 @@ namespace com.aoyon.facetune
     [AddComponentMenu(MenuPath)]
     public class PresetComponent : FaceTuneTagComponent
     {
-        internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
         internal const string ComponentName = "FT Preset";
 
         public string OverridePresetName = string.Empty;
         public DefaultFacialExpressionComponent? OverrideDefaultExpressionComponent = null;
 
-        internal Preset? GetPreset(FacialExpression defaultExpression, ParameterCondition presetCondition)
+        internal ParameterCondition? AssignedPresetCondition { get; private set; }
+
+        internal void SetAssignedPresetCondition(ParameterCondition presetCondition)
         {
+            AssignedPresetCondition = presetCondition;
+        }
+
+        internal Preset? GetPreset(SessionContext sessionContext, DefaultExpressionContext dec)
+        {
+            if (AssignedPresetCondition == null) return null;
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(true)
-                .Select(c => c.GetPattern(defaultExpression))
-                .UnityOfType<ExpressionPattern>()
+                .Select(c => c.GetPattern(sessionContext, dec))
+                .OfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;
             var presetName = string.IsNullOrWhiteSpace(OverridePresetName) ? gameObject.name : OverridePresetName;
-            return new Preset(presetName, patterns, defaultExpression, presetCondition);
+            return new Preset(presetName, patterns, dec.GetPresetDefaultExpression(this), AssignedPresetCondition);
         }
 
         internal GameObject GetMenuTarget()

@@ -46,9 +46,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 217935396108389837, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1352380249374286162, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1352380249374286162, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
@@ -106,9 +116,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5602339011208726010, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6149436245582214012, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6149436245582214012, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6186425253141192785, guid: 9f044864c335d38499244290e12697d3,
@@ -116,9 +136,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6186425253141192785, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6349561986896578731, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6349561986896578731, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6644612618986536593, guid: 9f044864c335d38499244290e12697d3,
@@ -126,9 +156,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6644612618986536593, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7043666745270236098, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7043666745270236098, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3,
@@ -210,9 +250,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1704227186460256230, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1930796234532467644, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1930796234532467644, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3472275454412260610, guid: 73a1d844c3155444696e054ae47b9f7c,
@@ -220,9 +270,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3472275454412260610, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4684944566820409495, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4684944566820409495, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5129038026141425213, guid: 73a1d844c3155444696e054ae47b9f7c,
@@ -235,9 +295,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5160402723131478131, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6666964804576130187, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6666964804576130187, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8899474392035475652, guid: 73a1d844c3155444696e054ae47b9f7c,
@@ -245,9 +315,19 @@ PrefabInstance:
       propertyPath: EnableBlending
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8899474392035475652, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9117185088660386367, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
       propertyPath: EnableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9117185088660386367, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings._enableBlending
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

@@ -7,17 +7,25 @@ internal static class CustomEditorUtility
         return SessionContextBuilder.TryBuild(obj, out context);
     }
 
-    public static void ToClip(GameObject obj, Func<DefaultExpressionContext , IEnumerable<BlendShape>?> blendShapesProvider)
+    public static bool TryGetContextWithDEC(GameObject obj, [NotNullWhen(true)] out SessionContext? context, [NotNullWhen(true)] out DefaultExpressionContext? dec)
     {
-        if (!TryGetContext(obj, out var context)) return;
+        return SessionContextBuilder.TryBuildWithDEC(obj, out context, out dec);
+    }
 
-        var relativePath = HierarchyUtility.GetRelativePath(context.Root, context.FaceRenderer.gameObject)!;
-        var blendShapes = blendShapesProvider(context.DEC);
-        if (blendShapes == null) return;
-
+    public static void ToClip(string relativePath, IEnumerable<BlendShape> blendShapes)
+    {
         var clip = new AnimationClip();
         clip.SetBlendShapes(relativePath, blendShapes);
         var path = EditorUtility.SaveFilePanelInProject("Save FacialExpression as Clip", "FacialExpression", "anim", "Please enter the name of the animation clip.");
+        if (string.IsNullOrEmpty(path)) return;
+        AssetDatabase.CreateAsset(clip, path);
+    }
+
+    public static void ToClip(List<GenericAnimation> genericAnimations)
+    {
+        var clip = new AnimationClip();
+        clip.SetGenericAnimations(genericAnimations);
+        var path = EditorUtility.SaveFilePanelInProject("Save GenericAnimations as Clip", "GenericAnimations", "anim", "Please enter the name of the animation clip.");
         if (string.IsNullOrEmpty(path)) return;
         AssetDatabase.CreateAsset(clip, path);
     }

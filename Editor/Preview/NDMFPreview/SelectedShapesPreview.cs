@@ -37,33 +37,37 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         _targetObject.Value = target;
     }
 
-    protected override BlendShapeSet? QueryBlendShapeSet(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, SessionContext sessionContext, ComputeContext context)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
         var observeContext = new NDMFPreviewObserveContext(context);
-        if (!IsEnabled(context)) return null;
+        if (!IsEnabled(context)) return;
 
-        var dfc = sessionContext.DEC;
+        using var dfc = DefaultExpressionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, observeContext);
         
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
-            return GetBlendShapeSet(clip);
+            GetBlendShapes(clip, result);
+            return;
         }
 
-        var defaultExpression = context.Observe(_targetObject, o => o is GameObject targetGameObject ? dfc.GetDefaultExpression(targetGameObject) : null, (a, b) =>
+        // _targetObjectをそのまま監視すると、無関係なオブジェクト同士に対する選択の切り替え時に更新がかかるようになる。
+        // そのため、extractを用いるが、propertymonitorの負荷を考えるとどうだろう
+        var defaultSet = context.Observe(_targetObject, o => o is GameObject targetGameObject && dfc.Disposed is false ? dfc.GetDefaultBlendShapes(targetGameObject) : null, (a, b) =>
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
             return a.Equals(b);
         });
-        if (defaultExpression == null)
+        if (defaultSet == null)
         {
-            return null;
+            return;
         }
 
         // 何らかのGameObjcetを触っており、defaultExpressionはglobalもしくはpreset
 
-        var expressionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ExpressionComponentBase>(targetGameObject) : null, (a, b) =>
+        // Todo: // extractにcontext.GetComponentsがあるのどうにかしたい
+        var expressionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ExpressionComponentBase>(targetGameObject) : null, (a, b) => 
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
@@ -71,7 +75,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         });
         if (expressionComponents != null && expressionComponents.Length > 0)
         {
-            return GetBlendShapeSet(expressionComponents, defaultExpression, observeContext);
+            GetBlendShapes(expressionComponents, defaultSet, observeContext, result);
+            return;
         }
 
         var conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? context.GetComponents<ConditionComponent>(targetGameObject) : null, (a, b) =>
@@ -80,41 +85,45 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             if (a == null || b == null) return false;
             return a.SequenceEqual(b);
         });
-        if (conditionComponents != null && conditionComponents.Length == 1)
+        if (conditionComponents != null && conditionComponents.Length > 0)
         {
             var conditionComponent = conditionComponents.First();
-            var expressionComponents_ = conditionComponent.GetExpressionComponents(observeContext);
-            return GetBlendShapeSet(expressionComponents_, defaultExpression, observeContext);
+            var childrenConditionComponents = conditionComponent.GetComponentsInChildren<ConditionComponent>(true);
+            if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
+            {
+                expressionComponents = context.GetComponentsInChildren<ExpressionComponentBase>(conditionComponent.gameObject, true);
+                GetBlendShapes(expressionComponents, defaultSet, observeContext, result);
+                return;
+            }
         }
 
-        var globalDefaultExpression = dfc.GetGlobalDefaultExpression();
-        if (!defaultExpression.Equals(globalDefaultExpression))
+        var globalDefaultBlendShapes = dfc.GetGlobalDefaultBlendShapes();
+        if (!defaultSet.SequenceEqual(globalDefaultBlendShapes))
         {
             // PresetdefaultExpression
-            return defaultExpression.BlendShapeSet;
+            result.AddRange(defaultSet);
+            return;
         }
         else
         {
             // GlobalDefaultExpression
             // DefaultPreviewと重複するが、DefaultPreviewがOFFの場合でも選択時はプレビューはして良いと思う。
-            return globalDefaultExpression.BlendShapeSet;
+            result.AddRange(globalDefaultBlendShapes);
+            return;
         }
     }
 
-    private static BlendShapeSet GetBlendShapeSet(AnimationClip clip)
+    private static void GetBlendShapes(AnimationClip clip, BlendShapeSet result)
     {
-        return clip.GetBlendShapes().ToSet();
+        clip.GetFirstFrameBlendShapes(result);
     }
 
-    private static BlendShapeSet GetBlendShapeSet(IEnumerable<ExpressionComponentBase> expressionComponents, FacialExpression defaultExpression, IObserveContext observeContext)
+    private static void GetBlendShapes(IEnumerable<ExpressionComponentBase> expressionComponents, BlendShapeSet defaultSet, IObserveContext observeContext, BlendShapeSet result)
     {
-        var blendShapes = new BlendShapeSet();
         foreach (var expressionComponent in expressionComponents)
         {
-            var expression = observeContext.Observe(expressionComponent, c => (c as IExpressionProvider)!.ToExpression(defaultExpression, observeContext), (a, b) => a.Equals(b));
-            blendShapes.Add(expression.GetBlendShapeSet());
+            if (expressionComponent is not IHasBlendShapes hasBlendShapes) continue;
+            hasBlendShapes.GetBlendShapes(result, defaultSet, observeContext);
         }
-        if (blendShapes.Count == 0) return defaultExpression.BlendShapeSet;
-        return blendShapes;
     }
 }

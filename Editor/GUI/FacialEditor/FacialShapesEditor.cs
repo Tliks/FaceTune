@@ -9,6 +9,7 @@ internal class FacialShapesEditor : EditorWindow
     public SkinnedMeshRenderer Renderer = null!;
     public Mesh Mesh = null!;
     public IReadOnlyList<BlendShape> BaseShapes = null!;
+    private Dictionary<string, int> _baseShapeIndexMap = null!;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
 
@@ -22,8 +23,18 @@ internal class FacialShapesEditor : EditorWindow
         {
             if (_previewOnHover == value) return;
             _previewOnHover = value;
-            if (value) _previewShapes.Value = GetResult();
-            else _previewShapes.Value = new();
+            var current = _previewShapes.Value;
+            _previewShapes.Value = _emptySet;
+            if (value)
+            {
+                GetResult(current);
+                _previewShapes.Value = current;
+            }
+            else
+            {
+                current.Clear();
+                _previewShapes.Value = current;
+            }
         }
     }
     private bool _highlightOnHover = false;
@@ -49,6 +60,7 @@ internal class FacialShapesEditor : EditorWindow
     private SerializedProperty _overrideFlagsProperty = null!;
     private SerializedProperty _overrideWeightsProperty = null!;
 
+    private BlendShapeSet _emptySet = new();
     private readonly PublishedValue<BlendShapeSet> _previewShapes = new(new());
 
     private AnimationClip? _sourceClip = null;
@@ -56,7 +68,7 @@ internal class FacialShapesEditor : EditorWindow
 
     private int _previousUndoGroup = -1;
 
-    public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
+    public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet defaultShapes, BlendShapeSet defaultOverrides)
     {
         if (HasOpenInstances<FacialShapesEditor>())
         {
@@ -85,12 +97,13 @@ internal class FacialShapesEditor : EditorWindow
         return window;
     }
 
-    public void Init(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> defaultShapes, BlendShapeSet defaultOverrides)
+    public void Init(SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet defaultShapes, BlendShapeSet defaultOverrides)
     {
         Renderer = renderer;
         Mesh = mesh;
 
         BaseShapes = defaultShapes.ToList().AsReadOnly();
+        _baseShapeIndexMap = BaseShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
         var mapping = defaultOverrides.BlendShapes.ToDictionary(x => x.Name, x => x.Weight);
         _overrideFlags = BaseShapes.Select(x => mapping.ContainsKey(x.Name)).ToArray();
         _overrideWeights = BaseShapes.Select(x => mapping.ContainsKey(x.Name) ? mapping[x.Name] : -1).ToArray();
@@ -108,8 +121,8 @@ internal class FacialShapesEditor : EditorWindow
         _previousUndoGroup = Undo.GetCurrentGroup();
         Undo.IncrementCurrentGroup();
 
-        _previewShapes.Value = GetResult();
-        EditingShapesPreview.Start(renderer, _previewShapes);
+        _previewShapes.Value = new();
+        EditingShapesPreview.Start(renderer, _previewShapes!);
     }
 
     private void OnAnyChangeCallback()
@@ -122,8 +135,18 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (PreviewOnHover)
         {
-            if (index == -1) _previewShapes.Value = GetResult();
-            else _previewShapes.Value = GetResult().Add(new BlendShape(BaseShapes[index].Name, 100f));
+            var current = _previewShapes.Value;
+            _previewShapes.Value = _emptySet;
+            GetResult(current);
+            if (index == -1)
+            {
+                _previewShapes.Value = current;
+            }
+            else
+            {
+                current.Add(new BlendShape(BaseShapes[index].Name, 100f));
+                _previewShapes.Value = current;
+            }
         }
         if (HighlightOnHover)
         {
@@ -141,7 +164,13 @@ internal class FacialShapesEditor : EditorWindow
 
     private void RefreshPreview()
     {
-        if (PreviewOnHover) _previewShapes.Value = GetResult();
+        if (PreviewOnHover)
+        {
+            var current = _previewShapes.Value;
+            _previewShapes.Value = _emptySet;
+            GetResult(current);
+            _previewShapes.Value = current;
+        }
     }
 
     public void RegisterApplyCallback(Action<BlendShapeSet> onApply)
@@ -151,16 +180,18 @@ internal class FacialShapesEditor : EditorWindow
 
     public override void SaveChanges()
     {
-        _onApply?.Invoke(GetResult());
+        var result = new BlendShapeSet(BaseShapes);
+        GetResult(result);
+        _onApply?.Invoke(result);
         hasUnsavedChanges = false;
         base.SaveChanges();
     }
 
-    public BlendShapeSet GetResult()
+    public void GetResult(BlendShapeSet result)
     {
+        result.Clear();
         _serializedObject.ApplyModifiedProperties();
         _serializedObject.Update();
-        var result = new BlendShapeSet();
         for (var i = 0; i < _overrideWeightsProperty.arraySize; i++)
         {
             var overrideFlag = _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue;
@@ -169,7 +200,6 @@ internal class FacialShapesEditor : EditorWindow
             var weight = _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue;
             result.Add(new BlendShape(BaseShapes[i].Name, weight));
         }
-        return result;
     }
 
     public void ForceClose()
@@ -270,12 +300,12 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_sourceClip == null) return;
 
-        var newBlendShapes = BlendShapeUtility.GetBlendShapeSetFromClip(_sourceClip, _clipExcludeOption, new BlendShapeSet(BaseShapes));
+        var newBlendShapes = new BlendShapeSet();
+        _sourceClip.GetFirstFrameBlendShapes(newBlendShapes, _clipExcludeOption, new BlendShapeSet(BaseShapes));
 
-        var mapping = new BlendShapeSet(BaseShapes).Add(GetResult()).BlendShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
-        foreach (var blendShape in newBlendShapes.BlendShapes)
+        foreach (var blendShape in newBlendShapes)
         {
-            if (mapping.TryGetValue(blendShape.Name, out var index))
+            if (_baseShapeIndexMap.TryGetValue(blendShape.Name, out var index))
             {
                 // if (!_includeEqualOverride && _overrideWeights[index] == blendShape.Weight) continue;
                 _overrideFlags[index] = true;
