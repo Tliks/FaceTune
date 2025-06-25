@@ -42,7 +42,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var observeContext = new NDMFPreviewObserveContext(context);
         if (!IsEnabled(context)) return;
 
-        using var dfc = SessionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, observeContext);
+        using var dfc = DefaultExpressionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, observeContext);
         
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)

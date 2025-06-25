@@ -19,7 +19,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
 
         sequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
-        sequence.Run("Get State", ctx => ctx.GetState(ctx => BuildPassState.Get(ctx)));
+        sequence.Run("Get State", ctx => ctx.GetState(ctx => new BuildPassState(ctx)));
         sequence.Run(ModifyHierarchyPass.Instance);
         sequence.Run(CollectDataPass.Instance);
         sequence.Run(ProcessTrackedShapesPass.Instance);

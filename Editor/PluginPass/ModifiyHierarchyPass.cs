@@ -13,23 +13,21 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.GetState<BuildPassState>();
-        var sessionContext = passContext.SessionContext;
-        if (sessionContext == null) return;
+        if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
         
         // Condition
-        NegotiateMAMenuItem(passContext);
-        ProcessPreset(passContext);
+        NegotiateMAMenuItem(buildPassContext);
+        ProcessPreset(buildPassContext);
         // Expression
-        MergeExpression(sessionContext);
+        MergeExpression(buildPassContext);
         // Pattern
-        NormalizeData(context.AvatarRootObject);
+        NormalizeData(buildPassContext);
     }
 
-    private void NegotiateMAMenuItem(BuildPassState passContext)
+    private void NegotiateMAMenuItem(BuildPassContext buildPassContext)
     {
-        var root = passContext.BuildContext.AvatarRootObject;
-        var platformSupport = passContext.PlatformSupport;
+        var root = buildPassContext.BuildContext.AvatarRootObject;
+        var platformSupport = buildPassContext.PlatformSupport;
 
         var usedParameterNames = new HashSet<string>();
         var menuItems = root.GetComponentsInChildren<ModularAvatarMenuItem>(true);
@@ -159,10 +157,10 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     }
 
     private const string Preset_Index_Parameter = $"{FaceTuneConsts.ParameterPrefix}/PresetIndex";
-    private void ProcessPreset(BuildPassState passContext)
+    private void ProcessPreset(BuildPassContext buildPassContext)
     {
-        var platformSupport = passContext.PlatformSupport;
-        var presetComponents = passContext.BuildContext.AvatarRootObject.GetComponentsInChildren<PresetComponent>(true);
+        var platformSupport = buildPassContext.PlatformSupport;
+        var presetComponents = buildPassContext.BuildContext.AvatarRootObject.GetComponentsInChildren<PresetComponent>(true);
         var presetIndex = 0;   
         foreach (var presetComponent in presetComponents)
         {
@@ -185,18 +183,22 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         }
     }
 
-    private void MergeExpression(SessionContext sessionContext)
+    private void MergeExpression(BuildPassContext buildPassContext)
     {
+        var sessionContext = buildPassContext.SessionContext;
+        var dec = buildPassContext.DEC;
+
         var mergeExpressionComponents = sessionContext.Root.GetComponentsInChildren<MergeExpressionComponent>(true);
         foreach (var mergeExpressionComponent in mergeExpressionComponents)
         {
-            mergeExpressionComponent.Merge(sessionContext);
+            mergeExpressionComponent.Merge(sessionContext, dec);
         }
     }
 
-    private void NormalizeData(GameObject root)
+    private void NormalizeData(BuildPassContext buildPassContext)
     {
         // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
+        var root = buildPassContext.BuildContext.AvatarRootObject;
         var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
         foreach (var expressionComponent in expressionComponents)
         {

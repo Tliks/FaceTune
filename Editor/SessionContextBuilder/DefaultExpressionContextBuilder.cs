@@ -2,61 +2,24 @@ using nadena.dev.ndmf.runtime;
 
 namespace com.aoyon.facetune;
 
-internal static class SessionContextBuilder
+internal static class DefaultExpressionContextBuilder
 {
-    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, IObserveContext? context = null)
+    private static readonly FacialSettings DefaultFacialSettings = new(TrackingPermission.Allow, TrackingPermission.Allow, false);
+
+    public static DefaultExpressionContext BuildDefaultExpressionContext(SessionContext sessionContext, IObserveContext? context = null)
     {
-        sessionContext = null;
-
+        var root = sessionContext.Root;
+        var faceRenderer = sessionContext.FaceRenderer;
+        return BuildDefaultExpressionContext(root, faceRenderer, context);
+    }
+    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, SkinnedMeshRenderer faceRenderer, IObserveContext? context = null)
+    {
         context ??= new NonObserveContext();
-
-        var root = context.GetAvatarRoot(target);
-        if (root == null) return false;
-
-        var faceRenderer = GetFaceRenderer(root, context);
-        if (faceRenderer == null) return false;
-
-        var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
-        if (faceMesh == null) return false;
 
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
-        
-        // context.Observe(faceRenderer, r => r.GetBlendShapes(faceMesh).ToSet(), (a, b) => a == b);
-        var sceneShapes = new BlendShapeSet(faceRenderer.GetBlendShapes(faceMesh));
-        var dec = BuildDefaultExpressionContext(root, bodyPath, sceneShapes, context);
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, dec);
-        return true;
-    }
-
-    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IObserveContext? context = null)
-    {
-        context ??= new NonObserveContext();
-
-        var overrideFaceRenderers = context.GetComponents<OverrideFaceRendererComponent>(root.gameObject);
-        if (overrideFaceRenderers.Length > 1)
-        {
-            Debug.LogWarning($"Found {overrideFaceRenderers.Length} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
-        }
-
-        // LastOrNullなのはhierarchy上で一番下のものを取りたいから
-        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c?.gameObject)).SkipDestroyed();
-        var faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null);
-        if (faceRenderer == null)
-        {
-            var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
-            return platformSupport.GetFaceRenderer();
-        }
-        else
-        {
-            return faceRenderer;
-        }
-    }
-
-    private static readonly FacialSettings DefaultFacialSettings = new(TrackingPermission.Allow, TrackingPermission.Allow, false);
-    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, string bodyPath, BlendShapeSet sceneShapes, IObserveContext? context = null)
-    {
-        context ??= new NonObserveContext();
+        using var _sceneShapes = BlendShapeSetPool.Get(out var sceneShapes);
+        faceRenderer.GetBlendShapes(sceneShapes);
         
         using var _defaultExpressionComponents = ListPool<DefaultFacialExpressionComponent>.Get(out var defaultExpressionComponents);
         defaultExpressionComponents.AddRange(context.GetComponentsInChildren<DefaultFacialExpressionComponent>(root.gameObject, true)); // Todo: NDMF

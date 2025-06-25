@@ -10,12 +10,12 @@ namespace com.aoyon.facetune
 
         internal Expression? MergedExpression { get; private set; }
 
-        internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
+        internal override Expression ToExpression(SessionContext sessionContext, DefaultExpressionContext dec, IObserveContext observeContext)
         {
             return MergedExpression ?? throw new InvalidOperationException("MergedExpression is not set");
         }
 
-        internal void Merge(SessionContext sessionContext)
+        internal void Merge(SessionContext sessionContext, DefaultExpressionContext dec)
         {
             var facialSettings = gameObject.GetComponentsInChildren<FacialExpressionComponent>(true).Any() ? FacialSettings : FacialSettings.Keep;
             var mergedExpression = new Expression(name, new List<GenericAnimation>(), ExpressionSettings, facialSettings);
@@ -25,7 +25,7 @@ namespace com.aoyon.facetune
             {
                 if (expressionComponent == this) continue;
 
-                var expression = expressionComponent.ToExpression(sessionContext, nonObserveContext);
+                var expression = expressionComponent.ToExpression(sessionContext, dec, nonObserveContext);
                 mergedExpression.MergeAnimation(expression.Animations);
                 Object.DestroyImmediate(expressionComponent);
             }

@@ -88,7 +88,7 @@ internal record PatternData
         OrderedItems = new List<IPatternElement>();
     }
 
-    public static PatternData Collect(SessionContext context)
+    public static PatternData Collect(SessionContext context, DefaultExpressionContext dec)
     {
         var orderedItems = new List<IPatternElement>();
         var processedGameObjects = new HashSet<GameObject>();
@@ -102,7 +102,7 @@ internal record PatternData
 
             if (component is PresetComponent presetComponent)
             {
-                var preset = presetComponent.GetPreset(context);
+                var preset = presetComponent.GetPreset(context, dec);
                 if (preset == null) continue;
                 orderedItems.Add(preset);
                 processedGameObjects.Add(presetComponent.gameObject);
@@ -114,7 +114,7 @@ internal record PatternData
             }
             else if (component is PatternComponent patternComponent)
             {
-                var pattern = patternComponent.GetPattern(context);
+                var pattern = patternComponent.GetPattern(context, dec);
                 if (pattern == null) continue;
                 orderedItems.Add(new SingleExpressionPattern(patternComponent.gameObject.name, pattern));
                 processedGameObjects.Add(patternComponent.gameObject);

@@ -2,7 +2,7 @@ namespace com.aoyon.facetune;
 
 internal interface IExpressionProvider
 {
-    Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext); // ビルドでのみ呼ぶ
+    Expression ToExpression(SessionContext sessionContext, DefaultExpressionContext dec, IObserveContext observeContext); // ビルドでのみ呼ぶ
 }
 
 internal interface IHasBlendShapes
@@ -14,7 +14,7 @@ public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressio
 {
     public ExpressionSettings ExpressionSettings = new();
     
-    internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)
+    internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext, DefaultExpressionContext dec)
     {
         // 親の GameObject ごとの Condition を取得する (OR の AND)
         var conditionComponentsByGameObject = new List<ConditionComponent[]>();
@@ -43,15 +43,15 @@ public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressio
                     x.HandGestureConditions.Select(y => y with { }),
                     x.ParameterConditions.Select(y => y with { })))
                 .ToList();
-            var expression = ToExpression(sessionContext, new NonObserveContext());
+            var expression = ToExpression(sessionContext, dec, new NonObserveContext());
             yield return new(conditions, expression);
         }
     }
 
-    internal abstract Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext);
+    internal abstract Expression ToExpression(SessionContext sessionContext, DefaultExpressionContext dec, IObserveContext observeContext);
 
-    Expression IExpressionProvider.ToExpression(SessionContext sessionContext, IObserveContext observeContext)
+    Expression IExpressionProvider.ToExpression(SessionContext sessionContext, DefaultExpressionContext dec, IObserveContext observeContext)
     {
-        return ToExpression(sessionContext, observeContext);
+        return ToExpression(sessionContext, dec, observeContext);
     }
 }

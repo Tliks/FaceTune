@@ -17,7 +17,7 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
     {
         if (!IsEnabled(context)) return;
 
-        using var defaultBlendShapeContext = SessionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, new NDMFPreviewObserveContext(context));
+        using var defaultBlendShapeContext = DefaultExpressionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, new NDMFPreviewObserveContext(context));
         var blendShapes = defaultBlendShapeContext.GetGlobalDefaultBlendShapes();
         result.AddRange(blendShapes);
     }

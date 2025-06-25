@@ -167,10 +167,10 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
 
     private void OpenFacialShapesEditor()
     {
-        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
-        var defaultBlendShapes = context.DEC.GetDefaultBlendShapeSet(Component.gameObject);
+        if (!CustomEditorUtility.TryGetContextWithDEC(Component.gameObject, out var context, out var dec)) return;
+        var defaultBlendShapes = dec.GetDefaultBlendShapeSet(Component.gameObject);
         var shapes = new List<BlendShape>();
-        Component.GetFirstFrameBlendShapeSet(context, shapes);
+        Component.GetFirstFrameBlendShapeSet(dec, shapes);
         var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes, new(shapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
@@ -214,12 +214,10 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
     private static void ToClip(MenuCommand command)
     {
         var component = (command.context as FacialExpressionComponent)!;
-        CustomEditorUtility.ToClip(component.gameObject, context =>
-        {
-            var shapes = new List<BlendShape>();
-            component.GetFirstFrameBlendShapeSet(context, shapes);
-            return shapes;
-        });
+        if (!CustomEditorUtility.TryGetContextWithDEC(component.gameObject, out var context, out var dec)) return;
+        var shapes = new List<BlendShape>();
+        component.GetFirstFrameBlendShapeSet(dec, shapes);
+        CustomEditorUtility.ToClip(context.BodyPath, shapes);
     }
 
     private void ConvertToManual()
@@ -228,8 +226,8 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         foreach (var component in components)
         {
             if (component.Clip == null) continue;
-            if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) continue;
-            var defaultSet = context.DEC.GetDefaultBlendShapeSet(component.gameObject);
+            if (!CustomEditorUtility.TryGetContextWithDEC(component.gameObject, out var context, out var dec)) continue;
+            var defaultSet = dec.GetDefaultBlendShapeSet(component.gameObject);
             var shapes = new List<BlendShape>();
             component.GetBlendShapes(shapes, defaultSet);
             var so = new SerializedObject(component);

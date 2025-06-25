@@ -7,14 +7,13 @@ internal static class CustomEditorUtility
         return SessionContextBuilder.TryBuild(obj, out context);
     }
 
-    public static void ToClip(GameObject obj, Func<SessionContext , IEnumerable<BlendShape>?> blendShapesProvider)
+    public static bool TryGetContextWithDEC(GameObject obj, [NotNullWhen(true)] out SessionContext? context, [NotNullWhen(true)] out DefaultExpressionContext? dec)
     {
-        if (!TryGetContext(obj, out var context)) return;
+        return SessionContextBuilder.TryBuildWithDEC(obj, out context, out dec);
+    }
 
-        var relativePath = HierarchyUtility.GetRelativePath(context.Root, context.FaceRenderer.gameObject)!;
-        var blendShapes = blendShapesProvider(context);
-        if (blendShapes == null) return;
-
+    public static void ToClip(string relativePath, IEnumerable<BlendShape> blendShapes)
+    {
         var clip = new AnimationClip();
         clip.SetBlendShapes(relativePath, blendShapes);
         var path = EditorUtility.SaveFilePanelInProject("Save FacialExpression as Clip", "FacialExpression", "anim", "Please enter the name of the animation clip.");

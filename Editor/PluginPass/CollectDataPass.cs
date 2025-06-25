@@ -9,9 +9,7 @@ internal class CollectDataPass : Pass<CollectDataPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.GetState<BuildPassState>();
-        var sessionContext = passContext.SessionContext;
-        if (sessionContext == null) return;
-        context.GetState(ctx => PatternData.Collect(sessionContext));
+        if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
+        context.GetState(ctx => PatternData.Collect(buildPassContext.SessionContext, buildPassContext.DEC));
     }
 }

@@ -9,13 +9,11 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.GetState<BuildPassState>();
-        var sessionContext = passContext.SessionContext;
-        if (sessionContext == null) return;
+        if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
-        var faceRenderer = sessionContext.FaceRenderer;
-        var faceMesh = sessionContext.FaceMesh;
-        var defaultBlendShapes = sessionContext.DEC.GetGlobalDefaultBlendShapeSet().BlendShapes;
+        var faceRenderer = buildPassContext.SessionContext.FaceRenderer;
+        var faceMesh = buildPassContext.SessionContext.FaceMesh;
+        var defaultBlendShapes = buildPassContext.DEC.GetGlobalDefaultBlendShapeSet().BlendShapes;
 
         MeshHelper.ApplyBlendShapes(faceRenderer, faceMesh, defaultBlendShapes);
     }

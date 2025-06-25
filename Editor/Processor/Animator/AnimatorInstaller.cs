@@ -36,7 +36,7 @@ internal class AnimatorInstaller
     private const string AllowEyeBlinkAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowEyeBlinkAAP";
     private const string AllowLipSyncAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowLipSyncAAP";
 
-    public AnimatorInstaller(SessionContext sessionContext, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
+    public AnimatorInstaller(SessionContext sessionContext, DefaultExpressionContext dec, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
         _sessionContext = sessionContext;
         _vcc = vcc;
@@ -44,7 +44,7 @@ internal class AnimatorInstaller
         _parameterCache = virtualController.Parameters.Values.ToDictionary(p => p.name, p => p);
         _platformSupport = platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
-        _defaultExpressionContext = sessionContext.DEC;
+        _defaultExpressionContext = dec;
         _globalDefaultExpression = _defaultExpressionContext.GetGlobalDefaultExpression();
     }
 

@@ -20,7 +20,7 @@ namespace com.aoyon.facetune
 
 
         // Todo: Refactor
-        internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
+        internal override Expression ToExpression(SessionContext sessionContext, DefaultExpressionContext dec, IObserveContext observeContext)
         {
             FacialSettings facialSettings;
             ExpressionSettings expressionSettings = new();
@@ -52,7 +52,7 @@ namespace com.aoyon.facetune
 
             var expression = new Expression(name, new List<GenericAnimation>(), expressionSettings, facialSettings);
             
-            var defaultExpression = sessionContext.DEC.GetDefaultExpression(gameObject);
+            var defaultExpression = dec.GetDefaultExpression(gameObject);
 
             var enableBlending = observeContext.Observe(this, c => c.FacialSettings.EnableBlending, (a, b) => a == b);
             if (!enableBlending)
@@ -120,9 +120,9 @@ namespace com.aoyon.facetune
             return expression;
         }
 
-        internal void GetFirstFrameBlendShapeSet(SessionContext sessionContext, ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
+        internal void GetFirstFrameBlendShapeSet(DefaultExpressionContext dec, ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
         {
-            var defaultSet = sessionContext.DEC.GetDefaultBlendShapeSet(gameObject);
+            var defaultSet = dec.GetDefaultBlendShapeSet(gameObject);
             GetBlendShapes(resultToAdd, defaultSet, observeContext);
         }
 

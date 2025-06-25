@@ -5,21 +5,47 @@ namespace com.aoyon.facetune.pass;
 
 internal class BuildPassState
 {
-    public BuildContext BuildContext { get; private set; } = null!;
-    public IPlatformSupport PlatformSupport { get; private set; } = null!;
-    public SessionContext? SessionContext { get; private set; }
+    public bool FTEnabled { get; } = false;
+    public BuildPassContext? BuildPassContext { get; } = null;
 
-    public static BuildPassState? Get(BuildContext context)
+    public BuildPassState()
     {
-        var state = new BuildPassState();
-        state.BuildContext = context;
-        var root = context.AvatarRootObject.transform;
-        state.PlatformSupport = platform.PlatformSupport.GetSupport(root);
-        state.PlatformSupport.Initialize(root);
-        if (SessionContextBuilder.TryBuild(context.AvatarRootObject, out var sessionContext))
+    }
+
+    public BuildPassState(BuildContext buildContext)
+    {
+        var FTEnabled = SessionContextBuilder.TryBuild(buildContext.AvatarRootObject, out var sessionContext);
+        if (!FTEnabled) return;
+
+        var platformSupport = platform.PlatformSupport.GetSupport(buildContext.AvatarRootObject.transform);
+        var dec = DefaultExpressionContextBuilder.BuildDefaultExpressionContext(sessionContext!);
+        BuildPassContext = new BuildPassContext(buildContext, platformSupport, sessionContext!, dec);
+    }
+
+    public bool TryGetBuildPassContext([NotNullWhen(true)] out BuildPassContext? buildPassContext)
+    {
+        if (FTEnabled)
         {
-            state.SessionContext = sessionContext;
+            buildPassContext = BuildPassContext!;
+            return true;
         }
-        return state;
+        buildPassContext = null;
+        return false;
+    }
+}
+
+internal class BuildPassContext
+{
+    public BuildContext BuildContext { get; }
+    public IPlatformSupport PlatformSupport { get; }
+    public SessionContext SessionContext { get; }
+    public DefaultExpressionContext DEC { get; }
+
+    public BuildPassContext(BuildContext buildContext, IPlatformSupport platformSupport, SessionContext sessionContext, DefaultExpressionContext dec)
+    {
+        BuildContext = buildContext;
+        PlatformSupport = platformSupport;
+        SessionContext = sessionContext;
+        DEC = dec;
     }
 }

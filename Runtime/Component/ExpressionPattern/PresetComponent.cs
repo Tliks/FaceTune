@@ -16,16 +16,16 @@ namespace com.aoyon.facetune
             AssignedPresetCondition = presetCondition;
         }
 
-        internal Preset? GetPreset(SessionContext sessionContext)
+        internal Preset? GetPreset(SessionContext sessionContext, DefaultExpressionContext dec)
         {
             if (AssignedPresetCondition == null) return null;
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(true)
-                .Select(c => c.GetPattern(sessionContext))
+                .Select(c => c.GetPattern(sessionContext, dec))
                 .OfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;
             var presetName = string.IsNullOrWhiteSpace(OverridePresetName) ? gameObject.name : OverridePresetName;
-            return new Preset(presetName, patterns, sessionContext.DEC.GetPresetDefaultExpression(this), AssignedPresetCondition);
+            return new Preset(presetName, patterns, dec.GetPresetDefaultExpression(this), AssignedPresetCondition);
         }
 
         internal GameObject GetMenuTarget()

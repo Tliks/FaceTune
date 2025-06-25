@@ -9,13 +9,11 @@ internal class DisableExistingControlAndInstallPatternDataPass : Pass<DisableExi
 
     protected override void Execute(BuildContext context)
     {
-        var passContext = context.GetState<BuildPassState>();
-        var sessionContext = passContext.SessionContext;
-        if (sessionContext == null) return;
+        if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
         var patternData = context.GetState<PatternData>();
 
-        var settings = sessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true);
+        var settings = buildPassContext.SessionContext.Root.GetComponentsInChildren<DisableExistingControlComponent>(true);
         bool overrideShapes;
         bool overrideProperties;
         if (settings.Length == 0)
@@ -36,7 +34,7 @@ internal class DisableExistingControlAndInstallPatternDataPass : Pass<DisableExi
         }
 
         Profiler.BeginSample("InstallPatternData");
-        passContext.PlatformSupport.DisableExistingControlAndInstallPatternData(passContext, new InstallData(overrideShapes, overrideProperties, patternData));
+        buildPassContext.PlatformSupport.DisableExistingControlAndInstallPatternData(buildPassContext, new InstallData(overrideShapes, overrideProperties, patternData));
         Profiler.EndSample();
     }
 }

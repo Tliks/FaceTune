@@ -14,7 +14,7 @@ namespace com.aoyon.facetune
         // FromAnimationClip
         public AnimationClip? Clip = null;
 
-        internal override Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
+        internal override Expression ToExpression(SessionContext sessionContext, DefaultExpressionContext dec, IObserveContext observeContext)
         {
             var animations = new List<GenericAnimation>();
             ExpressionSettings expressionSettings = new();

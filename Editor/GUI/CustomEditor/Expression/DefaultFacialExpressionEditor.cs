@@ -59,7 +59,9 @@ internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultF
     private static void ToClip(MenuCommand command)
     {
         var component = (command.context as DefaultFacialExpressionComponent)!;
-        CustomEditorUtility.ToClip(component.gameObject, context => component.GetFirstFrameBlendShapeSet(context).BlendShapes);
+        if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) return;
+        var blendShapes = component.GetFirstFrameBlendShapeSet(context).BlendShapes;
+        CustomEditorUtility.ToClip(context.BodyPath, blendShapes);
     }
 }
 
