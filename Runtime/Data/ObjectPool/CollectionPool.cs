@@ -41,3 +41,19 @@ internal class CollectionPool<TCollection, TItem> where TCollection : class, ICo
 
     public static void Release(TCollection collection) => _pool.Release(collection);
 }
+
+internal sealed class ListPool<T> : CollectionPool<List<T>, T>
+{
+}
+
+internal sealed class DictionaryPool<TKey, TValue> : CollectionPool<Dictionary<TKey, TValue>, KeyValuePair<TKey, TValue>>
+{
+}
+
+internal sealed class HashSetPool<T> : CollectionPool<HashSet<T>, T>
+{
+}
+
+internal sealed class BlendShapeSetPool : CollectionPool<BlendShapeSet, BlendShape>
+{
+}
