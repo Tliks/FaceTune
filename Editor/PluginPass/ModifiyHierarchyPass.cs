@@ -40,6 +40,8 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             usedParameterNames.Add(parameterName);
         }
 
+        var parameterTypes = GetParameterTypes(root);
+
         foreach (var menuItem in menuItems)
         {    
             using var _ = ListPool<ExpressionComponentBase>.Get(out var expressionComponents);
@@ -53,9 +55,37 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
                 case MenuItemType.Toggle:
                 case MenuItemType.Button:
                     var parameterName = EnsureParameter(menuItem, usedParameterNames, platformSupport);
-                    platformSupport.SetParameterValue(menuItem, 1);
-                    var conditionComponent = menuItem.gameObject.AddComponent<ConditionComponent>(); // OR
-                    conditionComponent.ParameterConditions.Add(ParameterCondition.Bool(parameterName, true));
+                    var parameterValue = platformSupport.GetParameterValue(menuItem);
+
+                    ParameterCondition? condition = null;
+                    if (parameterTypes.TryGetValue(parameterName, out var parameterType))
+                    {
+                        switch (parameterType)
+                        {
+                            case ParameterType.Bool:
+                                var boolValue = parameterValue != 0;
+                                condition = ParameterCondition.Bool(parameterName, boolValue);
+                                break;
+                            case ParameterType.Int:
+                                condition = ParameterCondition.Int(parameterName, ComparisonType.Equal, (int)parameterValue);
+                                break;
+                            case ParameterType.Float:
+                                condition = ParameterCondition.Float(parameterName, ComparisonType.Equal, (float)parameterValue);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else if (menuItem.automaticValue)
+                    {
+                        var boolValue = parameterValue != 0;
+                        condition = ParameterCondition.Bool(parameterName, boolValue);
+                    }
+                    
+                    if (condition == null) continue;
+
+                    var conditionComponent = menuItem.gameObject.AddComponent<ConditionComponent>();
+                    conditionComponent.ParameterConditions.Add(condition);
                     break;
                 case MenuItemType.RadialPuppet:
                     var radialParameterName = EnsureRadialParameter(menuItem, usedParameterNames, platformSupport);
@@ -99,6 +129,32 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
                 defaultValue = 0,
             });
             return parameterName;
+        }
+
+        static Dictionary<string, ParameterType> GetParameterTypes(GameObject root)
+        {
+            var parameterTypes = new Dictionary<string, ParameterType>();
+            var parameters = root.GetComponentsInChildren<ModularAvatarParameters>(true)
+                .SelectMany(x => x.parameters)
+                .Select(x => (x.nameOrPrefix, x.syncType));
+            foreach (var (name, syncType) in parameters)
+            {
+                switch (syncType)
+                {
+                    case ParameterSyncType.Int:
+                        parameterTypes[name] = ParameterType.Int;
+                        break;
+                    case ParameterSyncType.Float:
+                        parameterTypes[name] = ParameterType.Float;
+                        break;
+                    case ParameterSyncType.Bool:
+                        parameterTypes[name] = ParameterType.Bool;
+                        break;
+                    default:
+                        continue;
+                }
+            }
+            return parameterTypes;
         }
     }
 
