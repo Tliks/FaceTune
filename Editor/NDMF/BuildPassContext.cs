@@ -5,17 +5,18 @@ namespace com.aoyon.facetune.ndmf;
 
 internal class BuildPassState
 {
-    public bool Enabled { get; } = false;
-    public BuildPassContext? BuildPassContext { get; } = null;
+    public bool Enabled { get; }
+    public BuildPassContext? BuildPassContext { get; }
 
     public BuildPassState()
     {
+        throw new Exception("BuildPassState is not initialized");
     }
 
     public BuildPassState(BuildContext buildContext)
     {
-        var FTEnabled = SessionContextBuilder.TryBuild(buildContext.AvatarRootObject, out var sessionContext);
-        if (!FTEnabled) return;
+        Enabled = SessionContextBuilder.TryBuild(buildContext.AvatarRootObject, out var sessionContext);
+        if (!Enabled) return;
 
         var platformSupport = platform.PlatformSupport.GetSupport(buildContext.AvatarRootObject.transform);
         var dec = DefaultExpressionContextBuilder.BuildDefaultExpressionContext(sessionContext!);
