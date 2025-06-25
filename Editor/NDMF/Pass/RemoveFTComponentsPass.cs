@@ -1,6 +1,6 @@
 using nadena.dev.ndmf;
 
-namespace com.aoyon.facetune.pass;
+namespace com.aoyon.facetune.ndmf;
 
 internal class RemoveFTComponentsPass : Pass<RemoveFTComponentsPass>
 {

@@ -1,11 +1,11 @@
 using nadena.dev.ndmf;
 using com.aoyon.facetune.platform;
 
-namespace com.aoyon.facetune.pass;
+namespace com.aoyon.facetune.ndmf;
 
 internal class BuildPassState
 {
-    public bool FTEnabled { get; } = false;
+    public bool Enabled { get; } = false;
     public BuildPassContext? BuildPassContext { get; } = null;
 
     public BuildPassState()
@@ -24,7 +24,7 @@ internal class BuildPassState
 
     public bool TryGetBuildPassContext([NotNullWhen(true)] out BuildPassContext? buildPassContext)
     {
-        if (FTEnabled)
+        if (Enabled)
         {
             buildPassContext = BuildPassContext!;
             return true;
