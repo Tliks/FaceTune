@@ -164,7 +164,7 @@ internal static class SessionContextBuilder
             if (OverrideDefaultExpressionComponent != null)
             {
                 var presetDefaultBlendShapeSet = BlendShapeSetPool.Get(out _); // ctr
-                (OverrideDefaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(presetDefaultBlendShapeSet.Value, EmptyBlendShapeSet);
+                (OverrideDefaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(presetDefaultBlendShapeSet.Value, EmptyBlendShapeSet, context);
                 presetBlendShapeSets.Value.Add(presetComponent, presetDefaultBlendShapeSet);
                 usedExpressionComponents.Add(OverrideDefaultExpressionComponent);
             }
@@ -183,7 +183,7 @@ internal static class SessionContextBuilder
         {
             if (!usedExpressionComponents.Contains(defaultExpressionComponent))
             {
-                (defaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(defaultBlendShapes.Value, EmptyBlendShapeSet);
+                (defaultExpressionComponent as IHasBlendShapes)!.GetBlendShapes(defaultBlendShapes.Value, EmptyBlendShapeSet, context);
 
                 // defaultBlendShapesに全ブレンドシェイプを持たせる 
                 foreach (var fallbackShape in sceneShapes)

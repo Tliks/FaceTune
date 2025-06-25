@@ -23,8 +23,9 @@ namespace com.aoyon.facetune
             return expression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
         }
 
-        void IHasBlendShapes.GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet)
+        void IHasBlendShapes.GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext? observeContext)
         {
+            observeContext?.Observe(this);
             foreach (var animation in BlendShapeAnimations)
             {
                 resultToAdd.Add(animation.ToFirstFrameBlendShape());

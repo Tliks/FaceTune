@@ -123,8 +123,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         foreach (var expressionComponent in expressionComponents)
         {
             if (expressionComponent is not IHasBlendShapes hasBlendShapes) continue;
-            observeContext.Observe(expressionComponent);
-            hasBlendShapes.GetBlendShapes(result, defaultSet);
+            hasBlendShapes.GetBlendShapes(result, defaultSet, observeContext);
         }
     }
 }

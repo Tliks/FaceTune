@@ -120,15 +120,16 @@ namespace com.aoyon.facetune
             return expression;
         }
 
-        internal void GetFirstFrameBlendShapeSet(SessionContext sessionContext, ICollection<BlendShape> resultToAdd)
+        internal void GetFirstFrameBlendShapeSet(SessionContext sessionContext, ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
         {
             var defaultSet = sessionContext.DEC.GetDefaultBlendShapeSet(gameObject);
-            GetBlendShapes(resultToAdd, defaultSet);
+            GetBlendShapes(resultToAdd, defaultSet, observeContext);
         }
 
         // defaultsetは結合されていない
-        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet)
+        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext? observeContext = null)
         {
+            observeContext?.Observe(this);
             switch (SourceMode)
             {
                 case AnimationSourceMode.Manual:
@@ -148,9 +149,9 @@ namespace com.aoyon.facetune
             }
         }
 
-        void IHasBlendShapes.GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet)
+        void IHasBlendShapes.GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext? observeContext)
         {
-            GetBlendShapes(resultToAdd, defaultSet);
+            GetBlendShapes(resultToAdd, defaultSet, observeContext);
         }
     }
 }
