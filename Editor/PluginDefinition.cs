@@ -26,8 +26,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(ApplyDefaulShapesPass.Instance).PreviewingWith(new DefaultShapesPreview());
         sequence.WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
         {
-            sq1
-            .Run(DisableExistingControlAndInstallPatternDataPass.Instance);
+            sq1.Run(DisableExistingControlAndInstallPatternDataPass.Instance);
         });
         sequence.Run(RemoveFTComponentsPass.Instance);
 
