@@ -120,7 +120,7 @@ namespace com.aoyon.facetune
             return expression;
         }
 
-        internal void GetFirstFrameBlendShapeSet(DefaultExpressionContext dec, ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
+        internal void GetMergedBlendShapeSet(DefaultExpressionContext dec, ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
         {
             var defaultSet = dec.GetDefaultBlendShapeSet(gameObject);
             GetBlendShapes(resultToAdd, defaultSet, observeContext);

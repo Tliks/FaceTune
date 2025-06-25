@@ -170,7 +170,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         if (!CustomEditorUtility.TryGetContextWithDEC(Component.gameObject, out var context, out var dec)) return;
         var defaultBlendShapes = dec.GetDefaultBlendShapeSet(Component.gameObject);
         var shapes = new List<BlendShape>();
-        Component.GetFirstFrameBlendShapeSet(dec, shapes);
+        Component.GetMergedBlendShapeSet(dec, shapes);
         var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes, new(shapes));
         if (window == null) return;
         window.RegisterApplyCallback(RecieveEditorResult);
@@ -216,7 +216,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         var component = (command.context as FacialExpressionComponent)!;
         if (!CustomEditorUtility.TryGetContextWithDEC(component.gameObject, out var context, out var dec)) return;
         var shapes = new List<BlendShape>();
-        component.GetFirstFrameBlendShapeSet(dec, shapes);
+        component.GetMergedBlendShapeSet(dec, shapes);
         CustomEditorUtility.ToClip(context.BodyPath, shapes);
     }
 

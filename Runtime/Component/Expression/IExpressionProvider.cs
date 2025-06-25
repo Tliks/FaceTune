@@ -7,7 +7,7 @@ internal interface IExpressionProvider
 
 internal interface IHasBlendShapes
 {
-    internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext? observeContext = null);
+    void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext? observeContext = null);
 }
 
 public abstract class ExpressionComponentBase : FaceTuneTagComponent, IExpressionProvider

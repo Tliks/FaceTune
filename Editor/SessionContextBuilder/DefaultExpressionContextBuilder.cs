@@ -10,13 +10,15 @@ internal static class DefaultExpressionContextBuilder
     {
         var root = sessionContext.Root;
         var faceRenderer = sessionContext.FaceRenderer;
-        return BuildDefaultExpressionContext(root, faceRenderer, context);
+        var faceMesh = sessionContext.FaceMesh;
+        return BuildDefaultExpressionContext(root, faceRenderer, faceMesh, context);
     }
-    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, SkinnedMeshRenderer faceRenderer, IObserveContext? context = null)
+    public static DefaultExpressionContext BuildDefaultExpressionContext(GameObject root, SkinnedMeshRenderer faceRenderer, Mesh faceMesh, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
 
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
+        var defaultBlendShapeNames = faceRenderer.GetBlendShapes(faceMesh).Select(bs => bs.Name).ToList();
 
         using var _sceneShapes = BlendShapeSetPool.Get(out var sceneShapes);
         faceRenderer.GetBlendShapes(sceneShapes);
@@ -50,8 +52,7 @@ internal static class DefaultExpressionContextBuilder
             var OverrideDefaultExpressionComponent = context.Observe(presetComponent, pc => pc.OverrideDefaultExpressionComponent, (a, b) => a == b);
             if (OverrideDefaultExpressionComponent != null)
             {
-                var presetDefaultExpression = OverrideDefaultExpressionComponent.GetDefaultExpression(bodyPath, context);
-                EnsureHasAllShapes(presetDefaultExpression, sceneShapes, bodyPath);
+                var presetDefaultExpression = OverrideDefaultExpressionComponent.GetDefaultExpression(defaultBlendShapeNames, bodyPath, context);
                 presetExpressions.Add(presetComponent, presetDefaultExpression);
                 usedExpressionComponents.Add(OverrideDefaultExpressionComponent);
             }
@@ -64,31 +65,15 @@ internal static class DefaultExpressionContextBuilder
         // defaultExpression
         var defaultExpression = defaultExpressionComponents
             .Where(c => !usedExpressionComponents.Contains(c))
-            .Select(c => c.GetDefaultExpression(bodyPath, context))
+            .Select(c => c.GetDefaultExpression(defaultBlendShapeNames, bodyPath, context))
             .FirstOrNull();
         if (defaultExpression == null) 
         {
             var defaultAnimations = sceneShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight).ToGeneric(bodyPath)).ToList();
             defaultExpression = new Expression("Default", defaultAnimations, new ExpressionSettings(), DefaultFacialSettings);
         }
-        else
-        {
-            EnsureHasAllShapes(defaultExpression, sceneShapes, bodyPath);
-        }
 
         return new DefaultExpressionContext(defaultExpression, presetExpressions);
-
-        static void EnsureHasAllShapes(Expression expression, BlendShapeSet fallback, string bodyPath)
-        {
-            var shapes = expression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
-            foreach (var fallbackShape in fallback)
-            {
-                if (!shapes.TryGetValue(fallbackShape.Name, out _))
-                {
-                    expression.AnimationIndex.AddSingleFrameBlendShapeAnimation(bodyPath, fallbackShape.Name, fallbackShape.Weight);
-                }
-            }
-        }
     }
 
 
