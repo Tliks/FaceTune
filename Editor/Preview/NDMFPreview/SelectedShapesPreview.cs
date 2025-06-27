@@ -54,53 +54,53 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         // そのため、extractを用いるが、propertymonitorの負荷を考えるとどうだろう
         // Todo: extractにcontext.GetComponentsがあるのどうにかしたい
 
-        using var _defaultSet = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetDefaultBlendShapes(root, targetGameObject, original, observeContext) : null, (a, b) =>
+        var defaultSet = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetDefaultBlendShapes(root, targetGameObject, original, observeContext) : null, (a, b) =>
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
-            return a.Value.Equals(b.Value);
+            return a.Equals(b);
         });
-        if (_defaultSet == null) return;
+        if (defaultSet == null) return;
 
         // 何らかのGameObjcetを選択してる
 
-        using var dataComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<FacialDataComponent>(targetGameObject, observeContext) : null, (a, b) => 
+        var dataComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<FacialDataComponent>(targetGameObject, observeContext) : null, (a, b) => 
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
-            return a.Value.SequenceEqual(b.Value);
+            return a.SequenceEqual(b);
         });
-        if (dataComponents != null && dataComponents.Value.Count > 0)
+        if (dataComponents != null && dataComponents.Count > 0)
         {
-            GetBlendShapes(dataComponents.Value, _defaultSet.Value, observeContext, result);
+            GetBlendShapes(dataComponents, defaultSet, observeContext, result);
             return;
         }
 
-        using var _conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<ConditionComponent>(targetGameObject, observeContext) : null, (a, b) =>
+        var conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<ConditionComponent>(targetGameObject, observeContext) : null, (a, b) =>
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
-            return a.Value.SequenceEqual(b.Value);
+            return a.SequenceEqual(b);
         });
-        if (_conditionComponents != null && _conditionComponents.Value.Count > 0)
+        if (conditionComponents != null && conditionComponents.Count > 0)
         {
-            var conditionComponent = _conditionComponents.Value.First();
+            var conditionComponent = conditionComponents.First();
             using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
             conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
             if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
                 using var _expressionComponents = GetComponentsInChildren<FacialDataComponent>(conditionComponent.gameObject, true, observeContext);
-                GetBlendShapes(_expressionComponents.Value, _defaultSet.Value, observeContext, result);
+                GetBlendShapes(_expressionComponents.Value, defaultSet, observeContext, result);
                 return;
             }
         }
 
-        result.AddRange(_defaultSet.Value);
+        result.AddRange(defaultSet);
     }
 
-    private static PooledObject<BlendShapeSet> GetDefaultBlendShapes(GameObject root, GameObject targetGameObject, SkinnedMeshRenderer renderer, IObserveContext observeContext)
+    private static BlendShapeSet GetDefaultBlendShapes(GameObject root, GameObject targetGameObject, SkinnedMeshRenderer renderer, IObserveContext observeContext)
     {
-        var _result = BlendShapeSetPool.Get(out var result);
+        var result = new BlendShapeSet(); // Todo
         renderer.GetBlendShapesAndSetZeroWeight(result);
 
         using var _ = ListPool<FacialStyleComponent>.Get(out var facialStyleComponents);
@@ -116,14 +116,14 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             nearset.GetBlendShapes(result, observeContext);
         }
 
-        return _result;
+        return result;
     }
 
-    private static PooledObject<List<T>> GetComponents<T>(GameObject targetGameObject, IObserveContext observeContext) where T : Component
+    private static List<T> GetComponents<T>(GameObject targetGameObject, IObserveContext observeContext) where T : Component
     {
-        var _result = ListPool<T>.Get(out var result);
+        var result = new List<T>(); // Todo
         observeContext.GetComponents<T>(targetGameObject, result);
-        return _result;
+        return result;
     }
 
     private static PooledObject<List<T>> GetComponentsInChildren<T>(GameObject targetGameObject, bool includeInactive, IObserveContext observeContext) where T : Component
@@ -143,7 +143,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         result.AddRange(defaultSet);
         foreach (var dataComponent in dataComponents)
         {
-            dataComponent.GetBlendShapes(result, observeContext);
+            dataComponent.GetBlendShapes(result, defaultSet, observeContext);
         }
     }
 }

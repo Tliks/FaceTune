@@ -25,7 +25,9 @@ namespace com.aoyon.facetune
                     break;
                 case AnimationSourceMode.FromAnimationClip:
                     if (Clip == null) break;
+#if UNITY_EDITOR
                     Clip.GetGenericAnimations(animations);
+#endif
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
