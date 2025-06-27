@@ -16,7 +16,6 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         var patternData = context.GetState<PatternData>();
 
         List<Expression> allExpressions = new();
-        allExpressions.AddRange(buildPassContext.DEC.GetAllExpressions());
         if (!patternData.IsEmpty)
         {
             allExpressions.AddRange(patternData.GetAllExpressions());

@@ -1,5 +1,6 @@
 namespace com.aoyon.facetune
 {
+    [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
     public class DisableExistingControlComponent : FaceTuneTagComponent
     {

@@ -11,6 +11,15 @@ internal static class BlendShapeUtility
             resultToAdd.Add(new BlendShape(name, weight));
         }
     }
+    
+    public static void GetBlendShapesAndSetZeroWeight(this SkinnedMeshRenderer renderer, ICollection<BlendShape> resultToAdd)
+    {
+        for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
+        {
+            var name = renderer.sharedMesh.GetBlendShapeName(i);
+            resultToAdd.Add(new BlendShape(name, 0f));
+        }
+    }
 
     public static BlendShape[] GetBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh)
     {

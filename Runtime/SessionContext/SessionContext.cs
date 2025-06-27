@@ -7,18 +7,21 @@ internal record SessionContext
 
     public Mesh FaceMesh { get; }
     public string BodyPath { get; }
+    public List<BlendShape> ZeroWeightBlendShapes { get; }
 
     public SessionContext(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
         Mesh faceMesh,
-        string bodyPath
+        string bodyPath,
+        List<BlendShape> zeroWeightBlendShapes
     )
     {
         Root = root;
         FaceRenderer = faceRenderer;
         FaceMesh = faceMesh;
         BodyPath = bodyPath;
+        ZeroWeightBlendShapes = zeroWeightBlendShapes;
     }
 }
 

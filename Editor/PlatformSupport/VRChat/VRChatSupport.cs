@@ -66,18 +66,18 @@ internal class VRChatSuport : IPlatformSupport
         return faceRenderer;
     }
 
-    private AnimatorInstaller InitializeAnimatorInstaller(BuildContext buildContext, SessionContext context, DefaultExpressionContext dec)
+    private AnimatorInstaller InitializeAnimatorInstaller(BuildContext buildContext, SessionContext context)
     {
         var asc = buildContext.Extension<AnimatorServicesContext>();
         var cc = asc.ControllerContext;
         var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        return new AnimatorInstaller(context, dec, cc, fx, useWriteDefaults);
+        return new AnimatorInstaller(context, fx, useWriteDefaults);
     }
 
     public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, InstallData installData)
     {
-        var installer = InitializeAnimatorInstaller(buildPassContext.BuildContext, buildPassContext.SessionContext, buildPassContext.DEC);
+        var installer = InitializeAnimatorInstaller(buildPassContext.BuildContext, buildPassContext.SessionContext);
         installer.DisableExistingControlAndInstallPatternData(installData);
     }
 

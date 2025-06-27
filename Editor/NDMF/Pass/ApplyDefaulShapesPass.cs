@@ -11,10 +11,12 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
     {
         if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
+        /*
         var faceRenderer = buildPassContext.SessionContext.FaceRenderer;
         var faceMesh = buildPassContext.SessionContext.FaceMesh;
-        var defaultBlendShapes = buildPassContext.DEC.GetGlobalDefaultBlendShapeSet().BlendShapes;
+        var defaultBlendShapes = buildPassContext.SessionContext.ZeroWeightBlendShapes;
 
         MeshHelper.ApplyBlendShapes(faceRenderer, faceMesh, defaultBlendShapes);
+        */
     }
 }

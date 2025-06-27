@@ -7,11 +7,6 @@ internal static class CustomEditorUtility
         return SessionContextBuilder.TryBuild(obj, out context);
     }
 
-    public static bool TryGetContextWithDEC(GameObject obj, [NotNullWhen(true)] out SessionContext? context, [NotNullWhen(true)] out DefaultExpressionContext? dec)
-    {
-        return SessionContextBuilder.TryBuildWithDEC(obj, out context, out dec);
-    }
-
     public static void ToClip(string relativePath, IEnumerable<BlendShape> blendShapes)
     {
         var clip = new AnimationClip();

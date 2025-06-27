@@ -19,8 +19,7 @@ internal class BuildPassState
         if (!Enabled) return;
 
         var platformSupport = platform.PlatformSupport.GetSupport(buildContext.AvatarRootObject.transform);
-        var dec = DefaultExpressionContextBuilder.BuildDefaultExpressionContext(sessionContext!);
-        BuildPassContext = new BuildPassContext(buildContext, platformSupport, sessionContext!, dec);
+        BuildPassContext = new BuildPassContext(buildContext, platformSupport, sessionContext!);
     }
 
     public bool TryGetBuildPassContext([NotNullWhen(true)] out BuildPassContext? buildPassContext)
@@ -40,13 +39,11 @@ internal class BuildPassContext
     public BuildContext BuildContext { get; }
     public IPlatformSupport PlatformSupport { get; }
     public SessionContext SessionContext { get; }
-    public DefaultExpressionContext DEC { get; }
 
-    public BuildPassContext(BuildContext buildContext, IPlatformSupport platformSupport, SessionContext sessionContext, DefaultExpressionContext dec)
+    public BuildPassContext(BuildContext buildContext, IPlatformSupport platformSupport, SessionContext sessionContext)
     {
         BuildContext = buildContext;
         PlatformSupport = platformSupport;
         SessionContext = sessionContext;
-        DEC = dec;
     }
 }

@@ -2,6 +2,7 @@ using nadena.dev.modular_avatar.core;
 
 namespace com.aoyon.facetune
 {
+    [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
     public class OverrideFaceRendererComponent : FaceTuneTagComponent, IHasObjectReferences
     {

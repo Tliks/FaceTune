@@ -18,8 +18,6 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         // Condition
         NegotiateMAMenuItem(buildPassContext);
         ProcessPreset(buildPassContext);
-        // Expression
-        MergeExpression(buildPassContext);
         // Pattern
         NormalizeData(buildPassContext);
     }
@@ -42,8 +40,8 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
         foreach (var menuItem in menuItems)
         {    
-            using var _ = ListPool<ExpressionComponentBase>.Get(out var expressionComponents);
-            menuItem.GetComponentsInChildren<ExpressionComponentBase>(true, expressionComponents);
+            using var _ = ListPool<ExpressionComponent>.Get(out var expressionComponents);
+            menuItem.GetComponentsInChildren<ExpressionComponent>(true, expressionComponents);
             if (expressionComponents.Any() is false) continue;
 
             var menuItemType = platformSupport.GetMenuItemType(menuItem);
@@ -177,21 +175,6 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             platformSupport.SetMenuItemType(menuItem, MenuItemType.Toggle);
             platformSupport.SetParameterName(menuItem, Preset_Index_Parameter);  // Todo 上書きしていいかどうか。
             platformSupport.SetParameterValue(menuItem, presetIndex);
-
-            // PresetComponentに条件を設定
-            presetComponent.SetAssignedPresetCondition(presetCondition);
-        }
-    }
-
-    private void MergeExpression(BuildPassContext buildPassContext)
-    {
-        var sessionContext = buildPassContext.SessionContext;
-        var dec = buildPassContext.DEC;
-
-        var mergeExpressionComponents = sessionContext.Root.GetComponentsInChildren<MergeExpressionComponent>(true);
-        foreach (var mergeExpressionComponent in mergeExpressionComponents)
-        {
-            mergeExpressionComponent.Merge(sessionContext, dec);
         }
     }
 
@@ -199,7 +182,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     {
         // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
         var root = buildPassContext.BuildContext.AvatarRootObject;
-        var expressionComponents = root.GetComponentsInChildren<ExpressionComponentBase>(true);
+        var expressionComponents = root.GetComponentsInChildren<ExpressionComponent>(true);
         foreach (var expressionComponent in expressionComponents)
         {
             if (expressionComponent.GetComponentInParentNullable<PatternComponent>() == null)

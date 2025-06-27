@@ -21,7 +21,10 @@ internal static class SessionContextBuilder
 
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath);
+        var zeroWeightBlendShapes = new List<BlendShape>();
+        faceRenderer.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
+
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes);
         return true;
     }
 
@@ -29,10 +32,11 @@ internal static class SessionContextBuilder
     {
         context ??= new NonObserveContext();
 
-        var overrideFaceRenderers = context.GetComponents<OverrideFaceRendererComponent>(root.gameObject);
-        if (overrideFaceRenderers.Length > 1)
+        using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
+        context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
+        if (overrideFaceRenderers.Count > 1)
         {
-            Debug.LogWarning($"Found {overrideFaceRenderers.Length} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
+            Debug.LogWarning($"Found {overrideFaceRenderers.Count} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
         }
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
@@ -47,14 +51,6 @@ internal static class SessionContextBuilder
         {
             return faceRenderer;
         }
-    }
-
-    public static bool TryBuildWithDEC(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, [NotNullWhen(true)] out DefaultExpressionContext? dec, IObserveContext? context = null)
-    {
-        dec = null;
-        if (!TryBuild(target, out sessionContext, context)) return false;
-        dec = DefaultExpressionContextBuilder.BuildDefaultExpressionContext(sessionContext, context);
-        return dec != null;
     }
 }
 

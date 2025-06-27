@@ -9,12 +9,8 @@ namespace com.aoyon.facetune.animator;
 internal class AnimatorInstaller
 {
     private readonly SessionContext _sessionContext;
-    private readonly VirtualControllerContext _vcc;
     private readonly VirtualAnimatorController _virtualController;
     private readonly Dictionary<string, AnimatorControllerParameter> _parameterCache;
-
-    private readonly DefaultExpressionContext _defaultExpressionContext;
-    private readonly Expression _globalDefaultExpression;
 
     private readonly IPlatformSupport _platformSupport;
 
@@ -36,16 +32,13 @@ internal class AnimatorInstaller
     private const string AllowEyeBlinkAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowEyeBlinkAAP";
     private const string AllowLipSyncAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowLipSyncAAP";
 
-    public AnimatorInstaller(SessionContext sessionContext, DefaultExpressionContext dec, VirtualControllerContext vcc, VirtualAnimatorController virtualController, bool useWriteDefaults)
+    public AnimatorInstaller(SessionContext sessionContext, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
         _sessionContext = sessionContext;
-        _vcc = vcc;
         _virtualController = virtualController;
         _parameterCache = virtualController.Parameters.Values.ToDictionary(p => p.name, p => p);
         _platformSupport = platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
-        _defaultExpressionContext = dec;
-        _globalDefaultExpression = _defaultExpressionContext.GetGlobalDefaultExpression();
     }
 
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
@@ -135,34 +128,13 @@ internal class AnimatorInstaller
         VirtualLayer defaultLayer;
         VirtualState defaultState;
 
-        var defaultExpression = _globalDefaultExpression;
-
         var shapesLayerPriority = overrideShapes ? LayerPriority : WDLayerPriority;
         var propertiesLayerPriority = overrideProperties ? LayerPriority : WDLayerPriority;
 
         // ブレンドシェイプの初期化レイヤー
         var shapesLayer = AddFTLayer(_virtualController, "Default", shapesLayerPriority);
         var shapesState = AddFTState(shapesLayer, "Default", DefaultStatePosition);
-        AddExpressionToState(shapesState, defaultExpression);
-
-        List<VirtualState> presetStates = new();
-        if (!patternData.IsEmpty)
-        {
-            var presets = patternData.GetAllPresets().ToList();
-            if (presets.Count > 0)
-            {
-                var presetConditions = presets.Select(p => new[] { p.PresetCondition }).ToArray();
-                var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-                presetStates.AddRange(AddExclusiveStates(shapesLayer, shapesState, presetConditions, 0f, basePosition));
-                for (int i = 0; i < presets.Count; i++)
-                {
-                    var preset = presets[i];
-                    var presetState = presetStates[i];
-                    presetState.Name = preset.Name;
-                    AddExpressionToState(presetState, preset.DefaultExpression);
-                }
-            }
-        }
+        AddAnimationToState(shapesState, _sessionContext.ZeroWeightBlendShapes.Select(b => BlendShapeAnimation.SingleFrame(b.Name, 0f).ToGeneric(_sessionContext.BodyPath)));
 
         var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
 
@@ -175,10 +147,7 @@ internal class AnimatorInstaller
 
         if (shapesLayerPriority == propertiesLayerPriority)
         {
-            foreach (var state in presetStates.Concat(new[] { shapesState }))
-            {
-                AddAnimationToState(state, defaultPropertiesAnimations);
-            }
+            AddAnimationToState(shapesState, defaultPropertiesAnimations);
         }
         else
         {
@@ -218,16 +187,12 @@ internal class AnimatorInstaller
             }
         }
         
-        var defaultExpression = _defaultExpressionContext.GetAllExpressions();
         var patternExpressions = patternData.GetAllExpressions();
-
-        if (defaultExpression.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow) ||
-            patternExpressions.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow))
+        if (patternExpressions.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow))
         {
             AddEyeBlinkLayer();
         }
-        if (defaultExpression.Any(e => e.FacialSettings.AllowLipSync == TrackingPermission.Disallow) ||
-            patternExpressions.Any(e => e.FacialSettings.AllowLipSync == TrackingPermission.Disallow))
+        if (patternExpressions.Any(e => e.FacialSettings.AllowLipSync == TrackingPermission.Disallow))
         {
             AddLipSyncLayer();
         }

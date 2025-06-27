@@ -54,10 +54,11 @@ internal static class AssetsMenu
             toggleComponent.Control.parameter = new() { name = uniqueParameterId };
             toggleComponent.Control.value = i;
 
-            var facialExpression = toggle.AddComponent<FacialExpressionComponent>();
-            facialExpression.SourceMode = AnimationSourceMode.FromAnimationClip;
-            facialExpression.Clip = clip;
-            facialExpression.ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
+            toggle.AddComponent<ExpressionDataComponent>();
+            var dataComponent = toggle.GetComponent<ExpressionDataComponent>();
+            dataComponent.SourceMode = AnimationSourceMode.FromAnimationClip;
+            dataComponent.Clip = clip;
+            dataComponent.ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
         }
 
         menuObject.AddComponent<PatternComponent>();
