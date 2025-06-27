@@ -1,6 +1,6 @@
 namespace com.aoyon.facetune;
 
-internal interface IAnimationProvider
+internal interface IAnimationData
 {
     List<GenericAnimation> GetAnimations(SessionContext sessionContext);
 }

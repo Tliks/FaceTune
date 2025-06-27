@@ -16,7 +16,7 @@ internal class Expression : IEquatable<Expression> // 可変
     private AnimationIndex _animationIndex;
     public AnimationIndex AnimationIndex => _animationIndex;
 
-    public Expression(string name, List<GenericAnimation> animations, ExpressionSettings expressionSettings, FacialSettings? settings = null)
+    public Expression(string name, IEnumerable<GenericAnimation> animations, ExpressionSettings expressionSettings, FacialSettings? settings = null)
     {
         Name = name;
         _animationIndex = new AnimationIndex(animations);

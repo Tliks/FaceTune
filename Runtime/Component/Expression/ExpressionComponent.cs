@@ -12,13 +12,28 @@ namespace com.aoyon.facetune
 
         internal Expression ToExpression(SessionContext sessionContext)
         {
-            var animations = new List<GenericAnimation>();
-            var dataComponents = gameObject.GetInterfacesInChildFTComponents<IAnimationProvider>(true);
+            var animationIndex = new AnimationIndex();
+
+            if (!FacialSettings.EnableBlending)
+            {
+                var zeroAnimations = sessionContext.ZeroWeightBlendShapes
+                    .Select(bs => BlendShapeAnimation.SingleFrame(bs.Name, bs.Weight).ToGeneric(sessionContext.BodyPath));
+                animationIndex.AddRange(zeroAnimations);
+            }
+
+            var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>();
+            if (facialComponent != null)
+            {
+                animationIndex.AddRange(facialComponent.BlendShapeAnimations.Select(bs => bs.ToGeneric(sessionContext.BodyPath)));
+            }
+
+            var dataComponents = gameObject.GetInterfacesInChildFTComponents<IAnimationData>(true);
             foreach (var dataComponent in dataComponents)
             {
-                animations.AddRange(dataComponent.GetAnimations(sessionContext));
+                animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));
             }
-            return new Expression(name, animations, ExpressionSettings, FacialSettings);
+            
+            return new Expression(name, animationIndex.Animations, ExpressionSettings, FacialSettings);
         }
 
         internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)

@@ -1,7 +1,7 @@
 namespace com.aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class FacialDataComponent : FaceTuneTagComponent, IAnimationProvider
+    public class FacialDataComponent : FaceTuneTagComponent, IAnimationData
     {
         internal const string ComponentName = "FT Facial Data";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
@@ -16,7 +16,7 @@ namespace com.aoyon.facetune
         public AnimationClip? Clip = null;
         public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
 
-        List<GenericAnimation> IAnimationProvider.GetAnimations(SessionContext sessionContext)
+        List<GenericAnimation> IAnimationData.GetAnimations(SessionContext sessionContext)
         {
             var animations = new List<GenericAnimation>();
             switch (SourceMode)
