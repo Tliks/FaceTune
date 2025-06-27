@@ -64,7 +64,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
 
         // 何らかのGameObjcetを選択してる
 
-        using var dataComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<ExpressionDataComponent>(targetGameObject, observeContext) : null, (a, b) => 
+        using var dataComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<FacialDataComponent>(targetGameObject, observeContext) : null, (a, b) => 
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
@@ -89,7 +89,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
             if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
-                using var _expressionComponents = GetComponentsInChildren<ExpressionDataComponent>(conditionComponent.gameObject, true, observeContext);
+                using var _expressionComponents = GetComponentsInChildren<FacialDataComponent>(conditionComponent.gameObject, true, observeContext);
                 GetBlendShapes(_expressionComponents.Value, _defaultSet.Value, observeContext, result);
                 return;
             }
@@ -138,7 +138,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         clip.GetFirstFrameBlendShapes(result);
     }
 
-    private static void GetBlendShapes(IEnumerable<ExpressionDataComponent> dataComponents, BlendShapeSet defaultSet, IObserveContext observeContext, BlendShapeSet result)
+    private static void GetBlendShapes(IEnumerable<FacialDataComponent> dataComponents, BlendShapeSet defaultSet, IObserveContext observeContext, BlendShapeSet result)
     {
         result.AddRange(defaultSet);
         foreach (var dataComponent in dataComponents)

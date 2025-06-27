@@ -1,7 +1,6 @@
 namespace com.aoyon.facetune
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(ExpressionDataComponent))]
     [AddComponentMenu(MenuPath)]
     public class ExpressionComponent : FaceTuneTagComponent
     {
@@ -11,13 +10,13 @@ namespace com.aoyon.facetune
         public ExpressionSettings ExpressionSettings = new();
         public FacialSettings FacialSettings = new();
 
-        internal Expression ToExpression(SessionContext sessionContext, IObserveContext observeContext)
+        internal Expression ToExpression(SessionContext sessionContext)
         {
             var animations = new List<GenericAnimation>();
-            var dataComponents = gameObject.GetComponentsInChildren<ExpressionDataComponent>(true);
+            var dataComponents = gameObject.GetInterfacesInChildFTComponents<IAnimationProvider>(true);
             foreach (var dataComponent in dataComponents)
             {
-                animations.AddRange(dataComponent.GetAnimations(sessionContext, observeContext));
+                animations.AddRange(dataComponent.GetAnimations(sessionContext));
             }
             return new Expression(name, animations, ExpressionSettings, FacialSettings);
         }
@@ -51,7 +50,7 @@ namespace com.aoyon.facetune
                         x.HandGestureConditions.Select(y => y with { }),
                         x.ParameterConditions.Select(y => y with { })))
                     .ToList();
-                var expression = ToExpression(sessionContext, new NonObserveContext());
+                var expression = ToExpression(sessionContext);
                 yield return new(conditions, expression);
             }
         }
