@@ -9,6 +9,11 @@ namespace com.aoyon.facetune
 
         public bool IsSingleFrame = true;
         public List<BlendShapeAnimation> BlendShapeAnimations = new();
+
+        internal IEnumerable<GenericAnimation> GetAnimations(SessionContext sessionContext)
+        {
+            return BlendShapeAnimations.Select(bs => bs.ToGeneric(sessionContext.BodyPath));
+        }
         
         internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, IObserveContext? observeContext)
         {

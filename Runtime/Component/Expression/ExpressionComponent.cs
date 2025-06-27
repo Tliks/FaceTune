@@ -17,14 +17,14 @@ namespace com.aoyon.facetune
             if (!FacialSettings.EnableBlending)
             {
                 var zeroAnimations = sessionContext.ZeroWeightBlendShapes
-                    .Select(bs => BlendShapeAnimation.SingleFrame(bs.Name, bs.Weight).ToGeneric(sessionContext.BodyPath));
+                    .ToGenericAnimations(sessionContext.BodyPath);
                 animationIndex.AddRange(zeroAnimations);
             }
 
             var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>();
             if (facialComponent != null)
             {
-                animationIndex.AddRange(facialComponent.BlendShapeAnimations.Select(bs => bs.ToGeneric(sessionContext.BodyPath)));
+                animationIndex.AddRange(facialComponent.GetAnimations(sessionContext));
             }
 
             var dataComponents = gameObject.GetInterfacesInChildFTComponents<IAnimationData>(true);
