@@ -18,6 +18,8 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         // Condition
         NegotiateMAMenuItem(buildPassContext);
         ProcessPreset(buildPassContext);
+        // Expression
+        ProcessFacialStyle(buildPassContext);
         // Pattern
         NormalizeData(buildPassContext);
     }
@@ -175,6 +177,26 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             platformSupport.SetMenuItemType(menuItem, MenuItemType.Toggle);
             platformSupport.SetParameterName(menuItem, Preset_Index_Parameter);  // Todo 上書きしていいかどうか。
             platformSupport.SetParameterValue(menuItem, presetIndex);
+        }
+    }
+
+    private void ProcessFacialStyle(BuildPassContext buildPassContext)
+    {
+        var root = buildPassContext.BuildContext.AvatarRootObject;
+        var facialStyleComponents = root.GetComponentsInChildren<FacialStyleComponent>(true);
+        foreach (var facialStyleComponent in facialStyleComponents)
+        {
+            // AsDefaultが有効な場合、低い優先度かつFacialStyleの影響を受ける空のExpressionを生成する
+            // Presetなどで、切り替えた際に追加の条件を満たさない、デフォルト時にFacialStyleの影響を受けた表情を常時再生するような用途。
+            if (facialStyleComponent.AsDefault)
+            {
+                var defaultExpression = new GameObject(facialStyleComponent.name);
+                defaultExpression.transform.parent = facialStyleComponent.transform.parent;
+                defaultExpression.transform.SetAsFirstSibling();
+
+                var defaultExpressionComponent = defaultExpression.AddComponent<ExpressionComponent>();
+                defaultExpressionComponent.FacialSettings = FacialSettings.Keep with { EnableBlending = false };
+            }
         }
     }
 
