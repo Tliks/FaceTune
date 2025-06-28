@@ -1,6 +1,5 @@
 using nadena.dev.ndmf.preview;
 using com.aoyon.facetune.Settings;
-using System.Runtime.Remoting.Contexts;
 
 namespace com.aoyon.facetune.preview;
 
@@ -95,7 +94,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             }
         }
 
-        result.AddRange(defaultSet);
+        // result.AddRange(defaultSet);
     }
 
     private static BlendShapeSet GetDefaultBlendShapes(GameObject root, GameObject targetGameObject, SkinnedMeshRenderer renderer, IObserveContext observeContext)
