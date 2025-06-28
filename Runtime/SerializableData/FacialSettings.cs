@@ -14,6 +14,8 @@ public record class FacialSettings // Immutable
     [SerializeField] private bool enableBlending;
     public bool EnableBlending { get => enableBlending; init => enableBlending = value; }
     public const string EnableBlendingPropName = nameof(enableBlending);
+
+    internal AdvancedEyBlinkSettings AdvancedEyBlinkSettings { get; init; } = AdvancedEyBlinkSettings.Disabled();
     
     public FacialSettings()
     {
@@ -22,31 +24,39 @@ public record class FacialSettings // Immutable
         enableBlending = false;
     }
 
-    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, bool enableBlending)
+    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, bool enableBlending, AdvancedEyBlinkSettings advancedEyBlinkSettings)
     {
         this.allowEyeBlink = allowEyeBlink;
         this.allowLipSync = allowLipSync;
         this.enableBlending = enableBlending;
+        this.AdvancedEyBlinkSettings = advancedEyBlinkSettings;
     }
 
-    internal static FacialSettings Keep = new(TrackingPermission.Keep, TrackingPermission.Keep, true);
+    internal static FacialSettings Keep = new(TrackingPermission.Keep, TrackingPermission.Keep, true, AdvancedEyBlinkSettings.Disabled());
 
     internal FacialSettings Merge(FacialSettings other)
     {
         return new FacialSettings(
             allowEyeBlink == TrackingPermission.Keep ? other.allowEyeBlink : allowEyeBlink,
             allowLipSync == TrackingPermission.Keep ? other.allowLipSync : allowLipSync,
-            enableBlending == other.enableBlending);
+            enableBlending == other.enableBlending,
+            other.AdvancedEyBlinkSettings);
     }
 
     public virtual bool Equals(FacialSettings other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return allowEyeBlink == other.allowEyeBlink && allowLipSync == other.allowLipSync && enableBlending == other.enableBlending;
+        return allowEyeBlink == other.allowEyeBlink
+         && allowLipSync == other.allowLipSync
+         && enableBlending == other.enableBlending
+         && AdvancedEyBlinkSettings == other.AdvancedEyBlinkSettings;
     }
     public override int GetHashCode()
     {
-        return allowEyeBlink.GetHashCode() ^ allowLipSync.GetHashCode() ^ enableBlending.GetHashCode();
+        return allowEyeBlink.GetHashCode() 
+        ^ allowLipSync.GetHashCode() 
+        ^ enableBlending.GetHashCode() 
+        ^ AdvancedEyBlinkSettings.GetHashCode();
     }
 }

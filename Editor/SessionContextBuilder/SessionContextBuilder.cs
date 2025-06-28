@@ -24,7 +24,7 @@ internal static class SessionContextBuilder
         var zeroWeightBlendShapes = new List<BlendShape>();
         faceRenderer.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes);
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes, new());
         return true;
     }
 
@@ -40,7 +40,7 @@ internal static class SessionContextBuilder
         }
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
-        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c?.gameObject)).SkipDestroyed();
+        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c.FaceObject)).OfType<GameObject>();
         var faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null);
         if (faceRenderer == null)
         {

@@ -32,8 +32,15 @@ namespace com.aoyon.facetune
             {
                 animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));
             }
+
+            var facialSettings = FacialSettings;
+            var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyBlinkComponent>();
+            if (advancedEyeBlinkComponent != null)
+            {
+                facialSettings = facialSettings with { AdvancedEyBlinkSettings = advancedEyeBlinkComponent.GetAdvancedEyBlinkSettings(sessionContext.EyeBlendShapeNames) };
+            }
             
-            return new Expression(name, animationIndex.Animations, ExpressionSettings, FacialSettings);
+            return new Expression(name, animationIndex.Animations, ExpressionSettings, facialSettings);
         }
 
         internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)

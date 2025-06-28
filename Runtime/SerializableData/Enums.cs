@@ -58,3 +58,9 @@ public enum AnimationSourceMode
     Manual,
     FromAnimationClip
 }
+
+public enum AdvancedEyBlinkMode
+{
+    Animation,
+    SmartEyeBlink
+}

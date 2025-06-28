@@ -225,7 +225,7 @@ internal class AnimatorInstaller
                 if (!layerCreatedForThisIndex)
                 {
                     layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
-                    defaultStates[i] = AddFTState(layers[i], "Default", DefaultStatePosition); // パススルー
+                    defaultStates[i] = AddFTState(layers[i], "PassThrough", DefaultStatePosition);
                     layerCreatedForThisIndex = true;
                 }
                 
@@ -244,7 +244,7 @@ internal class AnimatorInstaller
                 !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
             var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
-            var defaultState = AddFTState(layer, "Default", DefaultStatePosition); // パススルー
+            var defaultState = AddFTState(layer, "PassThrough", DefaultStatePosition);
             var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
             AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
         }
