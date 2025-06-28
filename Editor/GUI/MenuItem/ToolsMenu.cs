@@ -22,18 +22,4 @@ internal static class ToolsMenu
         ProjectSettings.EnableSelectedExpressionPreview = !ProjectSettings.EnableSelectedExpressionPreview;
         InternalEditorUtility.RepaintAllViews();
     }
-
-    private const string Tools_ImportFromVRChatFXPath = BasePath + "ImportFromVRChatFX";
-
-    [MenuItem(Tools_ImportFromVRChatFXPath, false)]
-    private static void ImportFromVRChatFX()
-    {
-        var animatorController = Selection.activeObject as UnityEditor.Animations.AnimatorController;
-        if (animatorController == null)
-        {
-            Debug.LogError("AnimatorControllerを選択してください");
-            return;
-        }
-        FXImporter.ImportFromVRChatFX(animatorController);
-    }
 }

@@ -334,91 +334,22 @@ internal class AnimatorInstaller
 
     private AnimatorCondition ToAnimatorCondition(Condition condition)
     {
-        AnimatorControllerParameterType resolvedParamType = AnimatorControllerParameterType.Float;
-        string parameter = "";
-        AnimatorConditionMode mode = AnimatorConditionMode.Equals;
-        float threshold = 0;
-
-        switch (condition)
-        {
-            case HandGestureCondition hgc:
-                resolvedParamType = AnimatorControllerParameterType.Int;
-                parameter = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight";
-                mode = hgc.IsEqual ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual;
-                threshold = (int)hgc.HandGesture; // 整数値をそのまま使う。
-                break;
-            case ParameterCondition pc:
-                parameter = pc.ParameterName;
-                switch (pc.ParameterType)
-                {
-                    case ParameterType.Int:
-                        resolvedParamType = AnimatorControllerParameterType.Int;
-                        mode = pc.ComparisonType switch
-                        {
-                            ComparisonType.Equal => AnimatorConditionMode.Equals,
-                            ComparisonType.NotEqual => AnimatorConditionMode.NotEqual,
-                            ComparisonType.GreaterThan => AnimatorConditionMode.Greater,
-                            ComparisonType.LessThan => AnimatorConditionMode.Less,
-                            _ => mode
-                        };
-                        threshold = pc.IntValue;
-                        break;
-                    case ParameterType.Float:
-                        resolvedParamType = AnimatorControllerParameterType.Float;
-                        switch (pc.ComparisonType)
-                        {
-                            case ComparisonType.GreaterThan:
-                                mode = AnimatorConditionMode.Greater;
-                                break;
-                            case ComparisonType.LessThan:
-                                mode = AnimatorConditionMode.Less;
-                                break;
-                            case ComparisonType.Equal:
-                                Debug.LogWarning("Equal is not supported for float parameters. Using Greater instead.");
-                                mode = AnimatorConditionMode.Greater;
-                                break;
-                            case ComparisonType.NotEqual:
-                                Debug.LogWarning("NotEqual is not supported for float parameters. Using Greater instead.");
-                                mode = AnimatorConditionMode.Greater;
-                                break;
-                            default:
-                                throw new NotImplementedException($"Comparison type {pc.ComparisonType} is not implemented");
-                        }
-                        threshold = pc.FloatValue;
-                        break;
-                    case ParameterType.Bool:
-                        resolvedParamType = AnimatorControllerParameterType.Bool;
-                        mode = pc.BoolValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot;
-                        break;
-                    default:
-                        throw new NotImplementedException($"Parameter type {pc.ParameterType} is not implemented");
-                }
-                break;
-            default:
-                throw new NotImplementedException($"Condition type {condition.GetType()} is not implemented");
-        }
-
-        EnsureParameterExists(resolvedParamType, parameter);
-        
-        return new AnimatorCondition
-        {
-            parameter = parameter,
-            mode = mode,
-            threshold = threshold
-        };
+        var (animatorCondition, parameter, parameterType) = condition.ToAnimatorCondition();
+        EnsureParameterExists(parameterType, parameter);
+        return animatorCondition;
     }
 
-    private AnimatorControllerParameter EnsureParameterExists(AnimatorControllerParameterType resolvedParamType, string parameter)
+    private AnimatorControllerParameter EnsureParameterExists(AnimatorControllerParameterType parameterType, string parameter)
     {
         if (!_parameterCache.ContainsKey(parameter))
         {
             var param = new AnimatorControllerParameter
             {
                 name = parameter,
-                type = resolvedParamType
+                type = parameterType
             };
 
-            switch (resolvedParamType)
+            switch (parameterType)
             {
                 case AnimatorControllerParameterType.Bool:
                     param.defaultBool = false;
