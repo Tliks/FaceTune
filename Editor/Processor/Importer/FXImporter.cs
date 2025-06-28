@@ -59,20 +59,19 @@ internal static class FXImporter
                 var expObj = new GameObject(state.name);
                 expObj.transform.parent = layerObj.transform;
                 
-                // 各conditionに対してConditionComponentを作成（OR条件）
+                // 単一のConditionComponentに全条件を設定（AND条件）
+                var condition = expObj.AddComponent<ConditionComponent>();
+                var handGestureConditions = new List<HandGestureCondition>();
+                var parameterConditions = new List<ParameterCondition>();
+                
                 foreach (var animCondition in conditions)
                 {
-                    var condition = expObj.AddComponent<ConditionComponent>();
-                    
                     if (animCondition.parameter is "GestureLeft" or "GestureRight" && animCondition.threshold is >= 0 and < 8)
                     {
                         // HandGestureConditionを作成
                         var hand = animCondition.parameter == "GestureLeft" ? Hand.Left : Hand.Right;
                         var gesture = (HandGesture)(int)animCondition.threshold;
-                        condition.HandGestureConditions = new List<HandGestureCondition>
-                        {
-                            new HandGestureCondition(hand, true, gesture)
-                        };
+                        handGestureConditions.Add(new HandGestureCondition(hand, true, gesture));
                     }
                     else
                     {
@@ -125,9 +124,13 @@ internal static class FXImporter
                                 continue;
                         }
                         
-                        condition.ParameterConditions = new List<ParameterCondition> { paramCondition };
+                        parameterConditions.Add(paramCondition);
                     }
                 }
+                
+                // ConditionComponentに条件を設定
+                condition.HandGestureConditions = handGestureConditions;
+                condition.ParameterConditions = parameterConditions;
                 
                 // ExpressionComponentを追加
                 var exp = expObj.AddComponent<ExpressionComponent>();
@@ -218,10 +221,12 @@ internal static class FXImporter
                 _ => TrackingPermission.Keep
             };
 
-            var newFacialSettings = expressionComponent.FacialSettings with
+            var newFacialSettings = new FacialSettings()
             {
                 AllowEyeBlink = allowEyeBlink,
-                AllowLipSync = allowLipSync
+                AllowLipSync = allowLipSync,
+                EnableBlending = false,// Todo
+                AdvancedEyBlinkSettings = AdvancedEyBlinkSettings.Disabled()
             };
 
             expressionComponent.FacialSettings = newFacialSettings;
