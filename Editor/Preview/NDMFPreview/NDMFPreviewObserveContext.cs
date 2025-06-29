@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal class NDMFPreviewObserveContext : IObserveContext
 {

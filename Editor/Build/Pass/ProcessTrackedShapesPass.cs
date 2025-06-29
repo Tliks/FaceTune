@@ -1,6 +1,6 @@
 using nadena.dev.ndmf;
 
-namespace com.aoyon.facetune.build;
+namespace aoyon.facetune.build;
 
 internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 {

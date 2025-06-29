@@ -1,14 +1,14 @@
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.preview;
+using aoyon.facetune.preview;
 
-[assembly: ExportsPlugin(typeof(com.aoyon.facetune.build.PluginDefinition))]
+[assembly: ExportsPlugin(typeof(aoyon.facetune.build.PluginDefinition))]
 
-namespace com.aoyon.facetune.build;
+namespace aoyon.facetune.build;
 
 public sealed class PluginDefinition : Plugin<PluginDefinition>
 {
-    public override string QualifiedName => FaceTuneConsts.QualifiedName; // "com.aoyon.facetune"
+    public override string QualifiedName => FaceTuneConsts.QualifiedName; // "aoyon.facetune"
     public override string DisplayName => FaceTuneConsts.Name;
 
     protected override void Configure()

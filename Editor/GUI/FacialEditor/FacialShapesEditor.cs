@@ -1,8 +1,8 @@
 using UnityEditor.IMGUI.Controls;
 using nadena.dev.ndmf.preview;
-using com.aoyon.facetune.preview;
+using aoyon.facetune.preview;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 internal class FacialShapesEditor : EditorWindow
 {

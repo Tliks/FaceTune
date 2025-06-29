@@ -1,7 +1,11 @@
 {
-    "name": "com.aoyon.facetune.common",
+    "name": "aoyon.facetune.runtime",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "aoyon.facetune.common",
+        "nadena.dev.ndmf.runtime",
+        "nadena.dev.modular-avatar.core"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -10,5 +14,5 @@
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": true
+    "noEngineReferences": false
 }

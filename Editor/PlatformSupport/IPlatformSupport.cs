@@ -1,9 +1,9 @@
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.build;
+using aoyon.facetune.build;
 
-namespace com.aoyon.facetune.platform;
+namespace aoyon.facetune.platform;
 
 internal interface IPlatformSupport
 {

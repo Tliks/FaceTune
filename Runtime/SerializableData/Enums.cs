@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 public enum HandGesture
 {

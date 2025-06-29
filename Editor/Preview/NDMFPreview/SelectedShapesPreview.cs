@@ -1,7 +1,7 @@
 using nadena.dev.ndmf.preview;
-using com.aoyon.facetune.Settings;
+using aoyon.facetune.Settings;
 
-namespace com.aoyon.facetune.preview;
+namespace aoyon.facetune.preview;
 
 internal class SelectedShapesPreview : AbstractFaceTunePreview
 {

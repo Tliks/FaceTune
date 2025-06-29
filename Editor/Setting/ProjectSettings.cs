@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune.Settings;
+namespace aoyon.facetune.Settings;
 
 [FilePath($"ProjectSettings/Packages/{FaceTuneConsts.QualifiedName}/settings.json", FilePathAttribute.Location.ProjectFolder)]
 internal class ProjectSettings : ScriptableSingleton<ProjectSettings>

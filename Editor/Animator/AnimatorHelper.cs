@@ -1,7 +1,7 @@
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
 
-namespace com.aoyon.facetune.animator;
+namespace aoyon.facetune.animator;
 
 internal static class AnimatorHelper
 {

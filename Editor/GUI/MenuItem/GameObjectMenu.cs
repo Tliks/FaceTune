@@ -1,11 +1,11 @@
-using com.aoyon.facetune.importer;
-using com.aoyon.facetune.build;
+using aoyon.facetune.importer;
+using aoyon.facetune.build;
 using nadena.dev.ndmf.runtime;
 using UnityEditor.Animations;
 using VRC.SDK3.Avatars.Components;
 using M = UnityEditor.MenuItem;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 internal static class GameObjectMenu
 {

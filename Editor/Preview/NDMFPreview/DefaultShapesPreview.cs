@@ -1,13 +1,13 @@
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune.preview;
+namespace aoyon.facetune.preview;
 
 // early
 internal class DefaultShapesPreview : AbstractFaceTunePreview
 {
     public static TogglablePreviewNode ToggleNode = TogglablePreviewNode.Create(
         () => "DefaultShapesPreview",
-        qualifiedName: "com.aoyon.facetune.default-shapes-preview",
+        qualifiedName: "aoyon.facetune.default-shapes-preview",
         true
     );
 

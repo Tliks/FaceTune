@@ -1,7 +1,7 @@
 using UnityEditor.Animations;
 using VRC.SDKBase;
 
-namespace com.aoyon.facetune.importer;
+namespace aoyon.facetune.importer;
 
 internal static class FXImporter
 {

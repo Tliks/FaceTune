@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using HarmonyLib;
 
-namespace com.aoyon.facetune.ui
+namespace aoyon.facetune.ui
 {
     internal interface ISelectionData
     {

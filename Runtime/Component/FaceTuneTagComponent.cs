@@ -1,6 +1,6 @@
 using nadena.dev.ndmf;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 public abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
 {

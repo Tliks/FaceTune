@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune.preview;
+namespace aoyon.facetune.preview;
 
 internal abstract class AbstractFaceTunePreview : IRenderFilter
 {

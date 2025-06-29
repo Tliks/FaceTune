@@ -1,10 +1,10 @@
 using UnityEditor.Animations;
 using nadena.dev.ndmf.animator;
 using nadena.dev.modular_avatar.core;
-using com.aoyon.facetune.platform;
-using com.aoyon.facetune.build;
+using aoyon.facetune.platform;
+using aoyon.facetune.build;
 
-namespace com.aoyon.facetune.animator;
+namespace aoyon.facetune.animator;
 
 internal class AnimatorInstaller
 {

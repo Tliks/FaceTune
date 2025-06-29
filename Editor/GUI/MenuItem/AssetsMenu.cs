@@ -3,7 +3,7 @@ using nadena.dev.modular_avatar.core;
 using VRC.SDK3.Avatars.ScriptableObjects;
 using M = UnityEditor.MenuItem;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 internal static class AssetsMenu
 {

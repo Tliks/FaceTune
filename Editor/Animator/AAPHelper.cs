@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune.animator;
+namespace aoyon.facetune.animator;
 
 // AAP(float)のヘルパー
 

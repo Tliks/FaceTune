@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.runtime;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal class NonObserveContext : IObserveContext
 {
