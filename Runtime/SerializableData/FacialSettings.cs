@@ -15,7 +15,7 @@ public record class FacialSettings // Immutable
     public bool EnableBlending { get => enableBlending; init => enableBlending = value; }
     public const string EnableBlendingPropName = nameof(enableBlending);
 
-    internal AdvancedEyBlinkSettings AdvancedEyBlinkSettings { get; init; } = AdvancedEyBlinkSettings.Disabled();
+    internal AdvancedEyeBlinkSettings AdvancedEyBlinkSettings { get; init; } = AdvancedEyeBlinkSettings.Disabled();
     
     public FacialSettings()
     {
@@ -24,7 +24,7 @@ public record class FacialSettings // Immutable
         enableBlending = false;
     }
 
-    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, bool enableBlending, AdvancedEyBlinkSettings advancedEyBlinkSettings)
+    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, bool enableBlending, AdvancedEyeBlinkSettings advancedEyBlinkSettings)
     {
         this.allowEyeBlink = allowEyeBlink;
         this.allowLipSync = allowLipSync;
@@ -32,7 +32,7 @@ public record class FacialSettings // Immutable
         this.AdvancedEyBlinkSettings = advancedEyBlinkSettings;
     }
 
-    internal static FacialSettings Keep = new(TrackingPermission.Keep, TrackingPermission.Keep, true, AdvancedEyBlinkSettings.Disabled());
+    internal static FacialSettings Keep = new(TrackingPermission.Keep, TrackingPermission.Keep, true, AdvancedEyeBlinkSettings.Disabled());
 
     internal FacialSettings Merge(FacialSettings other)
     {

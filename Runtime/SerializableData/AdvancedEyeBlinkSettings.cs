@@ -1,7 +1,7 @@
 namespace aoyon.facetune;
 
 [Serializable]
-public record class AdvancedEyBlinkSettings // Immutable
+public record class AdvancedEyeBlinkSettings // Immutable
 {
     [SerializeField] private bool useAdvancedEyeBlink;
     public bool UseAdvancedEyeBlink { get => useAdvancedEyeBlink; init => useAdvancedEyeBlink = value; }
@@ -44,11 +44,12 @@ public record class AdvancedEyBlinkSettings // Immutable
     public const string CancelerBlendShapeNamesPropName = nameof(cancelerBlendShapeNames);
 
 
-    public AdvancedEyBlinkSettings() : this(true)
+    public AdvancedEyeBlinkSettings() : this(true)
     {
     }
 
-    public AdvancedEyBlinkSettings(bool useAdvancedEyeBlink)
+    private const string BlinkParam = "vrc.blink"; // Todo: デフォルトとするか、Editor上の追加とするか考える 
+    public AdvancedEyeBlinkSettings(bool useAdvancedEyeBlink)
     {
         this.useAdvancedEyeBlink = useAdvancedEyeBlink;
         useAnimation = true;
@@ -56,13 +57,22 @@ public record class AdvancedEyBlinkSettings // Immutable
         useRandomInterval = true;
         randomIntervalMinSeconds = 4.0f;
         randomIntervalMaxSeconds = 20.0f;
-        closeAnimations = new();
-        openAnimations = new();
+
+        var closeCurve = new AnimationCurve();
+        closeCurve.AddKey(0f, 0f);
+        closeCurve.AddKey(0.05f, 100f);
+        closeAnimations = new(){new (BlinkParam, closeCurve)};
+
+        var openCurve = new AnimationCurve();
+        openCurve.AddKey(0f, 100f);
+        openCurve.AddKey(0.05f, 0f);
+        openAnimations = new(){new (BlinkParam, openCurve)};
+
         useCanceler = false;
         cancelerBlendShapeNames = new();
     }
 
-    public AdvancedEyBlinkSettings(
+    public AdvancedEyeBlinkSettings(
         bool useAdvancedEyeBlink,
         bool useAnimation,
         float intervalSeconds,
@@ -87,9 +97,9 @@ public record class AdvancedEyBlinkSettings // Immutable
         this.cancelerBlendShapeNames = cancelerBlendShapeNames;
     }
 
-    internal static AdvancedEyBlinkSettings Disabled() => new(false);
+    internal static AdvancedEyeBlinkSettings Disabled() => new(false);
 
-    public virtual bool Equals(AdvancedEyBlinkSettings other)
+    public virtual bool Equals(AdvancedEyeBlinkSettings other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;

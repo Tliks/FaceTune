@@ -150,7 +150,7 @@ internal static class FXImporter
             AllowEyeBlink = eye,
             AllowLipSync = mouth,
             EnableBlending = false,// Todo
-            AdvancedEyBlinkSettings = AdvancedEyBlinkSettings.Disabled()
+            AdvancedEyBlinkSettings = AdvancedEyeBlinkSettings.Disabled()
         };
 
         expressionComponent.FacialSettings = facialSettings;

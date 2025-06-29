@@ -19,7 +19,7 @@ internal class AnimatorInstaller
     private readonly float _transitionDurationSeconds;
 
     private readonly Dictionary<Expression, VirtualClip> _expressionClipCache = new();
-    private readonly Dictionary<AdvancedEyBlinkSettings, int> _advancedEyeBlinkIndex = new();
+    private readonly Dictionary<AdvancedEyeBlinkSettings, int> _advancedEyeBlinkIndex = new();
     private readonly VirtualClip _emptyClip;
 
     private static readonly Vector3 EntryStatePosition = new Vector3(50, 120, 0);
@@ -401,7 +401,7 @@ internal class AnimatorInstaller
         }
     }
 
-    private int GetAdvancedEyeBlinkIndex(AdvancedEyBlinkSettings advancedEyeBlinkSettings)
+    private int GetAdvancedEyeBlinkIndex(AdvancedEyeBlinkSettings advancedEyeBlinkSettings)
     {
         if (_advancedEyeBlinkIndex.TryGetValue(advancedEyeBlinkSettings, out var index))
         {
