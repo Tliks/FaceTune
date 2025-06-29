@@ -600,13 +600,8 @@ internal class AnimatorInstaller
             close.Transitions = close.Transitions.Add(closeToStare);
 
             // Close -> Open
-            var closeToOpen = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            var closeToOpen = AnimatorHelper.CreateTransitionWithExitTime();
             closeToOpen.SetDestination(open);
-            closeToOpen.Conditions = ImmutableList.Create(new AnimatorCondition()
-            {
-                parameter = TrueParameterName,
-                mode = AnimatorConditionMode.If
-            });
             close.Transitions = close.Transitions.Add(closeToOpen);
 
             // Open -> Stare
@@ -624,14 +619,20 @@ internal class AnimatorInstaller
             });
             open.Transitions = open.Transitions.Add(openToStare2);
 
+            
             // 瞬きの間隔を設定
-            var blinkDelayClip = AnimatorHelper.CreateDelayClip(advancedSettings.IntervalSeconds, "BlinkDelay");
-            stare.Motion = blinkDelayClip;
-
-            if (advancedSettings.UseRandomInterval)
+            if (!advancedSettings.UseRandomInterval)
             {
+                var blinkDelayClip = AnimatorHelper.CreateDelayClip(advancedSettings.IntervalSeconds, $"BlinkDelay {index}");
+                stare.Motion = blinkDelayClip;
+            }
+            else
+            {
+                var blinkDelayClip = AnimatorHelper.CreateDelayClip(advancedSettings.RandomIntervalMinSeconds, $"BlinkDelay {index}");
+                stare.Motion = blinkDelayClip;
+
                 var maxMultiplier = 1f;
-                var minMultiplier = advancedSettings.RandomIntervalMinSeconds / advancedSettings.IntervalSeconds;
+                var minMultiplier = advancedSettings.RandomIntervalMinSeconds / advancedSettings.RandomIntervalMaxSeconds;
                 stare.EnsureBehavior<VRCAvatarParameterDriver>().parameters.Add(new VRC_AvatarParameterDriver.Parameter()
                 {
                     type = VRC_AvatarParameterDriver.ChangeType.Random,
@@ -639,17 +640,18 @@ internal class AnimatorInstaller
                     valueMin = minMultiplier,
                     valueMax = maxMultiplier,
                 });
+                stare.SpeedParameter = BlinkDelayMultiplier;
             }
 
             // 目を閉じるアニメーションとAAPを設定
-            var closeClip = close.GetOrCreateClip("Close");
+            var closeClip = close.GetOrCreateClip($"Close {index}");
             var closeCurve = new AnimationCurve();
             closeCurve.AddKey(0, 1);
             closeClip.SetFloatCurve("", typeof(Animator), BlinkClosingAAP, closeCurve);
             AddAnimationToState(closeClip, advancedSettings.CloseAnimations.Select(a => a.ToGeneric(_sessionContext.BodyPath)));
 
             // 目を開くアニメーションとAAPを設定
-            var openClip = open.GetOrCreateClip("Open");
+            var openClip = open.GetOrCreateClip($"Open {index}");
             var openCurve = new AnimationCurve();
             openCurve.AddKey(0, 1);
             openClip.SetFloatCurve("", typeof(Animator), BlinkOpeningAAP, openCurve);

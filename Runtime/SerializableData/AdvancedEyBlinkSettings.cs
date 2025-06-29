@@ -11,7 +11,7 @@ public record class AdvancedEyBlinkSettings // Immutable
     public bool UseAnimation { get => useAnimation; init => useAnimation = value; }
     public const string UseAnimationPropName = nameof(useAnimation);
 
-    [SerializeField] private float intervalSeconds; // randomIntervalMaxSecondsと兼用
+    [SerializeField] private float intervalSeconds;
     public float IntervalSeconds { get => intervalSeconds; init => intervalSeconds = value; }
     public const string IntervalSecondsPropName = nameof(intervalSeconds);
 
@@ -22,6 +22,10 @@ public record class AdvancedEyBlinkSettings // Immutable
     [SerializeField] private float randomIntervalMinSeconds;
     public float RandomIntervalMinSeconds { get => randomIntervalMinSeconds; init => randomIntervalMinSeconds = value; }
     public const string RandomIntervalMinSecondsPropName = nameof(randomIntervalMinSeconds);
+
+    [SerializeField] private float randomIntervalMaxSeconds;
+    public float RandomIntervalMaxSeconds { get => randomIntervalMaxSeconds; init => randomIntervalMaxSeconds = value; }
+    public const string RandomIntervalMaxSecondsPropName = nameof(randomIntervalMaxSeconds);
 
     [SerializeField] private List<BlendShapeAnimation> closeAnimations;
     public IReadOnlyList<BlendShapeAnimation> CloseAnimations { get => closeAnimations.AsReadOnly(); init => closeAnimations = value.ToList(); }
@@ -40,13 +44,18 @@ public record class AdvancedEyBlinkSettings // Immutable
     public const string CancelerBlendShapeNamesPropName = nameof(cancelerBlendShapeNames);
 
 
-    public AdvancedEyBlinkSettings()
+    public AdvancedEyBlinkSettings() : this(true)
     {
-        useAdvancedEyeBlink = true;
+    }
+
+    public AdvancedEyBlinkSettings(bool useAdvancedEyeBlink)
+    {
+        this.useAdvancedEyeBlink = useAdvancedEyeBlink;
         useAnimation = true;
-        intervalSeconds = 4.0f;
+        intervalSeconds = 10.0f;
         useRandomInterval = true;
-        randomIntervalMinSeconds = 0.8f;
+        randomIntervalMinSeconds = 4.0f;
+        randomIntervalMaxSeconds = 20.0f;
         closeAnimations = new();
         openAnimations = new();
         useCanceler = false;
@@ -59,6 +68,7 @@ public record class AdvancedEyBlinkSettings // Immutable
         float intervalSeconds,
         bool useRandomInterval,
         float randomIntervalMinSeconds,
+        float randomIntervalMaxSeconds,
         List<BlendShapeAnimation> closeAnimations,
         List<BlendShapeAnimation> openAnimations,
         bool useCanceler,
@@ -70,13 +80,14 @@ public record class AdvancedEyBlinkSettings // Immutable
         this.intervalSeconds = intervalSeconds;
         this.useRandomInterval = useRandomInterval;
         this.randomIntervalMinSeconds = randomIntervalMinSeconds;
+        this.randomIntervalMaxSeconds = randomIntervalMaxSeconds;
         this.closeAnimations = closeAnimations;
         this.openAnimations = openAnimations;
         this.useCanceler = useCanceler;
         this.cancelerBlendShapeNames = cancelerBlendShapeNames;
     }
 
-    internal static AdvancedEyBlinkSettings Disabled() => new(false, false, 0.1f, false, 0.1f, new(), new(), false, new());
+    internal static AdvancedEyBlinkSettings Disabled() => new(false);
 
     public virtual bool Equals(AdvancedEyBlinkSettings other)
     {
@@ -87,6 +98,7 @@ public record class AdvancedEyBlinkSettings // Immutable
          && IntervalSeconds == other.IntervalSeconds
          && UseRandomInterval == other.UseRandomInterval
          && RandomIntervalMinSeconds == other.RandomIntervalMinSeconds
+         && RandomIntervalMaxSeconds == other.RandomIntervalMaxSeconds
          && CloseAnimations.SequenceEqual(other.CloseAnimations)
          && OpenAnimations.SequenceEqual(other.OpenAnimations)
          && UseCanceler == other.UseCanceler
@@ -100,6 +112,7 @@ public record class AdvancedEyBlinkSettings // Immutable
         hash ^= IntervalSeconds.GetHashCode();
         hash ^= UseRandomInterval.GetHashCode();
         hash ^= RandomIntervalMinSeconds.GetHashCode();
+        hash ^= RandomIntervalMaxSeconds.GetHashCode();
         foreach (var closeAnimation in CloseAnimations)
         {
             hash ^= closeAnimation.GetHashCode();
