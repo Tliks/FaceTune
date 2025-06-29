@@ -2,7 +2,7 @@ using UnityEditor.Animations;
 using nadena.dev.ndmf.animator;
 using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.platform;
-using com.aoyon.facetune.ndmf;
+using com.aoyon.facetune.build;
 
 namespace com.aoyon.facetune.animator;
 

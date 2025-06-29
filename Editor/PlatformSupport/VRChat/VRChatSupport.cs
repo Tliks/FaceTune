@@ -7,7 +7,7 @@ using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
 using com.aoyon.facetune.animator;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.ndmf;
+using com.aoyon.facetune.build;
 
 namespace com.aoyon.facetune.platform;
 

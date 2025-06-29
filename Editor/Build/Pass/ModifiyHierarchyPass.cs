@@ -2,7 +2,7 @@ using com.aoyon.facetune.platform;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 
-namespace com.aoyon.facetune.ndmf;
+namespace com.aoyon.facetune.build;
 
 // Hierarchy上のデータを弄るパスは基本的にここに置く
 // なお、PatternDataを必要とする場合は後続のパス。

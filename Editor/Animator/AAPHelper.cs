@@ -1,8 +1,8 @@
 namespace com.aoyon.facetune.animator;
 
 // AAP(float)のヘルパー
-// VRCではfloatは[-1, 1]の範囲に制限され、かつ1/127で区部される
-// これを良い感じに扱う
+
+// VRCではfloatは[-1, 1]の範囲に制限され、かつ1/127で区分される
 internal static class VRCAAPHelper
 {
     public static float IndexToValue(int index)
@@ -11,7 +11,8 @@ internal static class VRCAAPHelper
         {
             throw new ArgumentException($"Index must be between 0 and 255. {index}");
         }
-        return (index / 127f) - 1f;
+        var value = (index / 127f) - 1f;
+        return Mathf.Clamp(value, -1f, 1f);
     }
 
     public static int ValueToIndex(float value)

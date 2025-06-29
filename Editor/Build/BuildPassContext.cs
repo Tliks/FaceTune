@@ -1,7 +1,7 @@
 using nadena.dev.ndmf;
 using com.aoyon.facetune.platform;
 
-namespace com.aoyon.facetune.ndmf;
+namespace com.aoyon.facetune.build;
 
 internal class BuildPassState
 {
