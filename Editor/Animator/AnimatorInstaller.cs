@@ -3,6 +3,8 @@ using nadena.dev.ndmf.animator;
 using nadena.dev.modular_avatar.core;
 using aoyon.facetune.platform;
 using aoyon.facetune.build;
+using VRC.SDKBase;
+using VRC.SDK3.Avatars.Components;
 
 namespace aoyon.facetune.animator;
 
@@ -14,7 +16,7 @@ internal class AnimatorInstaller
     private readonly IPlatformSupport _platformSupport;
 
     private readonly bool _useWriteDefaults;
-    private const float TransitionDurationSeconds = 0.1f; // 変更可能にすべき？
+    private readonly float _transitionDurationSeconds;
 
     private readonly Dictionary<Expression, VirtualClip> _expressionClipCache = new();
     private readonly Dictionary<AdvancedEyBlinkSettings, int> _advancedEyeBlinkIndex = new();
@@ -29,26 +31,30 @@ internal class AnimatorInstaller
     private const int LayerPriority = 1; // FaceEmo: 0
 
     private const string TrueParameterName = $"{FaceTuneConsts.ParameterPrefix}/True";
-    
     // LipSync
     private const string AllowLipSyncAAP = $"{FaceTuneConsts.ParameterPrefix}/AllowLipSyncAAP";
-
     // Blink
-    private const string BlinkParameter = $"{FaceTuneConsts.ParameterPrefix}/Blink";
-    private const string BlinkAllowAAP = $"{BlinkParameter}/Allow";
-    private const string BlinkUseAnimationAAP = $"{BlinkParameter}/UseAnimation";
-    private const string BlinkAnimationModeAAP = $"{BlinkParameter}/AnimationMode";
-    private const string BlinkClosingAAP = $"{BlinkParameter}/Closing";
-    private const string BlinkOpeningAAP = $"{BlinkParameter}/Opening";
+    private const string BlinkParameterPrefix = $"{FaceTuneConsts.ParameterPrefix}/Blink";
+    private const string BlinkAllowAAP = $"{BlinkParameterPrefix}/Allow";
+    private const string BlinkUseAnimationAAP = $"{BlinkParameterPrefix}/UseAnimation";
+    private const string BlinkAnimationModeAAP = $"{BlinkParameterPrefix}/AnimationMode";
+    private const string BlinkClosingAAP = $"{BlinkParameterPrefix}/Closing";
+    private const string BlinkOpeningAAP = $"{BlinkParameterPrefix}/Opening";
+    private const string BlinkDelayMultiplier = $"{BlinkParameterPrefix}/DelayMultiplier";
 
     public AnimatorInstaller(SessionContext sessionContext, VirtualAnimatorController virtualController, bool useWriteDefaults)
     {
-        _sessionContext = sessionContext;
         _virtualController = virtualController;
+
+        _sessionContext = sessionContext;
         _platformSupport = platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
+
+        _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
         _useWriteDefaults = useWriteDefaults;
+
         _emptyClip = AnimatorHelper.CreateCustomEmpty();
 
+        // Todo: 必要なパラメーターのみの追加
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowLipSyncAAP);
 
@@ -57,6 +63,7 @@ internal class AnimatorInstaller
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkAnimationModeAAP);
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkClosingAAP);
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkOpeningAAP);
+        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkDelayMultiplier);
     }
 
     private static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
@@ -196,7 +203,7 @@ internal class AnimatorInstaller
         
         var patternExpressions = patternData.GetAllExpressions();
         if (patternExpressions.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow
-            || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyBlink))
+            || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyeBlink))
         {
             AddEyeBlinkLayer();
         }
@@ -277,7 +284,7 @@ internal class AnimatorInstaller
             }
             return e;
         }).ToList();
-        var duration = TransitionDurationSeconds;
+        var duration = _transitionDurationSeconds;
         var conditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.Conditions).ToArray();
         var states = AddExclusiveStates(layer, defaultState, conditionsPerState, duration, basePosition);
         for (int i = 0; i < states.Length; i++)
@@ -369,7 +376,7 @@ internal class AnimatorInstaller
             clip.SetFloatCurve("", typeof(Animator), BlinkAllowAAP, allowBlinkCurve);
 
             var advancedSettings = facialSettings.AdvancedEyBlinkSettings;
-            if (advancedSettings.UseAdvancedEyBlink && advancedSettings.UseAnimation)
+            if (advancedSettings.UseAdvancedEyeBlink && advancedSettings.UseAnimation)
             {
                 // UseAnimation
                 var useAnimationCurve = new AnimationCurve();
@@ -455,7 +462,7 @@ internal class AnimatorInstaller
         });
         disabled.Transitions = disabled.Transitions.Add(disabledToEnabled);
 
-        if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => k.UseAdvancedEyBlink == false || k.UseAnimation == false)) return;
+        if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => k.UseAdvancedEyeBlink == false || k.UseAnimation == false)) return;
     
         // AnimationGate
         var disableTrackingPosition = enabledPosition + new Vector3(PositionXStep, 0, 0);
@@ -512,10 +519,8 @@ internal class AnimatorInstaller
 
         // Animationを用いた瞬き制御
         var starePosition = animationGatePosition + new Vector3(PositionXStep, 0, 0);
-        foreach (var advancedSettings in _advancedEyeBlinkIndex.OrderBy(kvp => kvp.Value))
+        foreach (var (advancedSettings, index) in _advancedEyeBlinkIndex.OrderBy(kvp => kvp.Value))
         {
-            var index = advancedSettings.Value;
-
             var stare = AddFTState(eyeBlinkLayer, $"Stare {index}", starePosition);
             var close = AddFTState(eyeBlinkLayer, $"Close {index}", starePosition + new Vector3(PositionXStep, 0, 0));
             var open = AddFTState(eyeBlinkLayer, $"Open {index}", starePosition + new Vector3(PositionXStep, 2 * PositionYStep, 0));
@@ -575,7 +580,24 @@ internal class AnimatorInstaller
             // Stare -> Close
             var stareToClose = AnimatorHelper.CreateTransitionWithExitTime();
             stareToClose.SetDestination(close);
+            stareToClose.Conditions = ImmutableList.Create(new AnimatorCondition()
+            {
+                parameter = BlinkAllowAAP,
+                mode = AnimatorConditionMode.Greater,
+                threshold = 0.99f
+            });
             stare.Transitions = stare.Transitions.Add(stareToClose);
+
+            // Close -> Stare
+            var closeToStare = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            closeToStare.SetDestination(stare);
+            closeToStare.Conditions = ImmutableList.Create(new AnimatorCondition()
+            {
+                parameter = BlinkAllowAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.99f
+            });
+            close.Transitions = close.Transitions.Add(closeToStare);
 
             // Close -> Open
             var closeToOpen = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
@@ -588,9 +610,50 @@ internal class AnimatorInstaller
             close.Transitions = close.Transitions.Add(closeToOpen);
 
             // Open -> Stare
-            var openToStare = AnimatorHelper.CreateTransitionWithExitTime();
-            openToStare.SetDestination(stare);
-            open.Transitions = open.Transitions.Add(openToStare);
+            var openToStare1 = AnimatorHelper.CreateTransitionWithExitTime();
+            openToStare1.SetDestination(stare);
+            open.Transitions = open.Transitions.Add(openToStare1);
+
+            var openToStare2 = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            openToStare2.SetDestination(stare);
+            openToStare2.Conditions = ImmutableList.Create(new AnimatorCondition()
+            {
+                parameter = BlinkAllowAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.99f
+            });
+            open.Transitions = open.Transitions.Add(openToStare2);
+
+            // 瞬きの間隔を設定
+            var blinkDelayClip = AnimatorHelper.CreateDelayClip(advancedSettings.IntervalSeconds, "BlinkDelay");
+            stare.Motion = blinkDelayClip;
+
+            if (advancedSettings.UseRandomInterval)
+            {
+                var maxMultiplier = 1f;
+                var minMultiplier = advancedSettings.RandomIntervalMinSeconds / advancedSettings.IntervalSeconds;
+                stare.EnsureBehavior<VRCAvatarParameterDriver>().parameters.Add(new VRC_AvatarParameterDriver.Parameter()
+                {
+                    type = VRC_AvatarParameterDriver.ChangeType.Random,
+                    name = BlinkDelayMultiplier,
+                    valueMin = minMultiplier,
+                    valueMax = maxMultiplier,
+                });
+            }
+
+            // 目を閉じるアニメーションとAAPを設定
+            var closeClip = close.GetOrCreateClip("Close");
+            var closeCurve = new AnimationCurve();
+            closeCurve.AddKey(0, 1);
+            closeClip.SetFloatCurve("", typeof(Animator), BlinkClosingAAP, closeCurve);
+            AddAnimationToState(closeClip, advancedSettings.CloseAnimations.Select(a => a.ToGeneric(_sessionContext.BodyPath)));
+
+            // 目を開くアニメーションとAAPを設定
+            var openClip = open.GetOrCreateClip("Open");
+            var openCurve = new AnimationCurve();
+            openCurve.AddKey(0, 1);
+            openClip.SetFloatCurve("", typeof(Animator), BlinkOpeningAAP, openCurve);
+            AddAnimationToState(openClip, advancedSettings.OpenAnimations.Select(a => a.ToGeneric(_sessionContext.BodyPath)));
 
             starePosition.y += 3 * PositionYStep;
         }
