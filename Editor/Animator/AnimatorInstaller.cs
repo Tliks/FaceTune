@@ -454,6 +454,8 @@ internal class AnimatorInstaller
             threshold = 0.99f
         });
         disabled.Transitions = disabled.Transitions.Add(disabledToEnabled);
+
+        if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => k.UseAdvancedEyBlink == false || k.UseAnimation == false)) return;
     
         // AnimationGate
         var disableTrackingPosition = enabledPosition + new Vector3(PositionXStep, 0, 0);
