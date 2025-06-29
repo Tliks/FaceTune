@@ -14,7 +14,11 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     protected override void Execute(BuildContext context)
     {
         if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
-        
+        Excute(buildPassContext);
+    }
+
+    internal static void Excute(BuildPassContext buildPassContext)
+    {
         // Condition
         NegotiateMAMenuItem(buildPassContext);
         ProcessPreset(buildPassContext);
@@ -24,9 +28,9 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         NormalizeData(buildPassContext);
     }
 
-    private void NegotiateMAMenuItem(BuildPassContext buildPassContext)
+    private static void NegotiateMAMenuItem(BuildPassContext buildPassContext)
     {
-        var root = buildPassContext.BuildContext.AvatarRootObject;
+        var root = buildPassContext.SessionContext.Root;
         var platformSupport = buildPassContext.PlatformSupport;
 
         var usedParameterNames = new HashSet<string>();
@@ -157,10 +161,10 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     }
 
     private const string Preset_Index_Parameter = $"{FaceTuneConsts.ParameterPrefix}/PresetIndex";
-    private void ProcessPreset(BuildPassContext buildPassContext)
+    private static void ProcessPreset(BuildPassContext buildPassContext)
     {
         var platformSupport = buildPassContext.PlatformSupport;
-        var presetComponents = buildPassContext.BuildContext.AvatarRootObject.GetComponentsInChildren<PresetComponent>(true);
+        var presetComponents = buildPassContext.SessionContext.Root.GetComponentsInChildren<PresetComponent>(true);
         var presetIndex = 0;   
         foreach (var presetComponent in presetComponents)
         {
@@ -180,9 +184,9 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         }
     }
 
-    private void ProcessFacialStyle(BuildPassContext buildPassContext)
+    private static void ProcessFacialStyle(BuildPassContext buildPassContext)
     {
-        var root = buildPassContext.BuildContext.AvatarRootObject;
+        var root = buildPassContext.SessionContext.Root;
         var facialStyleComponents = root.GetComponentsInChildren<FacialStyleComponent>(true);
         foreach (var facialStyleComponent in facialStyleComponents)
         {
@@ -191,7 +195,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             if (facialStyleComponent.AsDefault)
             {
                 var defaultExpression = new GameObject(facialStyleComponent.name);
-                defaultExpression.transform.parent = facialStyleComponent.transform.parent;
+                defaultExpression.transform.parent = facialStyleComponent.transform;
                 defaultExpression.transform.SetAsFirstSibling();
 
                 var defaultExpressionComponent = defaultExpression.AddComponent<ExpressionComponent>();
@@ -200,10 +204,10 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         }
     }
 
-    private void NormalizeData(BuildPassContext buildPassContext)
+    private static void NormalizeData(BuildPassContext buildPassContext)
     {
         // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
-        var root = buildPassContext.BuildContext.AvatarRootObject;
+        var root = buildPassContext.SessionContext.Root;
         var expressionComponents = root.GetComponentsInChildren<ExpressionComponent>(true);
         foreach (var expressionComponent in expressionComponents)
         {

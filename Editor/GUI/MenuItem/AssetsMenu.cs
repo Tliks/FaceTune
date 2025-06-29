@@ -55,7 +55,7 @@ internal static class AssetsMenu
             toggleComponent.Control.value = i;
 
             toggle.AddComponent<ExpressionComponent>();
-            var dataComponent = toggle.GetComponent<FacialDataComponent>();
+            var dataComponent = toggle.AddComponent<FacialDataComponent>();
             dataComponent.SourceMode = AnimationSourceMode.FromAnimationClip;
             dataComponent.Clip = clip;
             dataComponent.ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;

@@ -7,19 +7,21 @@ public record class AdvancedEyBlinkSettings // Immutable
     public bool UseAdvancedEyBlink { get => useAdvancedEyBlink; init => useAdvancedEyBlink = value; }
     public const string UseAdvancedEyBlinkPropName = nameof(useAdvancedEyBlink);
 
-    [SerializeField] private AdvancedEyBlinkMode mode = AdvancedEyBlinkMode.Animation;
-    public AdvancedEyBlinkMode Mode { get => mode; init => mode = value; }
-    public const string ModePropName = nameof(mode);
+    [SerializeField] private bool useAnimation = true;
+    public bool UseAnimation { get => useAnimation; init => useAnimation = value; }
+    public const string UseAnimationPropName = nameof(useAnimation);
 
-    // Animation
-    [SerializeField] private List<BlendShapeAnimation> blendShapeAnimations = new();
-    public IReadOnlyList<BlendShapeAnimation> BlendShapeAnimations { get => blendShapeAnimations.AsReadOnly(); init => blendShapeAnimations = value.ToList(); }
-    public const string BlendShapeAnimationsPropName = nameof(blendShapeAnimations);
+    [SerializeField] private List<BlendShapeAnimation> blinkAnimations = new();
+    public IReadOnlyList<BlendShapeAnimation> BlinkAnimations { get => blinkAnimations.AsReadOnly(); init => blinkAnimations = value.ToList(); }
+    public const string BlinkAnimationsPropName = nameof(blinkAnimations);
+    
+    [SerializeField] private bool useCanceler = false;
+    public bool UseCanceler { get => useCanceler; init => useCanceler = value; }
+    public const string UseCancelerPropName = nameof(useCanceler);
 
-    // SmartEyeBlink
-    [SerializeField] private List<string> eyeBlendShapeNames = new();
-    public IReadOnlyList<string> EyeBlendShapeNames { get => eyeBlendShapeNames.AsReadOnly(); init => eyeBlendShapeNames = value.ToList(); }
-    public const string EyeBlendShapeNamesPropName = nameof(eyeBlendShapeNames);
+    [SerializeField] private List<string> cancelerBlendShapeNames = new();
+    public IReadOnlyList<string> CancelerBlendShapeNames { get => cancelerBlendShapeNames.AsReadOnly(); init => cancelerBlendShapeNames = value.ToList(); }
+    public const string CancelerBlendShapeNamesPropName = nameof(cancelerBlendShapeNames);
 
 
     public AdvancedEyBlinkSettings()
@@ -27,13 +29,13 @@ public record class AdvancedEyBlinkSettings // Immutable
     }
 
     internal static AdvancedEyBlinkSettings Default() => new();
-    internal static AdvancedEyBlinkSettings Animation(List<BlendShapeAnimation> blendShapeAnimations)
+    internal static AdvancedEyBlinkSettings Animation(List<BlendShapeAnimation> blinkAnimations)
     {
-        return Default() with { Mode = AdvancedEyBlinkMode.Animation, BlendShapeAnimations = blendShapeAnimations };
+        return Default() with { UseAnimation = true, BlinkAnimations = blinkAnimations };
     }
-    internal static AdvancedEyBlinkSettings SmartEyeBlink(List<string> eyeBlendShapeNames)
+    internal static AdvancedEyBlinkSettings AnimationWithCanceler(List<BlendShapeAnimation> blinkAnimations, List<string> cancelerBlendShapeNames)
     {
-        return Default() with { Mode = AdvancedEyBlinkMode.SmartEyeBlink, EyeBlendShapeNames = eyeBlendShapeNames };
+        return Default() with { UseCanceler = true, BlinkAnimations = blinkAnimations, CancelerBlendShapeNames = cancelerBlendShapeNames };
     }
     internal static AdvancedEyBlinkSettings Disabled() => Default() with { UseAdvancedEyBlink = false };
 
@@ -43,19 +45,21 @@ public record class AdvancedEyBlinkSettings // Immutable
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return UseAdvancedEyBlink == other.UseAdvancedEyBlink
-         && Mode == other.Mode
-         && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations)
-         && EyeBlendShapeNames.SequenceEqual(other.EyeBlendShapeNames);
+         && UseAnimation == other.UseAnimation
+         && BlinkAnimations.SequenceEqual(other.BlinkAnimations)
+         && UseCanceler == other.UseCanceler
+         && CancelerBlendShapeNames.SequenceEqual(other.CancelerBlendShapeNames);
     }
     
     public override int GetHashCode()
     {
-        var hash = UseAdvancedEyBlink.GetHashCode() ^ Mode.GetHashCode();
-        foreach (var animation in BlendShapeAnimations)
+        var hash = UseAdvancedEyBlink.GetHashCode() ^ UseAnimation.GetHashCode();
+        foreach (var animation in BlinkAnimations)
         {
             hash ^= animation.GetHashCode();
         }
-        foreach (var name in EyeBlendShapeNames)
+        hash ^= UseCanceler.GetHashCode();
+        foreach (var name in CancelerBlendShapeNames)
         {
             hash ^= name.GetHashCode();
         }

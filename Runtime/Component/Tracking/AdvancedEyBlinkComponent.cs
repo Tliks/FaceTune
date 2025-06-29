@@ -7,14 +7,22 @@ namespace com.aoyon.facetune
         internal const string ComponentName = "FT Advanced EyBlink";
         internal const string MenuPath = BasePath + "/" + Tracking + "/" + ComponentName;
 
-        public bool AutoDetectEyeBlendShapes = true;
+        public bool AutoDetectBlinkAnimations = true;
+        public bool AutoDetectCancelerBlendShapeNames = true;
         public AdvancedEyBlinkSettings AdvancedEyBlinkSettings = new();
 
-        internal AdvancedEyBlinkSettings GetAdvancedEyBlinkSettings(List<string> eyeBlendShapeNames)
+        internal AdvancedEyBlinkSettings GetAdvancedEyBlinkSettings(List<BlendShapeAnimation> blinkAnimations, List<string> cancelerBlendShapeNames)
         {
-            if (AutoDetectEyeBlendShapes)
+            if (AutoDetectBlinkAnimations)
             {
-                return AdvancedEyBlinkSettings with { EyeBlendShapeNames = eyeBlendShapeNames };
+                if (AutoDetectCancelerBlendShapeNames)
+                {
+                    return AdvancedEyBlinkSettings with { BlinkAnimations = blinkAnimations, CancelerBlendShapeNames = cancelerBlendShapeNames };
+                }
+                else
+                {
+                    return AdvancedEyBlinkSettings with { BlinkAnimations = blinkAnimations };
+                }
             }
             else
             {

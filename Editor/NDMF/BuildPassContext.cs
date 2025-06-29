@@ -13,13 +13,17 @@ internal class BuildPassState
         throw new Exception("BuildPassState is not initialized");
     }
 
-    public BuildPassState(BuildContext buildContext)
+    public BuildPassState(BuildContext buildContext) : this(buildContext.AvatarRootObject)
     {
-        Enabled = SessionContextBuilder.TryBuild(buildContext.AvatarRootObject, out var sessionContext);
+    }
+
+    public BuildPassState(GameObject root)
+    {
+        Enabled = SessionContextBuilder.TryBuild(root, out var sessionContext);
         if (!Enabled) return;
 
-        var platformSupport = platform.PlatformSupport.GetSupport(buildContext.AvatarRootObject.transform);
-        BuildPassContext = new BuildPassContext(buildContext, platformSupport, sessionContext!);
+        var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
+        BuildPassContext = new BuildPassContext(sessionContext!, platformSupport);
     }
 
     public bool TryGetBuildPassContext([NotNullWhen(true)] out BuildPassContext? buildPassContext)
@@ -36,14 +40,12 @@ internal class BuildPassState
 
 internal class BuildPassContext
 {
-    public BuildContext BuildContext { get; }
-    public IPlatformSupport PlatformSupport { get; }
     public SessionContext SessionContext { get; }
+    public IPlatformSupport PlatformSupport { get; }
 
-    public BuildPassContext(BuildContext buildContext, IPlatformSupport platformSupport, SessionContext sessionContext)
+    public BuildPassContext(SessionContext sessionContext, IPlatformSupport platformSupport)
     {
-        BuildContext = buildContext;
-        PlatformSupport = platformSupport;
         SessionContext = sessionContext;
+        PlatformSupport = platformSupport;
     }
 }

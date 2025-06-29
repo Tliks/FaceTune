@@ -1,3 +1,4 @@
+using com.aoyon.facetune.ndmf;
 using nadena.dev.ndmf.runtime;
 using UnityEditor.Animations;
 using VRC.SDK3.Avatars.Components;
@@ -65,4 +66,18 @@ internal static class GameObjectMenu
     [M(MenuPath + "blending", false, PrefabPriority + 4)] 
     static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", true);
 
+    private const string DebugPath = BasePath + "Debug/";
+
+    [M(DebugPath + "Excute ModifyHierarchyPass", false, PrefabPriority + 5)]
+    static void DebugModifyHierarchyPass()
+    {
+        var root = RuntimeUtil.FindAvatarInParents(Selection.activeGameObject?.transform);
+        if (root == null) return;
+
+        root = Object.Instantiate(root);
+        var buildPassState = new BuildPassState(root.gameObject);
+        if (buildPassState.TryGetBuildPassContext(out var buildPassContext) is false) return;
+
+        ModifyHierarchyPass.Excute(buildPassContext);
+    }
 }

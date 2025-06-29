@@ -249,4 +249,32 @@ internal static class AnimatorHelper
         clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
         return clip;
     }
+
+    public static AnimatorControllerParameter EnsureParameterExists(this VirtualAnimatorController controller, AnimatorControllerParameterType parameterType, string parameter)
+    {
+        if (!controller.Parameters.ContainsKey(parameter))
+        {
+            var param = new AnimatorControllerParameter
+            {
+                name = parameter,
+                type = parameterType
+            };
+
+            switch (parameterType)
+            {
+                case AnimatorControllerParameterType.Bool:
+                    param.defaultBool = false;
+                    break;
+                case AnimatorControllerParameterType.Int:
+                    param.defaultInt = 0;
+                    break;
+                case AnimatorControllerParameterType.Float:
+                    param.defaultFloat = 0f;
+                    break;
+            }
+            controller.Parameters = controller.Parameters.Add(parameter, param);
+        }
+
+        return controller.Parameters[parameter];
+    }
 }

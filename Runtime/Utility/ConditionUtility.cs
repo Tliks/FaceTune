@@ -1,4 +1,6 @@
+#if UNITY_EDITOR
 using UnityEditor.Animations;
+#endif
 
 namespace com.aoyon.facetune;
 
@@ -27,6 +29,7 @@ internal static class ConditionUtility
         };
     }
 
+#if UNITY_EDITOR
     public static (HandGestureCondition?, ParameterCondition?) ToCondition(this AnimatorCondition animCondition, Dictionary<string, AnimatorControllerParameterType> parameterTypes, Action<string> onParameterTypeNotFound)
     {
         if (animCondition.parameter is "GestureLeft" or "GestureRight" && animCondition.threshold is >= 0 and < 8)
@@ -163,4 +166,5 @@ internal static class ConditionUtility
 
         return (animatorCondition, parameter, parameterType);
     }
+#endif
 }

@@ -37,7 +37,7 @@ namespace com.aoyon.facetune
             var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyBlinkComponent>();
             if (advancedEyeBlinkComponent != null)
             {
-                facialSettings = facialSettings with { AdvancedEyBlinkSettings = advancedEyeBlinkComponent.GetAdvancedEyBlinkSettings(sessionContext.EyeBlendShapeNames) };
+                facialSettings = facialSettings with { AdvancedEyBlinkSettings = advancedEyeBlinkComponent.GetAdvancedEyBlinkSettings(new(), new()) }; // Todo
             }
             
             return new Expression(name, animationIndex.Animations, ExpressionSettings, facialSettings);

@@ -53,7 +53,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         // そのため、extractを用いるが、propertymonitorの負荷を考えるとどうだろう
         // Todo: extractにcontext.GetComponentsがあるのどうにかしたい
 
-        var defaultSet = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetDefaultBlendShapes(root, targetGameObject, original, observeContext) : null, (a, b) =>
+        var defaultSet = context.Observe(_targetObject, o => o is GameObject targetGameObject && proxy != null ? GetDefaultBlendShapes(root, targetGameObject, proxy, observeContext) : null, (a, b) =>
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
