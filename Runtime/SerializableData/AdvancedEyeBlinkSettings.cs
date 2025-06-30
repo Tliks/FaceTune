@@ -58,15 +58,11 @@ public record class AdvancedEyeBlinkSettings // Immutable
         randomIntervalMinSeconds = 4.0f;
         randomIntervalMaxSeconds = 20.0f;
 
-        var closeCurve = new AnimationCurve();
-        closeCurve.AddKey(0f, 0f);
-        closeCurve.AddKey(0.05f, 100f);
-        closeAnimations = new(){new (BlinkParam, closeCurve)};
+        var closeCurve = AnimationCurve.Linear(0f, 0f, 0.05f, 100f);
+        closeAnimations = new(){ new (BlinkParam, closeCurve) };
 
-        var openCurve = new AnimationCurve();
-        openCurve.AddKey(0f, 100f);
-        openCurve.AddKey(0.05f, 0f);
-        openAnimations = new(){new (BlinkParam, openCurve)};
+        var openCurve = AnimationCurve.Linear(0f, 100f, 0.05f, 0f);
+        openAnimations = new(){ new (BlinkParam, openCurve) };
 
         useCanceler = false;
         cancelerBlendShapeNames = new();
