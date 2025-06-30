@@ -23,7 +23,7 @@ internal class AnimatorInstaller
     private readonly VirtualClip _emptyClip;
 
     private static readonly Vector3 EntryStatePosition = new Vector3(50, 120, 0);
-    private static readonly Vector3 DefaultStatePosition = new Vector3(300, 0, 0);
+    private static readonly Vector3 FTDefaultStatePosition = new Vector3(300, 0, 0);
     private const float PositionXStep = 250;
     private const float PositionYStep = 50;
     
@@ -38,8 +38,8 @@ internal class AnimatorInstaller
     private const string BlinkAllowAAP = $"{BlinkParameterPrefix}/Allow";
     private const string BlinkUseAnimationAAP = $"{BlinkParameterPrefix}/UseAnimation";
     private const string BlinkAnimationModeAAP = $"{BlinkParameterPrefix}/AnimationMode";
-    private const string BlinkClosingAAP = $"{BlinkParameterPrefix}/Closing";
-    private const string BlinkOpeningAAP = $"{BlinkParameterPrefix}/Opening";
+    private const string BlinkUseCancelerAAP = $"{BlinkParameterPrefix}/UseCanceler";
+    private const string BlinkBlinkingAAP = $"{BlinkParameterPrefix}/Blinking";
     private const string BlinkDelayMultiplier = $"{BlinkParameterPrefix}/DelayMultiplier";
 
     public AnimatorInstaller(SessionContext sessionContext, VirtualAnimatorController virtualController, bool useWriteDefaults)
@@ -61,8 +61,8 @@ internal class AnimatorInstaller
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkAllowAAP);
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkUseAnimationAAP);
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkAnimationModeAAP);
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkClosingAAP);
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkOpeningAAP);
+        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkUseCancelerAAP);
+        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkBlinkingAAP).defaultFloat = -1f; // -1: Stare, 0: Closing, 1: Opening
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, BlinkDelayMultiplier);
     }
 
@@ -151,7 +151,7 @@ internal class AnimatorInstaller
 
         // ブレンドシェイプの初期化レイヤー
         var shapesLayer = AddFTLayer(_virtualController, "Default", shapesLayerPriority);
-        var shapesState = AddFTState(shapesLayer, "Default", DefaultStatePosition);
+        var shapesState = AddFTState(shapesLayer, "Default", FTDefaultStatePosition);
         AddAnimationToState(shapesState, _sessionContext.ZeroWeightBlendShapes.ToGenericAnimations(_sessionContext.BodyPath));
 
         var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
@@ -170,7 +170,7 @@ internal class AnimatorInstaller
         else
         {
             var propertiesLayer = AddFTLayer(_virtualController, "Default", propertiesLayerPriority);
-            var propertiesState = AddFTState(propertiesLayer, "Default", DefaultStatePosition);
+            var propertiesState = AddFTState(propertiesLayer, "Default", FTDefaultStatePosition);
             AddAnimationToState(propertiesState, defaultPropertiesAnimations);
         }
 
@@ -246,7 +246,7 @@ internal class AnimatorInstaller
                 if (!layerCreatedForThisIndex)
                 {
                     layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
-                    defaultStates[i] = AddFTState(layers[i], "PassThrough", DefaultStatePosition);
+                    defaultStates[i] = AddFTState(layers[i], "PassThrough", FTDefaultStatePosition);
                     AsPassThrough(defaultStates[i]);
                     layerCreatedForThisIndex = true;
                 }
@@ -266,9 +266,9 @@ internal class AnimatorInstaller
                 !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
             var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
-            var defaultState = AddFTState(layer, "PassThrough", DefaultStatePosition);
+            var defaultState = AddFTState(layer, "PassThrough", FTDefaultStatePosition);
             AsPassThrough(defaultState);
-            var basePosition = DefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+            var basePosition = FTDefaultStatePosition + new Vector3(0, 2 * PositionYStep, 0);
             AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
         }
     }
@@ -388,6 +388,14 @@ internal class AnimatorInstaller
                 var animationModeCurve = new AnimationCurve();
                 animationModeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
                 clip.SetFloatCurve("", typeof(Animator), BlinkAnimationModeAAP, animationModeCurve);
+
+                // UseCanceler
+                if (advancedSettings.IsCancelerEnabled())
+                {
+                    var useCancelerCurve = new AnimationCurve();
+                    useCancelerCurve.AddKey(0, 1);
+                    clip.SetFloatCurve("", typeof(Animator), BlinkUseCancelerAAP, useCancelerCurve);
+                }
             }
         }
 
@@ -417,7 +425,14 @@ internal class AnimatorInstaller
 
     private void AddEyeBlinkLayer()
     {
-        var eyeBlinkLayer = AddFTLayer(_virtualController, "EyeBlink", LayerPriority);
+        VirtualLayer? cancelerLayer = null;
+        VirtualLayer? eyeBlinkLayer = null;
+        
+        if (_advancedEyeBlinkIndex.Keys.Any(k => k.IsCancelerEnabled()))
+        {
+            cancelerLayer = AddFTLayer(_virtualController, "EyeBlink (Canceler)", LayerPriority);
+        }
+        eyeBlinkLayer = AddFTLayer(_virtualController, "EyeBlink", LayerPriority);
 
         // 最初のフレームでTraking Controlを変更すると巻き戻される。
         // 2フレームの遅延が必要らしいので多めに0.1s程度遅延させる
@@ -462,7 +477,7 @@ internal class AnimatorInstaller
         });
         disabled.Transitions = disabled.Transitions.Add(disabledToEnabled);
 
-        if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => k.UseAdvancedEyeBlink == false || k.UseAnimation == false)) return;
+        if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => !k.IsEnabled())) return;
     
         // AnimationGate
         var disableTrackingPosition = enabledPosition + new Vector3(PositionXStep, 0, 0);
@@ -646,18 +661,105 @@ internal class AnimatorInstaller
             // 目を閉じるアニメーションとAAPを設定
             var closeClip = close.GetOrCreateClip($"Close {index}");
             var closeCurve = new AnimationCurve();
-            closeCurve.AddKey(0, 1);
-            closeClip.SetFloatCurve("", typeof(Animator), BlinkClosingAAP, closeCurve);
+            closeCurve.AddKey(0f, 0f);
+            closeClip.SetFloatCurve("", typeof(Animator), BlinkBlinkingAAP, closeCurve);
             AddAnimationToState(closeClip, advancedSettings.CloseAnimations.Select(a => a.ToGeneric(_sessionContext.BodyPath)));
 
             // 目を開くアニメーションとAAPを設定
             var openClip = open.GetOrCreateClip($"Open {index}");
             var openCurve = new AnimationCurve();
-            openCurve.AddKey(0, 1);
-            openClip.SetFloatCurve("", typeof(Animator), BlinkOpeningAAP, openCurve);
+            openCurve.AddKey(0f, 1f);
+            openClip.SetFloatCurve("", typeof(Animator), BlinkBlinkingAAP, openCurve);
             AddAnimationToState(openClip, advancedSettings.OpenAnimations.Select(a => a.ToGeneric(_sessionContext.BodyPath)));
 
             starePosition.y += 3 * PositionYStep;
+        }
+
+        if (cancelerLayer is null) return;
+
+        var passThroughPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
+        var passThrough = AddFTState(cancelerLayer, "PassThrough", passThroughPosition);
+        AsPassThrough(passThrough);
+        var position = passThroughPosition + new Vector3(PositionXStep, 0, 0);
+        foreach (var (advancedSettings, index) in _advancedEyeBlinkIndex.OrderBy(kvp => kvp.Value))
+        {
+            if (!advancedSettings.IsCancelerEnabled()) continue;
+
+            var canceler = AddFTState(cancelerLayer, $"Canceler {index}", position);
+            var cancelerAnimation = advancedSettings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
+            AddAnimationToState(canceler, cancelerAnimation);
+
+            // passThrough -> canceler
+
+            var closeDuration = advancedSettings.CloseAnimations.Select(a => a.Time).Max();
+            var passThroughToCanceler = AnimatorHelper.CreateTransitionWithDurationSeconds(closeDuration);
+            passThroughToCanceler.SetDestination(canceler);
+            // cancelerが有効かつ、BlinkingがStare(-1f)を上回りClosing(0f)のとき有効
+            passThroughToCanceler.Conditions = ImmutableList.Create(
+                new AnimatorCondition()
+                {
+                    parameter = BlinkUseCancelerAAP,
+                    mode = AnimatorConditionMode.Greater,
+                    threshold = 0f
+                },
+                new AnimatorCondition()
+                {
+                    parameter = BlinkBlinkingAAP,
+                    mode = AnimatorConditionMode.Greater,
+                    threshold = -1f
+                },
+                new AnimatorCondition()
+                {
+                    parameter = BlinkBlinkingAAP,
+                    mode = AnimatorConditionMode.Less,
+                    threshold = 0.01f
+                }
+            );
+            passThrough.Transitions = ImmutableList.Create(passThroughToCanceler);
+
+            // canceler -> passThrough
+
+            // cancelerが無効な時は早期リターン
+            var cancelerToPassThrough1 = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            cancelerToPassThrough1.SetDestination(passThrough);
+            cancelerToPassThrough1.Conditions = ImmutableList.Create(
+                new AnimatorCondition()
+                {
+                    parameter = BlinkUseCancelerAAP,
+                    mode = AnimatorConditionMode.Less,
+                    threshold = 1f
+                }
+            );
+            canceler.Transitions = canceler.Transitions.Add(cancelerToPassThrough1);
+
+            // Stare(-1f)の場合は早期リターン
+            var cancelerToPassThrough2 = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            cancelerToPassThrough2.SetDestination(passThrough);
+            cancelerToPassThrough2.Conditions = ImmutableList.Create(
+                new AnimatorCondition()
+                {
+                    parameter = BlinkBlinkingAAP,
+                    mode = AnimatorConditionMode.Less,
+                    threshold = -0.99f
+                }
+            );
+            canceler.Transitions = canceler.Transitions.Add(cancelerToPassThrough2);
+
+            // Closing(0f)を上回り、Opening(1f)のとき逆方向にキャンセラーを適用する
+            var openDuration = advancedSettings.OpenAnimations.Select(a => a.Time).Max();
+            var cancelerToPassThrough3 = AnimatorHelper.CreateTransitionWithDurationSeconds(openDuration);
+            cancelerToPassThrough3.SetDestination(passThrough);
+            cancelerToPassThrough3.Conditions = ImmutableList.Create(
+                new AnimatorCondition()
+                {
+                    parameter = BlinkBlinkingAAP,
+                    mode = AnimatorConditionMode.Greater,
+                    threshold = 0.01f
+                }
+            );
+            canceler.Transitions = canceler.Transitions.Add(cancelerToPassThrough3);
+
+            position.y += 2 * PositionYStep;
         }
     }
     
@@ -669,7 +771,7 @@ internal class AnimatorInstaller
         var delayClip = AnimatorHelper.CreateDelayClip(0.2f);
         delayState.Motion = delayClip;
 
-        var position = DefaultStatePosition;
+        var position = FTDefaultStatePosition;
         var enabled = AddFTState(lipSyncLayer, "Enabled", position);
         position.y += 2 * PositionYStep;
         var disabled = AddFTState(lipSyncLayer, "Disabled", position);

@@ -28,6 +28,8 @@ public record BlendShapeAnimation // Immutable
         curve = other.Clone();
     }
 
+    internal float Time => curve.keys.Max(k => k.time);
+
     internal static BlendShapeAnimation SingleFrame(string name, float weight)
     {
         var curve = new AnimationCurve();

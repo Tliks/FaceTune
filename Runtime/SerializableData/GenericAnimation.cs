@@ -43,6 +43,8 @@ public record GenericAnimation // Immutable
         this.objectReferenceCurve = objectReferenceCurve.ToList();
     }
 
+    internal float Time => curve.keys.Max(k => k.time);
+
     internal GenericAnimation ToSingleFrame()
     {
         var curve = new AnimationCurve();

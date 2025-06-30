@@ -99,6 +99,9 @@ public record class AdvancedEyeBlinkSettings // Immutable
 
     internal static AdvancedEyeBlinkSettings Disabled() => new(false);
 
+    internal bool IsEnabled() => useAdvancedEyeBlink && useAnimation;
+    internal bool IsCancelerEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
+
     public virtual bool Equals(AdvancedEyeBlinkSettings other)
     {
         if (other is null) return false;
