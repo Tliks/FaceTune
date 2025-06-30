@@ -18,12 +18,6 @@ public enum Hand
     Right
 }
 
-public enum PathType
-{
-    Absolute,
-    Relative
-}
-
 public enum ParameterType
 {
     Int,
@@ -57,10 +51,4 @@ public enum AnimationSourceMode
 {
     Manual,
     FromAnimationClip
-}
-
-public enum AdvancedEyBlinkMode
-{
-    Animation,
-    SmartEyeBlink
 }
