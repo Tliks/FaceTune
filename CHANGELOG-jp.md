@@ -5,7 +5,7 @@
 ### FaceTuneのほぼ全てのコンポーネントのデータが失われます。
 
 ### Added
-- `FT Expression`及び`FT Facial Data`を追加。
+- `FT Expression`および`FT Facial Data`を追加。
   - `FT Facial Expression`から置き換わります。
   - `FT Expression`がアタッチされたGameObject以下の`FT Facial Data`が紐付きます。
   - 同一の`FT Expression`の影響下にある複数の`FT Facial Data`は結合されます。
@@ -14,21 +14,28 @@
   - マルチフレームアニメーション・ループアニメーションに対応。
 - `FT Animation Data`による任意アニメーションの再生に対応。
   - 基本的な動作は`FT Facial Data`と同一です。
-  - 表情用のブレンドシェイプ以外の定義を可能にします。
+  - 表情用のブレンドシェイプ以外の定義も可能にします。
 - Motion Timeに対応。
-  - マルチフレームのアニメーションの設定及び`FT Expression`におけるパラメーターの設定が必要です。
+  - マルチフレームのアニメーションの設定および`FT Expression`におけるパラメーターの設定が必要です。
 - ネストされた`FT Condition`がAND条件として動作するように対応。
   - 同一のGameObjectに複数の`FT Condition`がアタッチされた際は引き続きOR条件として動作します。
 - MA MenuItem（Radial）はMotion Timeとして動作するように対応。
 - `FT Facial Style`を追加。
   - 顔つきを定義するコンポーネントとして、`FT Default Facial Expression`から置き換わります。
   - アタッチされたGameObject以下のExpressionに対し、定義されたブレンドシェイプの適用を行います。
-  - また、`AsDefault`が有効な場合、デフォルト表情(追加の条件を満たさないときの表情)としても機能します。
+  - また、`AsDefault`が有効な場合、デフォルト表情（追加の条件を満たさないときの表情）としても機能します。
   - デフォルト表情においては設定されていないブレンドシェイプは全て0として扱われ、適用対象のRendererの値は使用されません。
 - `Assets/FaceTune/SelectedClipsToExclusiveMenu`にメニューアイテムを追加。
   - 選択された複数のAnimationClipから、排他制御のMenuItemを条件とするExpressionを生成します。
 - `GameObject/FaceTune/Import from FX Layer`にメニューアイテムを追加。
   - アバターに現在適用されているFXレイヤーからFaceTuneの設定を追加します。
+- `FT Advanced EyeBlink`を追加
+  - アタッチされたGameObject以下のExpressionに対して影響を及ぼします。
+  - 瞬きのアニメーション制御への変更・アニメーションの内容・瞬きの頻度などを設定できます。
+  - また、干渉対策として任意のブレンドシェイプをキャンセラーとして使用できます。瞬きの進行に合わせて現在の表情とブレンドされます。
+- `FT Advanced LipSync`を追加
+  - アタッチされたGameObject以下のExpressionに対して影響を及ぼします。
+  - 干渉対策として任意のブレンドシェイプをキャンセラーとして使用できます。発話の開始時に適用されます。
 
 ### Changed
 - MA MenuItem（Toggle/Button）はOR条件として動作するように変更。
