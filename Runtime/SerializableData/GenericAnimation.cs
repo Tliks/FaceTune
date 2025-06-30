@@ -105,10 +105,7 @@ public record GenericAnimation // Immutable
     {
         var hash = curveBinding.GetHashCode();
         hash ^= curve.GetHashCode();
-        foreach (var keyframe in objectReferenceCurve)
-        {
-            hash ^= keyframe.GetHashCode();
-        }
+        hash ^= objectReferenceCurve.GetSequenceHashCode();
         return hash;
     }
 }

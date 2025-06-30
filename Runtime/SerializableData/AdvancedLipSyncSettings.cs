@@ -73,10 +73,7 @@ public record class AdvancedLipSyncSettings // Immutable
         hash ^= UseAnimation.GetHashCode();
         hash ^= Weight.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
-        foreach (var name in CancelerBlendShapeNames)
-        {
-            hash ^= name.GetHashCode();
-        }
+        hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
         return hash;
     }
 }

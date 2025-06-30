@@ -126,19 +126,10 @@ public record class AdvancedEyeBlinkSettings // Immutable
         hash ^= UseRandomInterval.GetHashCode();
         hash ^= RandomIntervalMinSeconds.GetHashCode();
         hash ^= RandomIntervalMaxSeconds.GetHashCode();
-        foreach (var closeAnimation in CloseAnimations)
-        {
-            hash ^= closeAnimation.GetHashCode();
-        }
-        foreach (var openAnimation in OpenAnimations)
-        {
-            hash ^= openAnimation.GetHashCode();
-        }
+        hash ^= CloseAnimations.GetSequenceHashCode();
+        hash ^= OpenAnimations.GetSequenceHashCode();
         hash ^= UseCanceler.GetHashCode();
-        foreach (var name in CancelerBlendShapeNames)
-        {
-            hash ^= name.GetHashCode();
-        }
+        hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
         return hash;
     }
 }                                                                                                                                                                                                                                                                                                                                                                                            
