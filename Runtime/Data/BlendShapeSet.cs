@@ -1,10 +1,10 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 /// <summary>
 /// 同名のBlendShapeを許容しないグループ
 /// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet : ICollection<BlendShape>
+internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet>
 {
     readonly Dictionary<string, BlendShape> map;
     public Dictionary<string, BlendShape>.ValueCollection BlendShapes => map.Values;
@@ -42,6 +42,14 @@ internal class BlendShapeSet : ICollection<BlendShape>
     public BlendShapeSet Clone()
     {
         return new BlendShapeSet(new(map));
+    }
+
+    public void CloneTo(BlendShapeSet result)
+    {
+        foreach (var (_, blendShape) in map)
+        {
+            result.Add(blendShape);
+        }
     }
 
     public bool Contains(string name) => map.ContainsKey(name);
@@ -142,6 +150,14 @@ internal class BlendShapeSet : ICollection<BlendShape>
         }
     }
 
+    public void SetAllWeight(float weight)
+    {
+        foreach (var (name, _) in map)
+        {
+            map[name] = new BlendShape(name, weight);
+        }
+    }
+
     public BlendShapeSet RemoveZeroWeight()
     {
         using (ListPool<string>.Get(out var keysToRemove))
@@ -185,6 +201,35 @@ internal class BlendShapeSet : ICollection<BlendShape>
         map.Values.CopyTo(array, arrayIndex);
     }
 
+    public bool Equals(BlendShapeSet other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (Count != other.Count) return false;
+
+        foreach (var (name, blendShape) in map)
+        {
+            if (!other.map.TryGetValue(name, out var otherBlendShape)) return false;
+            if (blendShape.Weight != otherBlendShape.Weight) return false;
+        }
+        return true;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is BlendShapeSet set && Equals(set);
+    }
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        foreach (var (name, blendShape) in map.OrderBy(x => x.Key))
+        {
+            hash.Add(name);
+            hash.Add(blendShape.Weight);
+        }
+        return hash.ToHashCode();
+    }
 }
 
 internal enum BlendShapeSetOptions

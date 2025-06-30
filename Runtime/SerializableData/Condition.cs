@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 [Serializable]
 public abstract record class Condition // Immutable

@@ -1,110 +1,130 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
-// GenericAnimationのコレクションに対する高速なアクセス・簡易な編集を行うためのラッパーオブジェクト
-// Todo: 重複のハンドリング
-internal class AnimationIndex
+// GenericAnimationのコレクションに対するアクセス・簡易な編集を行うためのラッパーオブジェクト
+// 重複を許容しない、Dictionary基盤の設計
+internal class AnimationIndex : ICollection<GenericAnimation>
 {
-    private List<GenericAnimation> _animations;
-    public IReadOnlyList<GenericAnimation> Animations => _animations.AsReadOnly();
-
-    // cache
-    private Dictionary<string, Dictionary<string, List<GenericAnimation>>>? _pathNameAnimationMap;
-    private Dictionary<string, Dictionary<string, List<BlendShapeAnimation>>>? _pathNameBlendShapeAnimationMap;
+    // メインデータ構造: Path -> PropertyName -> GenericAnimation
+    private Dictionary<string, Dictionary<string, GenericAnimation>> _pathPropertyAnimationMap;
+    
+    // BlendShapeAnimation用のキャッシュ
+    private Dictionary<string, Dictionary<string, BlendShapeAnimation>>? _pathNameBlendShapeAnimationMap;
     private Dictionary<string, BlendShapeSet>? _pathFirstFrameBlendShapeSets; 
     private BlendShapeSet? _allFirstFrameBlendShapeSet;
-    private bool _cacheValid = false;
+    private bool _blendShapeCacheValid = false;
 
     private static readonly string BlendShapePrefix = FaceTuneConsts.AnimatedBlendShapePrefix;
 
-    public AnimationIndex(IReadOnlyList<GenericAnimation> animations)
-    {
-        _animations = new List<GenericAnimation>(animations);
-    }
+    public int Count => _pathPropertyAnimationMap.Values.Sum(dict => dict.Count);
+    public bool IsReadOnly => false;
+    
+    public IReadOnlyList<GenericAnimation> Animations => 
+        _pathPropertyAnimationMap.Values.SelectMany(dict => dict.Values).ToList().AsReadOnly();
 
-    private Dictionary<string, Dictionary<string, List<GenericAnimation>>> GetPathNameToAnimationsMap()
+    public AnimationIndex(IEnumerable<GenericAnimation> animations)
     {
-        if (!_cacheValid || _pathNameAnimationMap == null)
+        _pathPropertyAnimationMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
+        foreach (var animation in animations)
         {
-            var mapping = new Dictionary<string, Dictionary<string, List<GenericAnimation>>>();
-            foreach (var animation in _animations)
-            {
-                mapping.GetOrAddNew(animation.CurveBinding.Path).GetOrAddNew(animation.CurveBinding.PropertyName).Add(animation);
-            }
-            _pathNameAnimationMap = mapping;
-            _cacheValid = true;
+            AddInternal(animation);
         }
-        return _pathNameAnimationMap;
     }
 
-    private Dictionary<string, Dictionary<string, List<BlendShapeAnimation>>> GetPathNameToBlendShapeAnimationsMap()
+    public AnimationIndex()
     {
-        if (!_cacheValid || _pathNameBlendShapeAnimationMap == null)
+        _pathPropertyAnimationMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
+    }
+
+    private void AddInternal(GenericAnimation animation)
+    {
+        var path = animation.CurveBinding.Path;
+        var propertyName = animation.CurveBinding.PropertyName;
+        
+        // 重複は上書きする（最新のものを保持）
+        _pathPropertyAnimationMap.GetOrAddNew(path)[propertyName] = animation;
+    }
+
+    private void InvalidateBlendShapeCache()
+    {
+        _blendShapeCacheValid = false;
+        _pathNameBlendShapeAnimationMap = null;
+        _pathFirstFrameBlendShapeSets = null;
+        _allFirstFrameBlendShapeSet = null;
+    }
+
+    private Dictionary<string, Dictionary<string, BlendShapeAnimation>> GetPathNameToBlendShapeAnimationsMap()
+    {
+        if (!_blendShapeCacheValid || _pathNameBlendShapeAnimationMap == null)
         {
-            var mapping = new Dictionary<string, Dictionary<string, List<BlendShapeAnimation>>>();
-            foreach (var animation in _animations)
+            var mapping = new Dictionary<string, Dictionary<string, BlendShapeAnimation>>();
+            foreach (var pathEntry in _pathPropertyAnimationMap)
             {
-                if (animation.TryToBlendShapeAnimation(out var blendShapeAnimation))
+                foreach (var propertyEntry in pathEntry.Value)
                 {
-                    mapping.GetOrAddNew(animation.CurveBinding.Path).GetOrAddNew(animation.CurveBinding.PropertyName).Add(blendShapeAnimation);
+                    if (propertyEntry.Value.TryToBlendShapeAnimation(out var blendShapeAnimation))
+                    {
+                        mapping.GetOrAddNew(pathEntry.Key)[propertyEntry.Key] = blendShapeAnimation;
+                    }
                 }
             }
             _pathNameBlendShapeAnimationMap = mapping;
-            _cacheValid = true;
+            _blendShapeCacheValid = true;
         }
         return _pathNameBlendShapeAnimationMap;
     }
 
-    private void InvalidateCache()
+    // Get methods
+    public bool TryGetAnimation(string path, string propertyName, [NotNullWhen(true)] out GenericAnimation? animation)
     {
-        _cacheValid = false;
-        _pathNameAnimationMap = null;
-        _pathFirstFrameBlendShapeSets = null;
+        animation = null;
+        return _pathPropertyAnimationMap.TryGetValue(path, out var propertyMap) && 
+               propertyMap.TryGetValue(propertyName, out animation);
     }
 
-
-    // get
-    public bool TryGetAnimations(string path, string name, [NotNullWhen(true)] out List<GenericAnimation>? animations)
+    public bool TryGetBlendShapeAnimation(string path, string name, [NotNullWhen(true)] out BlendShapeAnimation? animation)
     {
-        animations = null;
-        var pathNameToAnimationsMap = GetPathNameToAnimationsMap();
-        return pathNameToAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) && nameToAnimationsMap.TryGetValue(name, out animations);
-    }
-
-    public bool TryGetBlendShapeAnimations(string path, string name, [NotNullWhen(true)] out List<BlendShapeAnimation>? animations)
-    {
-        animations = null;
+        animation = null;
         var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
-        return pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) && nameToAnimationsMap.TryGetValue(name, out animations);
+        return pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) && 
+               nameToAnimationsMap.TryGetValue(name, out animation);
     }
 
     public IEnumerable<string> GetBlendShapeNames(string path)
     {
         var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
-        return pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) ? nameToAnimationsMap.Keys : Array.Empty<string>();
+        return pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap) ? 
+               nameToAnimationsMap.Keys : Array.Empty<string>();
     }
     
     public IEnumerable<string> GetAllBlendShapeNames()
     {
         var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
-        return pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.SelectMany(y => y.Value.Select(z => z.Name))).Distinct();
+        return pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.Select(y => y.Value.Name)).Distinct();
     }
 
     public bool TryGetFirstFrameBlendShapeSet(string path, [NotNullWhen(true)] out BlendShapeSet? blendShapeSet)
     {
-        if (!_cacheValid || _pathFirstFrameBlendShapeSets == null)
+        if (!_blendShapeCacheValid || _pathFirstFrameBlendShapeSets == null)
         {
             var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
-            if (!pathNameToBlendShapeAnimationsMap.TryGetValue(path, out var nameToAnimationsMap))
+            _pathFirstFrameBlendShapeSets = new Dictionary<string, BlendShapeSet>();
+            
+            foreach (var pathEntry in pathNameToBlendShapeAnimationsMap)
             {
-                blendShapeSet = null;
-                return false;
+                var blendShapes = pathEntry.Value.Values.Select(x => x.ToFirstFrameBlendShape()).ToList();
+                _pathFirstFrameBlendShapeSets[pathEntry.Key] = new BlendShapeSet(blendShapes);
             }
-            var blendShapes = nameToAnimationsMap.Values.SelectMany(x => x.Select(y => y.ToFirstFrameBlendShape())).ToList(); // Todo : 重複のハンドリング
-            _pathFirstFrameBlendShapeSets = new Dictionary<string, BlendShapeSet> { { path, new BlendShapeSet(blendShapes) } };
-            _cacheValid = true;
+            _blendShapeCacheValid = true;
         }
-        blendShapeSet = _pathFirstFrameBlendShapeSets[path!].Clone();
-        return true;
+        
+        if (_pathFirstFrameBlendShapeSets.TryGetValue(path, out blendShapeSet))
+        {
+            blendShapeSet = blendShapeSet.Clone();
+            return true;
+        }
+        
+        blendShapeSet = null;
+        return false;
     }
 
     public BlendShapeSet GetAllFirstFrameBlendShapeSet()
@@ -112,116 +132,231 @@ internal class AnimationIndex
         if (_allFirstFrameBlendShapeSet == null)
         {
             var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
-            var blendShapes = pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.SelectMany(y => y.Value.Select(z => z.ToFirstFrameBlendShape()))).ToList(); // Todo : 重複のハンドリング
+            var blendShapes = pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.Values.Select(y => y.ToFirstFrameBlendShape())).ToList();
             _allFirstFrameBlendShapeSet = new BlendShapeSet(blendShapes);
         }
         return _allFirstFrameBlendShapeSet.Clone();
     }
 
-
-    // add
-    public void AddAnimation(GenericAnimation animation)
+    // ICollection implementation
+    public void Add(GenericAnimation animation)
     {
-        _animations.Add(animation);
-        InvalidateCache();
+        AddInternal(animation);
+        InvalidateBlendShapeCache();
+    }
+
+    public void AddRange(IEnumerable<GenericAnimation> animations)
+    {
+        foreach (var animation in animations)
+        {
+            Add(animation);
+        }
     }
 
     public void AddSingleFrameBlendShapeAnimation(string path, string name, float weight)
     {
         var animation = BlendShapeAnimation.SingleFrame(name, weight).ToGeneric(path);
-        _animations.Add(animation);
-        InvalidateCache();
+        Add(animation);
     }
 
-    // replace
+    public void Clear()
+    {
+        _pathPropertyAnimationMap.Clear();
+        InvalidateBlendShapeCache();
+    }
+
+    public bool Contains(GenericAnimation item)
+    {
+        var path = item.CurveBinding.Path;
+        var propertyName = item.CurveBinding.PropertyName;
+        
+        if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap) &&
+            propertyMap.TryGetValue(propertyName, out var existing))
+        {
+            return existing.Equals(item);
+        }
+        return false;
+    }
+
+    public void CopyTo(GenericAnimation[] array, int arrayIndex)
+    {
+        if (array == null) throw new ArgumentNullException(nameof(array));
+        if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+        if (array.Length - arrayIndex < Count) throw new ArgumentException("Array is too small");
+
+        var index = arrayIndex;
+        foreach (var animation in this)
+        {
+            array[index++] = animation;
+        }
+    }
+
+    public bool Remove(GenericAnimation item)
+    {
+        var path = item.CurveBinding.Path;
+        var propertyName = item.CurveBinding.PropertyName;
+        
+        if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap) &&
+            propertyMap.ContainsKey(propertyName))
+        {
+            var removed = propertyMap.Remove(propertyName);
+            if (propertyMap.Count == 0)
+            {
+                _pathPropertyAnimationMap.Remove(path);
+            }
+            if (removed)
+            {
+                InvalidateBlendShapeCache();
+            }
+            return removed;
+        }
+        return false;
+    }
+
+    public IEnumerator<GenericAnimation> GetEnumerator()
+    {
+        return _pathPropertyAnimationMap.Values
+            .SelectMany(dict => dict.Values)
+            .GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    // Replace methods
     public void ReplacePropertyNames(Dictionary<string, string> propertyMapping)
     {
-        var newAnimations = ReplacePropertyNames(_animations, propertyMapping);
-        _animations = newAnimations;
-        InvalidateCache();
+        var newMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
+        
+        foreach (var pathEntry in _pathPropertyAnimationMap)
+        {
+            var newPropertyMap = new Dictionary<string, GenericAnimation>();
+            
+            foreach (var propertyEntry in pathEntry.Value)
+            {
+                var oldPropertyName = propertyEntry.Key;
+                var newPropertyName = propertyMapping.TryGetValue(oldPropertyName, out var mapped) ? mapped : oldPropertyName;
+                var newAnimation = propertyEntry.Value with 
+                { 
+                    CurveBinding = propertyEntry.Value.CurveBinding with { PropertyName = newPropertyName } 
+                };
+                newPropertyMap[newPropertyName] = newAnimation;
+            }
+            
+            newMap[pathEntry.Key] = newPropertyMap;
+        }
+        
+        _pathPropertyAnimationMap = newMap;
+        InvalidateBlendShapeCache();
     }
 
     public void ReplaceBlendShapeNames(string path, Dictionary<string, string> shapeMapping)
     {
-        var targetAnimations = _animations.Where(b => b.CurveBinding.Path == path);
-        var newAnimations = ReplacePropertyNames(targetAnimations, shapeMapping.ToDictionary(x => $"{BlendShapePrefix}{x.Key}", x => $"{BlendShapePrefix}{x.Value}"));
-        _animations = newAnimations;
-        InvalidateCache();
-    }
-
-    private static List<GenericAnimation> ReplacePropertyNames(IEnumerable<GenericAnimation> originalAnimations, Dictionary<string, string> propertyMapping)
-    {
-        var nameCurveMap = new Dictionary<string, List<GenericAnimation>>();
-        foreach (var animation in originalAnimations)
+        var propertyMapping = shapeMapping.ToDictionary(
+            x => $"{BlendShapePrefix}{x.Key}", 
+            x => $"{BlendShapePrefix}{x.Value}"
+        );
+        
+        if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap))
         {
-            nameCurveMap.GetOrAddNew(animation.CurveBinding.PropertyName).Add(animation);
-        }
-        foreach (var (oldName, newName) in propertyMapping)
-        {
-            if (nameCurveMap.TryGetValue(oldName, out var animations))
+            var newPropertyMap = new Dictionary<string, GenericAnimation>();
+            
+            foreach (var propertyEntry in propertyMap)
             {
-                nameCurveMap.Remove(oldName);
-                nameCurveMap[newName] = animations.Select(a => a with { CurveBinding = a.CurveBinding with { PropertyName = newName } }).ToList();
+                var oldPropertyName = propertyEntry.Key;
+                var newPropertyName = propertyMapping.TryGetValue(oldPropertyName, out var mapped) ? mapped : oldPropertyName;
+                var newAnimation = propertyEntry.Value with 
+                { 
+                    CurveBinding = propertyEntry.Value.CurveBinding with { PropertyName = newPropertyName } 
+                };
+                newPropertyMap[newPropertyName] = newAnimation;
             }
+            
+            _pathPropertyAnimationMap[path] = newPropertyMap;
+            InvalidateBlendShapeCache();
         }
-        return nameCurveMap.SelectMany(x => x.Value).ToList();
     }
 
-    // remove
+    // Remove methods
     public void RemoveProperties(IEnumerable<string> namesToRemove)
     {
-        _animations = RemoveProperties(_animations, namesToRemove);
-        InvalidateCache();
+        var nameSet = namesToRemove.ToHashSet();
+        var pathsToRemove = new List<string>();
+        
+        foreach (var pathEntry in _pathPropertyAnimationMap)
+        {
+            var propertiesToRemove = pathEntry.Value.Keys.Where(nameSet.Contains).ToList();
+            foreach (var property in propertiesToRemove)
+            {
+                pathEntry.Value.Remove(property);
+            }
+            
+            if (pathEntry.Value.Count == 0)
+            {
+                pathsToRemove.Add(pathEntry.Key);
+            }
+        }
+        
+        foreach (var path in pathsToRemove)
+        {
+            _pathPropertyAnimationMap.Remove(path);
+        }
+        
+        InvalidateBlendShapeCache();
     }
 
     public void RemoveBlendShapes(IEnumerable<string> namesToRemove)
     {
-        _animations = RemoveProperties(_animations, namesToRemove.Select(x => $"{BlendShapePrefix}{x}"));
-        InvalidateCache();
+        var propertyNamesToRemove = namesToRemove.Select(x => $"{BlendShapePrefix}{x}");
+        RemoveProperties(propertyNamesToRemove);
     }
 
     public void RemoveBlendShapes(string path, IEnumerable<string> namesToRemove)
     {
-        var targetBindings = _animations.Where(b => b.CurveBinding.Path == path);
-        var newBindings = RemoveProperties(targetBindings, namesToRemove.Select(x => $"{BlendShapePrefix}{x}"));
-        _animations = newBindings;
-        InvalidateCache();
+        if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap))
+        {
+            var propertyNamesToRemove = namesToRemove.Select(x => $"{BlendShapePrefix}{x}").ToList();
+            foreach (var propertyName in propertyNamesToRemove)
+            {
+                propertyMap.Remove(propertyName);
+            }
+            
+            if (propertyMap.Count == 0)
+            {
+                _pathPropertyAnimationMap.Remove(path);
+            }
+            
+            InvalidateBlendShapeCache();
+        }
     }
 
-    private static List<GenericAnimation> RemoveProperties(IEnumerable<GenericAnimation> originalAnimations, IEnumerable<string> namesToRemove)
-    {
-        var nameCurveMap = new Dictionary<string, List<GenericAnimation>>();
-        foreach (var animation in originalAnimations)
-        {
-            nameCurveMap.GetOrAddNew(animation.CurveBinding.PropertyName).Add(animation);
-        }
-        foreach (var name in namesToRemove)
-        {
-            nameCurveMap.Remove(name);
-        }
-        return nameCurveMap.SelectMany(x => x.Value).ToList();
-    }   
-
-    // merge
+    // Merge methods
     public void MergeAnimation(IEnumerable<GenericAnimation> others)
     {
-        var pathNameAnimationMap = GetPathNameToAnimationsMap();
-
-        foreach (var other in others)
+        foreach (var animation in others)
         {
-            var animations = pathNameAnimationMap.GetOrAddNew(other.CurveBinding.Path).GetOrAddNew(other.CurveBinding.PropertyName);
-            animations.Clear();
-            animations.Add(other);
+            AddInternal(animation); // 重複は自動的に上書きされる
         }
-
-        _animations = pathNameAnimationMap.SelectMany(x => x.Value.SelectMany(y => y.Value)).ToList();
-
-        InvalidateCache();
+        InvalidateBlendShapeCache();
     }
     
     public void AllToSingleFrame()
     {
-        _animations = _animations.Select(a => a.ToSingleFrame()).ToList();
-        InvalidateCache();
+        var newMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
+        
+        foreach (var pathEntry in _pathPropertyAnimationMap)
+        {
+            var newPropertyMap = new Dictionary<string, GenericAnimation>();
+            foreach (var propertyEntry in pathEntry.Value)
+            {
+                newPropertyMap[propertyEntry.Key] = propertyEntry.Value.ToSingleFrame();
+            }
+            newMap[pathEntry.Key] = newPropertyMap;
+        }
+        
+        _pathPropertyAnimationMap = newMap;
+        InvalidateBlendShapeCache();
     }
 }

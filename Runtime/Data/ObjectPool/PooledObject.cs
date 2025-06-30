@@ -1,12 +1,12 @@
 using UnityEngine.Pool;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal sealed class PooledObject<T> : IDisposable where T : class
 {
     public T Value { get; }
     private readonly IObjectPool<T> _pool;
-    private bool _disposed;
+    public bool Disposed { get; private set; } = false;
 
     internal PooledObject(T value, IObjectPool<T> pool)
     {
@@ -16,10 +16,10 @@ internal sealed class PooledObject<T> : IDisposable where T : class
 
     public void Dispose()
     {
-        if (!_disposed)
+        if (!Disposed)
         {
             _pool.Release(Value);
-            _disposed = true;
+            Disposed = true;
         }
     }
 }

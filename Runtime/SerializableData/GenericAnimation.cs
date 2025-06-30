@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 [Serializable]
 public record GenericAnimation // Immutable
@@ -42,6 +42,8 @@ public record GenericAnimation // Immutable
         this.curve = curve.Clone();
         this.objectReferenceCurve = objectReferenceCurve.ToList();
     }
+
+    internal float Time => curve.keys.Max(k => k.time);
 
     internal GenericAnimation ToSingleFrame()
     {

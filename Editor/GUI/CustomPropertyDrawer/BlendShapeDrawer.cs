@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 [CustomPropertyDrawer(typeof(BlendShape))]
 internal class BlendShapeDrawer : PropertyDrawer

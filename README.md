@@ -67,17 +67,15 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 
 ## Expression
 
-### Facial Expression
-表情を設定します。デフォルト表情からの差分の設定のみで動作します。`Enable Blending`をオンにすると、他の表情と重ね合わせて表情を使えるようになります。
+### Expression
 
-### Animation Expression
-任意のアニメーションを再生します。Animator生成時にはデフォルト用のアニメーションをシーン上のプロパティなどから自動生成します。
+### Facial Data
 
-### Default Facial Expression
-デフォルト表情を設定します。このコンポーネントが設定されない場合、シーン上のブレンドシェイプなどがデフォルト表情となります。プリセット単位で設定することも出来ます。
+### Animation Data
 
-### Merge Expression
-アタッチされたGameObject以下のExpressionを1つのExpressionへと結合します。表情変更(Facial Expression)と同時に耳のアニメーション(Animation Expression)を再生したい場合や、目の設定(Facial Expression)と口の設定(Facial Expression)をEditor上では別で管理し実際には結合して使い場合などに便利です。
+### Facial Style
+
+### Advanced Eyeblink 
 
 ## Condition
 

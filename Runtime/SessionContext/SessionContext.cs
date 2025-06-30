@@ -1,24 +1,27 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
-internal record SessionContext
+internal class SessionContext
 {
-    public GameObject Root { get; }
-    public SkinnedMeshRenderer FaceRenderer { get; }
+    public readonly GameObject Root;
+    public readonly SkinnedMeshRenderer FaceRenderer;
 
-    public Mesh FaceMesh { get; }
-    public string BodyPath { get; }
+    public readonly Mesh FaceMesh;
+    public readonly string BodyPath;
+    public readonly List<BlendShape> ZeroWeightBlendShapes;
 
     public SessionContext(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
         Mesh faceMesh,
-        string bodyPath
+        string bodyPath,
+        List<BlendShape> zeroWeightBlendShapes
     )
     {
         Root = root;
         FaceRenderer = faceRenderer;
         FaceMesh = faceMesh;
         BodyPath = bodyPath;
+        ZeroWeightBlendShapes = zeroWeightBlendShapes;
     }
 }
 

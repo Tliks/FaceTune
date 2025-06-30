@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 public enum HandGesture
 {
@@ -57,4 +57,10 @@ public enum AnimationSourceMode
 {
     Manual,
     FromAnimationClip
+}
+
+public enum AdvancedEyBlinkMode
+{
+    Animation,
+    SmartEyeBlink
 }

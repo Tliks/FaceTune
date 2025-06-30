@@ -3,7 +3,7 @@ using nadena.dev.modular_avatar.core;
 using VRC.SDK3.Avatars.ScriptableObjects;
 using M = UnityEditor.MenuItem;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 internal static class AssetsMenu
 {
@@ -54,10 +54,11 @@ internal static class AssetsMenu
             toggleComponent.Control.parameter = new() { name = uniqueParameterId };
             toggleComponent.Control.value = i;
 
-            var facialExpression = toggle.AddComponent<FacialExpressionComponent>();
-            facialExpression.SourceMode = AnimationSourceMode.FromAnimationClip;
-            facialExpression.Clip = clip;
-            facialExpression.ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
+            toggle.AddComponent<ExpressionComponent>();
+            var dataComponent = toggle.AddComponent<FacialDataComponent>();
+            dataComponent.SourceMode = AnimationSourceMode.FromAnimationClip;
+            dataComponent.Clip = clip;
+            dataComponent.ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
         }
 
         menuObject.AddComponent<PatternComponent>();

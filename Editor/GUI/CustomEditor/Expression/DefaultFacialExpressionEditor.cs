@@ -1,7 +1,8 @@
-using com.aoyon.facetune.preview;
+using aoyon.facetune.preview;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
+/*
 [CustomEditor(typeof(DefaultFacialExpressionComponent))]
 internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultFacialExpressionComponent>
 {
@@ -76,3 +77,5 @@ internal static class DefaultFacialExpressionEditorUtility
         component.BlendShapeAnimations = animations;
     }
 }
+
+*/

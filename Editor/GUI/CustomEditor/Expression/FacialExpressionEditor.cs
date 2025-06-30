@@ -1,9 +1,10 @@
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
+/*
 [CanEditMultipleObjects]
 [CustomEditor(typeof(FacialExpressionComponent))]
 internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressionComponent>
@@ -286,3 +287,5 @@ public class FacialExpressionEditorUtility
         }
     }
 }
+
+*/
