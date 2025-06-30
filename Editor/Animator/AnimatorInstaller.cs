@@ -1,4 +1,5 @@
 using UnityEditor.Animations;
+using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using nadena.dev.modular_avatar.core;
 using aoyon.facetune.platform;
@@ -533,6 +534,25 @@ internal class AnimatorInstaller
         disableTracking.Transitions = disableTracking.Transitions.Add(disableTrackingToAnimationGate);
 
         // Animationを用いた瞬き制御
+
+        var closeShapeNames = _advancedEyeBlinkIndex.Keys.SelectMany(s => s.CloseAnimations).Select(a => a.Name).ToHashSet();
+        var openShapeNames = _advancedEyeBlinkIndex.Keys.SelectMany(s => s.OpenAnimations).Select(a => a.Name).ToHashSet();
+        var cancelerShapeNames = _advancedEyeBlinkIndex.Keys.SelectMany(s => s.CancelerBlendShapeNames).ToHashSet();
+
+        // 瞬き用のブレンドシェイプを複製する
+        // Trackingとの競合を避けるためと、他表情で使用されている場合にそれをリセットせず移動量の追加のみ行うようにするため。
+        var shapesToClone = new HashSet<string>(closeShapeNames);
+        shapesToClone.UnionWith(openShapeNames);
+        Action<Mesh, Mesh> onClone = (Mesh o, Mesh n) => ObjectRegistry.RegisterReplacedObject(o, n);
+        Action<string> onNotFound = (string name) => { Debug.LogError($"Shape not found: {name}"); };
+        var mapping = MeshHelper.CloneShapes(_sessionContext.FaceRenderer, shapesToClone, onClone, onNotFound, "_clone.blink");
+        foreach (var (settings, index) in _advancedEyeBlinkIndex.ToList())
+        {
+            var newSettings = settings.GetRenamed(mapping);
+            _advancedEyeBlinkIndex.Remove(settings);
+            _advancedEyeBlinkIndex[newSettings] = index;
+        }
+
         var starePosition = animationGatePosition + new Vector3(PositionXStep, 0, 0);
         foreach (var (advancedSettings, index) in _advancedEyeBlinkIndex.OrderBy(kvp => kvp.Value))
         {

@@ -2,7 +2,17 @@ namespace aoyon.facetune;
 
 internal static class MeshHelper
 {
-    public static Dictionary<string, string> CloneShapes(Mesh editableMesh, HashSet<string> shapesToClose)
+    public static Dictionary<string, string> CloneShapes(SkinnedMeshRenderer renderer, HashSet<string> shapesToClone, Action<Mesh, Mesh> onClone, Action<string> onNotFound, string suffix = "_clone")
+    {
+        var oldMesh = renderer.sharedMesh;
+        var newMesh = Object.Instantiate(oldMesh);
+        onClone(oldMesh, newMesh);
+        var mapping = CloneShapes(newMesh, shapesToClone, onNotFound, suffix);
+        renderer.sharedMesh = newMesh;
+        return mapping;
+    }
+
+    public static Dictionary<string, string> CloneShapes(Mesh editableMesh, HashSet<string> shapesToClose, Action<string> onNotFound, string suffix = "_clone")
     {
         var mapping = new Dictionary<string, string>();
         var existingNames = new HashSet<string>();
@@ -43,26 +53,11 @@ internal static class MeshHelper
                 }
                 mapping[shape] = newShapeName;
             }
-        }
-        return mapping;
-    }
-
-    public static void ApplyBlendShapes(SkinnedMeshRenderer renderer, Mesh mesh, IEnumerable<BlendShape> blendShapes)
-    {
-        var mapping = new Dictionary<string, int>();
-        for (int i = 0; i < mesh.blendShapeCount; i++)
-        {
-            // 同名のブレンドシェイプが存在する場合一つ目に適用
-            mapping.TryAdd(mesh.GetBlendShapeName(i), i);
-        }
-
-        foreach (var shape in blendShapes)
-        {
-            if (mapping.TryGetValue(shape.Name, out int index))
+            else
             {
-                renderer.SetBlendShapeWeight(index, shape.Weight);
+                onNotFound(shape);
             }
         }
-    }
-    
+        return mapping;
+    } 
 }

@@ -31,24 +31,13 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             var shapesToClone = trackedShapes.Intersect(shapeNames);
             _ = shapesToClone;
             if (!shapesToClone.Any()) return;
-            var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
+            var mapping = MeshHelper.CloneShapes(sessionContext.FaceRenderer, shapesToClone.ToHashSet(), (o, n) => ObjectRegistry.RegisterReplacedObject(o, n), _ => {}, "_clone.tracked");
             ModifyData(allExpressions, sessionContext.BodyPath, mapping);
-            buildPassContext.RegisterCloneMapping(mapping);
         }
         else
         {
             RemoveAndWarning(allExpressions, trackedShapes);
         }
-    }
-
-    private Dictionary<string, string> ModifyFaceMesh(SkinnedMeshRenderer renderer, HashSet<string> shapesToClone)
-    {
-        var oldMesh = renderer.sharedMesh;
-        var newMesh = Object.Instantiate(oldMesh);
-        ObjectRegistry.RegisterReplacedObject(oldMesh, newMesh);
-        var mapping = MeshHelper.CloneShapes(newMesh, shapesToClone);
-        renderer.sharedMesh = newMesh;
-        return mapping;
     }
 
     private void ModifyData(IEnumerable<Expression> expressions, string targetPath, Dictionary<string, string> mapping)

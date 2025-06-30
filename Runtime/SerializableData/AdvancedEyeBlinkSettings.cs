@@ -102,6 +102,35 @@ public record class AdvancedEyeBlinkSettings // Immutable
     internal bool IsEnabled() => useAdvancedEyeBlink && useAnimation;
     internal bool IsCancelerEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
 
+    internal AdvancedEyeBlinkSettings GetRenamed(Dictionary<string, string> mapping)
+    {
+        var closeAnimations = new List<BlendShapeAnimation>();
+        foreach (var animation in CloseAnimations)
+        {
+            if (mapping.TryGetValue(animation.Name, out var newName))
+            {
+                closeAnimations.Add(animation with { Name = newName });
+            }
+            else
+            {
+                closeAnimations.Add(animation);
+            }
+        }
+        var openAnimations = new List<BlendShapeAnimation>();
+        foreach (var animation in OpenAnimations)
+        {
+            if (mapping.TryGetValue(animation.Name, out var newName))
+            {
+                openAnimations.Add(animation with { Name = newName });
+            }   
+            else
+            {
+                openAnimations.Add(animation);
+            }
+        }
+        return this with { CloseAnimations = closeAnimations, OpenAnimations = openAnimations };
+    }
+
     public virtual bool Equals(AdvancedEyeBlinkSettings other)
     {
         if (other is null) return false;
