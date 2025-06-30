@@ -85,13 +85,8 @@ internal class VRChatSuport : IPlatformSupport
         var disAllowed = new HashSet<string>();
         var lipSync = GetLipSyncBlendShape();
         disAllowed.UnionWith(lipSync);
-        /*
-        if (context) // any condition
-        {
-            var blink = GetBlinkBlendShape();
-            disAllowed.UnionWith(blink);
-        }
-        */ 
+        var blink = GetBlinkBlendShape(); // 安全側に倒す
+        disAllowed.UnionWith(blink);
         return disAllowed;
     }
 

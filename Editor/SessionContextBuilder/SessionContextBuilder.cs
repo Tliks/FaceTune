@@ -24,7 +24,7 @@ internal static class SessionContextBuilder
         var zeroWeightBlendShapes = new List<BlendShape>();
         faceRenderer.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes, new());
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes);
         return true;
     }
 

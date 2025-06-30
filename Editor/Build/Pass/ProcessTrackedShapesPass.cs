@@ -25,12 +25,15 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         if (sessionContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
+            var setteledShapes = allExpressions.SelectMany(e => e.AnimationIndex.GetBlendShapeNames(sessionContext.BodyPath)).ToHashSet();
+
             var shapeNames = sessionContext.FaceRenderer.GetBlendShapes(sessionContext.FaceMesh).Select(b => b.Name);
             var shapesToClone = trackedShapes.Intersect(shapeNames);
             _ = shapesToClone;
             if (!shapesToClone.Any()) return;
             var mapping = ModifyFaceMesh(sessionContext.FaceRenderer, shapesToClone.ToHashSet());
             ModifyData(allExpressions, sessionContext.BodyPath, mapping);
+            buildPassContext.RegisterCloneMapping(mapping);
         }
         else
         {

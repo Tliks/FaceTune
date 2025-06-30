@@ -33,13 +33,21 @@ namespace aoyon.facetune
                 animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));
             }
 
-            var facialSettings = FacialSettings;
             var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyeBlinkComponent>();
-            if (advancedEyeBlinkComponent != null)
-            {
-                facialSettings = facialSettings with { AdvancedEyBlinkSettings = advancedEyeBlinkComponent.AdvancedEyeBlinkSettings };
-            }
-            
+            var blinkSettings = advancedEyeBlinkComponent == null
+                ? AdvancedEyeBlinkSettings.Disabled() 
+                : advancedEyeBlinkComponent.AdvancedEyeBlinkSettings;
+
+            var advancedLipSyncComponent = gameObject.GetComponentInParent<AdvancedLipSyncComponent>();
+            var lipSyncSettings = advancedLipSyncComponent == null
+                ? AdvancedLipSyncSettings.Disabled()
+                : advancedLipSyncComponent.AdvancedLipSyncSettings;
+
+            var facialSettings = FacialSettings with {
+                AdvancedEyBlinkSettings = blinkSettings,
+                AdvancedLipSyncSettings = lipSyncSettings
+            };
+
             return new Expression(name, animationIndex.Animations, ExpressionSettings, facialSettings);
         }
 
