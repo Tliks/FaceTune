@@ -1,8 +1,18 @@
 namespace aoyon.facetune.ui;
 
-using UnityEditor;
-using UnityEditorInternal;
-using UnityEngine;
+[CanEditMultipleObjects]
+[CustomEditor(typeof(FacialDataComponent))]
+internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        if (GUILayout.Button("Open Editor"))
+        {
+            CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, so => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)));
+        }
+    }
+}
 
 /*
 [CanEditMultipleObjects]

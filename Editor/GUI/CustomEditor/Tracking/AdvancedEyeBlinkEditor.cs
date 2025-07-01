@@ -4,37 +4,14 @@ namespace aoyon.facetune.ui;
 [CustomEditor(typeof(AdvancedEyeBlinkComponent))]
 internal class AdvancedEyeBlinkEditor : FaceTuneCustomEditorBase<AdvancedEyeBlinkComponent>
 {
-    private SerializedProperty _advancedEyeBlinkSettingsProperty = null!;
-
-    public override void OnEnable()
-    {
-        base.OnEnable();
-        _advancedEyeBlinkSettingsProperty = serializedObject.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings));
-    }
-
     public override void OnInspectorGUI()
     {
-        serializedObject.Update();
-        EditorGUILayout.PropertyField(_advancedEyeBlinkSettingsProperty);
-        serializedObject.ApplyModifiedProperties();
+        base.OnInspectorGUI();
 
         if (GUILayout.Button("Open Editor"))
         {
-            CustomEditorUtility.OpenEditor(Component.gameObject, RecieveEditorResult);
+            var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
+            CustomEditorUtility.OpenEditorAndApplyBlendShapeNames(Component, getProperty);
         }
-    }
-
-    private void RecieveEditorResult(BlendShapeSet result)
-    {
-        var so = new SerializedObject(Component);
-        so.Update();
-        var animationProperty = so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
-        foreach (var shape in result.BlendShapes)
-        {
-            animationProperty.arraySize++;
-            var element = animationProperty.GetArrayElementAtIndex(animationProperty.arraySize - 1);
-            element.stringValue = shape.Name;
-        }
-        so.ApplyModifiedProperties();
     }
 }

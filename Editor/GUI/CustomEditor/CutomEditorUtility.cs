@@ -25,6 +25,42 @@ internal static class CustomEditorUtility
         AssetDatabase.CreateAsset(clip, path);
     }
 
+    public static void OpenEditorAndApplyBlendShapeSet(Component component, Func<SerializedObject, SerializedProperty> getProperty)
+    {
+        var onApply = new Action<BlendShapeSet>(set =>
+        {
+            var so = new SerializedObject(component);
+            so.Update();
+            var property = getProperty(so);
+            property.serializedObject.Update();
+            AddShapesAsSingleFrame(property, set.BlendShapes.ToList());
+            property.serializedObject.ApplyModifiedProperties();
+        });
+
+        if (!TryGetContext(component.gameObject, out var context)) return;
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroWeightBlendShapes), new());
+        if (window == null) return;
+        window.RegisterApplyCallback(onApply);
+    }
+
+    public static void OpenEditorAndApplyBlendShapeNames(Component component, Func<SerializedObject, SerializedProperty> getProperty)
+    {
+        var onApply = new Action<BlendShapeSet>(set =>
+        {
+            var so = new SerializedObject(component);
+            so.Update();
+            var property = getProperty(so);
+            property.serializedObject.Update();
+            AddShapesAsNames(property, set.BlendShapes.Select(shape => shape.Name).ToList());
+            property.serializedObject.ApplyModifiedProperties();
+        });
+
+        if (!TryGetContext(component.gameObject, out var context)) return;
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroWeightBlendShapes), new());
+        if (window == null) return;
+        window.RegisterApplyCallback(onApply);
+    }
+
     public static void OpenEditor(GameObject obj, Action<BlendShapeSet> onApply)
     {
         if (!TryGetContext(obj, out var context)) return;
@@ -38,17 +74,23 @@ internal static class CustomEditorUtility
         property.arraySize = 0;
     }
 
-    public static void AddShapesAsSingleFrame(SerializedProperty property, IReadOnlyList<BlendShape> newShapes, bool clear = false)
+    public static void AddShapesAsNames(SerializedProperty namesCollection, IReadOnlyList<string> names)
+    {
+        namesCollection.arraySize = names.Count;
+        for (var i = 0; i < names.Count; i++)
+        {
+            var element = namesCollection.GetArrayElementAtIndex(i);
+            element.stringValue = names[i];
+        }
+    }
+
+    public static void AddShapesAsSingleFrame(SerializedProperty blendShapeAnimation, IReadOnlyList<BlendShape> newShapes)
     {
         var animations = newShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight)).ToList();
-        if (clear)
-        {
-            ClearAnimations(property);
-        }
-        property.arraySize = animations.Count;
+        blendShapeAnimation.arraySize = animations.Count;
         for (var i = 0; i < animations.Count; i++)
         {
-            var element = property.GetArrayElementAtIndex(i);
+            var element = blendShapeAnimation.GetArrayElementAtIndex(i);
             var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
             var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
             nameProp.stringValue = animations[i].Name;
@@ -56,16 +98,12 @@ internal static class CustomEditorUtility
         }
     }
 
-    public static void AddAnimations(SerializedProperty property, IReadOnlyList<BlendShapeAnimation> newAnimations, bool clear = false)
+    public static void AddAnimations(SerializedProperty blendShapeAnimation, IReadOnlyList<BlendShapeAnimation> newAnimations)
     {
-        if (clear)
-        {
-            ClearAnimations(property);
-        }
-        property.arraySize = newAnimations.Count;
+        blendShapeAnimation.arraySize = newAnimations.Count;
         for (var i = 0; i < newAnimations.Count; i++)
         {
-            var element = property.GetArrayElementAtIndex(i);
+            var element = blendShapeAnimation.GetArrayElementAtIndex(i);
             element.FindPropertyRelative(BlendShapeAnimation.NamePropName).stringValue = newAnimations[i].Name;
             element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
         }

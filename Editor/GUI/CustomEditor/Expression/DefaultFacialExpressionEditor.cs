@@ -1,6 +1,18 @@
-using aoyon.facetune.preview;
-
 namespace aoyon.facetune.ui;
+
+[CanEditMultipleObjects]
+[CustomEditor(typeof(FacialStyleComponent))]
+internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<FacialStyleComponent>
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        if (GUILayout.Button("Open Editor"))
+        {
+            CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, so => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations)));
+        }
+    }
+}
 
 /*
 [CustomEditor(typeof(DefaultFacialExpressionComponent))]
