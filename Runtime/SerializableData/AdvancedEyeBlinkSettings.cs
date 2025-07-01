@@ -27,13 +27,13 @@ public record class AdvancedEyeBlinkSettings // Immutable
     public float RandomIntervalMaxSeconds { get => randomIntervalMaxSeconds; init => randomIntervalMaxSeconds = value; }
     public const string RandomIntervalMaxSecondsPropName = nameof(randomIntervalMaxSeconds);
 
-    [SerializeField] private List<BlendShapeAnimation> closeAnimations;
-    public IReadOnlyList<BlendShapeAnimation> CloseAnimations { get => closeAnimations.AsReadOnly(); init => closeAnimations = value.ToList(); }
-    public const string CloseAnimationsPropName = nameof(closeAnimations);
+    [SerializeField] private List<string> blinkBlendShapeNames;
+    public IReadOnlyList<string> BlinkBlendShapeNames { get => blinkBlendShapeNames.AsReadOnly(); init => blinkBlendShapeNames = value.ToList(); }
+    public const string BlinkBlendShapeNamesPropName = nameof(blinkBlendShapeNames);
 
-    [SerializeField] private List<BlendShapeAnimation> openAnimations;
-    public IReadOnlyList<BlendShapeAnimation> OpenAnimations { get => openAnimations.AsReadOnly(); init => openAnimations = value.ToList(); }
-    public const string OpenAnimationsPropName = nameof(openAnimations);
+    [SerializeField] private float blinkDurationSeconds;
+    public float BlinkDurationSeconds { get => blinkDurationSeconds; init => blinkDurationSeconds = value; }
+    public const string BlinkDurationSecondsPropName = nameof(blinkDurationSeconds);
 
     [SerializeField] private bool useCanceler;
     public bool UseCanceler { get => useCanceler; init => useCanceler = value; }
@@ -57,13 +57,8 @@ public record class AdvancedEyeBlinkSettings // Immutable
         useRandomInterval = true;
         randomIntervalMinSeconds = 4.0f;
         randomIntervalMaxSeconds = 20.0f;
-
-        var closeCurve = AnimationCurve.Linear(0f, 0f, 0.05f, 100f);
-        closeAnimations = new(){ new (BlinkParam, closeCurve) };
-
-        var openCurve = AnimationCurve.Linear(0f, 100f, 0.05f, 0f);
-        openAnimations = new(){ new (BlinkParam, openCurve) };
-
+        blinkBlendShapeNames = new(){ BlinkParam };
+        blinkDurationSeconds = 0.05f;
         useCanceler = false;
         cancelerBlendShapeNames = new();
     }
@@ -75,8 +70,8 @@ public record class AdvancedEyeBlinkSettings // Immutable
         bool useRandomInterval,
         float randomIntervalMinSeconds,
         float randomIntervalMaxSeconds,
-        List<BlendShapeAnimation> closeAnimations,
-        List<BlendShapeAnimation> openAnimations,
+        List<string> blinkBlendShapeNames,
+        float blinkDurationSeconds,
         bool useCanceler,
         List<string> cancelerBlendShapeNames
     )
@@ -87,44 +82,21 @@ public record class AdvancedEyeBlinkSettings // Immutable
         this.useRandomInterval = useRandomInterval;
         this.randomIntervalMinSeconds = randomIntervalMinSeconds;
         this.randomIntervalMaxSeconds = randomIntervalMaxSeconds;
-        this.closeAnimations = closeAnimations;
-        this.openAnimations = openAnimations;
+        this.blinkBlendShapeNames = blinkBlendShapeNames;
+        this.blinkDurationSeconds = blinkDurationSeconds;
         this.useCanceler = useCanceler;
         this.cancelerBlendShapeNames = cancelerBlendShapeNames;
     }
 
     internal static AdvancedEyeBlinkSettings Disabled() => new(false);
 
-    internal bool IsEnabled() => useAdvancedEyeBlink && useAnimation;
-    internal bool IsCancelerEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
+    internal bool IsEnabled() => useAdvancedEyeBlink; // useAnimatiomが有効でない場合現状意味はない
+    internal bool IsAnimationEnabled() => IsEnabled() && useAnimation; 
+    internal bool IsCancelerEnabled() => IsAnimationEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
 
     internal AdvancedEyeBlinkSettings GetRenamed(Dictionary<string, string> mapping)
     {
-        var closeAnimations = new List<BlendShapeAnimation>();
-        foreach (var animation in CloseAnimations)
-        {
-            if (mapping.TryGetValue(animation.Name, out var newName))
-            {
-                closeAnimations.Add(animation with { Name = newName });
-            }
-            else
-            {
-                closeAnimations.Add(animation);
-            }
-        }
-        var openAnimations = new List<BlendShapeAnimation>();
-        foreach (var animation in OpenAnimations)
-        {
-            if (mapping.TryGetValue(animation.Name, out var newName))
-            {
-                openAnimations.Add(animation with { Name = newName });
-            }   
-            else
-            {
-                openAnimations.Add(animation);
-            }
-        }
-        return this with { CloseAnimations = closeAnimations, OpenAnimations = openAnimations };
+        return this with { BlinkBlendShapeNames = blinkBlendShapeNames.Select(name => mapping.ContainsKey(name) ? mapping[name] : name).ToList() };
     }
 
     public virtual bool Equals(AdvancedEyeBlinkSettings other)
@@ -137,8 +109,8 @@ public record class AdvancedEyeBlinkSettings // Immutable
          && UseRandomInterval == other.UseRandomInterval
          && RandomIntervalMinSeconds == other.RandomIntervalMinSeconds
          && RandomIntervalMaxSeconds == other.RandomIntervalMaxSeconds
-         && CloseAnimations.SequenceEqual(other.CloseAnimations)
-         && OpenAnimations.SequenceEqual(other.OpenAnimations)
+         && BlinkBlendShapeNames.SequenceEqual(other.BlinkBlendShapeNames)
+         && BlinkDurationSeconds == other.BlinkDurationSeconds
          && UseCanceler == other.UseCanceler
          && CancelerBlendShapeNames.SequenceEqual(other.CancelerBlendShapeNames);
     }
@@ -151,8 +123,8 @@ public record class AdvancedEyeBlinkSettings // Immutable
         hash ^= UseRandomInterval.GetHashCode();
         hash ^= RandomIntervalMinSeconds.GetHashCode();
         hash ^= RandomIntervalMaxSeconds.GetHashCode();
-        hash ^= CloseAnimations.GetSequenceHashCode();
-        hash ^= OpenAnimations.GetSequenceHashCode();
+        hash ^= BlinkBlendShapeNames.GetSequenceHashCode();
+        hash ^= BlinkDurationSeconds.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
         hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
         return hash;
