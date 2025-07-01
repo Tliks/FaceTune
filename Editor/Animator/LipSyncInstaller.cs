@@ -18,7 +18,7 @@ internal class LipSyncInstaller : InstallerBase
 
     public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP);
+        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP).defaultFloat = 1f;
     }
 
     public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
@@ -32,34 +32,34 @@ internal class LipSyncInstaller : InstallerBase
             var value = facialSettings.AllowLipSync == TrackingPermission.Allow ? 1 : 0;
             curve.AddKey(0, value);
             clip.SetFloatCurve("", typeof(Animator), AllowAAP, curve);
+        }
 
-            var advancedSettings = facialSettings.AdvancedLipSyncSettings;
-            if (advancedSettings.IsEnabled())
+        var advancedSettings = facialSettings.AdvancedLipSyncSettings;
+        if (advancedSettings.IsEnabled())
+        {
+            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
+            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
+            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
+
+            // UseAdvanced
+            var useAdvancedCurve = new AnimationCurve();
+            useAdvancedCurve.AddKey(0, 1);
+            clip.SetFloatCurve("", typeof(Animator), UseAdvancedAAP, useAdvancedCurve);
+
+            // Mode
+            var index = GetIndexForSettings(advancedSettings);
+            var modeCurve = new AnimationCurve();
+            modeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
+            clip.SetFloatCurve("", typeof(Animator), ModeAAP, modeCurve);
+
+            if (advancedSettings.IsCancelerEnabled())
             {
-                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
-                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
-                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
-
-                // UseAdvanced
-                var useAdvancedCurve = new AnimationCurve();
-                useAdvancedCurve.AddKey(0, 1);
-                clip.SetFloatCurve("", typeof(Animator), UseAdvancedAAP, useAdvancedCurve);
-
-                // Mode
-                var index = GetIndexForSettings(advancedSettings);
-                var modeCurve = new AnimationCurve();
-                modeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
-                clip.SetFloatCurve("", typeof(Animator), ModeAAP, modeCurve);
-
-                if (advancedSettings.IsCancelerEnabled())
-                {
-                    _shouldAddCancelerLayer = true;
-                    
-                    // UseCanceler
-                    var useCancelerCurve = new AnimationCurve();
-                    useCancelerCurve.AddKey(0, 1);
-                    clip.SetFloatCurve("", typeof(Animator), UseCancelerAAP, useCancelerCurve);
-                }
+                _shouldAddCancelerLayer = true;
+                
+                // UseCanceler
+                var useCancelerCurve = new AnimationCurve();
+                useCancelerCurve.AddKey(0, 1);
+                clip.SetFloatCurve("", typeof(Animator), UseCancelerAAP, useCancelerCurve);
             }
         }
     }
