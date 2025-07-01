@@ -71,7 +71,7 @@ internal class VRChatSuport : IPlatformSupport
         var cc = asc.ControllerContext;
         var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        return new AnimatorInstaller(context, fx, useWriteDefaults);
+        return new AnimatorInstaller(fx, context, useWriteDefaults);
     }
 
     public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallData installData)
