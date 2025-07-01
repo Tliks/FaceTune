@@ -29,7 +29,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         {
             if (!context.ActiveInHierarchy(root)) continue;
 
-            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, observeContext);
+            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, null, observeContext);
             if (faceRenderer == null) continue;
 
             groups.Add(RenderGroup.For(faceRenderer).WithData(root));

@@ -1,3 +1,4 @@
+using aoyon.facetune.platform;
 using nadena.dev.ndmf.runtime;
 
 namespace aoyon.facetune;
@@ -13,7 +14,9 @@ internal static class SessionContextBuilder
         var root = context.GetAvatarRoot(target);
         if (root == null) return false;
 
-        var faceRenderer = GetFaceRenderer(root, context);
+        var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
+
+        var faceRenderer = GetFaceRenderer(root, platformSupport, context);
         if (faceRenderer == null) return false;
 
         var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
@@ -24,13 +27,16 @@ internal static class SessionContextBuilder
         var zeroWeightBlendShapes = new List<BlendShape>();
         faceRenderer.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes);
+        var trackedBlendShapes = platformSupport.GetTrackedBlendShape().ToHashSet();
+
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes, trackedBlendShapes);
         return true;
     }
 
-    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IObserveContext? context = null)
+    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IPlatformSupport? platformSupport = null, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
+        platformSupport ??= platform.PlatformSupport.GetSupport(root.transform);
 
         using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
         context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
@@ -44,7 +50,6 @@ internal static class SessionContextBuilder
         var faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null);
         if (faceRenderer == null)
         {
-            var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
             return platformSupport.GetFaceRenderer();
         }
         else

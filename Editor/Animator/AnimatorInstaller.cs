@@ -69,7 +69,7 @@ internal class AnimatorInstaller : InstallerBase
         // ブレンドシェイプの初期化レイヤー
         var shapesLayer = AddFTLayer(_virtualController, "Default", shapesLayerPriority);
         var shapesState = AddFTState(shapesLayer, "Default", ExclusiveStatePosition);
-        AddAnimationToState(shapesState, _sessionContext.ZeroWeightBlendShapes.ToGenericAnimations(_sessionContext.BodyPath));
+        AddAnimationToState(shapesState, _sessionContext.ZeroWeightBlendShapes.Where(shape => !_sessionContext.TrackedBlendShapes.Contains(shape.Name)).ToGenericAnimations(_sessionContext.BodyPath));
 
         var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
 
