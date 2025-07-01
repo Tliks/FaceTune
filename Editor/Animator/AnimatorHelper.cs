@@ -277,4 +277,16 @@ internal static class AnimatorHelper
 
         return controller.Parameters[parameter];
     }
+
+    public static List<VirtualStateTransition> SetORConditions(VirtualStateTransition transition, IEnumerable<AnimatorCondition> conditions)
+    {
+        var transitions = new List<VirtualStateTransition>();
+        foreach (var condition in conditions)
+        {
+            var duplicate = (transition.Clone() as VirtualStateTransition)!;
+            duplicate.Conditions = ImmutableList.Create(condition);
+            transitions.Add(duplicate);
+        }
+        return transitions;
+    }
 }

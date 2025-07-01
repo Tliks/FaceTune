@@ -25,6 +25,10 @@ public record class AdvancedLipSyncSettings // Immutable
     public IReadOnlyList<string> CancelerBlendShapeNames { get => cancelerBlendShapeNames.AsReadOnly(); init => cancelerBlendShapeNames = value.ToList(); }
     public const string CancelerBlendShapeNamesPropName = nameof(cancelerBlendShapeNames);
 
+    [SerializeField] private float cancelerDuration;
+    public float CancelerDuration { get => cancelerDuration; init => cancelerDuration = value; }
+    public const string CancelerDurationPropName = nameof(cancelerDuration);
+
     public AdvancedLipSyncSettings() : this(true)
     {
     }
@@ -34,17 +38,20 @@ public record class AdvancedLipSyncSettings // Immutable
         this.useAdvancedLipSync = useAdvancedLipSync;
         useCanceler = false;
         cancelerBlendShapeNames = new();
+        cancelerDuration = 0.1f;
     }
 
     public AdvancedLipSyncSettings(
         bool useAdvancedLipSync,
         bool useCanceler,
-        List<string> cancelerBlendShapeNames
+        List<string> cancelerBlendShapeNames,
+        float cancelerDuration
     )
     {
         this.useAdvancedLipSync = useAdvancedLipSync;
         this.useCanceler = useCanceler;
         this.cancelerBlendShapeNames = cancelerBlendShapeNames;
+        this.cancelerDuration = cancelerDuration;
     }
 
     internal static AdvancedLipSyncSettings Disabled() => new(false);
@@ -58,7 +65,8 @@ public record class AdvancedLipSyncSettings // Immutable
         if (ReferenceEquals(this, other)) return true;
         return UseAdvancedLipSync == other.UseAdvancedLipSync
          && UseCanceler == other.UseCanceler
-         && CancelerBlendShapeNames.SequenceEqual(other.CancelerBlendShapeNames);
+         && CancelerBlendShapeNames.SequenceEqual(other.CancelerBlendShapeNames)
+         && CancelerDuration == other.CancelerDuration;
     }
 
     public override int GetHashCode()
@@ -66,6 +74,7 @@ public record class AdvancedLipSyncSettings // Immutable
         var hash = UseAdvancedLipSync.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
         hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
+        hash ^= CancelerDuration.GetHashCode();
         return hash;
     }
 }

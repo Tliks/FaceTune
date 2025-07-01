@@ -5,26 +5,29 @@ namespace aoyon.facetune.animator;
 
 internal class LipSyncInstaller : InstallerBase
 {
-    private readonly Dictionary<AdvancedLipSyncSettings, int> _advancedLipSyncIndex = new();
+    private bool _shouldAddLayer = false;
+    private bool _shouldAddCancelerLayer = false;
+
+    private readonly Dictionary<AdvancedLipSyncSettings, int> _indexForAdvancedSettings = new();
 
     private const string ParameterPrefix = $"{FaceTuneConsts.ParameterPrefix}/LipSync";
-    private const string AllowAAP = $"{ParameterPrefix}/Allow";
-    private const string UseAdvancedAAP = $"{ParameterPrefix}/UseAdvanced";
-    private const string UseCancelerAAP = $"{ParameterPrefix}/UseCanceler";
-    private const string ModeAAP = $"{ParameterPrefix}/Mode";
+    private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
+    private const string UseAdvancedAAP = $"{ParameterPrefix}/UseAdvanced"; // 1つ以上有効なAdvancedLipSyncSettingsがあるとき
+    private const string UseCancelerAAP = $"{ParameterPrefix}/UseCanceler"; // 同上
+    private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
 
     public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP);
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
     }
 
     public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
     {
         if (facialSettings.AllowLipSync != TrackingPermission.Keep)
         {
+            _shouldAddLayer = true;
+
+            // Allow
             var curve = new AnimationCurve();
             var value = facialSettings.AllowLipSync == TrackingPermission.Allow ? 1 : 0;
             curve.AddKey(0, value);
@@ -33,17 +36,26 @@ internal class LipSyncInstaller : InstallerBase
             var advancedSettings = facialSettings.AdvancedLipSyncSettings;
             if (advancedSettings.IsEnabled())
             {
+                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
+                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
+                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
+
+                // UseAdvanced
                 var useAdvancedCurve = new AnimationCurve();
                 useAdvancedCurve.AddKey(0, 1);
                 clip.SetFloatCurve("", typeof(Animator), UseAdvancedAAP, useAdvancedCurve);
 
-                var index = GetAdvancedLipSyncIndex(advancedSettings);
+                // Mode
+                var index = GetIndexForSettings(advancedSettings);
                 var modeCurve = new AnimationCurve();
                 modeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
                 clip.SetFloatCurve("", typeof(Animator), ModeAAP, modeCurve);
 
                 if (advancedSettings.IsCancelerEnabled())
                 {
+                    _shouldAddCancelerLayer = true;
+                    
+                    // UseCanceler
                     var useCancelerCurve = new AnimationCurve();
                     useCancelerCurve.AddKey(0, 1);
                     clip.SetFloatCurve("", typeof(Animator), UseCancelerAAP, useCancelerCurve);
@@ -52,30 +64,16 @@ internal class LipSyncInstaller : InstallerBase
         }
     }
 
-    private int GetAdvancedLipSyncIndex(AdvancedLipSyncSettings advancedLipSyncSettings)
+    private int GetIndexForSettings(AdvancedLipSyncSettings advancedSettings)
     {
-        if (_advancedLipSyncIndex.TryGetValue(advancedLipSyncSettings, out var index))
-        {
-            return index;
-        }
-        else
-        {
-            index = _advancedLipSyncIndex.Count;
-            _advancedLipSyncIndex[advancedLipSyncSettings] = index;
-        }
-        return index;
+        return _indexForAdvancedSettings.GetOrAdd(advancedSettings, _indexForAdvancedSettings.Count);
     }
 
-    public void AddLipSyncLayer()
+    public void MayAddLipSyncLayers()
     {
-        VirtualLayer? cancelerLayer = null;
-        VirtualLayer? lipSyncLayer = null;
+        if (!_shouldAddLayer) return;
 
-        if (_advancedLipSyncIndex.Any(kvp => kvp.Key.IsCancelerEnabled()))
-        {
-            cancelerLayer = AddFTLayer(_virtualController, "LipSync (Canceler)", LayerPriority);
-        }
-        lipSyncLayer = AddFTLayer(_virtualController, "LipSync", LayerPriority);
+        var lipSyncLayer = AddFTLayer(_virtualController, "LipSync", LayerPriority);
         
         var delayState = AddFTState(lipSyncLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
         var delayClip = AnimatorHelper.CreateDelayClip(0.1f);
@@ -88,50 +86,60 @@ internal class LipSyncInstaller : InstallerBase
         _platformSupport.SetLipSyncTrack(enabled, true);
         _platformSupport.SetLipSyncTrack(disabled, false);
 
-        var delayTransition = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
-        delayTransition.SetDestination(enabled);
-        delayState.Transitions = ImmutableList.Create(delayTransition);
+        var delayToEnabledTransition = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
+        delayToEnabledTransition.SetDestination(enabled);
+        delayState.Transitions = ImmutableList.Create(delayToEnabledTransition);
 
-        var enabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        enabledTransition.SetDestination(enabled);
-        enabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        var enabledToDisabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        enabledToDisabledTransition.SetDestination(disabled);
+        enabledToDisabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
         {
             parameter = AllowAAP,
             mode = AnimatorConditionMode.Greater,
-            threshold = 0.99f
+            threshold = 0.99f // 安全側(Mute)に倒す
         });
-        disabled.Transitions = ImmutableList.Create(enabledTransition);
+        enabled.Transitions = ImmutableList.Create(enabledToDisabledTransition);
 
-        var disabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        disabledTransition.SetDestination(disabled);
-        disabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        var disabledToEnabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        disabledToEnabledTransition.SetDestination(enabled);
+        disabledToEnabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
         {
             parameter = AllowAAP,
             mode = AnimatorConditionMode.Less,
-            threshold = 0.99f
+            threshold = 0.99f // 同上
         });
-        enabled.Transitions = ImmutableList.Create(disabledTransition);
+        disabled.Transitions = ImmutableList.Create(disabledToEnabledTransition);
 
-        if (cancelerLayer is null) return;
+        if (_shouldAddCancelerLayer)
+        {
+            AddCancelerLayer();
+        }
+    }
+
+    private void AddCancelerLayer()
+    {
+        var cancelerLayer = AddFTLayer(_virtualController, "LipSync (Canceler)", LayerPriority);
 
         var mutePosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
         var mute = AddFTState(cancelerLayer, "Mute", mutePosition);
         mute.Motion = _emptyClip;
-        var position = mutePosition + new Vector3(PositionXStep, 0, 0);
+
         var voiceParam = "Voice"; // Todo
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, voiceParam);
-        foreach (var (advancedSettings, index) in _advancedLipSyncIndex.OrderBy(kvp => kvp.Value))
+
+        var position = mutePosition + new Vector3(PositionXStep, 0, 0);
+        foreach (var (settings, index) in _indexForAdvancedSettings.OrderBy(kvp => kvp.Value))
         {
-            if (!advancedSettings.IsCancelerEnabled()) continue;
+            if (!settings.IsCancelerEnabled()) continue;
 
             var lipsyncing = AddFTState(cancelerLayer, $"Lipsyncing {index}", position);
-            var cancelerAnimation = advancedSettings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
+            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
             // mute -> lipsyncing
-            var muteToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(0.1f); // Todo: 設定可能にしても良いかも
+            var muteToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDuration);
             muteToLipsyncing.SetDestination(lipsyncing);
-            muteToLipsyncing.Conditions = ImmutableList.Create(
+            var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
                 {
                     parameter = UseCancelerAAP,
@@ -144,82 +152,34 @@ internal class LipSyncInstaller : InstallerBase
                     mode = AnimatorConditionMode.Greater,
                     threshold = 0f
                 }
-            );
-            if (index > 0)
-            {   
-                muteToLipsyncing.Conditions = muteToLipsyncing.Conditions.Add(
-                    new AnimatorCondition()
-                    {
-                        parameter = ModeAAP,
-                        mode = AnimatorConditionMode.Greater,
-                        threshold = VRCAAPHelper.IndexToValue(index - 1)
-                    }
-                );
-            }
-            if (index < 255)
-            {
-                muteToLipsyncing.Conditions = muteToLipsyncing.Conditions.Add(
-                    new AnimatorCondition()
-                    {
-                        parameter = ModeAAP,
-                        mode = AnimatorConditionMode.Less,
-                        threshold = VRCAAPHelper.IndexToValue(index + 1)
-                    }
-                );
-            }
+            };
+            andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
+            muteToLipsyncing.Conditions = ImmutableList.CreateRange(andConditions);
             mute.Transitions = mute.Transitions.Add(muteToLipsyncing);
 
             // lipsyncing -> mute
-            var lipsyncingToMute1 = AnimatorHelper.CreateTransitionWithDurationSeconds(0.1f);
-            lipsyncingToMute1.SetDestination(mute);
-            lipsyncingToMute1.Conditions = ImmutableList.Create(
+            var lipsyncingToMute = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDuration);
+            lipsyncingToMute.SetDestination(mute);
+            var orConditions = new List<AnimatorCondition>
+            {
                 new AnimatorCondition()
                 {
                     parameter = voiceParam,
                     mode = AnimatorConditionMode.Less,
                     threshold = 0.01f
-                }
-            );
-            lipsyncing.Transitions = lipsyncing.Transitions.Add(lipsyncingToMute1);
-
-            var lipsyncingToMute2 = AnimatorHelper.CreateTransitionWithDurationSeconds(0.1f);
-            lipsyncingToMute2.SetDestination(mute);
-            lipsyncingToMute2.Conditions = ImmutableList.Create(
+                },
                 new AnimatorCondition()
                 {
                     parameter = UseCancelerAAP,
                     mode = AnimatorConditionMode.Less,
-                    threshold = 0.01f
+                    threshold = 1f
                 }
-            );
-            lipsyncing.Transitions = lipsyncing.Transitions.Add(lipsyncingToMute2);
+            };
+            orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
+            var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToMute, orConditions);
+            lipsyncing.Transitions = lipsyncing.Transitions.AddRange(orTransitions);
 
-            var lipsyncingToMute3 = AnimatorHelper.CreateTransitionWithDurationSeconds(0.1f);
-            lipsyncingToMute3.SetDestination(mute);
-            lipsyncingToMute3.Conditions = ImmutableList.Create(
-                new AnimatorCondition()
-                {
-                    parameter = ModeAAP,
-                    mode = AnimatorConditionMode.Greater,
-                    threshold = VRCAAPHelper.IndexToValue(index)
-                }
-            );
-            lipsyncing.Transitions = lipsyncing.Transitions.Add(lipsyncingToMute3);
-
-            var lipsyncingToMute4 = AnimatorHelper.CreateTransitionWithDurationSeconds(0.1f);
-            lipsyncingToMute4.SetDestination(mute);
-            lipsyncingToMute4.Conditions = ImmutableList.Create(
-                new AnimatorCondition()
-                {
-                    parameter = ModeAAP,
-                    mode = AnimatorConditionMode.Less,
-                    threshold = VRCAAPHelper.IndexToValue(index)
-                }
-            );
-            lipsyncing.Transitions = lipsyncing.Transitions.Add(lipsyncingToMute4);
-            
             position.y += PositionYStep;
         }
     }
 }
-

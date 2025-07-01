@@ -51,11 +51,8 @@ internal class AnimatorInstaller : InstallerBase
         {
             _blinkInstaller.AddEyeBlinkLayer();
         }
-        if (patternExpressions.Any(e => e.FacialSettings.AllowLipSync == TrackingPermission.Disallow
-            || e.FacialSettings.AdvancedLipSyncSettings.IsEnabled()))
-        {
-            _lipSyncInstaller.AddLipSyncLayer();
-        }
+
+        _lipSyncInstaller.MayAddLipSyncLayers();
     }
 
     // ブレンドシェイプ及びアニメーション用の初期化レイヤーを生成する
@@ -96,52 +93,6 @@ internal class AnimatorInstaller : InstallerBase
 
         defaultLayer = shapesLayer;
         defaultState = shapesState;
-    }
-
-    private void AddExpressionToState(VirtualState state, Expression expression)
-    {
-        if (state.TryGetClip(out var clip))
-        {
-            var duplicate = clip.Clone();
-            Impl(duplicate);
-            state.Motion = duplicate;
-        }
-        else
-        {
-            if (_expressionClipCache.TryGetValue(expression, out var cachedClip))
-            {
-                clip = cachedClip;
-                state.Motion = clip;
-            }
-            else
-            {
-                clip = state.CreateClip(state.Name);
-                Impl(clip);
-                _expressionClipCache[expression] = clip;
-            }
-        }
-
-        void Impl(VirtualClip clip)
-        {
-            AddSettingsToState(state, clip, expression.ExpressionSettings);
-            AddAnimationToState(clip, expression.Animations);
-            SetFacialSettings(clip, expression.FacialSettings);
-        }
-    }
-
-    private void AddSettingsToState(VirtualState state, VirtualClip clip, ExpressionSettings expressionSettings)
-    {
-        if (expressionSettings.LoopTime)
-        {
-            var settings = clip.Settings;
-            settings.loopTime = true;
-            clip.Settings = settings;
-        }
-        else if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
-        {
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, expressionSettings.MotionTimeParameterName);
-            state.TimeParameter = expressionSettings.MotionTimeParameterName;
-        }
     }
 
     private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
@@ -278,6 +229,52 @@ internal class AnimatorInstaller : InstallerBase
         var (animatorCondition, parameter, parameterType) = condition.ToAnimatorCondition();
         _virtualController.EnsureParameterExists(parameterType, parameter);
         return animatorCondition;
+    }
+
+    private void AddExpressionToState(VirtualState state, Expression expression)
+    {
+        if (state.TryGetClip(out var clip))
+        {
+            var duplicate = clip.Clone();
+            Impl(duplicate);
+            state.Motion = duplicate;
+        }
+        else
+        {
+            if (_expressionClipCache.TryGetValue(expression, out var cachedClip))
+            {
+                clip = cachedClip;
+                state.Motion = clip;
+            }
+            else
+            {
+                clip = state.CreateClip(state.Name);
+                Impl(clip);
+                _expressionClipCache[expression] = clip;
+            }
+        }
+
+        void Impl(VirtualClip clip)
+        {
+            AddAnimationToState(clip, expression.Animations);
+            SetExpressionSettings(state, clip, expression.ExpressionSettings);
+            SetFacialSettings(clip, expression.FacialSettings);
+        }
+    }
+
+    private void SetExpressionSettings(VirtualState state, VirtualClip clip, ExpressionSettings expressionSettings)
+    {
+        if (expressionSettings.LoopTime)
+        {
+            var settings = clip.Settings;
+            settings.loopTime = true;
+            clip.Settings = settings;
+        }
+        else if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
+        {
+            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, expressionSettings.MotionTimeParameterName);
+            state.TimeParameter = expressionSettings.MotionTimeParameterName;
+        }
     }
 
     private void SetFacialSettings(VirtualClip clip, FacialSettings? facialSettings)
