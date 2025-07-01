@@ -13,8 +13,8 @@ internal class LipSyncInstaller : InstallerBase
     private const string ParameterPrefix = $"{FaceTuneConsts.ParameterPrefix}/LipSync";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAdvancedAAP = $"{ParameterPrefix}/UseAdvanced"; // 1つ以上有効なAdvancedLipSyncSettingsがあるとき
-    private const string UseCancelerAAP = $"{ParameterPrefix}/UseCanceler"; // 同上
     private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
+    private const string UseCancelerAAP = $"{ParameterPrefix}/UseCanceler"; // 1つ以上有効なCancelerがあるとき
 
     public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
@@ -37,8 +37,9 @@ internal class LipSyncInstaller : InstallerBase
         var advancedSettings = facialSettings.AdvancedLipSyncSettings;
         if (advancedSettings.IsEnabled())
         {
+            _shouldAddLayer = true;
+
             _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
             _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
 
             // UseAdvanced
@@ -56,6 +57,8 @@ internal class LipSyncInstaller : InstallerBase
             {
                 _shouldAddCancelerLayer = true;
                 
+                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
+
                 // UseCanceler
                 var useCancelerCurve = new AnimationCurve();
                 useCancelerCurve.AddKey(0, 1);
@@ -83,6 +86,8 @@ internal class LipSyncInstaller : InstallerBase
         var enabled = AddFTState(lipSyncLayer, "Enabled", enabledPosition);
         var disabled = AddFTState(lipSyncLayer, "Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
 
+        enabled.Motion = _emptyClip;
+        disabled.Motion = _emptyClip;
         _platformSupport.SetLipSyncTrack(enabled, true);
         _platformSupport.SetLipSyncTrack(disabled, false);
 
