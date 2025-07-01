@@ -145,13 +145,13 @@ internal class LipSyncInstaller : InstallerBase
                 {
                     parameter = UseCancelerAAP,
                     mode = AnimatorConditionMode.Greater,
-                    threshold = 0.01f // greater 0fだと流石に不安定になる
+                    threshold = 0.01f
                 },
                 new AnimatorCondition()
                 {
                     parameter = voiceParam,
                     mode = AnimatorConditionMode.Greater,
-                    threshold = 0f
+                    threshold = 0.01f // 0fだと流石に不安定になる
                 }
             };
             andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
@@ -165,15 +165,15 @@ internal class LipSyncInstaller : InstallerBase
             {
                 new AnimatorCondition()
                 {
-                    parameter = voiceParam,
-                    mode = AnimatorConditionMode.Less,
-                    threshold = 0.01f
-                },
-                new AnimatorCondition()
-                {
                     parameter = UseCancelerAAP,
                     mode = AnimatorConditionMode.Less,
                     threshold = 1f
+                },
+                new AnimatorCondition()
+                {
+                    parameter = voiceParam,
+                    mode = AnimatorConditionMode.Less,
+                    threshold = 0.02f
                 }
             };
             orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));

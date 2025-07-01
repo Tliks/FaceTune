@@ -29,6 +29,12 @@ public record class AdvancedLipSyncSettings // Immutable
     public float CancelerDurationSeconds { get => cancelerDurationSeconds; init => cancelerDurationSeconds = value; }
     public const string CancelerDurationSecondsPropName = nameof(cancelerDurationSeconds);
 
+    /*
+    [SerializeField] private float cancelerThreshold;
+    public float CancelerThreshold { get => cancelerThreshold; init => cancelerThreshold = value; }
+    public const string CancelerThresholdPropName = nameof(cancelerThreshold);
+    */
+
     public AdvancedLipSyncSettings() : this(true)
     {
     }
