@@ -137,7 +137,7 @@ internal class LipSyncInstaller : InstallerBase
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
             // mute -> lipsyncing
-            var muteToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDuration);
+            var muteToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
             muteToLipsyncing.SetDestination(lipsyncing);
             var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
@@ -158,7 +158,7 @@ internal class LipSyncInstaller : InstallerBase
             mute.Transitions = mute.Transitions.Add(muteToLipsyncing);
 
             // lipsyncing -> mute
-            var lipsyncingToMute = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDuration);
+            var lipsyncingToMute = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
             lipsyncingToMute.SetDestination(mute);
             var orConditions = new List<AnimatorCondition>
             {
