@@ -32,7 +32,7 @@ internal class InstallerBase
         _useWriteDefaults = useWriteDefaults;
         _emptyClip = AnimatorHelper.CreateCustomEmpty();
 
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, TrueParameterName);
+        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
     }
 
     protected static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
