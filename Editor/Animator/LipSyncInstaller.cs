@@ -95,7 +95,7 @@ internal class LipSyncInstaller : InstallerBase
         enabledToDisabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
         {
             parameter = AllowAAP,
-            mode = AnimatorConditionMode.Greater,
+            mode = AnimatorConditionMode.Less,
             threshold = 0.99f // 安全側(Mute)に倒す
         });
         enabled.Transitions = ImmutableList.Create(enabledToDisabledTransition);
@@ -105,7 +105,7 @@ internal class LipSyncInstaller : InstallerBase
         disabledToEnabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
         {
             parameter = AllowAAP,
-            mode = AnimatorConditionMode.Less,
+            mode = AnimatorConditionMode.Greater,
             threshold = 0.99f // 同上
         });
         disabled.Transitions = ImmutableList.Create(disabledToEnabledTransition);
@@ -120,14 +120,15 @@ internal class LipSyncInstaller : InstallerBase
     {
         var cancelerLayer = AddFTLayer(_virtualController, "LipSync (Canceler)", LayerPriority);
 
-        var mutePosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var mute = AddFTState(cancelerLayer, "Mute", mutePosition);
-        mute.Motion = _emptyClip;
+        // キャンセラーに使うブレンドシェイプは複製されておらず、かつ transition durationを使うのでPassThrough
+        var passThroughPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
+        var passThrough = AddFTState(cancelerLayer, "PassThrough", passThroughPosition);
+        AsPassThrough(passThrough);
 
         var voiceParam = "Voice"; // Todo
         _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, voiceParam);
 
-        var position = mutePosition + new Vector3(PositionXStep, 0, 0);
+        var position = passThroughPosition + new Vector3(PositionXStep, 0, 0);
         foreach (var (settings, index) in _indexForAdvancedSettings.OrderBy(kvp => kvp.Value))
         {
             if (!settings.IsCancelerEnabled()) continue;
@@ -136,15 +137,15 @@ internal class LipSyncInstaller : InstallerBase
             var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
-            // mute -> lipsyncing
-            var muteToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
-            muteToLipsyncing.SetDestination(lipsyncing);
+            // PassThrough -> lipsyncing
+            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
+            passThroughToLipsyncing.SetDestination(lipsyncing);
             var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
                 {
                     parameter = UseCancelerAAP,
                     mode = AnimatorConditionMode.Greater,
-                    threshold = 0f
+                    threshold = 0.01f // greater 0fだと流石に不安定になる
                 },
                 new AnimatorCondition()
                 {
@@ -154,12 +155,12 @@ internal class LipSyncInstaller : InstallerBase
                 }
             };
             andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
-            muteToLipsyncing.Conditions = ImmutableList.CreateRange(andConditions);
-            mute.Transitions = mute.Transitions.Add(muteToLipsyncing);
+            passThroughToLipsyncing.Conditions = ImmutableList.CreateRange(andConditions);
+            passThrough.Transitions = passThrough.Transitions.Add(passThroughToLipsyncing);
 
-            // lipsyncing -> mute
-            var lipsyncingToMute = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
-            lipsyncingToMute.SetDestination(mute);
+            // lipsyncing -> PassThrough
+            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
+            lipsyncingToPassThrough.SetDestination(passThrough);
             var orConditions = new List<AnimatorCondition>
             {
                 new AnimatorCondition()
@@ -176,7 +177,7 @@ internal class LipSyncInstaller : InstallerBase
                 }
             };
             orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
-            var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToMute, orConditions);
+            var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToPassThrough, orConditions);
             lipsyncing.Transitions = lipsyncing.Transitions.AddRange(orTransitions);
 
             position.y += PositionYStep;
