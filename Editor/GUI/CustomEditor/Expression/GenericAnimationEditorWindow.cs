@@ -1,6 +1,6 @@
 using UnityEditor.Animations;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 [InitializeOnLoad]
 internal static class GenericAnimationEditor

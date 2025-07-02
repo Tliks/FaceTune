@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune.preview;
+namespace aoyon.facetune.preview;
 
 internal abstract class AbstractFaceTunePreview : IRenderFilter
 {
@@ -29,7 +29,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
         {
             if (!context.ActiveInHierarchy(root)) continue;
 
-            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, observeContext);
+            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, null, observeContext);
             if (faceRenderer == null) continue;
 
             groups.Add(RenderGroup.For(faceRenderer).WithData(root));

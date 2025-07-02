@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 // 明示的な適用対象(Binding)を持たずnameのみで適用対象を決定する
 // ブレンドシェイプを汎用的に取り扱えるようにするため。似たブレンドシェイプを持つ異なる対象への適用や、キメラ対応などが楽になる。
@@ -27,6 +27,8 @@ public record BlendShapeAnimation // Immutable
         this.name = name;
         curve = other.Clone();
     }
+
+    internal float Time => curve.keys.Max(k => k.time);
 
     internal static BlendShapeAnimation SingleFrame(string name, float weight)
     {

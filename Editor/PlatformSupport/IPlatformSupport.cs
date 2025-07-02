@@ -1,8 +1,9 @@
 using nadena.dev.modular_avatar.core;
+using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.ndmf;
+using aoyon.facetune.build;
 
-namespace com.aoyon.facetune.platform;
+namespace aoyon.facetune.platform;
 
 internal interface IPlatformSupport
 {
@@ -12,7 +13,7 @@ internal interface IPlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, InstallData installData)
+    public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallData installData)
     {
         return;
     }

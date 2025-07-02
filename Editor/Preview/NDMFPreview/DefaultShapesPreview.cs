@@ -1,13 +1,13 @@
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune.preview;
+namespace aoyon.facetune.preview;
 
 // early
 internal class DefaultShapesPreview : AbstractFaceTunePreview
 {
     public static TogglablePreviewNode ToggleNode = TogglablePreviewNode.Create(
         () => "DefaultShapesPreview",
-        qualifiedName: "com.aoyon.facetune.default-shapes-preview",
+        qualifiedName: "aoyon.facetune.default-shapes-preview",
         true
     );
 
@@ -17,8 +17,14 @@ internal class DefaultShapesPreview : AbstractFaceTunePreview
     {
         if (!IsEnabled(context)) return;
 
-        using var defaultBlendShapeContext = DefaultExpressionContextBuilder.BuildDefaultBlendShapeSetContext(root, original, new NDMFPreviewObserveContext(context));
-        var blendShapes = defaultBlendShapeContext.GetGlobalDefaultBlendShapes();
-        result.AddRange(blendShapes);
+        using var _ = ListPool<FacialStyleComponent>.Get(out var components);
+        context.GetComponentsInChildren<FacialStyleComponent>(root, true, components);
+        if (components.Count == 0) return;
+        
+        using var _2 = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
+        proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
+        result.AddRange(zeroWeightBlendShapes);
+
+        components[0].GetBlendShapes(result, new NDMFPreviewObserveContext(context));
     }
 }

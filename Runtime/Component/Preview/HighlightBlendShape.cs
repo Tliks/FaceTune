@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal class HilightBlendShape : FaceTuneTagComponent
 {

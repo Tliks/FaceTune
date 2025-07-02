@@ -1,5 +1,6 @@
-namespace com.aoyon.facetune
+namespace aoyon.facetune
 {
+    [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
     internal class FaceTuneAssistantComponent : FaceTuneTagComponent
     {

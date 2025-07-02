@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 public enum HandGesture
 {
@@ -16,12 +16,6 @@ public enum Hand
 {
     Left,
     Right
-}
-
-public enum PathType
-{
-    Absolute,
-    Relative
 }
 
 public enum ParameterType

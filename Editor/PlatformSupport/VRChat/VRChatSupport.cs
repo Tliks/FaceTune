@@ -5,11 +5,11 @@ using VRC.SDK3.Avatars.Components;
 using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
-using com.aoyon.facetune.animator;
+using aoyon.facetune.animator;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.ndmf;
+using aoyon.facetune.build;
 
-namespace com.aoyon.facetune.platform;
+namespace aoyon.facetune.platform;
 
 internal class VRChatSuport : IPlatformSupport
 {
@@ -66,19 +66,18 @@ internal class VRChatSuport : IPlatformSupport
         return faceRenderer;
     }
 
-    private AnimatorInstaller InitializeAnimatorInstaller(BuildContext buildContext, SessionContext context, DefaultExpressionContext dec)
+    private AnimatorInstaller InitializeAnimatorInstaller(AnimatorServicesContext asc, SessionContext context)
     {
-        var asc = buildContext.Extension<AnimatorServicesContext>();
         var cc = asc.ControllerContext;
         var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        return new AnimatorInstaller(context, dec, cc, fx, useWriteDefaults);
+        return new AnimatorInstaller(fx, context, useWriteDefaults);
     }
 
-    public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, InstallData installData)
+    public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallData installData)
     {
-        var installer = InitializeAnimatorInstaller(buildPassContext.BuildContext, buildPassContext.SessionContext, buildPassContext.DEC);
-        installer.DisableExistingControlAndInstallPatternData(installData);
+        var installer = InitializeAnimatorInstaller(buildContext.Extension<AnimatorServicesContext>(), buildPassContext.SessionContext);
+        installer.Execute(installData);
     }
 
     public IEnumerable<string> GetTrackedBlendShape()
@@ -86,13 +85,8 @@ internal class VRChatSuport : IPlatformSupport
         var disAllowed = new HashSet<string>();
         var lipSync = GetLipSyncBlendShape();
         disAllowed.UnionWith(lipSync);
-        /*
-        if (context) // any condition
-        {
-            var blink = GetBlinkBlendShape();
-            disAllowed.UnionWith(blink);
-        }
-        */ 
+        var blink = GetBlinkBlendShape(); // 安全側に倒す
+        disAllowed.UnionWith(blink);
         return disAllowed;
     }
 

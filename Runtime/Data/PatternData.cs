@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal record class ExpressionWithConditions
 {
@@ -22,11 +22,6 @@ internal record class ExpressionWithConditions
     }
 }
 
-internal interface IPatternElement {
-    public string Name { get; }
-    public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions { get; }
-}
-
 internal record class ExpressionPattern
 {
     public IReadOnlyList<ExpressionWithConditions> ExpressionWithConditions { get; private set; }
@@ -37,6 +32,11 @@ internal record class ExpressionPattern
     }
 
     public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions => ExpressionWithConditions;
+}
+
+internal interface IPatternElement {
+    public string Name { get; }
+    public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions { get; }
 }
 
 internal record class SingleExpressionPattern : IPatternElement
@@ -56,17 +56,12 @@ internal record class SingleExpressionPattern : IPatternElement
 internal record class Preset : IPatternElement
 {
     public string Name { get; private set; }
-    public readonly IReadOnlyList<ExpressionPattern> Patterns;
-    public readonly Expression DefaultExpression;
+    public IReadOnlyList<ExpressionPattern> Patterns { get; private set; }
 
-    public readonly ParameterCondition PresetCondition;
-
-    public Preset(string presetName, IReadOnlyList<ExpressionPattern> patterns, Expression defaultExpression, ParameterCondition presetCondition)
+    public Preset(string presetName, IReadOnlyList<ExpressionPattern> patterns)
     {
         Name = presetName;
         Patterns = patterns;
-        DefaultExpression = defaultExpression;
-        PresetCondition = presetCondition;
     }
 
     public IEnumerable<ExpressionWithConditions> AllExpressionWithConditions => Patterns.SelectMany(p => p.AllExpressionWithConditions);
@@ -88,7 +83,7 @@ internal record PatternData
         OrderedItems = new List<IPatternElement>();
     }
 
-    public static PatternData Collect(SessionContext context, DefaultExpressionContext dec)
+    public static PatternData Collect(SessionContext context)
     {
         var orderedItems = new List<IPatternElement>();
         var processedGameObjects = new HashSet<GameObject>();
@@ -102,7 +97,7 @@ internal record PatternData
 
             if (component is PresetComponent presetComponent)
             {
-                var preset = presetComponent.GetPreset(context, dec);
+                var preset = presetComponent.GetPreset(context);
                 if (preset == null) continue;
                 orderedItems.Add(preset);
                 processedGameObjects.Add(presetComponent.gameObject);
@@ -114,7 +109,7 @@ internal record PatternData
             }
             else if (component is PatternComponent patternComponent)
             {
-                var pattern = patternComponent.GetPattern(context, dec);
+                var pattern = patternComponent.GetPattern(context);
                 if (pattern == null) continue;
                 orderedItems.Add(new SingleExpressionPattern(patternComponent.gameObject.name, pattern));
                 processedGameObjects.Add(patternComponent.gameObject);
@@ -198,40 +193,6 @@ internal record PatternData
         if (currentGroup.Count > 0 && groupType != null)
         {
             yield return (groupType, currentGroup.AsReadOnly());
-        }
-    }
-
-    // Presetが一つしかない場合Presetは意味を為さないので、その中の各PatternをSingleExpressionPatternに変換する
-    public void ConvertSinglePresetToSingleExpressionPattern()
-    {
-        var presets = OrderedItems.OfType<Preset>().ToList();
-        if (presets.Count == 1)
-        {
-            var singlePreset = presets.First();
-            var newOrderedItems = new List<IPatternElement>();
-
-            foreach (var item in OrderedItems)
-            {
-                if (ReferenceEquals(item, singlePreset))
-                {
-                    for (int i = 0; i < singlePreset.Patterns.Count; i++)
-                    {
-                        var expressionPattern = singlePreset.Patterns[i];
-                        string newName = singlePreset.Name;
-                        if (singlePreset.Patterns.Count > 1)
-                        {
-                            newName = $"{singlePreset.Name}_{i}";
-                        }
-                        var newSingleExpressionPattern = new SingleExpressionPattern(newName, expressionPattern);
-                        newOrderedItems.Add(newSingleExpressionPattern);
-                    }
-                }
-                else
-                {
-                    newOrderedItems.Add(item);
-                }
-            }
-            OrderedItems = newOrderedItems.AsReadOnly();
         }
     }
 }

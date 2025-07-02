@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 [Serializable]
 public record class ExpressionSettings // Immutable
@@ -38,5 +38,17 @@ public record class ExpressionSettings // Immutable
         var loopTime = this.loopTime || other.loopTime;
         var motionTimeParameterName = string.IsNullOrEmpty(other.motionTimeParameterName) ? this.motionTimeParameterName : other.motionTimeParameterName;
         return new ExpressionSettings(loopTime, motionTimeParameterName);
+    }
+
+    public virtual bool Equals(ExpressionSettings other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return LoopTime == other.LoopTime && MotionTimeParameterName == other.MotionTimeParameterName;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(LoopTime, MotionTimeParameterName);
     }
 }

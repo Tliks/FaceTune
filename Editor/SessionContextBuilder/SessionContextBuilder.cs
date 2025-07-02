@@ -1,6 +1,7 @@
+using aoyon.facetune.platform;
 using nadena.dev.ndmf.runtime;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal static class SessionContextBuilder
 {
@@ -13,7 +14,9 @@ internal static class SessionContextBuilder
         var root = context.GetAvatarRoot(target);
         if (root == null) return false;
 
-        var faceRenderer = GetFaceRenderer(root, context);
+        var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
+
+        var faceRenderer = GetFaceRenderer(root, platformSupport, context);
         if (faceRenderer == null) return false;
 
         var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
@@ -21,40 +24,38 @@ internal static class SessionContextBuilder
 
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath);
+        var zeroWeightBlendShapes = new List<BlendShape>();
+        faceRenderer.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
+
+        var trackedBlendShapes = platformSupport.GetTrackedBlendShape().ToHashSet();
+
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes, trackedBlendShapes);
         return true;
     }
 
-    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IObserveContext? context = null)
+    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IPlatformSupport? platformSupport = null, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
+        platformSupport ??= platform.PlatformSupport.GetSupport(root.transform);
 
-        var overrideFaceRenderers = context.GetComponents<OverrideFaceRendererComponent>(root.gameObject);
-        if (overrideFaceRenderers.Length > 1)
+        using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
+        context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
+        if (overrideFaceRenderers.Count > 1)
         {
-            Debug.LogWarning($"Found {overrideFaceRenderers.Length} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
+            Debug.LogWarning($"Found {overrideFaceRenderers.Count} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
         }
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
-        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c?.gameObject)).SkipDestroyed();
+        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c.FaceObject)).OfType<GameObject>();
         var faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null);
         if (faceRenderer == null)
         {
-            var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
             return platformSupport.GetFaceRenderer();
         }
         else
         {
             return faceRenderer;
         }
-    }
-
-    public static bool TryBuildWithDEC(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, [NotNullWhen(true)] out DefaultExpressionContext? dec, IObserveContext? context = null)
-    {
-        dec = null;
-        if (!TryBuild(target, out sessionContext, context)) return false;
-        dec = DefaultExpressionContextBuilder.BuildDefaultExpressionContext(sessionContext, context);
-        return dec != null;
     }
 }
 

@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal static class BlendShapeUtility
 {
@@ -9,6 +9,15 @@ internal static class BlendShapeUtility
             var name = renderer.sharedMesh.GetBlendShapeName(i);
             var weight = renderer.GetBlendShapeWeight(i);
             resultToAdd.Add(new BlendShape(name, weight));
+        }
+    }
+    
+    public static void GetBlendShapesAndSetZeroWeight(this SkinnedMeshRenderer renderer, ICollection<BlendShape> resultToAdd)
+    {
+        for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
+        {
+            var name = renderer.sharedMesh.GetBlendShapeName(i);
+            resultToAdd.Add(new BlendShape(name, 0f));
         }
     }
 
@@ -22,5 +31,10 @@ internal static class BlendShapeUtility
             blendShapes[i] = new BlendShape(name, weight);
         }
         return blendShapes;
-    }   
+    }
+
+    public static IEnumerable<GenericAnimation> ToGenericAnimations(this IEnumerable<BlendShape> blendShapes, string path)
+    {
+        return blendShapes.Select(bs => BlendShapeAnimation.SingleFrame(bs.Name, bs.Weight).ToGeneric(path));
+    }
 }

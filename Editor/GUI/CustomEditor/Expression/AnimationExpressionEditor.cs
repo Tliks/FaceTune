@@ -1,8 +1,9 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
+/*
 // Todo: Refactor
 [CanEditMultipleObjects]
 [CustomEditor(typeof(AnimationExpressionComponent))]
@@ -263,3 +264,5 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
         EditorUtility.SetDirty(component);
     }
 }
+
+*/

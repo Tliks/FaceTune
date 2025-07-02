@@ -1,6 +1,6 @@
 using nadena.dev.ndmf;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 public abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
 {
@@ -11,4 +11,5 @@ public abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
     internal const string Option = "Option";
     internal const string Preview = "Preview";
     internal const string EditorOnly = "EditorOnly";
+    internal const string Tracking = "Tracking";
 }
