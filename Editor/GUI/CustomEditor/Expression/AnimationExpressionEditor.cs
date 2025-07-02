@@ -3,6 +3,36 @@ using UnityEngine.UIElements;
 
 namespace aoyon.facetune.ui;
 
+[CanEditMultipleObjects]
+[CustomEditor(typeof(AnimationDataComponent))]
+internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataComponent>
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        if (GUILayout.Button("Convert to Manual"))
+        {
+            ConvertToManual();
+        }
+    }
+
+    private void ConvertToManual()
+    {
+        var components = targets.Select(t => t as AnimationDataComponent).OfType<AnimationDataComponent>().ToArray();
+        foreach (var component in components)
+        {
+            var animations = new List<GenericAnimation>();
+            component.ClipToManual(animations);
+
+            var so = new SerializedObject(component);
+            so.Update();
+            CustomEditorUtility.AddGenericAnimations(so.FindProperty(nameof(AnimationDataComponent.Animations)), animations);
+            so.FindProperty(nameof(AnimationDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
+            so.ApplyModifiedProperties();
+        }
+    }
+}
+
 /*
 // Todo: Refactor
 [CanEditMultipleObjects]

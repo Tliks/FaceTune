@@ -98,7 +98,7 @@ internal static class CustomEditorUtility
         }
     }
 
-    public static void AddAnimations(SerializedProperty blendShapeAnimation, IReadOnlyList<BlendShapeAnimation> newAnimations)
+    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyList<BlendShapeAnimation> newAnimations)
     {
         blendShapeAnimation.arraySize = newAnimations.Count;
         for (var i = 0; i < newAnimations.Count; i++)
@@ -106,6 +106,37 @@ internal static class CustomEditorUtility
             var element = blendShapeAnimation.GetArrayElementAtIndex(i);
             element.FindPropertyRelative(BlendShapeAnimation.NamePropName).stringValue = newAnimations[i].Name;
             element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
+        }
+    }
+
+    public static void AddGenericAnimations(SerializedProperty genericAnimations, IReadOnlyList<GenericAnimation> newAnimations)
+    {
+        genericAnimations.arraySize = newAnimations.Count;
+        for (var i = 0; i < newAnimations.Count; i++)
+        {
+            var element = genericAnimations.GetArrayElementAtIndex(i);
+            var curveBindingProp = element.FindPropertyRelative(GenericAnimation.CurveBindingPropName);
+            var curveProp = element.FindPropertyRelative(GenericAnimation.CurvePropName);
+            var objectReferenceCurveProp = element.FindPropertyRelative(GenericAnimation.ObjectReferenceCurvePropName);
+            
+            // SerializableCurveBindingの各プロパティを設定
+            var newCurveBinding = newAnimations[i].CurveBinding;
+            curveBindingProp.FindPropertyRelative("path").stringValue = newCurveBinding.Path;
+            curveBindingProp.FindPropertyRelative("type").stringValue = newCurveBinding.Type?.AssemblyQualifiedName ?? "";
+            curveBindingProp.FindPropertyRelative("propertyName").stringValue = newCurveBinding.PropertyName;
+            
+            // AnimationCurveを設定
+            curveProp.animationCurveValue = newAnimations[i].Curve;
+            
+            // ObjectReferenceCurveを設定
+            var newObjectReferenceCurve = newAnimations[i].ObjectReferenceCurve;
+            objectReferenceCurveProp.arraySize = newObjectReferenceCurve.Count;
+            for (var j = 0; j < newObjectReferenceCurve.Count; j++)
+            {
+                var keyframeElement = objectReferenceCurveProp.GetArrayElementAtIndex(j);
+                keyframeElement.FindPropertyRelative("time").floatValue = newObjectReferenceCurve[j].Time;
+                keyframeElement.FindPropertyRelative("value").objectReferenceValue = newObjectReferenceCurve[j].Value;
+            }
         }
     }
 }

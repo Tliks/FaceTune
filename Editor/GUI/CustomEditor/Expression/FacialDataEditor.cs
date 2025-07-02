@@ -19,14 +19,18 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
     internal void ConvertToManual()
     {
-        var animations = new List<BlendShapeAnimation>();
-        Component.ClipToManual(animations);
+        var components = targets.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
+        foreach (var component in components)
+        {
+            var animations = new List<BlendShapeAnimation>();
+            Component.ClipToManual(animations);
 
-        var so = new SerializedObject(Component);
-        so.Update();
-        CustomEditorUtility.AddAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations);
-        so.FindProperty(nameof(FacialDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
-        so.ApplyModifiedProperties();
+            var so = new SerializedObject(Component);
+            so.Update();
+            CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations);
+            so.FindProperty(nameof(FacialDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
+            so.ApplyModifiedProperties();
+        }
     }
 }
 
