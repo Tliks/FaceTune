@@ -15,23 +15,30 @@ internal static class FXImporter
         for (int i = 0; i < layers.Length; i++)
         {
             var layer = layers[i];
+            Debug.Log($"Processing layer {i}: {layer.name}");
             var stateMachine = layer.stateMachine;
-            if (stateMachine == null) continue;
+            if (stateMachine == null)
+            {
+                Debug.Log($"Layer {i} has no state machine");
+                continue;
+            }
 
             var layerExpressions = new List<(AnimatorCondition[] Conditions, AnimatorState State)>();
 
-            // StateMachine全体を処理（anyState、通常のstate、sub state machinesを含む）
+            // StateMachine全体を処理
             ProcessStateMachineTransitions(stateMachine, layerExpressions);
 
+            Debug.Log($"Layer {i} processed: {layerExpressions.Count} expressions found");
             if (layerExpressions.Count > 0)
             {
                 expressionsByLayer[i] = layerExpressions;
             }
         }
 
+        Debug.Log($"Final result: {expressionsByLayer.Count} layers with expressions");
         if (expressionsByLayer.Count == 0)
         {
-            Debug.LogWarning("インポート可能なジェスチャーアニメーションが見つかりませんでした");
+            Debug.LogWarning("failed to find any expression");
             return null;
         }
 
@@ -54,9 +61,12 @@ internal static class FXImporter
                 var expObj = new GameObject(state.name);
                 expObj.transform.parent = layerObj.transform;
                 
-                // 単一のConditionComponentに全条件を設定（AND条件）
-                var condition = expObj.AddComponent<ConditionComponent>();
-                ProcessConditions(conditions, condition, parameterTypes);
+                // 単一のConditionComponentに全条件を設定（AND条件
+                if (conditions.Length > 0)
+                {
+                    var condition = expObj.AddComponent<ConditionComponent>();
+                    ProcessConditions(conditions, condition, parameterTypes);
+                }
 
                 // ExpressionComponentを追加
                 var exp = expObj.AddComponent<ExpressionComponent>();
@@ -71,19 +81,22 @@ internal static class FXImporter
             }
         }
 
-        Debug.Log($"FaceTuneパターンのインポートが完了しました: {expressionsByLayer.Count}レイヤー、{totalExpressionCount}個の表情を作成");
+        Debug.Log($"finished to import {totalExpressionCount} expressions");
         return rootObj;
     }
 
     private static void ProcessStateMachineTransitions(AnimatorStateMachine stateMachine, List<(AnimatorCondition[] Conditions, AnimatorState State)> layerExpressions)
     {
-        // anyStateTransitions を処理
+        foreach (var transition in stateMachine.entryTransitions)
+        {
+            ProcessTransition(transition, layerExpressions);
+        }
+        
         foreach (var transition in stateMachine.anyStateTransitions)
         {
             ProcessTransition(transition, layerExpressions);
         }
 
-        // 通常のstate transitionsを処理
         foreach (var state in stateMachine.states)
         {
             foreach (var transition in state.state.transitions)
@@ -92,7 +105,6 @@ internal static class FXImporter
             }
         }
 
-        // sub state machinesも再帰的に処理
         foreach (var subStateMachine in stateMachine.stateMachines)
         {
             ProcessStateMachineTransitions(subStateMachine.stateMachine, layerExpressions);
@@ -100,12 +112,19 @@ internal static class FXImporter
 
         return;
 
-        static void ProcessTransition(AnimatorStateTransition transition, List<(AnimatorCondition[] Conditions, AnimatorState State)> layerExpressions)
+        static void ProcessTransition(AnimatorTransitionBase transition, List<(AnimatorCondition[] Conditions, AnimatorState State)> layerExpressions)
         {
-            if (transition.destinationState is not { } state || state.motion is not AnimationClip clip)
+            if (transition.destinationState is not { } state)
+            {
+                Debug.Log("ProcessTransition: destinationState is null (exit transition) - skipping");
                 return;
-
-            if (transition.conditions.Length == 0) return;
+            }
+                
+            if (state.motion is not AnimationClip clip)
+            {
+                Debug.Log($"ProcessTransition: motion is not AnimationClip. Motion={state.motion?.name}, Type={state.motion?.GetType()}");
+                return;
+            }
 
             layerExpressions.Add((transition.conditions, state));
 
