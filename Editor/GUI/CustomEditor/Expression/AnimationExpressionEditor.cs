@@ -16,9 +16,9 @@ internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataCompo
         }
     }
 
-    private void ConvertToManual()
+    internal static void ConvertToManual()
     {
-        var components = targets.Select(t => t as AnimationDataComponent).OfType<AnimationDataComponent>().ToArray();
+        var components = Selection.objects.Select(t => t as AnimationDataComponent).OfType<AnimationDataComponent>().ToArray();
         foreach (var component in components)
         {
             var animations = new List<GenericAnimation>();
