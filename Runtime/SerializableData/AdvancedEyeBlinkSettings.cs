@@ -31,9 +31,17 @@ public record class AdvancedEyeBlinkSettings // Immutable
     public IReadOnlyList<string> BlinkBlendShapeNames { get => blinkBlendShapeNames.AsReadOnly(); init => blinkBlendShapeNames = value.ToList(); }
     public const string BlinkBlendShapeNamesPropName = nameof(blinkBlendShapeNames);
 
-    [SerializeField] private float blinkDurationSeconds;
-    public float BlinkDurationSeconds { get => blinkDurationSeconds; init => blinkDurationSeconds = value; }
-    public const string BlinkDurationSecondsPropName = nameof(blinkDurationSeconds);
+    [SerializeField] private float closingDurationSeconds;
+    public float ClosingDurationSeconds { get => closingDurationSeconds; init => closingDurationSeconds = value; }
+    public const string ClosingDurationSecondsPropName = nameof(closingDurationSeconds);
+    
+    [SerializeField] private float holdDurationSeconds;
+    public float HoldDurationSeconds { get => holdDurationSeconds; init => holdDurationSeconds = value; }
+    public const string HoldDurationSecondsPropName = nameof(holdDurationSeconds);
+
+    [SerializeField] private float openingDurationSeconds;
+    public float OpeningDurationSeconds { get => openingDurationSeconds; init => openingDurationSeconds = value; }
+    public const string OpeningDurationSecondsPropName = nameof(openingDurationSeconds);
 
     [SerializeField] private bool useCanceler;
     public bool UseCanceler { get => useCanceler; init => useCanceler = value; }
@@ -58,7 +66,9 @@ public record class AdvancedEyeBlinkSettings // Immutable
         randomIntervalMinSeconds = 4.0f;
         randomIntervalMaxSeconds = 20.0f;
         blinkBlendShapeNames = new(){ BlinkParam };
-        blinkDurationSeconds = 0.05f;
+        closingDurationSeconds = 0.04f;
+        holdDurationSeconds = 0.02f;
+        openingDurationSeconds = 0.04f;
         useCanceler = false;
         cancelerBlendShapeNames = new();
     }
@@ -71,7 +81,9 @@ public record class AdvancedEyeBlinkSettings // Immutable
         float randomIntervalMinSeconds,
         float randomIntervalMaxSeconds,
         List<string> blinkBlendShapeNames,
-        float blinkDurationSeconds,
+        float closingDurationSeconds,
+        float holdDurationSeconds,
+        float openingDurationSeconds,
         bool useCanceler,
         List<string> cancelerBlendShapeNames
     )
@@ -83,14 +95,16 @@ public record class AdvancedEyeBlinkSettings // Immutable
         this.randomIntervalMinSeconds = randomIntervalMinSeconds;
         this.randomIntervalMaxSeconds = randomIntervalMaxSeconds;
         this.blinkBlendShapeNames = blinkBlendShapeNames;
-        this.blinkDurationSeconds = blinkDurationSeconds;
+        this.closingDurationSeconds = closingDurationSeconds;
+        this.holdDurationSeconds = holdDurationSeconds;
+        this.openingDurationSeconds = openingDurationSeconds;
         this.useCanceler = useCanceler;
         this.cancelerBlendShapeNames = cancelerBlendShapeNames;
     }
 
     internal static AdvancedEyeBlinkSettings Disabled() => new(false);
 
-    internal bool IsEnabled() => useAdvancedEyeBlink; // useAnimatiomが有効でない場合現状意味はない
+    internal bool IsEnabled() => useAdvancedEyeBlink;
     internal bool IsAnimationEnabled() => IsEnabled() && useAnimation; 
     internal bool IsCancelerEnabled() => IsAnimationEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
 
@@ -110,7 +124,9 @@ public record class AdvancedEyeBlinkSettings // Immutable
          && RandomIntervalMinSeconds == other.RandomIntervalMinSeconds
          && RandomIntervalMaxSeconds == other.RandomIntervalMaxSeconds
          && BlinkBlendShapeNames.SequenceEqual(other.BlinkBlendShapeNames)
-         && BlinkDurationSeconds == other.BlinkDurationSeconds
+         && ClosingDurationSeconds == other.ClosingDurationSeconds
+         && HoldDurationSeconds == other.HoldDurationSeconds
+         && OpeningDurationSeconds == other.OpeningDurationSeconds
          && UseCanceler == other.UseCanceler
          && CancelerBlendShapeNames.SequenceEqual(other.CancelerBlendShapeNames);
     }
@@ -124,9 +140,11 @@ public record class AdvancedEyeBlinkSettings // Immutable
         hash ^= RandomIntervalMinSeconds.GetHashCode();
         hash ^= RandomIntervalMaxSeconds.GetHashCode();
         hash ^= BlinkBlendShapeNames.GetSequenceHashCode();
-        hash ^= BlinkDurationSeconds.GetHashCode();
+        hash ^= ClosingDurationSeconds.GetHashCode();
+        hash ^= HoldDurationSeconds.GetHashCode();
+        hash ^= OpeningDurationSeconds.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
         hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
         return hash;
     }
-}                                                                                                                                                                                                                                                                                                                                                                                            
+}

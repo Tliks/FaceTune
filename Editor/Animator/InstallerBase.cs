@@ -6,11 +6,13 @@ namespace aoyon.facetune.animator;
 
 internal class InstallerBase
 {
-    protected readonly VirtualAnimatorController _virtualController;
+    protected readonly VirtualAnimatorController _controller;
     protected readonly SessionContext _sessionContext;
     protected readonly IPlatformSupport _platformSupport;
 
     protected readonly bool _useWriteDefaults;
+
+    private readonly Dictionary<int, VirtualClip> _defaultClips = new();
 
     protected readonly VirtualClip _emptyClip;
 
@@ -24,7 +26,7 @@ internal class InstallerBase
 
     public InstallerBase(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults)
     {
-        _virtualController = virtualController;
+        _controller = virtualController;
         _sessionContext = sessionContext;
         _platformSupport = platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
@@ -32,18 +34,18 @@ internal class InstallerBase
         _useWriteDefaults = useWriteDefaults;
         _emptyClip = AnimatorHelper.CreateCustomEmpty();
 
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
+        _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
     }
 
-    protected static VirtualLayer AddFTLayer(VirtualAnimatorController controller, string layerName, int priority)
+    protected VirtualLayer AddLayer(string layerName, int priority)
     {
         var layerPriority = new LayerPriority(priority);
-        var layer = controller.AddLayer(layerPriority, $"{FaceTuneConsts.ShortName}: {layerName}");
+        var layer = _controller.AddLayer(layerPriority, $"{FaceTuneConsts.ShortName}: {layerName}");
         layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
         return layer; 
     }
 
-    protected VirtualState AddFTState(VirtualLayer layer, string stateName, Vector3? position = null)
+    protected VirtualState AddState(VirtualLayer layer, string stateName, Vector3? position = null)
     {
         var state = layer.StateMachine!.AddState(stateName, position: position);
         state.WriteDefaultValues = _useWriteDefaults;
@@ -53,14 +55,9 @@ internal class InstallerBase
     protected void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
     {
         var clip = state.GetOrCreateClip(state.Name);
-        AddAnimationToState(clip, animations);
-    }
-
-    protected void AddAnimationToState(VirtualClip clip, IEnumerable<GenericAnimation> animations)
-    {
         clip.SetAnimations(animations);
     }
-  
+
     protected void AsPassThrough(VirtualState state)
     {
         // Transition Durationを用いて上のレイヤーとブレンドする際、WD OFFの場合は空のClip、WD ONの場合はNone
@@ -73,4 +70,23 @@ internal class InstallerBase
             state.Motion = _emptyClip;
         }
     }
+    
+    protected VirtualClip GetOrCreateDefautLayerAndClip(int priority, string name)
+    {
+        if (_defaultClips.TryGetValue(priority, out var clip)) return clip;
+        
+        var layer = AddLayer(name, priority);
+        var state = layer.StateMachine!.AddState("Default", position: EntryStatePosition);
+        clip = state.GetOrCreateClip(state.Name);
+        _defaultClips[priority] = clip;
+        return clip;
+    }
+
+    protected VirtualClip GetRequiredDefaultClip(int priority)
+    {
+        if (!_defaultClips.ContainsKey(priority)) throw new InvalidOperationException($"Default clip for priority {priority} not found");
+        return _defaultClips[priority];
+    }
+
+    public virtual void EditDefaultClip(VirtualClip clip) { }
 }

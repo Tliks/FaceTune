@@ -13,6 +13,8 @@ internal class BlinkInstaller : InstallerBase
 
     private readonly Dictionary<AdvancedEyeBlinkSettings, int> _advancedEyeBlinkIndex = new();
     
+    private Dictionary<string, string> _clonedShapesMapping = new();
+
     private const string ParameterPrefix = $"{FaceTuneConsts.ParameterPrefix}/Blink";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAnimationAAP = $"{ParameterPrefix}/UseAnimation"; // 1つ以上有効なAdvancedEyeBlinkSettingsがあるとき
@@ -21,7 +23,7 @@ internal class BlinkInstaller : InstallerBase
 
     public BlinkInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP);
+        _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP);
     }
 
     public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
@@ -42,9 +44,9 @@ internal class BlinkInstaller : InstallerBase
         {
             _shouldAddLayer = true;
 
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAnimationAAP);
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, DelayMultiplier);
+            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAnimationAAP);
+            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
+            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, DelayMultiplier);
             
             // UseAnimation
             var useAnimationCurve = new AnimationCurve();
@@ -68,18 +70,18 @@ internal class BlinkInstaller : InstallerBase
     {
         if (!_shouldAddLayer) return;
 
-        var eyeBlinkLayer = AddFTLayer(_virtualController, "EyeBlink", LayerPriority);
+        var eyeBlinkLayer = AddLayer("EyeBlink", LayerPriority);
 
         // 最初のフレームでTraking Controlを変更すると巻き戻される。
         // 2フレームの遅延が必要らしいので多めに0.1s程度遅延させる
-        var delayState = AddFTState(eyeBlinkLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
+        var delayState = AddState(eyeBlinkLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
         var delayClip = AnimatorHelper.CreateDelayClip(0.1f);
         delayState.Motion = delayClip;
 
         // DefaultのTracking/Animationの入れ替え
         var enabledPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var enabled = AddFTState(eyeBlinkLayer, "Default: Enabled", enabledPosition);
-        var disabled = AddFTState(eyeBlinkLayer, "Default: Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
+        var enabled = AddState(eyeBlinkLayer, "Default: Enabled", enabledPosition);
+        var disabled = AddState(eyeBlinkLayer, "Default: Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
         
         enabled.Motion = _emptyClip;
         disabled.Motion = _emptyClip;
@@ -129,9 +131,9 @@ internal class BlinkInstaller : InstallerBase
     {
         // AnimationGate
         var disableTrackingPosition = enabledPosition + new Vector3(PositionXStep, 0, 0);
-        var disableTracking = AddFTState(layer, "DisableTracking", disableTrackingPosition);
+        var disableTracking = AddState(layer, "DisableTracking", disableTrackingPosition);
         var animationGatePosition = disableTrackingPosition + new Vector3(0, 2 * PositionYStep, 0);
-        var animationGate = AddFTState(layer, "AnimationGate", animationGatePosition);
+        var animationGate = AddState(layer, "AnimationGate", animationGatePosition);
 
         disableTracking.Motion = _emptyClip;
         animationGate.Motion = _emptyClip;
@@ -193,10 +195,10 @@ internal class BlinkInstaller : InstallerBase
 
         Action<Mesh, Mesh> onClone = (Mesh o, Mesh n) => ObjectRegistry.RegisterReplacedObject(o, n);
         Action<string> onNotFound = (string name) => { Debug.LogError($"Shape not found: {name}"); };
-        var mapping = MeshHelper.CloneShapes(_sessionContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
+        _clonedShapesMapping = MeshHelper.CloneShapes(_sessionContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
         foreach (var (settings, index) in _advancedEyeBlinkIndex.ToList())
         {
-            var newSettings = settings.GetRenamed(mapping);
+            var newSettings = settings.GetRenamed(_clonedShapesMapping);
             _advancedEyeBlinkIndex.Remove(settings);
             _advancedEyeBlinkIndex[newSettings] = index;
         }
@@ -207,10 +209,10 @@ internal class BlinkInstaller : InstallerBase
         var starePosition = animationGatePosition + new Vector3(PositionXStep, 0, 0);
         foreach (var (settings, index) in _advancedEyeBlinkIndex.OrderBy(kvp => kvp.Value))
         {
-            var stare = AddFTState(layer, $"Stare {index}", starePosition);
-            var entryPassThrough = AddFTState(layer, $"Entry PassThrough {index}", starePosition + new Vector3(PositionXStep, 0, 0));
-            var blink = AddFTState(layer, $"Blink {index}", starePosition + new Vector3(PositionXStep, 2 * PositionYStep, 0));
-            var exitPassThrough = AddFTState(layer, $"Exit PassThrough {index}", starePosition + new Vector3(0, 2 * PositionYStep, 0));
+            var stare = AddState(layer, $"Stare {index}", starePosition);
+            var entryPassThrough = AddState(layer, $"Entry PassThrough {index}", starePosition + new Vector3(PositionXStep, 0, 0));
+            var blink = AddState(layer, $"Blink {index}", starePosition + new Vector3(PositionXStep, 2 * PositionYStep, 0));
+            var exitPassThrough = AddState(layer, $"Exit PassThrough {index}", starePosition + new Vector3(0, 2 * PositionYStep, 0));
 
             // 瞬きの間隔を設定
             if (!settings.UseRandomInterval)
@@ -239,14 +241,28 @@ internal class BlinkInstaller : InstallerBase
             AsPassThrough(exitPassThrough);
 
             // 目を閉じたときの表情を設定 
-            var blinkAnimations = settings.BlinkBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 100f).ToGeneric(_sessionContext.BodyPath));
+            var blinkAnimations = new List<GenericAnimation>();
+            var holdDuration = settings.HoldDurationSeconds;
+            var bodyPath = _sessionContext.BodyPath;
+            if (holdDuration < 0.01f) holdDuration = 0.01f; // 0fにするとExitTimeで遷移が直ぐに行われない
+            foreach (var name in settings.BlinkBlendShapeNames)
+            {
+                var curve = new AnimationCurve();
+                curve.AddKey(0, 100);
+                curve.AddKey(holdDuration, 100);
+                blinkAnimations.Add(new BlendShapeAnimation(name, curve).ToGeneric(bodyPath));
+            }
             if (settings.IsCancelerEnabled())
             {
-                var cancelerAnimations = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
-                blinkAnimations = blinkAnimations.Concat(cancelerAnimations).ToList();
+                foreach (var name in settings.CancelerBlendShapeNames)
+                {
+                    var curve = new AnimationCurve();
+                    curve.AddKey(0, 0);
+                    curve.AddKey(holdDuration, 0);
+                    blinkAnimations.Add(new BlendShapeAnimation(name, curve).ToGeneric(bodyPath));
+                }
             }
-            var blinkClip = blink.GetOrCreateClip($"Blink {index}");
-            AddAnimationToState(blinkClip, blinkAnimations);
+            AddAnimationToState(blink, blinkAnimations);
 
             // AnimationGate -> Stare
             var gateToStare = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
@@ -272,7 +288,7 @@ internal class BlinkInstaller : InstallerBase
             stare.Transitions = stare.Transitions.Add(stareToEntryPassThrough);
 
             // entryPassThrough -> blink
-            var entryPassThroughToBlink = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.BlinkDurationSeconds);
+            var entryPassThroughToBlink = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.ClosingDurationSeconds);
             entryPassThroughToBlink.SetDestination(blink);
             entryPassThroughToBlink.Conditions = ImmutableList.Create(new AnimatorCondition()
             {
@@ -282,7 +298,7 @@ internal class BlinkInstaller : InstallerBase
             entryPassThrough.Transitions = entryPassThrough.Transitions.Add(entryPassThroughToBlink);
 
             // blink -> exitPassThrough
-            var blinkToExitPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.BlinkDurationSeconds);
+            var blinkToExitPassThrough = AnimatorHelper.CreateTransitionWithExitTime(1f, settings.OpeningDurationSeconds);
             blinkToExitPassThrough.SetDestination(exitPassThrough);
             blinkToExitPassThrough.Conditions = ImmutableList.Create(new AnimatorCondition()
             {
@@ -303,5 +319,13 @@ internal class BlinkInstaller : InstallerBase
 
             starePosition.y += 3 * PositionYStep;
         }
+    }
+
+    public override void EditDefaultClip(VirtualClip clip)
+    {
+        var animations = _clonedShapesMapping.Values
+            .Select(b => BlendShapeAnimation.SingleFrame(b, 0f))
+            .Select(a => a.ToGeneric(_sessionContext.BodyPath));
+        clip.SetAnimations(animations);
     }
 }

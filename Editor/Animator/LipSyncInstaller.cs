@@ -18,7 +18,7 @@ internal class LipSyncInstaller : InstallerBase
 
     public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP).defaultFloat = 1f;
+        _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP).defaultFloat = 1f;
     }
 
     public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
@@ -39,8 +39,8 @@ internal class LipSyncInstaller : InstallerBase
         {
             _shouldAddLayer = true;
 
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
+            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
+            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
 
             // UseAdvanced
             var useAdvancedCurve = new AnimationCurve();
@@ -57,7 +57,7 @@ internal class LipSyncInstaller : InstallerBase
             {
                 _shouldAddCancelerLayer = true;
                 
-                _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
+                _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
 
                 // UseCanceler
                 var useCancelerCurve = new AnimationCurve();
@@ -76,15 +76,15 @@ internal class LipSyncInstaller : InstallerBase
     {
         if (!_shouldAddLayer) return;
 
-        var lipSyncLayer = AddFTLayer(_virtualController, "LipSync", LayerPriority);
+        var lipSyncLayer = AddLayer("LipSync", LayerPriority);
         
-        var delayState = AddFTState(lipSyncLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
+        var delayState = AddState(lipSyncLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
         var delayClip = AnimatorHelper.CreateDelayClip(0.1f);
         delayState.Motion = delayClip;
         
         var enabledPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var enabled = AddFTState(lipSyncLayer, "Enabled", enabledPosition);
-        var disabled = AddFTState(lipSyncLayer, "Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
+        var enabled = AddState(lipSyncLayer, "Enabled", enabledPosition);
+        var disabled = AddState(lipSyncLayer, "Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
 
         enabled.Motion = _emptyClip;
         disabled.Motion = _emptyClip;
@@ -123,22 +123,22 @@ internal class LipSyncInstaller : InstallerBase
 
     private void AddCancelerLayer()
     {
-        var cancelerLayer = AddFTLayer(_virtualController, "LipSync (Canceler)", LayerPriority);
+        var cancelerLayer = AddLayer("LipSync (Canceler)", LayerPriority);
 
         // キャンセラーに使うブレンドシェイプは複製されておらず、かつ transition durationを使うのでPassThrough
         var passThroughPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var passThrough = AddFTState(cancelerLayer, "PassThrough", passThroughPosition);
+        var passThrough = AddState(cancelerLayer, "PassThrough", passThroughPosition);
         AsPassThrough(passThrough);
 
         var voiceParam = "Voice"; // Todo
-        _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, voiceParam);
+        _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, voiceParam);
 
         var position = passThroughPosition + new Vector3(PositionXStep, 0, 0);
         foreach (var (settings, index) in _indexForAdvancedSettings.OrderBy(kvp => kvp.Value))
         {
             if (!settings.IsCancelerEnabled()) continue;
 
-            var lipsyncing = AddFTState(cancelerLayer, $"Lipsyncing {index}", position);
+            var lipsyncing = AddState(cancelerLayer, $"Lipsyncing {index}", position);
             var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
 

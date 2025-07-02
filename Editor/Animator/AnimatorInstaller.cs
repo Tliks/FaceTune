@@ -6,6 +6,8 @@ namespace aoyon.facetune.animator;
 
 internal class AnimatorInstaller : InstallerBase
 {
+    private const int InitLayerPriority = -1; // 上書きを意図しない初期化レイヤー。
+
     private readonly float _transitionDurationSeconds;
 
     private readonly Dictionary<Expression, VirtualClip> _expressionClipCache = new();
@@ -13,22 +15,23 @@ internal class AnimatorInstaller : InstallerBase
     private readonly LipSyncInstaller _lipSyncInstaller;
     private readonly BlinkInstaller _blinkInstaller;
 
-    private const int InitLayerPriority = -1; // 上書きを意図しない初期化レイヤー。
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
-    
+
     public AnimatorInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
         _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
         _lipSyncInstaller = new LipSyncInstaller(virtualController, sessionContext, useWriteDefaults);
         _blinkInstaller = new BlinkInstaller(virtualController, sessionContext, useWriteDefaults);
     }
-    
-    public void DisableExistingControlAndInstallPatternData(InstallData installData)
+
+    public void Execute(InstallData installData)
     {
         var patternData = installData.PatternData;
         if (patternData.IsEmpty) return;
 
-        CreateDefaultLayer(installData.OverrideBlendShapes, installData.OverrideProperties, patternData);
+        var shapesLayerPriority = installData.OverrideBlendShapes ? LayerPriority : InitLayerPriority;
+        var propertiesLayerPriority = installData.OverrideProperties ? LayerPriority : InitLayerPriority;
+        CreateDefaultLayer(shapesLayerPriority, propertiesLayerPriority, patternData);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -50,49 +53,28 @@ internal class AnimatorInstaller : InstallerBase
             || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyeBlink))
         {
             _blinkInstaller.AddEyeBlinkLayer();
+            _blinkInstaller.EditDefaultClip(GetRequiredDefaultClip(shapesLayerPriority));
         }
 
         _lipSyncInstaller.MayAddLipSyncLayers();
+        _lipSyncInstaller.EditDefaultClip(GetRequiredDefaultClip(shapesLayerPriority));
     }
 
-    // ブレンドシェイプ及びアニメーション用の初期化レイヤーを生成する
-    // DisbaleExisingControlが無効な場合は既存の制御より低い優先度、有効な場合は高い優先度
-    // 優先度が同じ場合はブレンドシェイプ用とアニメーション用のレイヤーを結合する(軽量化)。
-    private void CreateDefaultLayer(bool overrideShapes, bool overrideProperties, PatternData patternData)
+    private void CreateDefaultLayer(int shapesLayerPriority, int propertiesLayerPriority, PatternData patternData)
     {
-        VirtualLayer defaultLayer;
-        VirtualState defaultState;
+        var shapesClip = GetOrCreateDefautLayerAndClip(shapesLayerPriority, "Default");
+        var shapesAnimations = _sessionContext.ZeroWeightBlendShapes
+            .Where(shape => !_sessionContext.TrackedBlendShapes.Contains(shape.Name))
+            .ToGenericAnimations(_sessionContext.BodyPath);
+        shapesClip.SetAnimations(shapesAnimations);
 
-        var shapesLayerPriority = overrideShapes ? LayerPriority : InitLayerPriority;
-        var propertiesLayerPriority = overrideProperties ? LayerPriority : InitLayerPriority;
-
-        // ブレンドシェイプの初期化レイヤー
-        var shapesLayer = AddFTLayer(_virtualController, "Default", shapesLayerPriority);
-        var shapesState = AddFTState(shapesLayer, "Default", ExclusiveStatePosition);
-        AddAnimationToState(shapesState, _sessionContext.ZeroWeightBlendShapes.Where(shape => !_sessionContext.TrackedBlendShapes.Contains(shape.Name)).ToGenericAnimations(_sessionContext.BodyPath));
-
-        var bindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct().ToList();
-
+        var allBindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct();
         var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), FaceTuneConsts.AnimatedBlendShapePrefix);
-        var nonFacialBindings = bindings.Where(b => b != facialBinding);
+        var nonFacialBindings = allBindings.Where(b => b != facialBinding);
         if (!nonFacialBindings.Any()) return;
-
-        var defaultPropertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
-        if (!defaultPropertiesAnimations.Any()) return;
-
-        if (shapesLayerPriority == propertiesLayerPriority)
-        {
-            AddAnimationToState(shapesState, defaultPropertiesAnimations);
-        }
-        else
-        {
-            var propertiesLayer = AddFTLayer(_virtualController, "Default", propertiesLayerPriority);
-            var propertiesState = AddFTState(propertiesLayer, "Default", ExclusiveStatePosition);
-            AddAnimationToState(propertiesState, defaultPropertiesAnimations);
-        }
-
-        defaultLayer = shapesLayer;
-        defaultState = shapesState;
+        var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
+        var propertiesClip = GetOrCreateDefautLayerAndClip(propertiesLayerPriority, "Default");
+        propertiesClip.SetAnimations(propertiesAnimations);
     }
 
     private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
@@ -114,8 +96,8 @@ internal class AnimatorInstaller : InstallerBase
 
                 if (!layerCreatedForThisIndex)
                 {
-                    layers[i] = AddFTLayer(_virtualController, $"Preset Pattern Group {i}", priority); 
-                    defaultStates[i] = AddFTState(layers[i], "PassThrough", ExclusiveStatePosition);
+                    layers[i] = AddLayer($"Preset Pattern Group {i}", priority); 
+                    defaultStates[i] = AddState(layers[i], "PassThrough", ExclusiveStatePosition);
                     AsPassThrough(defaultStates[i]);
                     layerCreatedForThisIndex = true;
                 }
@@ -134,8 +116,8 @@ internal class AnimatorInstaller : InstallerBase
             if (singleExpressionPattern == null || singleExpressionPattern.ExpressionPattern.ExpressionWithConditions == null || 
                 !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
 
-            var layer = AddFTLayer(_virtualController, singleExpressionPattern.Name, priority);
-            var defaultState = AddFTState(layer, "PassThrough", ExclusiveStatePosition);
+            var layer = AddLayer(singleExpressionPattern.Name, priority);
+            var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
             AsPassThrough(defaultState);
             var basePosition = ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0);
             AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
@@ -176,7 +158,7 @@ internal class AnimatorInstaller : InstallerBase
         {
             var conditions = conditionsPerState[i];
 
-            var state = AddFTState(layer, "unnamed", position);
+            var state = AddState(layer, "unnamed", position);
             states[i] = state;
             position.y += PositionYStep;
 
@@ -227,7 +209,7 @@ internal class AnimatorInstaller : InstallerBase
     private AnimatorCondition ToAnimatorCondition(Condition condition)
     {
         var (animatorCondition, parameter, parameterType) = condition.ToAnimatorCondition();
-        _virtualController.EnsureParameterExists(parameterType, parameter);
+        _controller.EnsureParameterExists(parameterType, parameter);
         return animatorCondition;
     }
 
@@ -256,7 +238,7 @@ internal class AnimatorInstaller : InstallerBase
 
         void Impl(VirtualClip clip)
         {
-            AddAnimationToState(clip, expression.Animations);
+            clip.SetAnimations(expression.Animations);
             SetExpressionSettings(state, clip, expression.ExpressionSettings);
             SetFacialSettings(clip, expression.FacialSettings);
         }
@@ -272,7 +254,7 @@ internal class AnimatorInstaller : InstallerBase
         }
         else if (!string.IsNullOrEmpty(expressionSettings.MotionTimeParameterName))
         {
-            _virtualController.EnsureParameterExists(AnimatorControllerParameterType.Float, expressionSettings.MotionTimeParameterName);
+            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, expressionSettings.MotionTimeParameterName);
             state.TimeParameter = expressionSettings.MotionTimeParameterName;
         }
     }
