@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4702234437909964113}
   - component: {fileID: 2745903661385263865}
-  - component: {fileID: 2906859138482423114}
+  - component: {fileID: 4610836032229641708}
   m_Layer: 0
   m_Name: Condition
   m_TagString: Untagged
@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HandGestureConditions: []
   ParameterConditions: []
---- !u!114 &2906859138482423114
+--- !u!114 &4610836032229641708
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -56,13 +56,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 904106534109234977}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
-  Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
