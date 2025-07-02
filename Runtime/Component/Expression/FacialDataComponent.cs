@@ -37,9 +37,7 @@ namespace aoyon.facetune
                 case AnimationSourceMode.FromAnimationClip:
                     if (Clip == null) break;
                     var blendShapeAnimations = new List<BlendShapeAnimation>();
-#if UNITY_EDITOR
-                    Clip.GetBlendShapeAnimations(blendShapeAnimations, ClipExcludeOption);
-#endif
+                    ClipToManual(blendShapeAnimations);
                     foreach (var animation in blendShapeAnimations)
                     {
                         animations.Add(animation.ToGeneric(sessionContext.BodyPath));
@@ -49,6 +47,14 @@ namespace aoyon.facetune
                     throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
             }
             return animations;
+        }
+
+        internal void ClipToManual(List<BlendShapeAnimation> animations)
+        {
+            if (Clip == null) return;
+#if UNITY_EDITOR
+            Clip.GetBlendShapeAnimations(animations, ClipExcludeOption);
+#endif
         }
 
         internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext observeContext)

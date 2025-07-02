@@ -11,6 +11,22 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         {
             CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, so => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)));
         }
+        if (GUILayout.Button("Convert to Manual"))
+        {
+            ConvertToManual();
+        }
+    }
+
+    internal void ConvertToManual()
+    {
+        var animations = new List<BlendShapeAnimation>();
+        Component.ClipToManual(animations);
+
+        var so = new SerializedObject(Component);
+        so.Update();
+        CustomEditorUtility.AddAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations);
+        so.FindProperty(nameof(FacialDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
+        so.ApplyModifiedProperties();
     }
 }
 

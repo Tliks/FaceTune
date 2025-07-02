@@ -23,15 +23,20 @@ namespace aoyon.facetune
                     animations.AddRange(Animations);
                     break;
                 case AnimationSourceMode.FromAnimationClip:
-                    if (Clip == null) break;
-#if UNITY_EDITOR
-                    Clip.GetGenericAnimations(animations);
-#endif
+                    ClipToManual(animations);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
             }
             return animations;
+        }
+
+        internal void ClipToManual(List<GenericAnimation> animations)
+        {
+            if (Clip == null) return;
+#if UNITY_EDITOR
+            Clip.GetGenericAnimations(animations);
+#endif
         }
     }
 }
