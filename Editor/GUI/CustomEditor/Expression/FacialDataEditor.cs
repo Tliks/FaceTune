@@ -63,7 +63,7 @@ internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressio
         _expressionSettingsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
         _blendShapeAnimationList = null;
 
-        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>() != null;
+        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>(true) != null;
     }
     
     private void SetupReorderableList()

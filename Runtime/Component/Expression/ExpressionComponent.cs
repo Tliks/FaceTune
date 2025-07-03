@@ -22,7 +22,7 @@ namespace aoyon.facetune
                 animationIndex.AddRange(zeroAnimations);
             }
 
-            var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>();
+            var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>(true);
             if (facialComponent != null)
             {
                 animationIndex.AddRange(facialComponent.GetAnimations(sessionContext));
@@ -34,12 +34,12 @@ namespace aoyon.facetune
                 animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));
             }
 
-            var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyeBlinkComponent>();
+            var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyeBlinkComponent>(true);
             var blinkSettings = advancedEyeBlinkComponent == null
                 ? AdvancedEyeBlinkSettings.Disabled() 
                 : advancedEyeBlinkComponent.AdvancedEyeBlinkSettings;
 
-            var advancedLipSyncComponent = gameObject.GetComponentInParent<AdvancedLipSyncComponent>();
+            var advancedLipSyncComponent = gameObject.GetComponentInParent<AdvancedLipSyncComponent>(true);
             var lipSyncSettings = advancedLipSyncComponent == null
                 ? AdvancedLipSyncSettings.Disabled()
                 : advancedLipSyncComponent.AdvancedLipSyncSettings;

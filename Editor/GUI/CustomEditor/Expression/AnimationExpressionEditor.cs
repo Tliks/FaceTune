@@ -48,7 +48,7 @@ internal class AnimationExpressionEditor : FaceTuneCustomEditorBase<AnimationExp
     public override void OnEnable()
     {
         base.OnEnable();
-        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>() != null;
+        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>(true) != null;
     }
     
     public override VisualElement CreateInspectorGUI()
