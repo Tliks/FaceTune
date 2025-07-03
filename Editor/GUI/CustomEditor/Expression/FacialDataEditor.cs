@@ -13,13 +13,13 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         }
         if (GUILayout.Button("Convert to Manual"))
         {
-            ConvertToManual();
+            ConvertToManual(targets);
         }
     }
 
-    internal static void ConvertToManual()
+    internal static void ConvertToManual(Object[] targets)
     {
-        var components = Selection.objects.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
+        var components = targets.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
         foreach (var component in components)
         {
             var animations = new List<BlendShapeAnimation>();
