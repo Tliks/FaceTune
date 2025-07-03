@@ -53,13 +53,13 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         // そのため、extractを用いるが、propertymonitorの負荷を考えるとどうだろう
         // Todo: extractにcontext.GetComponentsがあるのどうにかしたい
 
-        var defaultSet = context.Observe(_targetObject, o => o is GameObject targetGameObject && proxy != null ? GetDefaultBlendShapes(root, targetGameObject, proxy, observeContext) : null, (a, b) =>
+        var facialStyleSet = context.Observe(_targetObject, o => o is GameObject targetGameObject && proxy != null ? GetFacialStyle(root, targetGameObject, observeContext) : null, (a, b) =>
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
             return a.Equals(b);
         });
-        if (defaultSet == null) return;
+        if (facialStyleSet == null) return;
 
         // 何らかのGameObjcetを選択してる
 
@@ -71,7 +71,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         });
         if (dataComponents != null && dataComponents.Count > 0)
         {
-            GetBlendShapes(dataComponents, defaultSet, observeContext, result);
+            GetBlendShapes(dataComponents, facialStyleSet, observeContext, result);
             return;
         }
 
@@ -89,7 +89,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
                 using var _expressionComponents = GetComponentsInChildren<FacialDataComponent>(conditionComponent.gameObject, true, observeContext);
-                GetBlendShapes(_expressionComponents.Value, defaultSet, observeContext, result);
+                GetBlendShapes(_expressionComponents.Value, facialStyleSet, observeContext, result);
                 return;
             }
         }
@@ -97,17 +97,15 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         // result.AddRange(defaultSet);
     }
 
-    private static BlendShapeSet GetDefaultBlendShapes(GameObject root, GameObject targetGameObject, SkinnedMeshRenderer renderer, IObserveContext observeContext)
+    private static BlendShapeSet GetFacialStyle(GameObject root, GameObject targetGameObject, IObserveContext observeContext)
     {
         var result = new BlendShapeSet(); // Todo
-        renderer.GetBlendShapesAndSetZeroWeight(result);
 
         using var _ = ListPool<FacialStyleComponent>.Get(out var facialStyleComponents);
         targetGameObject.GetComponentsInParent<FacialStyleComponent>(true, facialStyleComponents);
         // GetComponentsInParentを監視できないのでその代わり
         using var _2 = ListPool<FacialStyleComponent>.Get(out var tmp);
         observeContext.GetComponentsInChildren<FacialStyleComponent>(root, true, tmp);
-
 
         if (facialStyleComponents.Count != 0)
         {
@@ -137,12 +135,12 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         clip.GetFirstFrameBlendShapes(result);
     }
 
-    private static void GetBlendShapes(IEnumerable<FacialDataComponent> dataComponents, BlendShapeSet defaultSet, IObserveContext observeContext, BlendShapeSet result)
+    private static void GetBlendShapes(IEnumerable<FacialDataComponent> dataComponents, BlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
     {
-        result.AddRange(defaultSet);
+        result.AddRange(facialStyleSet);
         foreach (var dataComponent in dataComponents)
         {
-            dataComponent.GetBlendShapes(result, defaultSet, observeContext);
+            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
         }
     }
 }

@@ -13,12 +13,12 @@ internal static class FTAnimationUtility
     private const string BlendShapePropertyName = FaceTuneConsts.AnimatedBlendShapePrefix;
 
 #if UNITY_EDITOR
-    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? defaultSet = null)
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? facialStyleSet = null)
     {
-        GetBlendShapes(clip, 0, resultToAdd, option, defaultSet);
+        GetBlendShapes(clip, 0, resultToAdd, option, facialStyleSet);
     }
 
-    public static void GetBlendShapes(this AnimationClip clip, float time, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? defaultSet = null)
+    public static void GetBlendShapes(this AnimationClip clip, float time, ICollection<BlendShape> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? facialStyleSet = null)
     {
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
         foreach (var binding in bindings)
@@ -42,9 +42,9 @@ internal static class FTAnimationUtility
                             resultToAdd.Add(new BlendShape(name, weight));
                         }
                         break;
-                    case ClipExcludeOption.ExcludeDefault:
-                        if (defaultSet == null) throw new InvalidOperationException("defaultSet is null");
-                        if (defaultSet.TryGetValue(name, out var defaultBlendShape) is false || defaultBlendShape.Weight != weight)
+                    case ClipExcludeOption.ExcludeZeroWeightAndFacialStyle:
+                        if (facialStyleSet == null) throw new InvalidOperationException("facialStyleSet is null");
+                        if (weight != 0 && (!facialStyleSet.TryGetValue(name, out var facialStyle) || facialStyle.Weight != weight))
                         {
                             resultToAdd.Add(new BlendShape(name, weight));
                         }
@@ -56,7 +56,7 @@ internal static class FTAnimationUtility
         }
     }
 
-    public static void GetBlendShapeAnimations(this AnimationClip clip, List<BlendShapeAnimation> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? defaultSet = null)
+    public static void GetBlendShapeAnimations(this AnimationClip clip, List<BlendShapeAnimation> resultToAdd, ClipExcludeOption? option = null, BlendShapeSet? facialStyleSet = null)
     {
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
         foreach (var binding in bindings)
@@ -80,9 +80,9 @@ internal static class FTAnimationUtility
                             resultToAdd.Add(new BlendShapeAnimation(name, curve));
                         }
                         break;
-                    case ClipExcludeOption.ExcludeDefault:
-                        if (defaultSet == null) throw new InvalidOperationException("defaultSet is null");
-                        if (defaultSet.TryGetValue(name, out var defaultBlendShape) is false || defaultBlendShape.Weight != weight)
+                    case ClipExcludeOption.ExcludeZeroWeightAndFacialStyle:
+                        if (facialStyleSet == null) throw new InvalidOperationException("facialStyleSet is null");
+                        if (weight != 0 && (!facialStyleSet.TryGetValue(name, out var facialStyle) || facialStyle.Weight != weight))
                         {
                             resultToAdd.Add(new BlendShapeAnimation(name, curve));
                         }

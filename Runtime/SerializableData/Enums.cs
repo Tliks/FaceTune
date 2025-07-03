@@ -44,7 +44,7 @@ public enum ClipExcludeOption
 {
     None,
     ExcludeZeroWeight,
-    ExcludeDefault
+    ExcludeZeroWeightAndFacialStyle
 }
 
 public enum AnimationSourceMode

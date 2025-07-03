@@ -52,12 +52,18 @@ namespace aoyon.facetune
         internal void ClipToManual(List<BlendShapeAnimation> animations)
         {
             if (Clip == null) return;
+            var facialStyleSet = new BlendShapeSet();
+            var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>();
+            if (facialComponent != null)
+            {
+                facialComponent.GetBlendShapes(facialStyleSet, null);
+            }
 #if UNITY_EDITOR
-            Clip.GetBlendShapeAnimations(animations, ClipExcludeOption);
+            Clip.GetBlendShapeAnimations(animations, ClipExcludeOption, facialStyleSet);
 #endif
         }
 
-        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet defaultSet, IObserveContext observeContext)
+        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet facialStyleSet, IObserveContext observeContext)
         {
             observeContext.Observe(this);
 
@@ -72,7 +78,7 @@ namespace aoyon.facetune
                 case AnimationSourceMode.FromAnimationClip:
                     if (Clip == null) break;
 #if UNITY_EDITOR
-                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipExcludeOption, defaultSet);
+                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipExcludeOption, facialStyleSet);
 #endif
                     break;
                 default:
