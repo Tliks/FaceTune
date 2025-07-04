@@ -222,9 +222,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 1
+  - hand: 1
+    isEqual: 1
+    handGesture: 1
   ParameterConditions: []
 --- !u!1001 &1311749907831637040
 PrefabInstance:
@@ -364,9 +364,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 3
+  - hand: 1
+    isEqual: 1
+    handGesture: 3
   ParameterConditions: []
 --- !u!1001 &2012100077674592145
 PrefabInstance:
@@ -506,9 +506,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 7
+  - hand: 1
+    isEqual: 1
+    handGesture: 7
   ParameterConditions: []
 --- !u!1001 &6747528071099017512
 PrefabInstance:
@@ -642,9 +642,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 4
+  - hand: 1
+    isEqual: 1
+    handGesture: 4
   ParameterConditions: []
 --- !u!4 &7328779653820152637 stripped
 Transform:
@@ -784,9 +784,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 2
+  - hand: 1
+    isEqual: 1
+    handGesture: 2
   ParameterConditions: []
 --- !u!4 &6723124568644091924 stripped
 Transform:
@@ -926,9 +926,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 6
+  - hand: 1
+    isEqual: 1
+    handGesture: 6
   ParameterConditions: []
 --- !u!4 &6076555927164944051 stripped
 Transform:
@@ -1068,9 +1068,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 5
+  - hand: 1
+    isEqual: 1
+    handGesture: 5
   ParameterConditions: []
 --- !u!4 &6155453930840955190 stripped
 Transform:
@@ -1210,9 +1210,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 0
-    ComparisonType: 0
-    HandGesture: 0
+  - hand: 1
+    isEqual: 1
+    handGesture: 0
   ParameterConditions: []
 --- !u!4 &6326022215658951004 stripped
 Transform:

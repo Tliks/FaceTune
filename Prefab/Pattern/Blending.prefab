@@ -41,24 +41,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 257858774868111890}
     m_Modifications:
-    - target: {fileID: 217935396108389837, guid: 9f044864c335d38499244290e12697d3,
+    - target: {fileID: 420971131414794567, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
-      propertyPath: EnableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 217935396108389837, guid: 9f044864c335d38499244290e12697d3,
+    - target: {fileID: 1333938627763096109, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
-      propertyPath: FacialSettings._enableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1352380249374286162, guid: 9f044864c335d38499244290e12697d3,
+    - target: {fileID: 1566056844248714750, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
-      propertyPath: EnableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1352380249374286162, guid: 9f044864c335d38499244290e12697d3,
+    - target: {fileID: 2752508068255845060, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
-      propertyPath: FacialSettings._enableBlending
+      propertyPath: FacialSettings.enableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2836967046156325946, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings.enableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2915475407305133317, guid: 9f044864c335d38499244290e12697d3,
+        type: 3}
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
@@ -111,64 +121,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5602339011208726010, guid: 9f044864c335d38499244290e12697d3,
+    - target: {fileID: 6242727870376411332, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
-      propertyPath: EnableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 5602339011208726010, guid: 9f044864c335d38499244290e12697d3,
+    - target: {fileID: 6511333595699222925, guid: 9f044864c335d38499244290e12697d3,
         type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6149436245582214012, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6149436245582214012, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6186425253141192785, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6186425253141192785, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6349561986896578731, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6349561986896578731, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6644612618986536593, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6644612618986536593, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7043666745270236098, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7043666745270236098, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3,
@@ -195,6 +155,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 257858774868111890}
     m_Modifications:
+    - target: {fileID: 164149071001300413, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings.enableBlending
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 253538085069377231, guid: 73a1d844c3155444696e054ae47b9f7c,
+        type: 3}
+      propertyPath: FacialSettings.enableBlending
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -245,89 +215,39 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1704227186460256230, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1704227186460256230, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1930796234532467644, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1930796234532467644, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3472275454412260610, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3472275454412260610, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4684944566820409495, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4684944566820409495, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 5129038026141425213, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
       propertyPath: m_Name
       value: Right Hand
       objectReference: {fileID: 0}
-    - target: {fileID: 5160402723131478131, guid: 73a1d844c3155444696e054ae47b9f7c,
+    - target: {fileID: 6533161233553423881, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
-      propertyPath: EnableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 5160402723131478131, guid: 73a1d844c3155444696e054ae47b9f7c,
+    - target: {fileID: 7095661423061188687, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
-      propertyPath: FacialSettings._enableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6666964804576130187, guid: 73a1d844c3155444696e054ae47b9f7c,
+    - target: {fileID: 7538845102695677385, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
-      propertyPath: EnableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6666964804576130187, guid: 73a1d844c3155444696e054ae47b9f7c,
+    - target: {fileID: 8152567463761656177, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
-      propertyPath: FacialSettings._enableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8899474392035475652, guid: 73a1d844c3155444696e054ae47b9f7c,
+    - target: {fileID: 8984721409370909803, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
-      propertyPath: EnableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8899474392035475652, guid: 73a1d844c3155444696e054ae47b9f7c,
+    - target: {fileID: 9211514212091228666, guid: 73a1d844c3155444696e054ae47b9f7c,
         type: 3}
-      propertyPath: FacialSettings._enableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9117185088660386367, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: EnableBlending
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9117185088660386367, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings._enableBlending
+      propertyPath: FacialSettings.enableBlending
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

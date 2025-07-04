@@ -73,7 +73,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7663972919204766180}
   - component: {fileID: 601990200424846913}
-  - component: {fileID: 7155762061381661922}
+  - component: {fileID: 7723153415170801214}
+  - component: {fileID: 4016804312303346933}
   m_Layer: 0
   m_Name: Lipsyncing
   m_TagString: Untagged
@@ -113,10 +114,10 @@ MonoBehaviour:
   - parameterName: Voice
     parameterType: 1
     comparisonType: 2
-    floatValue: 0
+    floatValue: 0.01
     intValue: 0
     boolValue: 0
---- !u!114 &7155762061381661922
+--- !u!114 &7723153415170801214
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -125,16 +126,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 2104754335780747224}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
-    allowEyeBlink: 2
-    allowLipSync: 2
-    enableBlending: 1
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &4016804312303346933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104754335780747224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []

@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1219754456085709511}
   - component: {fileID: 9184606957170513708}
-  - component: {fileID: 8119254161579909132}
+  - component: {fileID: 4374888456384498705}
+  - component: {fileID: 5801575695382712118}
   m_Layer: 0
   m_Name: Menu 2
   m_TagString: Untagged
@@ -63,7 +64,7 @@ MonoBehaviour:
   isDefault: 0
   automaticValue: 1
   label: 
---- !u!114 &8119254161579909132
+--- !u!114 &4374888456384498705
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -72,7 +73,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 431460732228429624}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
@@ -82,6 +83,18 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 1
+--- !u!114 &5801575695382712118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431460732228429624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -146,7 +159,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7456222614802790595}
   - component: {fileID: 5111710967144362899}
-  - component: {fileID: 1034750275876389132}
+  - component: {fileID: 383290922005379031}
+  - component: {fileID: 5324917404552597346}
   m_Layer: 0
   m_Name: Menu 1
   m_TagString: Untagged
@@ -199,7 +213,7 @@ MonoBehaviour:
   isDefault: 0
   automaticValue: 1
   label: 
---- !u!114 &1034750275876389132
+--- !u!114 &383290922005379031
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -208,7 +222,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3186688699208495892}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
@@ -218,6 +232,18 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 1
+--- !u!114 &5324917404552597346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3186688699208495892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
@@ -233,7 +259,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5754473874923411917}
   - component: {fileID: 7993080843260973249}
-  - component: {fileID: 1421757385672549956}
+  - component: {fileID: 6134673668799709763}
+  - component: {fileID: 2541262338161308096}
   m_Layer: 0
   m_Name: Menu 3
   m_TagString: Untagged
@@ -286,7 +313,7 @@ MonoBehaviour:
   isDefault: 0
   automaticValue: 1
   label: 
---- !u!114 &1421757385672549956
+--- !u!114 &6134673668799709763
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -295,7 +322,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3971391735560565184}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ExpressionSettings:
@@ -305,6 +332,18 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 1
+--- !u!114 &2541262338161308096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3971391735560565184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   SourceMode: 0
   IsSingleFrame: 1
   BlendShapeAnimations: []
