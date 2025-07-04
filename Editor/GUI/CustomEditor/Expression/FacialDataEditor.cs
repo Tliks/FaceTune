@@ -92,11 +92,11 @@ internal class ExportFacialDataWindow : EditorWindow
                 animations.AddRange(facialStyleAnimations);
             }
         }
+        animations.AddRange((_component as IAnimationData).GetAnimations(context));
         if (_excludeTrackedShapes)
         {
             animations.RemoveBlendShapes(context.TrackedBlendShapes);
         }
-        animations.AddRange((_component as IAnimationData).GetAnimations(context));
         CustomEditorUtility.SaveAsClip(clip =>
         {
             clip.SetGenericAnimations(animations);
