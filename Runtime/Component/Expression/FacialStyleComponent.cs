@@ -12,6 +12,8 @@ namespace aoyon.facetune
 
         public bool AsDefault = true;
 
+        public bool EnableRealTimePreview = false;
+
         internal IEnumerable<GenericAnimation> GetAnimations(SessionContext sessionContext)
         {
             return BlendShapeAnimations.Select(bs => bs.ToGeneric(sessionContext.BodyPath));
