@@ -9,14 +9,18 @@ internal class FacialShapesEditor : EditorWindow
 {
     public SkinnedMeshRenderer Renderer = null!;
     public Mesh Mesh = null!;
-    public IReadOnlyList<BlendShape> BaseShapes = null!;
-    private Dictionary<string, int> _baseShapeIndexMap = null!;
+    public HashSet<string> AllKeys = null!;
+    public string[] AllKeysArray = null!; // パフォーマンス向上のためのキャッシュ
+    public BlendShapeSet? FacialStyleSet = null; // スタイル参照用
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
 
     private BlendShapeSelectorManager _selector = null!;
     private BlendShapeGrouping _grouping = null!;
     private GroupSelectionUI _groupSelectionUI = null!;
+
+    [SerializeField] private bool _applyGroupFilterToSelected = true;
+    [SerializeField] private bool _applyGroupFilterToUnselected = true;
 
     private bool _previewOnHover = true;
     public bool PreviewOnHover
@@ -71,7 +75,7 @@ internal class FacialShapesEditor : EditorWindow
 
     private int _previousUndoGroup = -1;
 
-    public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet defaultShapes, BlendShapeSet defaultOverrides)
+    public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, HashSet<string> allKeys, BlendShapeSet defaultOverrides, BlendShapeSet? facialStyleSet = null)
     {
         if (HasOpenInstances<FacialShapesEditor>())
         {
@@ -96,28 +100,29 @@ internal class FacialShapesEditor : EditorWindow
         }
 
         var window = GetWindow<FacialShapesEditor>();
-        window.Init(renderer, mesh, defaultShapes, defaultOverrides);
+        window.Init(renderer, mesh, allKeys, defaultOverrides, facialStyleSet);
         return window;
     }
 
-    public void Init(SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet defaultShapes, BlendShapeSet defaultOverrides)
+    public void Init(SkinnedMeshRenderer renderer, Mesh mesh, HashSet<string> allKeys, BlendShapeSet defaultOverrides, BlendShapeSet? facialStyleSet = null)
     {
         Renderer = renderer;
         Mesh = mesh;
 
-        BaseShapes = defaultShapes.ToList().AsReadOnly();
-        _baseShapeIndexMap = BaseShapes.Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
-        var mapping = defaultOverrides.BlendShapes.ToDictionary(x => x.Name, x => x.Weight);
-        _overrideFlags = BaseShapes.Select(x => mapping.ContainsKey(x.Name)).ToArray();
-        _overrideWeights = BaseShapes.Select(x => mapping.ContainsKey(x.Name) ? mapping[x.Name] : -1).ToArray();
+        AllKeys = allKeys;
+        AllKeysArray = allKeys.ToArray(); // パフォーマンス向上のため配列キャッシュを作成
+        FacialStyleSet = facialStyleSet;
+        _overrideFlags = AllKeysArray.Select(x => defaultOverrides.Contains(x)).ToArray();
+        _overrideWeights = AllKeysArray.Select(x => defaultOverrides.TryGetValue(x, out var value) ? value.Weight : -1).ToArray();
 
         _serializedObject = new SerializedObject(this);
         _overrideFlagsProperty = _serializedObject.FindProperty(nameof(_overrideFlags));
         _overrideWeightsProperty = _serializedObject.FindProperty(nameof(_overrideWeights));
 
-        _grouping = new BlendShapeGrouping(BaseShapes);
+        _grouping = new BlendShapeGrouping(AllKeys);
         _groupSelectionUI = new GroupSelectionUI(_grouping.Groups, OnGroupSelectionChanged);
-        _selector = new BlendShapeSelectorManager(BaseShapes, _overrideFlagsProperty, _overrideWeightsProperty, _grouping, OnAnyChangeCallback, OnHoveredCallback);
+        _selector = new BlendShapeSelectorManager(AllKeysArray, _overrideFlagsProperty, _overrideWeightsProperty, _grouping, FacialStyleSet, 
+            () => _applyGroupFilterToSelected, () => _applyGroupFilterToUnselected, OnAnyChangeCallback, OnHoveredCallback);
         _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor(renderer, mesh);
 
         saveChangesMessage = "This window may have unsaved changes. Would you like to save?";
@@ -154,7 +159,7 @@ internal class FacialShapesEditor : EditorWindow
             }
             else
             {
-                current.Add(new BlendShape(BaseShapes[index].Name, 100f));
+                current.Add(new BlendShape(AllKeysArray[index], 100f));
                 _previewShapes.Value = current;
             }
         }
@@ -190,7 +195,7 @@ internal class FacialShapesEditor : EditorWindow
 
     public override void SaveChanges()
     {
-        var result = new BlendShapeSet(BaseShapes);
+        var result = new BlendShapeSet();
         GetResult(result);
         _onApply?.Invoke(result);
         hasUnsavedChanges = false;
@@ -208,7 +213,7 @@ internal class FacialShapesEditor : EditorWindow
             if (!overrideFlag) continue;
 
             var weight = _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue;
-            result.Add(new BlendShape(BaseShapes[i].Name, weight));
+            result.Add(new BlendShape(AllKeysArray[i], weight));
         }
     }
 
@@ -293,6 +298,16 @@ internal class FacialShapesEditor : EditorWindow
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         EditorGUILayout.LabelField("Group Filter", EditorStyles.boldLabel);
         _groupSelectionUI.OnGUI();
+        
+        EditorGUILayout.Space(5);
+        EditorGUILayout.LabelField("Apply Filter To:", EditorStyles.miniLabel);
+        EditorGUI.BeginChangeCheck();
+        _applyGroupFilterToSelected = EditorGUILayout.Toggle("Selected List", _applyGroupFilterToSelected);
+        _applyGroupFilterToUnselected = EditorGUILayout.Toggle("Unselected List", _applyGroupFilterToUnselected);
+        if (EditorGUI.EndChangeCheck())
+        {
+            _selector.Reload();
+        }
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space(10);
@@ -318,11 +333,17 @@ internal class FacialShapesEditor : EditorWindow
         if (_sourceClip == null) return;
 
         var newBlendShapes = new BlendShapeSet();
-        _sourceClip.GetFirstFrameBlendShapes(newBlendShapes, _clipExcludeOption, new BlendShapeSet(BaseShapes));
+        var baseShapeSet = new BlendShapeSet();
+        foreach (var key in AllKeysArray)
+        {
+            baseShapeSet.Add(new BlendShape(key, 0f));
+        }
+        _sourceClip.GetFirstFrameBlendShapes(newBlendShapes, _clipExcludeOption, baseShapeSet);
 
         foreach (var blendShape in newBlendShapes)
         {
-            if (_baseShapeIndexMap.TryGetValue(blendShape.Name, out var index))
+            var index = Array.IndexOf(AllKeysArray, blendShape.Name);
+            if (index >= 0)
             {
                 // if (!_includeEqualOverride && _overrideWeights[index] == blendShape.Weight) continue;
                 _overrideFlags[index] = true;
@@ -375,20 +396,21 @@ internal class BlendShapeGrouping
 
     public readonly List<BlendShapeGroup> Groups;
 
-    public BlendShapeGrouping(IReadOnlyList<BlendShape> blendShapes)
+    public BlendShapeGrouping(HashSet<string> allKeys)
     {
         Groups = new List<BlendShapeGroup>();
-        BuildGroups(blendShapes);
+        BuildGroups(allKeys);
     }
 
-    private void BuildGroups(IReadOnlyList<BlendShape> blendShapes)
+    private void BuildGroups(HashSet<string> allKeys)
     {
         Groups.Clear();
         Groups.Add(new BlendShapeGroup(DefaultGroupName));
 
-        for (var i = 0; i < blendShapes.Count; i++)
+        var allKeysArray = allKeys.ToArray();
+        for (var i = 0; i < allKeysArray.Length; i++)
         {
-            var shapeName = blendShapes[i].Name;
+            var shapeName = allKeysArray[i];
             var match = Regex.Match(shapeName, GroupNamePattern);
             if (match.Success)
             {
@@ -462,23 +484,30 @@ internal class GroupSelectionUI
 
 internal class BlendShapeSelectorManager : IDisposable
 {
-    public readonly IReadOnlyList<BlendShape> BaseShapes;
+    public readonly string[] AllKeysArray;
+    public readonly BlendShapeSet? FacialStyleSet;
     private readonly SerializedProperty _overrideFlagsProperty;
     private readonly SerializedProperty _overrideWeightsProperty;
     private readonly BlendShapeGrouping _grouping;
+    private readonly Func<bool> _getApplyGroupFilterToSelected;
+    private readonly Func<bool> _getApplyGroupFilterToUnselected;
 
     private readonly BlendShapeSelectorBase _selectedBlendShapeSelector;
     private readonly BlendShapeSelectorBase _unSelectedBlendShapeSelector;
 
     private readonly Action? _anyChangeCallback;
     private readonly Action<int>? _hoveredCallback;
-    public BlendShapeSelectorManager(IReadOnlyList<BlendShape> baseShapes, SerializedProperty overrideFlagsProperty, SerializedProperty overrideWeightsProperty, 
-        BlendShapeGrouping grouping, Action? anyChangeCallback = null, Action<int>? hoveredCallback = null)
+    public BlendShapeSelectorManager(string[] allKeysArray, SerializedProperty overrideFlagsProperty, SerializedProperty overrideWeightsProperty, 
+        BlendShapeGrouping grouping, BlendShapeSet? facialStyleSet, Func<bool> getApplyGroupFilterToSelected, Func<bool> getApplyGroupFilterToUnselected,
+        Action? anyChangeCallback = null, Action<int>? hoveredCallback = null)
     {
-        BaseShapes = baseShapes;
+        AllKeysArray = allKeysArray;
+        FacialStyleSet = facialStyleSet;
         _overrideFlagsProperty = overrideFlagsProperty;
         _overrideWeightsProperty = overrideWeightsProperty;
         _grouping = grouping;
+        _getApplyGroupFilterToSelected = getApplyGroupFilterToSelected;
+        _getApplyGroupFilterToUnselected = getApplyGroupFilterToUnselected;
         _selectedBlendShapeSelector = new SelectedBlendShapeSelector(this);
         _unSelectedBlendShapeSelector = new UnSelectedBlendShapeSelector(this);
 
@@ -522,10 +551,18 @@ internal class BlendShapeSelectorManager : IDisposable
         Reload();   
     }
 
+    public void AddWithWeight(int index, float weight)
+    {
+        _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
+        _anyChangeCallback?.Invoke();
+        Reload();
+    }
+
     public void Remove(int index)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
-        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = BaseShapes[index].Weight;
+        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = 0f; // デフォルト値
         _anyChangeCallback?.Invoke();
         Reload();
     }
@@ -550,6 +587,16 @@ internal class BlendShapeSelectorManager : IDisposable
         return _grouping.IsBlendShapeVisible(index);
     }
 
+    public bool ShouldApplyGroupFilterToSelected()
+    {
+        return _getApplyGroupFilterToSelected();
+    }
+
+    public bool ShouldApplyGroupFilterToUnselected()
+    {
+        return _getApplyGroupFilterToUnselected();
+    }
+
     private void OnUndoRedoPerformed()
     {
         EditorApplication.delayCall += () =>
@@ -563,34 +610,52 @@ internal class BlendShapeSelectorManager : IDisposable
 internal class SelectedBlendShapeSelector : BlendShapeSelectorBase
 {
     private readonly BlendShapeSelectorManager _manager;
-    public SelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.BaseShapes, index => manager.ReadOverrideFlag(index) && manager.IsBlendShapeVisible(index))
+    public SelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.AllKeysArray, index => 
+        manager.ReadOverrideFlag(index) && (!manager.ShouldApplyGroupFilterToSelected() || manager.IsBlendShapeVisible(index)))
     {
         _manager = manager;
     }
 
-    private const float ButtonWidth = 20f;
     public override void DrawRow(BlendShapeTreeViewItem item, Rect rect, bool selected)
     {
         Profiler.BeginSample("SelectedBlendShapeSelector.DrawRow");
-        var sliderRect = new Rect(rect.x, rect.y, rect.width - ButtonWidth, rect.height);
-        var buttonRect = new Rect(rect.x + rect.width - ButtonWidth, rect.y, ButtonWidth, rect.height);
 
-        var blendShape = item.BlendShape;
+        // FacialStyleSetに含まれているかチェック
+        var styleBlendShape = new BlendShape();
+        var hasStyleValue = _manager.FacialStyleSet != null && _manager.FacialStyleSet.TryGetValue(item.BlendShapeName, out styleBlendShape);
+        
+        // スタイル値がある場合は背景を薄い色で強調
+        if (hasStyleValue && Event.current.type == EventType.Repaint)
+        {
+            var bgColor = new Color(0.3f, 0.7f, 1f, 0.2f); // 薄い青色
+            EditorGUI.DrawRect(rect, bgColor);
+        }
 
-        var newWeight = EditorGUI.Slider(sliderRect, blendShape.Name, _manager.ReadWeight(item.Index), 0f, 100f);
+        var blendShapeName = item.BlendShapeName;
+        string displayText;
+        GUIStyle labelStyle;
+        if (hasStyleValue)
+        {
+            displayText = $"{blendShapeName} ({styleBlendShape.Weight:F1})";
+            labelStyle = EditorStyles.boldLabel;
+        }
+        else
+        {
+            displayText = blendShapeName;
+            labelStyle = EditorStyles.label;
+        }
+
+        var newWeight = EditorGUI.Slider(rect, displayText, _manager.ReadWeight(item.Index), 0f, 100f);
         if (newWeight != _manager.ReadWeight(item.Index))
         {
             _manager.ChangeWeight(item.Index, newWeight);
         }
 
-        if (GUI.Button(buttonRect, "✕"))
-        {
-            _manager.Remove(item.Index);
-        }
-
+        // クリックで削除
         if (Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition))
         {
             _manager.Remove(item.Index);
+            Event.current.Use();
         }
         Profiler.EndSample();
     }
@@ -600,30 +665,41 @@ internal class SelectedBlendShapeSelector : BlendShapeSelectorBase
 internal class UnSelectedBlendShapeSelector : BlendShapeSelectorBase
 {
     private readonly BlendShapeSelectorManager _manager;
-    public UnSelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.BaseShapes, index => manager.ReadOverrideFlag(index) is false && manager.IsBlendShapeVisible(index))
+    public UnSelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.AllKeysArray, index => 
+        manager.ReadOverrideFlag(index) is false && (!manager.ShouldApplyGroupFilterToUnselected() || manager.IsBlendShapeVisible(index)))
     {
         _manager = manager;
     }
 
-    private const float ButtonWidth = 20f;
     public override void DrawRow(BlendShapeTreeViewItem item, Rect rect, bool selected)
     {
         Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow");
 
-        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.Rect");
-        var labelRect = new Rect(rect.x, rect.y, rect.width - ButtonWidth, rect.height);
-        var buttonRect = new Rect(rect.x + rect.width - ButtonWidth, rect.y, ButtonWidth, rect.height);
-        Profiler.EndSample();
+        // FacialStyleSetに含まれているかチェック
+        var styleBlendShape = new BlendShape();
+        var hasStyleValue = _manager.FacialStyleSet != null && _manager.FacialStyleSet.TryGetValue(item.BlendShapeName, out styleBlendShape);
+        
+        // スタイル値がある場合は背景を薄い色で強調
+        if (hasStyleValue && Event.current.type == EventType.Repaint)
+        {
+            var bgColor = new Color(0.3f, 0.7f, 1f, 0.2f); // 薄い青色
+            EditorGUI.DrawRect(rect, bgColor);
+        }
 
         Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.LabelField");
-        EditorGUI.LabelField(labelRect, item.BlendShape.Name);
-        Profiler.EndSample();
-
-        Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.Button");
-        if (GUI.Button(buttonRect, "+"))
+        string displayText;
+        GUIStyle labelStyle;
+        if (hasStyleValue)
         {
-            _manager.Add(item.Index);
+            displayText = $"{item.BlendShapeName} ({styleBlendShape.Weight:F1})";
+            labelStyle = EditorStyles.boldLabel;
         }
+        else
+        {
+            displayText = item.BlendShapeName;
+            labelStyle = EditorStyles.label;
+        }
+        EditorGUI.LabelField(rect, displayText, labelStyle);
         Profiler.EndSample();
 
         Profiler.BeginSample("UnSelectedBlendShapeSelector.DrawRow.Contains");
@@ -634,7 +710,15 @@ internal class UnSelectedBlendShapeSelector : BlendShapeSelectorBase
 
             if (Event.current.type == EventType.MouseDown)
             {
-                _manager.Add(item.Index);
+                if (hasStyleValue)
+                {
+                    _manager.AddWithWeight(item.Index, styleBlendShape.Weight);
+                }
+                else
+                {
+                    _manager.Add(item.Index);
+                }
+                Event.current.Use();
             }
         }
         Profiler.EndSample();
@@ -683,10 +767,10 @@ internal abstract class BlendShapeSelectorBase
     private readonly SearchField _searchField;
     private readonly BlendShapeTreeView _blendShapeTreeView;
 
-    public BlendShapeSelectorBase(IReadOnlyList<BlendShape> baseShapes, Func<int, bool> _display)
+    public BlendShapeSelectorBase(string[] allKeysArray, Func<int, bool> _display)
     {
         _searchField = new SearchField();
-        _blendShapeTreeView = new BlendShapeTreeView(baseShapes, _display, DrawRow);
+        _blendShapeTreeView = new BlendShapeTreeView(allKeysArray, _display, DrawRow);
     }
 
     public virtual void OnGUI()
@@ -707,13 +791,13 @@ internal abstract class BlendShapeSelectorBase
 
 internal class BlendShapeTreeView : TreeView
 {
-    private readonly IReadOnlyList<BlendShape> _blendShapes;
+    private readonly string[] _blendShapeNames;
     private readonly Func<int, bool> _display;
     private readonly Action<BlendShapeTreeViewItem, Rect, bool> _drawRow;
 
-    public BlendShapeTreeView(IReadOnlyList<BlendShape> blendShapes, Func<int, bool> display, Action<BlendShapeTreeViewItem, Rect, bool> drawRow) : base(new TreeViewState())
+    public BlendShapeTreeView(string[] allKeysArray, Func<int, bool> display, Action<BlendShapeTreeViewItem, Rect, bool> drawRow) : base(new TreeViewState())
     {
-        _blendShapes = blendShapes;
+        _blendShapeNames = allKeysArray;
         _display = display;
         _drawRow = drawRow;
         Reload();
@@ -724,10 +808,10 @@ internal class BlendShapeTreeView : TreeView
         var root = new TreeViewItem(-1, -1, "Root");
 
         var items = new List<TreeViewItem>();
-        for (var i = 0; i < _blendShapes.Count; i++)
+        for (var i = 0; i < _blendShapeNames.Length; i++)
         {
             if (_display(i) is false) continue;
-            items.Add(new BlendShapeTreeViewItem(i, 0, _blendShapes[i], i));
+            items.Add(new BlendShapeTreeViewItem(i, 0, _blendShapeNames[i], i));
         }
         SetupParentsAndChildrenFromDepths(root, items);
         return root;
@@ -741,12 +825,12 @@ internal class BlendShapeTreeView : TreeView
 
 internal class BlendShapeTreeViewItem : TreeViewItem
 {
-    public readonly BlendShape BlendShape;
+    public readonly string BlendShapeName;
     public readonly int Index;
 
-    public BlendShapeTreeViewItem(int id, int depth, BlendShape blendShape, int index) : base(id, depth, blendShape.Name)
+    public BlendShapeTreeViewItem(int id, int depth, string blendShapeName, int index) : base(id, depth, blendShapeName)
     {
-        BlendShape = blendShape;
+        BlendShapeName = blendShapeName;
         Index = index;
     }
 }

@@ -59,8 +59,9 @@ namespace aoyon.facetune
 #endif
         }
 
-        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet facialStyleSet, IObserveContext observeContext)
+        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet facialStyleSet, IObserveContext? observeContext = null)
         {
+            observeContext ??= new NonObserveContext();
             observeContext.Observe(this);
 
             switch (SourceMode)

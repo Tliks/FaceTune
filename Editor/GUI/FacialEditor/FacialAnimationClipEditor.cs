@@ -5,10 +5,10 @@ internal class FacialAnimationClipEditor : FacialShapesEditor
     private GameObject? _root;
     private AnimationClip? _clip = null!;
 
-    public static FacialAnimationClipEditor OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet defaultShapes, BlendShapeSet defaultOverrides, AnimationClip clip)
+    public static FacialAnimationClipEditor OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, HashSet<string> allKeys, BlendShapeSet defaultOverrides, AnimationClip clip)
     {
         var window = GetWindow<FacialAnimationClipEditor>();
-        window.Init(renderer, mesh, defaultShapes, defaultOverrides);
+        window.Init(renderer, mesh, allKeys, defaultOverrides);
         window._clip = clip;
         return window;
     }

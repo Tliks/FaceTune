@@ -9,8 +9,9 @@ internal class AdvancedLipSyncEditor : FaceTuneCustomEditorBase<AdvancedLipSyncC
         base.OnInspectorGUI();
         if (GUILayout.Button("Open Editor for Canceler BlendShape Names"))
         {
+            var defaultOverride = new BlendShapeSet(Component.AdvancedLipSyncSettings.CancelerBlendShapeNames.Select(x => new BlendShape(x, 0.0f)));
             var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedLipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName);
-            CustomEditorUtility.OpenEditorAndApplyBlendShapeNames(Component, getProperty);
+            CustomEditorUtility.OpenEditorAndApplyBlendShapeNames(Component, defaultOverride, getProperty);
         }
     }
 }

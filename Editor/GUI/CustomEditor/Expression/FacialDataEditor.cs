@@ -9,12 +9,21 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         base.OnInspectorGUI();
         if (GUILayout.Button("Open Editor"))
         {
-            CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, so => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)));
+            OpenEditor();
         }
         if (GUILayout.Button("Convert to Manual"))
         {
             ConvertToManual(targets);
         }
+    }
+
+    private void OpenEditor()
+    {
+        var facialStyleSet = new BlendShapeSet();
+        FacialStyleContext.TryAddFacialStyleShapes(Component.gameObject, facialStyleSet);
+        var defaultOverride = new BlendShapeSet();
+        Component.GetBlendShapes(defaultOverride, facialStyleSet);
+        CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, defaultOverride, so => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), facialStyleSet);
     }
 
     internal static void ConvertToManual(Object[] targets)

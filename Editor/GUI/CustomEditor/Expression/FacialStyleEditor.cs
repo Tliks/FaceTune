@@ -13,8 +13,15 @@ internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent
         }
         if (GUILayout.Button("Open Editor"))
         {
-            CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, so => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations)));
+            OpenEditor();
         }
+    }
+
+    private void OpenEditor()
+    {
+        var defaultOverride = new BlendShapeSet();
+        Component.GetBlendShapes(defaultOverride);
+        CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, defaultOverride, so => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations)));
     }
 
     private void UpdateFromScene()

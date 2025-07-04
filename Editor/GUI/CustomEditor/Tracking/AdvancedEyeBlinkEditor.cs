@@ -10,8 +10,9 @@ internal class AdvancedEyeBlinkEditor : FaceTuneCustomEditorBase<AdvancedEyeBlin
 
         if (GUILayout.Button("Open Editor"))
         {
+            var defaultOverride = new BlendShapeSet(Component.AdvancedEyeBlinkSettings.CancelerBlendShapeNames.Select(x => new BlendShape(x, 0.0f)));
             var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
-            CustomEditorUtility.OpenEditorAndApplyBlendShapeNames(Component, getProperty);
+            CustomEditorUtility.OpenEditorAndApplyBlendShapeNames(Component, defaultOverride, getProperty);
         }
     }
 }
