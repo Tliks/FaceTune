@@ -8,14 +8,15 @@ internal static class FXImporter
     public static GameObject? ImportFromVRChatFX(AnimatorController animatorController)
     {
         var layers = animatorController.layers;
-        var expressionsByLayer = new Dictionary<int, List<(AnimatorCondition[] Conditions, AnimatorState State)>>();
-        
         var parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
+        
+        var rootObj = new GameObject($"FT_{animatorController.name}");
+        var totalExpressionCount = 0;
+        var validLayerCount = 0;
 
         for (int i = 0; i < layers.Length; i++)
         {
             var layer = layers[i];
-            Debug.Log($"Processing layer {i}: {layer.name}");
             var stateMachine = layer.stateMachine;
             if (stateMachine == null)
             {
@@ -23,113 +24,129 @@ internal static class FXImporter
                 continue;
             }
 
-            var layerExpressions = new List<(AnimatorCondition[] Conditions, AnimatorState State)>();
+            Debug.Log($"Layer {i} - Entry transitions: {stateMachine.entryTransitions.Length}");
+            Debug.Log($"Layer {i} - Any state transitions: {stateMachine.anyStateTransitions.Length}");
+            Debug.Log($"Layer {i} - States: {stateMachine.states.Length}");
+            Debug.Log($"Layer {i} - Sub state machines: {stateMachine.stateMachines.Length}");
 
-            // StateMachine全体を処理
-            ProcessStateMachineTransitions(stateMachine, layerExpressions);
+            // 条件とステートのペアを収集
+            var conditionStateList = new List<(AnimatorCondition[] conditions, AnimatorState state)>();
+            CollectConditionsAndStates(stateMachine, conditionStateList);
 
-            Debug.Log($"Layer {i} processed: {layerExpressions.Count} expressions found");
-            if (layerExpressions.Count > 0)
+            Debug.Log($"Layer {i} collected: {conditionStateList.Count} condition-state pairs");
+            
+            if (conditionStateList.Count > 0)
             {
-                expressionsByLayer[i] = layerExpressions;
+                // レイヤーオブジェクトを作成
+                var layerObj = new GameObject(layer.name);
+                layerObj.transform.parent = rootObj.transform;
+                layerObj.AddComponent<PatternComponent>();
+
+                // GameObjectを生成
+                foreach (var (conditions, state) in conditionStateList)
+                {
+                    CreateExpressionGameObject(layerObj, conditions, state, parameterTypes);
+                    totalExpressionCount++;
+                }
+
+                validLayerCount++;
+            }
+            else
+            {
+                Debug.LogWarning($"Layer {i} ({layer.name}) has no valid expressions");
             }
         }
 
-        Debug.Log($"Final result: {expressionsByLayer.Count} layers with expressions");
-        if (expressionsByLayer.Count == 0)
+        Debug.Log($"Final result: {validLayerCount} layers with {totalExpressionCount} expressions");
+        if (totalExpressionCount == 0)
         {
             Debug.LogWarning("failed to find any expression");
+            UnityEngine.Object.DestroyImmediate(rootObj);
             return null;
         }
 
-        var rootObj = new GameObject($"FT_{animatorController.name}");
-
-        var totalExpressionCount = 0;
-
-        foreach (var (layerIndex, expressions) in expressionsByLayer.OrderBy(x => x.Key))
-        {
-            var layerName = layers[layerIndex].name;
-            
-            var layerObj = new GameObject(layerName);
-            layerObj.transform.parent = rootObj.transform;
-            layerObj.AddComponent<PatternComponent>();
-
-            // 各表情を処理
-            foreach (var (conditions, state) in expressions)
-            {
-                // ExpressionComponentを作成（condition/expression/dataすべて同一GameObject）
-                var expObj = new GameObject(state.name);
-                expObj.transform.parent = layerObj.transform;
-                
-                // 単一のConditionComponentに全条件を設定（AND条件
-                if (conditions.Length > 0)
-                {
-                    var condition = expObj.AddComponent<ConditionComponent>();
-                    ProcessConditions(conditions, condition, parameterTypes);
-                }
-
-                // ExpressionComponentを追加
-                var exp = expObj.AddComponent<ExpressionComponent>();
-                SetFacialSettings(exp, state);
-
-                // 表情データコンポーネントを追加してアニメーションクリップを設定
-                var facialData = expObj.AddComponent<FacialDataComponent>();
-                facialData.SourceMode = AnimationSourceMode.FromAnimationClip;
-                facialData.Clip = state.motion as AnimationClip;
-
-                totalExpressionCount++;
-            }
-        }
+        Undo.RegisterCreatedObjectUndo(rootObj, "Import FX");
 
         Debug.Log($"finished to import {totalExpressionCount} expressions");
         return rootObj;
     }
 
-    private static void ProcessStateMachineTransitions(AnimatorStateMachine stateMachine, List<(AnimatorCondition[] Conditions, AnimatorState State)> layerExpressions)
+    private static void CollectConditionsAndStates(AnimatorStateMachine stateMachine, List<(AnimatorCondition[] conditions, AnimatorState state)> conditionStateList)
     {
         foreach (var transition in stateMachine.entryTransitions)
         {
-            ProcessTransition(transition, layerExpressions);
+            if (IsValidTransition(transition, out var state))
+            {
+                conditionStateList.Add((transition.conditions, state));
+            }
         }
         
         foreach (var transition in stateMachine.anyStateTransitions)
         {
-            ProcessTransition(transition, layerExpressions);
+            if (IsValidTransition(transition, out var state))
+            {
+                conditionStateList.Add((transition.conditions, state));
+            }
         }
 
-        foreach (var state in stateMachine.states)
+        foreach (var stateInfo in stateMachine.states)
         {
-            foreach (var transition in state.state.transitions)
+            foreach (var transition in stateInfo.state.transitions)
             {
-                ProcessTransition(transition, layerExpressions);
+                if (IsValidTransition(transition, out var state))
+                {
+                    conditionStateList.Add((transition.conditions, state));
+                }
             }
         }
 
         foreach (var subStateMachine in stateMachine.stateMachines)
         {
-            ProcessStateMachineTransitions(subStateMachine.stateMachine, layerExpressions);
+            CollectConditionsAndStates(subStateMachine.stateMachine, conditionStateList);
         }
 
-        return;
-
-        static void ProcessTransition(AnimatorTransitionBase transition, List<(AnimatorCondition[] Conditions, AnimatorState State)> layerExpressions)
+        static bool IsValidTransition(AnimatorTransitionBase transition, [NotNullWhen(true)] out AnimatorState? state)
         {
-            if (transition.destinationState is not { } state)
+            state = null;
+            
+            if (transition.destinationState is not { } destinationState)
             {
-                Debug.Log("ProcessTransition: destinationState is null (exit transition) - skipping");
-                return;
+                Debug.Log($"Transition: destinationState is null (exit transition) - skipping. Transition: {transition.name}");
+                return false;
             }
                 
-            if (state.motion is not AnimationClip clip)
+            if (destinationState.motion is not AnimationClip)
             {
-                Debug.Log($"ProcessTransition: motion is not AnimationClip. Motion={state.motion?.name}, Type={state.motion?.GetType()}");
-                return;
+                Debug.Log($"Transition: motion is not AnimationClip. State: {destinationState.name}, Motion={destinationState.motion?.name}, Type={destinationState.motion?.GetType()}");
+                return false;
             }
 
-            layerExpressions.Add((transition.conditions, state));
-
-            return;
+            Debug.Log($"Valid transition found: state '{destinationState.name}' with {transition.conditions.Length} conditions");
+            state = destinationState;
+            return true;
         }
+    }
+
+    private static void CreateExpressionGameObject(GameObject layerObj, AnimatorCondition[] conditions, AnimatorState state, Dictionary<string, AnimatorControllerParameterType> parameterTypes)
+    {
+        var expObj = new GameObject(state.name);
+        expObj.transform.parent = layerObj.transform;
+        
+        // 条件を設定
+        if (conditions.Length > 0)
+        {
+            var condition = expObj.AddComponent<ConditionComponent>();
+            ProcessConditions(conditions, condition, parameterTypes);
+        }
+
+        // ExpressionComponentを追加
+        var exp = expObj.AddComponent<ExpressionComponent>();
+        SetFacialSettings(exp, state);
+
+        // 表情データコンポーネントを追加
+        var facialData = expObj.AddComponent<FacialDataComponent>();
+        facialData.SourceMode = AnimationSourceMode.FromAnimationClip;
+        facialData.Clip = state.motion as AnimationClip;
     }
 
     private static void ProcessConditions(AnimatorCondition[] conditions, ConditionComponent condition, Dictionary<string, AnimatorControllerParameterType> parameterTypes)
