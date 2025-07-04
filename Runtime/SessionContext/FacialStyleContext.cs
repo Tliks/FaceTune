@@ -56,4 +56,15 @@ internal class FacialStyleContext
         facialStyle.GetBlendShapes(resultToAdd);
         return true;
     }
+
+    public static bool TryGetFacialStyleAnimations(GameObject target, SessionContext context, [NotNullWhen(true)] out IEnumerable<GenericAnimation>? animations)
+    {
+        if (!TryGetFacialStyle(target, out var facialStyle))
+        {
+            animations = null;
+            return false;
+        }
+        animations = facialStyle.GetAnimations(context);
+        return true;
+    }
 }

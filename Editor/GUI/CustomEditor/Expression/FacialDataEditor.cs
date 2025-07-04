@@ -32,6 +32,76 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
             so.ApplyModifiedProperties();
         }
     }
+
+    [MenuItem($"CONTEXT/{nameof(FacialDataComponent)}/Export as Clip")]
+    private static void ExportAsClip(MenuCommand command)
+    {
+        var component = (command.context as FacialDataComponent)!;
+        ExportFacialDataWindow.OpenWindow(component);
+    }
+}
+
+internal class ExportFacialDataWindow : EditorWindow
+{
+    private FacialDataComponent _component = null!;
+
+    private bool _addZeroWeight = false;
+    private bool _addFacialStyle = false;
+    private bool _excludeTrackedShapes = true;
+
+    private const int WindowWidth = 300;
+    private const int WindowHeight = 100;
+
+    public static void OpenWindow(FacialDataComponent component)
+    {
+        var window = GetWindow<ExportFacialDataWindow>();
+        window._component = component;
+        window.maxSize = new Vector2(WindowWidth, WindowHeight);
+        window.Show();
+    }
+
+    private void OnGUI()
+    {
+        _addZeroWeight = EditorGUILayout.Toggle("Add Zero Weight", _addZeroWeight);
+        _addFacialStyle = EditorGUILayout.Toggle("Add Facial Style", _addFacialStyle);
+        _excludeTrackedShapes = EditorGUILayout.Toggle("Exclude Tracked Shapes", _excludeTrackedShapes);
+
+        if (GUILayout.Button("Export"))
+        {
+            Export();
+            Close();
+        }
+    }
+
+    private void Export()
+    {
+        var animations = new AnimationIndex();
+        if (!SessionContextBuilder.TryBuild(_component.gameObject, out var context))
+        {
+            Debug.LogError("Failed to build session context");
+            return;
+        }
+        if (_addZeroWeight)
+        {
+            animations.AddRange(context.ZeroWeightBlendShapes.ToGenericAnimations(context.BodyPath));
+        }
+        if (_addFacialStyle)
+        {
+            if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, context, out var facialStyleAnimations))
+            {
+                animations.AddRange(facialStyleAnimations);
+            }
+        }
+        if (_excludeTrackedShapes)
+        {
+            animations.RemoveBlendShapes(context.TrackedBlendShapes);
+        }
+        animations.AddRange((_component as IAnimationData).GetAnimations(context));
+        CustomEditorUtility.SaveAsClip(clip =>
+        {
+            clip.SetGenericAnimations(animations);
+        });
+    }
 }
 
 /*

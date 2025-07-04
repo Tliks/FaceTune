@@ -7,21 +7,12 @@ internal static class CustomEditorUtility
         return SessionContextBuilder.TryBuild(obj, out context);
     }
 
-    public static void ToClip(string relativePath, IEnumerable<BlendShape> blendShapes)
+    public static void SaveAsClip(Action<AnimationClip> editClip)
     {
         var clip = new AnimationClip();
-        clip.SetBlendShapes(relativePath, blendShapes);
-        var path = EditorUtility.SaveFilePanelInProject("Save FacialExpression as Clip", "FacialExpression", "anim", "Please enter the name of the animation clip.");
-        if (string.IsNullOrEmpty(path)) return;
-        AssetDatabase.CreateAsset(clip, path);
-    }
-
-    public static void ToClip(List<GenericAnimation> genericAnimations)
-    {
-        var clip = new AnimationClip();
-        clip.SetGenericAnimations(genericAnimations);
-        var path = EditorUtility.SaveFilePanelInProject("Save GenericAnimations as Clip", "GenericAnimations", "anim", "Please enter the name of the animation clip.");
-        if (string.IsNullOrEmpty(path)) return;
+        editClip(clip);
+        var path = EditorUtility.SaveFilePanelInProject("Save as a Clip", "", "anim", "Please enter the name of the animation clip.");
+        if (string.IsNullOrEmpty(path)) throw new Exception("path is empty");
         AssetDatabase.CreateAsset(clip, path);
     }
 
