@@ -17,7 +17,7 @@ namespace aoyon.facetune
             return BlendShapeAnimations.Select(bs => bs.ToGeneric(sessionContext.BodyPath));
         }
         
-        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, IObserveContext? observeContext)
+        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
         {
             observeContext?.Observe(this);
             foreach (var animation in BlendShapeAnimations)

@@ -53,11 +53,7 @@ namespace aoyon.facetune
         {
             if (Clip == null) return;
             var facialStyleSet = new BlendShapeSet();
-            var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>(true);
-            if (facialComponent != null)
-            {
-                facialComponent.GetBlendShapes(facialStyleSet, null);
-            }
+            FacialStyleContext.TryAddFacialStyleShapes(gameObject, facialStyleSet);
 #if UNITY_EDITOR
             Clip.GetBlendShapeAnimations(animations, ClipExcludeOption, facialStyleSet);
 #endif

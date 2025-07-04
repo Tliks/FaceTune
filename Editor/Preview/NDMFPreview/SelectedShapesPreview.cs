@@ -100,19 +100,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
     private static BlendShapeSet GetFacialStyle(GameObject root, GameObject targetGameObject, IObserveContext observeContext)
     {
         var result = new BlendShapeSet(); // Todo
-
-        using var _ = ListPool<FacialStyleComponent>.Get(out var facialStyleComponents);
-        targetGameObject.GetComponentsInParent<FacialStyleComponent>(true, facialStyleComponents);
-        // GetComponentsInParentを監視できないのでその代わり
-        using var _2 = ListPool<FacialStyleComponent>.Get(out var tmp);
-        observeContext.GetComponentsInChildren<FacialStyleComponent>(root, true, tmp);
-
-        if (facialStyleComponents.Count != 0)
-        {
-            var nearset = facialStyleComponents[0];
-            nearset.GetBlendShapes(result, observeContext);
-        }
-
+        FacialStyleContext.TryAddFacialStyleShapes(targetGameObject, result, root, observeContext);
         return result;
     }
 
