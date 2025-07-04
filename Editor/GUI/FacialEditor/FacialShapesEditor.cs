@@ -1,6 +1,7 @@
 using UnityEditor.IMGUI.Controls;
 using nadena.dev.ndmf.preview;
 using aoyon.facetune.preview;
+using System.Text.RegularExpressions;
 
 namespace aoyon.facetune.ui;
 
@@ -14,6 +15,8 @@ internal class FacialShapesEditor : EditorWindow
     [SerializeField] private float[] _overrideWeights = null!;
 
     private BlendShapeSelectorManager _selector = null!;
+    private BlendShapeGrouping _grouping = null!;
+    private GroupSelectionUI _groupSelectionUI = null!;
 
     private bool _previewOnHover = true;
     public bool PreviewOnHover
@@ -112,7 +115,9 @@ internal class FacialShapesEditor : EditorWindow
         _overrideFlagsProperty = _serializedObject.FindProperty(nameof(_overrideFlags));
         _overrideWeightsProperty = _serializedObject.FindProperty(nameof(_overrideWeights));
 
-        _selector = new BlendShapeSelectorManager(BaseShapes, _overrideFlagsProperty, _overrideWeightsProperty, OnAnyChangeCallback, OnHoveredCallback);
+        _grouping = new BlendShapeGrouping(BaseShapes);
+        _groupSelectionUI = new GroupSelectionUI(_grouping.Groups, OnGroupSelectionChanged);
+        _selector = new BlendShapeSelectorManager(BaseShapes, _overrideFlagsProperty, _overrideWeightsProperty, _grouping, OnAnyChangeCallback, OnHoveredCallback);
         _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor(renderer, mesh);
 
         saveChangesMessage = "This window may have unsaved changes. Would you like to save?";
@@ -123,6 +128,11 @@ internal class FacialShapesEditor : EditorWindow
 
         _previewShapes.Value = new();
         EditingShapesPreview.Start(renderer, _previewShapes!);
+    }
+
+    private void OnGroupSelectionChanged()
+    {
+        _selector.Reload();
     }
 
     private void OnAnyChangeCallback()
@@ -281,6 +291,13 @@ internal class FacialShapesEditor : EditorWindow
         EditorGUILayout.Space(10);
 
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        EditorGUILayout.LabelField("Group Filter", EditorStyles.boldLabel);
+        _groupSelectionUI.OnGUI();
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.Space(10);
+
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         EditorGUILayout.LabelField("Clip Extraction", EditorStyles.boldLabel);
         _sourceClip = EditorGUILayout.ObjectField("Source Clip", _sourceClip, typeof(AnimationClip), false) as AnimationClip;
         _clipExcludeOption = (ClipExcludeOption)EditorGUILayout.EnumPopup("Exclude Option", _clipExcludeOption);
@@ -325,11 +342,130 @@ internal class FacialShapesEditor : EditorWindow
     }
 }
 
+internal class BlendShapeGroup
+{
+    public readonly string Name;
+    public readonly List<int> BlendShapeIndices;
+    public bool IsSelected { get; set; } = true;
+
+    public BlendShapeGroup(string name)
+    {
+        Name = name;
+        BlendShapeIndices = new List<int>();
+    }
+}
+
+internal class BlendShapeGrouping
+{
+    private const string DefaultGroupName = "Default";
+    
+    private static readonly string GroupNameSymbolPattern = string.Join("|", new[]
+    {
+        @"\W",     // Non-Word Characters
+        @"\p{Pc}", // Connector Punctuations
+        @"ー",     // Katakana-Hiragana Prolonged Sound Mark
+        @"ｰ",      // Halfwidth Katakana-Hiragana Prolonged Sound Mark
+    });
+    
+    private static readonly string GroupNamePattern = string.Join("|", new[]
+    {
+        $"^(?:(?:{GroupNameSymbolPattern}){{3,}})(.*?)(?:(?:{GroupNameSymbolPattern}){{3,}})?$",
+        $"^(?:(?:{GroupNameSymbolPattern}){{3,}})?(.*?)(?:(?:{GroupNameSymbolPattern}){{3,}})$",
+    });
+
+    public readonly List<BlendShapeGroup> Groups;
+
+    public BlendShapeGrouping(IReadOnlyList<BlendShape> blendShapes)
+    {
+        Groups = new List<BlendShapeGroup>();
+        BuildGroups(blendShapes);
+    }
+
+    private void BuildGroups(IReadOnlyList<BlendShape> blendShapes)
+    {
+        Groups.Clear();
+        Groups.Add(new BlendShapeGroup(DefaultGroupName));
+
+        for (var i = 0; i < blendShapes.Count; i++)
+        {
+            var shapeName = blendShapes[i].Name;
+            var match = Regex.Match(shapeName, GroupNamePattern);
+            if (match.Success)
+            {
+                var groupName = match.Groups.Cast<Group>().Skip(1).First(x => x.Success).Value;
+                Groups.Add(new BlendShapeGroup(groupName));
+            }
+
+            Groups.Last().BlendShapeIndices.Add(i);
+        }
+    }
+
+    public bool IsBlendShapeVisible(int index)
+    {
+        return Groups.Any(group => group.IsSelected && group.BlendShapeIndices.Contains(index));
+    }
+}
+
+internal class GroupSelectionUI
+{
+    private readonly List<BlendShapeGroup> _groups;
+    private readonly Action _onSelectionChanged;
+
+    public GroupSelectionUI(List<BlendShapeGroup> groups, Action onSelectionChanged)
+    {
+        _groups = groups;
+        _onSelectionChanged = onSelectionChanged;
+    }
+
+    public void OnGUI()
+    {
+        EditorGUI.BeginChangeCheck();
+
+        foreach (var group in _groups)
+        {
+            var displayName = $"{group.Name} ({group.BlendShapeIndices.Count})";
+            var newSelection = EditorGUILayout.Toggle(displayName, group.IsSelected);
+            if (newSelection != group.IsSelected)
+            {
+                group.IsSelected = newSelection;
+            }
+        }
+
+        EditorGUILayout.Space(5);
+        
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("All"))
+        {
+            SetAllGroups(true);
+        }
+        if (GUILayout.Button("None"))
+        {
+            SetAllGroups(false);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            _onSelectionChanged?.Invoke();
+        }
+    }
+
+    private void SetAllGroups(bool selected)
+    {
+        foreach (var group in _groups)
+        {
+            group.IsSelected = selected;
+        }
+        _onSelectionChanged?.Invoke();
+    }
+}
+
 internal class BlendShapeSelectorManager : IDisposable
 {
     public readonly IReadOnlyList<BlendShape> BaseShapes;
     private readonly SerializedProperty _overrideFlagsProperty;
     private readonly SerializedProperty _overrideWeightsProperty;
+    private readonly BlendShapeGrouping _grouping;
 
     private readonly BlendShapeSelectorBase _selectedBlendShapeSelector;
     private readonly BlendShapeSelectorBase _unSelectedBlendShapeSelector;
@@ -337,11 +473,12 @@ internal class BlendShapeSelectorManager : IDisposable
     private readonly Action? _anyChangeCallback;
     private readonly Action<int>? _hoveredCallback;
     public BlendShapeSelectorManager(IReadOnlyList<BlendShape> baseShapes, SerializedProperty overrideFlagsProperty, SerializedProperty overrideWeightsProperty, 
-        Action? anyChangeCallback = null, Action<int>? hoveredCallback = null)
+        BlendShapeGrouping grouping, Action? anyChangeCallback = null, Action<int>? hoveredCallback = null)
     {
         BaseShapes = baseShapes;
         _overrideFlagsProperty = overrideFlagsProperty;
         _overrideWeightsProperty = overrideWeightsProperty;
+        _grouping = grouping;
         _selectedBlendShapeSelector = new SelectedBlendShapeSelector(this);
         _unSelectedBlendShapeSelector = new UnSelectedBlendShapeSelector(this);
 
@@ -408,6 +545,11 @@ internal class BlendShapeSelectorManager : IDisposable
         return _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue;
     }
 
+    public bool IsBlendShapeVisible(int index)
+    {
+        return _grouping.IsBlendShapeVisible(index);
+    }
+
     private void OnUndoRedoPerformed()
     {
         EditorApplication.delayCall += () =>
@@ -421,7 +563,7 @@ internal class BlendShapeSelectorManager : IDisposable
 internal class SelectedBlendShapeSelector : BlendShapeSelectorBase
 {
     private readonly BlendShapeSelectorManager _manager;
-    public SelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.BaseShapes, index => manager.ReadOverrideFlag(index))
+    public SelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.BaseShapes, index => manager.ReadOverrideFlag(index) && manager.IsBlendShapeVisible(index))
     {
         _manager = manager;
     }
@@ -458,7 +600,7 @@ internal class SelectedBlendShapeSelector : BlendShapeSelectorBase
 internal class UnSelectedBlendShapeSelector : BlendShapeSelectorBase
 {
     private readonly BlendShapeSelectorManager _manager;
-    public UnSelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.BaseShapes, index => manager.ReadOverrideFlag(index) is false)
+    public UnSelectedBlendShapeSelector(BlendShapeSelectorManager manager) : base(manager.BaseShapes, index => manager.ReadOverrideFlag(index) is false && manager.IsBlendShapeVisible(index))
     {
         _manager = manager;
     }
