@@ -2,15 +2,30 @@ namespace aoyon.facetune.ui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(FacialStyleComponent))]
-internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<FacialStyleComponent>
+internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent>
 {
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
+        if (GUILayout.Button("Update From Scene"))
+        {
+            UpdateFromScene();
+        }
         if (GUILayout.Button("Open Editor"))
         {
             CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, so => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations)));
         }
+    }
+
+    private void UpdateFromScene()
+    {
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
+        var blendShapes = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Where(shape => shape.Weight > 0).ToList();
+        serializedObject.Update();
+        var property = serializedObject.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
+        CustomEditorUtility.ClearAnimations(property);
+        CustomEditorUtility.AddShapesAsSingleFrame(property, blendShapes);
+        serializedObject.ApplyModifiedProperties();
     }
 }
 
