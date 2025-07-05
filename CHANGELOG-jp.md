@@ -36,6 +36,8 @@
 - `FT Advanced LipSync`を追加
   - アタッチされたGameObject以下のExpressionに対して影響を及ぼします。
   - 干渉対策として任意のブレンドシェイプをキャンセラーとして使用できます。発話の開始時に適用されます。
+- `FacialShapesEditor`にブレンドシェイプのグルーピングや、一括変更、影響を受ける顔つきの表示などの機能を追加しました。
+- `FT Facial Data`のMenuItemにあるAnimation Clipとしての出力機能に対しオプションを追加しました。
 
 ### Changed
 - MA MenuItem（Toggle/Button）はOR条件として動作するように変更。
@@ -48,12 +50,16 @@
 ### Removed
 - `FT Facial Expression`を削除。
 - `FT Default Facial Expression`を削除。
+- `FT Dsiable Exisiting Control`を削除
+  - ブレンドシェイプの上書きに関しては追加の条件を設定しない `FT Expression`で対応することとし、廃止します。
+  - `FT Animation Data`により操作されるプロパティの無効化は行いません。
 
 ### Fixed
 - 毎フレームNDMF Previewが更新されていた問題を修正。
 - 不要なTracking用レイヤーが生成されないように修正。
 - floatのParameter Conditionが正常に動作していなかった問題を修正。
 - アバターの初期化時にTracking Controlが正常に適用されていなかった問題を修正。
+- 選択されているExpressionが正常にプレビューされないことがある問題を修正。
 
 ### Security
 
