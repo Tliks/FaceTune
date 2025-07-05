@@ -24,14 +24,12 @@ internal class AnimatorInstaller : InstallerBase
         _blinkInstaller = new BlinkInstaller(virtualController, sessionContext, useWriteDefaults);
     }
 
-    public void Execute(InstallData installData)
+    public void Execute(InstallerData installerData)
     {
-        var patternData = installData.PatternData;
+        var patternData = installerData.PatternData;
         if (patternData.IsEmpty) return;
 
-        var shapesLayerPriority = installData.OverrideBlendShapes ? LayerPriority : InitLayerPriority;
-        var propertiesLayerPriority = installData.OverrideProperties ? LayerPriority : InitLayerPriority;
-        CreateDefaultLayer(shapesLayerPriority, propertiesLayerPriority, patternData);
+        CreateDefaultLayer(patternData, InitLayerPriority);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -53,28 +51,27 @@ internal class AnimatorInstaller : InstallerBase
             || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyeBlink))
         {
             _blinkInstaller.AddEyeBlinkLayer();
-            _blinkInstaller.EditDefaultClip(GetRequiredDefaultClip(shapesLayerPriority));
+            _blinkInstaller.EditDefaultClip(GetRequiredDefaultClip(InitLayerPriority));
         }
 
         _lipSyncInstaller.MayAddLipSyncLayers();
-        _lipSyncInstaller.EditDefaultClip(GetRequiredDefaultClip(shapesLayerPriority));
+        _lipSyncInstaller.EditDefaultClip(GetRequiredDefaultClip(InitLayerPriority));
     }
 
-    private void CreateDefaultLayer(int shapesLayerPriority, int propertiesLayerPriority, PatternData patternData)
+    private void CreateDefaultLayer(PatternData patternData, int priority)
     {
-        var shapesClip = GetOrCreateDefautLayerAndClip(shapesLayerPriority, "Default");
+        var initializeClip = GetOrCreateDefautLayerAndClip(priority, "Initialize");
         var shapesAnimations = _sessionContext.ZeroWeightBlendShapes
             .Where(shape => !_sessionContext.TrackedBlendShapes.Contains(shape.Name))
             .ToGenericAnimations(_sessionContext.BodyPath);
-        shapesClip.SetAnimations(shapesAnimations);
+        initializeClip.SetAnimations(shapesAnimations);
 
         var allBindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct();
         var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), FaceTuneConsts.AnimatedBlendShapePrefix);
         var nonFacialBindings = allBindings.Where(b => b != facialBinding);
         if (!nonFacialBindings.Any()) return;
         var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
-        var propertiesClip = GetOrCreateDefautLayerAndClip(propertiesLayerPriority, "Default");
-        propertiesClip.SetAnimations(propertiesAnimations);
+        initializeClip.SetAnimations(propertiesAnimations);
     }
 
     private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)

@@ -74,10 +74,10 @@ internal class VRChatSuport : IPlatformSupport
         return new AnimatorInstaller(fx, context, useWriteDefaults);
     }
 
-    public void DisableExistingControlAndInstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallData installData)
+    public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
     {
         var installer = InitializeAnimatorInstaller(buildContext.Extension<AnimatorServicesContext>(), buildPassContext.SessionContext);
-        installer.Execute(installData);
+        installer.Execute(installerData);
     }
 
     public IEnumerable<string> GetTrackedBlendShape()
