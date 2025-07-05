@@ -11,7 +11,13 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
     public override bool IsEnabled(ComputeContext context) => context.Observe(_disabledDepth, d => d == 0, (a, b) => a == b);
     public static bool Enabled => _disabledDepth.Value == 0;
     public static void Disable() => _disabledDepth.Value++;
-    public static void MayEnable() => _disabledDepth.Value--;
+    public static void MayEnable()
+    {
+        if (_disabledDepth.Value > 0)
+        {
+            _disabledDepth.Value--;
+        }
+    }
 
     [InitializeOnLoadMethod]
     static void Init()
