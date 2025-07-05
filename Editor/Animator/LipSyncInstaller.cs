@@ -143,8 +143,9 @@ internal class LipSyncInstaller : InstallerBase
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
             // PassThrough -> lipsyncing
-            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
+            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerEntryDurationSeconds);
             passThroughToLipsyncing.SetDestination(lipsyncing);
+            passThroughToLipsyncing.InterruptionSource = TransitionInterruptionSource.Destination;
             var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
                 {
@@ -164,8 +165,9 @@ internal class LipSyncInstaller : InstallerBase
             passThrough.Transitions = passThrough.Transitions.Add(passThroughToLipsyncing);
 
             // lipsyncing -> PassThrough
-            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerDurationSeconds);
+            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerExitDurationSeconds);
             lipsyncingToPassThrough.SetDestination(passThrough);
+            lipsyncingToPassThrough.InterruptionSource = TransitionInterruptionSource.Source;
             var orConditions = new List<AnimatorCondition>
             {
                 new AnimatorCondition()

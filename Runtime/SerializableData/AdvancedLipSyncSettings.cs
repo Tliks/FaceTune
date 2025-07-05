@@ -25,9 +25,13 @@ public record class AdvancedLipSyncSettings // Immutable
     public IReadOnlyList<string> CancelerBlendShapeNames { get => cancelerBlendShapeNames.AsReadOnly(); init => cancelerBlendShapeNames = value.ToList(); }
     public const string CancelerBlendShapeNamesPropName = nameof(cancelerBlendShapeNames);
 
-    [SerializeField] private float cancelerDurationSeconds;
-    public float CancelerDurationSeconds { get => cancelerDurationSeconds; init => cancelerDurationSeconds = value; }
-    public const string CancelerDurationSecondsPropName = nameof(cancelerDurationSeconds);
+    [SerializeField] private float cancelerEntryDurationSeconds;
+    public float CancelerEntryDurationSeconds { get => cancelerEntryDurationSeconds; init => cancelerEntryDurationSeconds = value; }
+    public const string CancelerEntryDurationSecondsPropName = nameof(cancelerEntryDurationSeconds);
+
+    [SerializeField] private float cancelerExitDurationSeconds;
+    public float CancelerExitDurationSeconds { get => cancelerExitDurationSeconds; init => cancelerExitDurationSeconds = value; }
+    public const string CancelerExitDurationSecondsPropName = nameof(cancelerExitDurationSeconds);
 
     /*
     [SerializeField] private float cancelerThreshold;
@@ -44,20 +48,23 @@ public record class AdvancedLipSyncSettings // Immutable
         this.useAdvancedLipSync = useAdvancedLipSync;
         useCanceler = false;
         cancelerBlendShapeNames = new();
-        cancelerDurationSeconds = 0.1f;
+        cancelerEntryDurationSeconds = 0.1f;
+        cancelerExitDurationSeconds = 0.5f;
     }
 
     public AdvancedLipSyncSettings(
         bool useAdvancedLipSync,
         bool useCanceler,
         List<string> cancelerBlendShapeNames,
-        float cancelerDurationSeconds
+        float cancelerEntryDurationSeconds,
+        float cancelerExitDurationSeconds
     )
     {
         this.useAdvancedLipSync = useAdvancedLipSync;
         this.useCanceler = useCanceler;
         this.cancelerBlendShapeNames = cancelerBlendShapeNames;
-        this.cancelerDurationSeconds = cancelerDurationSeconds;
+        this.cancelerEntryDurationSeconds = cancelerEntryDurationSeconds;
+        this.cancelerExitDurationSeconds = cancelerExitDurationSeconds;
     }
 
     internal static AdvancedLipSyncSettings Disabled() => new(false);
@@ -72,14 +79,16 @@ public record class AdvancedLipSyncSettings // Immutable
         return UseAdvancedLipSync == other.UseAdvancedLipSync
          && UseCanceler == other.UseCanceler
          && CancelerBlendShapeNames.SequenceEqual(other.CancelerBlendShapeNames)
-         && CancelerDurationSeconds == other.CancelerDurationSeconds;
+         && CancelerEntryDurationSeconds == other.CancelerEntryDurationSeconds
+         && CancelerExitDurationSeconds == other.CancelerExitDurationSeconds;
     }
     public override int GetHashCode()
     {
         var hash = UseAdvancedLipSync.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
         hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
-        hash ^= CancelerDurationSeconds.GetHashCode();
+        hash ^= CancelerEntryDurationSeconds.GetHashCode();
+        hash ^= CancelerExitDurationSeconds.GetHashCode();
         return hash;
     }
 }
