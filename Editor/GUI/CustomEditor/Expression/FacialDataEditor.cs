@@ -4,13 +4,72 @@ namespace aoyon.facetune.ui;
 [CustomEditor(typeof(FacialDataComponent))]
 internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 {
+    private SerializedProperty _sourceModeProperty = null!;
+    private SerializedProperty _isSingleFrameProperty = null!;
+    private SerializedProperty _blendShapeAnimationsProperty = null!;
+    private SerializedProperty _clipProperty = null!;
+    private SerializedProperty _clipExcludeOptionProperty = null!;
+
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        _sourceModeProperty = serializedObject.FindProperty(nameof(FacialDataComponent.SourceMode));
+        _isSingleFrameProperty = serializedObject.FindProperty(nameof(FacialDataComponent.IsSingleFrame));
+        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
+        _clipProperty = serializedObject.FindProperty(nameof(FacialDataComponent.Clip));
+        _clipExcludeOptionProperty = serializedObject.FindProperty(nameof(FacialDataComponent.ClipExcludeOption));
+    }
+
+    private static readonly string[] SourceModeNames = {nameof(AnimationSourceMode.Manual), nameof(AnimationSourceMode.AnimationClip) };
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
+        serializedObject.Update();
+
+        DrawSourceModeGUI();
+
+        EditorGUILayout.Space();
+
+        GUI.enabled = _sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.Manual;
+        DrawManualModeGUI();
+        GUI.enabled = true;
+
+        EditorGUILayout.Space();
+
+        GUI.enabled = _sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.AnimationClip;
+        DrawFromAnimationClipModeGUI();
+        GUI.enabled = true;
+
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    private void DrawSourceModeGUI()
+    {
+        EditorGUI.BeginChangeCheck();
+        var newSourceMode = GUILayout.Toolbar(_sourceModeProperty.enumValueIndex, SourceModeNames);
+        if (EditorGUI.EndChangeCheck())
+        {
+            _sourceModeProperty.enumValueIndex = newSourceMode;
+        }
+    }
+
+    private void DrawManualModeGUI()
+    {
+        EditorGUILayout.PropertyField(_isSingleFrameProperty);
+        EditorGUILayout.PropertyField(_blendShapeAnimationsProperty);
+
+        EditorGUILayout.Space();
         if (GUILayout.Button("Open Editor"))
         {
             OpenEditor();
         }
+    }
+
+    private void DrawFromAnimationClipModeGUI()
+    {
+        EditorGUILayout.PropertyField(_clipProperty);
+        EditorGUILayout.PropertyField(_clipExcludeOptionProperty);
+
+        EditorGUILayout.Space();
         if (GUILayout.Button("Convert to Manual"))
         {
             ConvertToManual(targets);
