@@ -10,8 +10,6 @@ namespace aoyon.facetune
         public bool IsSingleFrame = true;
         public List<BlendShapeAnimation> BlendShapeAnimations = new();
 
-        public bool AsDefault = true;
-
         public bool EnableRealTimePreview = false;
 
         internal IEnumerable<GenericAnimation> GetAnimations(SessionContext sessionContext)

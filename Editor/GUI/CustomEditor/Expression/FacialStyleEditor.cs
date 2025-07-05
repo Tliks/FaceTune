@@ -4,6 +4,13 @@ namespace aoyon.facetune.ui;
 [CustomEditor(typeof(FacialStyleComponent))]
 internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent>
 {
+    private bool _hasDefault = false;
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        _hasDefault = HasDefault();
+    }
+
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
@@ -15,6 +22,12 @@ internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent
         {
             OpenEditor();
         }
+        GUI.enabled = !_hasDefault;
+        if (GUILayout.Button("As Default"))
+        {
+            AsDefault();
+        }
+        GUI.enabled = true;
     }
 
     private void OpenEditor()
@@ -33,6 +46,32 @@ internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent
         CustomEditorUtility.ClearAnimations(property);
         CustomEditorUtility.AddShapesAsSingleFrame(property, blendShapes);
         serializedObject.ApplyModifiedProperties();
+    }
+
+    // 子にDefault Expressionがあるか確認する
+    private bool HasDefault()
+    {
+        var defaultExpression = Component.transform.Find("Default");
+        if (defaultExpression == null) return false;
+        var defaultExpressionComponent = defaultExpression.GetComponent<ExpressionComponent>();
+        if (defaultExpressionComponent == null) return false;
+        var hasConditions = defaultExpression.GetComponentsInChildren<ConditionComponent>(true)
+            .Any(c => c.HandGestureConditions.Count > 0 || c.ParameterConditions.Count > 0);
+        if (hasConditions) return false;
+        return true;
+    }
+
+    private void AsDefault()
+    {
+        var defaultExpression = new GameObject("Default");
+        defaultExpression.transform.parent = Component.transform;
+        defaultExpression.transform.SetAsFirstSibling();
+
+        var defaultExpressionComponent = defaultExpression.AddComponent<ExpressionComponent>();
+        defaultExpressionComponent.FacialSettings = new(TrackingPermission.Allow, TrackingPermission.Allow, false);
+
+        Undo.RegisterCreatedObjectUndo(defaultExpression, "Create Default Expression");
+        EditorGUIUtility.PingObject(defaultExpression);
     }
 }
 
