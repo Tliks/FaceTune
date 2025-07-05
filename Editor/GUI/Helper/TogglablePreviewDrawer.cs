@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 internal class TogglablePreviewDrawer
 {

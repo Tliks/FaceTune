@@ -1,11 +1,11 @@
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.ui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(PatternComponent))]
 internal class PatternEditor : FaceTuneCustomEditorBase<PatternComponent>
 {
-    private const string Description = "このコンポーネントはアタッチされたGameObject以下のExpressionを同じ優先度と扱い排他制御にします。\n" +
-        "なお各Expressionに紐づいたConditionが排他ではない場合、どのExpressionが適用されるかは不定です。\n" +
+    private const string Description = "このコンポーネントはアタッチされたGameObject以下のExpressionを排他制御にします。\n" +
+        "各Expressionに紐づいたConditionが排他ではない場合、Hierarchy下のExpressionが優先されます。\n" +
         "このコンポーネントを使用した上で排他のConditionを設定することを推奨します。";
 
     public override void OnInspectorGUI()

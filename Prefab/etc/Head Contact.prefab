@@ -181,7 +181,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7378755284595162872}
   - component: {fileID: 953153314388719543}
-  - component: {fileID: 7080427580901489297}
+  - component: {fileID: 3486082118388007885}
+  - component: {fileID: 7518894814812070477}
   m_Layer: 0
   m_Name: Expression
   m_TagString: Untagged
@@ -218,14 +219,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HandGestureConditions: []
   ParameterConditions:
-  - ParameterName: FaceTune/HeadContact
-    ParameterType: 1
-    FloatComparisonType: 0
-    IntComparisonType: 0
-    FloatValue: 0.5
-    IntValue: 0
-    BoolValue: 0
---- !u!114 &7080427580901489297
+  - parameterName: 
+    parameterType: 0
+    comparisonType: 0
+    floatValue: 0
+    intValue: 0
+    boolValue: 0
+--- !u!114 &3486082118388007885
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -234,13 +234,30 @@ MonoBehaviour:
   m_GameObject: {fileID: 6973116030085656117}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &7518894814812070477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6973116030085656117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
