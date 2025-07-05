@@ -50,5 +50,5 @@ public enum ClipExcludeOption
 public enum AnimationSourceMode
 {
     Manual,
-    FromAnimationClip
+    AnimationClip
 }

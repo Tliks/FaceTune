@@ -34,7 +34,7 @@ namespace aoyon.facetune
                         }
                     }
                     break;
-                case AnimationSourceMode.FromAnimationClip:
+                case AnimationSourceMode.AnimationClip:
                     if (Clip == null) break;
                     var blendShapeAnimations = new List<BlendShapeAnimation>();
                     ClipToManual(blendShapeAnimations);
@@ -72,7 +72,7 @@ namespace aoyon.facetune
                         resultToAdd.Add(animation.ToFirstFrameBlendShape());
                     }
                     break;
-                case AnimationSourceMode.FromAnimationClip:
+                case AnimationSourceMode.AnimationClip:
                     if (Clip == null) break;
 #if UNITY_EDITOR
                     Clip.GetFirstFrameBlendShapes(resultToAdd, ClipExcludeOption, facialStyleSet);

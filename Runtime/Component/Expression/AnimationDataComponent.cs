@@ -22,7 +22,7 @@ namespace aoyon.facetune
                 case AnimationSourceMode.Manual:
                     animations.AddRange(Animations);
                     break;
-                case AnimationSourceMode.FromAnimationClip:
+                case AnimationSourceMode.AnimationClip:
                     ClipToManual(animations);
                     break;
                 default:

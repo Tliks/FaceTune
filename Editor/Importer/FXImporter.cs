@@ -145,7 +145,7 @@ internal static class FXImporter
 
         // 表情データコンポーネントを追加
         var facialData = expObj.AddComponent<FacialDataComponent>();
-        facialData.SourceMode = AnimationSourceMode.FromAnimationClip;
+        facialData.SourceMode = AnimationSourceMode.AnimationClip;
         facialData.Clip = state.motion as AnimationClip;
     }
 
