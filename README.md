@@ -3,7 +3,7 @@ FaceTune
 A modular tool for avatar emotion expression.
 
 Dependencies
-- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.7.0
+- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.8.0-beta.2
 - [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.12.0
 
 ## 導入方法
