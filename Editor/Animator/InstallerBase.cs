@@ -52,10 +52,11 @@ internal class InstallerBase
         return state;
     }
 
-    protected void AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
+    protected VirtualClip AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
     {
         var clip = state.GetOrCreateClip(state.Name);
         clip.SetAnimations(animations);
+        return clip;
     }
 
     protected void AsPassThrough(VirtualState state)

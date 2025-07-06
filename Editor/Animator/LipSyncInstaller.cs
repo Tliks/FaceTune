@@ -121,6 +121,10 @@ internal class LipSyncInstaller : InstallerBase
         }
     }
 
+    private const float CancelerTransitionDuration = 0.1f; // 一旦固定値
+    private const float CancelerThreshold = 0.01f;  // 0fだと流石に不安定になる
+    private const float CancelerExitTimerDuration = 0.5f;
+
     private void AddCancelerLayer()
     {
         var cancelerLayer = AddLayer("LipSync (Canceler)", LayerPriority);
@@ -142,22 +146,25 @@ internal class LipSyncInstaller : InstallerBase
             var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
+            var exitTimer = AddState(cancelerLayer, $"ExitTimer {index}", position + new Vector3(0, PositionYStep, 0));
+            var timerClip = AddAnimationToState(exitTimer, cancelerAnimation);
+            timerClip.SetDelay(CancelerExitTimerDuration);
+
             // PassThrough -> lipsyncing
-            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerEntryDurationSeconds);
+            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
             passThroughToLipsyncing.SetDestination(lipsyncing);
-            passThroughToLipsyncing.InterruptionSource = TransitionInterruptionSource.Destination;
             var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
                 {
                     parameter = UseCancelerAAP,
                     mode = AnimatorConditionMode.Greater,
-                    threshold = 0.01f
+                    threshold = 0.01f // 遷移を開始した直後から有効(有効側に寄せる)
                 },
                 new AnimatorCondition()
                 {
                     parameter = voiceParam,
                     mode = AnimatorConditionMode.Greater,
-                    threshold = 0.01f // 0fだと流石に不安定になる
+                    threshold = CancelerThreshold
                 }
             };
             andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
@@ -165,29 +172,60 @@ internal class LipSyncInstaller : InstallerBase
             passThrough.Transitions = passThrough.Transitions.Add(passThroughToLipsyncing);
 
             // lipsyncing -> PassThrough
-            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerExitDurationSeconds);
+            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
             lipsyncingToPassThrough.SetDestination(passThrough);
-            lipsyncingToPassThrough.InterruptionSource = TransitionInterruptionSource.Source;
-            var orConditions = new List<AnimatorCondition>
-            {
-                new AnimatorCondition()
-                {
-                    parameter = UseCancelerAAP,
-                    mode = AnimatorConditionMode.Less,
-                    threshold = 1f
-                },
-                new AnimatorCondition()
-                {
-                    parameter = voiceParam,
-                    mode = AnimatorConditionMode.Less,
-                    threshold = 0.02f
-                }
-            };
+            var orConditions = new List<AnimatorCondition>();
             orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
+            orConditions.Add(new AnimatorCondition()
+            {
+                parameter = UseCancelerAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.01f // 有効化側に寄せる
+            });
             var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToPassThrough, orConditions);
             lipsyncing.Transitions = lipsyncing.Transitions.AddRange(orTransitions);
 
-            position.y += PositionYStep;
+            // lipsyncing -> exitTimer
+            var lipsyncingToExitTimer = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            lipsyncingToExitTimer.SetDestination(exitTimer);
+            lipsyncingToExitTimer.Conditions = ImmutableList.Create(new AnimatorCondition()
+            {
+                parameter = voiceParam,
+                mode = AnimatorConditionMode.Less,
+                threshold = CancelerThreshold
+            });
+            lipsyncing.Transitions = lipsyncing.Transitions.Add(lipsyncingToExitTimer);
+
+            // exitTimer -> lipsyncing
+            var exitTimerToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            exitTimerToLipsyncing.SetDestination(lipsyncing);
+            exitTimerToLipsyncing.Conditions = ImmutableList.Create(new AnimatorCondition()
+            {
+                parameter = voiceParam,
+                mode = AnimatorConditionMode.Greater,
+                threshold = CancelerThreshold
+            });
+            exitTimer.Transitions = exitTimer.Transitions.Add(exitTimerToLipsyncing);
+
+            // exitTimer -> PassThrough
+            var exitTimerToPassThrough1 = AnimatorHelper.CreateTransitionWithExitTime(1f, CancelerTransitionDuration);
+            exitTimerToPassThrough1.SetDestination(passThrough);
+            exitTimer.Transitions = exitTimer.Transitions.Add(exitTimerToPassThrough1);
+
+            var exitTimerToPassThrough2 = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
+            exitTimerToPassThrough2.SetDestination(passThrough);
+            var orConditions2 = new List<AnimatorCondition>();
+            orConditions2.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
+            orConditions2.Add(new AnimatorCondition()
+            {
+                parameter = UseCancelerAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.01f // 有効化側に寄せる
+            });
+            var orTransitions2 = AnimatorHelper.SetORConditions(exitTimerToPassThrough2, orConditions2);
+            exitTimer.Transitions = exitTimer.Transitions.AddRange(orTransitions2);
+
+            position.y += 2 * PositionYStep;
         }
     }
 }

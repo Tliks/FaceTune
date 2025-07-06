@@ -238,13 +238,25 @@ internal static class AnimatorHelper
         }
     }
 
+    public static AnimationCurve CreateDelayCurve(float delay)
+    {
+        var curve = new AnimationCurve();
+        curve.AddKey(0f, 1f);
+        curve.AddKey(delay, 0f);
+        return curve;
+    }
+
+    public static void SetDelay(this VirtualClip clip, float delay)
+    {
+        var curve = CreateDelayCurve(delay);
+        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
+    }
+
     public static VirtualClip CreateDelayClip(float delay, string clipName = "Delay Clip")
     {
         var clip = VirtualClip.Create(clipName);
 
-        var curve = new AnimationCurve();
-        curve.AddKey(0f, 1f);
-        curve.AddKey(delay, 0f);
+        var curve = CreateDelayCurve(delay);
 
         clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
         return clip;
