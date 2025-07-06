@@ -55,12 +55,12 @@ public record class AdvancedLipSyncSettings // Immutable
     public AdvancedLipSyncSettings(
         bool useAdvancedLipSync,
         bool useCanceler,
-        List<string> cancelerBlendShapeNames
+        IReadOnlyList<string> cancelerBlendShapeNames
     )
     {
         this.useAdvancedLipSync = useAdvancedLipSync;
         this.useCanceler = useCanceler;
-        this.cancelerBlendShapeNames = cancelerBlendShapeNames;
+        this.cancelerBlendShapeNames = new(cancelerBlendShapeNames);
     }
 
     internal static AdvancedLipSyncSettings Disabled() => new(false);

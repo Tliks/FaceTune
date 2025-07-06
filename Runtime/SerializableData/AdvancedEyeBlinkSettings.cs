@@ -80,12 +80,12 @@ public record class AdvancedEyeBlinkSettings // Immutable
         bool useRandomInterval,
         float randomIntervalMinSeconds,
         float randomIntervalMaxSeconds,
-        List<string> blinkBlendShapeNames,
+        IReadOnlyList<string> blinkBlendShapeNames,
         float closingDurationSeconds,
         float holdDurationSeconds,
         float openingDurationSeconds,
         bool useCanceler,
-        List<string> cancelerBlendShapeNames
+        IReadOnlyList<string> cancelerBlendShapeNames
     )
     {
         this.useAdvancedEyeBlink = useAdvancedEyeBlink;
@@ -94,12 +94,12 @@ public record class AdvancedEyeBlinkSettings // Immutable
         this.useRandomInterval = useRandomInterval;
         this.randomIntervalMinSeconds = randomIntervalMinSeconds;
         this.randomIntervalMaxSeconds = randomIntervalMaxSeconds;
-        this.blinkBlendShapeNames = blinkBlendShapeNames;
+        this.blinkBlendShapeNames = new(blinkBlendShapeNames);
         this.closingDurationSeconds = closingDurationSeconds;
         this.holdDurationSeconds = holdDurationSeconds;
         this.openingDurationSeconds = openingDurationSeconds;
         this.useCanceler = useCanceler;
-        this.cancelerBlendShapeNames = cancelerBlendShapeNames;
+        this.cancelerBlendShapeNames = new(cancelerBlendShapeNames);
     }
 
     internal static AdvancedEyeBlinkSettings Disabled() => new(false);
