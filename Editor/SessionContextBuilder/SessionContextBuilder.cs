@@ -5,22 +5,34 @@ namespace aoyon.facetune;
 
 internal static class SessionContextBuilder
 {
-    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, IObserveContext? context = null)
+    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, out SessionContextBuildResult result, IObserveContext? context = null)
     {
         sessionContext = null;
 
         context ??= new NonObserveContext();
 
         var root = context.GetAvatarRoot(target);
-        if (root == null) return false;
+        if (root == null)
+        {
+            result = SessionContextBuildResult.NotFoundAvatarRoot;
+            return false;
+        }
 
         var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
 
         var faceRenderer = GetFaceRenderer(root, platformSupport, context);
-        if (faceRenderer == null) return false;
+        if (faceRenderer == null)
+        {
+            result = SessionContextBuildResult.NotFoundFaceRenderer;
+            return false;
+        }
 
         var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
-        if (faceMesh == null) return false;
+        if (faceMesh == null)
+        {
+            result = SessionContextBuildResult.NotFoundFaceMesh;
+            return false;
+        }
 
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
 
@@ -30,6 +42,7 @@ internal static class SessionContextBuilder
         var trackedBlendShapes = platformSupport.GetTrackedBlendShape().ToHashSet();
 
         sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes, trackedBlendShapes);
+        result = SessionContextBuildResult.Success;
         return true;
     }
 
@@ -56,6 +69,14 @@ internal static class SessionContextBuilder
         {
             return faceRenderer;
         }
+    }
+
+    public enum SessionContextBuildResult
+    {
+        Success,
+        NotFoundAvatarRoot,
+        NotFoundFaceRenderer,
+        NotFoundFaceMesh,
     }
 }
 
