@@ -1,0 +1,93 @@
+/* ListView Item Styling */
+.unity-list-view__item {
+    min-height: 24px;
+}
+
+.unity-list-view__item.list-item-even {
+    background-color: rgb(56, 56, 56);
+}
+
+.unity-list-view__item.list-item-odd {
+    background-color: rgb(64, 64, 64);
+}
+
+.unity-list-view__item:hover {
+    background-color: rgb(80, 90, 100);
+}
+
+/* Selected item should override hover and base colors */
+.unity-list-view__item:selected {
+    background-color: rgb(60, 95, 150);
+    color: white;
+}
+
+.unity-list-view__item:selected:hover {
+    background-color: rgb(70, 105, 160);
+}
+
+.unity-list-view__item.modified-style {
+    background-color: rgb(87, 80, 50);
+}
+
+.unity-list-view__item.modified-style:hover {
+    background-color: rgb(102, 95, 65);
+}
+
+.unity-list-view__item.modified-style:selected {
+    background-color: rgb(82, 110, 150);
+}
+
+/* Group Toggles */
+.group-toggle {
+    -unity-text-align: middle-left;
+    height: 22px;
+    margin-right: 2px;
+    margin-bottom: 2px;
+    padding-left: 8px;
+    border-radius: 3px;
+    background-color: rgb(80, 80, 80);
+    border-width: 0;
+}
+
+.group-toggle .unity-toggle__checkmark {
+    display: none;
+}
+
+.group-toggle:checked {
+    background-color: rgb(75, 110, 150);
+    color: white;
+}
+
+.group-toggle:hover {
+    background-color: rgb(100, 100, 100);
+}
+
+.group-toggle:checked:hover {
+    background-color: rgb(85, 125, 170);
+}
+
+.vertical-splitter {
+    height: 2px;
+    background-color: rgb(30, 30, 30);
+    cursor: resize-vertical;
+    flex-shrink: 0;
+}
+
+.horizontal-splitter {
+    width: 2px;
+    background-color: rgb(30, 30, 30);
+    cursor: resize-horizontal;
+    flex-shrink: 0;
+}
+
+.list-item-hover:hover {
+    background-color: rgba(100, 110, 120, 0.4);
+}
+
+.value-button {
+    width: 30px;
+    height: 18px;
+    font-size: 10px;
+    margin-left: 2px;
+    margin-right: 2px;
+} 
