@@ -1,16 +1,16 @@
-namespace com.aoyon.facetune
+namespace aoyon.facetune
 {
+    [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
     public class PatternComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = "FT Pattern";
-        internal const string MenuPath = FaceTune + "/" + ExpressionPattern + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
         
-        internal ExpressionPattern? GetPattern(FacialExpression defaultExpression)
+        internal ExpressionPattern? GetPattern(SessionContext sessionContext)
         {
-            var expressionWithConditions = gameObject.GetComponentsInChildren<ConditionComponent>(true)
-                .Select(c => c.GetExpressionWithCondition(defaultExpression))
-                .UnityOfType<ExpressionWithCondition>()
+            var expressionWithConditions = gameObject.GetComponentsInChildren<ExpressionComponent>(true)
+                .SelectMany(c => c.GetExpressionWithConditions(sessionContext))
                 .ToList();
             if (expressionWithConditions.Count == 0) return null;
             return new ExpressionPattern(expressionWithConditions);

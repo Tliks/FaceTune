@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace com.aoyon.facetune.preview;
+namespace aoyon.facetune.preview;
 
 // とりあえず動く
 

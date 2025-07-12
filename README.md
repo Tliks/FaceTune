@@ -3,7 +3,7 @@ FaceTune
 A modular tool for avatar emotion expression.
 
 Dependencies
-- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.7.0
+- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.8.0-beta.2
 - [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.12.0
 
 ## 導入方法
@@ -59,49 +59,48 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 *   例えば、上記「例2」のように最小構成で特定のジェスチャー表情だけを追加した場合、そのジェスチャーが実行されている間だけFaceTuneの表情が適用され、それ以外の時は元々のアバターの表情制御が機能します。これにより、既存のセットアップを壊さずに新しい表情を追加・上書きできます。
 *   もし、FaceTuneでアバターの表情全体を管理し、既存の表情制御を無効化したい場合は、`DisableExistingControl` というコンポーネントをアバターの任意のGameObjectにアタッチしてください。
     *   `Template Base` を使用する場合、このコンポーネントは最初から含まれています。
-    *   このコンポーネントは、主に表情に関連するブレンドシェイプのアニメーションを無効化しようと試みます。他の種類のアニメーション（オブジェクトのON/OFFなど）には影響しません。
+    *   このコンポーネントは、主に表情に関連するブレンドシェイプのアニメーションを無効化しようと試みます。
 
 ## 各コンポーネントの説明
 
 各コンポーネントの説明です。以下に説明のないコンポーネントは現在動作していません。
 
+## Expression
+
+### Expression
+
+### Facial Data
+
+### Animation Data
+
+### Facial Style
+
+### Advanced Eyeblink 
+
+### Advanced LipSync
+
+## Condition
+
 ### Condition
+条件を設定します。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。アタッチされたGameObject以下のExpressionがこのConditionの影響を受けます。。
+同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
-条件を設定します。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。アタッチされたGameObject以下のExpressionがこのConditionと紐付きます。
-
-### Facial Expression
-
-表情を設定します。デフォルト表情からの差分の設定のみで動作します。`Enable Blending`をオンにすると、他の表情と重ね合わせて表情を使えるようになります。
+### MenuItem (Modular Avatar)
+FaceTuneのコンポーネントではありませんが、同様に条件定義として動作します。ビルド時にパラメータを生成し、Conditionと同様に振る舞います。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。
 
 ### Pattern
-
 アタッチされたGameObject以下の複数の`Condition`とそれに紐づく`Expression`を排他制御としてマークします。
 
 ### Preset
-
 アタッチされたGameObject以下の制御をプリセットとしてマークします。このプリセットをオンオフするメニューは同じ階層に自動生成されます。このPresetを複数配置することで、複数の制御をメニューから切り替えできるようになります。
 
-### Default Facial Expression
-
-デフォルト表情を設定します。このコンポーネントが設定されない場合、シーン上のブレンドシェイプなどがデフォルト表情となります。プリセット単位で設定することも出来ます。
-
-### Disable Existing Control
- 
-既存の表情制御を無効化します。表情ブレンドシェイプ以外の無効化は行いません。
+## その他
 
 ### Allow Tracked BlendShapes
-
 まばたきやリップシンクに使用され、通常表情に用いることが許可されていないブレンドシェイプを用いることが出来るようにします。このコンポーネントが設定されておらず、許可されないブレンドシェイプが使用されていた場合、警告の上でそのブレンドシェイプは除外されます。動作原理はビルド時におけるブレンドシェイプの複製です。
 
 ### Override Face Renderer
-
 適用対象のSkinnedMeshRendererを明示的に指定します。このコンポーネントが設定されていない場合、自動的に選定されます。
 
-
-### Common Condition
-
-設定された条件を直下の`Condition`に一括で追加します。共通の条件をまとめたい際に便利です。
-
 ### FaceTune Assistant
-
 Editor上でのみ機能するコンポーネントです。現在アバターに対し設定されたFaceTuneの設定を簡単に解析し、設定に関する簡単な情報の提供をします。またGameObjectやコンポーネントの生成を行う機能などを提供します。
