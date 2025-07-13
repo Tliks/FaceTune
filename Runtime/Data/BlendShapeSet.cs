@@ -176,6 +176,19 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return this;
     }
 
+    public BlendShapeSet Where(Func<BlendShape, bool> predicate)
+    {
+        var result = new BlendShapeSet();
+        foreach (var blendShape in BlendShapes)
+        {
+            if (predicate(blendShape))
+            {
+                result.Add(blendShape);
+            }
+        }
+        return result;
+    }
+
     public BlendShapeSet Except(BlendShapeSet baseSet, bool includeEqualOverride = false)
     {
         var diff = new BlendShapeSet();

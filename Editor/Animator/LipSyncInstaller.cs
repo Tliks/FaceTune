@@ -123,8 +123,6 @@ internal class LipSyncInstaller : InstallerBase
 
     private const float CancelerTransitionDuration = 0.1f; // 一旦固定値
     private const float CancelerThreshold = 0.01f;  // 0fだと流石に不安定になる
-    private const float CancelerExitTimerDuration = 0.5f;
-
     private void AddCancelerLayer()
     {
         var cancelerLayer = AddLayer("LipSync (Canceler)", LayerPriority);
@@ -145,10 +143,6 @@ internal class LipSyncInstaller : InstallerBase
             var lipsyncing = AddState(cancelerLayer, $"Lipsyncing {index}", position);
             var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
-
-            var exitTimer = AddState(cancelerLayer, $"ExitTimer {index}", position + new Vector3(0, PositionYStep, 0));
-            var timerClip = AddAnimationToState(exitTimer, cancelerAnimation);
-            timerClip.SetDelay(CancelerExitTimerDuration);
 
             // PassThrough -> lipsyncing
             var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
@@ -182,50 +176,16 @@ internal class LipSyncInstaller : InstallerBase
                 mode = AnimatorConditionMode.Less,
                 threshold = 0.01f // 有効化側に寄せる
             });
+            orConditions.Add(new AnimatorCondition()
+            {
+                parameter = voiceParam,
+                mode = AnimatorConditionMode.Less,
+                threshold = CancelerThreshold
+            });
             var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToPassThrough, orConditions);
             lipsyncing.Transitions = lipsyncing.Transitions.AddRange(orTransitions);
 
-            // lipsyncing -> exitTimer
-            var lipsyncingToExitTimer = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-            lipsyncingToExitTimer.SetDestination(exitTimer);
-            lipsyncingToExitTimer.Conditions = ImmutableList.Create(new AnimatorCondition()
-            {
-                parameter = voiceParam,
-                mode = AnimatorConditionMode.Less,
-                threshold = CancelerThreshold
-            });
-            lipsyncing.Transitions = lipsyncing.Transitions.Add(lipsyncingToExitTimer);
-
-            // exitTimer -> lipsyncing
-            var exitTimerToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-            exitTimerToLipsyncing.SetDestination(lipsyncing);
-            exitTimerToLipsyncing.Conditions = ImmutableList.Create(new AnimatorCondition()
-            {
-                parameter = voiceParam,
-                mode = AnimatorConditionMode.Greater,
-                threshold = CancelerThreshold
-            });
-            exitTimer.Transitions = exitTimer.Transitions.Add(exitTimerToLipsyncing);
-
-            // exitTimer -> PassThrough
-            var exitTimerToPassThrough1 = AnimatorHelper.CreateTransitionWithExitTime(1f, CancelerTransitionDuration);
-            exitTimerToPassThrough1.SetDestination(passThrough);
-            exitTimer.Transitions = exitTimer.Transitions.Add(exitTimerToPassThrough1);
-
-            var exitTimerToPassThrough2 = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
-            exitTimerToPassThrough2.SetDestination(passThrough);
-            var orConditions2 = new List<AnimatorCondition>();
-            orConditions2.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
-            orConditions2.Add(new AnimatorCondition()
-            {
-                parameter = UseCancelerAAP,
-                mode = AnimatorConditionMode.Less,
-                threshold = 0.01f // 有効化側に寄せる
-            });
-            var orTransitions2 = AnimatorHelper.SetORConditions(exitTimerToPassThrough2, orConditions2);
-            exitTimer.Transitions = exitTimer.Transitions.AddRange(orTransitions2);
-
-            position.y += 2 * PositionYStep;
+            position.y += PositionYStep;
         }
     }
 }

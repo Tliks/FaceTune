@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
+    <ui:VisualElement name="unselected-shapes-panel">
+        <ui:Label name="unselected-label" text="Unselected Shapes" />
+        <ui:TextField name="unselected-search-field" />
+        <ui:VisualElement name="unselected-controls-container" style="flex-direction: row; align-items: center;">
+            <ui:Button name="add-all-button" text="Add All" />
+            <ui:Label name="weight-label" text="Weight:" />
+            <engine:FloatField name="add-weight-field" value="100" style="flex: 0 0 60px;" />
+        </ui:VisualElement>
+        <ui:ListView name="unselected-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" style="flex-grow: 1; margin-top: 5px;" />
+    </ui:VisualElement>
+</ui:UXML> 

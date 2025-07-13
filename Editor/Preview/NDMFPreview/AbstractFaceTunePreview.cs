@@ -39,6 +39,11 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
+        return Instantiate(group, proxyPairs, context);
+    }
+
+    protected virtual Task<IRenderFilterNode> Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
+    {
         try
         {
             var pair = proxyPairs.First();
@@ -56,35 +61,13 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
             using var _set = BlendShapeSetPool.Get(out var set);
             QueryBlendShapes(original, proxy, root, context, set);
 
-            // プレビューするブレンドシェイプが存在しない場合は空のプレビューを行う
-            if (set.Count == 0) return Empty();
-
-            var _blendShapeWeights = ListPool<float>.Get(out var blendShapeWeights);
-            for (int i = 0; i < proxyMesh.blendShapeCount; i++)
-            {
-                var name = proxyMesh.GetBlendShapeName(i);
-                if (set.TryGetValue(name, out var blendShape))
-                {
-                    blendShapeWeights.Add(blendShape.Weight);
-                }
-                else
-                {
-                    blendShapeWeights.Add(-1); // 対象外の場合はフラグとして-1を代入しNode側で除外
-                }
-            }
-
-            return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(_blendShapeWeights));
+            return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(proxy, set));
         }
         catch (Exception e)
         {
             return Error(e.Message);
         }
         
-        static Task<IRenderFilterNode> Empty()
-        {
-            return Task.FromResult<IRenderFilterNode>(new EmptyNode());
-        }
-
         // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
         static Task<IRenderFilterNode> Error(string? message = null)
         {
@@ -104,34 +87,90 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
 internal class BlendShapePreviewNode : IRenderFilterNode
 {
     public RenderAspects WhatChanged => RenderAspects.Shapes;
-    private readonly PooledObject<List<float>> _blendShapeWeights; 
 
-    public BlendShapePreviewNode(PooledObject<List<float>> blendShapeWeights)
+    private readonly SkinnedMeshRenderer _original;
+    private readonly Mesh _originalMesh;
+    private readonly int _blendShapeCount;
+    private readonly string[] _blendShapeNames;
+
+    public readonly PooledObject<List<float>> BlendShapeWeights;
+
+    private SkinnedMeshRenderer? _latestProxy;
+
+    public BlendShapePreviewNode(SkinnedMeshRenderer original, BlendShapeSet set)
     {
-        _blendShapeWeights = blendShapeWeights;
+        _original = original;
+        _originalMesh = original.sharedMesh;
+        _blendShapeCount = _originalMesh.blendShapeCount;
+        _blendShapeNames = new string[_blendShapeCount];
+        for (int i = 0; i < _blendShapeCount; i++)
+        {
+            _blendShapeNames[i] = _originalMesh.GetBlendShapeName(i);
+        }
+        BlendShapeWeights = ListPool<float>.Get(out _);
+        RefreshInternal(set);
     }
     
+    private void RefreshInternal(BlendShapeSet set)
+    {
+        var current = BlendShapeWeights.Value;
+        current.Clear();
+
+        for (int i = 0; i < _blendShapeCount; i++)
+        {
+            if (set.TryGetValue(_blendShapeNames[i], out var blendShape))
+            {
+                current.Add(blendShape.Weight);
+            }
+            else
+            {
+                current.Add(-1);
+            }
+        }
+    }
+
+    // 外部から直接書き換えることで再生成を伴うことなく、高速にプレビューを更新する
+    // 他のNodeの更新を必要しない下流かつ一時的な、また高頻度な更新を必要とするプレビュー用(EditingShapesPreview)
+    // パフォーマンスは良いものの、NDMF Previewの設計から外れてていると思われ、将来の動作は保証されない
+    // Todo: 今後のAPI変更に伴って書き換える
+    public void RefreshDirectly(BlendShapeSet set)
+    {
+        RefreshInternal(set);
+        if (_latestProxy != null)
+        {
+            // OnFrameがCamera.onPreCullを購読しているため、GUI等の一部の操作で発火しない
+            // そのため明示的にOnFrameを呼び更新する
+            OnFrameInternal(_latestProxy);
+        }
+    }
+
     public void OnFrame(Renderer original, Renderer proxy)
     {
         var smr = proxy as SkinnedMeshRenderer;
         if (smr == null) return;
+        _latestProxy = smr;
 
-        var mesh = smr.sharedMesh;
+        OnFrameInternal(smr);
+    }
+
+    private void OnFrameInternal(SkinnedMeshRenderer proxy)
+    {
+        var mesh = proxy.sharedMesh;
         if (mesh == null) return;
 
-        var weights = _blendShapeWeights.Value;
+        var weights = BlendShapeWeights.Value;
         var count = weights.Count;
 
         for (int i = 0; i < count; i++)
         {
             if (weights[i] == -1) continue; // 対象外
-            smr.SetBlendShapeWeight(i, weights[i]);
+            proxy.SetBlendShapeWeight(i, weights[i]);
         }
     }
 
     public void Dispose()
     {
-        _blendShapeWeights.Dispose();
+        BlendShapeWeights.Dispose();
     }
 }
 
