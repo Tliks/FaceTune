@@ -1,10 +1,17 @@
+using aoyon.facetune.ui.shapes_editor;
+
 namespace aoyon.facetune.ui;
 
 internal static class CustomEditorUtility
 {
     public static bool TryGetContext(GameObject obj, [NotNullWhen(true)] out SessionContext? context)
     {
-        return SessionContextBuilder.TryBuild(obj, out context);
+        if (SessionContextBuilder.TryBuild(obj, out context, out var result))
+        {
+            return true;
+        }
+        Debug.LogError($"Failed to get context: {result}");
+        return false;
     }
 
     public static void SaveAsClip(Action<AnimationClip> editClip)

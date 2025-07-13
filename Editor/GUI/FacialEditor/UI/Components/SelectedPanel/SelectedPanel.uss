@@ -1,0 +1,45 @@
+/* Selected Panel */
+#selected-panel {
+    flex-direction: column;
+    padding: 5px;
+}
+
+/* Common Controls-panel */
+#common-controls-panel {
+    flex: 0 0 auto;
+}
+
+/* Button Container */
+#button-container {
+    flex-direction: row;
+    margin-top: 5px;
+}
+
+/* Shapes Panel */
+#style-shapes-panel {
+    flex: 0 0 auto;
+    margin-top: 5px;
+}
+
+#selected-shapes-panel {
+    flex: 1 1 auto;
+    margin-top: 5px;
+}
+
+#style-label-container, #selected-label-container {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#style-list-view, #selected-list-view {
+    border-color: rgba(128, 128, 128, 0.8);
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+/* Labels */
+#style-label, #selected-label {
+    -unity-font-style: bold;
+}

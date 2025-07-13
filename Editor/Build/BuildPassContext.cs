@@ -19,7 +19,7 @@ internal class BuildPassState
 
     public BuildPassState(GameObject root)
     {
-        Enabled = SessionContextBuilder.TryBuild(root, out var sessionContext);
+        Enabled = SessionContextBuilder.TryBuild(root, out var sessionContext, out var result);
         if (!Enabled) return;
 
         var platformSupport = platform.PlatformSupport.GetSupport(root.transform);

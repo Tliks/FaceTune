@@ -22,10 +22,9 @@ namespace aoyon.facetune
                 animationIndex.AddRange(zeroAnimations);
             }
 
-            var facialComponent = gameObject.GetComponentInParent<FacialStyleComponent>(true);
-            if (facialComponent != null)
+            if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, sessionContext, out var facialAnimations))
             {
-                animationIndex.AddRange(facialComponent.GetAnimations(sessionContext));
+                animationIndex.AddRange(facialAnimations);
             }
 
             var dataComponents = gameObject.GetInterfacesInChildFTComponents<IAnimationData>(true);

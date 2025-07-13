@@ -1,0 +1,27 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
+    <ui:VisualElement name="selected-panel">
+        <ui:VisualElement name="common-controls-panel">
+            <ui:TextField name="search-field" />
+            <ui:VisualElement name="button-container">
+                <ui:Button name="set-all-100-button" text="Set All to 100" />
+                <ui:Button name="set-all-0-button" text="Set All to 0" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="style-shapes-panel">
+            <ui:VisualElement name="style-label-container">
+                <ui:Label name="style-label" text="Style Shapes" />
+                <ui:Button name="reset-all-button" text="Reset All" />
+            </ui:VisualElement>
+            <ui:ListView name="style-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="selected-shapes-panel">
+            <ui:VisualElement name="selected-label-container">
+                <ui:Label name="selected-label" text="Selected Shapes" />
+                <ui:Button name="remove-all-button" text="Remove All" />
+            </ui:VisualElement>
+            <ui:ListView name="selected-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

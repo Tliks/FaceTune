@@ -1,5 +1,6 @@
 namespace aoyon.facetune.ui;
 
+/*
 internal class FacialAnimationClipEditor : FacialShapesEditor
 {
     private GameObject? _root;
@@ -38,3 +39,4 @@ internal class FacialAnimationClipEditor : FacialShapesEditor
         clip.SetBlendShapes(relativePath, blendShapes.Where(s => s.Weight > 0.0f));
     }
 }
+*/
