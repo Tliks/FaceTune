@@ -40,11 +40,11 @@ public enum TrackingPermission
     Keep
 }
 
-public enum ClipExcludeOption
+public enum ClipImportOption
 {
-    None,
-    ExcludeZeroWeight,
-    ExcludeZeroWeightAndFacialStyle
+    All,
+    NonZero,
+    FacialStyleOverridesOrNonZero
 }
 
 public enum AnimationSourceMode

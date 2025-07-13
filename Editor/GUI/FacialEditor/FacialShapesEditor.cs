@@ -107,7 +107,7 @@ internal class FacialShapesEditor : EditorWindow
     private int _hoveredIndex = -1;
 
     private AnimationClip? _sourceClip = null;
-    private ClipExcludeOption _clipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
+    private ClipImportOption _clipOption = ClipImportOption.NonZero;
 
     private int _previousUndoGroup = -1;
 
@@ -392,7 +392,7 @@ internal class FacialShapesEditor : EditorWindow
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         EditorGUILayout.LabelField("Clip Extraction", EditorStyles.boldLabel);
         _sourceClip = EditorGUILayout.ObjectField("Source Clip", _sourceClip, typeof(AnimationClip), false) as AnimationClip;
-        _clipExcludeOption = (ClipExcludeOption)EditorGUILayout.EnumPopup("Exclude Option", _clipExcludeOption);
+        _clipOption = (ClipImportOption)EditorGUILayout.EnumPopup("Import Option", _clipOption);
         
         EditorGUILayout.Space(5);
         if (GUILayout.Button("Extract from Clip"))
@@ -415,7 +415,7 @@ internal class FacialShapesEditor : EditorWindow
         {
             baseShapeSet.Add(new BlendShape(key, 0f));
         }
-        _sourceClip.GetFirstFrameBlendShapes(newBlendShapes, _clipExcludeOption, baseShapeSet);
+        _sourceClip.GetFirstFrameBlendShapes(newBlendShapes, _clipOption, baseShapeSet);
 
         foreach (var blendShape in newBlendShapes)
         {

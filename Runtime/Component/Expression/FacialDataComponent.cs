@@ -14,7 +14,7 @@ namespace aoyon.facetune
 
         // FromAnimationClip
         public AnimationClip? Clip = null;
-        public ClipExcludeOption ClipExcludeOption = ClipExcludeOption.ExcludeZeroWeight;
+        public ClipImportOption ClipOption = ClipImportOption.NonZero;
 
         List<GenericAnimation> IAnimationData.GetAnimations(SessionContext sessionContext)
         {
@@ -55,7 +55,7 @@ namespace aoyon.facetune
             var facialStyleSet = new BlendShapeSet();
             FacialStyleContext.TryAddFacialStyleShapes(gameObject, facialStyleSet);
 #if UNITY_EDITOR
-            Clip.GetBlendShapeAnimations(animations, ClipExcludeOption, facialStyleSet);
+            Clip.GetBlendShapeAnimations(animations, ClipOption, facialStyleSet);
 #endif
         }
 
@@ -75,7 +75,7 @@ namespace aoyon.facetune
                 case AnimationSourceMode.AnimationClip:
                     if (Clip == null) break;
 #if UNITY_EDITOR
-                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipExcludeOption, facialStyleSet);
+                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipOption, facialStyleSet);
 #endif
                     break;
                 default:

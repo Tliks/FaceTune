@@ -8,7 +8,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
     private SerializedProperty _isSingleFrameProperty = null!;
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
-    private SerializedProperty _clipExcludeOptionProperty = null!;
+    private SerializedProperty _clipOptionProperty = null!;
 
     public override void OnEnable()
     {
@@ -17,7 +17,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         _isSingleFrameProperty = serializedObject.FindProperty(nameof(FacialDataComponent.IsSingleFrame));
         _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
         _clipProperty = serializedObject.FindProperty(nameof(FacialDataComponent.Clip));
-        _clipExcludeOptionProperty = serializedObject.FindProperty(nameof(FacialDataComponent.ClipExcludeOption));
+        _clipOptionProperty = serializedObject.FindProperty(nameof(FacialDataComponent.ClipOption));
     }
 
     private static readonly string[] SourceModeNames = {nameof(AnimationSourceMode.Manual), nameof(AnimationSourceMode.AnimationClip) };
@@ -67,7 +67,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
     private void DrawFromAnimationClipModeGUI()
     {
         EditorGUILayout.PropertyField(_clipProperty);
-        EditorGUILayout.PropertyField(_clipExcludeOptionProperty);
+        EditorGUILayout.PropertyField(_clipOptionProperty);
 
         EditorGUILayout.Space();
         if (GUILayout.Button("Convert to Manual"))
