@@ -50,9 +50,9 @@ internal class SelectedPanel
 
     private void EnsureAssets()
     {
-        UIUtility.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e", true);
-        UIUtility.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9", true);
-        UIUtility.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8", true);
+        UIUtility.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
+        UIUtility.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
+        UIUtility.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
     }
 
     private void SetupControls()
