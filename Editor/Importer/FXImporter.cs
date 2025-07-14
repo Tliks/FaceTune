@@ -73,6 +73,19 @@ internal static class FXImporter
 
     private static void CollectConditionsAndStates(AnimatorStateMachine stateMachine, List<(AnimatorCondition[] conditions, AnimatorState state)> conditionStateList)
     {
+        if (stateMachine.defaultState is { } defaultState)
+        {
+            if (defaultState.motion is AnimationClip)
+            {
+                Debug.Log($"Valid default state found: state '{defaultState.name}'");
+                conditionStateList.Add((new AnimatorCondition[0], defaultState));
+            }
+            else
+            {
+                Debug.Log($"Default state: motion is not AnimationClip. State: {defaultState.name}, Motion={defaultState.motion?.name}, Type={defaultState.motion?.GetType()}");
+            }
+        }
+        
         foreach (var transition in stateMachine.entryTransitions)
         {
             if (IsValidTransition(transition, out var state))
