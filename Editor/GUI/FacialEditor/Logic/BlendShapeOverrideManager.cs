@@ -54,6 +54,7 @@ internal class BlendShapeOverrideManager : IDisposable
         };
         OnAnyDataChange += () =>
         {
+            /*
             var overrideCount = 0;
             for (int i = 0; i < _allKeysArray.Length; i++)
             {
@@ -61,6 +62,7 @@ internal class BlendShapeOverrideManager : IDisposable
                     overrideCount++;
             }
             Debug.Log($"overrideCount: {overrideCount}");
+            */
         };
     }
 
