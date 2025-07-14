@@ -6,10 +6,12 @@ namespace aoyon.facetune
         internal const string ComponentName = "FT Animation Data";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
+        /*
         public AnimationSourceMode SourceMode = AnimationSourceMode.Manual;
 
         // Manual
         public List<GenericAnimation> Animations = new();
+        */
 
         // FromAnimationClip
         public AnimationClip? Clip = null;
@@ -17,6 +19,7 @@ namespace aoyon.facetune
         List<GenericAnimation> IAnimationData.GetAnimations(SessionContext sessionContext)
         {
             var animations = new List<GenericAnimation>();
+            /*
             switch (SourceMode)
             {
                 case AnimationSourceMode.Manual:
@@ -28,6 +31,8 @@ namespace aoyon.facetune
                 default:
                     throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
             }
+            */
+            ClipToManual(animations);
             return animations;
         }
 

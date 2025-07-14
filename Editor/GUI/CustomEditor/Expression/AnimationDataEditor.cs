@@ -10,12 +10,15 @@ internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataCompo
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
+        /*
         if (GUILayout.Button("Convert to Manual"))
         {
             ConvertToManual(targets);
         }
+        */
     }
 
+    /*
     internal static void ConvertToManual(Object[] targets)
     {
         var components = targets.Select(t => t as AnimationDataComponent).OfType<AnimationDataComponent>().ToArray();
@@ -31,6 +34,7 @@ internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataCompo
             so.ApplyModifiedProperties();
         }
     }
+    */
 }
 
 /*
