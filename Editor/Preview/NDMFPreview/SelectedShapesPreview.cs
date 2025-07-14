@@ -129,7 +129,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         clip.GetFirstFrameBlendShapes(result);
     }
 
-    private static void GetBlendShapes(IEnumerable<FacialDataComponent> dataComponents, BlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
+    private static void GetBlendShapes(IEnumerable<FacialDataComponent> dataComponents, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
     {
         result.AddRange(facialStyleSet);
         foreach (var dataComponent in dataComponents)

@@ -36,12 +36,14 @@ internal static class SessionContextBuilder
 
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
 
-        var zeroWeightBlendShapes = new List<BlendShape>();
-        faceRenderer.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
+        var zeroBlendShapes = new BlendShapeSet();
+        faceRenderer.GetBlendShapesAndSetZeroWeight(zeroBlendShapes);
 
-        var trackedBlendShapes = platformSupport.GetTrackedBlendShape().ToHashSet();
+        var trackedBlendShapes = new HashSet<string>(platformSupport.GetTrackedBlendShape());
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroWeightBlendShapes, trackedBlendShapes);
+        var safeZeroBlendShapes = new BlendShapeSet(zeroBlendShapes.Where(shape => !trackedBlendShapes.Contains(shape.Name)));
+
+        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroBlendShapes, trackedBlendShapes, safeZeroBlendShapes);
         result = SessionContextBuildResult.Success;
         return true;
     }

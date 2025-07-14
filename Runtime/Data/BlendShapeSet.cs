@@ -4,7 +4,7 @@ namespace aoyon.facetune;
 /// 同名のBlendShapeを許容しないグループ
 /// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet>
+internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet>, IReadOnlyBlendShapeSet
 {
     readonly Dictionary<string, BlendShape> map;
     public Dictionary<string, BlendShape>.ValueCollection BlendShapes => map.Values;
@@ -85,8 +85,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         Add(item, BlendShapeSetOptions.PreferLatter); 
     }
 
-    // otherが不変な保証がない
-    public BlendShapeSet AddRange(BlendShapeSet other, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public BlendShapeSet AddRange(IReadOnlyBlendShapeSet other, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         foreach (var blendShape in other.BlendShapes)
         {
@@ -189,24 +188,14 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return result;
     }
 
+    public IReadOnlyBlendShapeSet AsReadOnly()
+    {
+        return this;
+    }
+
     public BlendShapeSet Except(BlendShapeSet baseSet, bool includeEqualOverride = false)
     {
-        var diff = new BlendShapeSet();
-        foreach (var blendShape in BlendShapes)
-        {
-            if (baseSet.map.TryGetValue(blendShape.Name, out var baseValue))
-            {
-                if (includeEqualOverride || baseValue.Weight != blendShape.Weight)
-                {
-                    diff.Add(blendShape);
-                }
-            }
-            else
-            {
-                diff.Add(blendShape);
-            }
-        }
-        return diff;
+        return Except(baseSet.AsReadOnly(), includeEqualOverride);
     }
 
     public void CopyTo(BlendShape[] array, int arrayIndex)
@@ -217,15 +206,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
     public bool Equals(BlendShapeSet other)
     {
         if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        if (Count != other.Count) return false;
-
-        foreach (var (name, blendShape) in map)
-        {
-            if (!other.map.TryGetValue(name, out var otherBlendShape)) return false;
-            if (blendShape.Weight != otherBlendShape.Weight) return false;
-        }
-        return true;
+        return Equals(other.AsReadOnly());
     }
 
     public override bool Equals(object? obj)
@@ -243,6 +224,56 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         }
         return hash.ToHashCode();
     }
+
+    public BlendShapeSet Except(IReadOnlyBlendShapeSet baseSet, bool includeEqualOverride = false)
+    {
+        var diff = new BlendShapeSet();
+        foreach (var blendShape in BlendShapes)
+        {
+            if (baseSet.TryGetValue(blendShape.Name, out var baseValue))
+            {
+                if (includeEqualOverride || baseValue.Weight != blendShape.Weight)
+                {
+                    diff.Add(blendShape);
+                }
+            }
+            else
+            {
+                diff.Add(blendShape);
+            }
+        }
+        return diff;
+    }
+
+
+
+    public bool Equals(IReadOnlyBlendShapeSet other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (Count != other.Count) return false;
+
+        foreach (var (name, blendShape) in map)
+        {
+            if (!other.TryGetValue(name, out var otherBlendShape)) return false;
+            if (blendShape.Weight != otherBlendShape.Weight) return false;
+        }
+        return true;
+    }
+}
+
+internal interface IReadOnlyBlendShapeSet : IEnumerable<BlendShape>, IEquatable<IReadOnlyBlendShapeSet>
+{
+    int Count { get; }
+    Dictionary<string, BlendShape>.ValueCollection BlendShapes { get; }
+    Dictionary<string, BlendShape>.KeyCollection Names { get; }
+    BlendShapeSet Clone();
+    void CloneTo(BlendShapeSet result);
+    bool Contains(string name);
+    bool Contains(BlendShape item);
+    bool TryGetValue(string key, out BlendShape value);
+    BlendShapeSet Except(IReadOnlyBlendShapeSet baseSet, bool includeEqualOverride = false);
+    BlendShapeSet Where(Func<BlendShape, bool> predicate);
 }
 
 internal enum BlendShapeSetOptions

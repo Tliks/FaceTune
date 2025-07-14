@@ -9,8 +9,8 @@ internal class AnimationIndex : ICollection<GenericAnimation>
     
     // BlendShapeAnimation用のキャッシュ
     private Dictionary<string, Dictionary<string, BlendShapeAnimation>>? _pathNameBlendShapeAnimationMap;
-    private Dictionary<string, BlendShapeSet>? _pathFirstFrameBlendShapeSets; 
-    private BlendShapeSet? _allFirstFrameBlendShapeSet;
+    private Dictionary<string, IReadOnlyBlendShapeSet>? _pathFirstFrameBlendShapeSets; 
+    private IReadOnlyBlendShapeSet? _allFirstFrameBlendShapeSet;
     private bool _blendShapeCacheValid = false;
 
     private static readonly string BlendShapePrefix = FaceTuneConsts.AnimatedBlendShapePrefix;
@@ -107,7 +107,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>
         if (!_blendShapeCacheValid || _pathFirstFrameBlendShapeSets == null)
         {
             var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
-            _pathFirstFrameBlendShapeSets = new Dictionary<string, BlendShapeSet>();
+            _pathFirstFrameBlendShapeSets = new Dictionary<string, IReadOnlyBlendShapeSet>();
             
             foreach (var pathEntry in pathNameToBlendShapeAnimationsMap)
             {
@@ -117,9 +117,9 @@ internal class AnimationIndex : ICollection<GenericAnimation>
             _blendShapeCacheValid = true;
         }
         
-        if (_pathFirstFrameBlendShapeSets.TryGetValue(path, out blendShapeSet))
+        if (_pathFirstFrameBlendShapeSets.TryGetValue(path, out var result))
         {
-            blendShapeSet = blendShapeSet.Clone();
+            blendShapeSet = result.Clone();
             return true;
         }
         

@@ -17,7 +17,7 @@ internal class FacialShapesEditor : EditorWindow
     private const int MIN_WINDOW_HEIGHT = 500;
     
     public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, HashSet<string> allKeys, 
-        BlendShapeSet? defaultOverrides = null, BlendShapeSet? facialStyleSet = null)
+        IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         if (!CanOpenEditor()) return null;
         var window = CreateInstance<FacialShapesEditor>();
@@ -65,7 +65,7 @@ internal class FacialShapesEditor : EditorWindow
         return true;
     }
 
-    private void Init(SkinnedMeshRenderer renderer, string[] allKeys, BlendShapeSet defaultOverrides, BlendShapeSet facialStyleSet)
+    private void Init(SkinnedMeshRenderer renderer, string[] allKeys, IReadOnlyBlendShapeSet defaultOverrides, IReadOnlyBlendShapeSet facialStyleSet)
     {
         _serializedObject = new SerializedObject(this);
         var flagsProperty = _serializedObject.FindProperty(nameof(_overrideFlags));
@@ -106,7 +106,9 @@ internal class FacialShapesEditor : EditorWindow
 
     public override void SaveChanges()
     {
-        _onApply?.Invoke(_dataManager.GetCurrentOverrides(new()));
+        var set = new BlendShapeSet();
+        _dataManager.GetCurrentOverrides(set);
+        _onApply?.Invoke(set);
         hasUnsavedChanges = false;
     }
 

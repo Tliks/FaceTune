@@ -9,11 +9,11 @@ internal class BlendShapeOverrideManager : IDisposable
     private readonly SerializedProperty _overrideFlagsProperty;
     private readonly SerializedProperty _overrideWeightsProperty;
     private readonly string[] _allKeysArray;
-    private readonly BlendShapeSet _styleSet;
+    private readonly IReadOnlyBlendShapeSet _styleSet;
     private readonly Dictionary<string, int> _shapeNameToIndexMap;
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
-    public BlendShapeSet StyleSet => _styleSet;
+    public IReadOnlyBlendShapeSet StyleSet => _styleSet;
     public event Action<int>? OnSingleShapeOverride;
     public event Action<IEnumerable<int>>? OnMultipleShapeOverride;
     public event Action<int>? OnSingleShapeUnoverride;
@@ -28,13 +28,13 @@ internal class BlendShapeOverrideManager : IDisposable
         SerializedProperty overrideFlagsProperty,
         SerializedProperty overrideWeightsProperty,
         string[] allKeysArray,
-        BlendShapeSet styleSet,
-        BlendShapeSet defaultOverrides)
+        IReadOnlyBlendShapeSet styleSet,
+        IReadOnlyBlendShapeSet defaultOverrides)
     {
         _serializedObject = serializedObject;
         _allKeysArray = allKeysArray;
         var allkeys = _allKeysArray.ToHashSet();
-        _styleSet = styleSet.Where(x => allkeys.Contains(x.Name));
+        _styleSet = styleSet.Where(x => allkeys.Contains(x.Name)).AsReadOnly();
         
         // SerializedPropertyを直接設定
         _overrideFlagsProperty = overrideFlagsProperty;
@@ -64,7 +64,7 @@ internal class BlendShapeOverrideManager : IDisposable
         };
     }
 
-    private void InitializeData(BlendShapeSet defaultOverrides)
+    private void InitializeData(IReadOnlyBlendShapeSet defaultOverrides)
     {
         _serializedObject.Update();
 
@@ -97,7 +97,7 @@ internal class BlendShapeOverrideManager : IDisposable
         _serializedObject.Update();
     }
 
-    public BlendShapeSet GetCurrentOverrides(BlendShapeSet resultToAdd)
+    public void GetCurrentOverrides(BlendShapeSet resultToAdd)
     {
         var length = _allKeysArray.Length;
         for (int i = 0; i < length; i++)
@@ -109,7 +109,6 @@ internal class BlendShapeOverrideManager : IDisposable
                 resultToAdd.Add(new BlendShape(shapeName, weight));
             }
         }
-        return resultToAdd;
     }
 
     public int GetIndexForShape(string shapeName)

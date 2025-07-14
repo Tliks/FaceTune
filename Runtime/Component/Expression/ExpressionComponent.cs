@@ -16,9 +16,7 @@ namespace aoyon.facetune
 
             if (!FacialSettings.EnableBlending)
             {
-                var zeroAnimations = sessionContext.ZeroWeightBlendShapes
-                    .Where(shape => !sessionContext.TrackedBlendShapes.Contains(shape.Name))
-                    .ToGenericAnimations(sessionContext.BodyPath);
+                var zeroAnimations = sessionContext.SafeZeroBlendShapes.ToGenericAnimations(sessionContext.BodyPath);
                 animationIndex.AddRange(zeroAnimations);
             }
 

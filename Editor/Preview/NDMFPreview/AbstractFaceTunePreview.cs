@@ -61,7 +61,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
             using var _set = BlendShapeSetPool.Get(out var set);
             QueryBlendShapes(original, proxy, root, context, set);
 
-            return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(proxy, set));
+            return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(proxy, set.AsReadOnly()));
         }
         catch (Exception e)
         {
@@ -97,7 +97,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 
     private SkinnedMeshRenderer? _latestProxy;
 
-    public BlendShapePreviewNode(SkinnedMeshRenderer original, BlendShapeSet set)
+    public BlendShapePreviewNode(SkinnedMeshRenderer original, IReadOnlyBlendShapeSet set)
     {
         _original = original;
         _originalMesh = original.sharedMesh;
@@ -111,7 +111,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         RefreshInternal(set);
     }
     
-    private void RefreshInternal(BlendShapeSet set)
+    private void RefreshInternal(IReadOnlyBlendShapeSet set)
     {
         var current = BlendShapeWeights.Value;
         current.Clear();
@@ -133,7 +133,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
     // 他のNodeの更新を必要しない下流かつ一時的な、また高頻度な更新を必要とするプレビュー用(EditingShapesPreview)
     // パフォーマンスは良いものの、NDMF Previewの設計から外れてていると思われ、将来の動作は保証されない
     // Todo: 今後のAPI変更に伴って書き換える
-    public void RefreshDirectly(BlendShapeSet set)
+    public void RefreshDirectly(IReadOnlyBlendShapeSet set)
     {
         RefreshInternal(set);
         if (_latestProxy != null)

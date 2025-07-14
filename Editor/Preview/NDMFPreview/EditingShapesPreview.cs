@@ -8,9 +8,9 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
     private static readonly PublishedValue<SkinnedMeshRenderer?> _target = new(null);
     public override bool IsEnabled(ComputeContext context) => context.Observe(_target, t => t != null, (a, b) => a == b);
     private static BlendShapePreviewNode? _previewNode = null;
-    private static BlendShapeSet? _defaultSet = null;
+    private static IReadOnlyBlendShapeSet? _defaultSet = null;
 
-    public static void Start(SkinnedMeshRenderer target, BlendShapeSet? defaultSet = null)
+    public static void Start(SkinnedMeshRenderer target, IReadOnlyBlendShapeSet? defaultSet = null)
     {
         // 既存のプレビューは上書き
         _target.Value = target;
@@ -19,7 +19,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
         _defaultSet = defaultSet;
     }
 
-    public static void Refresh(BlendShapeSet set)
+    public static void Refresh(IReadOnlyBlendShapeSet set)
     {
         if (_target.Value == null) return;
         if (_previewNode == null)

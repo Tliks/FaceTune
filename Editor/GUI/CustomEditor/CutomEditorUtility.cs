@@ -23,7 +23,7 @@ internal static class CustomEditorUtility
         AssetDatabase.CreateAsset(clip, path);
     }
 
-    public static void OpenEditorAndApplyBlendShapeSet(Component component, BlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, BlendShapeSet? facialStyleSet = null)
+    public static void OpenEditorAndApplyBlendShapeSet(Component component, IReadOnlyBlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         var onApply = new Action<BlendShapeSet>(set =>
         {
@@ -36,12 +36,12 @@ internal static class CustomEditorUtility
         });
 
         if (!TryGetContext(component.gameObject, out var context)) return;
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroWeightBlendShapes.Select(x => x.Name)), defaultOverrides, facialStyleSet);
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet);
         if (window == null) return;
         window.RegisterApplyCallback(onApply);
     }
 
-    public static void OpenEditorAndApplyBlendShapeNames(Component component, BlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, BlendShapeSet? facialStyleSet = null)
+    public static void OpenEditorAndApplyBlendShapeNames(Component component, IReadOnlyBlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         var onApply = new Action<BlendShapeSet>(set =>
         {
@@ -49,20 +49,20 @@ internal static class CustomEditorUtility
             so.Update();
             var property = getProperty(so);
             property.serializedObject.Update();
-            AddShapesAsNames(property, set.BlendShapes.Select(shape => shape.Name).ToList());
+            AddShapesAsNames(property, set.Names.ToList());
             property.serializedObject.ApplyModifiedProperties();
         });
 
         if (!TryGetContext(component.gameObject, out var context)) return;
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroWeightBlendShapes.Select(x => x.Name)), defaultOverrides, facialStyleSet);
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet);
         if (window == null) return;
         window.RegisterApplyCallback(onApply);
     }
 
-    public static void OpenEditor(GameObject obj, BlendShapeSet defaultOverrides, Action<BlendShapeSet> onApply, BlendShapeSet? facialStyleSet = null)
+    public static void OpenEditor(GameObject obj, IReadOnlyBlendShapeSet defaultOverrides, Action<BlendShapeSet> onApply, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         if (!TryGetContext(obj, out var context)) return;
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroWeightBlendShapes.Select(x => x.Name)), defaultOverrides, facialStyleSet);
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet);
         if (window == null) return;
         window.RegisterApplyCallback(onApply);
     }

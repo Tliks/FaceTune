@@ -55,11 +55,11 @@ namespace aoyon.facetune
             var facialStyleSet = new BlendShapeSet();
             FacialStyleContext.TryAddFacialStyleShapes(gameObject, facialStyleSet);
 #if UNITY_EDITOR
-            Clip.GetBlendShapeAnimations(animations, ClipOption, facialStyleSet);
+            Clip.GetBlendShapeAnimations(animations, ClipOption, facialStyleSet.AsReadOnly());
 #endif
         }
 
-        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, BlendShapeSet facialStyleSet, IObserveContext? observeContext = null)
+        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext? observeContext = null)
         {
             observeContext ??= new NonObserveContext();
             observeContext.Observe(this);

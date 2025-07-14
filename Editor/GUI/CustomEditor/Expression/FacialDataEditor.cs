@@ -151,7 +151,7 @@ internal class ExportFacialDataWindow : EditorWindow
         }
         if (_addZeroWeight)
         {
-            animations.AddRange(context.ZeroWeightBlendShapes.ToGenericAnimations(context.BodyPath));
+            animations.AddRange(context.ZeroBlendShapes.ToGenericAnimations(context.BodyPath));
         }
         if (_addFacialStyle)
         {

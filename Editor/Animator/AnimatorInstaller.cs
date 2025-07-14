@@ -61,8 +61,7 @@ internal class AnimatorInstaller : InstallerBase
     private void CreateDefaultLayer(PatternData patternData, int priority)
     {
         var initializeClip = GetOrCreateDefautLayerAndClip(priority, "Initialize");
-        var shapesAnimations = _sessionContext.ZeroWeightBlendShapes
-            .Where(shape => !_sessionContext.TrackedBlendShapes.Contains(shape.Name))
+        var shapesAnimations = _sessionContext.SafeZeroBlendShapes
             .ToGenericAnimations(_sessionContext.BodyPath);
         initializeClip.SetAnimations(shapesAnimations);
 

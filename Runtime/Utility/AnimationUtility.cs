@@ -13,7 +13,7 @@ internal static class FTAnimationUtility
     private const string BlendShapePropertyName = FaceTuneConsts.AnimatedBlendShapePrefix;
 
 #if UNITY_EDITOR
-    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipImportOption? option = null, BlendShapeSet? facialStyleSet = null)
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipImportOption? option = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         GetBlendShapes(clip, 0, resultToAdd, option, facialStyleSet);
     }
@@ -22,7 +22,7 @@ internal static class FTAnimationUtility
         AnimationClip clip,
         float time,
         ClipImportOption? option,
-        BlendShapeSet? facialStyleSet,
+        IReadOnlyBlendShapeSet? facialStyleSet,
         Action<string, float, AnimationCurve> process)
     {
         if (option == ClipImportOption.FacialStyleOverridesOrNonZero && facialStyleSet == null)
@@ -82,7 +82,7 @@ internal static class FTAnimationUtility
         }
     }
 
-    public static void GetBlendShapes(this AnimationClip clip, float time, ICollection<BlendShape> resultToAdd, ClipImportOption? option = null, BlendShapeSet? facialStyleSet = null)
+    public static void GetBlendShapes(this AnimationClip clip, float time, ICollection<BlendShape> resultToAdd, ClipImportOption? option = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         ProcessBlendShapeBindings<BlendShape>(
             clip,
@@ -93,7 +93,7 @@ internal static class FTAnimationUtility
         );
     }
 
-    public static void GetBlendShapeAnimations(this AnimationClip clip, List<BlendShapeAnimation> resultToAdd, ClipImportOption? option = null, BlendShapeSet? facialStyleSet = null)
+    public static void GetBlendShapeAnimations(this AnimationClip clip, List<BlendShapeAnimation> resultToAdd, ClipImportOption? option = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         // 比較用のフレームはアニメーションは常に0フレーム目を参照
         ProcessBlendShapeBindings<BlendShapeAnimation>(

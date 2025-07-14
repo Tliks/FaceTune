@@ -7,24 +7,27 @@ internal class SessionContext
     
     public readonly Mesh FaceMesh;
     public readonly string BodyPath;
-    public readonly List<BlendShape> ZeroWeightBlendShapes;
+    public readonly IReadOnlyBlendShapeSet ZeroBlendShapes;
     public readonly HashSet<string> TrackedBlendShapes;
+    public readonly BlendShapeSet SafeZeroBlendShapes;
 
     public SessionContext(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
         Mesh faceMesh,
         string bodyPath,
-        List<BlendShape> zeroWeightBlendShapes,
-        HashSet<string> trackedBlendShapes
+        IReadOnlyBlendShapeSet zeroWeightBlendShapes,
+        HashSet<string> trackedBlendShapes,
+        BlendShapeSet safeBlendShapes
     )
     {
         Root = root;
         FaceRenderer = faceRenderer;
         FaceMesh = faceMesh;
         BodyPath = bodyPath;
-        ZeroWeightBlendShapes = zeroWeightBlendShapes;
+        ZeroBlendShapes = zeroWeightBlendShapes;
         TrackedBlendShapes = trackedBlendShapes;
+        SafeZeroBlendShapes = safeBlendShapes;
     }
 }
 
