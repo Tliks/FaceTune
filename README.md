@@ -3,8 +3,13 @@ FaceTune
 A modular tool for avatar emotion expression.
 
 Dependencies
-- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.8.0-beta.2
+- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.8.0
 - [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.12.0
+
+## FaceTuneとは
+FaceTuneはモジュール的に設計された、アバター向けの表情編集ツールです。
+
+柔軟な制御設計、軽量な編集エディタ、高度なプレビューシステムなどを特徴としています。
 
 ## 導入方法
 
@@ -22,16 +27,17 @@ git clone https://github.com/Tliks/FaceTune
 FaceTuneのセットアップ方法として、2つの例を紹介します。
 
 ### 例1: テンプレートを用いたセットアップ
-FaceTune Assistantとサンプルパターンを使って、表情制御を導入できます。
+FaceTune Assistantとサンプルのパターンを用いて表情制御を導入します。
 
-1.  **`Template Base` の追加**:
-    *   Hierarchyウィンドウで右クリックし、メニューから `FaceTune` > `Template Base` を選択します。
-    *   アバターのルートなどに `Template Base` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
-2.  **サンプルパターンの選択と追加**:
-    *   `FaceTune Assistant`のInspectorに表示される「サンプルパターンを追加」セクションで、作りたい表情制御の種類を選びます。
-        *   **ハンドジェスチャー**: 左手のみ・右手のみの個別制御、両手を使った基本的な制御、両手のジェスチャーをブレンドする制御、先に行ったジェスチャーを優先する制御、左右の手の組み合わせでなどのサンプルがあります。
-        *   **その他**: 特定の表情を一つだけONにする排他メニュー、他の表情と混ぜて使えるブレンドメニュー、コンタクトを用いたサンプルなどがあります。
-    *   「追加」ボタンを押すと、選択したサンプルパターンが子オブジェクトとして生成されます。これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
+1.  `Base Template` の追加:
+    - Hierarchyからアバターを右クリックし、メニューから `FaceTune` > `Base Template` を選択します。
+    - アバターのルートなどに `Base Template` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
+2.  サンプルのパターンの追加:
+    - `FaceTune Assistant`のInspectorに表示される「サンプルパターンを追加」セクションで、作りたい表情制御の種類を選びます。
+        - **ハンドジェスチャー** 片手制御、基本的な両手制御、両手で表情をブレンドする制御などがあります。
+        - **その他**: メニューを用いた制御などがあります。
+    - 「追加」ボタンを押すと、選択した制御が子オブジェクトとして生成されます。
+        - これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
 
 ### 例2: 最小構成から組み立てる
 FaceTuneは各機能が独立しているため、必要なものだけを選んで組み合わせたシンプルな構成から始めることも可能です。

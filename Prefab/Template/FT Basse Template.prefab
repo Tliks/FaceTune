@@ -10,11 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 7363885164174601864}
   - component: {fileID: 6790391440113222054}
+  - component: {fileID: 7810741059401449334}
   - component: {fileID: 4772267522580920295}
   - component: {fileID: 5731356164830962727}
   - component: {fileID: 5427458973660454188}
   m_Layer: 0
-  m_Name: FT Template Base
+  m_Name: FT Basse Template
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -48,6 +49,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ffae244c6ab9154b9b14ba76ea91359, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7810741059401449334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5177479075933827586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7c78602628c33342a7196db8db756fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
+  EnableRealTimePreview: 0
 --- !u!114 &4772267522580920295
 MonoBehaviour:
   m_ObjectHideFlags: 0

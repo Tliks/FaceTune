@@ -44,6 +44,7 @@
 - いずれの条件にも紐付かないExpressionも許可するように変更。
 - Prefabを更新。
 - GC負荷を軽減。
+- `FacialShapesEditor`が軽量に動作するようになりました。
 
 ### Deprecated
 
