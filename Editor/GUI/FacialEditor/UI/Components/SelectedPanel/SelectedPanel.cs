@@ -44,7 +44,7 @@ internal class SelectedPanel
         
         SetupControls();
         SetupListViews();
-        _groupManager.OnGroupSelectionChanged += (group, selected) => BuildAndRefreshListViewsSlow();
+        _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnSingleShapeOverride += (keyIndex) => AddByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();

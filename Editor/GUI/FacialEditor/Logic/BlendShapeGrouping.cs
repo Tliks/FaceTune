@@ -21,7 +21,7 @@ internal class BlendShapeGrouping
     });
 
     public IReadOnlyList<BlendShapeGroup> Groups { get; private set; }
-    public event Action<BlendShapeGroup, bool>? OnGroupSelectionChanged;
+    public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
     public BlendShapeGrouping(IReadOnlyList<string> allKeys)
     {
@@ -41,7 +41,7 @@ internal class BlendShapeGrouping
         Groups = groups.AsReadOnly();
         foreach (var group in Groups)
         {
-            group.OnSelectionChanged += (selected) => OnGroupSelectionChanged?.Invoke(group, selected);
+            group.OnSelectionChanged += (selected) => OnGroupSelectionChanged?.Invoke(new[] { (group, selected) });
         }
     }
 
@@ -59,9 +59,20 @@ internal class BlendShapeGrouping
     
     public void SelectAll(bool selected)
     {
+        var changes = new List<(BlendShapeGroup Group, bool Selected)>();
+        
         foreach (var group in Groups)
         {
-            group.IsSelected = selected;
+            if (group.IsSelected != selected)
+            {
+                group.SetSelectedSilently(selected);
+                changes.Add((group, selected));
+            }
+        }
+        
+        if (changes.Count > 0)
+        {
+            OnGroupSelectionChanged?.Invoke(changes);
         }
     }
 }
@@ -84,6 +95,11 @@ internal class BlendShapeGroup
         }
     }
     public event Action<bool>? OnSelectionChanged;
+
+    public void SetSelectedSilently(bool value)
+    {
+        _isSelected = value;
+    }
 
     public BlendShapeGroup(string name)
     {

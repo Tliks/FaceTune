@@ -14,7 +14,7 @@ internal class FacialShapeUI
     public readonly SelectedPanel SelectedPanel;
     public readonly UnselectedPanel UnselectedPanel;
 
-    private readonly VisualElement _root;
+    public readonly VisualElement Root;
 
     public FacialShapeUI(VisualElement root, BlendShapeOverrideManager manager)
     {
@@ -23,9 +23,9 @@ internal class FacialShapeUI
 
         EnsureUIAssets();
 
-        _root = root;
-        _uxml.CloneTree(_root);
-        _root.styleSheets.Add(_uss);
+        Root = root;
+        _uxml.CloneTree(Root);
+        Root.styleSheets.Add(_uss);
 
         GeneralControls = new GeneralControls(_blendShapeManager, _groupManager);
         SelectedPanel = new SelectedPanel(_blendShapeManager, _groupManager);
@@ -33,9 +33,9 @@ internal class FacialShapeUI
 
         // _root.Q<VisualElement>("test-container").Add(_selectedPanel.Element);
 
-        _root.Q<VisualElement>("controls-container").Add(GeneralControls.Element);
-        _root.Q<VisualElement>("primary-content-container").Add(SelectedPanel.Element);
-        _root.Q<VisualElement>("secondary-content-container").Add(UnselectedPanel.Element);
+        Root.Q<VisualElement>("controls-container").Add(GeneralControls.Element);
+        Root.Q<VisualElement>("primary-content-container").Add(SelectedPanel.Element);
+        Root.Q<VisualElement>("secondary-content-container").Add(UnselectedPanel.Element);
     }
 
     private void EnsureUIAssets()

@@ -54,7 +54,7 @@ internal class UnselectedPanel
         
         SetupControls();
         SetupListView();
-        _groupManager.OnGroupSelectionChanged += (group, selected) => BuildAndRefreshListViewSlow();
+        _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => AddByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewSlow();
@@ -99,6 +99,11 @@ internal class UnselectedPanel
         _unselectedListView.makeItem = MakeUnselectedElement;
         _unselectedListView.bindItem = (e, i) => BindUnselectedElement(e, i);
         
+        _unselectedListView.RegisterCallback<MouseLeaveEvent>(evt =>
+        {
+            CurrentHoveredIndex = -1;
+        });
+
         VisualElement MakeUnselectedElement()
         {
             var element = _unselectedItemUxml.CloneTree();
@@ -117,19 +122,7 @@ internal class UnselectedPanel
                 {
                     CurrentHoveredIndex = data.KeyIndex;
                 }
-            });
-            
-            element.RegisterCallback<MouseLeaveEvent>(evt =>
-            {
-                if (element.userData is ListViewItem data)
-                {
-                    if (CurrentHoveredIndex == data.KeyIndex)
-                    {
-                        CurrentHoveredIndex = -1;
-                    }
-                }
-            });
-            
+            });            
             return element;
         }
 
