@@ -1,17 +1,16 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="aoyon.facetune.ui.components">
     <ui:VisualElement name="selected-panel">
         <ui:VisualElement name="common-controls-panel">
             <ui:TextField name="search-field" />
-            <ui:VisualElement name="button-container">
-                <ui:Button name="set-all-100-button" text="Set All to 100" />
-                <ui:Button name="set-all-0-button" text="Set All to 0" />
-            </ui:VisualElement>
         </ui:VisualElement>
 
         <ui:VisualElement name="style-shapes-panel">
             <ui:VisualElement name="style-label-container">
                 <ui:Label name="style-label" text="Style Shapes" />
-                <ui:Button name="reset-all-button" text="Reset All" />
+                <ui:Button name="style-set-all-0-button" text="Set All to 0" />
+                <ui:Button name="style-set-all-100-button" text="Set All to 100" />
+                <ui:Button name="style-reset-all-button" text="Reset All" />
+                <components:SimpleToggle name="style-zero-toggle" text="0" value="true" />
             </ui:VisualElement>
             <ui:ListView name="style-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
         </ui:VisualElement>
@@ -19,7 +18,10 @@
         <ui:VisualElement name="selected-shapes-panel">
             <ui:VisualElement name="selected-label-container">
                 <ui:Label name="selected-label" text="Selected Shapes" />
+                <ui:Button name="selected-set-all-0-button" text="Set All to 0" />
+                <ui:Button name="selected-set-all-100-button" text="Set All to 100" />
                 <ui:Button name="remove-all-button" text="Remove All" />
+                <components:SimpleToggle name="selected-zero-toggle" text="0" value="true" />
             </ui:VisualElement>
             <ui:ListView name="selected-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
         </ui:VisualElement>

@@ -48,6 +48,20 @@ internal class BlendShapeOverrideManager : IDisposable
         
         InitializeData(defaultOverrides);
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
+        OnAnyDataChange += () =>
+        {
+            ValidateData();
+        };
+        OnAnyDataChange += () =>
+        {
+            var overrideCount = 0;
+            for (int i = 0; i < _allKeysArray.Length; i++)
+            {
+                if (IsOverridden(i))
+                    overrideCount++;
+            }
+            Debug.Log($"overrideCount: {overrideCount}");
+        };
     }
 
     private void InitializeData(BlendShapeSet defaultOverrides)
@@ -105,7 +119,6 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public bool IsOverridden(int index) 
     {
-        ValidateIndex(index);
         return _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue;
     }
     
@@ -116,7 +129,6 @@ internal class BlendShapeOverrideManager : IDisposable
     
     public float GetShapeWeight(int index) 
     {
-        ValidateIndex(index);
         return _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue;
     }
 
@@ -129,7 +141,7 @@ internal class BlendShapeOverrideManager : IDisposable
         return _styleSet.TryGetValue(_allKeysArray[index], out var shape) && Mathf.Approximately(shape.Weight, GetShapeWeight(index));
     }
 
-    private void ValidateIndex(int index)
+    private void ValidateData()
     {
         // 配列サイズが不整合の場合、再同期
         if (_overrideFlagsProperty.arraySize != _allKeysArray.Length ||
@@ -142,15 +154,6 @@ internal class BlendShapeOverrideManager : IDisposable
 
             _overrideFlagsProperty.arraySize = _allKeysArray.Length;
             _overrideWeightsProperty.arraySize = _allKeysArray.Length;
-        }
-
-        if (index < 0 || index >= _allKeysArray.Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index),
-                $"Index {index} is out of range. Valid range: 0-{_allKeysArray.Length - 1}. " +
-                $"_allKeysArray.Length: {_allKeysArray.Length}, " +
-                $"_overrideFlagsProperty.arraySize: {_overrideFlagsProperty.arraySize}, " +
-                $"_overrideWeightsProperty.arraySize: {_overrideWeightsProperty.arraySize}");
         }
     }
 
@@ -165,7 +168,6 @@ internal class BlendShapeOverrideManager : IDisposable
     // override
     public void OverrideShapeAndSetWeightWithOutApply(int index, float weight)
     {
-        ValidateIndex(index);
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
         SetShapeWeightWithOutApply(index, weight);
     }
@@ -201,7 +203,6 @@ internal class BlendShapeOverrideManager : IDisposable
     // unoverride
     public void UnoverrideShapeWithOutApply(int index)
     {
-        ValidateIndex(index);
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
     }
     public void UnoverrideShape(int index)
@@ -225,9 +226,11 @@ internal class BlendShapeOverrideManager : IDisposable
 
     // weight
     public void SetShapeWeightWithOutApply(int index, float weight)
-    {
-        ValidateIndex(index);
+    {        
+        // 先にweightを設定
+        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
         
+        // styleシェイプの場合、新しいweightでoverrideフラグを判定
         if (IsStyleShape(index))
         {
             if (IsInitialStyleWeight(index))
@@ -239,7 +242,6 @@ internal class BlendShapeOverrideManager : IDisposable
                 _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
             }
         }
-        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
     }
     public void SetShapeWeight(int index, float weight)
     {
@@ -255,6 +257,45 @@ internal class BlendShapeOverrideManager : IDisposable
         ExecuteModification(() =>
         {
             foreach (var index in indices) SetShapeWeightWithOutApply(index, weight);
+            OnMultipleShapeWeightChanged?.Invoke(indices);
+            OnAnyDataChange?.Invoke();
+        });
+    }
+    public void SetShapesWeight(IEnumerable<(int, float)> indicesAndWeights)
+    {
+        ExecuteModification(() =>
+        {
+            foreach (var (index, weight) in indicesAndWeights) SetShapeWeightWithOutApply(index, weight);
+            OnMultipleShapeWeightChanged?.Invoke(indicesAndWeights.Select(x => x.Item1));
+            OnAnyDataChange?.Invoke();
+        });
+    }
+    
+    public float ResetShapeWeightWithOutApply(int index)
+    {
+        _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
+        var oldWeight = GetShapeWeight(index);
+        var newWeight = GetRequiredInitialStyleWeight(_allKeysArray[index]);
+        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = newWeight;
+        Debug.Log($"ResetShapeWeightWithOutApply: {_allKeysArray[index]} {oldWeight} -> {newWeight}");
+        return newWeight;
+    }
+    public float ResetShapeWeight(int index)
+    {
+        float weight = 0f;
+        ExecuteModification(() =>
+        {
+            weight = ResetShapeWeightWithOutApply(index);
+            OnSingleShapeWeightChanged?.Invoke(index);
+            OnAnyDataChange?.Invoke();
+        });
+        return weight;
+    }
+    public void ResetShapesWeight(IEnumerable<int> indices)
+    {
+        ExecuteModification(() =>
+        {
+            foreach (var index in indices) ResetShapeWeightWithOutApply(index);
             OnMultipleShapeWeightChanged?.Invoke(indices);
             OnAnyDataChange?.Invoke();
         });
