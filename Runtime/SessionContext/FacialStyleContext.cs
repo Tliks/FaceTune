@@ -2,7 +2,7 @@ namespace aoyon.facetune;
 
 internal class FacialStyleContext
 {
-    public static bool TryGetFacialStyle(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle, GameObject root, IObserveContext observeContext)
+    public static bool TryGetFacialStyleAndObserve(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle, GameObject root, IObserveContext observeContext)
     {
         using var _ = ListPool<FacialStyleComponent>.Get(out var facialStyleComponents);
         target.GetComponentsInParent<FacialStyleComponent>(true, facialStyleComponents);
@@ -37,9 +37,9 @@ internal class FacialStyleContext
         }
     }
 
-    public static bool TryAddFacialStyleShapes(GameObject target, ICollection<BlendShape> resultToAdd, GameObject root, IObserveContext observeContext)
+    public static bool TryAddFacialStyleShapesAndObserve(GameObject target, ICollection<BlendShape> resultToAdd, GameObject root, IObserveContext observeContext)
     {
-        if (!TryGetFacialStyle(target, out var facialStyle, root, observeContext))
+        if (!TryGetFacialStyleAndObserve(target, out var facialStyle, root, observeContext))
         {
             return false;
         }

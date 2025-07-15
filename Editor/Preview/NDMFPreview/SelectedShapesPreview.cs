@@ -61,6 +61,9 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var isGameObject = context.Observe(_targetObject, o => o is GameObject, (a, b) => a == b);
         if (!isGameObject) return;
 
+        var isEditorOnly = context.Observe(_targetObject, o => ((GameObject)o!).CompareTag("EditorOnly"), (a, b) => a == b);
+        if (isEditorOnly) return;
+
         using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
         proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
         
@@ -99,7 +102,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
     private static BlendShapeSet GetFacialStyle(GameObject targetGameObject, GameObject root, IObserveContext observeContext)
     {
         var result = new BlendShapeSet(); // Todo
-        FacialStyleContext.TryAddFacialStyleShapes(targetGameObject, result, root, observeContext);
+        FacialStyleContext.TryAddFacialStyleShapesAndObserve(targetGameObject, result, root, observeContext);
         return result;
     }
 

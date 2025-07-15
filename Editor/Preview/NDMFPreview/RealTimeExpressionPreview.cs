@@ -32,7 +32,7 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview
         result.AddRange(zeroWeightBlendShapes);
 
         using var _3 = BlendShapeSetPool.Get(out var facialStyleSet);
-        FacialStyleContext.TryAddFacialStyleShapes(target.gameObject, facialStyleSet);
+        FacialStyleContext.TryAddFacialStyleShapesAndObserve(target.gameObject, facialStyleSet, root, new NDMFPreviewObserveContext(context));
         foreach (var blendShape in facialStyleSet) result.Add(blendShape);
 
         using var _4 = ListPool<AbstractDataComponent>.Get(out var dataComponents);
