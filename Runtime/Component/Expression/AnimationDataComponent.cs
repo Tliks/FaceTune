@@ -1,7 +1,7 @@
 namespace aoyon.facetune
 {
     [AddComponentMenu(MenuPath)]
-    public class AnimationDataComponent : FaceTuneTagComponent, IAnimationData
+    public class AnimationDataComponent : AbstractDataComponent
     {
         internal const string ComponentName = "FT Animation Data";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
@@ -16,7 +16,7 @@ namespace aoyon.facetune
         // FromAnimationClip
         public AnimationClip? Clip = null;
 
-        List<GenericAnimation> IAnimationData.GetAnimations(SessionContext sessionContext)
+        internal override List<GenericAnimation> GetAnimations(SessionContext sessionContext)
         {
             var animations = new List<GenericAnimation>();
             /*
@@ -42,6 +42,11 @@ namespace aoyon.facetune
 #if UNITY_EDITOR
             Clip.GetGenericAnimations(animations);
 #endif
+        }
+
+        internal override void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext? observeContext = null)
+        {
+            return; // Todo
         }
     }
 }

@@ -10,6 +10,8 @@ namespace aoyon.facetune
         public ExpressionSettings ExpressionSettings = new();
         public FacialSettings FacialSettings = new();
 
+        public bool EnableRealTimePreview = false;
+
         internal Expression ToExpression(SessionContext sessionContext)
         {
             var animationIndex = new AnimationIndex();
@@ -25,7 +27,7 @@ namespace aoyon.facetune
                 animationIndex.AddRange(facialAnimations);
             }
 
-            var dataComponents = gameObject.GetInterfacesInChildFTComponents<IAnimationData>(true);
+            var dataComponents = gameObject.GetInterfacesInChildFTComponents<AbstractDataComponent>(true);
             foreach (var dataComponent in dataComponents)
             {
                 animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));

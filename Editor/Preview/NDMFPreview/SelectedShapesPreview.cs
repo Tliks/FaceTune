@@ -51,59 +51,52 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
-            GetBlendShapes(clip, result);
+            clip.GetFirstFrameBlendShapes(result);
             return;
         }
 
-        // _targetObjectをそのまま監視すると、無関係なオブジェクト同士に対する選択の切り替え時に更新がかかるようになる。
-        // そのため、extractを用いるが、propertymonitorの負荷を考えるとどうだろう
-        // Todo: extractにcontext.GetComponentsがあるのどうにかしたい
+        // 無関係なオブジェクト同士に対する選択の切り替え時に更新がかかるらないように、_targetObjectのextractで監視する
+        // ただしpropertymonitorの負荷が高い
+        // Todo: extractにcontext.GetComponentsとList等のアロケーションがあるのをどうにかしたい
+        var isGameObject = context.Observe(_targetObject, o => o is GameObject, (a, b) => a == b);
+        if (!isGameObject) return;
 
-        var facialStyleSet = context.Observe(_targetObject, o => o is GameObject targetGameObject && proxy != null ? GetFacialStyle(root, targetGameObject, observeContext) : null, (a, b) =>
-        {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.Equals(b);
-        });
-        if (facialStyleSet == null) return;
+        using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
+        proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
+        
+        var facialStyleSet = context.Observe(_targetObject, o => GetFacialStyle((GameObject)o!, root, observeContext), (a, b) => a.SequenceEqual(b));
 
-        // 何らかのGameObjcetを選択してる
+        // 処理が軽い data > expression > condition の順に監視し、早期リターン
 
-        var dataComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<FacialDataComponent>(targetGameObject, observeContext) : null, (a, b) => 
+        var dataComponents = context.Observe(_targetObject, o => GetComponents<AbstractDataComponent>((GameObject)o!, observeContext), (a, b) => a.SequenceEqual(b));
+        if (dataComponents.Count > 0)
         {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.SequenceEqual(b);
-        });
-        if (dataComponents != null && dataComponents.Count > 0)
-        {
-            GetBlendShapes(dataComponents, facialStyleSet, observeContext, result);
+            result.AddRange(zeroWeightBlendShapes);
+            result.AddRange(facialStyleSet);
+            ProcessDataComponents(dataComponents, facialStyleSet, observeContext, result);
             return;
         }
 
-        var conditionComponents = context.Observe(_targetObject, o => o is GameObject targetGameObject ? GetComponents<ConditionComponent>(targetGameObject, observeContext) : null, (a, b) =>
+        var expressionComponent = context.Observe(_targetObject, o => context.GetComponent<ExpressionComponent>((GameObject)o!), (a, b) => ReferenceEquals(a, b));
+        if (expressionComponent != null)
         {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return a.SequenceEqual(b);
-        });
-        if (conditionComponents != null && conditionComponents.Count > 0)
-        {
-            var conditionComponent = conditionComponents.First();
-            using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
-            conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
-            if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
-            {
-                using var _expressionComponents = GetComponentsInChildren<FacialDataComponent>(conditionComponent.gameObject, true, observeContext);
-                GetBlendShapes(_expressionComponents.Value, facialStyleSet, observeContext, result);
-                return;
-            }
+            result.AddRange(zeroWeightBlendShapes);
+            result.AddRange(facialStyleSet);
+            ProcessExpressionComponent(expressionComponent, facialStyleSet, observeContext, result);
+            return;
         }
 
-        // result.AddRange(defaultSet);
+        var conditionComponents = context.Observe(_targetObject, o => GetComponents<ConditionComponent>((GameObject)o!, observeContext), (a, b) => a.SequenceEqual(b));
+        if (conditionComponents.Count > 0)
+        {
+            result.AddRange(zeroWeightBlendShapes);
+            result.AddRange(facialStyleSet);
+            ProcessConditionComponents(conditionComponents, facialStyleSet, observeContext, result);
+            return;
+        }
     }
 
-    private static BlendShapeSet GetFacialStyle(GameObject root, GameObject targetGameObject, IObserveContext observeContext)
+    private static BlendShapeSet GetFacialStyle(GameObject targetGameObject, GameObject root, IObserveContext observeContext)
     {
         var result = new BlendShapeSet(); // Todo
         FacialStyleContext.TryAddFacialStyleShapes(targetGameObject, result, root, observeContext);
@@ -117,24 +110,37 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         return result;
     }
 
-    private static PooledObject<List<T>> GetComponentsInChildren<T>(GameObject targetGameObject, bool includeInactive, IObserveContext observeContext) where T : Component
+    private static void ProcessDataComponents(IEnumerable<AbstractDataComponent> dataComponents, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
     {
-        var _result = ListPool<T>.Get(out var result);
-        observeContext.GetComponentsInChildren<T>(targetGameObject, includeInactive, result);
-        return _result;
-    }
-
-    private static void GetBlendShapes(AnimationClip clip, BlendShapeSet result)
-    {
-        clip.GetFirstFrameBlendShapes(result);
-    }
-
-    private static void GetBlendShapes(IEnumerable<FacialDataComponent> dataComponents, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
-    {
-        result.AddRange(facialStyleSet);
         foreach (var dataComponent in dataComponents)
         {
             dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
+        }
+    }
+
+    private static void ProcessExpressionComponent(ExpressionComponent expressionComponent, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
+    {
+        using var _ = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
+        observeContext.GetComponentsInChildren<AbstractDataComponent>(expressionComponent.gameObject, true, childDataComponents);
+        foreach (var dataComponent in childDataComponents)
+        {
+            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
+        }
+    }
+
+    private static void ProcessConditionComponents(List<ConditionComponent> conditionComponents, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
+    {
+        var conditionComponent = conditionComponents.First();
+        using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
+        conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
+        if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
+        {
+            using var _2 = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
+            conditionComponent.gameObject.GetComponentsInChildren<AbstractDataComponent>(true, childDataComponents);
+            foreach (var dataComponent in childDataComponents)
+            {
+                dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
+            }
         }
     }
 }

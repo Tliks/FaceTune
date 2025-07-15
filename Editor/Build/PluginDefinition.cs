@@ -23,7 +23,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(CollectDataPass.Instance);
         sequence.Run(ProcessTrackedShapesPass.Instance);
         sequence.Run(ApplyDefaulShapesPass.Instance)
-            .PreviewingWith(new FacialStylePreview());
+            .PreviewingWith(new RealTimeExpressionPreview());
         sequence.WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
         {
             sq1.Run(InstallPatternDataPass.Instance);

@@ -160,7 +160,7 @@ internal class ExportFacialDataWindow : EditorWindow
                 animations.AddRange(facialStyleAnimations);
             }
         }
-        animations.AddRange((_component as IAnimationData).GetAnimations(context));
+        animations.AddRange(_component.GetAnimations(context));
         if (_excludeTrackedShapes)
         {
             animations.RemoveBlendShapes(context.TrackedBlendShapes);
