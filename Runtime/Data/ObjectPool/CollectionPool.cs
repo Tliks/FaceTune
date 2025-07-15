@@ -23,14 +23,7 @@ internal class CollectionPool<TCollection, TItem> where TCollection : class, ICo
         maxSize: MaxSize
     );
 
-    // 極力こっちを使う
-    public static PooledObject<TCollection> Get(out TCollection collection)
-    {
-        collection = Get();
-        return new PooledObject<TCollection>(collection, _pool);
-    }
-
-    public static TCollection Get()
+    private static TCollection GetInternal()
     {
         if (_pool.CountActive > DefaultCapacity)
         {
@@ -39,6 +32,14 @@ internal class CollectionPool<TCollection, TItem> where TCollection : class, ICo
         return _pool.Get();
     }
 
+    // 極力こっちを使う
+    public static PooledObject<TCollection> Get(out TCollection collection)
+    {
+        collection = GetInternal();
+        return new PooledObject<TCollection>(collection, _pool);
+    }
+
+    public static TCollection Get() => GetInternal();
     public static void Release(TCollection collection) => _pool.Release(collection);
 }
 
