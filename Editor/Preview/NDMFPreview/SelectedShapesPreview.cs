@@ -43,6 +43,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         _targetObject.Value = target;
     }
 
+    // 無関係なオブジェクト同士の選択の切り替え時で更新がかかるらないように、_targetObjectのextractで監視する
     protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
         var observeContext = new NDMFPreviewObserveContext(context);
@@ -55,95 +56,68 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             return;
         }
 
-        // 無関係なオブジェクト同士に対する選択の切り替え時に更新がかかるらないように、_targetObjectのextractで監視する
-        // ただしpropertymonitorの負荷が高い
-        // Todo: extractにcontext.GetComponentsとList等のアロケーションがあるのをどうにかしたい
         var isGameObject = context.Observe(_targetObject, o => o is GameObject, (a, b) => a == b);
-        if (!isGameObject) return;
+        if (!isGameObject) return; // 早期リターン
 
-        var isEditorOnly = context.Observe(_targetObject, o => ((GameObject)o!).CompareTag("EditorOnly"), (a, b) => a == b);
+        // 処理が軽い data >= expression > condition の順に監視し、早期リターン
+        
+        // extractが呼ばれる順序の保証はないので、extract内におけるGameObjectかどうかの確認は必要
+        var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<AbstractDataComponent>(gameObject) : null, (a, b) => EQ(a, b));
+        if (dataComponent != null)
+        {
+            ProcessChildrenBlendShapes(dataComponent.gameObject, root, proxy, context, result);
+            return;
+        }
+
+        var expressionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionComponent>(gameObject) : null, (a, b) => EQ(a, b));
+        if (expressionComponent != null)
+        {
+            ProcessChildrenBlendShapes(expressionComponent.gameObject, root, proxy, context, result);
+            return;
+        }
+
+        var conditionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ConditionComponent>(gameObject) : null, (a, b) => EQ(a, b));
+        if (conditionComponent != null)
+        {
+            using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
+            conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
+            if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
+            {
+                ProcessChildrenBlendShapes(conditionComponent.gameObject, root, proxy, context, result);
+                return;
+            }
+        }
+
+        return; // 空のプレビュー
+
+        static bool EQ(Component? a, Component? b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            return ReferenceEquals(a, b);
+        }
+    }
+
+    // プレビューの対象となり得るGameObjectであることが確定している場合
+    private static void ProcessChildrenBlendShapes(GameObject targetGameObject, GameObject root, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeSet result)
+    {
+        var isEditorOnly = context.Observe(targetGameObject, o => o.CompareTag("EditorOnly"), (a, b) => a == b);
         if (isEditorOnly) return;
 
         using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
         proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
         
-        var facialStyleSet = context.Observe(_targetObject, o => GetFacialStyle((GameObject)o!, root, observeContext), (a, b) => a.SequenceEqual(b));
+        using var _2 = BlendShapeSetPool.Get(out var facialStyleSet);
+        FacialStyleContext.TryGetFacialStyleShapesAndObserve(targetGameObject, facialStyleSet, root, new NDMFPreviewObserveContext(context));
 
-        // 処理が軽い data > expression > condition の順に監視し、早期リターン
+        result.AddRange(zeroWeightBlendShapes);
+        result.AddRange(facialStyleSet);
 
-        var dataComponents = context.Observe(_targetObject, o => GetComponents<AbstractDataComponent>((GameObject)o!, observeContext), (a, b) => a.SequenceEqual(b));
-        if (dataComponents.Count > 0)
-        {
-            result.AddRange(zeroWeightBlendShapes);
-            result.AddRange(facialStyleSet);
-            ProcessDataComponents(dataComponents, facialStyleSet, observeContext, result);
-            return;
-        }
-
-        var expressionComponent = context.Observe(_targetObject, o => context.GetComponent<ExpressionComponent>((GameObject)o!), (a, b) => ReferenceEquals(a, b));
-        if (expressionComponent != null)
-        {
-            result.AddRange(zeroWeightBlendShapes);
-            result.AddRange(facialStyleSet);
-            ProcessExpressionComponent(expressionComponent, facialStyleSet, observeContext, result);
-            return;
-        }
-
-        var conditionComponents = context.Observe(_targetObject, o => GetComponents<ConditionComponent>((GameObject)o!, observeContext), (a, b) => a.SequenceEqual(b));
-        if (conditionComponents.Count > 0)
-        {
-            result.AddRange(zeroWeightBlendShapes);
-            result.AddRange(facialStyleSet);
-            ProcessConditionComponents(conditionComponents, facialStyleSet, observeContext, result);
-            return;
-        }
-    }
-
-    private static BlendShapeSet GetFacialStyle(GameObject targetGameObject, GameObject root, IObserveContext observeContext)
-    {
-        var result = new BlendShapeSet(); // Todo
-        FacialStyleContext.TryAddFacialStyleShapesAndObserve(targetGameObject, result, root, observeContext);
-        return result;
-    }
-
-    private static List<T> GetComponents<T>(GameObject targetGameObject, IObserveContext observeContext) where T : Component
-    {
-        var result = new List<T>(); // Todo
-        observeContext.GetComponents<T>(targetGameObject, result);
-        return result;
-    }
-
-    private static void ProcessDataComponents(IEnumerable<AbstractDataComponent> dataComponents, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
-    {
-        foreach (var dataComponent in dataComponents)
-        {
-            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
-        }
-    }
-
-    private static void ProcessExpressionComponent(ExpressionComponent expressionComponent, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
-    {
-        using var _ = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
-        observeContext.GetComponentsInChildren<AbstractDataComponent>(expressionComponent.gameObject, true, childDataComponents);
+        using var _3 = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
+        context.GetComponentsInChildren<AbstractDataComponent>(targetGameObject, true, childDataComponents);
         foreach (var dataComponent in childDataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
-        }
-    }
-
-    private static void ProcessConditionComponents(List<ConditionComponent> conditionComponents, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext observeContext, BlendShapeSet result)
-    {
-        var conditionComponent = conditionComponents.First();
-        using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
-        conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
-        if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
-        {
-            using var _2 = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
-            conditionComponent.gameObject.GetComponentsInChildren<AbstractDataComponent>(true, childDataComponents);
-            foreach (var dataComponent in childDataComponents)
-            {
-                dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
-            }
+            dataComponent.GetBlendShapes(result, facialStyleSet, new NDMFPreviewObserveContext(context));
         }
     }
 }

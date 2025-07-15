@@ -22,6 +22,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
     public static void Refresh(IReadOnlyBlendShapeSet set)
     {
         if (_target.Value == null) return;
+        if (NDMFPreview.DisablePreviewDepth != 0) return;
         if (_previewNode == null)
         {
             Debug.LogError("preview node not found. failed to refresh editing shapes preview");

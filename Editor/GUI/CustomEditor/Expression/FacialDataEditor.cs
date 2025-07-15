@@ -79,7 +79,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
     private void OpenEditor()
     {
         var facialStyleSet = new BlendShapeSet();
-        FacialStyleContext.TryAddFacialStyleShapes(Component.gameObject, facialStyleSet);
+        FacialStyleContext.TryGetFacialStyleShapes(Component.gameObject, facialStyleSet);
         var defaultOverride = new BlendShapeSet();
         Component.GetBlendShapes(defaultOverride, facialStyleSet);
         CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, defaultOverride, so => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), facialStyleSet);

@@ -37,7 +37,7 @@ internal class FacialStyleContext
         }
     }
 
-    public static bool TryAddFacialStyleShapesAndObserve(GameObject target, ICollection<BlendShape> resultToAdd, GameObject root, IObserveContext observeContext)
+    public static bool TryGetFacialStyleShapesAndObserve(GameObject target, ICollection<BlendShape> resultToAdd, GameObject root, IObserveContext observeContext)
     {
         if (!TryGetFacialStyleAndObserve(target, out var facialStyle, root, observeContext))
         {
@@ -47,7 +47,7 @@ internal class FacialStyleContext
         return true;
     }
     
-    public static bool TryAddFacialStyleShapes(GameObject target, ICollection<BlendShape> resultToAdd)
+    public static bool TryGetFacialStyleShapes(GameObject target, ICollection<BlendShape> resultToAdd)
     {
         if (!TryGetFacialStyle(target, out var facialStyle))
         {
