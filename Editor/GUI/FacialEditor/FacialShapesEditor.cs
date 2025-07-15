@@ -15,6 +15,8 @@ internal class FacialShapesEditor : EditorWindow
 
     private const int MIN_WINDOW_WIDTH = 500;
     private const int MIN_WINDOW_HEIGHT = 500;
+
+    private int _undoGroup = -1;
     
     public static FacialShapesEditor? OpenEditor(SkinnedMeshRenderer renderer, Mesh mesh, HashSet<string> allKeys, 
         IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
@@ -77,6 +79,9 @@ internal class FacialShapesEditor : EditorWindow
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
         hasUnsavedChanges = false;
         SetupKeyboardShortcuts();
+        Undo.IncrementCurrentGroup();
+        Undo.SetCurrentGroupName("Facial Shapes Editor");
+        _undoGroup = Undo.GetCurrentGroup();
     }
 
     private void SetupKeyboardShortcuts()
@@ -122,5 +127,6 @@ internal class FacialShapesEditor : EditorWindow
     {
         _dataManager?.Dispose();
         _previewManager?.Dispose();
+        Undo.CollapseUndoOperations(_undoGroup);
     }
 }
