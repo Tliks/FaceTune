@@ -10,6 +10,8 @@ namespace aoyon.facetune
         public bool IsSingleFrame = true;
         public List<BlendShapeAnimation> BlendShapeAnimations = new();
 
+        public bool ApplyToRenderer = false;
+
         internal IEnumerable<GenericAnimation> GetAnimations(SessionContext sessionContext)
         {
             return BlendShapeAnimations.Select(bs => bs.ToGeneric(sessionContext.BodyPath));

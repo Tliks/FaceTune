@@ -11,12 +11,39 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
     {
         if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
-        /*
-        var faceRenderer = buildPassContext.SessionContext.FaceRenderer;
-        var faceMesh = buildPassContext.SessionContext.FaceMesh;
-        var defaultBlendShapes = buildPassContext.SessionContext.ZeroWeightBlendShapes;
+        var sessionContext = buildPassContext.SessionContext;
+        
+        var facialStyleComponents = sessionContext.Root
+            .GetComponentsInChildren<FacialStyleComponent>(true)
+            .Where(x => x.ApplyToRenderer);
 
-        MeshHelper.ApplyBlendShapes(faceRenderer, faceMesh, defaultBlendShapes);
-        */
+        var componentCount = facialStyleComponents.Count();
+        if (componentCount == 0) return;
+        FacialStyleComponent target;
+        if (componentCount > 1)
+        {
+            Debug.LogWarning("ApplyDefaulShapesPass: Multiple FacialStyleComponent with ApplyToRenderer are found");
+            target = facialStyleComponents.Last();
+        }
+        else
+        {
+            target = facialStyleComponents.First();
+        }
+
+        var set = new BlendShapeSet();
+        set.AddRange(sessionContext.ZeroBlendShapes);
+        target.GetBlendShapes(set);
+
+        var faceRenderer = sessionContext.FaceRenderer;
+        var faceMesh = sessionContext.FaceMesh;
+        var blendShapeCount = faceMesh.blendShapeCount;
+        for (int i = 0; i < blendShapeCount; i++)
+        {
+            var name = faceMesh.GetBlendShapeName(i);
+            if (set.TryGetValue(name, out var blendShape))
+            {
+                faceRenderer.SetBlendShapeWeight(i, blendShape.Weight);
+            }
+        }
     }
 }

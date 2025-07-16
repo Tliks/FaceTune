@@ -63,7 +63,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsSingleFrame: 1
   BlendShapeAnimations: []
-  EnableRealTimePreview: 0
+  ApplyToRenderer: 1
 --- !u!114 &4772267522580920295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,3 +171,4 @@ MonoBehaviour:
     allowEyeBlink: 0
     allowLipSync: 0
     enableBlending: 0
+  EnableRealTimePreview: 0
