@@ -275,10 +275,8 @@ internal class BlendShapeOverrideManager : IDisposable
     public float ResetShapeWeightWithOutApply(int index)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
-        var oldWeight = GetShapeWeight(index);
         var newWeight = GetRequiredInitialStyleWeight(_allKeysArray[index]);
         _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = newWeight;
-        Debug.Log($"ResetShapeWeightWithOutApply: {_allKeysArray[index]} {oldWeight} -> {newWeight}");
         return newWeight;
     }
     public float ResetShapeWeight(int index)
