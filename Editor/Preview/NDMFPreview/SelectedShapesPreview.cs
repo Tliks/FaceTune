@@ -56,9 +56,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
             return;
         }
 
-        var isGameObject = context.Observe(_targetObject, o => o is GameObject, (a, b) => a == b);
-        if (!isGameObject) return; // 早期リターン
-
         // 処理が軽い data >= expression > condition の順に監視し、早期リターン
         
         // extractが呼ばれる順序の保証はないので、extract内におけるGameObjectかどうかの確認は必要
