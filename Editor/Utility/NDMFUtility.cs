@@ -1,7 +1,7 @@
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal static class NDMFUtility
 {

@@ -1,0 +1,67 @@
+#general-controls-container {
+    flex-direction: column;
+    flex: 0 0 auto;
+}
+
+/* Panels */
+#group-filter-panel, #preview-setting-panel, #clip-import-panel {
+    flex: 0 0 auto;
+    padding: 5px;
+}
+
+#preview-setting-panel, #clip-import-panel {
+    margin-top: 10px;
+}
+
+/* lablels */
+#filter-title, #preview-setting-label, #clip-import-label {
+    -unity-font-style: bold;
+}
+
+/* Filter Header */
+#filter-header {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Filter Buttons */
+#all-button, #none-button {
+    width: 60px;
+}
+
+/* Group Toggles Container */
+#group-toggles-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 5px;
+}
+
+/* Group Toggles */
+.group-toggle {
+    margin-right: 5px;
+    margin-bottom: 2px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.group-toggle:checked Label {
+    color: rgb(140, 180, 230);
+}
+
+.group-toggle:checked {
+    background-color: rgba(100, 120, 160, 0.15);
+}
+
+.group-toggle:hover {
+    background-color: rgba(100, 100, 100, 0.1);
+}
+
+.group-toggle:checked:hover {
+    background-color: rgba(100, 120, 160, 0.2);
+}
+
+.group-toggle .unity-toggle__checkmark {
+    display: none;
+}

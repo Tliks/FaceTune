@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5557704395542580616}
+  - component: {fileID: 6935143559633918826}
   m_Layer: 0
   m_Name: Lipsync Override
   m_TagString: Untagged
@@ -29,10 +30,40 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 9067912402786459724}
+  - {fileID: 7663972919204766180}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7128563309203844220
+--- !u!114 &6935143559633918826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2053227024675831482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b29d45007c5493d926d2cd45a489529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Control:
+    name: 
+    icon: {fileID: 0}
+    type: 102
+    parameter:
+      name: 
+    value: 1
+    style: 0
+    subMenu: {fileID: 0}
+    subParameters: []
+    labels: []
+  MenuSource: 1
+  menuSource_otherObjectChildren: {fileID: 0}
+  isSynced: 1
+  isSaved: 1
+  isDefault: 1
+  automaticValue: 1
+  label: 
+--- !u!1 &2104754335780747224
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -40,9 +71,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9067912402786459724}
-  - component: {fileID: 1044431585376670247}
-  - component: {fileID: 6207186560187071672}
+  - component: {fileID: 7663972919204766180}
+  - component: {fileID: 601990200424846913}
+  - component: {fileID: 7723153415170801214}
+  - component: {fileID: 4016804312303346933}
   m_Layer: 0
   m_Name: Lipsyncing
   m_TagString: Untagged
@@ -50,28 +82,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9067912402786459724
+--- !u!4 &7663972919204766180
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7128563309203844220}
+  m_GameObject: {fileID: 2104754335780747224}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5557704395542580616}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1044431585376670247
+--- !u!114 &601990200424846913
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7128563309203844220}
+  m_GameObject: {fileID: 2104754335780747224}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
@@ -79,29 +111,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HandGestureConditions: []
   ParameterConditions:
-  - ParameterName: Voice
-    ParameterType: 1
-    FloatComparisonType: 0
-    IntComparisonType: 0
-    FloatValue: 0
-    IntValue: 0
-    BoolValue: 0
---- !u!114 &6207186560187071672
+  - parameterName: Voice
+    parameterType: 1
+    comparisonType: 2
+    floatValue: 0.01
+    intValue: 0
+    boolValue: 0
+--- !u!114 &7723153415170801214
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7128563309203844220}
+  m_GameObject: {fileID: 2104754335780747224}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 2
-  AllowLipSync: 2
-  EnableBlending: 1
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &4016804312303346933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104754335780747224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1

@@ -1,0 +1,124 @@
+using UnityEngine.UIElements;
+using aoyon.facetune.preview;
+
+namespace aoyon.facetune.ui.shapes_editor;
+
+internal class PreviewManager : IDisposable
+{
+    private readonly SkinnedMeshRenderer _renderer;
+    private readonly BlendShapeOverrideManager _blendShapeOverrideManager;
+    private readonly FacialShapeUI _ui;
+    private readonly BlendShapeSet _previewSet;
+    private readonly HighlightBlendShapeProcessor _highlightBlendShapeProcessor;
+    
+    private readonly VisualElement _rootElement;
+    private IVisualElementScheduledItem _updateScheduler;
+    
+    private int _currentAppliedHoverIndex = -2;
+    private int _pendingHoverIndex = -2;
+    private bool _needsShapeRefresh = false;
+    
+    private const int UpdateIntervalMs = 33; // 約30fps
+
+    public PreviewManager(SkinnedMeshRenderer renderer, BlendShapeOverrideManager blendShapeOverrideManager, FacialShapeUI ui)
+    {
+        _renderer = renderer;
+        _blendShapeOverrideManager = blendShapeOverrideManager;
+        _ui = ui;
+        _rootElement = ui.Root;
+        _previewSet = new();
+        _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor(_renderer, _renderer.sharedMesh);
+        
+        _blendShapeOverrideManager.OnAnyDataChange += RequestShapeRefresh;
+        _ui.UnselectedPanel.OnHoveredIndexChanged += OnHoveredIndexChanged;
+        _ui.GeneralControls.OnSetBlendShapeTo100OnHoverChanged += (value) => { RequestShapeRefresh(); };
+        _ui.GeneralControls.OnHighlightBlendShapeVerticesOnHoverChanged += (value) => { _highlightBlendShapeProcessor.ClearHighlight(); };
+        
+        // UI Elementsスケジューラーで定期的に両方の更新をチェック
+        // UpdateIntervalMsで更新の頻度を制限する
+        _updateScheduler = _rootElement.schedule
+            .Execute(CheckAndApplyUpdates)
+            .Every(UpdateIntervalMs);
+            
+        var defaultSet = new BlendShapeSet();
+        GetCurrentSet(defaultSet);
+        EditingShapesPreview.Start(_renderer, defaultSet);
+    }
+
+    private void RequestShapeRefresh()
+    {
+        _needsShapeRefresh = true;
+    }
+
+    private void OnHoveredIndexChanged(int index)
+    {
+        _pendingHoverIndex = index;
+    }
+
+    private void CheckAndApplyUpdates()
+    {
+        // Shape更新が必要な場合は最優先で実行
+        if (_needsShapeRefresh)
+        {
+            _needsShapeRefresh = false;
+            GetCurrentSet(_previewSet);
+            EditingShapesPreview.Refresh(_previewSet);
+            return; // Shape更新後はhover更新をスキップ
+        }
+        
+        // Hover更新をチェック
+        var hoverIndexChanged = _pendingHoverIndex != _currentAppliedHoverIndex;
+        if (!hoverIndexChanged)
+        {
+            return;
+        }
+        
+        // Hover更新
+        _currentAppliedHoverIndex = _pendingHoverIndex;
+        var index = _currentAppliedHoverIndex;
+
+        if (_ui.GeneralControls.SetBlendShapeTo100OnHover)
+        {
+            GetCurrentSet(_previewSet);
+            if (index != -1)
+            {
+                _previewSet.Add(new BlendShape(_blendShapeOverrideManager.AllKeys[index], 100));
+            }
+            EditingShapesPreview.Refresh(_previewSet);
+        }
+        if (_ui.GeneralControls.HighlightBlendShapeVerticesOnHover)
+        {
+            if (index != -1)
+            {
+                _highlightBlendShapeProcessor.HilightBlendShapeFor(index);
+            }
+            else
+            {
+                _highlightBlendShapeProcessor.ClearHighlight();
+            }
+        }
+    }
+
+    private void GetCurrentSet(BlendShapeSet result)
+    {
+        result.Clear();
+        foreach (var shape in _blendShapeOverrideManager.AllKeys)
+        {
+            result.Add(new BlendShape(shape, 0));
+        }
+        foreach (var shape in _blendShapeOverrideManager.StyleSet)
+        {
+            result.Add(shape);
+        }
+        _blendShapeOverrideManager.GetCurrentOverrides(result);
+    }
+
+    public void Dispose()
+    {
+        _blendShapeOverrideManager.OnAnyDataChange -= RequestShapeRefresh;
+        _ui.UnselectedPanel.OnHoveredIndexChanged -= OnHoveredIndexChanged;
+        _updateScheduler?.Pause();
+        EditingShapesPreview.Stop();
+        _highlightBlendShapeProcessor.Dispose();
+    }
+}

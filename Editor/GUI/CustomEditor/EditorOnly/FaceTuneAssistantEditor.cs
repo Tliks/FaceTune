@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune.ui
+namespace aoyon.facetune.ui
 {
     internal enum HandGesturePatternType
     {
@@ -24,7 +24,7 @@ namespace com.aoyon.facetune.ui
         public string Guid { get; }
         public bool ShouldUnpack { get; }
 
-        public PatternInfo(string description, string guid, bool shouldUnpack = false)
+        public PatternInfo(string description, string guid, bool shouldUnpack = true)
         {
             Description = description;
             Guid = guid;
@@ -47,8 +47,8 @@ namespace com.aoyon.facetune.ui
         {
             { HandGesturePatternType.LeftOnly, new PatternInfo("左手のみのパターンです。", LeftOnlyPatternGuid) },
             { HandGesturePatternType.RightOnly, new PatternInfo("右手のみのパターンです。", RightOnlyPatternGuid) },
-            { HandGesturePatternType.BasicRight, new PatternInfo("右手が優先される基本的なパターンです。", BasicRightPatternGuid, true) },
-            { HandGesturePatternType.BasicLeft, new PatternInfo("左手が優先される基本的なパターンです。", BasicLeftPatternGuid, true) },
+            { HandGesturePatternType.BasicRight, new PatternInfo("右手が優先される基本的なパターンです。", BasicRightPatternGuid) },
+            { HandGesturePatternType.BasicLeft, new PatternInfo("左手が優先される基本的なパターンです。", BasicLeftPatternGuid) },
             { HandGesturePatternType.Blending, new PatternInfo("片手ごとのアニメーションがブレンドさせるパターンです。目と口の制御をそれぞれの手に割り当てる際などに便利です。", BlendingPatternGuid) },
             { HandGesturePatternType.FaceMorphFirst, new PatternInfo("右手と左手に優先度を付けず、最初に実行したジェスチャーを優先させるパターンです。", FaceMorphFirstPatternGuid) },
             { HandGesturePatternType.HandSign, new PatternInfo("左手と右手の組み合わせで最大64通りのジェスチャーを作成できるパターンです。", HandSignPatternGuid) },

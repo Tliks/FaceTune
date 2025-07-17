@@ -1,0 +1,32 @@
+{
+    "name": "aoyon.facetune.editor.vrchat",
+    "rootNamespace": "",
+    "references": [
+        "VRC.SDKBase",
+        "VRC.SDKBase.Editor",
+        "VRC.SDK3A",
+        "VRC.SDK3A.Editor",
+        "aoyon.facetune.common",
+        "aoyon.facetune.editor",
+        "aoyon.facetune.runtime",
+        "nadena.dev.ndmf",
+        "nadena.dev.modular-avatar.core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.vrchat.avatars",
+            "expression": "",
+            "define": "FT_VRCSDK3_AVATARS"
+        }
+    ],
+    "noEngineReferences": false
+}
