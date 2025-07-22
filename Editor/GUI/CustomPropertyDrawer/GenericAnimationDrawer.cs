@@ -1,7 +1,7 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 [CustomPropertyDrawer(typeof(GenericAnimation))]
 internal class GenericAnimationDrawer : PropertyDrawer

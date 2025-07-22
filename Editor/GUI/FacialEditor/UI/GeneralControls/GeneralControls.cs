@@ -1,7 +1,7 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui.shapes_editor;
+namespace aoyon.facetune.gui.shapes_editor;
 
 internal class GeneralControls
 {
@@ -56,8 +56,8 @@ internal class GeneralControls
 
     private void EnsureAssets()
     {
-        UIUtility.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
-        UIUtility.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
+        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
+        UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
     }
 
     private void SetupControls()

@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui.shapes_editor;
+namespace aoyon.facetune.gui.shapes_editor;
 
 internal class UnselectedPanel
 {
@@ -62,9 +62,9 @@ internal class UnselectedPanel
 
     private void EnsureAssets()
     {
-        UIUtility.EnsureUxmlWithGuid(ref _uxml, "736ebf000f485f041ac2becabbde48d3");
-        UIUtility.EnsureUxmlWithGuid(ref _unselectedItemUxml, "3efe7e91dce1d544b873dd133a44039d");
-        UIUtility.EnsureUssWithGuid(ref _uss, "b9dfe6425f70d0544a5939a176bdf3b0");
+        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "736ebf000f485f041ac2becabbde48d3");
+        UIAssetHelper.EnsureUxmlWithGuid(ref _unselectedItemUxml, "3efe7e91dce1d544b873dd133a44039d");
+        UIAssetHelper.EnsureUssWithGuid(ref _uss, "b9dfe6425f70d0544a5939a176bdf3b0");
     }
 
     private void SetupControls()

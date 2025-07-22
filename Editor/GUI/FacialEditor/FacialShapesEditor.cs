@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui.shapes_editor;
+namespace aoyon.facetune.gui.shapes_editor;
 
 internal class FacialShapesEditor : EditorWindow
 {

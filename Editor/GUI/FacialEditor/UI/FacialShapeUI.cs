@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui.shapes_editor;
+namespace aoyon.facetune.gui.shapes_editor;
 
 internal class FacialShapeUI
 {
@@ -40,7 +40,7 @@ internal class FacialShapeUI
 
     private void EnsureUIAssets()
     {
-        UIUtility.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
-        UIUtility.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
+        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
+        UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
     }
 }

@@ -1,7 +1,7 @@
 using UnityEngine.UIElements;
-using aoyon.facetune.ui.components;
+using aoyon.facetune.gui.components;
 
-namespace aoyon.facetune.ui.shapes_editor;
+namespace aoyon.facetune.gui.shapes_editor;
 
 internal class SelectedPanel
 {
@@ -52,9 +52,9 @@ internal class SelectedPanel
 
     private void EnsureAssets()
     {
-        UIUtility.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
-        UIUtility.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
-        UIUtility.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
+        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
+        UIAssetHelper.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
+        UIAssetHelper.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
     }
 
     private void SetupControls()

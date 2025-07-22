@@ -1,8 +1,8 @@
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
-internal static class UIUtility
+internal static class UIAssetHelper
 {
     public static void EnsureUxmlWithGuid(ref VisualTreeAsset uxml, string guid , bool forceUpdate = false)
     {

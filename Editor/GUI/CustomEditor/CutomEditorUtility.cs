@@ -1,6 +1,6 @@
-using aoyon.facetune.ui.shapes_editor;
+using aoyon.facetune.gui.shapes_editor;
 
-namespace aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 internal static class CustomEditorUtility
 {

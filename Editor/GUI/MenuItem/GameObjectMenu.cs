@@ -5,7 +5,7 @@ using UnityEditor.Animations;
 using VRC.SDK3.Avatars.Components;
 using M = UnityEditor.MenuItem;
 
-namespace aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 internal static class GameObjectMenu
 {

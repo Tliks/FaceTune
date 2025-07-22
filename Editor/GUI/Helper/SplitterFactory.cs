@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.ui
+namespace aoyon.facetune.gui
 {
     public static class SplitterFactory
     {

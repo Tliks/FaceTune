@@ -1,4 +1,4 @@
-namespace aoyon.facetune.ui.shapes_editor;
+namespace aoyon.facetune.gui.shapes_editor;
 
 // styleはは初期状態から変化した場合のみoverride
 // 通常のブレンドシェイプはweightに関わらず、overrideかどうかで判断

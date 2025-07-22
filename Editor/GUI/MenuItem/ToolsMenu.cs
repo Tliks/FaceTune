@@ -1,7 +1,7 @@
 using UnityEditorInternal;
 using aoyon.facetune.Settings;
 
-namespace aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 internal static class ToolsMenu
 {

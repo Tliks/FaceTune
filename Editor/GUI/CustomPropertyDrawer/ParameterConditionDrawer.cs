@@ -1,4 +1,4 @@
-namespace aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 [CustomPropertyDrawer(typeof(ParameterCondition))]
 internal class ParameterConditionDrawer : PropertyDrawer
