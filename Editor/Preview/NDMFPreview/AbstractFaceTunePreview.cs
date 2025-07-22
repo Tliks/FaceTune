@@ -3,7 +3,7 @@ using nadena.dev.ndmf.preview;
 
 namespace aoyon.facetune.preview;
 
-internal abstract class AbstractFaceTunePreview : IRenderFilter
+internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where TFilter : IRenderFilter
 {
     protected virtual TogglablePreviewNode? ControlNode { get; }
 
@@ -23,15 +23,13 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
     // => 全て対象にする
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
+        using var _ = new ProfilingSampleScope($"{typeof(TFilter).Name}.GetTargetGroups");
         var groups = new List<RenderGroup>();
         var observeContext = new NDMFPreviewObserveContext(context);
         foreach (var root in context.GetAvatarRoots())
         {
             if (!context.ActiveInHierarchy(root)) continue;
-
-            var faceRenderer = SessionContextBuilder.GetFaceRenderer(root, null, observeContext);
-            if (faceRenderer == null) continue;
-
+            if (!SessionContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, null, observeContext)) continue;
             groups.Add(RenderGroup.For(faceRenderer).WithData(root));
         }
         return groups.ToImmutableList();
@@ -44,6 +42,7 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
 
     protected virtual Task<IRenderFilterNode> Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
+        using var _ = new ProfilingSampleScope($"{typeof(TFilter).Name}.Instantiate");
         try
         {
             var pair = proxyPairs.First();
@@ -59,7 +58,10 @@ internal abstract class AbstractFaceTunePreview : IRenderFilter
             if (root == null) return Error("GameObject not found");
 
             using var _set = BlendShapeSetPool.Get(out var set);
-            QueryBlendShapes(original, proxy, root, context, set);
+            using var _2 = new ProfilingSampleScope($"{typeof(TFilter).Name}.QueryBlendShapes");
+            {
+                QueryBlendShapes(original, proxy, root, context, set);
+            }
 
             return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(proxy, set.AsReadOnly()));
         }
@@ -88,37 +90,34 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 {
     public RenderAspects WhatChanged => RenderAspects.Shapes;
 
-    private readonly SkinnedMeshRenderer _original;
-    private readonly Mesh _originalMesh;
     private readonly int _blendShapeCount;
-    private readonly string[] _blendShapeNames;
-
-    public readonly PooledObject<List<float>> BlendShapeWeights;
+    private readonly PooledObject<List<string>> _blendShapeNames;
+    private readonly PooledObject<List<float>> _blendShapeWeights;
 
     private SkinnedMeshRenderer? _latestProxy;
 
-    public BlendShapePreviewNode(SkinnedMeshRenderer original, IReadOnlyBlendShapeSet set)
+    public BlendShapePreviewNode(SkinnedMeshRenderer smr, IReadOnlyBlendShapeSet set)
     {
-        _original = original;
-        _originalMesh = original.sharedMesh;
-        _blendShapeCount = _originalMesh.blendShapeCount;
-        _blendShapeNames = new string[_blendShapeCount];
+        var mesh = smr.sharedMesh;
+        _blendShapeCount = mesh.blendShapeCount;
+        _blendShapeNames = ListPool<string>.Get(out var names);
         for (int i = 0; i < _blendShapeCount; i++)
         {
-            _blendShapeNames[i] = _originalMesh.GetBlendShapeName(i);
+            names.Add(mesh.GetBlendShapeName(i));
         }
-        BlendShapeWeights = ListPool<float>.Get(out _);
+        _blendShapeWeights = ListPool<float>.Get(out _);
         RefreshInternal(set);
     }
     
     private void RefreshInternal(IReadOnlyBlendShapeSet set)
     {
-        var current = BlendShapeWeights.Value;
+        var current = _blendShapeWeights.Value;
         current.Clear();
+        var names = _blendShapeNames.Value;
 
         for (int i = 0; i < _blendShapeCount; i++)
         {
-            if (set.TryGetValue(_blendShapeNames[i], out var blendShape))
+            if (set.TryGetValue(names[i], out var blendShape))
             {
                 current.Add(blendShape.Weight);
             }
@@ -158,19 +157,20 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         var mesh = proxy.sharedMesh;
         if (mesh == null) return;
 
-        var weights = BlendShapeWeights.Value;
+        var weights = _blendShapeWeights.Value;
         var count = weights.Count;
 
         for (int i = 0; i < count; i++)
         {
-            if (weights[i] == -1) continue; // 対象外
-            proxy.SetBlendShapeWeight(i, weights[i]);
+            var weight = weights[i];
+            if (weight == -1) continue; // 対象外
+            proxy.SetBlendShapeWeight(i, weight);
         }
     }
-
     public void Dispose()
     {
-        BlendShapeWeights.Dispose();
+        _blendShapeNames.Dispose();
+        _blendShapeWeights.Dispose();
     }
 }
 

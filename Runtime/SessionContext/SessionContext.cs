@@ -9,7 +9,7 @@ internal class SessionContext
     public readonly string BodyPath;
     public readonly IReadOnlyBlendShapeSet ZeroBlendShapes;
     public readonly HashSet<string> TrackedBlendShapes;
-    public readonly BlendShapeSet SafeZeroBlendShapes;
+    public readonly IReadOnlyBlendShapeSet SafeZeroBlendShapes;
 
     public SessionContext(
         GameObject root,
@@ -18,7 +18,7 @@ internal class SessionContext
         string bodyPath,
         IReadOnlyBlendShapeSet zeroWeightBlendShapes,
         HashSet<string> trackedBlendShapes,
-        BlendShapeSet safeBlendShapes
+        IReadOnlyBlendShapeSet safeBlendShapes
     )
     {
         Root = root;

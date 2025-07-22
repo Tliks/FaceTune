@@ -3,12 +3,12 @@ using nadena.dev.ndmf.preview;
 
 namespace aoyon.facetune.preview;
 
-internal class EditingShapesPreview : AbstractFaceTunePreview
+internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPreview>
 {
     private static readonly PublishedValue<SkinnedMeshRenderer?> _target = new(null);
     public override bool IsEnabled(ComputeContext context) => context.Observe(_target, t => t != null, (a, b) => a == b);
     private static BlendShapePreviewNode? _previewNode = null;
-    private static IReadOnlyBlendShapeSet? _defaultSet = null;
+    private static BlendShapeSet _currentSet = new();
 
     public static void Start(SkinnedMeshRenderer target, IReadOnlyBlendShapeSet? defaultSet = null)
     {
@@ -16,11 +16,12 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
         _target.Value = target;
         // OnSelectedなプレビューとは共存させる意味がないので停止させる
         SelectedShapesPreview.Disable();
-        _defaultSet = defaultSet;
+        defaultSet?.CloneTo(_currentSet);
     }
 
     public static void Refresh(IReadOnlyBlendShapeSet set)
     {
+        set.CloneTo(_currentSet);
         if (_target.Value == null) return;
         if (NDMFPreview.DisablePreviewDepth != 0) return;
         if (_previewNode == null)
@@ -28,27 +29,25 @@ internal class EditingShapesPreview : AbstractFaceTunePreview
             Debug.LogError("preview node not found. failed to refresh editing shapes preview");
             return;
         }
-        _previewNode.RefreshDirectly(set);
+        _previewNode.RefreshDirectly(_currentSet);
     }
 
     protected override async Task<IRenderFilterNode> Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
-        var node = await base.Instantiate(group, proxyPairs, context);
-        if (node == null) throw new Exception("Failed to instantiate preview node");
-        _previewNode = node as BlendShapePreviewNode;
-        if (_previewNode == null) throw new Exception("Failed to cast preview node");
-        if (_defaultSet != null) _previewNode.RefreshDirectly(_defaultSet);
+        var node = await base.Instantiate(group, proxyPairs, context) ?? throw new Exception("Failed to instantiate preview node");
+        _previewNode = (BlendShapePreviewNode)node;
+        _previewNode.RefreshDirectly(_currentSet);
         return node;
     }
 
     public static void Stop()
     {
         _target.Value = null;
+        _currentSet.Clear();
         SelectedShapesPreview.MayEnable();
     }
 
     protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
-        if (!IsEnabled(context)) return;
     }
 }

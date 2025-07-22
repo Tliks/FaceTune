@@ -101,5 +101,20 @@ internal static class HierarchyUtility
         }
         return component;
     }
+
+    public static bool IsEditorOnlyInHierarchy(this GameObject gameObject)
+    {
+        var current = gameObject;
+        while (current != null)
+        {
+            if (current.CompareTag("EditorOnly"))
+            {
+                return true;
+            }
+            var parent = current.transform.parent;
+            current = parent != null ? parent.gameObject : null;
+        }
+        return false;
+    }
 }
 

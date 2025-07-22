@@ -3,7 +3,7 @@ using aoyon.facetune.Settings;
 
 namespace aoyon.facetune.preview;
 
-internal class SelectedShapesPreview : AbstractFaceTunePreview
+internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPreview>
 {
     // 一時的に無効化出来るようにするために、必ずしもProjectSettings.EnableSelectedExpressionPreviewとは一致しない
     private static readonly PublishedValue<int> _disabledDepth = new(0); // 0で有効 無効化したい時は足す
@@ -34,21 +34,19 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
 
         var selections = Selection.objects;
 
-        Object? target = null;
         if (selections.Count() == 1)
         {
-            target = selections.First();
+            _targetObject.Value = selections.First();
         }
-
-        _targetObject.Value = target;
+        else
+        {
+            _targetObject.Value = null;
+        }
     }
 
     // 無関係なオブジェクト同士の選択の切り替え時で更新がかかるらないように、_targetObjectのextractで監視する
     protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
-        var observeContext = new NDMFPreviewObserveContext(context);
-        if (!IsEnabled(context)) return;
-        
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
@@ -59,21 +57,21 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         // 処理が軽い data >= expression > condition の順に監視し、早期リターン
         
         // extractが呼ばれる順序の保証はないので、extract内におけるGameObjectかどうかの確認は必要
-        var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<AbstractDataComponent>(gameObject) : null, (a, b) => EQ(a, b));
+        var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<AbstractDataComponent>(gameObject) : null, (a, b) => a == b);
         if (dataComponent != null)
         {
             ProcessChildrenBlendShapes(dataComponent.gameObject, root, proxy, context, result);
             return;
         }
 
-        var expressionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionComponent>(gameObject) : null, (a, b) => EQ(a, b));
+        var expressionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionComponent>(gameObject) : null, (a, b) => a == b);
         if (expressionComponent != null)
         {
             ProcessChildrenBlendShapes(expressionComponent.gameObject, root, proxy, context, result);
             return;
         }
 
-        var conditionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ConditionComponent>(gameObject) : null, (a, b) => EQ(a, b));
+        var conditionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ConditionComponent>(gameObject) : null, (a, b) => a == b);
         if (conditionComponent != null)
         {
             using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
@@ -86,26 +84,21 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         }
 
         return; // 空のプレビュー
-
-        static bool EQ(Component? a, Component? b)
-        {
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            return ReferenceEquals(a, b);
-        }
     }
 
     // プレビューの対象となり得るGameObjectであることが確定している場合
     private static void ProcessChildrenBlendShapes(GameObject targetGameObject, GameObject root, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeSet result)
     {
-        var isEditorOnly = context.Observe(targetGameObject, o => o.CompareTag("EditorOnly"), (a, b) => a == b);
+        var isEditorOnly = context.Observe(targetGameObject, o => o.IsEditorOnlyInHierarchy(), (a, b) => a == b);
         if (isEditorOnly) return;
+
+        var observeContext = new NDMFPreviewObserveContext(context);
 
         using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
         proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
         
         using var _2 = BlendShapeSetPool.Get(out var facialStyleSet);
-        FacialStyleContext.TryGetFacialStyleShapesAndObserve(targetGameObject, facialStyleSet, root, new NDMFPreviewObserveContext(context));
+        FacialStyleContext.TryGetFacialStyleShapesAndObserve(targetGameObject, facialStyleSet, root, observeContext);
 
         result.AddRange(zeroWeightBlendShapes);
         result.AddRange(facialStyleSet);
@@ -114,7 +107,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview
         context.GetComponentsInChildren<AbstractDataComponent>(targetGameObject, true, childDataComponents);
         foreach (var dataComponent in childDataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleSet, new NDMFPreviewObserveContext(context));
+            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
         }
     }
 }

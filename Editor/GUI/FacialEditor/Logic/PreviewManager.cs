@@ -19,6 +19,9 @@ internal class PreviewManager : IDisposable
     private bool _needsShapeRefresh = false;
     
     private const int UpdateIntervalMs = 33; // 約30fps
+    
+    private bool _setBlendShapeTo100OnHover => _ui.GeneralControls.SetBlendShapeTo100OnHover;
+    private bool _highlightBlendShapeVerticesOnHover => _ui.GeneralControls.HighlightBlendShapeVerticesOnHover;
 
     public PreviewManager(SkinnedMeshRenderer renderer, BlendShapeOverrideManager blendShapeOverrideManager, FacialShapeUI ui)
     {
@@ -57,36 +60,26 @@ internal class PreviewManager : IDisposable
 
     private void CheckAndApplyUpdates()
     {
-        // Shape更新が必要な場合は最優先で実行
-        if (_needsShapeRefresh)
-        {
-            _needsShapeRefresh = false;
-            GetCurrentSet(_previewSet);
-            EditingShapesPreview.Refresh(_previewSet);
-            return; // Shape更新後はhover更新をスキップ
-        }
-        
-        // Hover更新をチェック
         var hoverIndexChanged = _pendingHoverIndex != _currentAppliedHoverIndex;
-        if (!hoverIndexChanged)
+        var shouldRefresh = hoverIndexChanged || _needsShapeRefresh;
+
+        if (!shouldRefresh)
         {
             return;
         }
         
-        // Hover更新
+        _needsShapeRefresh = false;
         _currentAppliedHoverIndex = _pendingHoverIndex;
         var index = _currentAppliedHoverIndex;
 
-        if (_ui.GeneralControls.SetBlendShapeTo100OnHover)
+        GetCurrentSet(_previewSet);
+        if (_setBlendShapeTo100OnHover && index != -1)
         {
-            GetCurrentSet(_previewSet);
-            if (index != -1)
-            {
-                _previewSet.Add(new BlendShape(_blendShapeOverrideManager.AllKeys[index], 100));
-            }
-            EditingShapesPreview.Refresh(_previewSet);
+            _previewSet.Add(new BlendShape(_blendShapeOverrideManager.AllKeys[index], 100));
         }
-        if (_ui.GeneralControls.HighlightBlendShapeVerticesOnHover)
+        EditingShapesPreview.Refresh(_previewSet);
+
+        if (_highlightBlendShapeVerticesOnHover)
         {
             if (index != -1)
             {

@@ -3,7 +3,7 @@ using nadena.dev.ndmf.preview;
 namespace aoyon.facetune.preview;
 
 // early
-internal class RealTimeExpressionPreview : AbstractFaceTunePreview
+internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpressionPreview>
 {
     protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
     {
@@ -27,17 +27,18 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview
             target = enabledComponents.Last();
         }
 
+        var observeContext = new NDMFPreviewObserveContext(context);
+
         using var _2 = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
         proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
         result.AddRange(zeroWeightBlendShapes);
 
         using var _3 = BlendShapeSetPool.Get(out var facialStyleSet);
-        FacialStyleContext.TryGetFacialStyleShapesAndObserve(target.gameObject, facialStyleSet, root, new NDMFPreviewObserveContext(context));
+        FacialStyleContext.TryGetFacialStyleShapesAndObserve(target.gameObject, facialStyleSet, root, observeContext);
         foreach (var blendShape in facialStyleSet) result.Add(blendShape);
 
         using var _4 = ListPool<AbstractDataComponent>.Get(out var dataComponents);
         context.GetComponentsInChildren<AbstractDataComponent>(target.gameObject, true, dataComponents);
-        var observeContext = new NDMFPreviewObserveContext(context);
         foreach (var dataComponent in dataComponents)
         {
             dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);

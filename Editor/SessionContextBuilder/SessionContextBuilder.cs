@@ -20,8 +20,7 @@ internal static class SessionContextBuilder
 
         var platformSupport = platform.PlatformSupport.GetSupport(root.transform);
 
-        var faceRenderer = GetFaceRenderer(root, platformSupport, context);
-        if (faceRenderer == null)
+        if (!TryGetFaceRenderer(root, out var faceRenderer, platformSupport, context))
         {
             result = SessionContextBuildResult.NotFoundFaceRenderer;
             return false;
@@ -48,7 +47,7 @@ internal static class SessionContextBuilder
         return true;
     }
 
-    public static SkinnedMeshRenderer? GetFaceRenderer(GameObject root, IPlatformSupport? platformSupport = null, IObserveContext? context = null)
+    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, IPlatformSupport? platformSupport = null, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
         platformSupport ??= platform.PlatformSupport.GetSupport(root.transform);
@@ -62,15 +61,12 @@ internal static class SessionContextBuilder
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
         var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c.FaceObject)).OfType<GameObject>();
-        var faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null);
-        if (faceRenderer == null)
+        faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null) ?? platformSupport.GetFaceRenderer();
+        if (faceRenderer != null)
         {
-            return platformSupport.GetFaceRenderer();
+            return true;
         }
-        else
-        {
-            return faceRenderer;
-        }
+        return false;
     }
 
     public enum SessionContextBuildResult
