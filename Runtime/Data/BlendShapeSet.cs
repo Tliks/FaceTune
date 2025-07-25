@@ -262,9 +262,8 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
     }
 }
 
-internal interface IReadOnlyBlendShapeSet : IEnumerable<BlendShape>, IEquatable<IReadOnlyBlendShapeSet>
+internal interface IReadOnlyBlendShapeSet : IReadOnlyCollection<BlendShape>, IEquatable<IReadOnlyBlendShapeSet>
 {
-    int Count { get; }
     Dictionary<string, BlendShape>.ValueCollection BlendShapes { get; }
     Dictionary<string, BlendShape>.KeyCollection Names { get; }
     BlendShapeSet Clone();

@@ -33,8 +33,13 @@ internal static class BlendShapeUtility
         return blendShapes;
     }
 
+    public static IEnumerable<BlendShapeAnimation> ToBlendShapeAnimations(this IEnumerable<BlendShape> blendShapes)
+    {
+        return blendShapes.Select(bs => BlendShapeAnimation.SingleFrame(bs.Name, bs.Weight));
+    }
+
     public static IEnumerable<GenericAnimation> ToGenericAnimations(this IEnumerable<BlendShape> blendShapes, string path)
     {
-        return blendShapes.Select(bs => BlendShapeAnimation.SingleFrame(bs.Name, bs.Weight).ToGeneric(path));
+        return blendShapes.ToBlendShapeAnimations().Select(bs => bs.ToGeneric(path));
     }
 }

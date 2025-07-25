@@ -10,7 +10,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
     private static BlendShapePreviewNode? _previewNode = null;
     private static BlendShapeSet _currentSet = new();
 
-    public static void Start(SkinnedMeshRenderer target, IReadOnlyBlendShapeSet? defaultSet = null)
+    public static void Start(SkinnedMeshRenderer? target, IReadOnlyBlendShapeSet? defaultSet = null)
     {
         // 既存のプレビューは上書き
         _target.Value = target;
@@ -24,11 +24,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
         set.CloneTo(_currentSet);
         if (_target.Value == null) return;
         if (NDMFPreview.DisablePreviewDepth != 0) return;
-        if (_previewNode == null)
-        {
-            Debug.LogError("preview node not found. failed to refresh editing shapes preview");
-            return;
-        }
+        if (_previewNode == null) return;
         _previewNode.RefreshDirectly(_currentSet);
     }
 
@@ -43,6 +39,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
     public static void Stop()
     {
         _target.Value = null;
+        _previewNode = null;
         _currentSet.Clear();
         SelectedShapesPreview.MayEnable();
     }
