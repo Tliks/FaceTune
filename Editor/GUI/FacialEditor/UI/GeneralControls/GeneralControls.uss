@@ -3,18 +3,26 @@
     flex: 0 0 auto;
 }
 
+#general-controls-unscroll-view {
+    flex: 0 0 auto;
+}
+
+#general-controls-scroll-view {
+    flex: 1 1 270px;
+}
+
 /* Panels */
-#group-filter-panel, #preview-setting-panel, #clip-import-panel {
+#target-panel, #group-filter-panel, #preview-setting-panel, #clip-import-panel {
     flex: 0 0 auto;
     padding: 5px;
 }
 
-#preview-setting-panel, #clip-import-panel {
+#group-filter-panel, #preview-setting-panel, #clip-import-panel {
     margin-top: 10px;
 }
 
 /* lablels */
-#filter-title, #preview-setting-label, #clip-import-label {
+#target-title, #filter-title, #preview-setting-title, #clip-import-title {
     -unity-font-style: bold;
 }
 

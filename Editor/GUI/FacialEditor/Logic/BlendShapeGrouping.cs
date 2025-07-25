@@ -23,7 +23,16 @@ internal class BlendShapeGrouping
     public IReadOnlyList<BlendShapeGroup> Groups { get; private set; }
     public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
-    public BlendShapeGrouping(IReadOnlyList<string> allKeys)
+    public BlendShapeGrouping(TargetManager targetManager, BlendShapeOverrideManager dataManager)
+    {
+        Groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };
+        targetManager.OnTargetingChanged += (targeting) =>
+        {
+            Refresh(dataManager.AllKeys);
+        };
+    }
+
+    public void Refresh(IReadOnlyList<string> allKeys)
     {
         var groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };
 

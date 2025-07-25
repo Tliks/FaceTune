@@ -35,7 +35,7 @@
 
 /* Buttons */
 #style-set-all-100-button, #selected-set-all-100-button, #style-set-all-0-button, #selected-set-all-0-button, #style-reset-all-button, #remove-all-button {
-    flex: 0 0 100px;
+    flex: 0 0 85px;
 }
 
 /* SimpleToggle */

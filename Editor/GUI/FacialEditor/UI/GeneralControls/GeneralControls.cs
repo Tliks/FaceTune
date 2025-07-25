@@ -5,48 +5,28 @@ namespace aoyon.facetune.gui.shapes_editor;
 
 internal class GeneralControls
 {
+    private readonly TargetManager _targetManager;
     private readonly BlendShapeOverrideManager _blendShapeManager;
     private readonly BlendShapeGrouping _groupManager;
-    private readonly List<Toggle> _groupToggles = new();
-    private readonly VisualElement _element;
-    
+    private readonly PreviewManager _previewManager;
+
     private static VisualTreeAsset _uxml = null!;
     private static StyleSheet _uss = null!;
-
+    private readonly VisualElement _element;
     public VisualElement Element => _element;
-    
-    public event Action? OnGroupSelectionChanged;
-    public event Action<bool>? OnSetBlendShapeTo100OnHoverChanged;
-    public event Action<bool>? OnHighlightBlendShapeVerticesOnHoverChanged;
-
-    private bool _setBlendShapeTo100OnHover = true;
-    public bool SetBlendShapeTo100OnHover
-    {
-        get => _setBlendShapeTo100OnHover;
-        set
-        {
-            _setBlendShapeTo100OnHover = value;
-            OnSetBlendShapeTo100OnHoverChanged?.Invoke(_setBlendShapeTo100OnHover);
-        }
-    }
-    private bool _highlightBlendShapeVerticesOnHover = false;
-    public bool HighlightBlendShapeVerticesOnHover
-    {
-        get => _highlightBlendShapeVerticesOnHover;
-        set
-        {
-            _highlightBlendShapeVerticesOnHover = value;
-            OnHighlightBlendShapeVerticesOnHoverChanged?.Invoke(_highlightBlendShapeVerticesOnHover);
-        }
-    }
+    private VisualElement _targetingContainer = null!;
+    private VisualElement _groupTogglesContainer = null!;
+    private readonly List<Toggle> _groupToggles = new();
 
     private AnimationClip? _clip;
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
 
-    public GeneralControls(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager)
+    public GeneralControls(TargetManager targetManager, BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager)
     {
+        _targetManager = targetManager;
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
+        _previewManager = previewManager;
 
         EnsureAssets();
         _element = _uxml.CloneTree();
@@ -62,40 +42,52 @@ internal class GeneralControls
 
     private void SetupControls()
     {
-        var groupTogglesContainer = _element.Q<VisualElement>("group-toggles-container");
-        
-        _groupToggles.Clear();
-        foreach (var group in _groupManager.Groups)
+        var targetPanel = _element.Q<VisualElement>("target-panel");
+
+        var targetRendererField = targetPanel.Q<ObjectField>("target-renderer-field");
+        targetRendererField.objectType = typeof(SkinnedMeshRenderer);
+        targetRendererField.RegisterValueChangedCallback(evt =>
         {
-            var toggle = new Toggle($"{group.Name}({group.BlendShapeIndices.Count})") { value = group.IsSelected };
-            toggle.AddToClassList("group-toggle");
-            toggle.RegisterValueChangedCallback(evt =>
-            {
-                group.IsSelected = evt.newValue;
-                OnGroupSelectionChanged?.Invoke();
-            });
-            groupTogglesContainer.Add(toggle);
-            _groupToggles.Add(toggle);
-        }
+            _targetManager.TrySetTargetRenderer(evt.newValue as SkinnedMeshRenderer);
+        });
+        _targetManager.OnTargetRendererChanged += (renderer) =>
+        {
+            targetRendererField.SetValueWithoutNotify(renderer);
+        };
+
+        _targetingContainer = targetPanel.Q<VisualElement>("targeting-container");
+        RefreshTargetingContainer();
+        _targetManager.OnTargetingChanged += (targeting) =>
+        {
+            RefreshTargetingContainer();
+        };
+
+        var saveButton = targetPanel.Q<Button>("save-button");
+        saveButton.clicked += () =>
+        {
+            _targetManager.Save();
+        };
+
+        _groupTogglesContainer = _element.Q<VisualElement>("group-toggles-container");
+        RefreshGroupToggles();
+        _groupManager.OnGroupSelectionChanged += (groups) => RefreshGroupToggles();
 
         _element.Q<Button>("all-button").clicked += () =>
         {
-            _groupManager.SelectAll(true);
             for (int i = 0; i < _groupManager.Groups.Count; i++)
             {
                 _groupToggles[i].SetValueWithoutNotify(true);
             }
-            OnGroupSelectionChanged?.Invoke();
+            _groupManager.SelectAll(true);
         };
         
         _element.Q<Button>("none-button").clicked += () =>
         {
-            _groupManager.SelectAll(false);
             for (int i = 0; i < _groupManager.Groups.Count; i++)
             {
                 _groupToggles[i].SetValueWithoutNotify(false);
             }
-            OnGroupSelectionChanged?.Invoke();
+            _groupManager.SelectAll(false);
         };
 
 
@@ -127,11 +119,46 @@ internal class GeneralControls
         var previewSettingPanel = _element.Q<VisualElement>("preview-setting-panel");
 
         var setBlendShapeTo100OnHoverButton = previewSettingPanel.Q<Toggle>("set-blendshape-to-100-on-hover-button");
-        setBlendShapeTo100OnHoverButton.value = SetBlendShapeTo100OnHover;
-        setBlendShapeTo100OnHoverButton.RegisterValueChangedCallback(evt => SetBlendShapeTo100OnHover = evt.newValue);
+        setBlendShapeTo100OnHoverButton.value = _previewManager.SetBlendShapeTo100OnHover;
+        setBlendShapeTo100OnHoverButton.RegisterValueChangedCallback(evt => _previewManager.SetBlendShapeTo100OnHover = evt.newValue);
+        _previewManager.OnSetBlendShapeTo100OnHoverChanged += (value) => setBlendShapeTo100OnHoverButton.SetValueWithoutNotify(value);
 
         var highlightBlendShapeVerticesOnHoverButton = previewSettingPanel.Q<Toggle>("highlight-blendshape-vertices-on-hover-button");
-        highlightBlendShapeVerticesOnHoverButton.value = HighlightBlendShapeVerticesOnHover;
-        highlightBlendShapeVerticesOnHoverButton.RegisterValueChangedCallback(evt => HighlightBlendShapeVerticesOnHover = evt.newValue);
+        highlightBlendShapeVerticesOnHoverButton.value = _previewManager.HighlightBlendShapeVerticesOnHover;
+        highlightBlendShapeVerticesOnHoverButton.RegisterValueChangedCallback(evt => _previewManager.HighlightBlendShapeVerticesOnHover = evt.newValue);
+        _previewManager.OnHighlightBlendShapeVerticesOnHoverChanged += (value) => highlightBlendShapeVerticesOnHoverButton.SetValueWithoutNotify(value);
+    }
+
+    private void RefreshTargetingContainer()
+    {
+        _targetingContainer.Clear();
+        var targeting = _targetManager.Targeting;
+        if (targeting != null)
+        {
+            _targetingContainer.Add(targeting.DrawTargeting(_targetingContainer));
+        }
+    }
+
+    public void RefreshTarget()
+    {
+        // RefreshTargetingContainer();
+        RefreshGroupToggles();
+    }
+
+    private void RefreshGroupToggles()
+    {
+        _groupTogglesContainer.Clear();
+        _groupToggles.Clear();
+        foreach (var group in _groupManager.Groups)
+        {
+            var toggle = new Toggle($"{group.Name} ({group.BlendShapeIndices.Count})") { value = group.IsSelected };
+            toggle.AddToClassList("group-toggle");
+            toggle.RegisterValueChangedCallback(evt =>
+            {
+                group.IsSelected = evt.newValue;
+            });
+            _groupTogglesContainer.Add(toggle);
+            _groupToggles.Add(toggle);
+        }
     }
 }

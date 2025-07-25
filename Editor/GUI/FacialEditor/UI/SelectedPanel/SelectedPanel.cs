@@ -44,9 +44,15 @@ internal class SelectedPanel
         
         SetupControls();
         SetupListViews();
+        
+        // rebuild sourcce
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnSingleShapeOverride += (keyIndex) => AddByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewsSlow();
+        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
+        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewsSlow();
+        // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => BuildAndRefreshListViewsSlow();
+        _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();
     }
 
@@ -69,18 +75,15 @@ internal class SelectedPanel
         {
             var indices = _currentStyleSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 100f);
-            _styleListView.RefreshItems(); // 要素数を変更しないのでbindのみ
         };
         styleShapesPanel.Q<Button>("style-set-all-0-button").clicked += () =>
         {
             var indices = _currentStyleSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 0f);
-            BuildAndRefreshStyleListViewsSlow(); // zero-toggleにより0への変更で要素数が変動するので再構築
         };
         styleShapesPanel.Q<Button>("style-reset-all-button").clicked += () =>
         {
             _blendShapeManager.ResetShapesWeight(_currentStyleSource.Select(item => item.KeyIndex));
-            BuildAndRefreshStyleListViewsSlow();
         };
         _styleZeroToggle = styleShapesPanel.Q<SimpleToggle>("style-zero-toggle");
         _styleZeroToggle.RegisterValueChangedCallback(evt =>
@@ -94,19 +97,16 @@ internal class SelectedPanel
         {
             var indices = _currentSelectedSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 100f);
-            _selectedListView.RefreshItems();
         };
         selectedShapesPanel.Q<Button>("selected-set-all-0-button").clicked += () =>
         {
             var indices = _currentSelectedSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 0f);
-            BuildAndRefreshSelectedListViewsSlow();
         };
         selectedShapesPanel.Q<Button>("remove-all-button").clicked += () =>
         {
             var indices = _currentSelectedSource.Select(item => item.KeyIndex);
             _blendShapeManager.UnoverrideShapes(indices);
-            BuildAndRefreshListViewsSlow();
         };
         _selectedZeroToggle = selectedShapesPanel.Q<SimpleToggle>("selected-zero-toggle");
         _selectedZeroToggle.RegisterValueChangedCallback(evt =>
@@ -126,19 +126,7 @@ internal class SelectedPanel
         _styleListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
         _selectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
-        var allSource = new List<ElementData>();
-        var allKeys = _blendShapeManager.AllKeys;
-        for (int i = 0; i < allKeys.Count; i++)
-        {
-            allSource.Add(new ElementData { ShapeName = allKeys[i], KeyIndex = i, IsStyle = _blendShapeManager.IsStyleShape(i) });
-        }
-        _allSource = allSource.AsReadOnly();
-        _currentStyleSource = new();
-        _currentSelectedSource = new();
-        BuildCurrentSource();
-
-        _styleListView.itemsSource = _currentStyleSource;
-        _selectedListView.itemsSource = _currentSelectedSource;
+        RefreshTarget();
 
         _styleListView.makeItem = () => MakeElement(true);
         _styleListView.bindItem = (e, i) => BindElement(e, i, true);
@@ -163,6 +151,14 @@ internal class SelectedPanel
                     UpdateActionButton(item, isStyle, actionButton);
                 }
             });
+            _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) =>
+            {
+                if (element.userData is ElementData item && item.KeyIndex == keyIndex)
+                {
+                    sliderFloatField.SetValueWithoutNotify(_blendShapeManager.GetShapeWeight(keyIndex));
+                    UpdateActionButton(item, isStyle, actionButton);
+                }
+            };
             
             zeroButton.clicked += () =>
             {
@@ -228,6 +224,26 @@ internal class SelectedPanel
                 actionButton.SetEnabled(!_blendShapeManager.IsInitialStyleWeight(item.KeyIndex));
             }
         }
+    }
+
+    public void RefreshTarget()
+    {
+        var allSource = new List<ElementData>();
+        var allKeys = _blendShapeManager.AllKeys;
+        for (int i = 0; i < allKeys.Count; i++)
+        {
+            allSource.Add(new ElementData { ShapeName = allKeys[i], KeyIndex = i, IsStyle = _blendShapeManager.IsStyleShape(i) });
+        }
+        _allSource = allSource.AsReadOnly();
+        _currentStyleSource = new();
+        _currentSelectedSource = new();
+        BuildCurrentSource();
+
+        _styleListView.itemsSource = _currentStyleSource;
+        _selectedListView.itemsSource = _currentSelectedSource;
+
+        _styleListView.RefreshItems();
+        _selectedListView.RefreshItems();
     }
 
     private void BuildCurrentSource(bool style = true, bool selected = true)

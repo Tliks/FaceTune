@@ -6,6 +6,7 @@ internal class UnselectedPanel
 {
     private readonly BlendShapeOverrideManager _blendShapeManager;
     private readonly BlendShapeGrouping _groupManager;
+    private readonly PreviewManager _previewManager;
 
     private readonly VisualElement _element;
     public VisualElement Element => _element;
@@ -18,20 +19,6 @@ internal class UnselectedPanel
     private FloatField _addWeightField = null!;
     private ListView _unselectedListView = null!;
     
-    private int _currentHoveredIndex = -1;
-    public int CurrentHoveredIndex
-    {
-        get => _currentHoveredIndex;
-        set
-        {
-            if (_currentHoveredIndex != value)
-            {
-                _currentHoveredIndex = value;
-                OnHoveredIndexChanged?.Invoke(value);
-            }
-        }
-    }
-    public event Action<int>? OnHoveredIndexChanged;
     
     private struct ListViewItem
     {
@@ -42,11 +29,12 @@ internal class UnselectedPanel
     private IReadOnlyList<ListViewItem> _allSource = null!;
     private List<ListViewItem> _currentSource = null!;
     
-    public UnselectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager)
+    public UnselectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager)
     {
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
-        
+        _previewManager = previewManager;
+
         EnsureAssets();
         
         _element = _uxml.CloneTree();
@@ -55,6 +43,8 @@ internal class UnselectedPanel
         SetupControls();
         SetupListView();
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewSlow();
+        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
+        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => AddByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewSlow();
@@ -84,24 +74,14 @@ internal class UnselectedPanel
     {
         _unselectedListView = _element.Q<ListView>("unselected-list-view");
 
-        var allSource = new List<ListViewItem>();
-        var allKeys = _blendShapeManager.AllKeys;
-        for (int i = 0; i < allKeys.Count; i++)
-        {
-            allSource.Add(new ListViewItem { ShapeName = allKeys[i], KeyIndex = i });
-        }
-        _allSource = allSource.AsReadOnly();
-        _currentSource = new();
-        BuildCurrentSource();
+        RefreshTarget();
 
-        _unselectedListView.itemsSource = _currentSource;
-        
         _unselectedListView.makeItem = MakeUnselectedElement;
         _unselectedListView.bindItem = (e, i) => BindUnselectedElement(e, i);
         
         _unselectedListView.RegisterCallback<MouseLeaveEvent>(evt =>
         {
-            CurrentHoveredIndex = -1;
+            _previewManager.CurrentHoveredIndex = -1;
         });
 
         VisualElement MakeUnselectedElement()
@@ -112,7 +92,6 @@ internal class UnselectedPanel
                 if (element.userData is ListViewItem data)
                 {
                     _blendShapeManager.OverrideShapeAndSetWeight(data.KeyIndex, _addWeightField.value);
-                    RemoveByKeyIndex(data.KeyIndex);
                 }
             });
             
@@ -120,7 +99,7 @@ internal class UnselectedPanel
             {
                 if (element.userData is ListViewItem data)
                 {
-                    CurrentHoveredIndex = data.KeyIndex;
+                    _previewManager.CurrentHoveredIndex = data.KeyIndex;
                 }
             });            
             return element;
@@ -132,6 +111,22 @@ internal class UnselectedPanel
             element.userData = item;
             element.Q<Label>("name").text = item.ShapeName;
         }
+    }   
+
+    public void RefreshTarget()
+    {
+        var allSource = new List<ListViewItem>();
+        var allKeys = _blendShapeManager.AllKeys;
+        for (int i = 0; i < allKeys.Count; i++)
+        {
+            allSource.Add(new ListViewItem { ShapeName = allKeys[i], KeyIndex = i });
+        }
+        _allSource = allSource.AsReadOnly();
+        _currentSource = new();
+        BuildCurrentSource();
+
+        _unselectedListView.itemsSource = _currentSource;
+        _unselectedListView.RefreshItems();
     }
 
     private void BuildCurrentSource()

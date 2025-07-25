@@ -1,23 +1,23 @@
 /* Facial Shape UI Styles */
-#main-container {
+#root {
     flex-direction: row;
 }
 
-#primary-section {
+#left-panel {
     flex: 1 1 65%;
     flex-direction: column;
 }
 
-#controls-container {
-    flex: 0 0 250px;
+#general-controls-container {
+    flex: 0 0 auto;
 }
 
-#primary-content-container {
+#selected-content-container {
     flex: 1 1 auto;
     margin-top: 10px;
 }
 
-#secondary-section {
+#right-panel {
     flex: 1 1 35%;
     flex-direction: column;
 }

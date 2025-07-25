@@ -5,47 +5,95 @@ namespace aoyon.facetune.gui.shapes_editor;
 
 internal class PreviewManager : IDisposable
 {
-    private readonly SkinnedMeshRenderer _renderer;
     private readonly BlendShapeOverrideManager _blendShapeOverrideManager;
-    private readonly FacialShapeUI _ui;
-    private readonly BlendShapeSet _previewSet;
-    private readonly HighlightBlendShapeProcessor _highlightBlendShapeProcessor;
+    private  HighlightBlendShapeProcessor _highlightBlendShapeProcessor;
     
     private readonly VisualElement _rootElement;
     private IVisualElementScheduledItem _updateScheduler;
-    
-    private int _currentAppliedHoverIndex = -2;
-    private int _pendingHoverIndex = -2;
-    private bool _needsShapeRefresh = false;
-    
     private const int UpdateIntervalMs = 33; // 約30fps
-    
-    private bool _setBlendShapeTo100OnHover => _ui.GeneralControls.SetBlendShapeTo100OnHover;
-    private bool _highlightBlendShapeVerticesOnHover => _ui.GeneralControls.HighlightBlendShapeVerticesOnHover;
+    private readonly BlendShapeSet _previewSet;
 
-    public PreviewManager(SkinnedMeshRenderer renderer, BlendShapeOverrideManager blendShapeOverrideManager, FacialShapeUI ui)
+    private bool _setBlendShapeTo100OnHover;
+    public bool SetBlendShapeTo100OnHover
     {
-        _renderer = renderer;
+        get => _setBlendShapeTo100OnHover;
+        set
+        {
+            if (SetBlendShapeTo100OnHover == value) return;
+            _setBlendShapeTo100OnHover = value;
+            OnSetBlendShapeTo100OnHoverChanged?.Invoke(value);
+        }
+    }
+    private bool _highlightBlendShapeVerticesOnHover;
+    public bool HighlightBlendShapeVerticesOnHover
+    {
+        get => _highlightBlendShapeVerticesOnHover;
+        set
+        {
+            if (HighlightBlendShapeVerticesOnHover == value) return;
+            _highlightBlendShapeVerticesOnHover = value;
+            OnHighlightBlendShapeVerticesOnHoverChanged?.Invoke(value);
+        }
+    }
+
+    private int _currentHoveredIndex = -1;
+    public int CurrentHoveredIndex
+    {
+        get => _currentHoveredIndex;
+        set
+        {
+            if (_currentHoveredIndex == value) return;
+            _currentHoveredIndex = value;
+            OnHoveredIndexChanged?.Invoke(_currentHoveredIndex);
+        }
+    }
+
+    public event Action<bool>? OnSetBlendShapeTo100OnHoverChanged;
+    public event Action<bool>? OnHighlightBlendShapeVerticesOnHoverChanged;
+    public event Action<int>? OnHoveredIndexChanged;
+
+    private bool _isEnabled = false;
+
+    private int _currentAppliedHoverIndex = -1;
+    private bool _needsShapeRefresh = false;
+
+    public PreviewManager(BlendShapeOverrideManager blendShapeOverrideManager, VisualElement rootElement)
+    {
         _blendShapeOverrideManager = blendShapeOverrideManager;
-        _ui = ui;
-        _rootElement = ui.Root;
+        _rootElement = rootElement;
         _previewSet = new();
-        _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor(_renderer, _renderer.sharedMesh);
+        _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor();
+        SetBlendShapeTo100OnHover = true;
+        HighlightBlendShapeVerticesOnHover = false;
+
         
         _blendShapeOverrideManager.OnAnyDataChange += RequestShapeRefresh;
-        _ui.UnselectedPanel.OnHoveredIndexChanged += OnHoveredIndexChanged;
-        _ui.GeneralControls.OnSetBlendShapeTo100OnHoverChanged += (value) => { RequestShapeRefresh(); };
-        _ui.GeneralControls.OnHighlightBlendShapeVerticesOnHoverChanged += (value) => { _highlightBlendShapeProcessor.ClearHighlight(); };
+        OnSetBlendShapeTo100OnHoverChanged += (value) => { RequestShapeRefresh(); };
+        OnHighlightBlendShapeVerticesOnHoverChanged += (value) => { _highlightBlendShapeProcessor.ClearHighlight(); };
         
         // UI Elementsスケジューラーで定期的に両方の更新をチェック
         // UpdateIntervalMsで更新の頻度を制限する
         _updateScheduler = _rootElement.schedule
             .Execute(CheckAndApplyUpdates)
             .Every(UpdateIntervalMs);
-            
-        var defaultSet = new BlendShapeSet();
-        GetCurrentSet(defaultSet);
-        EditingShapesPreview.Start(_renderer, defaultSet);
+        
+    }
+
+    public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer)
+    {
+        EditingShapesPreview.Stop();
+        if (renderer == null)
+        {
+            _isEnabled = false;
+        }
+        else
+        {
+            _isEnabled = true;
+            var defaultSet = new BlendShapeSet();
+            GetCurrentSet(defaultSet);
+            EditingShapesPreview.Start(renderer, defaultSet);
+            _highlightBlendShapeProcessor.RefreshTarget(renderer, renderer.sharedMesh);
+        }
     }
 
     private void RequestShapeRefresh()
@@ -53,42 +101,47 @@ internal class PreviewManager : IDisposable
         _needsShapeRefresh = true;
     }
 
-    private void OnHoveredIndexChanged(int index)
-    {
-        _pendingHoverIndex = index;
-    }
-
     private void CheckAndApplyUpdates()
     {
-        var hoverIndexChanged = _pendingHoverIndex != _currentAppliedHoverIndex;
-        var shouldRefresh = hoverIndexChanged || _needsShapeRefresh;
-
-        if (!shouldRefresh)
+        try
         {
-            return;
-        }
-        
-        _needsShapeRefresh = false;
-        _currentAppliedHoverIndex = _pendingHoverIndex;
-        var index = _currentAppliedHoverIndex;
+            if (!_isEnabled) return;
 
-        GetCurrentSet(_previewSet);
-        if (_setBlendShapeTo100OnHover && index != -1)
-        {
-            _previewSet.Add(new BlendShape(_blendShapeOverrideManager.AllKeys[index], 100));
-        }
-        EditingShapesPreview.Refresh(_previewSet);
+            var hoverIndexChanged = _currentHoveredIndex != _currentAppliedHoverIndex;
+            var shouldRefresh = hoverIndexChanged || _needsShapeRefresh;
 
-        if (_highlightBlendShapeVerticesOnHover)
-        {
-            if (index != -1)
+            if (!shouldRefresh)
             {
-                _highlightBlendShapeProcessor.HilightBlendShapeFor(index);
+                return;
             }
-            else
+            
+            _needsShapeRefresh = false;
+            _currentAppliedHoverIndex = _currentHoveredIndex;
+            var index = _currentAppliedHoverIndex;
+
+            GetCurrentSet(_previewSet);
+            if (SetBlendShapeTo100OnHover && index != -1)
             {
-                _highlightBlendShapeProcessor.ClearHighlight();
+                var key = _blendShapeOverrideManager.AllKeys[index];
+                _previewSet.Add(new BlendShape(key, 100));
             }
+            EditingShapesPreview.Refresh(_previewSet);
+
+            if (HighlightBlendShapeVerticesOnHover)
+            {
+                if (index != -1)
+                {
+                    _highlightBlendShapeProcessor.HilightBlendShapeFor(index);
+                }
+                else
+                {
+                    _highlightBlendShapeProcessor.ClearHighlight();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"CheckAndApplyUpdates: {e}");
         }
     }
 
@@ -105,11 +158,10 @@ internal class PreviewManager : IDisposable
         }
         _blendShapeOverrideManager.GetCurrentOverrides(result);
     }
-
     public void Dispose()
     {
+        _isEnabled = false;
         _blendShapeOverrideManager.OnAnyDataChange -= RequestShapeRefresh;
-        _ui.UnselectedPanel.OnHoveredIndexChanged -= OnHoveredIndexChanged;
         _updateScheduler?.Pause();
         EditingShapesPreview.Stop();
         _highlightBlendShapeProcessor.Dispose();
