@@ -6,6 +6,7 @@ namespace aoyon.facetune.gui.shapes_editor;
 internal class TargetManager
 {
     private SerializedObject _serializedObject;
+    private BlendShapeOverrideManager _dataManager;
 
     [SerializeField] private SkinnedMeshRenderer? _targetRenderer;
     public SkinnedMeshRenderer? TargetRenderer
@@ -17,13 +18,17 @@ internal class TargetManager
             _targetRendererProperty.objectReferenceValue = value;
             _serializedObject.ApplyModifiedProperties();
             _serializedObject.Update();
+            _cachedTargetRendererForUndo = value;
             OnTargetRendererChanged?.Invoke(value);
+            UpdateCanSave();
         }
     }
     private SerializedProperty _targetRendererProperty;
-    public List<Func<SkinnedMeshRenderer?, bool>> RenderChangeConditions = new();
+    public List<Func<SkinnedMeshRenderer?, bool>> RenderChangeConditions;
     public event Action<SkinnedMeshRenderer?>? OnTargetRendererChanged;
-    private SkinnedMeshRenderer? _unserializedTargetRenderer;
+    private SkinnedMeshRenderer? _cachedTargetRendererForUndo;
+
+    private Transform? _targetRoot;
 
     private IShapesEditorTargeting? _targeting;
     public IShapesEditorTargeting? Targeting
@@ -32,29 +37,58 @@ internal class TargetManager
         set
         {
             _targeting = value;
-            OnTargetingChanged?.Invoke(value);
+            OnTargetingChanged  ?.Invoke(value);
+            UpdateCanSave();
         }
     }
-    public List<Func<IShapesEditorTargeting?, bool>> TargetingChangeConditions = new();
+    public List<Func<IShapesEditorTargeting?, bool>> TargetingChangeConditions;
     public event Action<IShapesEditorTargeting?>? OnTargetingChanged;
     public event Action? OnTargetChanged;
 
-    private Transform? _targetRoot;
-    private readonly BlendShapeOverrideManager _dataManager;
+    private bool _hasUnsavedChanges = false;
+    public bool HasUnsavedChanges
+    {
+        get => _hasUnsavedChanges;
+        set
+        {
+            if (_hasUnsavedChanges != value)
+            {
+                _hasUnsavedChanges = value;
+                OnHasUnsavedChangesChanged?.Invoke(value);
+                UpdateCanSave();
+            }
+        }
+    }
+    public event Action<bool>? OnHasUnsavedChangesChanged;
+
+    private bool _canSave = false;
+    public bool CanSave
+    {
+        get => _canSave;
+        set
+        {
+            if (_canSave != value)
+            {
+                _canSave = value;
+                OnCanSaveChanged?.Invoke(value);
+            }
+        }
+    }
+    public event Action<bool>? OnCanSaveChanged;
+
+    private void UpdateCanSave()
+    {
+        bool newCanSave = TargetRenderer != null && Targeting != null && Targeting.GetTarget() != null && HasUnsavedChanges;
+        CanSave = newCanSave;
+    }
 
     public TargetManager(SerializedObject serializedObject, SerializedProperty baseProperty, BlendShapeOverrideManager dataManager)
     {
         _serializedObject = serializedObject;
+        _targetRendererProperty = baseProperty.FindPropertyRelative(nameof(_targetRenderer));
         _dataManager = dataManager;
-        _targetRendererProperty = baseProperty.FindPropertyRelative(nameof(_targetRenderer));
-    }
-
-    public void OnDomainReload(SerializedObject serializedObject, SerializedProperty baseProperty)
-    {
-        _serializedObject = serializedObject;
-        _targetRendererProperty = baseProperty.FindPropertyRelative(nameof(_targetRenderer));
-        RenderChangeConditions ??= new();
-        TargetingChangeConditions ??= new();
+        RenderChangeConditions = new();
+        TargetingChangeConditions = new();
     }
 
     public bool TrySetTargetRenderer(SkinnedMeshRenderer? renderer)
@@ -77,8 +111,6 @@ internal class TargetManager
             if (_targetRoot == null) throw new Exception("TargetRenderer is not a child of an avatar");
         }
         TargetRenderer = renderer;
-        _unserializedTargetRenderer = renderer;
-        OnTargetRendererChanged?.Invoke(renderer);
     }
 
     public bool TrySetTargeting(IShapesEditorTargeting targeting)
@@ -99,7 +131,11 @@ internal class TargetManager
         OnTargetingChanged?.Invoke(targeting);
         if (targeting != null)
         {
-            targeting.OnTargetChanged += () => OnTargetChanged?.Invoke();
+            targeting.OnTargetChanged += () => 
+            {
+                OnTargetChanged?.Invoke();
+                UpdateCanSave();
+            };
         }
     }
     
@@ -108,15 +144,23 @@ internal class TargetManager
         if (TargetRenderer == null) throw new Exception("TargetRenderer is not set");
         if (_targetRoot == null) throw new Exception("TargetRoot is not set");
         Targeting?.Save(_targetRoot.gameObject, TargetRenderer, _dataManager);
+        HasUnsavedChanges = false;
     }
 
     public void OnUndoRedo()
     {
-        if (_unserializedTargetRenderer != TargetRenderer)
+        _serializedObject.Update();
+        if (_cachedTargetRendererForUndo != TargetRenderer)
         {
-            _unserializedTargetRenderer = TargetRenderer;
+            Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} != {TargetRenderer}");
+            _cachedTargetRendererForUndo = TargetRenderer;
             OnTargetRendererChanged?.Invoke(TargetRenderer);
         }
+        else
+        {
+            Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} == {TargetRenderer}");
+        }
         OnTargetingChanged?.Invoke(Targeting);
+        UpdateCanSave();
     }
 }

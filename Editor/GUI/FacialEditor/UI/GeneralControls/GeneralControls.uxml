@@ -5,8 +5,12 @@
             <ui:Box name="target-panel">
                 <ui:Label name="target-title" text="Target" />
                 <uie:ObjectField name="target-renderer-field" label="Renderer" />
-                <ui:VisualElement name="targeting-container" />
-                <ui:Button name="save-button" text="Save" />
+                <ui:VisualElement name="targeting-container">
+                    <ui:DropdownField name="targeting-type-field" />
+                    <uie:ObjectField name="targeting-object-field"/>
+                    <ui:Button name="save-button" text="Save (Ctrl+S)" />
+                </ui:VisualElement>
+                <ui:VisualElement name="targeting-options-container" />
             </ui:Box>
         </ui:VisualElement>
 

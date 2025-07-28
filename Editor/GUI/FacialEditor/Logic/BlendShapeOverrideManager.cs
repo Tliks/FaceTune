@@ -6,8 +6,8 @@ namespace aoyon.facetune.gui.shapes_editor;
 internal class BlendShapeOverrideManager : IDisposable
 {
     private SerializedObject _serializedObject;
-    [SerializeField] private bool[] _overrideFlags;
-    [SerializeField] private float[] _overrideWeights;
+    [SerializeField] private bool[] _overrideFlags = null!;
+    [SerializeField] private float[] _overrideWeights = null!;
     private SerializedProperty _overrideFlagsProperty;
     private SerializedProperty _overrideWeightsProperty;
 
@@ -24,13 +24,12 @@ internal class BlendShapeOverrideManager : IDisposable
     public event Action<int>? OnSingleShapeWeightChanged;
     public event Action<IEnumerable<int>>? OnMultipleShapeWeightChanged;
     public event Action? OnUnknownChange;
+    public event Action? OnStyleSetChange;
     public event Action? OnAnyDataChange;
 
     public BlendShapeOverrideManager(SerializedObject serializedObject, SerializedProperty baseProperty)
     {
         _serializedObject = serializedObject;
-        _overrideFlags = new bool[0];
-        _overrideWeights = new float[0];
         _overrideFlagsProperty = baseProperty.FindPropertyRelative(nameof(_overrideFlags));
         _overrideWeightsProperty = baseProperty.FindPropertyRelative(nameof(_overrideWeights));
         OnAnyDataChange += () =>
@@ -38,15 +37,6 @@ internal class BlendShapeOverrideManager : IDisposable
             ValidateData();
             // DebugLog();
         };
-    }
-
-    public void OnDomainReload(SerializedObject serializedObject, SerializedProperty baseProperty)
-    {
-        _serializedObject = serializedObject;
-        _overrideFlagsProperty = baseProperty.FindPropertyRelative(nameof(_overrideFlags));
-        _overrideWeightsProperty = baseProperty.FindPropertyRelative(nameof(_overrideWeights));
-        _styleSet ??= new BlendShapeSet(); // Todo: シリアライズ出来ていない
-        RefreshTargetRenderer(null); // Todo
     }
 
     public void RefreshTargetRenderer(SkinnedMeshRenderer? targetRenderer)
@@ -57,22 +47,30 @@ internal class BlendShapeOverrideManager : IDisposable
         _overrideFlagsProperty.arraySize = _allKeysArray.Length;
         _overrideWeightsProperty.arraySize = _allKeysArray.Length;
         _serializedObject.ApplyModifiedProperties();
+        _serializedObject.Update();
     }
 
-    public void SetStyleSet(IReadOnlyBlendShapeSet styleSet)
+    public void RefreshStyleAndDefaultOverrides(IReadOnlyBlendShapeSet? styleSet, IReadOnlyBlendShapeSet? defaultOverrides)
     {
-        _styleSet = styleSet;
-    }
-
-    private void DebugLog()
-    {
-        var overrideCount = 0;
-        for (int i = 0; i < _allKeysArray.Length; i++)
+        _styleSet = styleSet ?? new BlendShapeSet();
+        var _defaultOverrides = defaultOverrides ?? new BlendShapeSet();
+        ExecuteModification(() =>
         {
-            if (IsOverridden(i))
-                overrideCount++;
-        }
-        Debug.Log($"overrideCount: {overrideCount}");
+            for (int i = 0; i < _allKeysArray.Length; i++)
+            {
+                _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = false;
+                if (_styleSet.TryGetValue(_allKeysArray[i], out var styleShape))
+                {
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = styleShape.Weight;
+                }
+                if (_defaultOverrides.TryGetValue(_allKeysArray[i], out var defaultShape))
+                {
+                    _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = true;
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = defaultShape.Weight;
+                }
+            }
+        });
+        OnStyleSetChange?.Invoke();
     }
 
     public void GetCurrentOverrides(BlendShapeSet resultToAdd)

@@ -93,6 +93,7 @@ internal class PreviewManager : IDisposable
             GetCurrentSet(defaultSet);
             EditingShapesPreview.Start(renderer, defaultSet);
             _highlightBlendShapeProcessor.RefreshTarget(renderer, renderer.sharedMesh);
+            RequestShapeRefresh();
         }
     }
 

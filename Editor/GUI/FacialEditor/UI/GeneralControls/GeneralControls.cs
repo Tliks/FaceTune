@@ -14,7 +14,7 @@ internal class GeneralControls
     private static StyleSheet _uss = null!;
     private readonly VisualElement _element;
     public VisualElement Element => _element;
-    private VisualElement _targetingContainer = null!;
+    private VisualElement _targetingOptionsContainer = null!;
     private VisualElement _groupTogglesContainer = null!;
     private readonly List<Toggle> _groupToggles = new();
 
@@ -40,6 +40,16 @@ internal class GeneralControls
         UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
     }
 
+    private static Dictionary<Type, Func<IShapesEditorTargeting>> _targetingTypes = new()
+    {
+        { typeof(AnimationClip), () => new AnimationClipTargeting() },
+        { typeof(FacialDataComponent), () => new FacialDataTargeting() },
+        { typeof(FacialStyleComponent), () => new FacialStyleTargeting() },
+        { typeof(AdvancedEyeBlinkComponent), () => new AdvancedEyeBlinkTargeting() },
+        { typeof(AdvancedLipSyncComponent), () => new AdvancedLipSyncTargeting() },
+    };
+    private static Dictionary<string, Type> _targetingTypeNames = _targetingTypes.ToDictionary(x => x.Key.Name, x => x.Key);
+
     private void SetupControls()
     {
         var targetPanel = _element.Q<VisualElement>("target-panel");
@@ -55,7 +65,40 @@ internal class GeneralControls
             targetRendererField.SetValueWithoutNotify(renderer);
         };
 
-        _targetingContainer = targetPanel.Q<VisualElement>("targeting-container");
+        var targetingField = targetPanel.Q<ObjectField>("targeting-object-field");
+        targetingField.RegisterValueChangedCallback(evt =>
+        {
+            _targetManager.Targeting?.SetTarget(evt.newValue);
+        });
+        _targetManager.OnTargetingChanged += (targeting) =>
+        {
+            targetingField.SetValueWithoutNotify(targeting?.GetTarget());
+        };
+
+        var targetingTypeField = targetPanel.Q<DropdownField>("targeting-type-field");
+        targetingTypeField.choices = _targetingTypeNames.Keys.ToList();
+        targetingTypeField.RegisterValueChangedCallback(evt =>
+        {
+            var targeting = _targetingTypes[_targetingTypeNames[evt.newValue]]();
+            _targetManager.SetTargeting(targeting);
+            targetingField.objectType = targeting.GetObjectType();
+        });
+        _targetManager.OnTargetingChanged += (targeting) =>
+        {
+            if (targeting != null)
+            {
+                var objectType = targeting.GetObjectType();
+                targetingTypeField.SetValueWithoutNotify(objectType.Name);
+                targetingField.objectType = objectType;
+            }
+            else
+            {
+                targetingTypeField.SetValueWithoutNotify(null);
+                targetingField.objectType = null;
+            }
+        };
+
+        _targetingOptionsContainer = targetPanel.Q<VisualElement>("targeting-options-container");
         RefreshTargetingContainer();
         _targetManager.OnTargetingChanged += (targeting) =>
         {
@@ -67,6 +110,8 @@ internal class GeneralControls
         {
             _targetManager.Save();
         };
+        saveButton.SetEnabled(_targetManager.CanSave);
+        _targetManager.OnCanSaveChanged += (canSave) => saveButton.SetEnabled(canSave);
 
         _groupTogglesContainer = _element.Q<VisualElement>("group-toggles-container");
         RefreshGroupToggles();
@@ -131,11 +176,11 @@ internal class GeneralControls
 
     private void RefreshTargetingContainer()
     {
-        _targetingContainer.Clear();
+        _targetingOptionsContainer.Clear();
         var targeting = _targetManager.Targeting;
         if (targeting != null)
         {
-            _targetingContainer.Add(targeting.DrawTargeting(_targetingContainer));
+            _targetingOptionsContainer.Add(targeting.DrawOptions());
         }
     }
 

@@ -55,22 +55,8 @@ internal class FacialShapesEditor : EditorWindow
     private void OnEnable()
     {
         _serializedObject = new SerializedObject(this);
-        if (_dataManager == null) 
-        {
-            _dataManager = new BlendShapeOverrideManager(_serializedObject, _serializedObject.FindProperty(nameof(_dataManager)));
-        }
-        else
-        {
-            _dataManager.OnDomainReload(_serializedObject, _serializedObject.FindProperty(nameof(_dataManager)));
-        }
-        if (_targetManager == null) 
-        {
-            _targetManager = new TargetManager(_serializedObject, _serializedObject.FindProperty(nameof(_targetManager)), _dataManager);
-        }
-        else
-        {
-            _targetManager.OnDomainReload(_serializedObject, _serializedObject.FindProperty(nameof(_targetManager)));
-        }
+        _dataManager = new BlendShapeOverrideManager(_serializedObject, _serializedObject.FindProperty(nameof(_dataManager))); // 初期化
+        _targetManager = new TargetManager(_serializedObject, _serializedObject.FindProperty(nameof(_targetManager)), _dataManager); // 初期化
         _groupManager = new BlendShapeGrouping(_targetManager, _dataManager);
         _previewManager = new PreviewManager(_dataManager, rootVisualElement);
         _ui = new FacialShapeUI(rootVisualElement, _targetManager, _dataManager, _groupManager, _previewManager);
@@ -81,7 +67,7 @@ internal class FacialShapesEditor : EditorWindow
         hasUnsavedChanges = false;
         SetupKeyboardShortcuts();
         Undo.IncrementCurrentGroup();
-        Undo.SetCurrentGroupName("Facial Shapes Editor");
+        Undo.SetCurrentGroupName("Facial Shapes Editor: OnEnable");
         _initialUndoGroup = Undo.GetCurrentGroup();
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
 
@@ -90,20 +76,20 @@ internal class FacialShapesEditor : EditorWindow
         _targetManager.TargetingChangeConditions.Add(targeting => true);
         _targetManager.OnTargetingChanged += (targeting) => {};
         _targetManager.OnTargetChanged += () => {};
-        _dataManager.OnAnyDataChange += OnDataChanged;
+        _targetManager.OnHasUnsavedChangesChanged += (hasUnsavedChanges) => this.hasUnsavedChanges = hasUnsavedChanges;
+        _dataManager.OnAnyDataChange += () => _targetManager.HasUnsavedChanges = true;
     }
 
     private bool CanRefreshTargetRenderer()
     {
-        if (!hasUnsavedChanges) return true;
+        if (!_targetManager.HasUnsavedChanges) return true;
         return ProcessUnsavedChanges(this);
     }
 
     public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? facialStyleSet = null, IReadOnlyBlendShapeSet? defaultOverrides = null)
     {
         _targetManager.SetTargetRenderer(renderer);
-        _dataManager.SetStyleSet(facialStyleSet ?? new BlendShapeSet());
-        _dataManager.OverrideShapesAndSetWeight(defaultOverrides ?? new BlendShapeSet());
+        _dataManager.RefreshStyleAndDefaultOverrides(facialStyleSet, defaultOverrides);
     }
 
     private void OnTargetRendererChanged(SkinnedMeshRenderer? renderer)
@@ -112,7 +98,9 @@ internal class FacialShapesEditor : EditorWindow
         _groupManager.Refresh(_dataManager.AllKeys);
         _previewManager.RefreshTargetRenderer(renderer);
         _ui.RefreshTarget();
-        EditorApplication.delayCall += () => hasUnsavedChanges = false;
+        EditorApplication.delayCall += () => _targetManager.HasUnsavedChanges = false;
+        Undo.SetCurrentGroupName($"Facial Shapes Editor: OnTargetRendererChanged: {renderer?.name}");
+        DebugLog($"OnTargetRendererChanged: {renderer?.name}");
     }
 
     private bool ProcessUnsavedChanges(FacialShapesEditor window)
@@ -125,23 +113,23 @@ internal class FacialShapesEditor : EditorWindow
             "Cancel"
         );
 
-        bool processedUnsavedChanges;
+        bool processed;
         switch (result)
         {
             case 0: // Save
                 window.SaveChanges();
-                processedUnsavedChanges = true;
+                processed = true;
                 break;
             case 1: // Discard
                 window.hasUnsavedChanges = false;
-                processedUnsavedChanges = true;
+                processed = true;
                 break;
             case 2: // Cancel
             default:
-                processedUnsavedChanges = false;
+                processed = false;
                 break;
         }
-        return processedUnsavedChanges;
+        return processed;
     }
 
     private void SetupKeyboardShortcuts()
@@ -162,15 +150,9 @@ internal class FacialShapesEditor : EditorWindow
         }
     }
 
-    private void OnDataChanged()
-    {
-        hasUnsavedChanges = true;
-    }
-
     public override void SaveChanges()
     {
         _targetManager.Save();
-        hasUnsavedChanges = false;
     }
 
     private void OnUndoRedoPerformed()
@@ -208,5 +190,12 @@ internal class FacialShapesEditor : EditorWindow
         }
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Undo.CollapseUndoOperations(_initialUndoGroup);
+    }
+
+    private void DebugLog(string message)
+    {
+#if FACETUNE_SHAPESEDITOR_DEBUG
+        Debug.Log(message);
+#endif
     }
 }

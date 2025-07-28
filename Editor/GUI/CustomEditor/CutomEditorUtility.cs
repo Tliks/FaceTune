@@ -106,6 +106,7 @@ internal static class CustomEditorUtility
         ModicyComponent(component, so =>
         {
             var property = getProperty(so);
+            AddBlendShapeAnimations(property, animations);
         });
     }
     public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyCollection<BlendShapeAnimation> animations)
@@ -125,6 +126,7 @@ internal static class CustomEditorUtility
         ModicyComponent(component, so =>
         {
             var property = getProperty(so);
+            AddGenericAnimations(property, animations);
         });
     }
     public static void AddGenericAnimations(SerializedProperty genericAnimations, IReadOnlyCollection<GenericAnimation> animations)

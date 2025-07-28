@@ -16,6 +16,8 @@ internal class SelectedPanel
     private static StyleSheet _uss = null!;
 
     private TextField _searchField = null!;
+    private VisualElement _styleShapesPanel = null!;
+    private VisualElement _selectedShapesPanel = null!;
     private ListView _styleListView = null!;
     private ListView _selectedListView = null!;
     private SimpleToggle _styleZeroToggle = null!;
@@ -54,6 +56,7 @@ internal class SelectedPanel
         // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();
+        _blendShapeManager.OnStyleSetChange += () => { RefreshTarget(); UpdateStyleVisibility(); };
     }
 
     private void EnsureAssets()
@@ -69,46 +72,46 @@ internal class SelectedPanel
         _searchField = commonControls.Q<TextField>("search-field");
         _searchField.RegisterValueChangedCallback(_ => BuildAndRefreshListViewsSlow());
 
-        var styleShapesPanel = _element.Q("style-shapes-panel");
+        _styleShapesPanel = _element.Q("style-shapes-panel");
 
-        styleShapesPanel.Q<Button>("style-set-all-100-button").clicked += () =>
+        _styleShapesPanel.Q<Button>("style-set-all-100-button").clicked += () =>
         {
             var indices = _currentStyleSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 100f);
         };
-        styleShapesPanel.Q<Button>("style-set-all-0-button").clicked += () =>
+        _styleShapesPanel.Q<Button>("style-set-all-0-button").clicked += () =>
         {
             var indices = _currentStyleSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 0f);
         };
-        styleShapesPanel.Q<Button>("style-reset-all-button").clicked += () =>
+        _styleShapesPanel.Q<Button>("style-reset-all-button").clicked += () =>
         {
             _blendShapeManager.ResetShapesWeight(_currentStyleSource.Select(item => item.KeyIndex));
         };
-        _styleZeroToggle = styleShapesPanel.Q<SimpleToggle>("style-zero-toggle");
+        _styleZeroToggle = _styleShapesPanel.Q<SimpleToggle>("style-zero-toggle");
         _styleZeroToggle.RegisterValueChangedCallback(evt =>
         {
             BuildAndRefreshStyleListViewsSlow();
         });
 
-        var selectedShapesPanel = _element.Q("selected-shapes-panel");
+        _selectedShapesPanel = _element.Q("selected-shapes-panel");
 
-        selectedShapesPanel.Q<Button>("selected-set-all-100-button").clicked += () =>
+        _selectedShapesPanel.Q<Button>("selected-set-all-100-button").clicked += () =>
         {
             var indices = _currentSelectedSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 100f);
         };
-        selectedShapesPanel.Q<Button>("selected-set-all-0-button").clicked += () =>
+        _selectedShapesPanel.Q<Button>("selected-set-all-0-button").clicked += () =>
         {
             var indices = _currentSelectedSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, 0f);
         };
-        selectedShapesPanel.Q<Button>("remove-all-button").clicked += () =>
+        _selectedShapesPanel.Q<Button>("remove-all-button").clicked += () =>
         {
             var indices = _currentSelectedSource.Select(item => item.KeyIndex);
             _blendShapeManager.UnoverrideShapes(indices);
         };
-        _selectedZeroToggle = selectedShapesPanel.Q<SimpleToggle>("selected-zero-toggle");
+        _selectedZeroToggle = _selectedShapesPanel.Q<SimpleToggle>("selected-zero-toggle");
         _selectedZeroToggle.RegisterValueChangedCallback(evt =>
         {
             BuildAndRefreshSelectedListViewsSlow();
@@ -139,8 +142,7 @@ internal class SelectedPanel
             var element = _itemUxml.CloneTree();
             
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
-            var zeroButton = element.Q<Button>("zero-button");
-            var hundredButton = element.Q<Button>("hundred-button");
+            var toggleButton = element.Q<Button>("toggle-button");
             var actionButton = element.Q<Button>("action");
             
             sliderFloatField.RegisterValueChangedCallback(evt =>
@@ -160,26 +162,18 @@ internal class SelectedPanel
                 }
             };
             
-            zeroButton.clicked += () =>
+            toggleButton.clicked += () =>
             {
                 if (element.userData is ElementData item)
                 {
-                    _blendShapeManager.SetShapeWeight(item.KeyIndex, 0f);
-                    sliderFloatField.SetValueWithoutNotify(0f);
+                    var currentWeight = _blendShapeManager.GetShapeWeight(item.KeyIndex);
+                    var newWeight = currentWeight == 0f ? 100f : 0f;
+                    _blendShapeManager.SetShapeWeight(item.KeyIndex, newWeight);
+                    sliderFloatField.SetValueWithoutNotify(newWeight);
                     UpdateActionButton(item, isStyle, actionButton);
                 }
             };
-            
-            hundredButton.clicked += () =>
-            {
-                if (element.userData is ElementData item)
-                {
-                    _blendShapeManager.SetShapeWeight(item.KeyIndex, 100f);
-                    sliderFloatField.SetValueWithoutNotify(100f);
-                    UpdateActionButton(item, isStyle, actionButton);
-                }
-            };
-            
+                        
             actionButton.clicked += () =>
             {
                 if (element.userData is ElementData item)
@@ -244,6 +238,12 @@ internal class SelectedPanel
 
         _styleListView.RefreshItems();
         _selectedListView.RefreshItems();
+    }
+
+    private void UpdateStyleVisibility()
+    {
+        var hasStyleShapes = _currentStyleSource.Count > 0;
+        _styleShapesPanel.style.display = hasStyleShapes ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private void BuildCurrentSource(bool style = true, bool selected = true)

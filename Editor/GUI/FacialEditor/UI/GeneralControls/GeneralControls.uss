@@ -73,3 +73,16 @@
 .group-toggle .unity-toggle__checkmark {
     display: none;
 }
+
+#targeting-container {
+    flex-direction: row;
+    align-items: center;
+}
+
+#targeting-type-field, #targeting-object-field {
+    flex: 1 1 auto;
+}
+
+#save-button {
+    flex: 0 0 110px;
+}
