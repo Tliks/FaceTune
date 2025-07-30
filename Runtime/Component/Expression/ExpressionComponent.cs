@@ -20,11 +20,11 @@ namespace aoyon.facetune
             {
                 var zeroAnimations = sessionContext.SafeZeroBlendShapes.ToGenericAnimations(sessionContext.BodyPath);
                 animationIndex.AddRange(zeroAnimations);
-            }
 
-            if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, sessionContext, out var facialAnimations))
-            {
-                animationIndex.AddRange(facialAnimations);
+                if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, sessionContext, out var facialAnimations))
+                {
+                    animationIndex.AddRange(facialAnimations);
+                }
             }
 
             var dataComponents = gameObject.GetInterfacesInChildFTComponents<AbstractDataComponent>(true);
