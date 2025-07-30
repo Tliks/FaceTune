@@ -34,9 +34,9 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
 
         var selections = Selection.objects;
 
-        if (selections.Count() == 1)
+        if (selections.Length == 1)
         {
-            _targetObject.Value = selections.First();
+            _targetObject.Value = selections[0];
         }
         else
         {
@@ -95,7 +95,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         var observeContext = new NDMFPreviewObserveContext(context);
 
         using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
-        proxy.GetBlendShapesAndSetZeroWeight(zeroWeightBlendShapes);
+        proxy.GetBlendShapesAndSetWeightToZero(zeroWeightBlendShapes);
         
         using var _2 = BlendShapeSetPool.Get(out var facialStyleSet);
         FacialStyleContext.TryGetFacialStyleShapesAndObserve(targetGameObject, facialStyleSet, root, observeContext);

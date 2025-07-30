@@ -30,7 +30,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
 
     protected override async Task<IRenderFilterNode> Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
-        var node = await base.Instantiate(group, proxyPairs, context) ?? throw new Exception("Failed to instantiate preview node");
+        var node = await base.Instantiate(group, proxyPairs, context);
         _previewNode = (BlendShapePreviewNode)node;
         _previewNode.RefreshDirectly(_currentSet);
         return node;
