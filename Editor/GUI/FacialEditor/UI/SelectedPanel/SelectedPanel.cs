@@ -122,8 +122,8 @@ internal class SelectedPanel
     {
         _styleListView = _element.Q<ListView>("style-list-view");
         _selectedListView = _element.Q<ListView>("selected-list-view");
-        _styleListView.focusable = false;
-        _selectedListView.focusable = false;
+        _styleListView.focusable = true;
+        _selectedListView.focusable = true;
         _styleListView.selectionType = SelectionType.None;
         _selectedListView.selectionType = SelectionType.None;
         _styleListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;

@@ -31,8 +31,9 @@ internal class SliderFloatField : VisualElement
         get => _slider.value;
         set
         {
-            _slider.SetValueWithoutNotify(value);
-            _floatField.SetValueWithoutNotify(value);
+            var clampedValue = Mathf.Clamp(value, lowValue, highValue);
+            _slider.SetValueWithoutNotify(clampedValue);
+            _floatField.SetValueWithoutNotify(clampedValue);
         }
     }
 
