@@ -1,3 +1,6 @@
+using aoyon.facetune.gui.shapes_editor;
+using BestHTTP.SecureProtocol.Org.BouncyCastle.Asn1.X509;
+
 namespace aoyon.facetune.gui;
 
 [CanEditMultipleObjects]
@@ -11,8 +14,7 @@ internal class AdvancedEyeBlinkEditor : FaceTuneCustomEditorBase<AdvancedEyeBlin
         if (GUILayout.Button("Open Editor"))
         {
             var defaultOverride = new BlendShapeSet(Component.AdvancedEyeBlinkSettings.CancelerBlendShapeNames.Select(x => new BlendShape(x, 0.0f)));
-            var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
-            CustomEditorUtility.OpenEditorAndApplyBlendShapeNames(Component, defaultOverride, getProperty);
+            CustomEditorUtility.OpenEditor(Component.gameObject, new AdvancedEyeBlinkTargeting(){ Target = Component }, defaultOverride);
         }
         if (GUILayout.Button("Enable Eye Blink in All Child Expressions"))
         {

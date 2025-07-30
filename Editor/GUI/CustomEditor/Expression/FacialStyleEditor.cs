@@ -1,3 +1,5 @@
+using aoyon.facetune.gui.shapes_editor;
+
 namespace aoyon.facetune.gui;
 
 [CanEditMultipleObjects]
@@ -34,7 +36,7 @@ internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent
     {
         var defaultOverride = new BlendShapeSet();
         Component.GetBlendShapes(defaultOverride);
-        CustomEditorUtility.OpenEditorAndApplyBlendShapeSet(Component, defaultOverride, so => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations)));
+        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialStyleTargeting(){ Target = Component }, defaultOverride, null);
     }
 
     private void UpdateFromScene()

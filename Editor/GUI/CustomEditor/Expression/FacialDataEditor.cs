@@ -84,11 +84,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         FacialStyleContext.TryGetFacialStyleShapes(Component.gameObject, facialStyleSet);
         var defaultOverride = new BlendShapeSet();
         Component.GetBlendShapes(defaultOverride, facialStyleSet);
-        if (CustomEditorUtility.TryGetContext(Component.gameObject, out var context))
-        {
-            var targeting = new FacialDataTargeting(){ Target = Component };
-            FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaultOverride, facialStyleSet);
-        }
+        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, facialStyleSet);
     }
 
     internal static void ConvertToManual(Object[] targets)

@@ -23,50 +23,11 @@ internal static class CustomEditorUtility
         AssetDatabase.CreateAsset(clip, path);
     }
 
-    public static void OpenEditorAndApplyBlendShapeSet(Component component, IReadOnlyBlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyBlendShapeSet? facialStyleSet = null)
+    public static void OpenEditor(GameObject obj, IShapesEditorTargeting targeting, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
-        var onApply = new Action<BlendShapeSet>(set =>
-        {
-            var so = new SerializedObject(component);
-            so.Update();
-            var property = getProperty(so);
-            property.serializedObject.Update();
-            // AddShapesAsSingleFrame(property, set.BlendShapes.ToList());
-            property.serializedObject.ApplyModifiedProperties();
-        });
-
-        if (!TryGetContext(component.gameObject, out var context)) return;
-        var window = FacialShapesEditor.TryOpenEditor(context.FaceRenderer, new AnimationClipTargeting(), defaultOverrides, facialStyleSet);
-        if (window == null) return;
-    }
-
-    public static void OpenEditorAndApplyBlendShapeNames(Component component, IReadOnlyBlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyBlendShapeSet? facialStyleSet = null)
-    {
-        /*
-        var onApply = new Action<BlendShapeSet>(set =>
-        {
-            var so = new SerializedObject(component);
-            so.Update();
-            var property = getProperty(so);
-            property.serializedObject.Update();
-            AddShapesAsNames(property, set.Names.ToList());
-            property.serializedObject.ApplyModifiedProperties();
-        });
-
-        if (!TryGetContext(component.gameObject, out var context)) return;
-        var window = FacialShapesEditor.TryOpenEditor();
-        if (window == null) return;
-        window
-        */
-    }
-
-    public static void OpenEditor(GameObject obj, IReadOnlyBlendShapeSet defaultOverrides, Action<BlendShapeSet> onApply, IReadOnlyBlendShapeSet? facialStyleSet = null)
-    {
-        /*
         if (!TryGetContext(obj, out var context)) return;
-        if (FacialShapesEditor.TryOpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet) == null) return;
-        window.RegisterApplyCallback(onApply);
-        */
+        var window = FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaultOverrides, facialStyleSet);
+        if (window == null) return;
     }
 
     public static void ClearAllElements(SerializedProperty property)
