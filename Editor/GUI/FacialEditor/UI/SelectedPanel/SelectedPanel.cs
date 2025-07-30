@@ -34,6 +34,10 @@ internal class SelectedPanel
     private List<ElementData> _currentStyleSource = null!;
     private List<ElementData> _currentSelectedSource = null!;
 
+    private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff@2x").image;
+    private static readonly Texture _resetIcon = EditorGUIUtility.IconContent("d_Toolbar Minus@2x").image;
+    private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus@2x").image;
+
     public SelectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager)
     {
         _blendShapeManager = blendShapeManager;
@@ -144,6 +148,11 @@ internal class SelectedPanel
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var toggleButton = element.Q<Button>("toggle-button");
             var actionButton = element.Q<Button>("action");
+
+            toggleButton.text = "";
+            toggleButton.Add(new Image { image = _toggleIcon });
+            actionButton.text = "";
+            actionButton.Add(new Image { image = isStyle ? _resetIcon : _removeIcon });
             
             sliderFloatField.RegisterValueChangedCallback(evt =>
             {
@@ -207,7 +216,6 @@ internal class SelectedPanel
             nameLabel.text = item.ShapeName;
             var currentWeight = _blendShapeManager.GetShapeWeight(item.KeyIndex);
             sliderFloatField.SetValueWithoutNotify(currentWeight);
-            actionButton.text = isStyle ? "R" : "R";
             UpdateActionButton(item, isStyle, actionButton);
         }
 
