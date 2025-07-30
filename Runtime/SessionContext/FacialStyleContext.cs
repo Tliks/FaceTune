@@ -57,14 +57,23 @@ internal class FacialStyleContext
         return true;
     }
 
-    public static bool TryGetFacialStyleAnimations(GameObject target, SessionContext context, [NotNullWhen(true)] out IEnumerable<GenericAnimation>? animations)
+    public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeAnimation> resultToAdd)
     {
         if (!TryGetFacialStyle(target, out var facialStyle))
         {
-            animations = null;
             return false;
         }
-        animations = facialStyle.GetAnimations(context);
+        facialStyle.GetBlendShapeAnimations(resultToAdd);
+        return true;
+    }
+
+    public static bool TryGetFacialStyleAnimationsAndObserve(GameObject target, ICollection<BlendShapeAnimation> resultToAdd, GameObject root, IObserveContext observeContext)
+    {
+        if (!TryGetFacialStyleAndObserve(target, out var facialStyle, root, observeContext))
+        {
+            return false;
+        }
+        facialStyle.GetBlendShapeAnimations(resultToAdd, observeContext);
         return true;
     }
 }

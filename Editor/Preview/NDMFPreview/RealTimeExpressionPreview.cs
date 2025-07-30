@@ -33,15 +33,15 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpre
         proxy.GetBlendShapesAndSetWeightToZero(zeroWeightBlendShapes);
         result.AddRange(zeroWeightBlendShapes);
 
-        using var _3 = BlendShapeSetPool.Get(out var facialStyleSet);
-        FacialStyleContext.TryGetFacialStyleShapesAndObserve(target.gameObject, facialStyleSet, root, observeContext);
-        result.AddRange(facialStyleSet);
+        using var _3 = ListPool<BlendShapeAnimation>.Get(out var facialStyleAnimations);
+        FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(target.gameObject, facialStyleAnimations, root, observeContext);
+        result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
         using var _4 = ListPool<AbstractDataComponent>.Get(out var dataComponents);
         context.GetComponentsInChildren<AbstractDataComponent>(target.gameObject, true, dataComponents);
         foreach (var dataComponent in dataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
+            dataComponent.GetBlendShapes(result, facialStyleAnimations, observeContext);
         }
     }
 }

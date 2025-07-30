@@ -21,9 +21,10 @@ namespace aoyon.facetune
                 var zeroAnimations = sessionContext.SafeZeroBlendShapes.ToGenericAnimations(sessionContext.BodyPath);
                 animationIndex.AddRange(zeroAnimations);
 
-                if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, sessionContext, out var facialAnimations))
+                using var _ = ListPool<BlendShapeAnimation>.Get(out var facialAnimations);
+                if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialAnimations))
                 {
-                    animationIndex.AddRange(facialAnimations);
+                    animationIndex.AddRange(facialAnimations.ToGenericAnimations(sessionContext.BodyPath));
                 }
             }
 

@@ -50,7 +50,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
-            clip.GetFirstFrameBlendShapes(result);
+            using var _ = ListPool<BlendShapeAnimation>.Get(out var animations);
+            clip.GetAllFirstFrameBlendShapes(result);
             return;
         }
 
@@ -97,17 +98,17 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
         proxy.GetBlendShapesAndSetWeightToZero(zeroWeightBlendShapes);
         
-        using var _2 = BlendShapeSetPool.Get(out var facialStyleSet);
-        FacialStyleContext.TryGetFacialStyleShapesAndObserve(targetGameObject, facialStyleSet, root, observeContext);
+        using var _2 = ListPool<BlendShapeAnimation>.Get(out var facialStyleAnimations);
+        FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(targetGameObject, facialStyleAnimations, root, observeContext);
 
         result.AddRange(zeroWeightBlendShapes);
-        result.AddRange(facialStyleSet);
+        result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
         using var _3 = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
         context.GetComponentsInChildren<AbstractDataComponent>(targetGameObject, true, childDataComponents);
         foreach (var dataComponent in childDataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleSet, observeContext);
+            dataComponent.GetBlendShapes(result, facialStyleAnimations, observeContext);
         }
     }
 }

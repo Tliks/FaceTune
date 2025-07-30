@@ -44,7 +44,7 @@ namespace aoyon.facetune
 #endif
         }
 
-        internal override void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext? observeContext = null)
+        internal override void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyList<BlendShapeAnimation> facialAnimations, IObserveContext? observeContext = null)
         {
             return; // Todo
         }

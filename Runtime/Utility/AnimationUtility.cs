@@ -13,22 +13,33 @@ internal static class FTAnimationUtility
     private const string BlendShapePropertyName = FaceTuneConsts.AnimatedBlendShapePrefix;
 
 #if UNITY_EDITOR
-    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipImportOption? option = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
+
+    private static readonly List<BlendShapeAnimation> _emptyFacialAnimations = new();
+
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations)
     {
-        GetBlendShapes(clip, 0, resultToAdd, option, facialStyleSet);
+        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
     }
 
-    private static void ProcessBlendShapeBindings<T>(
-        AnimationClip clip,
-        float time,
-        ClipImportOption? option,
-        IReadOnlyBlendShapeSet? facialStyleSet,
-        Action<string, float, AnimationCurve> process)
+    public static void GetAllFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd)
     {
-        if (option == ClipImportOption.FacialStyleOverridesOrNonZero && facialStyleSet == null)
-            throw new InvalidOperationException("facialStyleSet is null");
+        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
+    }
 
+    public static void GetBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeAnimation> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations)
+    {
+        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeAnimation(name, curve)));
+    }
+
+    public static void GetAllBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeAnimation> resultToAdd)
+    {
+        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeAnimation(name, curve)));
+    }
+
+    private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations, Action<string, AnimationCurve> addAction)
+    {
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
+        var facialCurves = facialAnimations.ToDictionary(a => a.Name, a => a.Curve);
         foreach (var binding in bindings)
         {
             if (binding.type != typeof(SkinnedMeshRenderer) || !binding.propertyName.StartsWith(BlendShapePropertyName)) continue;
@@ -36,74 +47,48 @@ internal static class FTAnimationUtility
             var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
             if (curve != null && curve.keys.Length > 0)
             {
+                var add = false;
                 var name = binding.propertyName.Replace(BlendShapePropertyName, string.Empty);
-                var weight = curve.Evaluate(time);
+                var isZero = curve.keys.All(k => k.value == 0);
                 switch (option)
                 {
-                    case null:
                     case ClipImportOption.All:
-                        process(name, weight, curve);
+                        add = true;
                         break;
                     case ClipImportOption.NonZero:
-                        if (weight != 0)
+                        if (!isZero)
                         {
-                            process(name, weight, curve);
+                            add = true;
                         }
                         break;
                     case ClipImportOption.FacialStyleOverridesOrNonZero:
-                        if (facialStyleSet!.TryGetValue(name, out var facialStyle))
+                        if (facialCurves.TryGetValue(name, out var facialCurve))
                         {
-                            if (facialStyle.Weight == weight)
+                            if (!facialCurve.Equals(curve))
                             {
-                                continue;
+                                add = true; // override
                             }
-                            else
-                            {
-                                process(name, weight, curve);
-                                continue;
-                            }
+                            break;
                         }
                         else
                         {
-                            if (weight == 0)
+                            if (!isZero)
                             {
-                                continue;
+                                add = true;
                             }
-                            else
-                            {
-                                process(name, weight, curve);
-                                continue;
-                            }
+                            break;
                         }
                     default:
                         throw new ArgumentOutOfRangeException(nameof(option), option, null);
+                }
+                if (add)
+                {
+                    addAction(name, curve);
                 }
             }
         }
     }
 
-    public static void GetBlendShapes(this AnimationClip clip, float time, ICollection<BlendShape> resultToAdd, ClipImportOption? option = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
-    {
-        ProcessBlendShapeBindings<BlendShape>(
-            clip,
-            time,
-            option,
-            facialStyleSet,
-            (name, weight, curve) => resultToAdd.Add(new BlendShape(name, weight))
-        );
-    }
-
-    public static void GetBlendShapeAnimations(this AnimationClip clip, List<BlendShapeAnimation> resultToAdd, ClipImportOption? option = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
-    {
-        // 比較用のフレームはアニメーションは常に0フレーム目を参照
-        ProcessBlendShapeBindings<BlendShapeAnimation>(
-            clip,
-            0,
-            option,
-            facialStyleSet,
-            (name, weight, curve) => resultToAdd.Add(new BlendShapeAnimation(name, curve))
-        );
-    }
     public static void GetGenericAnimations(this AnimationClip clip, List<GenericAnimation> resultToAdd)
     {
         resultToAdd.AddRange(GenericAnimation.FromAnimationClip(clip));

@@ -7,7 +7,6 @@ namespace aoyon.facetune.gui;
 internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 {
     private SerializedProperty _sourceModeProperty = null!;
-    private SerializedProperty _isSingleFrameProperty = null!;
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipOptionProperty = null!;
@@ -16,7 +15,6 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
     {
         base.OnEnable();
         _sourceModeProperty = serializedObject.FindProperty(nameof(FacialDataComponent.SourceMode));
-        _isSingleFrameProperty = serializedObject.FindProperty(nameof(FacialDataComponent.IsSingleFrame));
         _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
         _clipProperty = serializedObject.FindProperty(nameof(FacialDataComponent.Clip));
         _clipOptionProperty = serializedObject.FindProperty(nameof(FacialDataComponent.ClipOption));
@@ -56,7 +54,6 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
     private void DrawManualModeGUI()
     {
-        EditorGUILayout.PropertyField(_isSingleFrameProperty);
         EditorGUILayout.PropertyField(_blendShapeAnimationsProperty);
 
         EditorGUILayout.Space();
@@ -80,11 +77,12 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
     private void OpenEditor()
     {
-        var facialStyleSet = new BlendShapeSet();
-        FacialStyleContext.TryGetFacialStyleShapes(Component.gameObject, facialStyleSet);
+        var facialStyleAnimations = new List<BlendShapeAnimation>();
+        FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
         var defaultOverride = new BlendShapeSet();
-        Component.GetBlendShapes(defaultOverride, facialStyleSet);
-        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, facialStyleSet);
+        Component.GetBlendShapes(defaultOverride, facialStyleAnimations);
+        var firstFrameBlendShapes = facialStyleAnimations.ToFirstFrameBlendShapes();
+        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, new BlendShapeSet(firstFrameBlendShapes));
     }
 
     internal static void ConvertToManual(Object[] targets)
@@ -157,9 +155,10 @@ internal class ExportFacialDataWindow : EditorWindow
         }
         if (_addFacialStyle)
         {
-            if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, context, out var facialStyleAnimations))
+            var facialStyleAnimations = new List<BlendShapeAnimation>();
+            if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, facialStyleAnimations))
             {
-                animations.AddRange(facialStyleAnimations);
+                animations.AddRange(facialStyleAnimations.ToGenericAnimations(context.BodyPath));
             }
         }
         animations.AddRange(_component.GetAnimations(context));

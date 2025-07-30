@@ -9,7 +9,6 @@ namespace aoyon.facetune
         public AnimationSourceMode SourceMode = AnimationSourceMode.Manual;
 
         // Manual
-        public bool IsSingleFrame = true;
         public List<BlendShapeAnimation> BlendShapeAnimations = new();
 
         // FromAnimationClip
@@ -24,14 +23,7 @@ namespace aoyon.facetune
                 case AnimationSourceMode.Manual:
                     foreach (var animation in BlendShapeAnimations)
                     {
-                        if (IsSingleFrame)
-                        {
-                            animations.Add(animation.ToSingleFrame().ToGeneric(sessionContext.BodyPath));
-                        }
-                        else
-                        {
-                            animations.Add(animation.ToGeneric(sessionContext.BodyPath));
-                        }
+                        animations.Add(animation.ToGeneric(sessionContext.BodyPath));
                     }
                     break;
                 case AnimationSourceMode.AnimationClip:
@@ -52,14 +44,14 @@ namespace aoyon.facetune
         internal void ClipToManual(List<BlendShapeAnimation> animations)
         {
             if (Clip == null) return;
-            var facialStyleSet = new BlendShapeSet();
-            FacialStyleContext.TryGetFacialStyleShapes(gameObject, facialStyleSet);
+            var facialStyleAnimations = new List<BlendShapeAnimation>();
+            FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialStyleAnimations);
 #if UNITY_EDITOR
-            Clip.GetBlendShapeAnimations(animations, ClipOption, facialStyleSet.AsReadOnly());
+            Clip.GetBlendShapeAnimations(animations, ClipOption, facialStyleAnimations);
 #endif
         }
 
-        internal override void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyBlendShapeSet facialStyleSet, IObserveContext? observeContext = null)
+        internal override void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyList<BlendShapeAnimation> facialAnimations, IObserveContext? observeContext = null)
         {
             observeContext ??= new NonObserveContext();
             observeContext.Observe(this);
@@ -75,7 +67,7 @@ namespace aoyon.facetune
                 case AnimationSourceMode.AnimationClip:
                     if (Clip == null) break;
 #if UNITY_EDITOR
-                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipOption, facialStyleSet);
+                    Clip.GetFirstFrameBlendShapes(resultToAdd, ClipOption, facialAnimations);
 #endif
                     break;
                 default:

@@ -37,10 +37,17 @@ public record BlendShapeAnimation // Immutable
         return new BlendShapeAnimation(name, curve);
     }
 
-    internal BlendShapeAnimation ToSingleFrame()
+    internal BlendShapeAnimation ToFirstFrame()
     {
         var curve = new AnimationCurve();
         curve.AddKey(0, this.curve.Evaluate(0));
+        return new BlendShapeAnimation(Name, curve);
+    }
+
+    internal BlendShapeAnimation ToLastFrame()
+    {
+        var curve = new AnimationCurve();
+        curve.AddKey(Time, this.curve.Evaluate(Time));
         return new BlendShapeAnimation(Name, curve);
     }
 
