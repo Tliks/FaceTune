@@ -1,12 +1,14 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
-    <ui:VisualElement name="main-container">
-        <ui:VisualElement name="primary-section">
-            <ui:ScrollView name="controls-container" />
-            <ui:VisualElement name="primary-content-container" />
+    <ui:VisualElement name="root">
+
+        <ui:VisualElement name="left-panel">
+            <ui:VisualElement name="general-controls-container" />
+            <ui:VisualElement name="selected-content-container" />
         </ui:VisualElement>
-                
-        <ui:VisualElement name="secondary-section">
-            <ui:VisualElement name="secondary-content-container" />
+
+        <ui:VisualElement name="right-panel">
+            <ui:VisualElement name="unselected-content-container" />
         </ui:VisualElement>
+        
     </ui:VisualElement>
-</ui:UXML> 
+</ui:UXML>

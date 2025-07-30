@@ -23,81 +23,56 @@ internal static class CustomEditorUtility
         AssetDatabase.CreateAsset(clip, path);
     }
 
-    public static void OpenEditorAndApplyBlendShapeSet(Component component, IReadOnlyBlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyBlendShapeSet? facialStyleSet = null)
-    {
-        var onApply = new Action<BlendShapeSet>(set =>
-        {
-            var so = new SerializedObject(component);
-            so.Update();
-            var property = getProperty(so);
-            property.serializedObject.Update();
-            AddShapesAsSingleFrame(property, set.BlendShapes.ToList());
-            property.serializedObject.ApplyModifiedProperties();
-        });
-
-        if (!TryGetContext(component.gameObject, out var context)) return;
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet);
-        if (window == null) return;
-        window.RegisterApplyCallback(onApply);
-    }
-
-    public static void OpenEditorAndApplyBlendShapeNames(Component component, IReadOnlyBlendShapeSet defaultOverrides, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyBlendShapeSet? facialStyleSet = null)
-    {
-        var onApply = new Action<BlendShapeSet>(set =>
-        {
-            var so = new SerializedObject(component);
-            so.Update();
-            var property = getProperty(so);
-            property.serializedObject.Update();
-            AddShapesAsNames(property, set.Names.ToList());
-            property.serializedObject.ApplyModifiedProperties();
-        });
-
-        if (!TryGetContext(component.gameObject, out var context)) return;
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet);
-        if (window == null) return;
-        window.RegisterApplyCallback(onApply);
-    }
-
-    public static void OpenEditor(GameObject obj, IReadOnlyBlendShapeSet defaultOverrides, Action<BlendShapeSet> onApply, IReadOnlyBlendShapeSet? facialStyleSet = null)
+    public static void OpenEditor(GameObject obj, IShapesEditorTargeting targeting, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         if (!TryGetContext(obj, out var context)) return;
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(context.ZeroBlendShapes.Names), defaultOverrides, facialStyleSet);
+        var window = FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaultOverrides, facialStyleSet);
         if (window == null) return;
-        window.RegisterApplyCallback(onApply);
     }
 
-    public static void ClearAnimations(SerializedProperty property)
+    public static void ClearAllElements(SerializedProperty property)
     {
         property.arraySize = 0;
     }
 
-    public static void AddShapesAsNames(SerializedProperty namesCollection, IReadOnlyList<string> names)
+    private static void ModicyComponent(Component component, Action<SerializedObject> action)
     {
-        namesCollection.arraySize = names.Count;
-        for (var i = 0; i < names.Count; i++)
+        var so = new SerializedObject(component);
+        so.Update();
+        action(so);
+        so.ApplyModifiedProperties();
+    }
+
+    public static void AddShapesAsNames(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<string> names)
+    {
+        ModicyComponent(component, so =>
+        {
+            var property = getProperty(so);
+            AddShapesAsNames(property, names);
+        });
+    }
+    public static void AddShapesAsNames(SerializedProperty namesCollection, IReadOnlyCollection<string> names)
+    {
+        var newNames = names.ToList();
+        namesCollection.arraySize = newNames.Count;
+        for (var i = 0; i < newNames.Count; i++)
         {
             var element = namesCollection.GetArrayElementAtIndex(i);
-            element.stringValue = names[i];
+            element.stringValue = newNames[i];
         }
     }
-
-    public static void AddShapesAsSingleFrame(SerializedProperty blendShapeAnimation, IReadOnlyList<BlendShape> newShapes)
+    
+    public static void AddBlendShapeAnimations(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<BlendShapeAnimation> animations)
     {
-        var animations = newShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight)).ToList();
-        blendShapeAnimation.arraySize = animations.Count;
-        for (var i = 0; i < animations.Count; i++)
+        ModicyComponent(component, so =>
         {
-            var element = blendShapeAnimation.GetArrayElementAtIndex(i);
-            var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
-            var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
-            nameProp.stringValue = animations[i].Name;
-            curveProp.animationCurveValue = animations[i].Curve;
-        }
+            var property = getProperty(so);
+            AddBlendShapeAnimations(property, animations);
+        });
     }
-
-    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyList<BlendShapeAnimation> newAnimations)
+    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyCollection<BlendShapeAnimation> animations)
     {
+        var newAnimations = animations.ToList();
         blendShapeAnimation.arraySize = newAnimations.Count;
         for (var i = 0; i < newAnimations.Count; i++)
         {
@@ -107,8 +82,17 @@ internal static class CustomEditorUtility
         }
     }
 
-    public static void AddGenericAnimations(SerializedProperty genericAnimations, IReadOnlyList<GenericAnimation> newAnimations)
+    public static void AddGenericAnimations(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<GenericAnimation> animations)
     {
+        ModicyComponent(component, so =>
+        {
+            var property = getProperty(so);
+            AddGenericAnimations(property, animations);
+        });
+    }
+    public static void AddGenericAnimations(SerializedProperty genericAnimations, IReadOnlyCollection<GenericAnimation> animations)
+    {
+        var newAnimations = animations.ToList();
         genericAnimations.arraySize = newAnimations.Count;
         for (var i = 0; i < newAnimations.Count; i++)
         {

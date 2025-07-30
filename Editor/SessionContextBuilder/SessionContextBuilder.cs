@@ -36,7 +36,7 @@ internal static class SessionContextBuilder
         var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
 
         var zeroBlendShapes = new BlendShapeSet();
-        faceRenderer.GetBlendShapesAndSetZeroWeight(zeroBlendShapes);
+        faceRenderer.GetBlendShapesAndSetWeightToZero(zeroBlendShapes);
 
         var trackedBlendShapes = new HashSet<string>(platformSupport.GetTrackedBlendShape());
 

@@ -12,7 +12,7 @@ internal static class BlendShapeUtility
         }
     }
     
-    public static void GetBlendShapesAndSetZeroWeight(this SkinnedMeshRenderer renderer, ICollection<BlendShape> resultToAdd)
+    public static void GetBlendShapesAndSetWeightToZero(this SkinnedMeshRenderer renderer, ICollection<BlendShape> resultToAdd)
     {
         for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
         {

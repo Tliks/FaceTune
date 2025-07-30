@@ -7,63 +7,67 @@ namespace aoyon.facetune.preview;
 
 internal class HighlightBlendShapeProcessor : IDisposable
 {
-    private readonly SkinnedMeshRenderer _renderer;
-    private readonly Mesh _mesh;
-    private readonly CancellationTokenSource cancellationTokenSource;
+    private SkinnedMeshRenderer? _renderer;
+    private CancellationTokenSource? cancellationTokenSource;
     private Mesh? _bakedMesh;
-    private Task<int[][]>? latestTask;
-    private HilightBlendShape? hlighter;
+    private Task<int[][]>? _latestTask;
+    private HilightBlendShape? _hlighter;
     private static readonly int[] emptyArray = new int[0];
 
-    public HighlightBlendShapeProcessor(SkinnedMeshRenderer renderer, Mesh mesh)
+    public HighlightBlendShapeProcessor()
     { 
+    }
+
+    public void RefreshTarget(SkinnedMeshRenderer? renderer, Mesh? mesh)
+    {
+        Dispose();
+        if (renderer == null || mesh == null) return;
         _renderer = renderer;
-        _mesh = mesh;
         cancellationTokenSource = new CancellationTokenSource();
-        latestTask = CalculateBlendShapeTriangleIndices(cancellationTokenSource.Token);            
+        _latestTask = CalculateBlendShapeTriangleIndices(mesh, cancellationTokenSource.Token);
     }
 
     public void HilightBlendShapeFor(int blendShapeIndex)
     {
         EnsureHilighter();
         var indices = GetTrinangleIndicesFor(blendShapeIndex);
-        hlighter!.Mesh.triangles = indices;
+        _hlighter!.Mesh.triangles = indices;
     }
 
     public void ClearHighlight()
     {
-        if (hlighter != null)
+        if (_hlighter != null)
         {
-            hlighter.Mesh.triangles = emptyArray;
+            _hlighter.Mesh.triangles = emptyArray;
         }
     }
 
     private void EnsureHilighter()
     {
-        if (hlighter != null) return;
+        if (_hlighter != null || _renderer == null) return;
 
-        hlighter = _renderer.gameObject.AddComponent<HilightBlendShape>();
+        _hlighter = _renderer.gameObject.AddComponent<HilightBlendShape>();
 
         _bakedMesh = new Mesh();
         Debug.Log($"BakeMesh: {_renderer.name}");
         _renderer.BakeMesh(_bakedMesh);
-        hlighter.Mesh = _bakedMesh;
-        hlighter.Position = _renderer.transform.position;
+        _hlighter.Mesh = _bakedMesh;
+        _hlighter.Position = _renderer.transform.position;
     }
 
     private int[] GetTrinangleIndicesFor(int blendShapeIndex)
     {
-        if (latestTask == null) return emptyArray;
-        if (!latestTask.IsCompleted) return emptyArray;
+        if (_latestTask == null) return emptyArray;
+        if (!_latestTask.IsCompleted) return emptyArray;
 
-        return latestTask.Result[blendShapeIndex];
+        return _latestTask.Result[blendShapeIndex];
     }
 
-    private Task<int[][]> CalculateBlendShapeTriangleIndices(CancellationToken token = default)
+    private static Task<int[][]> CalculateBlendShapeTriangleIndices(Mesh mesh, CancellationToken token = default)
     {
-        int blendShapeCount = _mesh.blendShapeCount;
-        Vector3[] vertices = _mesh.vertices;
-        int[] triangles = _mesh.triangles;
+        int blendShapeCount = mesh.blendShapeCount;
+        Vector3[] vertices = mesh.vertices;
+        int[] triangles = mesh.triangles;
 
         // メインスレッドで必要な情報を取得
         var frameCounts = new int[blendShapeCount];
@@ -73,12 +77,12 @@ internal class HighlightBlendShapeProcessor : IDisposable
 
         for (int i = 0; i < blendShapeCount; i++)
         {
-            frameCounts[i] = _mesh.GetBlendShapeFrameCount(i);
+            frameCounts[i] = mesh.GetBlendShapeFrameCount(i);
             // 各フレームの頂点情報を取得してリストに追加
             for (int j = 0; j < frameCounts[i]; j++)
             {
                 Vector3[] deltaVertices = new Vector3[vertices.Length];
-                _mesh.GetBlendShapeFrameVertices(i, j, deltaVertices, temp, temp);
+                mesh.GetBlendShapeFrameVertices(i, j, deltaVertices, temp, temp);
                 deltaVerticesList.Add(deltaVertices);
             }
         }
@@ -133,13 +137,13 @@ internal class HighlightBlendShapeProcessor : IDisposable
 
     public void Dispose()
     {
-        cancellationTokenSource.Cancel();
-        latestTask = null;
+        cancellationTokenSource?.Cancel();
+        _latestTask = null;
 
         if (_bakedMesh != null) Object.DestroyImmediate(_bakedMesh);
         _bakedMesh = null;
 
-        if (hlighter != null) Object.DestroyImmediate(hlighter);
-        hlighter = null;
+        if (_hlighter != null) Object.DestroyImmediate(_hlighter);
+        _hlighter = null;
     }
 }

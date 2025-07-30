@@ -30,6 +30,7 @@ internal static class AssetsMenu
         var menuName = "ExclusiveMenu";
         var menuObject = new GameObject(menuName);
         var subMenu = menuObject.AddComponent<ModularAvatarMenuItem>();
+        subMenu.Control ??= new VRCExpressionsMenu.Control();
         subMenu.Control.name = menuName;
         subMenu.Control.type = VRCExpressionsMenu.Control.ControlType.SubMenu;
         subMenu.MenuSource = SubmenuSource.Children;
@@ -49,10 +50,13 @@ internal static class AssetsMenu
             var toggle = new GameObject(clip.name);
             toggle.transform.SetParent(subMenu.transform);
             var toggleComponent = toggle.AddComponent<ModularAvatarMenuItem>();
-            toggleComponent.Control.name = clip.name;
-            toggleComponent.Control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
-            toggleComponent.Control.parameter = new() { name = uniqueParameterId };
-            toggleComponent.Control.value = i;
+            toggleComponent.Control = new VRCExpressionsMenu.Control
+            {
+                name = clip.name,
+                type = VRCExpressionsMenu.Control.ControlType.Toggle,
+                parameter = new() { name = uniqueParameterId },
+                value = i
+            };
 
             toggle.AddComponent<ExpressionComponent>();
             var dataComponent = toggle.AddComponent<FacialDataComponent>();
