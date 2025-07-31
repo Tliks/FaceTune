@@ -7,19 +7,16 @@ namespace aoyon.facetune.gui;
 
 internal static class AssetsMenu
 {
-    private const string BasePath = $"Assets/{FaceTuneConsts.Name}/";
-
-    private const string Assets_SelectedClipsToExclusiveMenuPath = BasePath + "SelectedClipsToExclusiveMenu";
 
 
-    [M(Assets_SelectedClipsToExclusiveMenuPath, true)]
+    [M(MenuItems.SelectedClipsToExclusiveMenuPath, true)]
     private static bool ValidateSelectedClipsToExclusiveMenu()
     {
         var clips = Selection.objects.OfType<AnimationClip>();
         return clips.Count() >= 2;
     }
 
-    [M(Assets_SelectedClipsToExclusiveMenuPath, false)]
+    [M(MenuItems.SelectedClipsToExclusiveMenuPath, false, MenuItems.SelectedClipsToExclusiveMenuPriority)]
     private static void SelectedClipsToExclusiveMenu()
     {
         GenerateExclusiveMenuFromClips(Selection.objects.OfType<AnimationClip>().ToArray());

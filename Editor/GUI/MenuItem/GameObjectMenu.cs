@@ -9,11 +9,7 @@ namespace aoyon.facetune.gui;
 
 internal static class GameObjectMenu
 {
-    private const string BasePath = $"GameObject/{FaceTuneConsts.Name}/";
-    private const int PRIORITY = 21;
-
-    private const string FXImporterPath = $"{BasePath}/Import from FX Layer";
-    [M(FXImporterPath, false, PRIORITY)] 
+    [M(MenuItems.ImportFromFXLayerMenuPath, false, MenuItems.ImportFromFXLayerMenuPriority)] 
     static void ImportFromFXLayer()
     {
         var root = RuntimeUtil.FindAvatarInParents(Selection.activeGameObject?.transform);
@@ -49,27 +45,22 @@ internal static class GameObjectMenu
         FTPrefabUtility.InstantiatePrefab(guid, unpackRoot, parent);
     }
     
-    private const int PrefabPriority = PRIORITY + 10;
-    
-    [M(BasePath + "Template Base", false, PrefabPriority)] 
+    [M(MenuItems.TemplateBasePath, false, MenuItems.TemplateBasePriority)] 
     static void TemplateBase() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e", true);
 
-    [M(BasePath + "Condition", false, PrefabPriority + 1)] 
+    [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 
     static void Condition() => IP("20aca02f84d174940bb4ca676555589a", true);
     
-    private const string MenuPath = BasePath + "Menu/";
-    [M(MenuPath + "single", false, PrefabPriority + 2)] 
+    [M(MenuItems.MenuSinglePath, false, MenuItems.MenuSinglePriority)] 
     static void MenuSingle() => IP("a045ae2cad411ae43b4c008ff814957e", true);
 
-    [M(MenuPath + "exclusive", false, PrefabPriority + 3)] 
+    [M(MenuItems.MenuExclusivePath, false, MenuItems.MenuExclusivePriority)] 
     static void MenuExclusive() => IP("9e1741e66ac069742976cf8c7e785a35", true);
 
-    [M(MenuPath + "blending", false, PrefabPriority + 4)] 
+    [M(MenuItems.MenuBlendingPath, false, MenuItems.MenuBlendingPriority)] 
     static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", true);
 
-    private const string DebugPath = BasePath + "Debug/";
-
-    [M(DebugPath + "Excute ModifyHierarchyPass", false, PrefabPriority + 5)]
+    [M(MenuItems.DebugModifyHierarchyPassPath, false, MenuItems.DebugModifyHierarchyPassPriority)]
     static void DebugModifyHierarchyPass()
     {
         var root = RuntimeUtil.FindAvatarInParents(Selection.activeGameObject?.transform);
