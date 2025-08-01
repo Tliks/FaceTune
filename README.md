@@ -33,7 +33,7 @@ git clone https://github.com/Tliks/FaceTune
     - 「追加」ボタンを押すと、選択した制御が子オブジェクトとして生成されます。
         - これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
 3. 表情の設定
-    `Expression`コンポーネントがアタッチされたGameObject以下の存在する`Facial Data`コンポーネントから表情用のブレンドシェイプを設定します。
+    - `Expression`コンポーネントがアタッチされたGameObject以下の存在する`Facial Data`コンポーネントから表情用のブレンドシェイプを設定します。
     以下の2つのモードがあります。
     *   **Manualモード**: ブレンドシェイプ名とそのウェイト値を直接手動で指定して表情を作ります。`Open Editor`からEditorが起動できます。
     *   **From Clipモード**: 既存のAnimationClipを指定し、そのクリップ内のブレンドシェイプを表情として利用します。
@@ -41,7 +41,7 @@ git clone https://github.com/Tliks/FaceTune
 
 
 ### ビルドとアップロード
-設定に基づいて必要なAnimator Controllerやアニメーションクリップなどがビルド時に生成され、アバターに非破壊的に結合されます。
+設定に基づいて必要なAnimator ControllerやAnimation Clipなどがビルド時に生成され、アバターに非破壊的に適応されます。
 
 ### 既存の表情制御との共存について
 FaceTuneは、デフォルトでアバターに既に設定されている表情制御に対し特別な操作を行いません。
@@ -58,9 +58,9 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 最も重要なコンポーネントであり、このコンポーネントが存在することにより実際にアバターに対する適応が行われます。
 基本的にはこのコンポーネントは単体ではなく、`Facial Data`コンポーネントや、`Condition`コンポーネントを併用します。Hierarchy上で下にあるほど高い優先度として動作します。
 
-`Enable Blending`はOFF(デフォルト)のとき、より低い優先度のExpressionから表情用のアニメーションを上書きします。設定されていないブレンドシェイプは0として扱われます。一方でtrueのとき、設定されたブレンドシェイプの再生のみを行うことで、より低い優先度のExpressionとの結合を可能にします。
+`Enable Blending`はOFF(デフォルト)のとき、設定されていない表情ブレンドシェイプを全て0として扱うことで、より優先度の低い表情アニメーションを無効化します。一方でtrueのとき、設定されたデータの再生のみを行うことで、より低い優先度のExpressionとの結合を可能にします。
 
-一切の`Condition`と紐づかない場合、常に再生されるExpressionとなり、一切の`Facial Data`等と紐づかない場合、`Enable Blending`がOFFのとき、全表情ブレンドシェイプを0とするExpressionとなり、ONのときは空のExpressionとなります。
+一切の`Condition`と紐づかない場合、常に再生されるExpressionとなり、一切の`Facial Data`等と紐づかない場合、`Enable Blending`がOFFのとき全表情ブレンドシェイプを0とするExpressionとなり、ONのとき空のExpressionとなります。
 
 ### Facial Data
 表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以上の`Expression`コンポーネントと紐づきます。同一の`Expression`コンポーネントに対し複数の`Facial Data`コンポーネントが紐づき、かつ同じブレンドシェイプが設定されていた場合、Hierarchy上で下にあるコンポーネントの値が使用されます。
@@ -80,7 +80,7 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 ## Condition
 
 ### Condition
-条件を設定します。アタッチされたGameObject以上の`Expression`コンポーネントと紐づきます。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。
+条件を設定します。アタッチされたGameObject以下の`Expression`コンポーネントと紐づきます。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。
 同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
 ### MenuItem (Modular Avatar)
