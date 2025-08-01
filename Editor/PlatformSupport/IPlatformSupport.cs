@@ -2,6 +2,7 @@ using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using aoyon.facetune.build;
+using UnityEditor.Animations;
 
 namespace aoyon.facetune.platform;
 
@@ -22,43 +23,6 @@ internal interface IPlatformSupport
         return new string[] { };
     }
 
-    // ModularAvatarMenuItem
-    public MenuItemType GetMenuItemType(ModularAvatarMenuItem menuItem)
-    {
-        return MenuItemType.Button;
-    }
-    public void SetMenuItemType(ModularAvatarMenuItem menuItem, MenuItemType type)
-    {
-        return;
-    }
-    public string GetParameterName(ModularAvatarMenuItem menuItem)
-    {
-        return string.Empty;
-    }
-    public string GetUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames, string suffix)
-    {
-        return Guid.NewGuid().ToString();
-    }
-    public void SetParameterName(ModularAvatarMenuItem menuItem, string parameterName)
-    {
-        return;
-    }
-    public string GetRadialParameterName(ModularAvatarMenuItem menuItem)
-    {
-        return string.Empty;
-    }
-    public void SetRadialParameterName(ModularAvatarMenuItem menuItem, string parameterName)
-    {
-        return;
-    }
-    public float GetParameterValue(ModularAvatarMenuItem menuItem)
-    {
-        return 0;
-    }
-    public void SetParameterValue(ModularAvatarMenuItem menuItem, float value)
-    {
-        return;
-    }
 
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
     {
@@ -68,15 +32,17 @@ internal interface IPlatformSupport
     {
         return;
     }
-}
+    public void StateAsRandrom(VirtualState state, string parameterName, float min, float max)
+    {
+        return;
+    }
 
-
-internal enum MenuItemType
-{
-    Button,
-    Toggle,
-    SubMenu,
-    TwoAxisPuppet,
-    FourAxisPuppet,
-    RadialPuppet,
+    public AnimatorController? GetFXAnimatorController()
+    {
+        return null;
+    }
+    public (TrackingPermission eye, TrackingPermission mouth)? GetTrackingPermission(AnimatorState state)
+    {
+        return null;
+    }
 }

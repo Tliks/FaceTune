@@ -37,7 +37,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         var menuItems = root.GetComponentsInChildren<ModularAvatarMenuItem>(true);
         foreach (var menuItem in menuItems)
         {
-            var parameterName = platformSupport.GetParameterName(menuItem);
+            var parameterName = menuItem.PortableControl.Parameter;
             if (string.IsNullOrWhiteSpace(parameterName)) continue;
             usedParameterNames.Add(parameterName);
         }
@@ -50,14 +50,14 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             menuItem.GetComponentsInChildren<ExpressionComponent>(true, expressionComponents);
             if (expressionComponents.Any() is false) continue;
 
-            var menuItemType = platformSupport.GetMenuItemType(menuItem);
+            var menuItemType = menuItem.PortableControl.Type;
 
             switch (menuItemType)
             {
-                case MenuItemType.Toggle:
-                case MenuItemType.Button:
+                case PortableControlType.Toggle:
+                case PortableControlType.Button:
                     var parameterName = EnsureParameter(menuItem, usedParameterNames, platformSupport);
-                    var parameterValue = platformSupport.GetParameterValue(menuItem);
+                    var parameterValue = menuItem.PortableControl.Value;
 
                     ParameterCondition? condition = null;
                     if (parameterTypes.TryGetValue(parameterName, out var parameterType))
@@ -89,7 +89,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
                     var conditionComponent = menuItem.gameObject.AddComponent<ConditionComponent>();
                     conditionComponent.ParameterConditions.Add(condition);
                     break;
-                case MenuItemType.RadialPuppet:
+                case PortableControlType.RadialPuppet:
                     var radialParameterName = EnsureRadialParameter(menuItem, usedParameterNames, platformSupport);
                     foreach (var expressionComponent in expressionComponents)
                     {
@@ -104,24 +104,24 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
         static string EnsureParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
         {
-            string parameterName = platformSupport.GetParameterName(menuItem);
+            string parameterName = menuItem.PortableControl.Parameter;
             if (string.IsNullOrWhiteSpace(parameterName))
             {
-                parameterName = platformSupport.GetUniqueParameterName(menuItem, usedParameterNames, "toggle");
+                parameterName = GetUniqueParameterName(menuItem.gameObject.name, usedParameterNames, "toggle");
                 usedParameterNames.Add(parameterName);
-                platformSupport.SetParameterName(menuItem, parameterName);
+                menuItem.PortableControl.Parameter = parameterName;
             }
             return parameterName;
         }
 
         static string EnsureRadialParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
         {
-            string parameterName = platformSupport.GetRadialParameterName(menuItem);
+            string parameterName = menuItem.PortableControl.SubParameters.FirstOrDefault();
             if (string.IsNullOrWhiteSpace(parameterName))
             {
-                parameterName = platformSupport.GetUniqueParameterName(menuItem, usedParameterNames, "radial");
+                parameterName = GetUniqueParameterName(menuItem.gameObject.name, usedParameterNames, "radial");
                 usedParameterNames.Add(parameterName);
-                platformSupport.SetRadialParameterName(menuItem, parameterName);
+                menuItem.PortableControl.SubParameters = ImmutableList.Create(parameterName);
             }
             var parameters = menuItem.gameObject.EnsureComponent<ModularAvatarParameters>();
             parameters.parameters.Add(new ParameterConfig()
@@ -158,6 +158,20 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             }
             return parameterTypes;
         }
+        
+        static string GetUniqueParameterName(string baseName, HashSet<string> usedParameterNames, string suffix)
+        {
+            baseName = baseName.Replace(" ", "_");
+            baseName = baseName.Replace(".", "_");
+            var parameterName = $"{FaceTuneConsts.ParameterPrefix}/{baseName}/{suffix}";
+            int index = 1;
+            while (usedParameterNames.Contains(parameterName))
+            {
+                parameterName = $"{FaceTuneConsts.ParameterPrefix}/{baseName}_{index}/{suffix}";
+                index++;
+            }
+            return parameterName;
+        }
     }
 
     private const string Preset_Index_Parameter = $"{FaceTuneConsts.ParameterPrefix}/PresetIndex";
@@ -178,9 +192,9 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             // 条件を発火させるMenuItemを設定
             var menuTarget = presetComponent.GetMenuTarget();
             var menuItem = menuTarget.EnsureComponent<ModularAvatarMenuItem>();
-            platformSupport.SetMenuItemType(menuItem, MenuItemType.Toggle);
-            platformSupport.SetParameterName(menuItem, Preset_Index_Parameter);  // Todo 上書きしていいかどうか。
-            platformSupport.SetParameterValue(menuItem, presetIndex);
+            menuItem.PortableControl.Type = PortableControlType.Toggle;
+            menuItem.PortableControl.Parameter = Preset_Index_Parameter;  // Todo 上書きしていいかどうか。
+            menuItem.PortableControl.Value = presetIndex;
         }
     }
 

@@ -4,7 +4,7 @@ A modular tool for avatar emotion expression.
 
 Dependencies
 - [NDMF](https://github.com/bdunderscore/ndmf) >= 1.8.0
-- [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.12.0
+- [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.13.0
 
 ## FaceTuneとは
 FaceTuneはモジュール的に設計された、アバター向けの表情編集ツールです。

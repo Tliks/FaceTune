@@ -1,6 +1,5 @@
 using UnityEngine.SceneManagement;
 using nadena.dev.modular_avatar.core;
-using VRC.SDK3.Avatars.ScriptableObjects;
 using M = UnityEditor.MenuItem;
 
 namespace aoyon.facetune.gui;
@@ -27,9 +26,7 @@ internal static class AssetsMenu
         var menuName = "ExclusiveMenu";
         var menuObject = new GameObject(menuName);
         var subMenu = menuObject.AddComponent<ModularAvatarMenuItem>();
-        subMenu.Control ??= new VRCExpressionsMenu.Control();
-        subMenu.Control.name = menuName;
-        subMenu.Control.type = VRCExpressionsMenu.Control.ControlType.SubMenu;
+        subMenu.PortableControl.Type = PortableControlType.SubMenu;
         subMenu.MenuSource = SubmenuSource.Children;
 
         var uniqueParameterId = $"{FaceTuneConsts.Name}/ExclusiveMenu/{Guid.NewGuid()}";
@@ -47,13 +44,9 @@ internal static class AssetsMenu
             var toggle = new GameObject(clip.name);
             toggle.transform.SetParent(subMenu.transform);
             var toggleComponent = toggle.AddComponent<ModularAvatarMenuItem>();
-            toggleComponent.Control = new VRCExpressionsMenu.Control
-            {
-                name = clip.name,
-                type = VRCExpressionsMenu.Control.ControlType.Toggle,
-                parameter = new() { name = uniqueParameterId },
-                value = i
-            };
+            toggleComponent.PortableControl.Type = PortableControlType.Toggle;
+            toggleComponent.PortableControl.Parameter = uniqueParameterId;
+            toggleComponent.PortableControl.Value = i;
 
             toggle.AddComponent<ExpressionComponent>();
             var dataComponent = toggle.AddComponent<FacialDataComponent>();

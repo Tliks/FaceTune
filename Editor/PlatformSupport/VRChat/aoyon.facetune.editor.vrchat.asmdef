@@ -2,10 +2,6 @@
     "name": "aoyon.facetune.editor.vrchat",
     "rootNamespace": "",
     "references": [
-        "VRC.SDKBase",
-        "VRC.SDKBase.Editor",
-        "VRC.SDK3A",
-        "VRC.SDK3A.Editor",
         "aoyon.facetune.common",
         "aoyon.facetune.editor",
         "aoyon.facetune.runtime",
@@ -17,8 +13,14 @@
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "System.Collections.Immutable.dll",
+        "VRCSDKBase.dll",
+        "VRCSDKBase-Editor.dll",
+        "VRCSDK3A.dll",
+        "VRCSDK3A-Editor.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [

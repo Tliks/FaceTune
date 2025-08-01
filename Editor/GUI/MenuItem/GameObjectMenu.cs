@@ -1,9 +1,8 @@
 using aoyon.facetune.importer;
 using aoyon.facetune.build;
 using nadena.dev.ndmf.runtime;
-using UnityEditor.Animations;
-using VRC.SDK3.Avatars.Components;
 using M = UnityEditor.MenuItem;
+using aoyon.facetune.platform;
 
 namespace aoyon.facetune.gui;
 
@@ -17,24 +16,22 @@ internal static class GameObjectMenu
         {
             throw new InvalidOperationException("failed to get avatar root");
         }
-        var descriptor = root.GetComponent<VRCAvatarDescriptor>()!;
-        foreach (var layer in descriptor.baseAnimationLayers)
+        var ac = PlatformSupport.GetSupport(root).GetFXAnimatorController();
+        if (ac != null)
         {
-            if (layer.type == VRCAvatarDescriptor.AnimLayerType.FX
-                && layer.animatorController != null
-                && layer.animatorController is AnimatorController ac)
+            var platformSupport = PlatformSupport.GetSupport(root);
+            var result = new FXImporter(platformSupport).ImportFromVRChatFX(ac);
+            if (result != null)
             {
-                var result = FXImporter.ImportFromVRChatFX(ac);
-                if (result != null)
-                {
-                    result.transform.parent = root.transform;
-                    Undo.RegisterCreatedObjectUndo(result, "Import FX Layer");
-                    Selection.activeGameObject = result;
-                }
-                return;
+                result.transform.parent = root.transform;
+                Undo.RegisterCreatedObjectUndo(result, "Import FX Layer");
+                Selection.activeGameObject = result;
             }
         }
-        throw new InvalidOperationException("failed to find FX layer");
+        else
+        {
+            throw new InvalidOperationException("failed to find FX layer");
+        }
     }
 
     private static void IP(string guid, bool unpack = true)
