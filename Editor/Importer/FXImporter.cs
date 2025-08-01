@@ -1,11 +1,18 @@
 using UnityEditor.Animations;
-using VRC.SDKBase;
+using aoyon.facetune.platform;
 
 namespace aoyon.facetune.importer;
 
-internal static class FXImporter
+internal class FXImporter
 {
-    public static GameObject? ImportFromVRChatFX(AnimatorController animatorController)
+    private readonly IPlatformSupport _platformSupport;
+
+    public FXImporter(IPlatformSupport platformSupport)
+    {
+        _platformSupport = platformSupport;
+    }
+
+    public GameObject? ImportFromVRChatFX(AnimatorController animatorController)
     {
         var layers = animatorController.layers;
         var parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
@@ -140,7 +147,7 @@ internal static class FXImporter
         }
     }
 
-    private static void CreateExpressionGameObject(GameObject layerObj, AnimatorCondition[] conditions, AnimatorState state, Dictionary<string, AnimatorControllerParameterType> parameterTypes)
+    private void CreateExpressionGameObject(GameObject layerObj, AnimatorCondition[] conditions, AnimatorState state, Dictionary<string, AnimatorControllerParameterType> parameterTypes)
     {
         var expObj = new GameObject(state.name);
         expObj.transform.parent = layerObj.transform;
@@ -178,66 +185,15 @@ internal static class FXImporter
         }
     }
 
-    private static void SetFacialSettings(ExpressionComponent expressionComponent, AnimatorState state)
+    private void SetFacialSettings(ExpressionComponent expressionComponent, AnimatorState state)
     {
-        TrackingPermission eye;
-        TrackingPermission mouth;
-
-        var trackingControl = GetVRCAnimatorTrackingControl(state);
-        if (trackingControl != null)
-        {
-            (eye, mouth) = GetTrackingPermission(trackingControl);
-        }
-        else
-        {
-            eye = TrackingPermission.Disallow;
-            mouth = TrackingPermission.Allow;
-        }
-
-        var facialSettings = new FacialSettings()
+        var (eye, mouth) = _platformSupport.GetTrackingPermission(state) ?? (TrackingPermission.Disallow, TrackingPermission.Allow);
+        expressionComponent.FacialSettings = new FacialSettings()
         {
             AllowEyeBlink = eye,
             AllowLipSync = mouth,
             EnableBlending = false,// Todo
             AdvancedEyBlinkSettings = AdvancedEyeBlinkSettings.Disabled()
         };
-
-        expressionComponent.FacialSettings = facialSettings;
-
-        return;
-
-        static VRC_AnimatorTrackingControl? GetVRCAnimatorTrackingControl(AnimatorState state)
-        {
-            if (state.behaviours == null) return null;
-            foreach (var behaviour in state.behaviours)
-            {
-                if (behaviour is VRC_AnimatorTrackingControl trackingControl)
-                {
-                    return trackingControl;
-                }
-            }
-            return null;
-        }
-
-        static (TrackingPermission eye, TrackingPermission mouth) GetTrackingPermission(VRC_AnimatorTrackingControl trackingControl)
-        {
-            var eye = trackingControl.trackingEyes switch
-            {
-                VRC_AnimatorTrackingControl.TrackingType.NoChange => TrackingPermission.Keep,
-                VRC_AnimatorTrackingControl.TrackingType.Tracking => TrackingPermission.Allow,
-                VRC_AnimatorTrackingControl.TrackingType.Animation => TrackingPermission.Disallow,
-                _ => TrackingPermission.Keep
-            };
-            
-            var mouth = trackingControl.trackingMouth switch
-            {
-                VRC_AnimatorTrackingControl.TrackingType.NoChange => TrackingPermission.Keep,
-                VRC_AnimatorTrackingControl.TrackingType.Tracking => TrackingPermission.Allow,
-                VRC_AnimatorTrackingControl.TrackingType.Animation => TrackingPermission.Disallow,
-                _ => TrackingPermission.Keep
-            };
-
-            return (eye, mouth);
-        }
     }
 }

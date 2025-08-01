@@ -2,8 +2,6 @@
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
-using VRC.SDK3.Avatars.Components;
-using VRC.SDKBase;
 
 namespace aoyon.facetune.animator;
 
@@ -227,13 +225,7 @@ internal class BlinkInstaller : InstallerBase
 
                 var maxMultiplier = 1f;
                 var minMultiplier = settings.RandomIntervalMinSeconds / settings.RandomIntervalMaxSeconds;
-                stare.EnsureBehavior<VRCAvatarParameterDriver>().parameters.Add(new VRC_AvatarParameterDriver.Parameter()
-                {
-                    type = VRC_AvatarParameterDriver.ChangeType.Random,
-                    name = DelayMultiplier,
-                    valueMin = minMultiplier,
-                    valueMax = maxMultiplier,
-                });
+                _platformSupport.StateAsRandrom(stare, DelayMultiplier, minMultiplier, maxMultiplier);
                 stare.SpeedParameter = DelayMultiplier;
             }
 
