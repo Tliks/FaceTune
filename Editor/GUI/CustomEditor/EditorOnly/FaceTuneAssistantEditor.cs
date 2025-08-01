@@ -22,13 +22,11 @@ namespace aoyon.facetune.gui
     {
         public string Description { get; }
         public string Guid { get; }
-        public bool ShouldUnpack { get; }
 
-        public PatternInfo(string description, string guid, bool shouldUnpack = true)
+        public PatternInfo(string description, string guid)
         {
             Description = description;
             Guid = guid;
-            ShouldUnpack = shouldUnpack;
         }
     }
 
@@ -75,7 +73,7 @@ namespace aoyon.facetune.gui
 
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.LabelField("Pattern, ConditionはHierarhyで下にあるほど優先されます。", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("ExpressionコンポーネントはHierarhy上で下にあるほど優先度が高くなります。", EditorStyles.boldLabel);
 
             // --- サジェスチョン表示エリアここから ---
             EditorGUILayout.Space();
@@ -146,7 +144,7 @@ namespace aoyon.facetune.gui
 
         private void CreatePatternImpl(PatternInfo patternInfo)
         {
-            FTPrefabUtility.InstantiatePrefab(patternInfo.Guid, patternInfo.ShouldUnpack, Component.gameObject);
+            FTPrefabUtility.InstantiatePrefab(patternInfo.Guid, true, Component.gameObject);
         }
     }
 }
