@@ -45,7 +45,7 @@ internal static class GameObjectMenu
         FTPrefabUtility.InstantiatePrefab(guid, unpackRoot, parent);
     }
     
-    [M(MenuItems.TemplateBasePath, false, MenuItems.TemplateBasePriority)] 
+    [M(MenuItems.BaseTemplatePath, false, MenuItems.BaseTemplatePriority)] 
     static void TemplateBase() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e", true);
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 

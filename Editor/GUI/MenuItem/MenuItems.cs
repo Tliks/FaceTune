@@ -28,8 +28,8 @@ internal static class MenuItems
     public const string ImportFromFXLayerMenuPath = GameObjectPath + "Import From FX Layer";
     public const int ImportFromFXLayerMenuPriority = 20;
 
-    public const string TemplateBasePath = GameObjectPath + "TemplateBase";
-    public const int TemplateBasePriority = 100;
+    public const string BaseTemplatePath = GameObjectPath + "Base Template";
+    public const int BaseTemplatePriority = 100;
 
     public const string ConditionPath = GameObjectPath + "Condition";
     public const int ConditionPriority = 200;
