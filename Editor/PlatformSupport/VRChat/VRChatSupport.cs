@@ -1,14 +1,15 @@
 #if FT_VRCSDK3_AVATARS
 
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.Animations;
 using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
-using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.ndmf;
-using nadena.dev.modular_avatar.core;
-using aoyon.facetune.animator;
 using nadena.dev.ndmf.animator;
 using aoyon.facetune.build;
-using UnityEditor.Animations;
+using aoyon.facetune.animator;
 
 namespace aoyon.facetune.platform;
 
