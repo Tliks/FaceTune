@@ -22,9 +22,7 @@
 - MA MenuItem（Radial）はMotion Timeとして動作するように対応。
 - `FT Facial Style`を追加。
   - 顔つきを定義するコンポーネントとして、`FT Default Facial Expression`から置き換わります。
-  - アタッチされたGameObject以下のExpressionに対し、定義されたブレンドシェイプの適用を行います。
-  - また、`AsDefault`が有効な場合、デフォルト表情（追加の条件を満たさないときの表情）としても機能します。
-  - デフォルト表情においては設定されていないブレンドシェイプは全て0として扱われ、適用対象のRendererの値は使用されません。
+  - アタッチされたGameObject以下のEnable Blendingが無効なExpressionに対し、定義されたブレンドシェイプの適用を行います。
 - `Assets/FaceTune/SelectedClipsToExclusiveMenu`にメニューアイテムを追加。
   - 選択された複数のAnimationClipから、排他制御のMenuItemを条件とするExpressionを生成します。
 - `GameObject/FaceTune/Import from FX Layer`にメニューアイテムを追加。
@@ -36,8 +34,9 @@
 - `FT Advanced LipSync`を追加
   - アタッチされたGameObject以下のExpressionに対して影響を及ぼします。
   - 干渉対策として任意のブレンドシェイプをキャンセラーとして使用できます。発話の開始時に適用されます。
-- `FacialShapesEditor`にブレンドシェイプのグルーピングや、一括変更、影響を受ける顔つきの表示などの機能を追加しました。
+- `FacialShapesEditor`にブレンドシェイプのグルーピングや、一括変更、影響を受ける顔つきの表示、AnimatonClipに対する編集機能など追加しました。
 - `FT Facial Data`のMenuItemにあるAnimation Clipとしての出力機能に対しオプションを追加しました。
+- `Tools/FaceTune/FacialShapesEditor`から`FacialShapesEditor`を開くメニューアイテムを追加。
 
 ### Changed
 - MA MenuItem（Toggle/Button）はOR条件として動作するように変更。
@@ -45,6 +44,7 @@
 - Prefabを更新。
 - GC負荷を軽減。
 - `FacialShapesEditor`が軽量に動作するようになりました。
+- AnimationClipのImport方法を変更・修正。
 
 ### Deprecated
 
