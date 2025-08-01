@@ -5,9 +5,12 @@ internal static class MenuItems
     // Tools
     private const string ToolsPath = $"Tools/{FaceTuneConsts.Name}/";
 
-    public const string SelectedExpressionPreviewPath = ToolsPath + "Selected Expression Preview";
-    public const int SelectedExpressionPreviewPriority = 1000;
+    public const string FacialShapesEditorPath = ToolsPath + "Facial Shapes Editor";
+    public const int FacialShapesEditorPriority = 1000;
 
+    private const string ToolsSettingsPath = ToolsPath + "Settings/";
+    public const string SelectedExpressionPreviewPath = ToolsSettingsPath + "Selected Expression Preview";
+    public const int SelectedExpressionPreviewPriority = 1100;
 
     // Assets
     private const string AssetsPath = $"Assets/{FaceTuneConsts.Name}/";

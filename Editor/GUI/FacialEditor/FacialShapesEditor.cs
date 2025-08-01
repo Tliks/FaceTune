@@ -43,7 +43,7 @@ internal class FacialShapesEditor : EditorWindow
     }
 
     public static FacialShapesEditor? TryOpenEditor(
-        SkinnedMeshRenderer? renderer, IShapesEditorTargeting? targeting = null, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
+        SkinnedMeshRenderer? renderer = null, IShapesEditorTargeting? targeting = null, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
         window.RefreshTargetRenderer(renderer, facialStyleSet, defaultOverrides);
