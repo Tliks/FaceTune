@@ -120,10 +120,12 @@ internal class AnimatorInstaller : InstallerBase
         }
     }
 
-    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IEnumerable<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
+    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IReadOnlyList<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
     {
         var trueCondition = new[] { ParameterCondition.Bool(TrueParameterName, true) };
-        var expressionWithConditionList = expressionWithConditions.Select(e => 
+        // Pattern内で下のExpressionが優先されることを保証するため、Animatorにおいて上のStateが優先される仕様を用いるためにReverseする。
+        // ワークアラウンド
+        var expressionWithConditionList = expressionWithConditions.Reverse().Select(e =>
         {
             if (!e.Conditions.Any())
             {
