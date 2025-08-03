@@ -54,6 +54,7 @@
 - `FT Dsiable Exisiting Control`を削除
   - ブレンドシェイプの上書きに関しては追加の条件を設定しない `FT Expression`で対応することとし、廃止します。
   - `FT Animation Data`により操作されるプロパティの無効化は行いません。
+- `FT Gesture Smoothing`を削除。
 
 ### Fixed
 - 毎フレームNDMF Previewが更新されていた問題を修正。
