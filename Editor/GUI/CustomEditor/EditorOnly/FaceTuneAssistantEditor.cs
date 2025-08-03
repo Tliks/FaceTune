@@ -43,13 +43,13 @@ namespace aoyon.facetune.gui
 
         private static readonly Dictionary<HandGesturePatternType, PatternInfo> _handGesturePatternDetails = new()
         {
-            { HandGesturePatternType.LeftOnly, new PatternInfo("左手のみのパターンです。", LeftOnlyPatternGuid) },
-            { HandGesturePatternType.RightOnly, new PatternInfo("右手のみのパターンです。", RightOnlyPatternGuid) },
-            { HandGesturePatternType.BasicRight, new PatternInfo("右手が優先される基本的なパターンです。", BasicRightPatternGuid) },
-            { HandGesturePatternType.BasicLeft, new PatternInfo("左手が優先される基本的なパターンです。", BasicLeftPatternGuid) },
-            { HandGesturePatternType.Blending, new PatternInfo("片手ごとのアニメーションがブレンドさせるパターンです。目と口の制御をそれぞれの手に割り当てる際などに便利です。", BlendingPatternGuid) },
-            { HandGesturePatternType.FaceMorphFirst, new PatternInfo("右手と左手に優先度を付けず、最初に実行したジェスチャーを優先させるパターンです。", FaceMorphFirstPatternGuid) },
-            { HandGesturePatternType.HandSign, new PatternInfo("左手と右手の組み合わせで最大64通りのジェスチャーを作成できるパターンです。", HandSignPatternGuid) },
+            { HandGesturePatternType.LeftOnly, new PatternInfo("左手のみのパターンです。(8通り)", LeftOnlyPatternGuid) },
+            { HandGesturePatternType.RightOnly, new PatternInfo("右手のみのパターンです。(8通り)", RightOnlyPatternGuid) },
+            { HandGesturePatternType.BasicRight, new PatternInfo("右手が優先される基本的なパターンです。(16通り)", BasicRightPatternGuid) },
+            { HandGesturePatternType.BasicLeft, new PatternInfo("左手が優先される基本的なパターンです。(16通り)", BasicLeftPatternGuid) },
+            { HandGesturePatternType.HandSign, new PatternInfo("左手と右手の組み合わせで最大64通りのジェスチャーを作成できるパターンです。(64通り)", HandSignPatternGuid) },
+            { HandGesturePatternType.Blending, new PatternInfo("片手ごとのアニメーションがブレンドさせるパターンです。目と口の制御をそれぞれの手に割り当てる際などに便利です。(64通り)", BlendingPatternGuid) },
+            { HandGesturePatternType.FaceMorphFirst, new PatternInfo("右手と左手に優先度を付けず、最初に実行したジェスチャーを優先させるパターンです。(16通り)", FaceMorphFirstPatternGuid) },
         };
 
         private static readonly Dictionary<OtherPatternType, PatternInfo> _otherPatternDetails = new()
