@@ -7,7 +7,6 @@ namespace aoyon.facetune.gui
         BasicRight,
         BasicLeft,
         Blending,
-        FaceMorphFirst,
         HandSign
     }
 
@@ -38,7 +37,6 @@ namespace aoyon.facetune.gui
         internal const string BasicRightPatternGuid = "c259edc6efd4aaa4bba3b1636557cc3b";
         internal const string BasicLeftPatternGuid = "376099cca4d264b4fbfbeeb7901dc770";
         internal const string BlendingPatternGuid = "9eb5bf9eeb8dc81488fb9453d21f3510";
-        internal const string FaceMorphFirstPatternGuid = "618bf06062904004f99355468c34ac7c";
         internal const string HandSignPatternGuid = "e7a261d8cf051454ea0c41e427463276";
 
         private static readonly Dictionary<HandGesturePatternType, PatternInfo> _handGesturePatternDetails = new()
@@ -49,7 +47,6 @@ namespace aoyon.facetune.gui
             { HandGesturePatternType.BasicLeft, new PatternInfo("左手が優先される基本的なパターンです。(16通り)", BasicLeftPatternGuid) },
             { HandGesturePatternType.HandSign, new PatternInfo("左手と右手の組み合わせで最大64通りのジェスチャーを作成できるパターンです。(64通り)", HandSignPatternGuid) },
             { HandGesturePatternType.Blending, new PatternInfo("片手ごとのアニメーションがブレンドさせるパターンです。目と口の制御をそれぞれの手に割り当てる際などに便利です。(64通り)", BlendingPatternGuid) },
-            { HandGesturePatternType.FaceMorphFirst, new PatternInfo("右手と左手に優先度を付けず、最初に実行したジェスチャーを優先させるパターンです。(16通り)", FaceMorphFirstPatternGuid) },
         };
 
         private static readonly Dictionary<OtherPatternType, PatternInfo> _otherPatternDetails = new()
@@ -73,7 +70,7 @@ namespace aoyon.facetune.gui
 
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.LabelField("ExpressionコンポーネントはHierarhy上で下にあるほど優先度が高くなります。", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("ExpressionコンポーネントはHierarhyにおいて下にあるほど優先度が高くなります。", EditorStyles.boldLabel);
 
             // --- サジェスチョン表示エリアここから ---
             EditorGUILayout.Space();
