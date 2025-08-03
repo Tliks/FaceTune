@@ -83,6 +83,7 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 0
+  EnableRealTimePreview: 0
 --- !u!114 &6183290581108215895
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,10 +97,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SourceMode: 0
-  IsSingleFrame: 1
   BlendShapeAnimations: []
   Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ClipOption: 1
 --- !u!1 &3112246864338959533
 GameObject:
   m_ObjectHideFlags: 0
@@ -165,7 +165,7 @@ MonoBehaviour:
   parameters:
   - nameOrPrefix: FaceTune/ExclusiveMenu/1
     remapTo: 
-    internalParameter: 1
+    internalParameter: 0
     isPrefix: 0
     syncType: 1
     localOnly: 0
@@ -256,6 +256,7 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 0
+  EnableRealTimePreview: 0
 --- !u!114 &7947152783119004369
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -269,10 +270,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SourceMode: 0
-  IsSingleFrame: 1
   BlendShapeAnimations: []
   Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ClipOption: 1
 --- !u!1 &3971391735560565184
 GameObject:
   m_ObjectHideFlags: 0
@@ -356,6 +356,7 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 0
+  EnableRealTimePreview: 0
 --- !u!114 &1144919736270127148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -369,7 +370,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SourceMode: 0
-  IsSingleFrame: 1
   BlendShapeAnimations: []
   Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ClipOption: 1
