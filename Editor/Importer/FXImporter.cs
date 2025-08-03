@@ -1,5 +1,6 @@
 using UnityEditor.Animations;
 using aoyon.facetune.platform;
+using aoyon.facetune.gui;
 
 namespace aoyon.facetune.importer;
 
@@ -71,6 +72,9 @@ internal class FXImporter
             UnityEngine.Object.DestroyImmediate(rootObj);
             return null;
         }
+
+        var facialDataComponents = rootObj.GetComponentsInChildren<FacialDataComponent>();
+        FacialDataEditor.ConvertToManual(facialDataComponents);
 
         Undo.RegisterCreatedObjectUndo(rootObj, "Import FX");
 
