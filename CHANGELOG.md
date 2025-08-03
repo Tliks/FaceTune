@@ -1,6 +1,6 @@
 # Changelog
 
-[Japanese version](./CHANGELOG-jp.md)
+## [Japanese version](./CHANGELOG-jp.md)
 
 ## [Unreleased]
 ### Added

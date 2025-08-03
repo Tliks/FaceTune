@@ -1,6 +1,6 @@
 # Changelog
 
-[English version](./CHANGELOG.md)
+## [English version](./CHANGELOG.md)
 
 ## [Unreleased]
 ### Added
