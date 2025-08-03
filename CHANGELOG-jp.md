@@ -1,7 +1,19 @@
 # Changelog
 
 ## [Unreleased]
+### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0-beta.4] - 2025-08-03
 ### FaceTuneのほぼ全てのコンポーネントのデータが失われます。
 
 ### Added
@@ -46,8 +58,6 @@
 - `FacialShapesEditor`が軽量に動作するようになりました。
 - AnimationClipのImport方法を変更・修正。
 
-### Deprecated
-
 ### Removed
 - `FT Facial Expression`を削除。
 - `FT Default Facial Expression`を削除。
@@ -62,8 +72,6 @@
 - floatのParameter Conditionが正常に動作していなかった問題を修正。
 - アバターの初期化時にTracking Controlが正常に適用されていなかった問題を修正。
 - 選択されているExpressionが正常にプレビューされないことがある問題を修正。
-
-### Security
 
 ## [0.1.0-beta.3] - 2025-06-14
 ### Changed
