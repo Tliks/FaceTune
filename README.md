@@ -28,8 +28,8 @@ git clone https://github.com/Tliks/FaceTune
     - `Base Template` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
 2.  サンプルのパターンの追加:
     - `FaceTune Assistant`のInspectorに表示される「サンプルパターンを追加」セクションで、作りたい表情制御の種類を選びます。
-        - **ハンドジェスチャー**: 片手制御、基本的な両手制御、両手で表情をブレンドする制御などがあります。
-        - **その他**: メニューを用いた制御などがあります。
+        - ハンドジェスチャー: 片手制御、基本的な両手制御、両手で表情をブレンドする制御などがあります。
+        - その他: メニューを用いた制御などがあります。
     - 「追加」ボタンを押すと、選択した制御が子オブジェクトとして生成されます。
         - これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
 3. 表情の設定
@@ -67,13 +67,10 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 汎用的なアニメーションを設定するコンポーネントです。アタッチされたGameObject以上の`Expression`コンポーネントと紐づきます。同一の`Expression`コンポーネントに対し複数の`Animation Data`コンポーネントが紐づき、かつ同じプロパティが設定されていた場合、Hierarchy上で下にあるコンポーネントの値が使用されます。
 
 ### Facial Style
-顔つきのように、複数のExpressionで共通して適用されてほしい表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以上の`Expression`コンポーネントに対し適用されます。このコンポーネントは各`Expression`コンポーネントに対する適用のみを行うため、この顔つきが適用された表情をデフォルトとして使用する場合、`As Default`ボタンから追加の`Condition`コンポーネントと紐づかない`Expression`コンポーネントを配置してください。このコンポーネントで設定された値は適用先の各Expressionで上書きできます。`Enable Blending`がONのExpressionに対しては動作しません。
+顔つきのように、複数のExpressionで共通して適用されてほしい表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以下のの`Expression`コンポーネントに対し適用されます。このコンポーネントは各`Expression`コンポーネントに対する適用のみを行うため、この顔つきが適用された表情をデフォルトとして使用する場合、`As Default`ボタンから追加の`Condition`コンポーネントと紐づかない`Expression`コンポーネントを配置してください。このコンポーネントで設定された値は適用先の各Expressionで上書きできます。`Enable Blending`がONのExpressionに対しては動作しません。
 
-### Advanced Eyeblink 
-高度なまばたきの設定を適用します。アタッチされたGameObject以下の`Expression`コンポーネントに対し適用されます。複数のコンポーネントが設定された場合、最も親子関係が近いコンポーネントが使用されます。
-
-### Advanced LipSync
-高度なリップシンクの設定を適用します。アタッチされたGameObject以下の`Expression`コンポーネントに対し適用されます。複数のコンポーネントが設定された場合、最も親子関係が近いコンポーネントが使用されます。
+### Advanced Eyeblink / Advanced LipSync
+高度なまばたき/リップシンクの設定を適用します。アタッチされたGameObject以下の`Expression`コンポーネントに対し適用されます。複数のコンポーネントが設定された場合、最も親子関係が近いコンポーネントが使用されます。
 
 ## Condition
 
@@ -82,7 +79,7 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
 ### MenuItem (Modular Avatar)
-FaceTuneのコンポーネントではありませんが、同様に条件定義として動作します。ビルド時にパラメータを生成し、Conditionと同様に振る舞います。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。
+FaceTuneのコンポーネントではありませんが、Toggoe/Buttonの場合、boolの条件として`Condition`コンポーネント同様に動作します。パラメーターは設定されていない場合、自動で生成されます。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。またRadialの場合、Motion TImeとして動作します。アタッチされたGameObject以下の`Expression`コンポーネントに対しMotion Timeを設定します。
 
 ### Pattern
 アタッチされたGameObject以下の複数の`Condition`とそれに紐づく`Expression`を排他制御としてマークします。
