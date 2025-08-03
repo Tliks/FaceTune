@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
+    <ui:VisualElement name="root">
+
+        <ui:VisualElement name="left-panel">
+            <ui:VisualElement name="general-controls-container" />
+            <ui:VisualElement name="selected-content-container" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="right-panel">
+            <ui:VisualElement name="unselected-content-container" />
+        </ui:VisualElement>
+        
+    </ui:VisualElement>
+</ui:UXML>

@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1217908734099934476}
   - component: {fileID: 568746846911937821}
-  - component: {fileID: 6233659251436812542}
+  - component: {fileID: 4082239387376021693}
+  - component: {fileID: 3176226630039608025}
   - component: {fileID: 8624867446494249728}
   m_Layer: 0
   m_Name: Menu (single)
@@ -64,7 +65,7 @@ MonoBehaviour:
   isDefault: 0
   automaticValue: 1
   label: 
---- !u!114 &6233659251436812542
+--- !u!114 &4082239387376021693
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -73,13 +74,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 8534645339298742439}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  _blendShapes: []
-  EnableBlending: 0
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &3176226630039608025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8534645339298742439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
+  Clip: {fileID: 0}
+  ClipExcludeOption: 1
 --- !u!114 &8624867446494249728
 MonoBehaviour:
   m_ObjectHideFlags: 0

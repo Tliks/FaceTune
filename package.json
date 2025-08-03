@@ -1,7 +1,7 @@
 {
-  "name": "com.aoyon.facetune",
+  "name": "aoyon.facetune",
   "displayName": "FaceTune",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.4",
   "unity": "2022.3",
   "description": "A modular tool for avatar emotion expression.",
   "author": {
@@ -11,8 +11,8 @@
   "url": "https://github.com/Tliks/FaceTune",
   "changelogUrl": "https://github.com/Tliks/FaceTune/blob/main/CHANGELOG.md",
   "vpmDependencies": {
-    "nadena.dev.ndmf": ">=1.7.0",
-    "nadena.dev.modular-avatar": ">=1.12.0",
+    "nadena.dev.ndmf": ">=1.8.0-beta.2",
+    "nadena.dev.modular-avatar": ">=1.13.0",
     "com.vrchat.avatars": ">=3.5.2"
   }
 }

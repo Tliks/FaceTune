@@ -88,7 +88,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8899474392035475652}
+      addedObject: {fileID: 253538085069377231}
+    - targetCorrespondingSourceObject: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 656958924962836645}
     - targetCorrespondingSourceObject: {fileID: 540778276760996074, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -96,7 +100,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 540778276760996074, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1704227186460256230}
+      addedObject: {fileID: 8984721409370909803}
+    - targetCorrespondingSourceObject: {fileID: 540778276760996074, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3312460311947927448}
     - targetCorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -104,7 +112,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3472275454412260610}
+      addedObject: {fileID: 9211514212091228666}
+    - targetCorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7742858653632592517}
     - targetCorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -112,7 +124,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6666964804576130187}
+      addedObject: {fileID: 6533161233553423881}
+    - targetCorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5815421334667972133}
     - targetCorrespondingSourceObject: {fileID: 1391225575274008053, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -120,7 +136,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1391225575274008053, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1930796234532467644}
+      addedObject: {fileID: 8152567463761656177}
+    - targetCorrespondingSourceObject: {fileID: 1391225575274008053, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8078504106742716782}
     - targetCorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -128,7 +148,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 9117185088660386367}
+      addedObject: {fileID: 164149071001300413}
+    - targetCorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5715951491460720501}
     - targetCorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -136,7 +160,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5160402723131478131}
+      addedObject: {fileID: 7095661423061188687}
+    - targetCorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2204764030383481693}
     - targetCorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
@@ -144,7 +172,11 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4684944566820409495}
+      addedObject: {fileID: 7538845102695677385}
+    - targetCorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8301995462822921171}
   m_SourcePrefab: {fileID: 100100000, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
 --- !u!1 &203561971578919895 stripped
 GameObject:
@@ -165,11 +197,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 1
+  - hand: 1
+    isEqual: 1
+    handGesture: 1
   ParameterConditions: []
---- !u!114 &1704227186460256230
+--- !u!114 &8984721409370909803
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,14 +210,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 203561971578919895}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &3312460311947927448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203561971578919895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &719036594373005496 stripped
@@ -207,11 +256,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 7
+  - hand: 1
+    isEqual: 1
+    handGesture: 7
   ParameterConditions: []
---- !u!114 &4684944566820409495
+--- !u!114 &7538845102695677385
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -220,14 +269,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 719036594373005496}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &8301995462822921171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 719036594373005496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &1283242355045987396 stripped
@@ -249,11 +315,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 3
+  - hand: 1
+    isEqual: 1
+    handGesture: 3
   ParameterConditions: []
---- !u!114 &6666964804576130187
+--- !u!114 &6533161233553423881
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -262,14 +328,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 1283242355045987396}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &5815421334667972133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283242355045987396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &1593333329699954376 stripped
@@ -291,11 +374,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 4
+  - hand: 1
+    isEqual: 1
+    handGesture: 4
   ParameterConditions: []
---- !u!114 &1930796234532467644
+--- !u!114 &8152567463761656177
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -304,14 +387,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 1593333329699954376}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &8078504106742716782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1593333329699954376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &1887829009709415210 stripped
@@ -333,11 +433,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 2
+  - hand: 1
+    isEqual: 1
+    handGesture: 2
   ParameterConditions: []
---- !u!114 &3472275454412260610
+--- !u!114 &9211514212091228666
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -346,14 +446,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 1887829009709415210}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &7742858653632592517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1887829009709415210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &5129038026141425213 stripped
@@ -393,11 +510,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 0
+  - hand: 1
+    isEqual: 1
+    handGesture: 0
   ParameterConditions: []
---- !u!114 &8899474392035475652
+--- !u!114 &253538085069377231
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -406,14 +523,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 5713551421088801279}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &656958924962836645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5713551421088801279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &6467650993244730529 stripped
@@ -435,11 +569,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 6
+  - hand: 1
+    isEqual: 1
+    handGesture: 6
   ParameterConditions: []
---- !u!114 &5160402723131478131
+--- !u!114 &7095661423061188687
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -448,14 +582,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 6467650993244730529}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &2204764030383481693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6467650993244730529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1
 --- !u!1 &9153813716057836039 stripped
@@ -477,11 +628,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   HandGestureConditions:
-  - Hand: 1
-    ComparisonType: 0
-    HandGesture: 5
+  - hand: 1
+    isEqual: 1
+    handGesture: 5
   ParameterConditions: []
---- !u!114 &9117185088660386367
+--- !u!114 &164149071001300413
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -490,13 +641,30 @@ MonoBehaviour:
   m_GameObject: {fileID: 9153813716057836039}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50ac964d256b14d47abc79c93c9fbb10, type: 3}
+  m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
-  AllowLipSync: 0
-  EnableBlending: 0
-  ExpressionType: 0
-  _blendShapes: []
+  ExpressionSettings:
+    loopTime: 0
+    motionTimeParameterName: 
+  FacialSettings:
+    allowEyeBlink: 1
+    allowLipSync: 0
+    enableBlending: 0
+--- !u!114 &5715951491460720501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9153813716057836039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SourceMode: 0
+  IsSingleFrame: 1
+  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipExcludeOption: 1

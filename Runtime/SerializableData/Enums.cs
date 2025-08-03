@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 public enum HandGesture
 {
@@ -18,12 +18,6 @@ public enum Hand
     Right
 }
 
-public enum PathType
-{
-    Absolute,
-    Relative
-}
-
 public enum ParameterType
 {
     Int,
@@ -31,24 +25,12 @@ public enum ParameterType
     Bool
 }
 
-public enum IntComparisonType
+public enum ComparisonType
 {
     Equal,
     NotEqual,
     GreaterThan,
     LessThan
-}
-
-public enum FloatComparisonType
-{
-    GreaterThan,
-    LessThan,
-}
-
-public enum BoolComparisonType
-{
-    Equal,
-    NotEqual
 }
 
 public enum TrackingPermission
@@ -58,15 +40,15 @@ public enum TrackingPermission
     Keep
 }
 
-public enum ClipExcludeOption
+public enum ClipImportOption
 {
-    None,
-    ExcludeZeroWeight,
-    ExcludeDefault
+    All,
+    NonZero,
+    FacialStyleOverridesOrNonZero
 }
 
-public enum FacialExpressionType
+public enum AnimationSourceMode
 {
     Manual,
-    FromClip
+    AnimationClip
 }

@@ -1,4 +1,4 @@
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 [CustomPropertyDrawer(typeof(HandGestureCondition))]
 internal class HandGestureConditionDrawer : PropertyDrawer
@@ -7,20 +7,20 @@ internal class HandGestureConditionDrawer : PropertyDrawer
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        var handProp = property.FindPropertyRelative(nameof(HandGestureCondition.Hand));
-        var comparisonTypeProp = property.FindPropertyRelative(nameof(HandGestureCondition.ComparisonType));
-        var handGestureProp = property.FindPropertyRelative(nameof(HandGestureCondition.HandGesture));
+        var handProp = property.FindPropertyRelative(HandGestureCondition.HandPropName);
+        var isEqualProp = property.FindPropertyRelative(HandGestureCondition.IsEqualPropName);
+        var handGestureProp = property.FindPropertyRelative(HandGestureCondition.HandGesturePropName);
     
         Rect currentPosition = position;
         currentPosition.height = EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(currentPosition, handProp, new GUIContent("Hand"));
+        EditorGUI.PropertyField(currentPosition, handProp);
         currentPosition.y += EditorGUIUtility.singleLineHeight;
         
-        EditorGUI.PropertyField(currentPosition, comparisonTypeProp, new GUIContent("Comparison"));
+        EditorGUI.PropertyField(currentPosition, isEqualProp);
         currentPosition.y += EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(currentPosition, handGestureProp, new GUIContent("Hand Gesture"));
+        EditorGUI.PropertyField(currentPosition, handGestureProp);
         // currentPosition.y += EditorGUIUtility.singleLineHeight; // 最後の要素の場合は不要
 
         EditorGUI.EndProperty();

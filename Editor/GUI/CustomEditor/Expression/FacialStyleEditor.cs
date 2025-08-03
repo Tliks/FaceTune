@@ -1,0 +1,156 @@
+using aoyon.facetune.gui.shapes_editor;
+
+namespace aoyon.facetune.gui;
+
+[CanEditMultipleObjects]
+[CustomEditor(typeof(FacialStyleComponent))]
+internal class FacialStyleEditor : FaceTuneCustomEditorBase<FacialStyleComponent>
+{
+    private bool _hasDefault = false;
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        _hasDefault = HasDefault();
+    }
+
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+        if (GUILayout.Button("Update From Scene"))
+        {
+            UpdateFromScene();
+        }
+        if (GUILayout.Button("Open Editor"))
+        {
+            OpenEditor();
+        }
+        GUI.enabled = !_hasDefault;
+        if (GUILayout.Button("As Default"))
+        {
+            AsDefault();
+        }
+        GUI.enabled = true;
+    }
+
+    private void OpenEditor()
+    {
+        var defaultOverride = new BlendShapeSet();
+        Component.GetBlendShapes(defaultOverride);
+        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialStyleTargeting(){ Target = Component }, defaultOverride, null);
+    }
+
+    private void UpdateFromScene()
+    {
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
+        var blendShapes = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Where(shape => shape.Weight > 0).ToList();
+        serializedObject.Update();
+        var property = serializedObject.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
+        CustomEditorUtility.ClearAllElements(property);
+        CustomEditorUtility.AddBlendShapeAnimations(property, blendShapes.ToBlendShapeAnimations().ToList());
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    // 子にDefault Expressionがあるか確認する
+    private bool HasDefault()
+    {
+        var defaultExpression = Component.transform.Find("Default");
+        if (defaultExpression == null) return false;
+        var defaultExpressionComponent = defaultExpression.GetComponent<ExpressionComponent>();
+        if (defaultExpressionComponent == null) return false;
+        var hasConditions = defaultExpression.GetComponentsInChildren<ConditionComponent>(true)
+            .Any(c => c.HandGestureConditions.Count > 0 || c.ParameterConditions.Count > 0);
+        if (hasConditions) return false;
+        return true;
+    }
+
+    private void AsDefault()
+    {
+        var defaultExpression = new GameObject("Default");
+        defaultExpression.transform.parent = Component.transform;
+        defaultExpression.transform.SetAsFirstSibling();
+
+        var defaultExpressionComponent = defaultExpression.AddComponent<ExpressionComponent>();
+        defaultExpressionComponent.FacialSettings = new(TrackingPermission.Allow, TrackingPermission.Allow, false);
+
+        Undo.RegisterCreatedObjectUndo(defaultExpression, "Create Default Expression");
+        EditorGUIUtility.PingObject(defaultExpression);
+    }
+}
+
+/*
+[CustomEditor(typeof(DefaultFacialExpressionComponent))]
+internal class DefaultFacialExpressionEditor : FaceTuneCustomEditorBase<DefaultFacialExpressionComponent>
+{
+    private SessionContext? _context;
+    public override void OnEnable()
+    {
+        base.OnEnable();
+        CustomEditorUtility.TryGetContext(Component.gameObject, out _context);
+    }
+
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+
+        if (_context != null)
+        {
+            if (GUILayout.Button("Update From Scene"))
+            {
+                UpdateDefaultExpression();
+            }
+            if (GUILayout.Button("Open Editor"))
+            {
+                OpenFacialShapesEditor();
+            }
+        }
+
+        TogglablePreviewDrawer.Draw(DefaultShapesPreview.ToggleNode);
+    }
+
+    private void UpdateDefaultExpression()
+    {
+        if (_context == null) return;
+        var defaultBlendShapes = _context.FaceRenderer.GetBlendShapes(_context.FaceMesh);
+        DefaultFacialExpressionEditorUtility.UpdateShapes(Component, defaultBlendShapes);
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    private void OpenFacialShapesEditor()
+    {
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
+        var blendShapes = context.FaceRenderer.GetBlendShapes(context.FaceMesh);
+        var defaultOverride = new List<BlendShape>();
+        Component.GetBlendShapes(defaultOverride, new(), new NonObserveContext());
+        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, new(blendShapes), new(defaultOverride));
+        if (window == null) return;
+        window.RegisterApplyCallback(RecieveEditorResult);
+    }
+
+    private void RecieveEditorResult(BlendShapeSet result)
+    {
+        serializedObject.Update();
+        DefaultFacialExpressionEditorUtility.UpdateShapes(Component, result.BlendShapes.ToList());
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    [MenuItem($"CONTEXT/{nameof(DefaultFacialExpressionComponent)}/ToClip")]
+    private static void ToClip(MenuCommand command)
+    {
+        var component = (command.context as DefaultFacialExpressionComponent)!;
+        if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) return;
+        var blendShapes = component.GetMergedBlendShapeSet(context).BlendShapes;
+        CustomEditorUtility.ToClip(context.BodyPath, blendShapes);
+    }
+}
+
+internal static class DefaultFacialExpressionEditorUtility
+{
+    public static void UpdateShapes(DefaultFacialExpressionComponent component, IReadOnlyList<BlendShape> newShapes)
+    {
+        Undo.RecordObject(component, "Update Default Shapes");
+        var animations = newShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight)).ToList();
+        component.BlendShapeAnimations = animations;
+    }
+}
+
+*/

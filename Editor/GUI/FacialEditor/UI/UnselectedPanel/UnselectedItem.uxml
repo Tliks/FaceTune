@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="list-item-container" style="height: 20px; justify-content: center; padding-left: 5px;">
+        <ui:Label name="name" />
+    </ui:VisualElement>
+</ui:UXML> 

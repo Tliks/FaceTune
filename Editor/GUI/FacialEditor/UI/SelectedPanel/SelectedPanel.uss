@@ -1,0 +1,53 @@
+/* Selected Panel */
+#selected-panel {
+    flex-direction: column;
+    padding: 5px;
+}
+
+/* Common Controls-panel */
+#common-controls-panel {
+    flex: 0 0 auto;
+}
+
+/* Shapes Panel */
+#style-shapes-panel {
+    flex: 0 0 auto;
+    margin-top: 5px;
+}
+
+#selected-shapes-panel {
+    flex: 1 1 auto;
+    margin-top: 10px;
+}
+
+#style-label-container, #selected-label-container {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Labels */
+#style-label, #selected-label {
+    -unity-font-style: bold;
+    margin-right: auto;
+}
+
+/* Buttons */
+#style-set-all-100-button, #selected-set-all-100-button, #style-set-all-0-button, #selected-set-all-0-button, #style-reset-all-button, #remove-all-button {
+    flex: 0 0 85px;
+}
+
+/* SimpleToggle */
+#style-zero-toggle, #selected-zero-toggle {
+    flex: 0 0 30px;
+}
+
+/* List Views */
+#style-list-view, #selected-list-view {
+    border-color: rgba(128, 128, 128, 0.8);
+    border-width: 1px;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+

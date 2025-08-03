@@ -1,9 +1,9 @@
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal static class FTPrefabUtility
 {
     public static void InstantiatePrefab(string guid, 
-        bool unpackRoot = false,
+        bool unpack,
         GameObject? parent = null, 
         bool isFirstSibling = false
     )
@@ -15,11 +15,11 @@ internal static class FTPrefabUtility
             return;
         }
 
-        InstantiatePrefab(prefab, unpackRoot, parent, isFirstSibling);
+        InstantiatePrefab(prefab, unpack, parent, isFirstSibling);
     }
 
     public static void InstantiatePrefab(GameObject prefab, 
-        bool unpackRoot = false,
+        bool unpack,
         GameObject? parent = null, 
         bool isFirstSibling = false
     )
@@ -41,9 +41,9 @@ internal static class FTPrefabUtility
             Undo.SetSiblingIndex(instance.transform, 0, "Set First Sibling");
         }
         
-        if (unpackRoot)
+        if (unpack)
         {
-            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
+            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.UserAction);
         }
 
         Selection.activeObject = instance;

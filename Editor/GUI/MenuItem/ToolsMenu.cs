@@ -1,22 +1,25 @@
 using UnityEditorInternal;
-using com.aoyon.facetune.Settings;
+using aoyon.facetune.Settings;
+using aoyon.facetune.gui.shapes_editor;
 
-namespace com.aoyon.facetune.ui;
+namespace aoyon.facetune.gui;
 
 internal static class ToolsMenu
 {
-    private const string BasePath = "Tools/FaceTune/";
+    [MenuItem(MenuItems.FacialShapesEditorPath, false, MenuItems.FacialShapesEditorPriority)]
+    private static void OpenFacialShapesEditor()
+    {
+        FacialShapesEditor.TryOpenEditor(targeting: new AnimationClipTargeting());
+    }
 
-    private const string Tools_SelectedExpressionPreviewPath = BasePath + "SelectedExpressionPreview";
-
-    [MenuItem(Tools_SelectedExpressionPreviewPath, true)]
+    [MenuItem(MenuItems.SelectedExpressionPreviewPath, true)]
     private static bool ValidateSelectedExpressionPreview()
     {
-        Menu.SetChecked(Tools_SelectedExpressionPreviewPath, ProjectSettings.EnableSelectedExpressionPreview);
+        Menu.SetChecked(MenuItems.SelectedExpressionPreviewPath, ProjectSettings.EnableSelectedExpressionPreview);
         return true;
     }
 
-    [MenuItem(Tools_SelectedExpressionPreviewPath, false)]
+    [MenuItem(MenuItems.SelectedExpressionPreviewPath, false, MenuItems.SelectedExpressionPreviewPriority)]
     private static void ToggleSelectedExpressionPreview()
     {
         ProjectSettings.EnableSelectedExpressionPreview = !ProjectSettings.EnableSelectedExpressionPreview;

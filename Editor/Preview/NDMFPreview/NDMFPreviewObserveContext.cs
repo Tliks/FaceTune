@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.preview;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal class NDMFPreviewObserveContext : IObserveContext
 {
@@ -16,6 +16,11 @@ internal class NDMFPreviewObserveContext : IObserveContext
         return _context.GetAvatarRoot(obj);
     }
 
+    public T Observe<T>(T obj) where T : Object
+    {
+        return _context.Observe(obj);
+    }
+
     public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object
     {
         return _context.Observe(obj, extract, compare);
@@ -28,16 +33,16 @@ internal class NDMFPreviewObserveContext : IObserveContext
 
     public C? GetComponentNullable<C>(GameObject obj) where C : Component
     {
-        return _context.GetComponent<C>(obj).NullCast();
+        return _context.GetComponent<C>(obj).DestroyedAsNull();
     }
 
-    public C[] GetComponents<C>(GameObject obj) where C : Component
+    public void GetComponents<C>(GameObject obj, List<C> results) where C : Component
     {
-        return _context.GetComponents<C>(obj);
+        _context.GetComponents<C>(obj, results);
     }
 
-    public C[] GetComponentsInChildren<C>(GameObject obj, bool includeInactive) where C : Component
+    public void GetComponentsInChildren<C>(GameObject obj, bool includeInactive, List<C> results) where C : Component
     {
-        return _context.GetComponentsInChildren<C>(obj, includeInactive);
+        _context.GetComponentsInChildren<C>(obj, includeInactive, results);
     }
 }

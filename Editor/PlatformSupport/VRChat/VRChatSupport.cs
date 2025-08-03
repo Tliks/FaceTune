@@ -1,15 +1,17 @@
 #if FT_VRCSDK3_AVATARS
 
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.Animations;
 using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
-using VRC.SDK3.Avatars.ScriptableObjects;
 using nadena.dev.ndmf;
-using nadena.dev.modular_avatar.core;
-using com.aoyon.facetune.animator;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.pass;
+using aoyon.facetune.build;
+using aoyon.facetune.animator;
 
-namespace com.aoyon.facetune.platform;
+namespace aoyon.facetune.platform;
 
 internal class VRChatSuport : IPlatformSupport
 {
@@ -66,41 +68,18 @@ internal class VRChatSuport : IPlatformSupport
         return faceRenderer;
     }
 
-    private AnimatorInstaller InitializeAnimatorInstaller(BuildContext buildContext, SessionContext context)
+    private AnimatorInstaller InitializeAnimatorInstaller(AnimatorServicesContext asc, SessionContext context)
     {
-        var asc = buildContext.Extension<AnimatorServicesContext>();
         var cc = asc.ControllerContext;
         var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        return new AnimatorInstaller(context, cc, fx, useWriteDefaults);
+        return new AnimatorInstaller(fx, context, useWriteDefaults);
     }
 
-    private AnimatorInstaller InitializeAnimatorInstallerIfNull(FTPassContext passContext)
+    public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
     {
-        var sessionContext = passContext.SessionContext;
-        if (sessionContext == null)
-        {
-            throw new Exception("SessionContext is not set");
-        }
-        var installer = passContext.AnimatorInstaller;
-        if (installer == null)
-        {
-            installer = InitializeAnimatorInstaller(passContext.BuildContext, sessionContext);
-            passContext.SetAnimatorInstaller(installer);
-        }
-        return installer;
-    }
-
-    public void DisableExistingControl(FTPassContext passContext)
-    {
-        var installer = InitializeAnimatorInstallerIfNull(passContext);
-        installer.DisableExistingControl();
-    }
-
-    public void InstallPatternData(FTPassContext passContext, PatternData patternData)
-    {
-        var installer = InitializeAnimatorInstallerIfNull(passContext);
-        installer.InstallPatternData(patternData);
+        var installer = InitializeAnimatorInstaller(buildContext.Extension<AnimatorServicesContext>(), buildPassContext.SessionContext);
+        installer.Execute(installerData);
     }
 
     public IEnumerable<string> GetTrackedBlendShape()
@@ -108,13 +87,8 @@ internal class VRChatSuport : IPlatformSupport
         var disAllowed = new HashSet<string>();
         var lipSync = GetLipSyncBlendShape();
         disAllowed.UnionWith(lipSync);
-        /*
-        if (context) // any condition
-        {
-            var blink = GetBlinkBlendShape();
-            disAllowed.UnionWith(blink);
-        }
-        */ 
+        var blink = GetBlinkBlendShape(); // 安全側に倒す
+        disAllowed.UnionWith(blink);
         return disAllowed;
     }
 
@@ -154,67 +128,7 @@ internal class VRChatSuport : IPlatformSupport
         }
         return ret;
     }
-
-    public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
-        usedNames.Add(parameterName);
-        var control = new VRCExpressionsMenu.Control()
-        {
-            name = menuItem.gameObject.name,
-            type = VRCExpressionsMenu.Control.ControlType.Toggle,
-            parameter = new VRCExpressionsMenu.Control.Parameter()
-            {
-                name = parameterName,
-            },
-            subParameters = new VRCExpressionsMenu.Control.Parameter[] { },
-            value = 0,
-            labels = new VRCExpressionsMenu.Control.Label[] { },
-            icon = null,
-        };
-        menuItem.Control = control;
-        return parameterName;
-    }
-    private string GenerateUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        var baseName = menuItem.gameObject.name.Replace(" ", "_");
-        var parameterName = $"facetune/{baseName}/toggle";
-        int index = 1;
-        while (usedNames.Contains(parameterName))
-        {
-            parameterName = $"facetune/{baseName}_{index}/toggle";
-            index++;
-        }
-        return parameterName;
-    }
-    public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
-    {
-        menuItem.Control.parameter = new() { name = parameterName };
-    }
-    public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
-    {
-        menuItem.Control.value = value;
-    }
-    public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
-    {
-        menuItem.Control.type = VRCExpressionsMenu.Control.ControlType.Toggle;
-    }
-    public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        var existingParameterName = menuItem.Control.parameter.name;
-        if (!string.IsNullOrWhiteSpace(existingParameterName)) 
-        {
-            return (existingParameterName, new ParameterCondition(existingParameterName, true));
-        }
-        if (menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Toggle ||
-            menuItem.Control.type == VRCExpressionsMenu.Control.ControlType.Button)
-        {
-            var parameterName = GenerateUniqueParameterName(menuItem, usedNames);
-            menuItem.Control.parameter.name = parameterName;
-            return (parameterName, new ParameterCondition(parameterName, true));
-        }
-        return (null, null);
-    }
+    
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
     {
         var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
@@ -224,6 +138,77 @@ internal class VRChatSuport : IPlatformSupport
     {
         var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
         trackingControl.trackingMouth = isTracking ? VRCAnimatorTrackingControl.TrackingType.Tracking : VRCAnimatorTrackingControl.TrackingType.Animation;
+    }
+    public void StateAsRandrom(VirtualState state, string parameterName, float min, float max)
+    {
+        state.EnsureBehavior<VRCAvatarParameterDriver>().parameters.Add(new VRC_AvatarParameterDriver.Parameter()
+        {
+            type = VRC_AvatarParameterDriver.ChangeType.Random,
+            name = parameterName,
+            valueMin = min,
+            valueMax = max,
+        });
+    }
+    public AnimatorController? GetFXAnimatorController()
+    {
+        var descriptor = _root.GetComponent<VRCAvatarDescriptor>()!;
+        foreach (var layer in descriptor.baseAnimationLayers)
+        {
+            if (layer.type == VRCAvatarDescriptor.AnimLayerType.FX
+                && layer.animatorController != null
+                && layer.animatorController is AnimatorController ac)
+            {
+                return ac;
+            }
+        }
+        return null;
+    }
+
+    public (TrackingPermission eye, TrackingPermission mouth)? GetTrackingPermission(AnimatorState state)
+    {
+        var trackingControl = GetVRCAnimatorTrackingControl(state);
+        if (trackingControl != null)
+        {
+            return GetTrackingPermission(trackingControl);
+        }
+        else
+        {
+            return null;
+        }
+
+        static VRC_AnimatorTrackingControl? GetVRCAnimatorTrackingControl(AnimatorState state)
+        {
+            if (state.behaviours == null) return null;
+            foreach (var behaviour in state.behaviours)
+            {
+                if (behaviour is VRC_AnimatorTrackingControl trackingControl)
+                {
+                    return trackingControl;
+                }
+            }
+            return null;
+        }
+
+        static (TrackingPermission eye, TrackingPermission mouth) GetTrackingPermission(VRC_AnimatorTrackingControl trackingControl)
+        {
+            var eye = trackingControl.trackingEyes switch
+            {
+                VRC_AnimatorTrackingControl.TrackingType.NoChange => TrackingPermission.Keep,
+                VRC_AnimatorTrackingControl.TrackingType.Tracking => TrackingPermission.Allow,
+                VRC_AnimatorTrackingControl.TrackingType.Animation => TrackingPermission.Disallow,
+                _ => TrackingPermission.Keep
+            };
+            
+            var mouth = trackingControl.trackingMouth switch
+            {
+                VRC_AnimatorTrackingControl.TrackingType.NoChange => TrackingPermission.Keep,
+                VRC_AnimatorTrackingControl.TrackingType.Tracking => TrackingPermission.Allow,
+                VRC_AnimatorTrackingControl.TrackingType.Animation => TrackingPermission.Disallow,
+                _ => TrackingPermission.Keep
+            };
+
+            return (eye, mouth);
+        }
     }
 }
 

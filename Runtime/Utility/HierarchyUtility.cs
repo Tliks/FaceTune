@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.runtime;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal static class HierarchyUtility
 {
@@ -39,7 +39,7 @@ internal static class HierarchyUtility
 
     public static T? GetComponentInParentNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
     {
-        return gameObject.GetComponentInParent<T>(includeInactive).NullCast();
+        return gameObject.GetComponentInParent<T>(includeInactive).DestroyedAsNull();
     }
 
     public static T? GetComponentInParentNullable<T>(this Component component, bool includeInactive = false) where T : Component
@@ -49,7 +49,7 @@ internal static class HierarchyUtility
 
     public static T? GetComponentInChildrenNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
     {
-        return gameObject.GetComponentInChildren<T>(includeInactive).NullCast();
+        return gameObject.GetComponentInChildren<T>(includeInactive).DestroyedAsNull();
     }
 
     public static T? GetComponentInChildrenNullable<T>(this Component component, bool includeInactive = false) where T : Component
@@ -62,7 +62,7 @@ internal static class HierarchyUtility
     {
         return gameObject
             .GetComponentsInChildren<TComponent>(includeInactive)
-            .UnityOfType<TInterface>()
+            .OfType<TInterface>()
             .ToList();
     }
 
@@ -100,6 +100,21 @@ internal static class HierarchyUtility
             component = gameObject.AddComponent<TComponent>();
         }
         return component;
+    }
+
+    public static bool IsEditorOnlyInHierarchy(this GameObject gameObject)
+    {
+        var current = gameObject;
+        while (current != null)
+        {
+            if (current.CompareTag("EditorOnly"))
+            {
+                return true;
+            }
+            var parent = current.transform.parent;
+            current = parent != null ? parent.gameObject : null;
+        }
+        return false;
     }
 }
 

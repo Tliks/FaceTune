@@ -1,3 +1,6 @@
+
+/*
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using HarmonyLib;
 
-namespace com.aoyon.facetune.ui
+namespace aoyon.facetune.ui
 {
     internal interface ISelectionData
     {
@@ -204,3 +207,5 @@ namespace com.aoyon.facetune.ui
         }
     }
 }
+
+*/

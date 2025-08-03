@@ -1,12 +1,17 @@
 using nadena.dev.ndmf.runtime;
 
-namespace com.aoyon.facetune;
+namespace aoyon.facetune;
 
 internal class NonObserveContext : IObserveContext
 {
     public GameObject? GetAvatarRoot(GameObject obj)
     {
-        return RuntimeUtil.FindAvatarInParents(obj.transform).NullCast()?.gameObject;
+        return RuntimeUtil.FindAvatarInParents(obj.transform).DestroyedAsNull()?.gameObject;
+    }
+
+    public T Observe<T>(T obj) where T : Object
+    {
+        return obj;
     }
 
     public R Observe<T, R>(T obj, Func<T, R> extract, Func<R, R, bool>? compare = null) where T : Object
@@ -24,13 +29,13 @@ internal class NonObserveContext : IObserveContext
         return obj.GetComponentNullable<C>();
     }
 
-    public C[] GetComponents<C>(GameObject obj) where C : Component
+    public void GetComponents<C>(GameObject obj, List<C> results) where C : Component
     {
-        return obj.GetComponents<C>();
+        obj.GetComponents<C>(results);
     }
 
-    public C[] GetComponentsInChildren<C>(GameObject obj, bool includeInactive) where C : Component
+    public void GetComponentsInChildren<C>(GameObject obj, bool includeInactive, List<C> results) where C : Component
     {
-        return obj.GetComponentsInChildren<C>(includeInactive);
+        obj.GetComponentsInChildren<C>(includeInactive, results);
     }
 }

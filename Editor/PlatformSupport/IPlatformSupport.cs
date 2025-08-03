@@ -1,9 +1,10 @@
-using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
+using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using com.aoyon.facetune.pass;
+using aoyon.facetune.build;
+using UnityEditor.Animations;
 
-namespace com.aoyon.facetune.platform;
+namespace aoyon.facetune.platform;
 
 internal interface IPlatformSupport
 {
@@ -13,11 +14,7 @@ internal interface IPlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void DisableExistingControl(FTPassContext passContext)
-    {
-        return;
-    }
-    public void InstallPatternData(FTPassContext passContext, PatternData patternData)
+    public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
     {
         return;
     }
@@ -26,27 +23,6 @@ internal interface IPlatformSupport
         return new string[] { };
     }
 
-    // ModularAvatarMenuItem
-    public string AssignUniqueParameterName(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        return string.Empty;
-    }
-    public void AssignParameterName(ModularAvatarMenuItem menuItem, string parameterName)
-    {
-        return;
-    }
-    public void AssignParameterValue(ModularAvatarMenuItem menuItem, float value)
-    {
-        return;
-    }
-    public void EnsureMenuItemIsToggle(ModularAvatarMenuItem menuItem)
-    {
-        return;
-    }
-    public (string?, ParameterCondition?) MenuItemAsCondition(ModularAvatarMenuItem menuItem, HashSet<string> usedNames)
-    {
-        return (null, null);
-    }
 
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
     {
@@ -55,5 +31,18 @@ internal interface IPlatformSupport
     public void SetLipSyncTrack(VirtualState state, bool isTracking)
     {
         return;
+    }
+    public void StateAsRandrom(VirtualState state, string parameterName, float min, float max)
+    {
+        return;
+    }
+
+    public AnimatorController? GetFXAnimatorController()
+    {
+        return null;
+    }
+    public (TrackingPermission eye, TrackingPermission mouth)? GetTrackingPermission(AnimatorState state)
+    {
+        return null;
     }
 }

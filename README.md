@@ -3,8 +3,13 @@ FaceTune
 A modular tool for avatar emotion expression.
 
 Dependencies
-- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.7.0
-- [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.12.0
+- [NDMF](https://github.com/bdunderscore/ndmf) >= 1.8.0
+- [Modular Avatar](https://github.com/bdunderscore/modular-avatar) >= 1.13.0
+
+## FaceTuneとは
+FaceTuneはモジュール的に設計された、アバター向けの表情編集ツールです。
+
+柔軟な制御設計、軽量な編集エディタ、高度なプレビューシステムなどを特徴としています。
 
 ## 導入方法
 
@@ -18,90 +23,77 @@ git clone https://github.com/Tliks/FaceTune
 現時点では対応していません。
 
 ## クイックスタート
+1.  テンプレートの追加:
+    - Hierarchyからアバターを右クリックし、メニューから `FaceTune` > `Base Template` を選択します。
+    - `Base Template` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
+2.  サンプルのパターンの追加:
+    - `FaceTune Assistant`のInspectorに表示される「サンプルパターンを追加」セクションで、作りたい表情制御の種類を選びます。
+        - ハンドジェスチャー: 片手制御、基本的な両手制御、両手で表情をブレンドする制御などがあります。
+        - その他: メニューを用いた制御などがあります。
+    - 「追加」ボタンを押すと、選択した制御が子オブジェクトとして生成されます。
+        - これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
+3. 表情の設定
+    - `Expression`コンポーネントとそれに紐づく`Facial Data`コンポーネントから表情用のブレンドシェイプを設定します。
+    - ManualモードとAnimationClipモードの2つがあり、前者の場合はOpen Editorからブレンドシェイプの編集用のウィンドウが開けます。
+    - また、表情用のブレンドシェイプ以外のアニメーションを可能にする`Animation Data`コンポーネントを追加することもできます。
 
-FaceTuneのセットアップ方法として、2つの例を紹介します。
-
-### 例1: テンプレートを用いたセットアップ
-FaceTune Assistantとサンプルパターンを使って、表情制御を導入できます。
-
-1.  **`Template Base` の追加**:
-    *   Hierarchyウィンドウで右クリックし、メニューから `FaceTune` > `Template Base` を選択します。
-    *   アバターのルートなどに `Template Base` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
-2.  **サンプルパターンの選択と追加**:
-    *   `FaceTune Assistant`のInspectorに表示される「サンプルパターンを追加」セクションで、作りたい表情制御の種類を選びます。
-        *   **ハンドジェスチャー**: 左手のみ・右手のみの個別制御、両手を使った基本的な制御、両手のジェスチャーをブレンドする制御、先に行ったジェスチャーを優先する制御、左右の手の組み合わせでなどのサンプルがあります。
-        *   **その他**: 特定の表情を一つだけONにする排他メニュー、他の表情と混ぜて使えるブレンドメニュー、コンタクトを用いたサンプルなどがあります。
-    *   「追加」ボタンを押すと、選択したサンプルパターンが子オブジェクトとして生成されます。これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
-
-### 例2: 最小構成から組み立てる
-FaceTuneは各機能が独立しているため、必要なものだけを選んで組み合わせたシンプルな構成から始めることも可能です。
-
-*   **ジェスチャー1つで特定の表情を出す**:
-    `Condition` コンポーネントと `Expression` コンポーネントの2つがあれば実現できます。
-
-*   **Expressionメニューから特定の表情をON/OFFする**:
-    `Condition`　コンポーネントの代わりとして`MA MenuItem` コンポーネントが利用できます。`Expression` コンポーネントと`MA Menu Installer` コンポーネントを追加した3つのコンポーネントで表情制御のメニューが生成できます。
-
-`Condition`など、FaceTuneにおけるコンポーネントは基本的にHierarhyで下にあるほど優先されます。
-
-### 表情の設定
-上記いずれの方法でも、最終的には `Condition` (または `MA MenuItem`) に紐づく `Expression` を使って実際の表情を設定します。
-*   `Expression` コンポーネントを選択し、Inspectorから設定します。
-    *   **Manualモード**: ブレンドシェイプ名とそのウェイト値を直接手動で指定して表情を作ります。`Open Editor`からEditorが起動できます。
-    *   **From Clipモード**: 既存のAnimationClipを指定し、そのクリップ内のブレンドシェイプを表情として利用します。
 
 ### ビルドとアップロード
-設定に基づいて必要なAnimator Controllerやアニメーションクリップなどがビルド時に生成され、アバターに非破壊的に結合されます。
+設定に基づいて必要なAnimator ControllerやAnimation Clipなどがビルド時に生成され、アバターに非破壊的に適応されます。
 
 ### 既存の表情制御との共存について
-FaceTuneは、デフォルトでアバターに既に設定されている表情制御と共存するように動作します。
-
-*   例えば、上記「例2」のように最小構成で特定のジェスチャー表情だけを追加した場合、そのジェスチャーが実行されている間だけFaceTuneの表情が適用され、それ以外の時は元々のアバターの表情制御が機能します。これにより、既存のセットアップを壊さずに新しい表情を追加・上書きできます。
-*   もし、FaceTuneでアバターの表情全体を管理し、既存の表情制御を無効化したい場合は、`DisableExistingControl` というコンポーネントをアバターの任意のGameObjectにアタッチしてください。
-    *   `Template Base` を使用する場合、このコンポーネントは最初から含まれています。
-    *   このコンポーネントは、主に表情に関連するブレンドシェイプのアニメーションを無効化しようと試みます。他の種類のアニメーション（オブジェクトのON/OFFなど）には影響しません。
+FaceTuneは、デフォルトでアバターに既に設定されている表情制御に対し特別な操作を行いません。
+生成されるアニメーションは既存の制御より高い優先度で実行されます。
+そのため、既存の表情制御を無効化したい場合は手動での無効化、もしくは常に再生されるExpressionコンポーネントを配置することで表情用のアニメーションが無効化できます。
 
 ## 各コンポーネントの説明
 
 各コンポーネントの説明です。以下に説明のないコンポーネントは現在動作していません。
 
+## Expression
+
+### Expression
+最も重要なコンポーネントであり、このコンポーネントが存在することにより実際にアバターに対する適応が行われます。
+基本的にはこのコンポーネントは単体ではなく、`Facial Data`コンポーネントや、`Condition`コンポーネントを併用します。Hierarchy上で下にあるほど高い優先度として動作します。
+
+`Enable Blending`はOFF(デフォルト)のとき、設定されていない表情ブレンドシェイプを全て0として扱うことで、より優先度の低い表情アニメーションを無効化します。一方でtrueのとき、設定されたデータの再生のみを行うことで、より低い優先度のExpressionとの結合を可能にします。
+
+一切の`Condition`と紐づかない場合、常に再生されるExpressionとなり、一切の`Facial Data`等と紐づかない場合、`Enable Blending`がOFFのとき全表情ブレンドシェイプを0とするExpressionとなり、ONのとき空のExpressionとなります。
+
+### Facial Data
+表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以上の`Expression`コンポーネントと紐づきます。同一の`Expression`コンポーネントに対し複数の`Facial Data`コンポーネントが紐づき、かつ同じブレンドシェイプが設定されていた場合、Hierarchy上で下にあるコンポーネントの値が使用されます。
+
+### Animation Data
+汎用的なアニメーションを設定するコンポーネントです。アタッチされたGameObject以上の`Expression`コンポーネントと紐づきます。同一の`Expression`コンポーネントに対し複数の`Animation Data`コンポーネントが紐づき、かつ同じプロパティが設定されていた場合、Hierarchy上で下にあるコンポーネントの値が使用されます。
+
+### Facial Style
+顔つきのように、複数のExpressionで共通して適用されてほしい表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以下のの`Expression`コンポーネントに対し適用されます。このコンポーネントは各`Expression`コンポーネントに対する適用のみを行うため、この顔つきが適用された表情をデフォルトとして使用する場合、`As Default`ボタンから追加の`Condition`コンポーネントと紐づかない`Expression`コンポーネントを配置してください。このコンポーネントで設定された値は適用先の各Expressionで上書きできます。`Enable Blending`がONのExpressionに対しては動作しません。
+
+### Advanced Eyeblink / Advanced LipSync
+高度なまばたき/リップシンクの設定を適用します。アタッチされたGameObject以下の`Expression`コンポーネントに対し適用されます。複数のコンポーネントが設定された場合、最も親子関係が近いコンポーネントが使用されます。
+
+## Condition
+
 ### Condition
+条件を設定します。アタッチされたGameObject以下の`Expression`コンポーネントと紐づきます。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。
+同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
-条件を設定します。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。アタッチされたGameObject以下のExpressionがこのConditionと紐付きます。
-
-### Facial Expression
-
-表情を設定します。デフォルト表情からの差分の設定のみで動作します。`Enable Blending`をオンにすると、他の表情と重ね合わせて表情を使えるようになります。
+### MenuItem (Modular Avatar)
+FaceTuneのコンポーネントではありませんが、Toggoe/Buttonの場合、boolの条件として`Condition`コンポーネント同様に動作します。パラメーターは設定されていない場合、自動で生成されます。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。またRadialの場合、Motion TImeとして動作します。アタッチされたGameObject以下の`Expression`コンポーネントに対しMotion Timeを設定します。
 
 ### Pattern
-
 アタッチされたGameObject以下の複数の`Condition`とそれに紐づく`Expression`を排他制御としてマークします。
 
 ### Preset
-
 アタッチされたGameObject以下の制御をプリセットとしてマークします。このプリセットをオンオフするメニューは同じ階層に自動生成されます。このPresetを複数配置することで、複数の制御をメニューから切り替えできるようになります。
 
-### Default Facial Expression
-
-デフォルト表情を設定します。このコンポーネントが設定されない場合、シーン上のブレンドシェイプなどがデフォルト表情となります。プリセット単位で設定することも出来ます。
-
-### Disable Existing Control
- 
-既存の表情制御を無効化します。表情ブレンドシェイプ以外の無効化は行いません。
+## その他
 
 ### Allow Tracked BlendShapes
-
 まばたきやリップシンクに使用され、通常表情に用いることが許可されていないブレンドシェイプを用いることが出来るようにします。このコンポーネントが設定されておらず、許可されないブレンドシェイプが使用されていた場合、警告の上でそのブレンドシェイプは除外されます。動作原理はビルド時におけるブレンドシェイプの複製です。
 
 ### Override Face Renderer
-
 適用対象のSkinnedMeshRendererを明示的に指定します。このコンポーネントが設定されていない場合、自動的に選定されます。
 
-
-### Common Condition
-
-設定された条件を直下の`Condition`に一括で追加します。共通の条件をまとめたい際に便利です。
-
 ### FaceTune Assistant
-
 Editor上でのみ機能するコンポーネントです。現在アバターに対し設定されたFaceTuneの設定を簡単に解析し、設定に関する簡単な情報の提供をします。またGameObjectやコンポーネントの生成を行う機能などを提供します。
