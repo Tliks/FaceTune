@@ -109,7 +109,7 @@ namespace aoyon.facetune.gui
         internal void CreatePatternGUI()
         {
             EditorGUILayout.BeginVertical(GUI.skin.box);
-            EditorGUILayout.LabelField("サンプルパターンを追加", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("パターンを追加", EditorStyles.boldLabel);
 
             EditorGUILayout.Space();
 
@@ -146,7 +146,7 @@ namespace aoyon.facetune.gui
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField("Animator Controllerをインポート", EditorStyles.boldLabel);
             _selectedAnimatorController = (AnimatorController)EditorGUILayout.ObjectField("選択中のAnimator Controller:", _selectedAnimatorController, typeof(AnimatorController), false);
-            if (GUILayout.Button("インポート"))
+            if (GUILayout.Button("追加"))
             {
                 ImportAnimatorController();
             }
