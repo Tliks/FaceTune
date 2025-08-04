@@ -12,15 +12,7 @@ FaceTuneはモジュール的に設計された、アバター向けの表情編
 柔軟な制御設計、軽量な編集エディタ、高度なプレビューシステムなどを特徴としています。
 
 ## 導入方法
-
-### Git
-プロジェクトの `Assets` または `Packages` フォルダにリポジトリをクローンします。
-```
-git clone https://github.com/Tliks/FaceTune
-```
-
-### VCC/ALCOM対応
-現時点では対応していません。
+[Add to VCC or ALCOM](https://tliks.github.io/facetune-release/)
 
 ## クイックスタート
 1.  テンプレートの追加:
