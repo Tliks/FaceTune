@@ -17,6 +17,16 @@ internal static class PlatformSupport
         return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
     }
 
+    public static IPlatformSupport GetSupportInParents(Transform transform)
+    {
+        var avatar = FindAvatarInParents(transform);
+        if (avatar == null)
+        {
+            throw new Exception("Avatar not found");
+        }
+        return GetSupport(avatar);
+    }
+
     public static IPlatformSupport GetSupport(Transform root)
     {
         return GetSupports(root).First();

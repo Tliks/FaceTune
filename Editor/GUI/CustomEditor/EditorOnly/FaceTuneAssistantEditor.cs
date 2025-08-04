@@ -1,3 +1,6 @@
+using aoyon.facetune.importer;
+using UnityEditor.Animations;
+
 namespace aoyon.facetune.gui
 {
     internal enum HandGesturePatternType
@@ -58,6 +61,7 @@ namespace aoyon.facetune.gui
 
         private HandGesturePatternType _selectedHandGesturePattern = HandGesturePatternType.BasicRight;
         private OtherPatternType _selectedOtherPattern = OtherPatternType.ExclusiveMenu;
+        private AnimatorController? _selectedAnimatorController;
 
         private PresetComponent[] _presets = Array.Empty<PresetComponent>();
         private ConditionComponent[] _conditions = Array.Empty<ConditionComponent>();
@@ -136,12 +140,37 @@ namespace aoyon.facetune.gui
                 CreatePatternImpl(_otherPatternDetails[_selectedOtherPattern]);
             }
             EditorGUILayout.EndVertical();
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Animator Controllerをインポート", EditorStyles.boldLabel);
+            _selectedAnimatorController = (AnimatorController)EditorGUILayout.ObjectField("選択中のAnimator Controller:", _selectedAnimatorController, typeof(AnimatorController), false);
+            if (GUILayout.Button("インポート"))
+            {
+                ImportAnimatorController();
+            }
+            EditorGUILayout.EndVertical();
             EditorGUILayout.EndVertical();
         }
 
         private void CreatePatternImpl(PatternInfo patternInfo)
         {
             FTPrefabUtility.InstantiatePrefab(patternInfo.Guid, true, Component.gameObject);
+        }
+
+        private void ImportAnimatorController()
+        {
+            if (_selectedAnimatorController == null)
+            {
+                throw new Exception("Animator Controller is not selected");
+            }
+            if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context))
+            {
+                throw new Exception("Failed to get context");
+            }
+            var importer = new AnimatorControllerImporter(context, _selectedAnimatorController);
+            importer.Import(Component.gameObject);
         }
     }
 }
