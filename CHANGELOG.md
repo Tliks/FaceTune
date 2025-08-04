@@ -1,15 +1,23 @@
 # Changelog
 
-## [Japanese version](./CHANGELOG-jp.md)
+## [日本語](./CHANGELOG-jp.md)
 
 ## [Unreleased]
 ### Added
+- Added import function for Animator Controller to `FaceTune Assistant`.
 
 ### Changed
+- Changed the specification for importing Animator Controllers.
+  - Expressions are now generated only if blendshapes for facial expressions are included.
+  - If both facial animation and non-facial animation are included, `Animation Data` will be generated.
+  - The generated `Facial Data` now defaults to Manual Mode.
+- When generating patterns from `FaceTune Assistant`, Prefabs are now fully unpacked.
 
 ### Deprecated
 
 ### Removed
+- Removed the menu item `GameObject/FaceTune/Import from FX Layer`.
+- Removed the FaceMorphFirst pattern.
 
 ### Fixed
 

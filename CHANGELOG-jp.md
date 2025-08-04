@@ -1,15 +1,22 @@
 # Changelog
 
-## [English version](./CHANGELOG.md)
+## [English](./CHANGELOG.md)
 
 ## [Unreleased]
 ### Added
+- `FaceTune Assistant`にAnimator Controllerのインポート機能が追加されました。
 
 ### Changed
-
+- Animator Controllerのインポートの仕様を変更しました。
+ - 表情用のブレンドシェイプが含まれている場合のみExpressionが生成されるようになりました。
+ - 表情アニメーションと表情以外のアニメーションの両方が含まれている場合は`Animation Data`を生成するようになりました。
+ - 生成される`Facial Data`はManual Modeをデフォルトとするように変更されました。
+- `FaceTune Assistant`からパターンを生成する際に、完全にPrefabをUnpackするようになりました。
 ### Deprecated
 
 ### Removed
+- `GameObject/FaceTune/Import from FX Layer`のメニューアイテムを削除しました。
+- FaceMorphFirstパターンを削除しました。
 
 ### Fixed
 
