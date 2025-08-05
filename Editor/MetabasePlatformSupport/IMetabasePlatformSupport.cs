@@ -36,11 +36,6 @@ internal interface IMetabasePlatformSupport
     {
         return;
     }
-
-    public AnimatorController? GetFXAnimatorController()
-    {
-        return null;
-    }
     public (TrackingPermission eye, TrackingPermission mouth)? GetTrackingPermission(AnimatorState state)
     {
         return null;

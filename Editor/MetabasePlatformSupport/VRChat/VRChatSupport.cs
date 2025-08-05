@@ -68,17 +68,13 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return faceRenderer;
     }
 
-    private AnimatorInstaller InitializeAnimatorInstaller(AnimatorServicesContext asc, SessionContext context)
-    {
-        var cc = asc.ControllerContext;
-        var fx = cc.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
-        var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        return new AnimatorInstaller(fx, context, useWriteDefaults);
-    }
-
     public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
     {
-        var installer = InitializeAnimatorInstaller(buildContext.Extension<AnimatorServicesContext>(), buildPassContext.SessionContext);
+        var controllerContext = buildContext.Extension<VirtualControllerContext>();
+        var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
+        var sessionContext = buildPassContext.SessionContext;
+        var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
+        var installer = new AnimatorInstaller(fx, sessionContext, useWriteDefaults);
         installer.Execute(installerData);
     }
 
@@ -148,20 +144,6 @@ internal class VRChatSupport : IMetabasePlatformSupport
             valueMin = min,
             valueMax = max,
         });
-    }
-    public AnimatorController? GetFXAnimatorController()
-    {
-        var descriptor = _root.GetComponent<VRCAvatarDescriptor>()!;
-        foreach (var layer in descriptor.baseAnimationLayers)
-        {
-            if (layer.type == VRCAvatarDescriptor.AnimLayerType.FX
-                && layer.animatorController != null
-                && layer.animatorController is AnimatorController ac)
-            {
-                return ac;
-            }
-        }
-        return null;
     }
 
     public (TrackingPermission eye, TrackingPermission mouth)? GetTrackingPermission(AnimatorState state)

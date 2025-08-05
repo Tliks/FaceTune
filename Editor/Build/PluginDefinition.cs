@@ -25,7 +25,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(ProcessTrackedShapesPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
-        sequence.WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
+        sequence.WithRequiredExtension(typeof(VirtualControllerContext), sq1 => 
         {
             sq1.Run(InstallPatternDataPass.Instance);
         });
