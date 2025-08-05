@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.runtime;
 
-namespace Aoyon.FaceTune.Gui.shapes_editor;
+namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 [Serializable]
 internal class TargetManager

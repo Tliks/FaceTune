@@ -1,6 +1,6 @@
 using UnityEngine.UIElements;
 
-namespace Aoyon.FaceTune.Gui.components;
+namespace Aoyon.FaceTune.Gui.Components;
 
 internal class SimpleToggle : VisualElement
 {

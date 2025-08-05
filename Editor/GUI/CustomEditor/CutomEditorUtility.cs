@@ -1,4 +1,4 @@
-using Aoyon.FaceTune.Gui.shapes_editor;
+using Aoyon.FaceTune.Gui.ShapesEditor;
 
 namespace Aoyon.FaceTune.Gui;
 
