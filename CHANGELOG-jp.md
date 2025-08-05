@@ -4,7 +4,22 @@
 
 ## [Unreleased]
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0-beta.5] - 2025-08-05
+### Added
 - `FaceTune Assistant`にAnimator Controllerのインポート機能が追加されました。
+- プラットフォーム別のブルド時の動作を指定しました。
+  - Animatorへの適用はVRChat向けビルドでのみ行われ、それ以外のパスは全プラットフォームで動作します。
 
 ### Changed
 - Animator Controllerのインポートの仕様を変更しました。
@@ -12,15 +27,10 @@
   - 表情アニメーションと表情以外のアニメーションの両方が含まれている場合は`Animation Data`を生成するようになりました。
   - 生成される`Facial Data`はManual Modeをデフォルトとするように変更されました。
 - `FaceTune Assistant`からパターンを生成する際に、完全にPrefabをUnpackするようになりました。
-### Deprecated
 
 ### Removed
 - `GameObject/FaceTune/Import from FX Layer`のメニューアイテムを削除しました。
 - FaceMorphFirstパターンを削除しました。
-
-### Fixed
-
-### Security
 
 ## [0.1.0-beta.4] - 2025-08-03
 ### FaceTuneのほぼ全てのコンポーネントのデータが失われます。

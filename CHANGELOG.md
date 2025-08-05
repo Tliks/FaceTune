@@ -4,7 +4,22 @@
 
 ## [Unreleased]
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0-beta.5] - 2025-08-05
+### Added
 - Added import function for Animator Controller to `FaceTune Assistant`.
+- Specified platform-dependent build behavior.
+  - Application to Animator is performed only for VRChat builds; other passes work on all platforms.
 
 ### Changed
 - Changed the specification for importing Animator Controllers.
@@ -13,15 +28,9 @@
   - The generated `Facial Data` now defaults to Manual Mode.
 - When generating patterns from `FaceTune Assistant`, Prefabs are now fully unpacked.
 
-### Deprecated
-
 ### Removed
 - Removed the menu item `GameObject/FaceTune/Import from FX Layer`.
 - Removed the FaceMorphFirst pattern.
-
-### Fixed
-
-### Security
 
 ## [0.1.0-beta.4] - 2025-08-03
 ### Data for almost all FaceTune components will be lost.
