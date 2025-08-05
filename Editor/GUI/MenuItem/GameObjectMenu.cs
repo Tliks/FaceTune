@@ -8,32 +8,6 @@ namespace aoyon.facetune.gui;
 
 internal static class GameObjectMenu
 {
-    [M(MenuItems.ImportFromFXLayerMenuPath, false, MenuItems.ImportFromFXLayerMenuPriority)] 
-    static void ImportFromFXLayer()
-    {
-        var root = RuntimeUtil.FindAvatarInParents(Selection.activeGameObject?.transform);
-        if (root == null)
-        {
-            throw new InvalidOperationException("failed to get avatar root");
-        }
-        var ac = PlatformSupport.GetSupport(root).GetFXAnimatorController();
-        if (ac != null)
-        {
-            var platformSupport = PlatformSupport.GetSupport(root);
-            var result = new FXImporter(platformSupport).ImportFromVRChatFX(ac);
-            if (result != null)
-            {
-                result.transform.parent = root.transform;
-                Undo.RegisterCreatedObjectUndo(result, "Import FX Layer");
-                Selection.activeGameObject = result;
-            }
-        }
-        else
-        {
-            throw new InvalidOperationException("failed to find FX layer");
-        }
-    }
-
     private static void IP(string guid, bool unpack = true)
     {
         var parent = Selection.activeGameObject;

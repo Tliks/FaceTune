@@ -71,7 +71,8 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         EditorGUILayout.Space();
         if (GUILayout.Button("Convert to Manual"))
         {
-            ConvertToManual(targets);
+            var components = targets.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
+            ConvertToManual(components);
         }
     }
 
@@ -85,20 +86,29 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, new BlendShapeSet(firstFrameBlendShapes));
     }
 
-    internal static void ConvertToManual(Object[] targets)
+    internal static void ConvertToManual(FacialDataComponent[] components)
     {
-        var components = targets.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
         foreach (var component in components)
         {
-            var animations = new List<BlendShapeAnimation>();
-            component.ClipToManual(animations);
-
-            var so = new SerializedObject(component);
-            so.Update();
-            CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations);
-            so.FindProperty(nameof(FacialDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
-            so.ApplyModifiedProperties();
+            ConvertToManual(component);
         }
+    }
+
+    internal static bool ConvertToManual(FacialDataComponent component)
+    {
+        var animations = new List<BlendShapeAnimation>();
+        component.ClipToManual(animations);
+        if (animations.Count == 0)
+        {
+            return false;
+        }
+
+        var so = new SerializedObject(component);
+        so.Update();
+        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations);
+        so.FindProperty(nameof(FacialDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
+        so.ApplyModifiedProperties();
+        return true;
     }
 
     [MenuItem($"CONTEXT/{nameof(FacialDataComponent)}/Export as Clip")]

@@ -6,6 +6,7 @@ using aoyon.facetune.preview;
 
 namespace aoyon.facetune.build;
 
+[RunsOnAllPlatforms]
 public sealed class PluginDefinition : Plugin<PluginDefinition>
 {
     public override string QualifiedName => FaceTuneConsts.QualifiedName; // "aoyon.facetune"

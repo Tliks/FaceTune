@@ -25,9 +25,6 @@ internal static class MenuItems
     // GameObject
     private const string GameObjectPath = $"GameObject/{FaceTuneConsts.Name}/";
 
-    public const string ImportFromFXLayerMenuPath = GameObjectPath + "Import From FX Layer";
-    public const int ImportFromFXLayerMenuPriority = 20;
-
     public const string BaseTemplatePath = GameObjectPath + "Base Template";
     public const int BaseTemplatePriority = 100;
 

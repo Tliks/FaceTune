@@ -26,6 +26,11 @@ internal static class FTAnimationUtility
         ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
     }
 
+    public static void GetNonZeroBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd)
+    {
+        ProcessBlendShapeBindings(clip, ClipImportOption.NonZero, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
+    }
+
     public static void GetBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeAnimation> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations)
     {
         ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeAnimation(name, curve)));

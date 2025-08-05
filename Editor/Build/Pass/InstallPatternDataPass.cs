@@ -2,6 +2,7 @@ using nadena.dev.ndmf;
 
 namespace aoyon.facetune.build;
 
+[RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
 internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
 {
     public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.install-pattern-data";

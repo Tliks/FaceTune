@@ -12,15 +12,7 @@ FaceTuneはモジュール的に設計された、アバター向けの表情編
 柔軟な制御設計、軽量な編集エディタ、高度なプレビューシステムなどを特徴としています。
 
 ## 導入方法
-
-### Git
-プロジェクトの `Assets` または `Packages` フォルダにリポジトリをクローンします。
-```
-git clone https://github.com/Tliks/FaceTune
-```
-
-### VCC/ALCOM対応
-現時点では対応していません。
+[Add to VCC or ALCOM](https://tliks.github.io/facetune-release/)
 
 ## クイックスタート
 1.  テンプレートの追加:
@@ -30,6 +22,7 @@ git clone https://github.com/Tliks/FaceTune
     - `FaceTune Assistant`のInspectorに表示される「サンプルパターンを追加」セクションで、作りたい表情制御の種類を選びます。
         - ハンドジェスチャー: 片手制御、基本的な両手制御、両手で表情をブレンドする制御などがあります。
         - その他: メニューを用いた制御などがあります。
+        - Animator Contollerをインポート: FXレイヤーをはじめとしたAnimator Contollerの内容を読み取った制御が追加できます。
     - 「追加」ボタンを押すと、選択した制御が子オブジェクトとして生成されます。
         - これには `Condition` コンポーネントや`Expression`コンポーネントなどが含まれています。
 3. 表情の設定
