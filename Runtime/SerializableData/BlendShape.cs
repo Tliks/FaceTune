@@ -25,7 +25,7 @@ public record struct BlendShape
 
     public readonly bool Equals(BlendShape other)
     {
-        return name.Equals(other.name)
+        return name == other.name
             && weight.Equals(other.weight);
     }
 
