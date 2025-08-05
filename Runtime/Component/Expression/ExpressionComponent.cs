@@ -12,7 +12,7 @@ namespace Aoyon.FaceTune
 
         public bool EnableRealTimePreview = false;
 
-        internal Expression ToExpression(SessionContext sessionContext)
+        internal AvatarExpression ToExpression(SessionContext sessionContext)
         {
             var animationIndex = new AnimationIndex();
 
@@ -21,7 +21,7 @@ namespace Aoyon.FaceTune
                 var zeroAnimations = sessionContext.SafeZeroBlendShapes.ToGenericAnimations(sessionContext.BodyPath);
                 animationIndex.AddRange(zeroAnimations);
 
-                using var _ = ListPool<BlendShapeAnimation>.Get(out var facialAnimations);
+                using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
                 if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialAnimations))
                 {
                     animationIndex.AddRange(facialAnimations.ToGenericAnimations(sessionContext.BodyPath));
@@ -49,7 +49,7 @@ namespace Aoyon.FaceTune
                 AdvancedLipSyncSettings = lipSyncSettings
             };
 
-            return new Expression(name, animationIndex.Animations, ExpressionSettings, facialSettings);
+            return new AvatarExpression(name, animationIndex.Animations, ExpressionSettings, facialSettings);
         }
 
         internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)

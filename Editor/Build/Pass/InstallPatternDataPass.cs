@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune.Build;
 [RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
 internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
 {
-    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.install-pattern-data";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.install-pattern-data";
     public override string DisplayName => "Install PatternData";
 
     protected override void Execute(BuildContext context)

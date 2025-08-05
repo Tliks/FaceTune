@@ -12,7 +12,7 @@ internal class AdvancedEyeBlinkEditor : FaceTuneCustomEditorBase<AdvancedEyeBlin
 
         if (GUILayout.Button("Open Editor"))
         {
-            var defaultOverride = new BlendShapeSet(Component.AdvancedEyeBlinkSettings.CancelerBlendShapeNames.Select(x => new BlendShape(x, 0.0f)));
+            var defaultOverride = new BlendShapeSet(Component.AdvancedEyeBlinkSettings.CancelerBlendShapeNames.Select(x => new BlendShapeWeight(x, 0.0f)));
             CustomEditorUtility.OpenEditor(Component.gameObject, new AdvancedEyeBlinkTargeting(){ Target = Component }, defaultOverride);
         }
         if (GUILayout.Button("Enable Eye Blink in All Child Expressions"))

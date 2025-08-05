@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune.Build;
 
 internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 {
-    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.process-tracked-shapes";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.process-tracked-shapes";
     public override string DisplayName => "Process Tracked Shapes";
 
     protected override void Execute(BuildContext context)
@@ -15,7 +15,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         var patternData = context.GetState<PatternData>();
 
-        List<Expression> allExpressions = new();
+        List<AvatarExpression> allExpressions = new();
         if (!patternData.IsEmpty)
         {
             allExpressions.AddRange(patternData.GetAllExpressions());
@@ -40,7 +40,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         }
     }
 
-    private void ModifyData(IEnumerable<Expression> expressions, string targetPath, Dictionary<string, string> mapping)
+    private void ModifyData(IEnumerable<AvatarExpression> expressions, string targetPath, Dictionary<string, string> mapping)
     {
         foreach (var expression in expressions)
         {
@@ -48,10 +48,10 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         }
     }
 
-    private void RemoveAndWarning(IEnumerable<Expression> expressions, HashSet<string> trackedShapes)
+    private void RemoveAndWarning(IEnumerable<AvatarExpression> expressions, HashSet<string> trackedShapes)
     {
-        var shapesToRemove = new List<BlendShape>();
-        var shapesToWarning = new List<BlendShape>();
+        var shapesToRemove = new List<BlendShapeWeight>();
+        var shapesToWarning = new List<BlendShapeWeight>();
 
         foreach (var expression in expressions)
         {

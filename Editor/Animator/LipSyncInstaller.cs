@@ -10,7 +10,7 @@ internal class LipSyncInstaller : InstallerBase
 
     private readonly Dictionary<AdvancedLipSyncSettings, int> _indexForAdvancedSettings = new();
 
-    private const string ParameterPrefix = $"{FaceTuneConsts.ParameterPrefix}/LipSync";
+    private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/LipSync";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAdvancedAAP = $"{ParameterPrefix}/UseAdvanced"; // 1つ以上有効なAdvancedLipSyncSettingsがあるとき
     private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
@@ -141,7 +141,7 @@ internal class LipSyncInstaller : InstallerBase
             if (!settings.IsCancelerEnabled()) continue;
 
             var lipsyncing = AddState(cancelerLayer, $"Lipsyncing {index}", position);
-            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
+            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
             // PassThrough -> lipsyncing

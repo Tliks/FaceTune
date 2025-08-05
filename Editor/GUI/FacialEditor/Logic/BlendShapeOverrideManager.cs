@@ -41,7 +41,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void RefreshTargetRenderer(SkinnedMeshRenderer? targetRenderer)
     {
-        var allBlendShapes = targetRenderer == null ? new BlendShape[0] : targetRenderer.GetBlendShapes(targetRenderer.sharedMesh);
+        var allBlendShapes = targetRenderer == null ? new BlendShapeWeight[0] : targetRenderer.GetBlendShapes(targetRenderer.sharedMesh);
         _allKeysArray = allBlendShapes.Select(x => x.Name).ToArray();
         _shapeNameToIndexMap = _allKeysArray.Select((x, i) => (x, i)).ToDictionary(x => x.x, x => x.i);
         _overrideFlagsProperty.arraySize = _allKeysArray.Length;
@@ -82,7 +82,7 @@ internal class BlendShapeOverrideManager : IDisposable
             {
                 var shapeName = _allKeysArray[i];
                 var weight = GetShapeWeight(i);
-                resultToAdd.Add(new BlendShape(shapeName, weight));
+                resultToAdd.Add(new BlendShapeWeight(shapeName, weight));
             }
         }
     }
@@ -174,7 +174,7 @@ internal class BlendShapeOverrideManager : IDisposable
             OnAnyDataChange?.Invoke();
         });
     }
-    public void OverrideShapesAndSetWeight(IReadOnlyCollection<BlendShape> shapes)
+    public void OverrideShapesAndSetWeight(IReadOnlyCollection<BlendShapeWeight> shapes)
     {
         var indicesAndWeights = shapes.Select(x => (GetIndexForShape(x.Name), x.Weight))
             .Where(pair => pair.Item1 != -1);

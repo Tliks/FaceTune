@@ -11,14 +11,14 @@ using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
 using Aoyon.FaceTune.Animator;
 
-namespace Aoyon.FaceTune.Platform;
+namespace Aoyon.FaceTune.Platforms;
 
-internal class VRChatSuport : IPlatformSupport
+internal class VRChatSupport : IMetabasePlatformSupport
 {
     [InitializeOnLoadMethod]
     static void Register()
     {
-        PlatformSupport.Register(new VRChatSuport());
+        MetabasePlatformSupport.Register(new VRChatSupport());
     }
 
     private Transform _root = null!;

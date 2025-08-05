@@ -3,7 +3,7 @@ namespace Aoyon.FaceTune.Gui;
 internal static class MenuItems
 {
     // Tools
-    private const string ToolsPath = $"Tools/{FaceTuneConsts.Name}/";
+    private const string ToolsPath = $"Tools/{FaceTuneConstants.Name}/";
 
     public const string FacialShapesEditorPath = ToolsPath + "Facial Shapes Editor";
     public const int FacialShapesEditorPriority = 1000;
@@ -13,7 +13,7 @@ internal static class MenuItems
     public const int SelectedExpressionPreviewPriority = 1100;
 
     // Assets
-    private const string AssetsPath = $"Assets/{FaceTuneConsts.Name}/";
+    private const string AssetsPath = $"Assets/{FaceTuneConstants.Name}/";
 
     public const string EditAnimationClipMenuPath = AssetsPath + "Edit Animation Clip";
     public const int EditAnimationClipMenuPriority = 1000;
@@ -23,7 +23,7 @@ internal static class MenuItems
 
 
     // GameObject
-    private const string GameObjectPath = $"GameObject/{FaceTuneConsts.Name}/";
+    private const string GameObjectPath = $"GameObject/{FaceTuneConstants.Name}/";
 
     public const string BaseTemplatePath = GameObjectPath + "Base Template";
     public const int BaseTemplatePriority = 100;

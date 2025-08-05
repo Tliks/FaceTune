@@ -55,6 +55,6 @@ internal sealed class HashSetPool<T> : CollectionPool<HashSet<T>, T>
 {
 }
 
-internal sealed class BlendShapeSetPool : CollectionPool<BlendShapeSet, BlendShape>
+internal sealed class BlendShapeSetPool : CollectionPool<BlendShapeSet, BlendShapeWeight>
 {
 }

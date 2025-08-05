@@ -1,4 +1,4 @@
-using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 
@@ -8,7 +8,7 @@ namespace Aoyon.FaceTune.Build;
 // なお、PatternDataを必要とする場合は後続のパス。
 internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 {
-    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.modify-hierarchy";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.modify-hierarchy";
     public override string DisplayName => "Modify Hierarchy";
 
     protected override void Execute(BuildContext context)
@@ -102,7 +102,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             }
         }
 
-        static string EnsureParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
+        static string EnsureParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IMetabasePlatformSupport platformSupport)
         {
             string parameterName = menuItem.PortableControl.Parameter;
             if (string.IsNullOrWhiteSpace(parameterName))
@@ -114,7 +114,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             return parameterName;
         }
 
-        static string EnsureRadialParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IPlatformSupport platformSupport)
+        static string EnsureRadialParameter(ModularAvatarMenuItem menuItem, HashSet<string> usedParameterNames, IMetabasePlatformSupport platformSupport)
         {
             string parameterName = menuItem.PortableControl.SubParameters.FirstOrDefault();
             if (string.IsNullOrWhiteSpace(parameterName))
@@ -163,18 +163,18 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         {
             baseName = baseName.Replace(" ", "_");
             baseName = baseName.Replace(".", "_");
-            var parameterName = $"{FaceTuneConsts.ParameterPrefix}/{baseName}/{suffix}";
+            var parameterName = $"{FaceTuneConstants.ParameterPrefix}/{baseName}/{suffix}";
             int index = 1;
             while (usedParameterNames.Contains(parameterName))
             {
-                parameterName = $"{FaceTuneConsts.ParameterPrefix}/{baseName}_{index}/{suffix}";
+                parameterName = $"{FaceTuneConstants.ParameterPrefix}/{baseName}_{index}/{suffix}";
                 index++;
             }
             return parameterName;
         }
     }
 
-    private const string Preset_Index_Parameter = $"{FaceTuneConsts.ParameterPrefix}/PresetIndex";
+    private const string Preset_Index_Parameter = $"{FaceTuneConstants.ParameterPrefix}/PresetIndex";
     private static void ProcessPreset(BuildPassContext buildPassContext)
     {
         var platformSupport = buildPassContext.PlatformSupport;

@@ -124,7 +124,7 @@ internal class PreviewManager : IDisposable
             if (SetBlendShapeTo100OnHover && index != -1)
             {
                 var key = _blendShapeOverrideManager.AllKeys[index];
-                _previewSet.Add(new BlendShape(key, 100));
+                _previewSet.Add(new BlendShapeWeight(key, 100));
             }
             EditingShapesPreview.Refresh(_previewSet);
 
@@ -151,7 +151,7 @@ internal class PreviewManager : IDisposable
         result.Clear();
         foreach (var shape in _blendShapeOverrideManager.AllKeys)
         {
-            result.Add(new BlendShape(shape, 0));
+            result.Add(new BlendShapeWeight(shape, 0));
         }
         foreach (var shape in _blendShapeOverrideManager.StyleSet)
         {

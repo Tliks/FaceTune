@@ -50,7 +50,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
-            using var _ = ListPool<BlendShapeAnimation>.Get(out var animations);
+            using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
             clip.GetAllFirstFrameBlendShapes(result);
             return;
         }
@@ -98,7 +98,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
         proxy.GetBlendShapesAndSetWeightToZero(zeroWeightBlendShapes);
         
-        using var _2 = ListPool<BlendShapeAnimation>.Get(out var facialStyleAnimations);
+        using var _2 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
         FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(targetGameObject, facialStyleAnimations, root, observeContext);
 
         result.AddRange(zeroWeightBlendShapes);

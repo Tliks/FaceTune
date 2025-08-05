@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal class Expression : IEquatable<Expression> // 可変
+internal class AvatarExpression : IEquatable<AvatarExpression> // 可変
 {
     public string Name { get; private set; }
     public IReadOnlyList<GenericAnimation> Animations
@@ -16,7 +16,7 @@ internal class Expression : IEquatable<Expression> // 可変
     private AnimationIndex _animationIndex;
     public AnimationIndex AnimationIndex => _animationIndex;
 
-    public Expression(string name, IEnumerable<GenericAnimation> animations, ExpressionSettings expressionSettings, FacialSettings? settings = null)
+    public AvatarExpression(string name, IEnumerable<GenericAnimation> animations, ExpressionSettings expressionSettings, FacialSettings? settings = null)
     {
         Name = name;
         _animationIndex = new AnimationIndex(animations);
@@ -24,7 +24,7 @@ internal class Expression : IEquatable<Expression> // 可変
         _facialSettings = settings ?? FacialSettings.Keep;
     }
     
-    public void MergeExpression(Expression other)
+    public void MergeExpression(AvatarExpression other)
     {
         MergeAnimation(other.Animations);
         MergeExpressionSettings(other.ExpressionSettings);
@@ -34,7 +34,7 @@ internal class Expression : IEquatable<Expression> // 可変
     public void MergeExpressionSettings(ExpressionSettings other) => _expressionSettings = _expressionSettings.Merge(other);
     public void MergeFacialSettings(FacialSettings other) => _facialSettings = _facialSettings.Merge(other);
 
-    public bool Equals(Expression other)
+    public bool Equals(AvatarExpression other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -43,7 +43,7 @@ internal class Expression : IEquatable<Expression> // 可変
 
     public override bool Equals(object? obj)
     {
-        return obj is Expression expression && Equals(expression);
+        return obj is AvatarExpression expression && Equals(expression);
     }
 
     public override int GetHashCode()

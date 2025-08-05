@@ -10,38 +10,38 @@ internal static class FTAnimationUtility
         return duplicated;
     }
 
-    private const string BlendShapePropertyName = FaceTuneConsts.AnimatedBlendShapePrefix;
+    private const string BlendShapePropertyName = FaceTuneConstants.AnimatedBlendShapePrefix;
 
 #if UNITY_EDITOR
 
-    private static readonly List<BlendShapeAnimation> _emptyFacialAnimations = new();
+    private static readonly List<BlendShapeWeightAnimation> _emptyFacialAnimations = new();
 
-    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations)
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShapeWeight> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations)
     {
-        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
+        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))));
     }
 
-    public static void GetAllFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd)
+    public static void GetAllFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShapeWeight> resultToAdd)
     {
-        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
+        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))));
     }
 
-    public static void GetNonZeroBlendShapes(this AnimationClip clip, ICollection<BlendShape> resultToAdd)
+    public static void GetNonZeroBlendShapes(this AnimationClip clip, ICollection<BlendShapeWeight> resultToAdd)
     {
-        ProcessBlendShapeBindings(clip, ClipImportOption.NonZero, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShape(name, curve.Evaluate(0))));
+        ProcessBlendShapeBindings(clip, ClipImportOption.NonZero, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))));
     }
 
-    public static void GetBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeAnimation> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations)
+    public static void GetBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeWeightAnimation> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations)
     {
-        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeAnimation(name, curve)));
+        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)));
     }
 
-    public static void GetAllBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeAnimation> resultToAdd)
+    public static void GetAllBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeWeightAnimation> resultToAdd)
     {
-        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeAnimation(name, curve)));
+        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)));
     }
 
-    private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, IReadOnlyList<BlendShapeAnimation> facialAnimations, Action<string, AnimationCurve> addAction)
+    private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, Action<string, AnimationCurve> addAction)
     {
         var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
         var facialCurves = facialAnimations.ToDictionary(a => a.Name, a => a.Curve);
@@ -99,7 +99,7 @@ internal static class FTAnimationUtility
         resultToAdd.AddRange(GenericAnimation.FromAnimationClip(clip));
     }
 
-    public static void SetBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShape> blendShapes)
+    public static void SetBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)
     {
         foreach (var blendShape in blendShapes)
         {

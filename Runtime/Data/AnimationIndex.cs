@@ -8,12 +8,12 @@ internal class AnimationIndex : ICollection<GenericAnimation>
     private Dictionary<string, Dictionary<string, GenericAnimation>> _pathPropertyAnimationMap;
     
     // BlendShapeAnimation用のキャッシュ
-    private Dictionary<string, Dictionary<string, BlendShapeAnimation>>? _pathNameBlendShapeAnimationMap;
+    private Dictionary<string, Dictionary<string, BlendShapeWeightAnimation>>? _pathNameBlendShapeAnimationMap;
     private Dictionary<string, IReadOnlyBlendShapeSet>? _pathFirstFrameBlendShapeSets; 
     private IReadOnlyBlendShapeSet? _allFirstFrameBlendShapeSet;
     private bool _blendShapeCacheValid = false;
 
-    private static readonly string BlendShapePrefix = FaceTuneConsts.AnimatedBlendShapePrefix;
+    private static readonly string BlendShapePrefix = FaceTuneConstants.AnimatedBlendShapePrefix;
 
     public int Count => _pathPropertyAnimationMap.Values.Sum(dict => dict.Count);
     public bool IsReadOnly => false;
@@ -52,11 +52,11 @@ internal class AnimationIndex : ICollection<GenericAnimation>
         _allFirstFrameBlendShapeSet = null;
     }
 
-    private Dictionary<string, Dictionary<string, BlendShapeAnimation>> GetPathNameToBlendShapeAnimationsMap()
+    private Dictionary<string, Dictionary<string, BlendShapeWeightAnimation>> GetPathNameToBlendShapeAnimationsMap()
     {
         if (!_blendShapeCacheValid || _pathNameBlendShapeAnimationMap == null)
         {
-            var mapping = new Dictionary<string, Dictionary<string, BlendShapeAnimation>>();
+            var mapping = new Dictionary<string, Dictionary<string, BlendShapeWeightAnimation>>();
             foreach (var pathEntry in _pathPropertyAnimationMap)
             {
                 foreach (var propertyEntry in pathEntry.Value)
@@ -81,7 +81,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>
                propertyMap.TryGetValue(propertyName, out animation);
     }
 
-    public bool TryGetBlendShapeAnimation(string path, string name, [NotNullWhen(true)] out BlendShapeAnimation? animation)
+    public bool TryGetBlendShapeAnimation(string path, string name, [NotNullWhen(true)] out BlendShapeWeightAnimation? animation)
     {
         animation = null;
         var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
@@ -155,7 +155,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>
 
     public void AddSingleFrameBlendShapeAnimation(string path, string name, float weight)
     {
-        var animation = BlendShapeAnimation.SingleFrame(name, weight).ToGeneric(path);
+        var animation = BlendShapeWeightAnimation.SingleFrame(name, weight).ToGeneric(path);
         Add(animation);
     }
 

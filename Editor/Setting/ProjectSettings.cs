@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune.Settings;
 
-[FilePath($"ProjectSettings/Packages/{FaceTuneConsts.QualifiedName}/settings.json", FilePathAttribute.Location.ProjectFolder)]
+[FilePath($"ProjectSettings/Packages/{FaceTuneConstants.QualifiedName}/settings.json", FilePathAttribute.Location.ProjectFolder)]
 internal class ProjectSettings : ScriptableSingleton<ProjectSettings>
 {
     // instanceの生成はメインスレッドでのみ可能なので一応ここで実行しておく

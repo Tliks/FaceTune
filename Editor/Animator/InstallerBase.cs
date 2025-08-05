@@ -1,6 +1,6 @@
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
-using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Animator;
 
@@ -8,7 +8,7 @@ internal class InstallerBase
 {
     protected readonly VirtualAnimatorController _controller;
     protected readonly SessionContext _sessionContext;
-    protected readonly IPlatformSupport _platformSupport;
+    protected readonly IMetabasePlatformSupport _platformSupport;
 
     protected readonly bool _useWriteDefaults;
 
@@ -22,13 +22,13 @@ internal class InstallerBase
     protected const float PositionXStep = 250;
     protected const float PositionYStep = 50;
 
-    protected const string TrueParameterName = $"{FaceTuneConsts.ParameterPrefix}/True";
+    protected const string TrueParameterName = $"{FaceTuneConstants.ParameterPrefix}/True";
 
     public InstallerBase(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults)
     {
         _controller = virtualController;
         _sessionContext = sessionContext;
-        _platformSupport = Platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
+        _platformSupport = Platforms.MetabasePlatformSupport.GetSupport(_sessionContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
 
         _useWriteDefaults = useWriteDefaults;
@@ -40,7 +40,7 @@ internal class InstallerBase
     protected VirtualLayer AddLayer(string layerName, int priority)
     {
         var layerPriority = new LayerPriority(priority);
-        var layer = _controller.AddLayer(layerPriority, $"{FaceTuneConsts.ShortName}: {layerName}");
+        var layer = _controller.AddLayer(layerPriority, $"{FaceTuneConstants.ShortName}: {layerName}");
         layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
         return layer; 
     }

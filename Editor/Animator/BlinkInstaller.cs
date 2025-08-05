@@ -13,7 +13,7 @@ internal class BlinkInstaller : InstallerBase
     
     private Dictionary<string, string> _clonedShapesMapping = new();
 
-    private const string ParameterPrefix = $"{FaceTuneConsts.ParameterPrefix}/Blink";
+    private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/Blink";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAnimationAAP = $"{ParameterPrefix}/UseAnimation"; // 1つ以上有効なAdvancedEyeBlinkSettingsがあるとき
     private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
@@ -242,7 +242,7 @@ internal class BlinkInstaller : InstallerBase
                 var curve = new AnimationCurve();
                 curve.AddKey(0, 100);
                 curve.AddKey(holdDuration, 100);
-                blinkAnimations.Add(new BlendShapeAnimation(name, curve).ToGeneric(bodyPath));
+                blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve).ToGeneric(bodyPath));
             }
             if (settings.IsCancelerEnabled())
             {
@@ -251,7 +251,7 @@ internal class BlinkInstaller : InstallerBase
                     var curve = new AnimationCurve();
                     curve.AddKey(0, 0);
                     curve.AddKey(holdDuration, 0);
-                    blinkAnimations.Add(new BlendShapeAnimation(name, curve).ToGeneric(bodyPath));
+                    blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve).ToGeneric(bodyPath));
                 }
             }
             AddAnimationToState(blink, blinkAnimations);
@@ -316,7 +316,7 @@ internal class BlinkInstaller : InstallerBase
     public override void EditDefaultClip(VirtualClip clip)
     {
         var animations = _clonedShapesMapping.Values
-            .Select(b => BlendShapeAnimation.SingleFrame(b, 0f))
+            .Select(b => BlendShapeWeightAnimation.SingleFrame(b, 0f))
             .Select(a => a.ToGeneric(_sessionContext.BodyPath));
         clip.SetAnimations(animations);
     }

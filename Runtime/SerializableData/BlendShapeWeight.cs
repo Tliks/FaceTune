@@ -1,7 +1,7 @@
 namespace Aoyon.FaceTune;
 
 [Serializable]
-public record struct BlendShape
+public record struct BlendShapeWeight
 {
     [SerializeField] private string name;
     public string Name { readonly get => name; init => name = value; }
@@ -11,19 +11,19 @@ public record struct BlendShape
     public float Weight { readonly get => weight; init => weight = value; }
     public const string WeightPropName = nameof(weight);
 
-    public BlendShape()
+    public BlendShapeWeight()
     {
         name = "";
         weight = 0.0f;
     }
 
-    public BlendShape(string name, float weight)
+    public BlendShapeWeight(string name, float weight)
     {
         this.name = name;
         this.weight = weight;
     }    
 
-    public readonly bool Equals(BlendShape other)
+    public readonly bool Equals(BlendShapeWeight other)
     {
         return name == other.name
             && weight.Equals(other.weight);

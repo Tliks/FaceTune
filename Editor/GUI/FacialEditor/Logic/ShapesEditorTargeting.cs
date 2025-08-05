@@ -54,7 +54,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
         if (path == null) throw new Exception("TargetRenderer is not a child of root");
         if (AddZeroWeight)
         {
-            var zeroShapes = dataManager.AllKeys.Select(key => new BlendShape(key, 0f));
+            var zeroShapes = dataManager.AllKeys.Select(key => new BlendShapeWeight(key, 0f));
             animations.AddRange(zeroShapes.ToGenericAnimations(path));
         }
         if (AddFacialStyle)

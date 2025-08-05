@@ -62,7 +62,7 @@ internal static class CustomEditorUtility
         }
     }
     
-    public static void AddBlendShapeAnimations(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<BlendShapeAnimation> animations)
+    public static void AddBlendShapeAnimations(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<BlendShapeWeightAnimation> animations)
     {
         ModicyComponent(component, so =>
         {
@@ -70,15 +70,15 @@ internal static class CustomEditorUtility
             AddBlendShapeAnimations(property, animations);
         });
     }
-    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyCollection<BlendShapeAnimation> animations)
+    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyCollection<BlendShapeWeightAnimation> animations)
     {
         var newAnimations = animations.ToList();
         blendShapeAnimation.arraySize = newAnimations.Count;
         for (var i = 0; i < newAnimations.Count; i++)
         {
             var element = blendShapeAnimation.GetArrayElementAtIndex(i);
-            element.FindPropertyRelative(BlendShapeAnimation.NamePropName).stringValue = newAnimations[i].Name;
-            element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
+            element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = newAnimations[i].Name;
+            element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
         }
     }
 

@@ -2,7 +2,7 @@ using Aoyon.FaceTune.Importer;
 using Aoyon.FaceTune.Build;
 using nadena.dev.ndmf.runtime;
 using M = UnityEditor.MenuItem;
-using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Gui;
 

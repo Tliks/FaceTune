@@ -11,7 +11,7 @@ internal class AdvancedLipSyncEditor : FaceTuneCustomEditorBase<AdvancedLipSyncC
         base.OnInspectorGUI();
         if (GUILayout.Button("Open Editor for Canceler BlendShape Names"))
         {
-            var defaultOverride = new BlendShapeSet(Component.AdvancedLipSyncSettings.CancelerBlendShapeNames.Select(x => new BlendShape(x, 0.0f)));
+            var defaultOverride = new BlendShapeSet(Component.AdvancedLipSyncSettings.CancelerBlendShapeNames.Select(x => new BlendShapeWeight(x, 0.0f)));
             CustomEditorUtility.OpenEditor(Component.gameObject, new AdvancedLipSyncTargeting(){ Target = Component }, defaultOverride);
         }
     }

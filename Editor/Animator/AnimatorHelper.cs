@@ -89,7 +89,7 @@ internal static class AnimatorHelper
                 case UnityEngine.Animator:
                     //Debug.Log($"{curveBinding.path}, {curveBinding.type}, {propName}, AAP");
                     continue;
-                case SkinnedMeshRenderer renderer when curveBinding.type == typeof(SkinnedMeshRenderer) && propName.StartsWith(FaceTuneConsts.AnimatedBlendShapePrefix):
+                case SkinnedMeshRenderer renderer when curveBinding.type == typeof(SkinnedMeshRenderer) && propName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix):
                     var index = renderer.sharedMesh.GetBlendShapeIndex(propName);
                     var weight = renderer.GetBlendShapeWeight(index);
                     animations.Add(CreateFloatCurveAnimation(curveBinding_, weight));

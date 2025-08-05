@@ -1,4 +1,4 @@
-using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune;
@@ -18,7 +18,7 @@ internal static class SessionContextBuilder
             return false;
         }
 
-        var platformSupport = Platform.PlatformSupport.GetSupport(root.transform);
+        var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(root.transform);
 
         if (!TryGetFaceRenderer(root, out var faceRenderer, platformSupport, context))
         {
@@ -47,10 +47,10 @@ internal static class SessionContextBuilder
         return true;
     }
 
-    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, IPlatformSupport? platformSupport = null, IObserveContext? context = null)
+    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, IMetabasePlatformSupport? platformSupport = null, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
-        platformSupport ??= Platform.PlatformSupport.GetSupport(root.transform);
+        platformSupport ??= Platforms.MetabasePlatformSupport.GetSupport(root.transform);
 
         using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
         context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);

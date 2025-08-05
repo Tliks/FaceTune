@@ -53,17 +53,17 @@ public record GenericAnimation // Immutable
         return new GenericAnimation(curveBinding, curve, objectReferenceCurve);
     }
 
-    private static readonly string BlendShapePrefix = FaceTuneConsts.AnimatedBlendShapePrefix;
+    private static readonly string BlendShapePrefix = FaceTuneConstants.AnimatedBlendShapePrefix;
     internal bool IsBlendShapeAnimation()
     {
         return curveBinding.Type == typeof(SkinnedMeshRenderer) && curveBinding.PropertyName.StartsWith(BlendShapePrefix);
     }
-    internal bool TryToBlendShapeAnimation([NotNullWhen(true)] out BlendShapeAnimation? animation)
+    internal bool TryToBlendShapeAnimation([NotNullWhen(true)] out BlendShapeWeightAnimation? animation)
     {
         if (IsBlendShapeAnimation())
         {
             var name = curveBinding.PropertyName.Substring(BlendShapePrefix.Length);
-            animation = new BlendShapeAnimation(name, curve);
+            animation = new BlendShapeWeightAnimation(name, curve);
             return true;
         }
         animation = null;

@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune;
 
 public abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
 {
-    internal const string BasePath = FaceTuneConsts.Name;
+    internal const string BasePath = FaceTuneConstants.Name;
     internal const string Expression = "Expression";
     internal const string ExpressionPattern = "ExpressionPattern";
     internal const string Global = "Global";

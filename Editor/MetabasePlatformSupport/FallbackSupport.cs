@@ -1,6 +1,6 @@
-namespace Aoyon.FaceTune.Platform;
+namespace Aoyon.FaceTune.Platforms;
 
-internal class FallbackSupport : IPlatformSupport
+internal class FallbackSupport : IMetabasePlatformSupport
 {     
     public bool IsTarget(Transform root)
     {

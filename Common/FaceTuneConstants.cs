@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal static class FaceTuneConsts
+internal static class FaceTuneConstants
 {
     public const string Name = "FaceTune";
     public const string ShortName = "FT";

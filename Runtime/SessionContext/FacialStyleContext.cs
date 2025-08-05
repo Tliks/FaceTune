@@ -37,7 +37,7 @@ internal class FacialStyleContext
         }
     }
 
-    public static bool TryGetFacialStyleShapesAndObserve(GameObject target, ICollection<BlendShape> resultToAdd, GameObject root, IObserveContext observeContext)
+    public static bool TryGetFacialStyleShapesAndObserve(GameObject target, ICollection<BlendShapeWeight> resultToAdd, GameObject root, IObserveContext observeContext)
     {
         if (!TryGetFacialStyleAndObserve(target, out var facialStyle, root, observeContext))
         {
@@ -47,7 +47,7 @@ internal class FacialStyleContext
         return true;
     }
     
-    public static bool TryGetFacialStyleShapes(GameObject target, ICollection<BlendShape> resultToAdd)
+    public static bool TryGetFacialStyleShapes(GameObject target, ICollection<BlendShapeWeight> resultToAdd)
     {
         if (!TryGetFacialStyle(target, out var facialStyle))
         {
@@ -57,7 +57,7 @@ internal class FacialStyleContext
         return true;
     }
 
-    public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeAnimation> resultToAdd)
+    public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd)
     {
         if (!TryGetFacialStyle(target, out var facialStyle))
         {
@@ -67,7 +67,7 @@ internal class FacialStyleContext
         return true;
     }
 
-    public static bool TryGetFacialStyleAnimationsAndObserve(GameObject target, ICollection<BlendShapeAnimation> resultToAdd, GameObject root, IObserveContext observeContext)
+    public static bool TryGetFacialStyleAnimationsAndObserve(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd, GameObject root, IObserveContext observeContext)
     {
         if (!TryGetFacialStyleAndObserve(target, out var facialStyle, root, observeContext))
         {

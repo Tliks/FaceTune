@@ -1,5 +1,5 @@
 using nadena.dev.ndmf;
-using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Build;
 
@@ -22,7 +22,7 @@ internal class BuildPassState
         Enabled = SessionContextBuilder.TryBuild(root, out var sessionContext, out var result);
         if (!Enabled) return;
 
-        var platformSupport = Platform.PlatformSupport.GetSupport(root.transform);
+        var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(root.transform);
         BuildPassContext = new BuildPassContext(sessionContext!, platformSupport);
     }
 
@@ -41,9 +41,9 @@ internal class BuildPassState
 internal class BuildPassContext
 {
     public SessionContext SessionContext { get; }
-    public IPlatformSupport PlatformSupport { get; }
+    public IMetabasePlatformSupport PlatformSupport { get; }
 
-    public BuildPassContext(SessionContext sessionContext, IPlatformSupport platformSupport)
+    public BuildPassContext(SessionContext sessionContext, IMetabasePlatformSupport platformSupport)
     {
         SessionContext = sessionContext;
         PlatformSupport = platformSupport;

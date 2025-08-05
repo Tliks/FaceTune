@@ -7,11 +7,11 @@ namespace Aoyon.FaceTune
         internal const string ComponentName = "FT Facial Style";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
-        public List<BlendShapeAnimation> BlendShapeAnimations = new();
+        public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
         public bool ApplyToRenderer = false;
 
-        internal void GetBlendShapeAnimations(ICollection<BlendShapeAnimation> resultToAdd, IObserveContext? observeContext = null)
+        internal void GetBlendShapeAnimations(ICollection<BlendShapeWeightAnimation> resultToAdd, IObserveContext? observeContext = null)
         {
             observeContext?.Observe(this);
             foreach (var animation in BlendShapeAnimations)
@@ -20,7 +20,7 @@ namespace Aoyon.FaceTune
             }
         }
    
-        internal void GetBlendShapes(ICollection<BlendShape> resultToAdd, IObserveContext? observeContext = null)
+        internal void GetBlendShapes(ICollection<BlendShapeWeight> resultToAdd, IObserveContext? observeContext = null)
         {
             observeContext?.Observe(this);
             foreach (var animation in BlendShapeAnimations)

@@ -1,14 +1,14 @@
 namespace Aoyon.FaceTune.Gui;
 
-[CustomPropertyDrawer(typeof(BlendShape))]
+[CustomPropertyDrawer(typeof(BlendShapeWeight))]
 internal class BlendShapeDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        var propName = property.FindPropertyRelative(BlendShape.NamePropName);
-        var propWeight = property.FindPropertyRelative(BlendShape.WeightPropName);
+        var propName = property.FindPropertyRelative(BlendShapeWeight.NamePropName);
+        var propWeight = property.FindPropertyRelative(BlendShapeWeight.WeightPropName);
 
         if (propName == null || propWeight == null) return;
         

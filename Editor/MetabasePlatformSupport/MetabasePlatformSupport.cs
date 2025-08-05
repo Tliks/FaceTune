@@ -1,13 +1,13 @@
 using nadena.dev.ndmf.runtime;
 
-namespace Aoyon.FaceTune.Platform;
+namespace Aoyon.FaceTune.Platforms;
 
-internal static class PlatformSupport
+internal static class MetabasePlatformSupport
 {
-    private static readonly List<IPlatformSupport> s_supports = new();
-    private static readonly IPlatformSupport s_fallback = new FallbackSupport();
+    private static readonly List<IMetabasePlatformSupport> s_supports = new();
+    private static readonly IMetabasePlatformSupport s_fallback = new FallbackSupport();
     
-    public static void Register(IPlatformSupport support)
+    public static void Register(IMetabasePlatformSupport support)
     {
         s_supports.Add(support);
     }
@@ -17,7 +17,7 @@ internal static class PlatformSupport
         return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
     }
 
-    public static IPlatformSupport GetSupportInParents(Transform transform)
+    public static IMetabasePlatformSupport GetSupportInParents(Transform transform)
     {
         var avatar = FindAvatarInParents(transform);
         if (avatar == null)
@@ -27,12 +27,12 @@ internal static class PlatformSupport
         return GetSupport(avatar);
     }
 
-    public static IPlatformSupport GetSupport(Transform root)
+    public static IMetabasePlatformSupport GetSupport(Transform root)
     {
         return GetSupports(root).First();
     }
 
-    public static IEnumerable<IPlatformSupport> GetSupports(Transform root)
+    public static IEnumerable<IMetabasePlatformSupport> GetSupports(Transform root)
     {
         foreach (var support in s_supports)
         {

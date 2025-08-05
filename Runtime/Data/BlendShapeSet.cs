@@ -4,27 +4,27 @@ namespace Aoyon.FaceTune;
 /// 同名のBlendShapeを許容しないグループ
 /// 結合や削除、差分の取りだしなど
 /// </summary>
-internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet>, IReadOnlyBlendShapeSet
+internal class BlendShapeSet : ICollection<BlendShapeWeight>, IEquatable<BlendShapeSet>, IReadOnlyBlendShapeSet
 {
-    readonly Dictionary<string, BlendShape> map;
-    public Dictionary<string, BlendShape>.ValueCollection BlendShapes => map.Values;
-    public Dictionary<string, BlendShape>.KeyCollection Names => map.Keys;
+    readonly Dictionary<string, BlendShapeWeight> map;
+    public Dictionary<string, BlendShapeWeight>.ValueCollection BlendShapes => map.Values;
+    public Dictionary<string, BlendShapeWeight>.KeyCollection Names => map.Keys;
     public int Count => map.Count;
 
     public bool IsReadOnly => false;
 
-    private BlendShapeSet(Dictionary<string, BlendShape> map)
+    private BlendShapeSet(Dictionary<string, BlendShapeWeight> map)
     {
         this.map = map;
     }
     public BlendShapeSet(): this(new()) { }
 
-    public BlendShapeSet(IEnumerable<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter) : this()
+    public BlendShapeSet(IEnumerable<BlendShapeWeight> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter) : this()
     {
         AddRange(blendShapes, options);
     }
 
-    public IEnumerator<BlendShape> GetEnumerator()
+    public IEnumerator<BlendShapeWeight> GetEnumerator()
     {
         return map.Values.GetEnumerator();
     }
@@ -53,9 +53,9 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
     }
 
     public bool Contains(string name) => map.ContainsKey(name);
-    public bool Contains(BlendShape item) => map.TryGetValue(item.Name, out var value) && value.Weight == item.Weight;
-    public bool TryGetValue(string key, out BlendShape value) => map.TryGetValue(key, out value);
-    public BlendShapeSet Add(BlendShape blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public bool Contains(BlendShapeWeight item) => map.TryGetValue(item.Name, out var value) && value.Weight == item.Weight;
+    public bool TryGetValue(string key, out BlendShapeWeight value) => map.TryGetValue(key, out value);
+    public BlendShapeSet Add(BlendShapeWeight blendShape, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         if (string.IsNullOrWhiteSpace(blendShape.Name)) return this;
 
@@ -80,7 +80,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return this;
     }
 
-    public void Add(BlendShape item)
+    public void Add(BlendShapeWeight item)
     {
         Add(item, BlendShapeSetOptions.PreferLatter); 
     }
@@ -94,7 +94,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return this;
     }
 
-    public BlendShapeSet AddRange(IEnumerable<BlendShape> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
+    public BlendShapeSet AddRange(IEnumerable<BlendShapeWeight> blendShapes, BlendShapeSetOptions options = BlendShapeSetOptions.PreferLatter)
     {
         foreach (var blendShape in blendShapes)
         {
@@ -103,7 +103,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return this;
     }
 
-    bool ICollection<BlendShape>.Remove(BlendShape item)
+    bool ICollection<BlendShapeWeight>.Remove(BlendShapeWeight item)
     {
         return map.Remove(item.Name);
     }
@@ -120,13 +120,13 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return this;
     }
 
-    public BlendShapeSet Remove(BlendShape blendShape)
+    public BlendShapeSet Remove(BlendShapeWeight blendShape)
     {
         map.Remove(blendShape.Name);
         return this;
     }
 
-    public BlendShapeSet RemoveRange(IEnumerable<BlendShape> blendShapes)
+    public BlendShapeSet RemoveRange(IEnumerable<BlendShapeWeight> blendShapes)
     {
         map.RemoveRange(blendShapes.Select(x => x.Name));
         return this;
@@ -145,7 +145,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         if (map.TryGetValue(oldName, out var blendShape))
         {
             map.Remove(oldName);
-            map.Add(newName, new BlendShape(newName, blendShape.Weight));
+            map.Add(newName, new BlendShapeWeight(newName, blendShape.Weight));
         }
     }
 
@@ -153,7 +153,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
     {
         foreach (var (name, _) in map)
         {
-            map[name] = new BlendShape(name, weight);
+            map[name] = new BlendShapeWeight(name, weight);
         }
     }
 
@@ -175,7 +175,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return this;
     }
 
-    public BlendShapeSet Where(Func<BlendShape, bool> predicate)
+    public BlendShapeSet Where(Func<BlendShapeWeight, bool> predicate)
     {
         var result = new BlendShapeSet();
         foreach (var blendShape in BlendShapes)
@@ -198,7 +198,7 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
         return Except(baseSet.AsReadOnly(), includeEqualOverride);
     }
 
-    public void CopyTo(BlendShape[] array, int arrayIndex)
+    public void CopyTo(BlendShapeWeight[] array, int arrayIndex)
     {
         map.Values.CopyTo(array, arrayIndex);
     }
@@ -262,17 +262,17 @@ internal class BlendShapeSet : ICollection<BlendShape>, IEquatable<BlendShapeSet
     }
 }
 
-internal interface IReadOnlyBlendShapeSet : IReadOnlyCollection<BlendShape>, IEquatable<IReadOnlyBlendShapeSet>
+internal interface IReadOnlyBlendShapeSet : IReadOnlyCollection<BlendShapeWeight>, IEquatable<IReadOnlyBlendShapeSet>
 {
-    Dictionary<string, BlendShape>.ValueCollection BlendShapes { get; }
-    Dictionary<string, BlendShape>.KeyCollection Names { get; }
+    Dictionary<string, BlendShapeWeight>.ValueCollection BlendShapes { get; }
+    Dictionary<string, BlendShapeWeight>.KeyCollection Names { get; }
     BlendShapeSet Clone();
     void CloneTo(BlendShapeSet result);
     bool Contains(string name);
-    bool Contains(BlendShape item);
-    bool TryGetValue(string key, out BlendShape value);
+    bool Contains(BlendShapeWeight item);
+    bool TryGetValue(string key, out BlendShapeWeight value);
     BlendShapeSet Except(IReadOnlyBlendShapeSet baseSet, bool includeEqualOverride = false);
-    BlendShapeSet Where(Func<BlendShape, bool> predicate);
+    BlendShapeSet Where(Func<BlendShapeWeight, bool> predicate);
 }
 
 internal enum BlendShapeSetOptions

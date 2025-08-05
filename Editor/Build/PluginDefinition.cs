@@ -9,8 +9,8 @@ namespace Aoyon.FaceTune.Build;
 [RunsOnAllPlatforms]
 public sealed class PluginDefinition : Plugin<PluginDefinition>
 {
-    public override string QualifiedName => FaceTuneConsts.QualifiedName; // "aoyon.facetune"
-    public override string DisplayName => FaceTuneConsts.Name;
+    public override string QualifiedName => FaceTuneConstants.QualifiedName; // "aoyon.facetune"
+    public override string DisplayName => FaceTuneConstants.Name;
 
     protected override void Configure()
     {
@@ -23,7 +23,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(ModifyHierarchyPass.Instance);
         sequence.Run(CollectDataPass.Instance);
         sequence.Run(ProcessTrackedShapesPass.Instance);
-        sequence.Run(ApplyDefaulShapesPass.Instance)
+        sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
         sequence.WithRequiredExtension(typeof(AnimatorServicesContext), sq1 => 
         {

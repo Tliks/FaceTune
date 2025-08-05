@@ -4,9 +4,9 @@ using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
 using UnityEditor.Animations;
 
-namespace Aoyon.FaceTune.Platform;
+namespace Aoyon.FaceTune.Platforms;
 
-internal interface IPlatformSupport
+internal interface IMetabasePlatformSupport
 {
     public bool IsTarget(Transform root);
     public void Initialize(Transform root)

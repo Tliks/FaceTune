@@ -9,7 +9,7 @@ namespace Aoyon.FaceTune
         public AnimationSourceMode SourceMode = AnimationSourceMode.Manual;
 
         // Manual
-        public List<BlendShapeAnimation> BlendShapeAnimations = new();
+        public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
         // FromAnimationClip
         public AnimationClip? Clip = null;
@@ -28,7 +28,7 @@ namespace Aoyon.FaceTune
                     break;
                 case AnimationSourceMode.AnimationClip:
                     if (Clip == null) break;
-                    var blendShapeAnimations = new List<BlendShapeAnimation>();
+                    var blendShapeAnimations = new List<BlendShapeWeightAnimation>();
                     ClipToManual(blendShapeAnimations);
                     foreach (var animation in blendShapeAnimations)
                     {
@@ -41,17 +41,17 @@ namespace Aoyon.FaceTune
             return animations;
         }
 
-        internal void ClipToManual(List<BlendShapeAnimation> animations)
+        internal void ClipToManual(List<BlendShapeWeightAnimation> animations)
         {
             if (Clip == null) return;
-            var facialStyleAnimations = new List<BlendShapeAnimation>();
+            var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
             FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialStyleAnimations);
 #if UNITY_EDITOR
             Clip.GetBlendShapeAnimations(animations, ClipOption, facialStyleAnimations);
 #endif
         }
 
-        internal override void GetBlendShapes(ICollection<BlendShape> resultToAdd, IReadOnlyList<BlendShapeAnimation> facialAnimations, IObserveContext? observeContext = null)
+        internal override void GetBlendShapes(ICollection<BlendShapeWeight> resultToAdd, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, IObserveContext? observeContext = null)
         {
             observeContext ??= new NonObserveContext();
             observeContext.Observe(this);

@@ -33,7 +33,7 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpre
         proxy.GetBlendShapesAndSetWeightToZero(zeroWeightBlendShapes);
         result.AddRange(zeroWeightBlendShapes);
 
-        using var _3 = ListPool<BlendShapeAnimation>.Get(out var facialStyleAnimations);
+        using var _3 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
         FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(target.gameObject, facialStyleAnimations, root, observeContext);
         result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 

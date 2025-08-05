@@ -78,7 +78,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
     private void OpenEditor()
     {
-        var facialStyleAnimations = new List<BlendShapeAnimation>();
+        var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
         FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
         var defaultOverride = new BlendShapeSet();
         Component.GetBlendShapes(defaultOverride, facialStyleAnimations);
@@ -96,7 +96,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
     internal static bool ConvertToManual(FacialDataComponent component)
     {
-        var animations = new List<BlendShapeAnimation>();
+        var animations = new List<BlendShapeWeightAnimation>();
         component.ClipToManual(animations);
         if (animations.Count == 0)
         {
@@ -165,7 +165,7 @@ internal class ExportFacialDataWindow : EditorWindow
         }
         if (_addFacialStyle)
         {
-            var facialStyleAnimations = new List<BlendShapeAnimation>();
+            var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
             if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, facialStyleAnimations))
             {
                 animations.AddRange(facialStyleAnimations.ToGenericAnimations(context.BodyPath));

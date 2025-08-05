@@ -1,5 +1,5 @@
 using UnityEditor.Animations;
-using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Platforms;
 using Aoyon.FaceTune.Gui;
 
 namespace Aoyon.FaceTune.Importer;
@@ -8,14 +8,14 @@ internal class AnimatorControllerImporter
 {
     private readonly SessionContext _context;
     private readonly AnimatorController _animatorController;
-    private readonly IPlatformSupport _platformSupport;
+    private readonly IMetabasePlatformSupport _platformSupport;
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
 
     public AnimatorControllerImporter(SessionContext context, AnimatorController animatorController)
     {
         _context = context;
         _animatorController = animatorController;
-        _platformSupport = PlatformSupport.GetSupportInParents(context.Root.transform);
+        _platformSupport = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
     }
 
@@ -185,7 +185,7 @@ internal class AnimatorControllerImporter
         {
             if (binding.type == typeof(SkinnedMeshRenderer) &&
                 binding.path.ToLower() == _context.BodyPath.ToLower() &&
-                binding.propertyName.StartsWith(FaceTuneConsts.AnimatedBlendShapePrefix)
+                binding.propertyName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix)
             )
             {
                 facialData = true;

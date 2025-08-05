@@ -3,9 +3,9 @@ namespace Aoyon.FaceTune;
 internal record class ExpressionWithConditions
 {
     public IReadOnlyList<Condition> Conditions { get; private set; }
-    public Expression Expression { get; private set; }
+    public AvatarExpression Expression { get; private set; }
 
-    public ExpressionWithConditions(IReadOnlyList<Condition> conditions, Expression expression)
+    public ExpressionWithConditions(IReadOnlyList<Condition> conditions, AvatarExpression expression)
     {
         Conditions = conditions;
         Expression = expression;
@@ -16,7 +16,7 @@ internal record class ExpressionWithConditions
         Conditions = conditions;
     }
 
-    public void SetExpression(Expression expression)
+    public void SetExpression(AvatarExpression expression)
     {
         Expression = expression;
     }
@@ -134,9 +134,9 @@ internal record PatternData
         return OrderedItems.OfType<SingleExpressionPattern>();
     }
 
-    public IEnumerable<Expression> GetAllExpressions()
+    public IEnumerable<AvatarExpression> GetAllExpressions()
     {
-        var expressions = new List<Expression>();
+        var expressions = new List<AvatarExpression>();
         foreach (var orderedItem in OrderedItems)
         {
             foreach (var expressionWithCondition in orderedItem.AllExpressionWithConditions)

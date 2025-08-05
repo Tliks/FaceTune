@@ -6,7 +6,7 @@ namespace Aoyon.FaceTune;
 // <= 本来不要なプロパティをセーブデータとして公開することになる。
 // <= 仮の値の場合、そのフラグが必要になる。
 [Serializable]
-public record BlendShapeAnimation // Immutable
+public record BlendShapeWeightAnimation // Immutable
 {
     [SerializeField] private string name;
     public string Name { get => name; init => name = value; }
@@ -16,13 +16,13 @@ public record BlendShapeAnimation // Immutable
     public AnimationCurve Curve { get => curve.Clone(); init => curve = value.Clone(); }
     public const string CurvePropName = nameof(curve);
 
-    public BlendShapeAnimation()
+    public BlendShapeWeightAnimation()
     {
         name = "";
         curve = new AnimationCurve();
     }
 
-    public BlendShapeAnimation(string name, AnimationCurve other)
+    public BlendShapeWeightAnimation(string name, AnimationCurve other)
     {
         this.name = name;
         curve = other.Clone();
@@ -30,38 +30,38 @@ public record BlendShapeAnimation // Immutable
 
     internal float Time => curve.keys.Max(k => k.time);
 
-    internal static BlendShapeAnimation SingleFrame(string name, float weight)
+    internal static BlendShapeWeightAnimation SingleFrame(string name, float weight)
     {
         var curve = new AnimationCurve();
         curve.AddKey(0, weight);
-        return new BlendShapeAnimation(name, curve);
+        return new BlendShapeWeightAnimation(name, curve);
     }
 
-    internal BlendShapeAnimation ToFirstFrame()
+    internal BlendShapeWeightAnimation ToFirstFrame()
     {
         var curve = new AnimationCurve();
         curve.AddKey(0, this.curve.Evaluate(0));
-        return new BlendShapeAnimation(Name, curve);
+        return new BlendShapeWeightAnimation(Name, curve);
     }
 
-    internal BlendShapeAnimation ToLastFrame()
+    internal BlendShapeWeightAnimation ToLastFrame()
     {
         var curve = new AnimationCurve();
         curve.AddKey(Time, this.curve.Evaluate(Time));
-        return new BlendShapeAnimation(Name, curve);
+        return new BlendShapeWeightAnimation(Name, curve);
     }
 
     internal GenericAnimation ToGeneric(string path)
     {
-        var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), FaceTuneConsts.AnimatedBlendShapePrefix + Name);
+        var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), FaceTuneConstants.AnimatedBlendShapePrefix + Name);
         return new GenericAnimation(binding, curve);
     }
 
-    internal BlendShape ToFirstFrameBlendShape()
+    internal BlendShapeWeight ToFirstFrameBlendShape()
     {
-        return new BlendShape(Name, curve.Evaluate(0));
+        return new BlendShapeWeight(Name, curve.Evaluate(0));
     }
-    public virtual bool Equals(BlendShapeAnimation other)
+    public virtual bool Equals(BlendShapeWeightAnimation other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;

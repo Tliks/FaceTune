@@ -10,7 +10,7 @@ internal class AnimatorInstaller : InstallerBase
 
     private readonly float _transitionDurationSeconds;
 
-    private readonly Dictionary<Expression, VirtualClip> _expressionClipCache = new();
+    private readonly Dictionary<AvatarExpression, VirtualClip> _expressionClipCache = new();
 
     private readonly LipSyncInstaller _lipSyncInstaller;
     private readonly BlinkInstaller _blinkInstaller;
@@ -66,7 +66,7 @@ internal class AnimatorInstaller : InstallerBase
         initializeClip.SetAnimations(shapesAnimations);
 
         var allBindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct();
-        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), FaceTuneConsts.AnimatedBlendShapePrefix);
+        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), FaceTuneConstants.AnimatedBlendShapePrefix);
         var nonFacialBindings = allBindings.Where(b => b != facialBinding);
         if (!nonFacialBindings.Any()) return;
         var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
@@ -211,7 +211,7 @@ internal class AnimatorInstaller : InstallerBase
         return animatorCondition;
     }
 
-    private void AddExpressionToState(VirtualState state, Expression expression)
+    private void AddExpressionToState(VirtualState state, AvatarExpression expression)
     {
         if (state.TryGetClip(out var clip))
         {

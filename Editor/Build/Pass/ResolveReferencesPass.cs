@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune.Build;
 
 internal class ResolveReferencesPass : Pass<ResolveReferencesPass>
 {
-    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.resolve-references";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.resolve-references";
     public override string DisplayName => "Resolve References";
 
     protected override void Execute(BuildContext context)

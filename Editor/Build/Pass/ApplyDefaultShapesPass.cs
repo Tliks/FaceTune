@@ -2,9 +2,9 @@ using nadena.dev.ndmf;
 
 namespace Aoyon.FaceTune.Build;
 
-internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
+internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
 {
-    public override string QualifiedName => $"{FaceTuneConsts.QualifiedName}.apply-default-shapes";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.apply-default-shapes";
     public override string DisplayName => "Apply Default Shapes";
 
     protected override void Execute(BuildContext context)
@@ -22,7 +22,7 @@ internal class ApplyDefaulShapesPass : Pass<ApplyDefaulShapesPass>
         FacialStyleComponent target;
         if (componentCount > 1)
         {
-            Debug.LogWarning("ApplyDefaulShapesPass: Multiple FacialStyleComponent with ApplyToRenderer are found");
+            Debug.LogWarning("ApplyDefaultShapesPass: Multiple FacialStyleComponent with ApplyToRenderer are found");
             target = facialStyleComponents.Last();
         }
         else
