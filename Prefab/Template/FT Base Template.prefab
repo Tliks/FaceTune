@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5731356164830962727}
   - component: {fileID: 5427458973660454188}
   m_Layer: 0
-  m_Name: FT Basse Template
+  m_Name: FT Base Template
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
