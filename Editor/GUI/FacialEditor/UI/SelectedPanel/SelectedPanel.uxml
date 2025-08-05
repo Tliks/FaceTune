@@ -1,4 +1,4 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="aoyon.facetune.gui.components">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="selected-panel">
         <ui:VisualElement name="common-controls-panel">
             <ui:TextField name="search-field" />
