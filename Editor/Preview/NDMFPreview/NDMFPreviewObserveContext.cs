@@ -31,6 +31,11 @@ internal class NDMFPreviewObserveContext : IObserveContext
         return _context.ActiveInHierarchy(obj);
     }
 
+    public bool EditorOnlyInHierarchy(GameObject obj)
+    {
+        return _context.EditorOnlyInHierarchy(obj);
+    }
+
     public C? GetComponentNullable<C>(GameObject obj) where C : Component
     {
         return _context.GetComponent<C>(obj).DestroyedAsNull();

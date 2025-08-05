@@ -90,7 +90,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
     // プレビューの対象となり得るGameObjectであることが確定している場合
     private static void ProcessChildrenBlendShapes(GameObject targetGameObject, GameObject root, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeSet result)
     {
-        var isEditorOnly = context.Observe(targetGameObject, o => o.IsEditorOnlyInHierarchy(), (a, b) => a == b);
+        var isEditorOnly = context.EditorOnlyInHierarchy(targetGameObject);
         if (isEditorOnly) return;
 
         var observeContext = new NDMFPreviewObserveContext(context);

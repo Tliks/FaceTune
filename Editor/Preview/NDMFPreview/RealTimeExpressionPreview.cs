@@ -9,23 +9,18 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpre
     {
         using var _ = ListPool<ExpressionComponent>.Get(out var components);
         context.GetComponentsInChildren<ExpressionComponent>(root, true, components);
-        foreach (var component in components) context.Observe(component);
-        var enabledComponents = components.Where(c => c.EnableRealTimePreview).ToList();
 
-        ExpressionComponent target;
-        if (enabledComponents.Count == 0)
+        ExpressionComponent? target = null;
+        foreach (var component in components)
         {
-            return;
+            var enabled = context.Observe(component, c => c.EnableRealTimePreview, (a, b) => a == b);
+            if (!enabled) continue;
+            var isEditorOnly = context.EditorOnlyInHierarchy(component.gameObject);
+            if (isEditorOnly) continue;
+            if (target != null) Debug.LogWarning("RealTimeExpressionPreview: Multiple ExpressionComponent with EnableRealTimePreview are found");
+            target = component;
         }
-        if (enabledComponents.Count == 1)
-        {
-            target = enabledComponents[0];
-        }
-        else
-        {
-            Debug.LogWarning("RealTimeExpressionPreview: Multiple ExpressionComponent with EnableRealTimePreview are found");
-            target = enabledComponents.Last();
-        }
+        if (target == null) return;
 
         var observeContext = new NDMFPreviewObserveContext(context);
 
