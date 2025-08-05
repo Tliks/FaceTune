@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 internal static class DictionaryExtensions
 {

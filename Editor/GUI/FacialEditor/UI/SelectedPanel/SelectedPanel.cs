@@ -1,7 +1,7 @@
 using UnityEngine.UIElements;
-using aoyon.facetune.gui.components;
+using Aoyon.FaceTune.Gui.components;
 
-namespace aoyon.facetune.gui.shapes_editor;
+namespace Aoyon.FaceTune.Gui.shapes_editor;
 
 internal class SelectedPanel
 {

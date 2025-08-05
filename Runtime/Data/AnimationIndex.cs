@@ -1,4 +1,4 @@
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 // GenericAnimationのコレクションに対するアクセス・簡易な編集を行うためのラッパーオブジェクト
 // 重複を許容しない、Dictionary基盤の設計

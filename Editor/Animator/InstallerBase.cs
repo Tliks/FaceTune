@@ -1,8 +1,8 @@
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
-using aoyon.facetune.platform;
+using Aoyon.FaceTune.Platform;
 
-namespace aoyon.facetune.animator;
+namespace Aoyon.FaceTune.Animator;
 
 internal class InstallerBase
 {
@@ -28,7 +28,7 @@ internal class InstallerBase
     {
         _controller = virtualController;
         _sessionContext = sessionContext;
-        _platformSupport = platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
+        _platformSupport = Platform.PlatformSupport.GetSupport(_sessionContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
 
         _useWriteDefaults = useWriteDefaults;

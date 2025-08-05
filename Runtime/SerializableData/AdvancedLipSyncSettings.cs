@@ -1,4 +1,4 @@
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 [Serializable]
 public record class AdvancedLipSyncSettings // Immutable

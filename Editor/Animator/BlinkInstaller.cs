@@ -3,7 +3,7 @@ using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
 
-namespace aoyon.facetune.animator;
+namespace Aoyon.FaceTune.Animator;
 
 internal class BlinkInstaller : InstallerBase
 {
@@ -34,7 +34,7 @@ internal class BlinkInstaller : InstallerBase
             var allowBlinkCurve = new AnimationCurve();
             var value = facialSettings.AllowEyeBlink == TrackingPermission.Allow ? 1 : 0;
             allowBlinkCurve.AddKey(0, value);
-            clip.SetFloatCurve("", typeof(Animator), AllowAAP, allowBlinkCurve);
+            clip.SetFloatCurve("", typeof(UnityEngine.Animator), AllowAAP, allowBlinkCurve);
         }
 
         var advancedSettings = facialSettings.AdvancedEyBlinkSettings;
@@ -49,13 +49,13 @@ internal class BlinkInstaller : InstallerBase
             // UseAnimation
             var useAnimationCurve = new AnimationCurve();
             useAnimationCurve.AddKey(0, 1);
-            clip.SetFloatCurve("", typeof(Animator), UseAnimationAAP, useAnimationCurve);
+            clip.SetFloatCurve("", typeof(UnityEngine.Animator), UseAnimationAAP, useAnimationCurve);
 
             // AnimationMode
             var index = GetIndexForSettings(advancedSettings);
             var animationModeCurve = new AnimationCurve();
             animationModeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
-            clip.SetFloatCurve("", typeof(Animator), ModeAAP, animationModeCurve);
+            clip.SetFloatCurve("", typeof(UnityEngine.Animator), ModeAAP, animationModeCurve);
         }
     }
 

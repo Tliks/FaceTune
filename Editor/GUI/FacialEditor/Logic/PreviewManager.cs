@@ -1,7 +1,7 @@
 using UnityEngine.UIElements;
-using aoyon.facetune.preview;
+using Aoyon.FaceTune.Preview;
 
-namespace aoyon.facetune.gui.shapes_editor;
+namespace Aoyon.FaceTune.Gui.shapes_editor;
 
 internal class PreviewManager : IDisposable
 {

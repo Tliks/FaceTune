@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 internal static class LinqExtensions
 {

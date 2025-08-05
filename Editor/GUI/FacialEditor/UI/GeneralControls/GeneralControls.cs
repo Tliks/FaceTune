@@ -1,7 +1,7 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.gui.shapes_editor;
+namespace Aoyon.FaceTune.Gui.shapes_editor;
 
 internal class GeneralControls
 {

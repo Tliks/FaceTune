@@ -1,10 +1,10 @@
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using aoyon.facetune.preview;
+using Aoyon.FaceTune.Preview;
 
-[assembly: ExportsPlugin(typeof(aoyon.facetune.build.PluginDefinition))]
+[assembly: ExportsPlugin(typeof(Aoyon.FaceTune.Build.PluginDefinition))]
 
-namespace aoyon.facetune.build;
+namespace Aoyon.FaceTune.Build;
 
 [RunsOnAllPlatforms]
 public sealed class PluginDefinition : Plugin<PluginDefinition>

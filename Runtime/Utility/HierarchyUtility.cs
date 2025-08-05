@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.runtime;
 
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 internal static class HierarchyUtility
 {

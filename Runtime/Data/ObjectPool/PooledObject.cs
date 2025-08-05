@@ -1,6 +1,6 @@
 using UnityEngine.Pool;
 
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 internal sealed class PooledObject<T> : IDisposable where T : class
 {

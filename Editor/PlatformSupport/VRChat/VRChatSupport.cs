@@ -8,10 +8,10 @@ using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using aoyon.facetune.build;
-using aoyon.facetune.animator;
+using Aoyon.FaceTune.Build;
+using Aoyon.FaceTune.Animator;
 
-namespace aoyon.facetune.platform;
+namespace Aoyon.FaceTune.Platform;
 
 internal class VRChatSuport : IPlatformSupport
 {

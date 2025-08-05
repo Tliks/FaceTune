@@ -2,7 +2,7 @@ using UnityEngine.SceneManagement;
 using nadena.dev.modular_avatar.core;
 using M = UnityEditor.MenuItem;
 
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 internal static class AssetsMenu
 {

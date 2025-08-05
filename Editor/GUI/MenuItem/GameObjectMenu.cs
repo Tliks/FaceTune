@@ -1,10 +1,10 @@
-using aoyon.facetune.importer;
-using aoyon.facetune.build;
+using Aoyon.FaceTune.Importer;
+using Aoyon.FaceTune.Build;
 using nadena.dev.ndmf.runtime;
 using M = UnityEditor.MenuItem;
-using aoyon.facetune.platform;
+using Aoyon.FaceTune.Platform;
 
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 internal static class GameObjectMenu
 {

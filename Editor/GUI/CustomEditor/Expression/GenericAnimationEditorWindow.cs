@@ -1,19 +1,19 @@
 using UnityEditor.Animations;
 
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 [InitializeOnLoad]
 internal static class GenericAnimationEditor
 {
     public class AnimationWindowSession
     {
-        public readonly Animator EditedAnimator;
+        public readonly UnityEngine.Animator EditedAnimator;
         public readonly RuntimeAnimatorController? OriginalController;
         public readonly bool HasPrefabOverride;
         public readonly AnimationClip EditedClip;
         public readonly Action<AnimationClip>? OnClipModified;
 
-        public AnimationWindowSession(Animator editedAnimator, RuntimeAnimatorController? originalController, AnimationClip editedClip, Action<AnimationClip>? onClipModified)
+        public AnimationWindowSession(UnityEngine.Animator editedAnimator, RuntimeAnimatorController? originalController, AnimationClip editedClip, Action<AnimationClip>? onClipModified)
         {
             EditedAnimator = editedAnimator;
             OriginalController = originalController;
@@ -47,12 +47,12 @@ internal static class GenericAnimationEditor
         return s_CurrentSession != null;
     }
     
-    public static bool IsEditing(Animator animator)
+    public static bool IsEditing(UnityEngine.Animator animator)
     {
         return IsEditing() && s_CurrentSession?.EditedAnimator == animator;
     }
 
-    public static void StartEditingWithAnimations(Animator animator, IReadOnlyList<GenericAnimation> animations, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
+    public static void StartEditingWithAnimations(UnityEngine.Animator animator, IReadOnlyList<GenericAnimation> animations, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
     {
         var tmpClip = new AnimationClip { name = $"{FaceTuneConsts.ShortName} Temporary Clip" };
         tmpClip.SetGenericAnimations(animations);
@@ -67,7 +67,7 @@ internal static class GenericAnimationEditor
         StartEditing(animator, tmpClip, onClipModified, onSessionEnded_);
     }
 
-    public static void StartEditing(Animator animator, AnimationClip clipToEdit, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
+    public static void StartEditing(UnityEngine.Animator animator, AnimationClip clipToEdit, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
     {
         if (animator == null)
         {

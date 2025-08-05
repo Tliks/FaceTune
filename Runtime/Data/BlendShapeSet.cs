@@ -1,4 +1,4 @@
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 /// <summary>
 /// 同名のBlendShapeを許容しないグループ

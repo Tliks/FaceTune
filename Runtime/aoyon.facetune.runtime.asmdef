@@ -1,8 +1,8 @@
 {
-    "name": "aoyon.facetune.runtime",
+    "name": "Aoyon.FaceTune.Runtime",
     "rootNamespace": "",
     "references": [
-        "aoyon.facetune.common",
+        "Aoyon.FaceTune.Common",
         "nadena.dev.ndmf.runtime",
         "nadena.dev.modular-avatar.core"
     ],

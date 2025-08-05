@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace aoyon.facetune.gui.shapes_editor;
+namespace Aoyon.FaceTune.Gui.shapes_editor;
 
 internal class BlendShapeGrouping
 {

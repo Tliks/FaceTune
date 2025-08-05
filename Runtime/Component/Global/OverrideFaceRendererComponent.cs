@@ -1,6 +1,6 @@
 using nadena.dev.modular_avatar.core;
 
-namespace aoyon.facetune
+namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]

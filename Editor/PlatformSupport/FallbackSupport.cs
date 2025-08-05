@@ -1,4 +1,4 @@
-namespace aoyon.facetune.platform;
+namespace Aoyon.FaceTune.Platform;
 
 internal class FallbackSupport : IPlatformSupport
 {     

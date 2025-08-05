@@ -1,10 +1,10 @@
 {
-    "name": "aoyon.facetune.editor.vrchat",
+    "name": "Aoyon.FaceTune.Editor.VRChat",
     "rootNamespace": "",
     "references": [
-        "aoyon.facetune.common",
-        "aoyon.facetune.editor",
-        "aoyon.facetune.runtime",
+        "Aoyon.FaceTune.Common",
+        "Aoyon.FaceTune.Editor",
+        "Aoyon.FaceTune.Runtime",
         "nadena.dev.ndmf",
         "nadena.dev.modular-avatar.core"
     ],

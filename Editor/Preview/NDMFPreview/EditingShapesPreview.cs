@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using nadena.dev.ndmf.preview;
 
-namespace aoyon.facetune.preview;
+namespace Aoyon.FaceTune.Preview;
 
 internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPreview>
 {

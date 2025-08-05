@@ -1,8 +1,8 @@
 using UnityEditor.Animations;
-using aoyon.facetune.platform;
-using aoyon.facetune.gui;
+using Aoyon.FaceTune.Platform;
+using Aoyon.FaceTune.Gui;
 
-namespace aoyon.facetune.importer;
+namespace Aoyon.FaceTune.Importer;
 
 internal class AnimatorControllerImporter
 {

@@ -1,7 +1,7 @@
 using UnityEditor.Animations;
 using nadena.dev.ndmf.animator;
 
-namespace aoyon.facetune.animator;
+namespace Aoyon.FaceTune.Animator;
 
 internal class LipSyncInstaller : InstallerBase
 {
@@ -31,7 +31,7 @@ internal class LipSyncInstaller : InstallerBase
             var curve = new AnimationCurve();
             var value = facialSettings.AllowLipSync == TrackingPermission.Allow ? 1 : 0;
             curve.AddKey(0, value);
-            clip.SetFloatCurve("", typeof(Animator), AllowAAP, curve);
+            clip.SetFloatCurve("", typeof(UnityEngine.Animator), AllowAAP, curve);
         }
 
         var advancedSettings = facialSettings.AdvancedLipSyncSettings;
@@ -45,13 +45,13 @@ internal class LipSyncInstaller : InstallerBase
             // UseAdvanced
             var useAdvancedCurve = new AnimationCurve();
             useAdvancedCurve.AddKey(0, 1);
-            clip.SetFloatCurve("", typeof(Animator), UseAdvancedAAP, useAdvancedCurve);
+            clip.SetFloatCurve("", typeof(UnityEngine.Animator), UseAdvancedAAP, useAdvancedCurve);
 
             // Mode
             var index = GetIndexForSettings(advancedSettings);
             var modeCurve = new AnimationCurve();
             modeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
-            clip.SetFloatCurve("", typeof(Animator), ModeAAP, modeCurve);
+            clip.SetFloatCurve("", typeof(UnityEngine.Animator), ModeAAP, modeCurve);
 
             if (advancedSettings.IsCancelerEnabled())
             {
@@ -62,7 +62,7 @@ internal class LipSyncInstaller : InstallerBase
                 // UseCanceler
                 var useCancelerCurve = new AnimationCurve();
                 useCancelerCurve.AddKey(0, 1);
-                clip.SetFloatCurve("", typeof(Animator), UseCancelerAAP, useCancelerCurve);
+                clip.SetFloatCurve("", typeof(UnityEngine.Animator), UseCancelerAAP, useCancelerCurve);
             }
         }
     }

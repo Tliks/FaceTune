@@ -1,8 +1,8 @@
 using UnityEditorInternal;
-using aoyon.facetune.Settings;
-using aoyon.facetune.gui.shapes_editor;
+using Aoyon.FaceTune.Settings;
+using Aoyon.FaceTune.Gui.shapes_editor;
 
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 internal static class ToolsMenu
 {

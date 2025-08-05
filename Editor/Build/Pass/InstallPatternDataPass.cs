@@ -1,6 +1,6 @@
 using nadena.dev.ndmf;
 
-namespace aoyon.facetune.build;
+namespace Aoyon.FaceTune.Build;
 
 [RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
 internal class InstallPatternDataPass : Pass<InstallPatternDataPass>

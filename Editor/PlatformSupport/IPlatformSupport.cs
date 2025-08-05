@@ -1,10 +1,10 @@
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
-using aoyon.facetune.build;
+using Aoyon.FaceTune.Build;
 using UnityEditor.Animations;
 
-namespace aoyon.facetune.platform;
+namespace Aoyon.FaceTune.Platform;
 
 internal interface IPlatformSupport
 {

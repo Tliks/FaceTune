@@ -1,6 +1,6 @@
 using UnityEditor.Animations;
 
-namespace aoyon.facetune.animator;
+namespace Aoyon.FaceTune.Animator;
 
 // AAP(float)のヘルパー
 

@@ -1,4 +1,4 @@
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 [CustomPropertyDrawer(typeof(HandGestureCondition))]
 internal class HandGestureConditionDrawer : PropertyDrawer

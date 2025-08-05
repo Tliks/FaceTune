@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("aoyon.facetune.editor.vrchat")]
+[assembly: InternalsVisibleTo("Aoyon.FaceTune.Editor.VRChat")]

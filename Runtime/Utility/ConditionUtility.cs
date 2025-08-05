@@ -2,7 +2,7 @@
 using UnityEditor.Animations;
 #endif
 
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 internal static class ConditionUtility
 {

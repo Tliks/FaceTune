@@ -1,7 +1,7 @@
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
 
-namespace aoyon.facetune.animator;
+namespace Aoyon.FaceTune.Animator;
 
 internal static class AnimatorHelper
 {
@@ -86,7 +86,7 @@ internal static class AnimatorHelper
                 case null:
                     Debug.LogWarning($"Target is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}");
                     continue;
-                case Animator:
+                case UnityEngine.Animator:
                     //Debug.Log($"{curveBinding.path}, {curveBinding.type}, {propName}, AAP");
                     continue;
                 case SkinnedMeshRenderer renderer when curveBinding.type == typeof(SkinnedMeshRenderer) && propName.StartsWith(FaceTuneConsts.AnimatedBlendShapePrefix):

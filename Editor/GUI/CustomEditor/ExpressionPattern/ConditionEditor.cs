@@ -1,4 +1,4 @@
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(ConditionComponent))]

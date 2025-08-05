@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.runtime;
 
-namespace aoyon.facetune.platform;
+namespace Aoyon.FaceTune.Platform;
 
 internal static class PlatformSupport
 {

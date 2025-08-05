@@ -1,6 +1,6 @@
 using UnityEngine.Pool;
 
-namespace aoyon.facetune;
+namespace Aoyon.FaceTune;
 
 // unityEngineにCollectionPool/ListPool等は用意されているが、使用を区別し監視する為にこれを用いない
 // 基本的に短命のオブジェクトに対する利用を想定しているためCapacityの制限は厳しい

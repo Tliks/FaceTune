@@ -1,6 +1,6 @@
 using nadena.dev.ndmf.preview;
 
-namespace aoyon.facetune.preview;
+namespace Aoyon.FaceTune.Preview;
 
 // early
 internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpressionPreview>

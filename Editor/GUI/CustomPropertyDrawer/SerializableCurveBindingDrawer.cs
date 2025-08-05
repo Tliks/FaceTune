@@ -1,7 +1,7 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace aoyon.facetune.gui;
+namespace Aoyon.FaceTune.Gui;
 
 [CustomPropertyDrawer(typeof(SerializableCurveBinding))]
 public class SerializableCurveBindingDrawer : PropertyDrawer

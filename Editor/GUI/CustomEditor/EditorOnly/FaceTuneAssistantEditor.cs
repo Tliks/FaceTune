@@ -1,7 +1,7 @@
-using aoyon.facetune.importer;
+using Aoyon.FaceTune.Importer;
 using UnityEditor.Animations;
 
-namespace aoyon.facetune.gui
+namespace Aoyon.FaceTune.Gui
 {
     internal enum HandGesturePatternType
     {
