@@ -13,10 +13,10 @@ public record class HandGestureCondition : Condition // Immutable
     public Hand Hand { get => hand; init => hand = value; }
     public const string HandPropName = nameof(hand);
 
-    [SerializeField] private bool isEqual;
-    public bool IsEqual { get => isEqual; init => isEqual = value; }
-    public const string IsEqualPropName = nameof(isEqual);
-
+    [SerializeField] private EqualityComparison equalityComparison;
+    public EqualityComparison EqualityComparison { get => equalityComparison; init => equalityComparison = value; }
+    public const string EqualityComparisonPropName = nameof(equalityComparison);
+    
     [SerializeField] private HandGesture handGesture;
     public HandGesture HandGesture { get => handGesture; init => handGesture = value; }
     public const string HandGesturePropName = nameof(handGesture);
@@ -24,20 +24,20 @@ public record class HandGestureCondition : Condition // Immutable
     public HandGestureCondition()
     {
         hand = Hand.Left;
-        isEqual = true;
+        equalityComparison = EqualityComparison.Equal;
         handGesture = HandGesture.Fist;
     }
 
-    public HandGestureCondition(Hand hand, bool isEqual, HandGesture handGesture)
+    public HandGestureCondition(Hand hand, EqualityComparison equalityComparison, HandGesture handGesture)
     {
         this.hand = hand;
-        this.isEqual = isEqual;
+        this.equalityComparison = equalityComparison;
         this.handGesture = handGesture;
     }
 
     internal override Condition ToNegation()
     {
-        return this with { isEqual = !isEqual };
+        return this with { equalityComparison = equalityComparison.Negate() };
     }
 
     public virtual bool Equals(HandGestureCondition other)
@@ -45,13 +45,13 @@ public record class HandGestureCondition : Condition // Immutable
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return hand == other.hand
-            && isEqual == other.isEqual
+            && equalityComparison == other.equalityComparison
             && handGesture == other.handGesture;
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(hand, isEqual, handGesture);
+        return HashCode.Combine(hand, equalityComparison, handGesture);
     }
 }
 

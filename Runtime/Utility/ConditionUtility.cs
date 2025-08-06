@@ -6,6 +6,16 @@ namespace Aoyon.FaceTune;
 
 internal static class ConditionUtility
 {
+    public static EqualityComparison Negate(this EqualityComparison type)
+    {
+        return type switch
+        {
+            EqualityComparison.Equal => EqualityComparison.NotEqual,
+            EqualityComparison.NotEqual => EqualityComparison.Equal,
+            _ => throw new InvalidOperationException($"Invalid equality comparison type: {type}")
+        };
+    }
+
     public static (ComparisonType newType, int newValue) Negate(this ComparisonType type, int currentValue)
     {
         return type switch
@@ -36,7 +46,7 @@ internal static class ConditionUtility
         {
             var hand = animCondition.parameter == "GestureLeft" ? Hand.Left : Hand.Right;
             var gesture = (HandGesture)(int)animCondition.threshold;
-            return (new HandGestureCondition(hand, true, gesture), null);
+            return (new HandGestureCondition(hand, EqualityComparison.Equal, gesture), null);
         }
         else
         {
@@ -106,7 +116,7 @@ internal static class ConditionUtility
             case HandGestureCondition hgc:
                 parameter = hgc.Hand == Hand.Left ? "GestureLeft" : "GestureRight";
                 parameterType = AnimatorControllerParameterType.Int;
-                mode = hgc.IsEqual ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual;
+                mode = hgc.EqualityComparison == EqualityComparison.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual;
                 threshold = (int)hgc.HandGesture; // 整数値をそのまま使う。
                 break;
             case ParameterCondition pc:

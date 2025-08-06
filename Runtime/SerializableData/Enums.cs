@@ -33,6 +33,12 @@ public enum ComparisonType
     LessThan
 }
 
+public enum EqualityComparison
+{
+    Equal,
+    NotEqual
+}
+
 public enum TrackingPermission
 {
     Allow,
