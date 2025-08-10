@@ -4,17 +4,24 @@
 
 ## [Unreleased]
 ### Added
-- Added transition duration setting for canceller in AdvancedLipSyncSettings.
 
 ### Changed
 
 ### Deprecated
-- Changed namespaces.
-- Changed some properties of the Expression component.
-  - isEqual data will be lost.
-- Removed the abbreviation "FT" and unified to "FaceTune".
 
 ### Removed
+
+### Fixed
+
+## [0.1.0-beta.6] - 2025-08-10
+### Added
+- Added transition duration setting for canceller in AdvancedLipSyncSettings.
+
+### Deprecated
+- Changed namespaces.
+- Changed the isEqual property of the Expression component.
+  - isEqual data will be lost.
+- Removed the abbreviation "FT" and unified to "FaceTune".
 
 ### Fixed
 - Fixed a typo in the template Prefab name.
