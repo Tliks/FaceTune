@@ -83,6 +83,7 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 1
+  EnableRealTimePreview: 0
 --- !u!114 &5801575695382712118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,10 +97,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SourceMode: 0
-  IsSingleFrame: 1
   BlendShapeAnimations: []
   Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ClipOption: 1
 --- !u!1 &3112246864338959533
 GameObject:
   m_ObjectHideFlags: 0
@@ -109,6 +109,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5810532990172336924}
+  - component: {fileID: 4850963173708307984}
   - component: {fileID: 4509772171380548814}
   m_Layer: 0
   m_Name: Menu (blending)
@@ -135,6 +136,36 @@ Transform:
   - {fileID: 5754473874923411917}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4850963173708307984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3112246864338959533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b29d45007c5493d926d2cd45a489529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Control:
+    name: 
+    icon: {fileID: 0}
+    type: 103
+    parameter:
+      name: 
+    value: 1
+    style: 0
+    subMenu: {fileID: 0}
+    subParameters: []
+    labels: []
+  MenuSource: 1
+  menuSource_otherObjectChildren: {fileID: 0}
+  isSynced: 1
+  isSaved: 1
+  isDefault: 0
+  automaticValue: 1
+  label: 
 --- !u!114 &4509772171380548814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -232,6 +263,7 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 1
+  EnableRealTimePreview: 0
 --- !u!114 &5324917404552597346
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -245,10 +277,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SourceMode: 0
-  IsSingleFrame: 1
   BlendShapeAnimations: []
   Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ClipOption: 1
 --- !u!1 &3971391735560565184
 GameObject:
   m_ObjectHideFlags: 0
@@ -332,6 +363,7 @@ MonoBehaviour:
     allowEyeBlink: 1
     allowLipSync: 0
     enableBlending: 1
+  EnableRealTimePreview: 0
 --- !u!114 &2541262338161308096
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -345,7 +377,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SourceMode: 0
-  IsSingleFrame: 1
   BlendShapeAnimations: []
   Clip: {fileID: 0}
-  ClipExcludeOption: 1
+  ClipOption: 1
