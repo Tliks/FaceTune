@@ -121,7 +121,6 @@ internal class LipSyncInstaller : InstallerBase
         }
     }
 
-    private const float CancelerTransitionDuration = 0.1f; // 一旦固定値
     private const float CancelerThreshold = 0.01f;  // 0fだと流石に不安定になる
     private void AddCancelerLayer()
     {
@@ -145,7 +144,7 @@ internal class LipSyncInstaller : InstallerBase
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
             // PassThrough -> lipsyncing
-            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
+            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerEntryDurationSeconds);
             passThroughToLipsyncing.SetDestination(lipsyncing);
             var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
@@ -166,7 +165,7 @@ internal class LipSyncInstaller : InstallerBase
             passThrough.Transitions = passThrough.Transitions.Add(passThroughToLipsyncing);
 
             // lipsyncing -> PassThrough
-            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(CancelerTransitionDuration);
+            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerExitDurationSeconds);
             lipsyncingToPassThrough.SetDestination(passThrough);
             var orConditions = new List<AnimatorCondition>();
             orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
