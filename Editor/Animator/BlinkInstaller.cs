@@ -313,11 +313,5 @@ internal class BlinkInstaller : InstallerBase
         }
     }
 
-    public override void EditDefaultClip(VirtualClip clip)
-    {
-        var animations = _clonedShapesMapping.Values
-            .Select(b => BlendShapeWeightAnimation.SingleFrame(b, 0f))
-            .Select(a => a.ToGeneric(_sessionContext.BodyPath));
-        clip.SetAnimations(animations);
-    }
+    public IEnumerable<BlendShapeWeight> ShapesToInitialize => _clonedShapesMapping.Values.Select(b => new BlendShapeWeight(b, 0f));
 }

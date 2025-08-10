@@ -7,6 +7,9 @@ namespace Aoyon.FaceTune.Animator;
 internal class AnimatorInstaller : InstallerBase
 {
     private const int InitLayerPriority = -1; // 上書きを意図しない初期化レイヤー。
+    
+    private VirtualClip _nonMMDInitializationClip = null!;
+    private VirtualClip _MMDInitializationClip = null!;
 
     private readonly float _transitionDurationSeconds;
 
@@ -29,7 +32,7 @@ internal class AnimatorInstaller : InstallerBase
         var patternData = installerData.PatternData;
         if (patternData.IsEmpty) return;
 
-        CreateDefaultLayer(patternData, InitLayerPriority);
+        CreateInitializationLayer(patternData, InitLayerPriority);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -51,26 +54,72 @@ internal class AnimatorInstaller : InstallerBase
             || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyeBlink))
         {
             _blinkInstaller.AddEyeBlinkLayer();
-            _blinkInstaller.EditDefaultClip(GetRequiredDefaultClip(InitLayerPriority));
+            AddBlendShapeInitialization(_blinkInstaller.ShapesToInitialize);
         }
 
         _lipSyncInstaller.MayAddLipSyncLayers();
-        _lipSyncInstaller.EditDefaultClip(GetRequiredDefaultClip(InitLayerPriority));
     }
 
-    private void CreateDefaultLayer(PatternData patternData, int priority)
+    private void CreateInitializationLayer(PatternData patternData, int priority)
     {
-        var initializeClip = GetOrCreateDefautLayerAndClip(priority, "Initialize");
-        var shapesAnimations = _sessionContext.SafeZeroBlendShapes
-            .ToGenericAnimations(_sessionContext.BodyPath);
-        initializeClip.SetAnimations(shapesAnimations);
+        var nonMMDLayer = AddLayer("Init", priority, false);
+        var nonMMDState = AddState(nonMMDLayer, "Init", position: ExclusiveStatePosition);
+        _nonMMDInitializationClip = nonMMDState.CreateClip(nonMMDState.Name);
+
+        var MMDLayer = AddLayer("Init (MMD)", priority, true);
+        var MMDState = AddState(MMDLayer, "Init (MMD)", position: ExclusiveStatePosition);
+        _MMDInitializationClip = MMDState.CreateClip(MMDState.Name);
+
+        var animations = new List<GenericAnimation>();
+        var mmdAnimations = new List<GenericAnimation>();
+
+        foreach (var shape in _sessionContext.SafeZeroBlendShapes)
+        {
+            if (IsMMDBlendShapeName(shape.Name))
+            {
+                mmdAnimations.Add(shape.ToGenericAnimation(_sessionContext.BodyPath));
+            }
+            else
+            {
+                animations.Add(shape.ToGenericAnimation(_sessionContext.BodyPath));
+            }
+        }
 
         var allBindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct();
-        var facialBinding = SerializableCurveBinding.FloatCurve(_sessionContext.BodyPath, typeof(SkinnedMeshRenderer), FaceTuneConstants.AnimatedBlendShapePrefix);
-        var nonFacialBindings = allBindings.Where(b => b != facialBinding);
-        if (!nonFacialBindings.Any()) return;
-        var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
-        initializeClip.SetAnimations(propertiesAnimations);
+        var nonFacialBindings = new List<SerializableCurveBinding>();
+        foreach (var binding in allBindings)
+        {
+            if (binding.Path == _sessionContext.BodyPath &&
+                binding.Type == typeof(SkinnedMeshRenderer) &&
+                binding.PropertyName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix))
+            {
+                continue;
+            }
+            nonFacialBindings.Add(binding);
+        }
+        if (nonFacialBindings.Any())
+        {
+            var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
+            animations.AddRange(propertiesAnimations);
+        }
+
+        _MMDInitializationClip.AddAnimations(mmdAnimations);
+        _nonMMDInitializationClip.AddAnimations(animations);
+    }
+
+    private void AddBlendShapeInitialization(IEnumerable<BlendShapeWeight> blendShapes)
+    {
+        foreach (var shape in blendShapes)
+        {
+            if (IsMMDBlendShapeName(shape.Name))
+            {
+                _MMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_sessionContext.BodyPath));
+            }
+            else
+            {
+                _nonMMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_sessionContext.BodyPath));
+            }
+        }
     }
 
     private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
@@ -236,7 +285,7 @@ internal class AnimatorInstaller : InstallerBase
 
         void Impl(VirtualClip clip)
         {
-            clip.SetAnimations(expression.Animations);
+            clip.AddAnimations(expression.Animations);
             SetExpressionSettings(state, clip, expression.ExpressionSettings);
             SetFacialSettings(clip, expression.FacialSettings);
         }
@@ -263,4 +312,108 @@ internal class AnimatorInstaller : InstallerBase
         _blinkInstaller.SetSettings(clip, facialSettings);
         _lipSyncInstaller.SetSettings(clip, facialSettings);
     }
+
+    private bool IsMMDBlendShapeName(string name)
+    {
+        return MmdBlendShapeNames.Contains(name);
+    }
+
+#nullable disable
+    private static readonly HashSet<string> MmdBlendShapeNames = new HashSet<string>
+    {
+        // New EN by Yi MMD World
+        //  https://docs.google.com/spreadsheets/d/1mfE8s48pUfjP_rBIPN90_nNkAIBUNcqwIxAdVzPBJ-Q/edit?usp=sharing
+        // Old EN by Xoriu
+        //  https://booth.pm/ja/items/3341221
+        //  https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/0b7b5e4b-c62e-41f7-8ced-1f3e58c4f5bf/d5nbmvp-5779f5ac-d476-426c-8ee6-2111eff8e76c.png
+        // Old EN, New EN, JA,
+
+        // ===== Mouth =====
+        "a",            "Ah",               "あ",
+        "i",            "Ch",               "い",
+        "u",            "U",                "う",
+        "e",            "E",                "え",
+        "o",            "Oh",               "お",
+        "Niyari",       "Grin",             "にやり",
+        "Mouse_2",      "∧",                "∧",
+        "Wa",           "Wa",               "ワ",
+        "Omega",        "ω",                "ω",
+        "Mouse_1",      "▲",                "▲",
+        "MouseUP",      "Mouth Horn Raise", "口角上げ",
+        "MouseDW",      "Mouth Horn Lower", "口角下げ",
+        "MouseWD",      "Mouth Side Widen", "口横広げ", 
+        "n",            null,               "ん",
+        "Niyari2",      null,               "にやり２",
+        // by Xoriu only
+        "a 2",          null,               "あ２",
+        "□",            null,               "□",
+        "ω□",           null,               "ω□",
+        "Smile",        null,               "にっこり",
+        "Pero",         null,               "ぺろっ",
+        "Bero-tehe",    null,               "てへぺろ",
+        "Bero-tehe2",   null,               "てへぺろ２",
+
+        // ===== Eyes =====
+        "Blink",        "Blink",            "まばたき",
+        "Smile",        "Blink Happy",      "笑い",
+        "> <",          "Close><",          "はぅ",
+        "EyeSmall",     "Pupil",            "瞳小",
+        "Wink-c",       "Wink 2 Right",     "ｳｨﾝｸ２右",
+        "Wink-b",       "Wink 2",           "ウィンク２",
+        "Wink",         "Wink",             "ウィンク",
+        "Wink-a",       "Wink Right",       "ウィンク右",
+        "Howawa",       "Calm",             "なごみ",
+        "Jito-eye",     "Stare",            "じと目",
+        "Ha!!!",        "Surprised",        "びっくり",
+        "Kiri-eye",     "Slant",            "ｷﾘｯ",
+        "EyeHeart",     "Heart",            "はぁと",
+        "EyeStar",      "Star Eye",         "星目",
+        "EyeFunky",     null,               "恐ろしい子！",
+        // by Xoriu only
+        "O O",          null,               "はちゅ目",
+        "EyeSmall-v",   null,               "瞳縦潰れ",
+        "EyeUnderli",   null,               "光下",
+        "EyHi-Off",     null,               "ハイライト消",
+        "EyeRef-off",   null,               "映り込み消",
+
+        // ===== Eyebrow =====
+        "Smily",        "Cheerful",         "にこり",
+        "Up",           "Upper",            "上",
+        "Down",         "Lower",            "下",
+        "Serious",      "Serious",          "真面目",
+        "Trouble",      "Sadness",          "困る",
+        "Get angry",    "Anger",            "怒り",
+        null,           "Front",            "前",
+        
+        // ===== Eyes + Eyebrow Feeling =====
+        // by Xoriu only
+        "Joy",          null,               "喜び",
+        "Wao!?",        null,               "わぉ!?",
+        "Howawa ω",     null,               "なごみω",
+        "Wail",         null,               "悲しむ",
+        "Hostility",    null,               "敵意",
+
+        // ===== Other ======
+        null,           "Blush",            "照れ",
+        "ToothAnon",    null,               "歯無し下",
+        "ToothBnon",    null,               "歯無し上",
+        null,           null,               "涙",
+
+        // others
+
+        // https://gist.github.com/lilxyzw/80608d9b16bf3458c61dec6b090805c5
+        "しいたけ",
+
+        // https://site.nicovideo.jp/ch/userblomaga_thanks/archive/ar1471249
+        "なぬ！",
+        "はんっ！",
+        "えー",
+        "睨み",
+        "睨む",
+        "白目",
+        "瞳大",
+        "頬染め",
+        "青ざめ",
+    }.Where(x => x != null).Distinct().ToHashSet(); // removed null with Where
+#nullable restore
 }

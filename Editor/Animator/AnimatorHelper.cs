@@ -224,17 +224,17 @@ internal static class AnimatorHelper
         return clip;
     }
 
-    public static void SetAnimation(this VirtualClip clip, GenericAnimation animation)
+    public static void AddAnimation(this VirtualClip clip, GenericAnimation animation)
     {
         var binding = animation.CurveBinding.ToEditorCurveBinding();
         clip.SetFloatCurve(binding.path, binding.type, binding.propertyName, animation.Curve);
     }
 
-    public static void SetAnimations(this VirtualClip clip, IEnumerable<GenericAnimation> animations)
+    public static void AddAnimations(this VirtualClip clip, IEnumerable<GenericAnimation> animations)
     {
         foreach (var animation in animations)
         {
-            SetAnimation(clip, animation);
+            AddAnimation(clip, animation);
         }
     }
 

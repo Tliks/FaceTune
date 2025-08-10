@@ -12,8 +12,6 @@ internal class InstallerBase
 
     protected readonly bool _useWriteDefaults;
 
-    private readonly Dictionary<int, VirtualClip> _defaultClips = new();
-
     protected readonly VirtualClip _emptyClip;
 
     protected const int LayerPriority = 1; // FaceEmo: 0
@@ -37,11 +35,14 @@ internal class InstallerBase
         _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
     }
 
-    protected VirtualLayer AddLayer(string layerName, int priority)
+    protected VirtualLayer AddLayer(string layerName, int priority, bool addMMDLayerControl = true)
     {
         var layerPriority = new LayerPriority(priority);
         var layer = _controller.AddLayer(layerPriority, $"{FaceTuneConstants.ShortName}: {layerName}");
-        layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
+        if (addMMDLayerControl)
+        {
+            layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;
+        }
         return layer; 
     }
 
@@ -55,7 +56,7 @@ internal class InstallerBase
     protected VirtualClip AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
     {
         var clip = state.GetOrCreateClip(state.Name);
-        clip.SetAnimations(animations);
+        clip.AddAnimations(animations);
         return clip;
     }
 
@@ -71,23 +72,4 @@ internal class InstallerBase
             state.Motion = _emptyClip;
         }
     }
-    
-    protected VirtualClip GetOrCreateDefautLayerAndClip(int priority, string name)
-    {
-        if (_defaultClips.TryGetValue(priority, out var clip)) return clip;
-        
-        var layer = AddLayer(name, priority);
-        var state = layer.StateMachine!.AddState("Default", position: EntryStatePosition);
-        clip = state.GetOrCreateClip(state.Name);
-        _defaultClips[priority] = clip;
-        return clip;
-    }
-
-    protected VirtualClip GetRequiredDefaultClip(int priority)
-    {
-        if (!_defaultClips.ContainsKey(priority)) throw new InvalidOperationException($"Default clip for priority {priority} not found");
-        return _defaultClips[priority];
-    }
-
-    public virtual void EditDefaultClip(VirtualClip clip) { }
 }
