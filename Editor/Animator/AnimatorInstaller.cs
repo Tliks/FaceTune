@@ -73,7 +73,7 @@ internal class AnimatorInstaller : InstallerBase
         var animations = new List<GenericAnimation>();
         var mmdAnimations = new List<GenericAnimation>();
 
-        foreach (var shape in _sessionContext.SafeZeroBlendShapes)
+        foreach (var shape in _sessionContext.FaceRenderer.GetBlendShapes(_sessionContext.FaceMesh).Where(b => !_sessionContext.TrackedBlendShapes.Contains(b.Name)))
         {
             if (IsMMDBlendShapeName(shape.Name))
             {
