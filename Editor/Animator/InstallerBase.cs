@@ -38,7 +38,7 @@ internal class InstallerBase
     protected VirtualLayer AddLayer(string layerName, int priority, bool addMMDLayerControl = true)
     {
         var layerPriority = new LayerPriority(priority);
-        var layer = _controller.AddLayer(layerPriority, $"{FaceTuneConstants.ShortName}: {layerName}");
+        var layer = _controller.AddLayer(layerPriority, $"{FaceTuneConstants.Name}: {layerName}");
         if (addMMDLayerControl)
         {
             layer.StateMachine!.EnsureBehavior<ModularAvatarMMDLayerControl>().DisableInMMDMode = true;

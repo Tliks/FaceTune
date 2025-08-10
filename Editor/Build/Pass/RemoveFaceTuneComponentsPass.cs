@@ -2,10 +2,10 @@ using nadena.dev.ndmf;
 
 namespace Aoyon.FaceTune.Build;
 
-internal class RemoveFTComponentsPass : Pass<RemoveFTComponentsPass>
+internal class RemoveFaceTuneComponentsPass : Pass<RemoveFaceTuneComponentsPass>
 {
-    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.remove-ft-components";
-    public override string DisplayName => "Remove FT Components";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.remove-facetune-components";
+    public override string DisplayName => "Remove FaceTune Components";
 
     protected override void Execute(BuildContext context)
     {

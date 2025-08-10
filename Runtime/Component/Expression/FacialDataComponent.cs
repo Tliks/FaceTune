@@ -3,7 +3,7 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPath)]
     public class FacialDataComponent : AbstractDataComponent
     {
-        internal const string ComponentName = "FT Facial Data";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Facial Data";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         public AnimationSourceMode SourceMode = AnimationSourceMode.Manual;

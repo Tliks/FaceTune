@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPath)]
     public class PatternComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = "FT Pattern";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Pattern";
         internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
         
         internal ExpressionPattern? GetPattern(SessionContext sessionContext)

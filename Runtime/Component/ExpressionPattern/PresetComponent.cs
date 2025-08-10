@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune
     public class PresetComponent : FaceTuneTagComponent
     {
         internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
-        internal const string ComponentName = "FT Preset";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Preset";
 
         internal Preset? GetPreset(SessionContext sessionContext)
         {

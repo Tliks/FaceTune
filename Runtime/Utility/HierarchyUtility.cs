@@ -72,16 +72,16 @@ internal static class HierarchyUtility
         return GetInterfacesInChildComponents<TComponent, TInterface>(component.gameObject, includeInactive);
     }
 
-    public static List<TInterface> GetInterfacesInChildFTComponents<TInterface>(this GameObject gameObject, bool includeInactive = false)
+    public static List<TInterface> GetInterfacesInChildFaceTuneComponents<TInterface>(this GameObject gameObject, bool includeInactive = false)
     where TInterface : class
     {
         return GetInterfacesInChildComponents<FaceTuneTagComponent, TInterface>(gameObject, includeInactive);
     }
 
-    public static List<TInterface> GetInterfacesInChildFTComponents<TInterface>(this Component component, bool includeInactive = false)
+    public static List<TInterface> GetInterfacesInChildFaceTuneComponents<TInterface>(this Component component, bool includeInactive = false)
     where TInterface : class
     {
-        return GetInterfacesInChildFTComponents<TInterface>(component.gameObject, includeInactive);
+        return GetInterfacesInChildFaceTuneComponents<TInterface>(component.gameObject, includeInactive);
     }
 
     public static TComponent[] GetDirectChildComponents<TComponent>(this GameObject gameObject) where TComponent : Component

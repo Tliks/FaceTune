@@ -11,7 +11,7 @@ internal static class GameObjectMenu
     private static void IP(string guid, bool unpack = true)
     {
         var parent = Selection.activeGameObject;
-        FTPrefabUtility.InstantiatePrefab(guid, unpack, parent);
+        PrefabUtility.InstantiatePrefab(guid, unpack, parent);
     }
     
     [M(MenuItems.BaseTemplatePath, false, MenuItems.BaseTemplatePriority)] 

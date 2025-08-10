@@ -1,4 +1,4 @@
-#if FT_VRCSDK3_AVATARS
+#if FaceTune_VRCSDK3_AVATARS
 
 using System.Collections.Generic;
 using UnityEngine;

@@ -6,7 +6,7 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPath)]
     public class OverrideFaceRendererComponent : FaceTuneTagComponent, IHasObjectReferences
     {
-        internal const string ComponentName = "FT Override Face Renderer";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Override Face Renderer";
         internal const string MenuPath = BasePath + "/" + Global + "/" + ComponentName;
 
         [SerializeField]

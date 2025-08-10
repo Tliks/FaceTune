@@ -29,7 +29,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         {
             sq1.Run(InstallPatternDataPass.Instance);
         });
-        sequence.Run(RemoveFTComponentsPass.Instance);
+        sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
         sequence = InPhase(BuildPhase.Optimizing)
             .AfterPlugin("nadena.dev.modular-avatar")

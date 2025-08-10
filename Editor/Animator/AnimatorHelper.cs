@@ -79,7 +79,7 @@ internal static class AnimatorHelper
         foreach (var curveBinding_ in curveBindings)
         {
             var curveBinding = curveBinding_.ToEditorCurveBinding();
-            var target = AnimationUtility.GetAnimatedObject(root, curveBinding);
+            var target = UnityEditor.AnimationUtility.GetAnimatedObject(root, curveBinding);
             var propName = curveBinding.propertyName;
             switch (target)
             {

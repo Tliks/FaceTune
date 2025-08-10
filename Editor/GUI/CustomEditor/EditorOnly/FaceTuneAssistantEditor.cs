@@ -156,7 +156,7 @@ namespace Aoyon.FaceTune.Gui
 
         private void CreatePatternImpl(PatternInfo patternInfo)
         {
-            FTPrefabUtility.InstantiatePrefab(patternInfo.Guid, true, Component.gameObject);
+            PrefabUtility.InstantiatePrefab(patternInfo.Guid, true, Component.gameObject);
         }
 
         private void ImportAnimatorController()

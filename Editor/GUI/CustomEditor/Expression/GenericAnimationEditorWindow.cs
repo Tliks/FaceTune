@@ -29,7 +29,7 @@ internal static class GenericAnimationEditor
 
     static GenericAnimationEditor()
     {
-        AnimationUtility.onCurveWasModified += OnCurveModified;
+        UnityEditor.AnimationUtility.onCurveWasModified += OnCurveModified;
         AssemblyReloadEvents.beforeAssemblyReload += StopEditing;
         EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
     }
@@ -54,7 +54,7 @@ internal static class GenericAnimationEditor
 
     public static void StartEditingWithAnimations(UnityEngine.Animator animator, IReadOnlyList<GenericAnimation> animations, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
     {
-        var tmpClip = new AnimationClip { name = $"{FaceTuneConstants.ShortName} Temporary Clip" };
+        var tmpClip = new AnimationClip { name = $"{FaceTuneConstants.ComponentPrefix} Temporary Clip" };
         tmpClip.SetGenericAnimations(animations);
         Action<AnimationWindowSession> onSessionEnded_ = session =>
         {
@@ -92,7 +92,7 @@ internal static class GenericAnimationEditor
         s_CurrentSession = new AnimationWindowSession(animator, originalController, clipToEdit, onClipModified);
         s_OnSessionEnded = onSessionEnded;
 
-        var tempController = new AnimatorController { name = $"{FaceTuneConstants.ShortName} Temporary Controller" };
+        var tempController = new AnimatorController { name = $"{FaceTuneConstants.ComponentPrefix} Temporary Controller" };
         tempController.AddLayer("TempLayer");
         var state = tempController.layers[0].stateMachine.AddState("TempState");
         state.motion = clipToEdit;
@@ -131,7 +131,7 @@ internal static class GenericAnimationEditor
             }
             else
             {
-                PrefabUtility.RevertPropertyOverride(prop, InteractionMode.AutomatedAction);
+                UnityEditor.PrefabUtility.RevertPropertyOverride(prop, InteractionMode.AutomatedAction);
             }
 
             so.ApplyModifiedProperties();
@@ -140,7 +140,7 @@ internal static class GenericAnimationEditor
         s_OnSessionEnded?.Invoke(session);
     }
     
-    private static void OnCurveModified(AnimationClip clip, EditorCurveBinding binding, AnimationUtility.CurveModifiedType type)
+    private static void OnCurveModified(AnimationClip clip, EditorCurveBinding binding, UnityEditor.AnimationUtility.CurveModifiedType type)
     {
         if (s_CurrentSession == null) return;
         if (clip == s_CurrentSession.EditedClip)

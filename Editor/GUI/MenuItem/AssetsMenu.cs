@@ -29,7 +29,7 @@ internal static class AssetsMenu
         subMenu.PortableControl.Type = PortableControlType.SubMenu;
         subMenu.MenuSource = SubmenuSource.Children;
 
-        var uniqueParameterId = $"{FaceTuneConstants.Name}/ExclusiveMenu/{Guid.NewGuid()}";
+        var uniqueParameterId = $"{FaceTuneConstants.ComponentPrefix}/ExclusiveMenu/{Guid.NewGuid()}";
         var parameters = menuObject.AddComponent<ModularAvatarParameters>();
         parameters.parameters.Add(new ParameterConfig()
         {

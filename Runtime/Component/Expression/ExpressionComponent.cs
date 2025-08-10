@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPath)]
     public class ExpressionComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = "FT Expression";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Expression";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         public ExpressionSettings ExpressionSettings = new();
@@ -28,7 +28,7 @@ namespace Aoyon.FaceTune
                 }
             }
 
-            var dataComponents = gameObject.GetInterfacesInChildFTComponents<AbstractDataComponent>(true);
+            var dataComponents = gameObject.GetInterfacesInChildFaceTuneComponents<AbstractDataComponent>(true);
             foreach (var dataComponent in dataComponents)
             {
                 animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));

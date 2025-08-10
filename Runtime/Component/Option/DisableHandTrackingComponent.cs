@@ -4,6 +4,6 @@ namespace Aoyon.FaceTune
     public class DisableHandTrackingComponent : FaceTuneTagComponent
     {
         internal const string MenuPath = BasePath + "/" + Option + "/" + ComponentName;
-        internal const string ComponentName = "FT Disable Hand Tracking";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Disable Hand Tracking";
     }
 }   

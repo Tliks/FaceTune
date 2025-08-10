@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPath)]
     public class FacialStyleComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = "FT Facial Style";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Facial Style";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();

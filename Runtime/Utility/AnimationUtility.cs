@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal static class FTAnimationUtility
+internal static class AnimationUtility
 {
     // AnimationCurve
     public static AnimationCurve Clone(this AnimationCurve curve)

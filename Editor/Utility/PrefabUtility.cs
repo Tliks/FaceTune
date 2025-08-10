@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal static class FTPrefabUtility
+internal static class PrefabUtility
 {
     public static void InstantiatePrefab(string guid, 
         bool unpack,
@@ -28,7 +28,7 @@ internal static class FTPrefabUtility
         Undo.SetCurrentGroupName("Create " + prefab.name);
         var groupIndex = Undo.GetCurrentGroup();
         
-        var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+        var instance = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefab);
         Undo.RegisterCreatedObjectUndo(instance, "Create " + instance.name);
         
         if (parent != null)
@@ -43,7 +43,7 @@ internal static class FTPrefabUtility
         
         if (unpack)
         {
-            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.UserAction);
+            UnityEditor.PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.UserAction);
         }
 
         Selection.activeObject = instance;
