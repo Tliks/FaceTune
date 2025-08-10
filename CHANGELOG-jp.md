@@ -4,14 +4,22 @@
 
 ## [Unreleased]
 ### Added
+- AdvancedLipSyncSettingsでキャンセラー使用時の遷移時間設定を追加
 
 ### Changed
 
 ### Deprecated
+- 名前空間を変更。
+- Expressionコンポーネントの一部プロパティを変更。
+  - isEqualのデータが失われます。
+- 簡略名"FT"を削除し、"FaceTune"に統一。
 
 ### Removed
 
 ### Fixed
+- テンプレート用のPrefab名の誤字を修正。
+- FacialShapesEditorにおいて、選択されたブレンドシェイプの表示領域がスクロールされない問題を修正。
+- MMDダンスワールドにおける互換性を修正。
 
 ### Security
 
