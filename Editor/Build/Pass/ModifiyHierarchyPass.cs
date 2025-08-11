@@ -183,7 +183,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         foreach (var presetComponent in presetComponents)
         {
             // indexの条件を生成
-            var presetCondition = ParameterCondition.Int(Preset_Index_Parameter, ComparisonType.Equal, presetIndex++);
+            var presetCondition = ParameterCondition.Int(Preset_Index_Parameter, ComparisonType.Equal, presetIndex);
 
             // 配下のExpressionに大してその条件を設定
             var conditionComponent = presetComponent.gameObject.AddComponent<ConditionComponent>();
@@ -195,6 +195,8 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             menuItem.PortableControl.Type = PortableControlType.Toggle;
             menuItem.PortableControl.Parameter = Preset_Index_Parameter;  // Todo 上書きしていいかどうか。
             menuItem.PortableControl.Value = presetIndex;
+
+            presetIndex++;
         }
     }
 
