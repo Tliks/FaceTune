@@ -149,7 +149,7 @@ internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<AdvancedEyeBli
         dataManager.GetCurrentOverrides(result);
         CustomEditorUtility.AddShapesAsNames(
             Target, 
-            so => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)), 
+            so => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName), 
             result.Names.ToList()
         );
     }
@@ -168,7 +168,7 @@ internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<AdvancedLipSync
         dataManager.GetCurrentOverrides(result);
         CustomEditorUtility.AddShapesAsNames(
             Target, 
-            so => so.FindProperty(nameof(AdvancedLipSyncComponent.AdvancedLipSyncSettings)), 
+            so => so.FindProperty(nameof(AdvancedLipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName), 
             result.Names.ToList()
         );
     }
