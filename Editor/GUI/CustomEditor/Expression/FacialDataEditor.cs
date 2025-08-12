@@ -123,7 +123,7 @@ internal class ExportFacialDataWindow : EditorWindow
 {
     private FacialDataComponent _component = null!;
 
-    private bool _addZeroWeight = false;
+    private bool _addZeroWeight = true;
     private bool _addFacialStyle = false;
     private bool _excludeTrackedShapes = true;
 
