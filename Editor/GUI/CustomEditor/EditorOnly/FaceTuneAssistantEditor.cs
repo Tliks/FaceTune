@@ -1,4 +1,5 @@
 using Aoyon.FaceTune.Importer;
+using Aoyon.FaceTune.Platforms;
 using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Gui
@@ -70,6 +71,16 @@ namespace Aoyon.FaceTune.Gui
             base.OnEnable();
             _presets = Component.transform.GetComponentsInChildren<PresetComponent>();
             _conditions = Component.transform.GetComponentsInChildren<ConditionComponent>();
+            GetDefaultAnimatorController();
+        }
+
+        private void GetDefaultAnimatorController()
+        {
+            var support = MetabasePlatformSupport.GetSupportInParents(Component.transform);
+            if (support != null && _selectedAnimatorController == null)
+            {
+                _selectedAnimatorController = support.GetAnimatorController();
+            }
         }
 
         public override void OnInspectorGUI()

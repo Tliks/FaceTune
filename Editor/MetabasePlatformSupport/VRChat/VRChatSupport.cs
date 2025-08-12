@@ -192,6 +192,20 @@ internal class VRChatSupport : IMetabasePlatformSupport
             return (eye, mouth);
         }
     }
+
+    public AnimatorController? GetAnimatorController()
+    {
+        foreach (var layer in _descriptor.baseAnimationLayers)
+        {
+            if (layer.type == VRCAvatarDescriptor.AnimLayerType.FX
+                && layer.animatorController != null
+                && layer.animatorController is AnimatorController ac)
+            {
+                return ac;
+            }
+        }    
+        return null;
+    }
 }
 
 #endif

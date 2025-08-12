@@ -40,4 +40,9 @@ internal interface IMetabasePlatformSupport
     {
         return null;
     }
+
+    public AnimatorController? GetAnimatorController()
+    {
+        return null;
+    }
 }
