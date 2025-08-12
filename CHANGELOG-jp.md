@@ -15,6 +15,16 @@
 
 ### Security
 
+## [0.1.0-beta.7] - 2025-08-12
+### Changed
+- Assistantの動作を微調整。
+- ExportFacialDataWindow._addZeroWeightのデフォルト値をfalseに。
+
+### Fixed
+- FacialShapesEditorで保存を行おうとするとInvalid property to resize arrayが発生する問題を修正。
+- Presetで生成されるメニューで操作される制御がずれていた問題を修正。
+- FacialShapesEditorでAnimationClipを保存出来ない問題を修正。
+
 ## [0.1.0-beta.6] - 2025-08-10
 ### Added
 - AdvancedLipSyncSettingsでキャンセラー使用時の遷移時間設定を追加
