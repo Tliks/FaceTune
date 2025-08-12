@@ -24,6 +24,7 @@ internal class AnimatorControllerImporter
         Debug.Log($"Importing {_animatorController.name}");
         var expressionCount = 0;
         var layers = _animatorController.layers;
+        GameObject? firstLayerObj = null;
         for (int i = 0; i < layers.Length; i++)
         {
             var layer = layers[i];
@@ -37,6 +38,7 @@ internal class AnimatorControllerImporter
             if (conditionStateList.Count > 0)
             {
                 var layerObj = new GameObject(layer.name);
+                firstLayerObj ??= layerObj;
                 layerObj.transform.parent = root.transform;
                 layerObj.AddComponent<PatternComponent>();
 
@@ -76,6 +78,11 @@ internal class AnimatorControllerImporter
         }
 
         Undo.RegisterCreatedObjectUndo(root, "Import FX");
+        if (firstLayerObj != null)
+        {
+            Selection.activeObject = firstLayerObj;
+            EditorGUIUtility.PingObject(firstLayerObj);
+        }
 
         Debug.Log($"Finished to import {_animatorController.name}: {expressionCount} expressions");
     }
