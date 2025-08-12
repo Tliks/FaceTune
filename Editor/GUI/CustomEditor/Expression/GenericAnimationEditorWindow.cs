@@ -55,7 +55,7 @@ internal static class GenericAnimationEditor
     public static void StartEditingWithAnimations(UnityEngine.Animator animator, IReadOnlyList<GenericAnimation> animations, Action<AnimationClip>? onClipModified = null, Action<AnimationWindowSession>? onSessionEnded = null)
     {
         var tmpClip = new AnimationClip { name = $"{FaceTuneConstants.ComponentPrefix} Temporary Clip" };
-        tmpClip.SetGenericAnimations(animations);
+        tmpClip.AddGenericAnimations(animations);
         Action<AnimationWindowSession> onSessionEnded_ = session =>
         {
             if (tmpClip != null)

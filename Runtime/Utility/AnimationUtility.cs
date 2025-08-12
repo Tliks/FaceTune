@@ -99,24 +99,45 @@ internal static class AnimationUtility
         resultToAdd.AddRange(GenericAnimation.FromAnimationClip(clip));
     }
 
-    public static void SetBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)
+    public static void AddBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)
     {
+        var bindings = new List<UnityEditor.EditorCurveBinding>();
+        var curves = new List<AnimationCurve>();
         foreach (var blendShape in blendShapes)
         {
             var curve = new AnimationCurve();
             curve.AddKey(0, blendShape.Weight);
             var binding = UnityEditor.EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), BlendShapePropertyName + blendShape.Name);
-            UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, curve);
+            bindings.Add(binding);
+            curves.Add(curve);
         }
+        UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
     }
 
-    public static void SetGenericAnimations(this AnimationClip clip, IEnumerable<GenericAnimation> genericAnimations)
+    public static void AddGenericAnimations(this AnimationClip clip, IEnumerable<GenericAnimation> genericAnimations)
     {
+        var bindings = new List<UnityEditor.EditorCurveBinding>();
+        var curves = new List<AnimationCurve>();
         foreach (var genericAnimation in genericAnimations)
         {
             var binding = genericAnimation.CurveBinding.ToEditorCurveBinding();
-            UnityEditor.AnimationUtility.SetEditorCurve(clip, binding, genericAnimation.Curve);
+            bindings.Add(binding);
+            curves.Add(genericAnimation.Curve);
         }
+        UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
+    }
+
+    public static void RemoveAllCurveBindings(this AnimationClip clip)
+    {
+        var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
+        var curves = Enumerable.Repeat<AnimationCurve?>(null, bindings.Length).ToArray();
+        UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings, curves);
+    }
+
+    public static void SaveChanges(this AnimationClip clip)
+    {
+        UnityEditor.EditorUtility.SetDirty(clip);
+        UnityEditor.AssetDatabase.SaveAssetIfDirty(clip);
     }
 #endif
 }

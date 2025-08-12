@@ -178,7 +178,7 @@ internal class ExportFacialDataWindow : EditorWindow
         }
         CustomEditorUtility.SaveAsClip(clip =>
         {
-            clip.SetGenericAnimations(animations);
+            clip.AddGenericAnimations(animations);
         });
     }
 }

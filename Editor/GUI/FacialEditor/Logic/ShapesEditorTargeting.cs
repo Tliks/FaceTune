@@ -49,6 +49,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
 
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
+        if (Target == null) throw new Exception("Target is not set");
         var animations = new AnimationIndex();
         var path = RuntimeUtil.RelativePath(root, renderer.gameObject);
         if (path == null) throw new Exception("TargetRenderer is not a child of root");
@@ -64,6 +65,10 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
         var overrides = new BlendShapeSet();
         dataManager.GetCurrentOverrides(overrides);
         animations.AddRange(overrides.ToGenericAnimations(path));
+
+        Target.RemoveAllCurveBindings();
+        Target.AddGenericAnimations(animations);
+        Target.SaveChanges();
     }
 
     public override float InitialAddWeight => 100f;
