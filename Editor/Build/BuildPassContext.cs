@@ -19,7 +19,9 @@ internal class BuildPassState
 
     public BuildPassState(GameObject root)
     {
-        Enabled = SessionContextBuilder.TryBuild(root, out var sessionContext, out var result);
+        var canBuild = SessionContextBuilder.TryBuild(root, out var sessionContext, out var result);
+        var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Count() > 0;
+        Enabled = canBuild && anyComponents;
         if (!Enabled) return;
 
         var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(root.transform);
