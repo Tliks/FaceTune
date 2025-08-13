@@ -78,15 +78,16 @@ public record GenericAnimation // Immutable
         foreach (var binding in bindings)
         {
             var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
-
             var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
+            animations.Add(new GenericAnimation(serializableCurveBinding, curve));
+        }
+        var objectReferenceBindings = UnityEditor.AnimationUtility.GetObjectReferenceCurveBindings(clip);
+        foreach (var binding in objectReferenceBindings)
+        {
+            var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
             var objectReferenceCurve = UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip, binding);
-
-            curve ??= new AnimationCurve();
-            objectReferenceCurve ??= new UnityEditor.ObjectReferenceKeyframe[0];
             var serializableObjectReferenceCurve = objectReferenceCurve.Select(SerializableObjectReferenceKeyframe.FromEditorObjectReferenceKeyframe);
-
-            animations.Add(new GenericAnimation(serializableCurveBinding, curve, serializableObjectReferenceCurve.ToList()));
+            animations.Add(new GenericAnimation(serializableCurveBinding, serializableObjectReferenceCurve.ToList()));
         }
         return animations;
     }
