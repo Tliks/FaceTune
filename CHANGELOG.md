@@ -13,6 +13,16 @@
 
 ### Fixed
 
+### Security
+
+## [0.1.0-beta.8] - 2025-08-13
+### Changed
+- Adjusted FacialShapesEditor.
+- Improved the behavior of AnimatorControllerImporter.
+
+### Fixed
+- Fixed an issue where the path was executed when the component did not exist.
+
 ## [0.1.0-beta.7] - 2025-08-12
 ### Changed
 - Fine-tuned the behavior of the Assistant.

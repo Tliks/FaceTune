@@ -15,6 +15,14 @@
 
 ### Security
 
+## [0.1.0-beta.8] - 2025-08-13
+### Changed
+- FacialShapesEditorを調整。
+- AnimatorControllerImporterの動作を改善。
+
+### Fixed
+- コンポーネントが存在しない場合にパスが実行されていた問題を修正。
+
 ## [0.1.0-beta.7] - 2025-08-12
 ### Changed
 - Assistantの動作を微調整。
