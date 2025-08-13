@@ -135,6 +135,20 @@ internal class GeneralControls
             _groupManager.SelectAll(false);
         };
 
+        var leftToggle = _element.Q<Toggle>("left-toggle");
+        leftToggle.SetValueWithoutNotify(_groupManager.IsLeftSelected);
+        leftToggle.RegisterValueChangedCallback(evt =>
+        {
+            _groupManager.IsLeftSelected = evt.newValue;
+        });
+        
+        var rightToggle = _element.Q<Toggle>("right-toggle");
+        rightToggle.SetValueWithoutNotify(_groupManager.IsRightSelected);
+        rightToggle.RegisterValueChangedCallback(evt =>
+        {
+            _groupManager.IsRightSelected = evt.newValue;
+        });
+
 
         var clipImportPanel = _element.Q<VisualElement>("clip-import-panel");
         

@@ -23,6 +23,36 @@ internal class BlendShapeGrouping
     public IReadOnlyList<BlendShapeGroup> Groups { get; private set; }
     public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
+    private bool _isLeftSelected = false;
+    public event Action<bool>? OnLeftSelectionChanged;
+    public bool IsLeftSelected
+    {
+        get => _isLeftSelected;
+        set
+        {
+            if (value != _isLeftSelected)
+            {
+                _isLeftSelected = value;
+                OnLeftSelectionChanged?.Invoke(value);
+            }
+        }
+    }
+
+    private bool _isRightSelected = true;
+    public event Action<bool>? OnRightSelectionChanged;
+    public bool IsRightSelected
+    {
+        get => _isRightSelected;
+        set
+        {
+            if (value != _isRightSelected)
+            {
+                _isRightSelected = value;
+                OnRightSelectionChanged?.Invoke(value);
+            }
+        }
+    }
+
     public BlendShapeGrouping(TargetManager targetManager, BlendShapeOverrideManager dataManager)
     {
         Groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };

@@ -17,9 +17,11 @@
         <ui:ScrollView name="general-controls-scroll-view">
             <ui:Box name="group-filter-panel">
                 <ui:VisualElement name="filter-header">
-                    <ui:Label name="filter-title" text="Group Filter" />
+                    <ui:Label name="filter-title" text="Group" />
                     <ui:Button name="all-button" text="All" />
                     <ui:Button name="none-button" text="None" />
+                    <ui:Toggle name="left-toggle" text="Left" />
+                    <ui:Toggle name="right-toggle" text="Right" />
                 </ui:VisualElement>
                 <ui:VisualElement name="group-toggles-container" />
             </ui:Box>
