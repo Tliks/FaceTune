@@ -38,6 +38,8 @@ internal class SelectedPanel
     private static readonly Texture _resetIcon = EditorGUIUtility.IconContent("d_Toolbar Minus@2x").image;
     private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus@2x").image;
 
+	public event Action<int>? OnSelectedItemNameClicked;
+
     public SelectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager)
     {
         _blendShapeManager = blendShapeManager;
@@ -146,15 +148,19 @@ internal class SelectedPanel
         {
             var element = _itemUxml.CloneTree();
             
+            var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var toggleButton = element.Q<Button>("toggle-button");
             var actionButton = element.Q<Button>("action");
 
-            toggleButton.text = "";
-            toggleButton.Add(new Image { image = _toggleIcon });
-            actionButton.text = "";
-            actionButton.Add(new Image { image = isStyle ? _resetIcon : _removeIcon });
-            
+            nameLabel.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (element.userData is ElementData item)
+                {
+                    OnSelectedItemNameClicked?.Invoke(item.KeyIndex);
+                }
+            });
+
             sliderFloatField.RegisterValueChangedCallback(evt =>
             {
                 if (element.userData is ElementData item)
@@ -172,6 +178,11 @@ internal class SelectedPanel
                 }
             };
             
+            toggleButton.text = "";
+            toggleButton.Add(new Image { image = _toggleIcon });
+            actionButton.text = "";
+            actionButton.Add(new Image { image = isStyle ? _resetIcon : _removeIcon });
+
             toggleButton.clicked += () =>
             {
                 if (element.userData is ElementData item)
@@ -202,7 +213,7 @@ internal class SelectedPanel
                 }
             };
             
-            return element;
+			return element;
         }
 
         void BindElement(VisualElement element, int index, bool isStyle)

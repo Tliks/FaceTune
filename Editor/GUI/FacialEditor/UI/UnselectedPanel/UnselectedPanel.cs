@@ -205,4 +205,40 @@ internal class UnselectedPanel
         BuildCurrentSource();
         _unselectedListView.RefreshItems();
     }
+
+    private int FindNearestListIndexByKeyIndex(int targetKeyIndex)
+    {
+        if (_currentSource == null || _currentSource.Count == 0) return -1;
+
+        int lo = 0, hi = _currentSource.Count - 1;
+        while (lo <= hi)
+        {
+            int mid = (lo + hi) / 2;
+            int key = _currentSource[mid].KeyIndex;
+            if (key == targetKeyIndex) return mid;
+            if (key < targetKeyIndex) lo = mid + 1;
+            else hi = mid - 1;
+        }
+
+        if (lo >= _currentSource.Count) return _currentSource.Count - 1;
+        if (hi < 0) return 0;
+
+        int loDiff = System.Math.Abs(_currentSource[lo].KeyIndex - targetKeyIndex);
+        int hiDiff = System.Math.Abs(_currentSource[hi].KeyIndex - targetKeyIndex);
+        return (loDiff < hiDiff) ? lo : hi;
+    }
+
+    public bool ScrollToNearestKeyIndex(int targetKeyIndex, bool select = false, bool notify = false)
+    {
+        int idx = FindNearestListIndexByKeyIndex(targetKeyIndex);
+        if (idx < 0) return false;
+
+        if (select)
+        {
+            if (notify) _unselectedListView.SetSelection(new[] { idx });
+            else _unselectedListView.SetSelectionWithoutNotify(new[] { idx });
+        }
+        _unselectedListView.ScrollToItem(idx);
+        return true;
+    }
 }

@@ -23,9 +23,22 @@ internal class FacialShapeUI
         _selectedPanel = new SelectedPanel(dataManager, groupManager);
         _unselectedPanel = new UnselectedPanel(dataManager, groupManager, previewManager);
 
-        root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
+		root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
         root.Q<VisualElement>("selected-content-container").Add(_selectedPanel.Element);
         root.Q<VisualElement>("unselected-content-container").Add(_unselectedPanel.Element);
+
+		UIEventHandler();
+    }
+
+    private void UIEventHandler()
+    {
+		_selectedPanel.OnSelectedItemNameClicked += keyIndex =>
+		{
+			_unselectedPanel.Element.schedule.Execute(() =>
+			{
+				_unselectedPanel.ScrollToNearestKeyIndex(keyIndex, true, false);
+			});
+		};
     }
 
     private void EnsureUIAssets()
