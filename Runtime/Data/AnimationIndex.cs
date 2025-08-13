@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune;
 
 // GenericAnimationのコレクションに対するアクセス・簡易な編集を行うためのラッパーオブジェクト
 // 重複を許容しない、Dictionary基盤の設計
-internal class AnimationIndex : ICollection<GenericAnimation>
+internal class AnimationIndex : ICollection<GenericAnimation>, IEquatable<AnimationIndex>
 {
     // メインデータ構造: Path -> PropertyName -> GenericAnimation
     private Dictionary<string, Dictionary<string, GenericAnimation>> _pathPropertyAnimationMap;
@@ -358,5 +358,61 @@ internal class AnimationIndex : ICollection<GenericAnimation>
         
         _pathPropertyAnimationMap = newMap;
         InvalidateBlendShapeCache();
+    }
+
+    public bool Equals(AnimationIndex? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (Count != other.Count) return false;
+
+        // Compare by path/property key and GenericAnimation value equality
+        foreach (var pathEntry in _pathPropertyAnimationMap)
+        {
+            if (!other._pathPropertyAnimationMap.TryGetValue(pathEntry.Key, out var otherPropertyMap))
+            {
+                return false;
+            }
+            if (pathEntry.Value.Count != otherPropertyMap.Count)
+            {
+                return false;
+            }
+            foreach (var propertyEntry in pathEntry.Value)
+            {
+                if (!otherPropertyMap.TryGetValue(propertyEntry.Key, out var otherAnimation))
+                {
+                    return false;
+                }
+                if (!propertyEntry.Value.Equals(otherAnimation))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is AnimationIndex idx && Equals(idx);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hash = 17;
+            foreach (var path in _pathPropertyAnimationMap.Keys.OrderBy(x => x))
+            {
+                hash = hash * 31 + path.GetHashCode();
+                var propertyMap = _pathPropertyAnimationMap[path];
+                foreach (var property in propertyMap.Keys.OrderBy(x => x))
+                {
+                    hash = hash * 31 + property.GetHashCode();
+                    hash = hash * 31 + propertyMap[property].GetHashCode();
+                }
+            }
+            return hash;
+        }
     }
 }
