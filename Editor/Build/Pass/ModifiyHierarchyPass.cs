@@ -34,7 +34,9 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         var platformSupport = buildPassContext.PlatformSupport;
 
         var usedParameterNames = new HashSet<string>();
-        var menuItems = root.GetComponentsInChildren<ModularAvatarMenuItem>(true);
+        var menuItems = root.GetComponentsInChildren<ModularAvatarMenuItem>(true)
+            .Where(x => x.PortableControl != null);
+        
         foreach (var menuItem in menuItems)
         {
             var parameterName = menuItem.PortableControl.Parameter;
