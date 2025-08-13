@@ -43,6 +43,7 @@ internal class UnselectedPanel
         SetupControls();
         SetupListView();
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewSlow();
+        _groupManager.OnRightSelectionChanged += (isRightSelected) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => AddByKeyIndex(keyIndex);
@@ -151,7 +152,7 @@ internal class UnselectedPanel
             if (hasSearchText && !item.ShapeName.ToLower().Contains(searchText))
                 continue;
                 
-            if (!_groupManager.IsBlendShapeVisible(item.KeyIndex))
+            if (_groupManager.IsRightSelected && !_groupManager.IsBlendShapeVisible(item.KeyIndex))
                 continue;
                 
             _currentSource.Add(item);

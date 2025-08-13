@@ -53,6 +53,7 @@ internal class SelectedPanel
         
         // rebuild sourcce
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewsSlow();
+        _groupManager.OnLeftSelectionChanged += (isLeftSelected) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnSingleShapeOverride += (keyIndex) => AddByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
@@ -274,7 +275,7 @@ internal class SelectedPanel
             if (hasSearchText && !item.ShapeName.ToLower().Contains(searchText))
                 continue;
 
-            if (!_groupManager.IsBlendShapeVisible(item.KeyIndex))
+            if (_groupManager.IsLeftSelected && !_groupManager.IsBlendShapeVisible(item.KeyIndex))
                 continue;
 
             if (style && item.IsStyle)
