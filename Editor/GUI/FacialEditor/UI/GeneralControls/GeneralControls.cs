@@ -43,7 +43,7 @@ internal class GeneralControls
     private static Dictionary<Type, Func<IShapesEditorTargeting>> _targetingTypes = new()
     {
         { typeof(AnimationClip), () => new AnimationClipTargeting() },
-        { typeof(FacialDataComponent), () => new FacialDataTargeting() },
+        { typeof(ExpressionDataComponent), () => new ExpressionDataTargeting() },
         { typeof(FacialStyleComponent), () => new FacialStyleTargeting() },
         { typeof(AdvancedEyeBlinkComponent), () => new AdvancedEyeBlinkTargeting() },
         { typeof(AdvancedLipSyncComponent), () => new AdvancedLipSyncTargeting() },

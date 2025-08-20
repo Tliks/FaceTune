@@ -1,9 +1,9 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(MenuPath)]
-    public class FacialDataComponent : AbstractDataComponent
+    public class ExpressionDataComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Facial Data";
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Expression Data";
         internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
 
         // AnimationClip
@@ -13,11 +13,17 @@ namespace Aoyon.FaceTune
         // Manual
         public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
+        // Non Facial
+        public AnimationClip? NonFacialClip = null;
 
-        internal override void GetAnimations(AnimationSet resultToAdd, SessionContext sessionContext)
+        internal void GetAnimations(AnimationSet resultToAdd, SessionContext sessionContext)
         {
             resultToAdd.AddRange(ProcessClip().ToGenericAnimations(sessionContext.BodyPath));
             resultToAdd.AddRange(BlendShapeAnimations.ToGenericAnimations(sessionContext.BodyPath)); // Manualを優先
+            if (NonFacialClip != null)
+            {
+                NonFacialClip.GetGenericAnimations(resultToAdd);
+            }
         }
 
         internal List<BlendShapeWeightAnimation> ProcessClip()
@@ -32,7 +38,7 @@ namespace Aoyon.FaceTune
             return result;
         }
 
-        internal override void GetBlendShapes(ICollection<BlendShapeWeight> resultToAdd, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, IObserveContext? observeContext = null)
+        internal void GetBlendShapes(ICollection<BlendShapeWeight> resultToAdd, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, IObserveContext? observeContext = null)
         {
             observeContext ??= new NonObserveContext();
             observeContext.Observe(this);

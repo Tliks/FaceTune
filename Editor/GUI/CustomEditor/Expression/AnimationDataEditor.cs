@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui;
 
+/*
 [CanEditMultipleObjects]
 [CustomEditor(typeof(AnimationDataComponent))]
 internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataComponent>
@@ -15,10 +16,8 @@ internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataCompo
         {
             ConvertToManual(targets);
         }
-        */
     }
 
-    /*
     internal static void ConvertToManual(Object[] targets)
     {
         var components = targets.Select(t => t as AnimationDataComponent).OfType<AnimationDataComponent>().ToArray();
@@ -34,8 +33,8 @@ internal class AnimationDataEditor : FaceTuneCustomEditorBase<AnimationDataCompo
             so.ApplyModifiedProperties();
         }
     }
-    */
 }
+*/
 
 /*
 // Todo: Refactor

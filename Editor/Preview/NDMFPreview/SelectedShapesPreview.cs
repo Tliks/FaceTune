@@ -58,7 +58,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         // 処理が軽い data >= expression > condition の順に監視し、早期リターン
         
         // extractが呼ばれる順序の保証はないので、extract内におけるGameObjectかどうかの確認は必要
-        var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<AbstractDataComponent>(gameObject) : null, (a, b) => a == b);
+        var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionDataComponent>(gameObject) : null, (a, b) => a == b);
         if (dataComponent != null)
         {
             ProcessChildrenBlendShapes(dataComponent.gameObject, root, proxy, context, result);
@@ -104,8 +104,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         result.AddRange(zeroWeightBlendShapes);
         result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
-        using var _3 = ListPool<AbstractDataComponent>.Get(out var childDataComponents);
-        context.GetComponentsInChildren<AbstractDataComponent>(targetGameObject, true, childDataComponents);
+        using var _3 = ListPool<ExpressionDataComponent>.Get(out var childDataComponents);
+        context.GetComponentsInChildren<ExpressionDataComponent>(targetGameObject, true, childDataComponents);
         foreach (var dataComponent in childDataComponents)
         {
             dataComponent.GetBlendShapes(result, facialStyleAnimations, observeContext);

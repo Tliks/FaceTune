@@ -103,9 +103,9 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
     }
 }
 
-internal class FacialDataTargeting : IShapesEditorTargeting<FacialDataComponent>
+internal class ExpressionDataTargeting : IShapesEditorTargeting<ExpressionDataComponent>
 {
-    public override FacialDataComponent? Target { get; set; } = null;
+    public override ExpressionDataComponent? Target { get; set; } = null;
 
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
@@ -113,7 +113,7 @@ internal class FacialDataTargeting : IShapesEditorTargeting<FacialDataComponent>
         var result = new BlendShapeSet();
         dataManager.GetCurrentOverrides(result);
         var blendshapeAnimations = result.ToBlendShapeAnimations().ToList();
-        var getProperty = (SerializedObject so) => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
+        var getProperty = (SerializedObject so) => so.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations));
         CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddBlendShapeAnimations(
             Target,

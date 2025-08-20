@@ -49,7 +49,7 @@ internal static class AssetsMenu
             toggleComponent.PortableControl.Value = i;
 
             toggle.AddComponent<ExpressionComponent>();
-            var dataComponent = toggle.AddComponent<FacialDataComponent>();
+            var dataComponent = toggle.AddComponent<ExpressionDataComponent>();
             dataComponent.Clip = clip;
             dataComponent.ClipOption = ClipImportOption.NonZero;
         }

@@ -66,9 +66,9 @@ internal class AnimatorControllerImporter
 
                         if (nonFacialAnimations.Count == 0)
                         {
-                            var facialData = obj.AddComponent<FacialDataComponent>();
-                            facialData.Clip = clip;
-                            facialData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
+                            var expressionData = obj.AddComponent<ExpressionDataComponent>();
+                            expressionData.Clip = clip;
+                            expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
                         }
                         else
                         {
@@ -78,11 +78,9 @@ internal class AnimatorControllerImporter
                                     .Where(fa => !fa.Curve.keys.All(k => k.value == 0))
                                     .ToList();
                             }
-                            var facialData = obj.AddComponent<FacialDataComponent>();
-                            facialData.BlendShapeAnimations = facialAnimations;
-
-                            var animationData = obj.AddComponent<AnimationDataComponent>();
-                            animationData.Clip = CreateClip(new AnimationSet(nonFacialAnimations));
+                            var expressionData = obj.AddComponent<ExpressionDataComponent>();
+                            expressionData.BlendShapeAnimations = facialAnimations;
+                            expressionData.NonFacialClip = CreateClip(new AnimationSet(nonFacialAnimations));
                         }
                         
                         validExpressionPerLayer++;

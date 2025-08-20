@@ -3,22 +3,22 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(FacialDataComponent))]
-internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
+[CustomEditor(typeof(ExpressionDataComponent))]
+internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataComponent>
 {
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipOptionProperty = null!;
-
+    private SerializedProperty _nonFacialClipProperty = null!;
     public override void OnEnable()
     {
         base.OnEnable();
-        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
-        _clipProperty = serializedObject.FindProperty(nameof(FacialDataComponent.Clip));
-        _clipOptionProperty = serializedObject.FindProperty(nameof(FacialDataComponent.ClipOption));
+        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations));
+        _clipProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.Clip));
+        _clipOptionProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.ClipOption));
+        _nonFacialClipProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.NonFacialClip));
     }
 
-    private static readonly string[] SourceModeNames = {nameof(AnimationSourceMode.Manual), nameof(AnimationSourceMode.AnimationClip) };
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -26,6 +26,8 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         DrawFromAnimationClipModeGUI();
         EditorGUILayout.Space();
         DrawManualModeGUI();
+        EditorGUILayout.Space();
+        DrawNonFacialClipGUI();
 
         serializedObject.ApplyModifiedProperties();
     }
@@ -47,12 +49,17 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         EditorGUILayout.PropertyField(_clipProperty);
         if (GUILayout.Button("Import", GUILayout.Width(60)))
         {
-            var components = targets.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
+            var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
             ImportClip(components);
         }
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.PropertyField(_clipOptionProperty);
+    }
+
+    private void DrawNonFacialClipGUI()
+    {
+        EditorGUILayout.PropertyField(_nonFacialClipProperty);
     }
 
     private void OpenEditor()
@@ -67,11 +74,11 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
         baseSet.AddRange(Component.ProcessClip().ToFirstFrameBlendShapes());
 
-        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, baseSet);
+        CustomEditorUtility.OpenEditor(Component.gameObject, new ExpressionDataTargeting(){ Target = Component }, defaultOverride, baseSet);
     }
     
 
-    internal static void ImportClip(FacialDataComponent[] components)
+    internal static void ImportClip(ExpressionDataComponent[] components)
     {
         foreach (var component in components)
         {
@@ -79,7 +86,7 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
         }
     }
 
-    internal static bool ImportClip(FacialDataComponent component)
+    internal static bool ImportClip(ExpressionDataComponent component)
     {
         var animations = component.ProcessClip();
         if (animations.Count == 0)
@@ -89,23 +96,23 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
         var so = new SerializedObject(component);
         so.Update();
-        so.FindProperty(nameof(FacialDataComponent.Clip)).objectReferenceValue = null;
-        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations, false); // manualにある方を優先
+        so.FindProperty(nameof(ExpressionDataComponent.Clip)).objectReferenceValue = null;
+        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations)), animations, false); // manualにある方を優先
         so.ApplyModifiedProperties();
         return true;
     }
 
-    [MenuItem($"CONTEXT/{nameof(FacialDataComponent)}/Export as Clip")]
+    [MenuItem($"CONTEXT/{nameof(ExpressionDataComponent)}/Export as Clip")]
     private static void ExportAsClip(MenuCommand command)
     {
-        var component = (command.context as FacialDataComponent)!;
+        var component = (command.context as ExpressionDataComponent)!;
         ExportFacialDataWindow.OpenWindow(component);
     }
 }
 
 internal class ExportFacialDataWindow : EditorWindow
 {
-    private FacialDataComponent _component = null!;
+    private ExpressionDataComponent _component = null!;
 
     private bool _addZeroWeight = true;
     private bool _addFacialStyle = false;
@@ -114,7 +121,7 @@ internal class ExportFacialDataWindow : EditorWindow
     private const int WindowWidth = 300;
     private const int WindowHeight = 100;
 
-    public static void OpenWindow(FacialDataComponent component)
+    public static void OpenWindow(ExpressionDataComponent component)
     {
         var window = GetWindow<ExportFacialDataWindow>();
         window._component = component;

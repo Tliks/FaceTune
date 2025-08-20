@@ -32,8 +32,8 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpre
         FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(target.gameObject, facialStyleAnimations, root, observeContext);
         result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
-        using var _4 = ListPool<AbstractDataComponent>.Get(out var dataComponents);
-        context.GetComponentsInChildren<AbstractDataComponent>(target.gameObject, true, dataComponents);
+        using var _4 = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
+        context.GetComponentsInChildren<ExpressionDataComponent>(target.gameObject, true, dataComponents);
         foreach (var dataComponent in dataComponents)
         {
             dataComponent.GetBlendShapes(result, facialStyleAnimations, observeContext);

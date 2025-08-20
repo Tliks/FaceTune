@@ -28,7 +28,7 @@ namespace Aoyon.FaceTune
                 }
             }
 
-            var dataComponents = gameObject.GetInterfacesInChildFaceTuneComponents<AbstractDataComponent>(true);
+            var dataComponents = gameObject.GetComponentsInChildren<ExpressionDataComponent>(true);
             foreach (var dataComponent in dataComponents)
             {
                 dataComponent.GetAnimations(animationSet, sessionContext);
