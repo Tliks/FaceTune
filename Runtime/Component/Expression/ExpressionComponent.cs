@@ -14,24 +14,24 @@ namespace Aoyon.FaceTune
 
         internal AvatarExpression ToExpression(SessionContext sessionContext)
         {
-            var animationIndex = new AnimationSet();
+            var animationSet = new AnimationSet();
 
             if (!FacialSettings.EnableBlending)
             {
                 var zeroAnimations = sessionContext.SafeZeroBlendShapes.ToGenericAnimations(sessionContext.BodyPath);
-                animationIndex.AddRange(zeroAnimations);
+                animationSet.AddRange(zeroAnimations);
 
                 using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
                 if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialAnimations))
                 {
-                    animationIndex.AddRange(facialAnimations.ToGenericAnimations(sessionContext.BodyPath));
+                    animationSet.AddRange(facialAnimations.ToGenericAnimations(sessionContext.BodyPath));
                 }
             }
 
             var dataComponents = gameObject.GetInterfacesInChildFaceTuneComponents<AbstractDataComponent>(true);
             foreach (var dataComponent in dataComponents)
             {
-                animationIndex.AddRange(dataComponent.GetAnimations(sessionContext));
+                dataComponent.GetAnimations(animationSet, sessionContext);
             }
 
             var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyeBlinkComponent>(true);
@@ -49,7 +49,7 @@ namespace Aoyon.FaceTune
                 AdvancedLipSyncSettings = lipSyncSettings
             };
 
-            return new AvatarExpression(name, animationIndex.Animations, ExpressionSettings, facialSettings);
+            return new AvatarExpression(name, animationSet.Animations, ExpressionSettings, facialSettings);
         }
 
         internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)

@@ -16,9 +16,8 @@ namespace Aoyon.FaceTune
         // FromAnimationClip
         public AnimationClip? Clip = null;
 
-        internal override List<GenericAnimation> GetAnimations(SessionContext sessionContext)
+        internal override void GetAnimations(AnimationSet animationSet, SessionContext sessionContext)
         {
-            var animations = new List<GenericAnimation>();
             /*
             switch (SourceMode)
             {
@@ -32,15 +31,14 @@ namespace Aoyon.FaceTune
                     throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
             }
             */
-            ClipToManual(animations);
-            return animations;
+            ClipToManual(animationSet);
         }
 
-        internal void ClipToManual(List<GenericAnimation> animations)
+        internal void ClipToManual(AnimationSet animationSet)
         {
             if (Clip == null) return;
 #if UNITY_EDITOR
-            Clip.GetGenericAnimations(animations);
+            Clip.GetGenericAnimations(animationSet);
 #endif
         }
 

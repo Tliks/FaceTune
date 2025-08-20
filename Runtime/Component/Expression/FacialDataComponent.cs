@@ -15,15 +15,14 @@ namespace Aoyon.FaceTune
         public AnimationClip? Clip = null;
         public ClipImportOption ClipOption = ClipImportOption.NonZero;
 
-        internal override List<GenericAnimation> GetAnimations(SessionContext sessionContext)
+        internal override void GetAnimations(AnimationSet resultToAdd, SessionContext sessionContext)
         {
-            var animations = new List<GenericAnimation>();
             switch (SourceMode)
             {
                 case AnimationSourceMode.Manual:
                     foreach (var animation in BlendShapeAnimations)
                     {
-                        animations.Add(animation.ToGeneric(sessionContext.BodyPath));
+                        resultToAdd.Add(animation.ToGeneric(sessionContext.BodyPath));
                     }
                     break;
                 case AnimationSourceMode.AnimationClip:
@@ -32,13 +31,12 @@ namespace Aoyon.FaceTune
                     ClipToManual(blendShapeAnimations);
                     foreach (var animation in blendShapeAnimations)
                     {
-                        animations.Add(animation.ToGeneric(sessionContext.BodyPath));
+                        resultToAdd.Add(animation.ToGeneric(sessionContext.BodyPath));
                     }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(SourceMode), SourceMode, null);
             }
-            return animations;
         }
 
         internal void ClipToManual(List<BlendShapeWeightAnimation> animations)

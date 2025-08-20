@@ -94,9 +94,12 @@ internal static class AnimationUtility
         }
     }
 
-    public static void GetGenericAnimations(this AnimationClip clip, List<GenericAnimation> resultToAdd)
+    public static void GetGenericAnimations(this AnimationClip clip, ICollection<GenericAnimation> resultToAdd)
     {
-        resultToAdd.AddRange(GenericAnimation.FromAnimationClip(clip));
+        foreach (var animation in GenericAnimation.FromAnimationClip(clip))
+        {
+            resultToAdd.Add(animation);
+        }
     }
 
     public static void AddBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)
