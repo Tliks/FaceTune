@@ -62,23 +62,56 @@ internal static class CustomEditorUtility
         }
     }
     
-    public static void AddBlendShapeAnimations(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<BlendShapeWeightAnimation> animations)
+    public static void AddBlendShapeAnimations(Component component, Func<SerializedObject, SerializedProperty> getProperty, IReadOnlyCollection<BlendShapeWeightAnimation> animations, bool preferLatter = true)
     {
         ModicyComponent(component, so =>
         {
             var property = getProperty(so);
-            AddBlendShapeAnimations(property, animations);
+            AddBlendShapeAnimations(property, animations, preferLatter);
         });
     }
-    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyCollection<BlendShapeWeightAnimation> animations)
+    public static void AddBlendShapeAnimations(SerializedProperty blendShapeAnimation, IReadOnlyCollection<BlendShapeWeightAnimation> animations, bool preferLatter = true)
     {
-        var newAnimations = animations.ToList();
-        blendShapeAnimation.arraySize = newAnimations.Count;
-        for (var i = 0; i < newAnimations.Count; i++)
+        // 既存のアニメーションを辞書化
+        var existingAnimations = new Dictionary<string, (SerializedProperty, AnimationCurve)>();
+        for (int i = 0; i < blendShapeAnimation.arraySize; i++)
         {
             var element = blendShapeAnimation.GetArrayElementAtIndex(i);
-            element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = newAnimations[i].Name;
-            element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
+            var name = element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue;
+            var curve = element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue;
+            if (!string.IsNullOrEmpty(name))
+            {
+                existingAnimations[name] = (element, curve);
+            }
+        }
+
+        var newAnimations = animations.ToList();
+
+        foreach (var anim in newAnimations)
+        {
+            if (existingAnimations.TryGetValue(anim.Name, out var existing))
+            {
+                bool isSame = anim.Curve.Equals(existing.Item2);
+                if (isSame)
+                {
+                    // 同じなら何もしない（既存を維持）
+                }
+                else
+                {
+                    // 既に存在していて同値ではなく、かつpreferLatterの場合は上書き
+                    if (preferLatter)
+                    {
+                        existing.Item1.animationCurveValue = anim.Curve;
+                    }
+                }
+            }
+            else // 新規追加
+            {
+                blendShapeAnimation.arraySize++;
+                var newElement = blendShapeAnimation.GetArrayElementAtIndex(blendShapeAnimation.arraySize - 1);
+                newElement.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = anim.Name;
+                newElement.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = anim.Curve;
+            }
         }
     }
 

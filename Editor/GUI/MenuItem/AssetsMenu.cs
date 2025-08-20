@@ -50,7 +50,6 @@ internal static class AssetsMenu
 
             toggle.AddComponent<ExpressionComponent>();
             var dataComponent = toggle.AddComponent<FacialDataComponent>();
-            dataComponent.SourceMode = AnimationSourceMode.AnimationClip;
             dataComponent.Clip = clip;
             dataComponent.ClipOption = ClipImportOption.NonZero;
         }

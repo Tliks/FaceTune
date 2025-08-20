@@ -6,7 +6,6 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(FacialDataComponent))]
 internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 {
-    private SerializedProperty _sourceModeProperty = null!;
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipOptionProperty = null!;
@@ -14,7 +13,6 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
     public override void OnEnable()
     {
         base.OnEnable();
-        _sourceModeProperty = serializedObject.FindProperty(nameof(FacialDataComponent.SourceMode));
         _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
         _clipProperty = serializedObject.FindProperty(nameof(FacialDataComponent.Clip));
         _clipOptionProperty = serializedObject.FindProperty(nameof(FacialDataComponent.ClipOption));
@@ -25,31 +23,11 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
     {
         serializedObject.Update();
 
-        DrawSourceModeGUI();
-
-        EditorGUILayout.Space();
-
-        GUI.enabled = _sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.Manual;
-        DrawManualModeGUI();
-        GUI.enabled = true;
-
-        EditorGUILayout.Space();
-
-        GUI.enabled = _sourceModeProperty.enumValueIndex == (int)AnimationSourceMode.AnimationClip;
         DrawFromAnimationClipModeGUI();
-        GUI.enabled = true;
+        EditorGUILayout.Space();
+        DrawManualModeGUI();
 
         serializedObject.ApplyModifiedProperties();
-    }
-
-    private void DrawSourceModeGUI()
-    {
-        EditorGUI.BeginChangeCheck();
-        var newSourceMode = GUILayout.Toolbar(_sourceModeProperty.enumValueIndex, SourceModeNames);
-        if (EditorGUI.EndChangeCheck())
-        {
-            _sourceModeProperty.enumValueIndex = newSourceMode;
-        }
     }
 
     private void DrawManualModeGUI()
@@ -65,39 +43,45 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
     private void DrawFromAnimationClipModeGUI()
     {
+        EditorGUILayout.BeginHorizontal();
         EditorGUILayout.PropertyField(_clipProperty);
-        EditorGUILayout.PropertyField(_clipOptionProperty);
-
-        EditorGUILayout.Space();
-        if (GUILayout.Button("Convert to Manual"))
+        if (GUILayout.Button("Import", GUILayout.Width(60)))
         {
             var components = targets.Select(t => t as FacialDataComponent).OfType<FacialDataComponent>().ToArray();
-            ConvertToManual(components);
+            ImportClip(components);
         }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.PropertyField(_clipOptionProperty);
     }
 
     private void OpenEditor()
     {
         var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
         FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
-        var defaultOverride = new BlendShapeSet();
-        Component.GetBlendShapes(defaultOverride, facialStyleAnimations);
-        var firstFrameBlendShapes = facialStyleAnimations.ToFirstFrameBlendShapes();
-        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, new BlendShapeSet(firstFrameBlendShapes));
-    }
 
-    internal static void ConvertToManual(FacialDataComponent[] components)
+        var defaultOverride = new BlendShapeSet();
+        defaultOverride.AddRange(Component.BlendShapeAnimations.ToFirstFrameBlendShapes());
+
+        var baseSet = new BlendShapeSet();
+        baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
+        baseSet.AddRange(Component.ProcessClip().ToFirstFrameBlendShapes());
+
+        CustomEditorUtility.OpenEditor(Component.gameObject, new FacialDataTargeting(){ Target = Component }, defaultOverride, baseSet);
+    }
+    
+
+    internal static void ImportClip(FacialDataComponent[] components)
     {
         foreach (var component in components)
         {
-            ConvertToManual(component);
+            ImportClip(component);
         }
     }
 
-    internal static bool ConvertToManual(FacialDataComponent component)
+    internal static bool ImportClip(FacialDataComponent component)
     {
-        var animations = new List<BlendShapeWeightAnimation>();
-        component.ClipToManual(animations);
+        var animations = component.ProcessClip();
         if (animations.Count == 0)
         {
             return false;
@@ -105,8 +89,8 @@ internal class FacialDataEditor : FaceTuneCustomEditorBase<FacialDataComponent>
 
         var so = new SerializedObject(component);
         so.Update();
-        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations);
-        so.FindProperty(nameof(FacialDataComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
+        so.FindProperty(nameof(FacialDataComponent.Clip)).objectReferenceValue = null;
+        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)), animations, false); // manualにある方を優先
         so.ApplyModifiedProperties();
         return true;
     }

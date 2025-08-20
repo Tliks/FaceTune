@@ -64,19 +64,27 @@ internal class AnimatorControllerImporter
                         var obj = CreateConditionAndExpression(state, conditions, isBlending);
                         obj.transform.parent = layerObj.transform;
 
-                        if (!isBlending)
+                        if (nonFacialAnimations.Count == 0)
                         {
-                            facialAnimations = facialAnimations
-                                .Where(fa => !fa.Curve.keys.All(k => k.value == 0))
-                                .ToList();
+                            var facialData = obj.AddComponent<FacialDataComponent>();
+                            facialData.Clip = clip;
+                            facialData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
                         }
-
-                        AddFacialData(obj, facialAnimations);
-                        if (nonFacialAnimations.Count > 0)
+                        else
                         {
-                            AddAnimationData(obj, nonFacialAnimations);
-                        }
+                            if (!isBlending)
+                            {
+                                facialAnimations = facialAnimations
+                                    .Where(fa => !fa.Curve.keys.All(k => k.value == 0))
+                                    .ToList();
+                            }
+                            var facialData = obj.AddComponent<FacialDataComponent>();
+                            facialData.BlendShapeAnimations = facialAnimations;
 
+                            var animationData = obj.AddComponent<AnimationDataComponent>();
+                            animationData.Clip = CreateClip(new AnimationSet(nonFacialAnimations));
+                        }
+                        
                         validExpressionPerLayer++;
                         expressionCount++;
                     }
@@ -233,19 +241,6 @@ internal class AnimatorControllerImporter
             nonFacialAnimations.Add(new GenericAnimation(serializableCurveBinding, serializableObjectReferenceCurve.ToList()));
         }
         return (facialAnimations, nonFacialAnimations);
-    }
-
-    private void AddFacialData(GameObject obj, List<BlendShapeWeightAnimation> facialAnimations)
-    {
-        var facialData = obj.AddComponent<FacialDataComponent>();
-        facialData.SourceMode = AnimationSourceMode.Manual;
-        facialData.BlendShapeAnimations = facialAnimations;
-    }
-
-    private void AddAnimationData(GameObject obj, List<GenericAnimation> nonFacialAnimations)
-    {
-        var animationData = obj.AddComponent<AnimationDataComponent>();
-        animationData.Clip = CreateClip(new AnimationSet(nonFacialAnimations));
     }
 
     private AnimationClip CreateClip(AnimationSet animations)
