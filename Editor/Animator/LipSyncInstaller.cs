@@ -10,6 +10,7 @@ internal class LipSyncInstaller : InstallerBase
 
     private readonly Dictionary<AdvancedLipSyncSettings, int> _indexForAdvancedSettings = new();
 
+    private const string ForceDisableLipSyncParameter = FaceTuneConstants.ForceDisableLipSyncParameter;
     private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/LipSync";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAdvancedAAP = $"{ParameterPrefix}/UseAdvanced"; // 1つ以上有効なAdvancedLipSyncSettingsがあるとき
@@ -18,6 +19,7 @@ internal class LipSyncInstaller : InstallerBase
 
     public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
+        _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, ForceDisableLipSyncParameter).defaultBool = false;
         _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP).defaultFloat = 1f;
     }
 
@@ -97,21 +99,38 @@ internal class LipSyncInstaller : InstallerBase
 
         var enabledToDisabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         enabledToDisabledTransition.SetDestination(disabled);
-        enabledToDisabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        var disableORConditions = new List<AnimatorCondition>
         {
-            parameter = AllowAAP,
-            mode = AnimatorConditionMode.Less,
-            threshold = 0.99f // 安全側(Mute)に倒す
-        });
-        enabled.Transitions = ImmutableList.Create(enabledToDisabledTransition);
+            new AnimatorCondition()
+            {
+                parameter = ForceDisableLipSyncParameter,
+                mode = AnimatorConditionMode.If
+            },
+            new AnimatorCondition()
+            {
+                parameter = AllowAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.99f // 安全側(Mute)に倒す
+            }
+        };
+        var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabledTransition, disableORConditions);
+        enabled.Transitions = ImmutableList.CreateRange(orTransitions);
 
         var disabledToEnabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         disabledToEnabledTransition.SetDestination(enabled);
-        disabledToEnabledTransition.Conditions = ImmutableList.Create(new AnimatorCondition()
+        disabledToEnabledTransition.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition>()
         {
-            parameter = AllowAAP,
-            mode = AnimatorConditionMode.Greater,
-            threshold = 0.99f // 同上
+            new AnimatorCondition()
+            {
+                parameter = ForceDisableLipSyncParameter,
+                mode = AnimatorConditionMode.IfNot
+            },
+            new AnimatorCondition()
+            {
+                parameter = AllowAAP,
+                mode = AnimatorConditionMode.Greater,
+                threshold = 0.99f // 同上
+            }
         });
         disabled.Transitions = ImmutableList.Create(disabledToEnabledTransition);
 
@@ -149,6 +168,11 @@ internal class LipSyncInstaller : InstallerBase
             var andConditions = new List<AnimatorCondition> {
                 new AnimatorCondition()
                 {
+                    parameter = ForceDisableLipSyncParameter,
+                    mode = AnimatorConditionMode.IfNot
+                },
+                new AnimatorCondition()
+                {
                     parameter = UseCancelerAAP,
                     mode = AnimatorConditionMode.Greater,
                     threshold = 0.01f // 遷移を開始した直後から有効(有効側に寄せる)
@@ -169,6 +193,11 @@ internal class LipSyncInstaller : InstallerBase
             lipsyncingToPassThrough.SetDestination(passThrough);
             var orConditions = new List<AnimatorCondition>();
             orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
+            orConditions.Add(new AnimatorCondition()
+            {
+                parameter = ForceDisableLipSyncParameter,
+                mode = AnimatorConditionMode.If
+            });
             orConditions.Add(new AnimatorCondition()
             {
                 parameter = UseCancelerAAP,

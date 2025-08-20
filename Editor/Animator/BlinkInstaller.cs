@@ -13,6 +13,7 @@ internal class BlinkInstaller : InstallerBase
     
     private Dictionary<string, string> _clonedShapesMapping = new();
 
+    private const string ForceDisableEyeBlinkParameter = FaceTuneConstants.ForceDisableEyeBlinkParameter;
     private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/Blink";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAnimationAAP = $"{ParameterPrefix}/UseAnimation"; // 1つ以上有効なAdvancedEyeBlinkSettingsがあるとき
@@ -21,6 +22,7 @@ internal class BlinkInstaller : InstallerBase
 
     public BlinkInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
+        _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, ForceDisableEyeBlinkParameter).defaultBool = false;
         _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP);
     }
 
@@ -94,22 +96,39 @@ internal class BlinkInstaller : InstallerBase
         // Enabled -> Disabled
         var enabledToDisabled = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         enabledToDisabled.SetDestination(disabled);
-        enabledToDisabled.Conditions = ImmutableList.Create(new AnimatorCondition()
+        var disableORConditions = new List<AnimatorCondition>
         {
-            parameter = AllowAAP,
-            mode = AnimatorConditionMode.Less,
-            threshold = 0.99f // 安全側(Stare)に倒す
-        });
-        enabled.Transitions = enabled.Transitions.Add(enabledToDisabled);
+            new AnimatorCondition()
+            {
+                parameter = ForceDisableEyeBlinkParameter,
+                mode = AnimatorConditionMode.If
+            },
+            new AnimatorCondition()
+            {
+                parameter = AllowAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.99f // 安全側(Stare)に倒す
+            }
+        };
+        var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabled, disableORConditions);
+        enabled.Transitions = enabled.Transitions.AddRange(orTransitions);
 
         // Disabled -> Enabled
         var disabledToEnabled = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         disabledToEnabled.SetDestination(enabled);
-        disabledToEnabled.Conditions = ImmutableList.Create(new AnimatorCondition()
+        disabledToEnabled.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition>()
         {
-            parameter = AllowAAP,
-            mode = AnimatorConditionMode.Greater,
-            threshold = 0.99f // 同上
+            new AnimatorCondition()
+            {
+                parameter = ForceDisableEyeBlinkParameter,
+                mode = AnimatorConditionMode.IfNot
+            },
+            new AnimatorCondition()
+            {
+                parameter = AllowAAP,
+                mode = AnimatorConditionMode.Greater,
+                threshold = 0.99f // 同上
+            }
         });
         disabled.Transitions = disabled.Transitions.Add(disabledToEnabled);
 
@@ -259,24 +278,44 @@ internal class BlinkInstaller : InstallerBase
             // AnimationGate -> Stare
             var gateToStare = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
             gateToStare.SetDestination(stare);
-            gateToStare.Conditions = ImmutableList.CreateRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
-            animationGate.Transitions = animationGate.Transitions.Add(gateToStare);
-
-            // Stare -> AnimationGate (OR)
-            var stareToGate = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-            stareToGate.SetDestination(animationGate);
-            var orTransitions = AnimatorHelper.SetORConditions(stareToGate, VRCAAPHelper.IndexConditions(ModeAAP, false, index));
-            stare.Transitions = stare.Transitions.AddRange(orTransitions);
-
-            // stare -> entryPassThrough
-            var stareToEntryPassThrough = AnimatorHelper.CreateTransitionWithExitTime(); // StareのDelayAnimationの再生が終わったタイミングで瞬きを発火
-            stareToEntryPassThrough.SetDestination(entryPassThrough);
-            stareToEntryPassThrough.Conditions = ImmutableList.Create(new AnimatorCondition()
+            var andConditions = new List<AnimatorCondition>();
+            andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
+            andConditions.Add(new AnimatorCondition()
+            {
+                parameter = ForceDisableEyeBlinkParameter,
+                mode = AnimatorConditionMode.IfNot
+            });
+            andConditions.Add(new AnimatorCondition()
             {
                 parameter = AllowAAP,
                 mode = AnimatorConditionMode.Greater,
                 threshold = 0.99f // 安全側(Stare)に倒す
             });
+            gateToStare.Conditions = ImmutableList.CreateRange(andConditions);
+            animationGate.Transitions = animationGate.Transitions.Add(gateToStare);
+
+            // Stare -> AnimationGate (OR)
+            var stareToGate = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            stareToGate.SetDestination(animationGate);
+            var orConditions = new List<AnimatorCondition>();
+            orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
+            orConditions.Add(new AnimatorCondition()
+            {
+                parameter = ForceDisableEyeBlinkParameter,
+                mode = AnimatorConditionMode.If
+            });
+            orConditions.Add(new AnimatorCondition()
+            {
+                parameter = AllowAAP,
+                mode = AnimatorConditionMode.Less,
+                threshold = 0.99f // 同上
+            });
+            var orTransitions = AnimatorHelper.SetORConditions(stareToGate, orConditions);
+            stare.Transitions = stare.Transitions.AddRange(orTransitions);
+
+            // stare -> entryPassThrough
+            var stareToEntryPassThrough = AnimatorHelper.CreateTransitionWithExitTime(); // StareのDelayAnimationの再生が終わったタイミングで瞬きを発火
+            stareToEntryPassThrough.SetDestination(entryPassThrough);
             stare.Transitions = stare.Transitions.Add(stareToEntryPassThrough);
 
             // entryPassThrough -> blink
