@@ -50,7 +50,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new Exception("Target is not set");
-        var animations = new AnimationIndex();
+        var animations = new AnimationSet();
         var path = RuntimeUtil.RelativePath(root, renderer.gameObject);
         if (path == null) throw new Exception("TargetRenderer is not a child of root");
         if (AddZeroWeight)

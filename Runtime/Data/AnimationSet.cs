@@ -1,8 +1,7 @@
 namespace Aoyon.FaceTune;
 
-// GenericAnimationのコレクションに対するアクセス・簡易な編集を行うためのラッパーオブジェクト
-// 重複を許容しない、Dictionary基盤の設計
-internal class AnimationIndex : ICollection<GenericAnimation>, IEquatable<AnimationIndex>
+// 重複を許容せず、順序を保持しないGenericAnimationのコレクション。
+internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<AnimationSet>
 {
     // メインデータ構造: Path -> PropertyName -> GenericAnimation
     private Dictionary<string, Dictionary<string, GenericAnimation>> _pathPropertyAnimationMap;
@@ -21,7 +20,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>, IEquatable<Animat
     public IReadOnlyList<GenericAnimation> Animations => 
         _pathPropertyAnimationMap.Values.SelectMany(dict => dict.Values).ToList().AsReadOnly();
 
-    public AnimationIndex(IEnumerable<GenericAnimation> animations)
+    public AnimationSet(IEnumerable<GenericAnimation> animations)
     {
         _pathPropertyAnimationMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
         foreach (var animation in animations)
@@ -30,7 +29,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>, IEquatable<Animat
         }
     }
 
-    public AnimationIndex()
+    public AnimationSet()
     {
         _pathPropertyAnimationMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
     }
@@ -360,7 +359,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>, IEquatable<Animat
         InvalidateBlendShapeCache();
     }
 
-    public bool Equals(AnimationIndex? other)
+    public bool Equals(AnimationSet? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -394,7 +393,7 @@ internal class AnimationIndex : ICollection<GenericAnimation>, IEquatable<Animat
 
     public override bool Equals(object? obj)
     {
-        return obj is AnimationIndex idx && Equals(idx);
+        return obj is AnimationSet idx && Equals(idx);
     }
 
     public override int GetHashCode()

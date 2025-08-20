@@ -14,7 +14,7 @@ namespace Aoyon.FaceTune
 
         internal AvatarExpression ToExpression(SessionContext sessionContext)
         {
-            var animationIndex = new AnimationIndex();
+            var animationIndex = new AnimationSet();
 
             if (!FacialSettings.EnableBlending)
             {

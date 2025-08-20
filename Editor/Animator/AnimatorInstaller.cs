@@ -85,7 +85,7 @@ internal class AnimatorInstaller : InstallerBase
             }
         }
 
-        var allBindings = patternData.GetAllExpressions().SelectMany(e => e.Animations).Select(a => a.CurveBinding).Distinct();
+        var allBindings = patternData.GetAllExpressions().SelectMany(e => e.AnimationSet.Animations).Select(a => a.CurveBinding).Distinct();
         var nonFacialBindings = new List<SerializableCurveBinding>();
         foreach (var binding in allBindings)
         {
@@ -285,7 +285,7 @@ internal class AnimatorInstaller : InstallerBase
 
         void Impl(VirtualClip clip)
         {
-            clip.AddAnimations(expression.Animations);
+            clip.AddAnimations(expression.AnimationSet);
             SetExpressionSettings(state, clip, expression.ExpressionSettings);
             SetFacialSettings(clip, expression.FacialSettings);
         }

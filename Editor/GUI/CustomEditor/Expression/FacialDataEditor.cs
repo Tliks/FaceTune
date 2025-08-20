@@ -153,7 +153,7 @@ internal class ExportFacialDataWindow : EditorWindow
 
     private void Export()
     {
-        var animations = new AnimationIndex();
+        var animations = new AnimationSet();
         if (!SessionContextBuilder.TryBuild(_component.gameObject, out var context, out var result))
         {
             Debug.LogError($"Failed to build session context: {result}");

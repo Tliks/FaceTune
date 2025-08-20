@@ -25,7 +25,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         if (sessionContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
-            var setteledShapes = allExpressions.SelectMany(e => e.AnimationIndex.GetBlendShapeNames(sessionContext.BodyPath)).ToHashSet();
+            var setteledShapes = allExpressions.SelectMany(e => e.AnimationSet.GetBlendShapeNames(sessionContext.BodyPath)).ToHashSet();
 
             var shapeNames = sessionContext.FaceRenderer.GetBlendShapes(sessionContext.FaceMesh).Select(b => b.Name);
             var shapesToClone = trackedShapes.Intersect(shapeNames);
@@ -44,7 +44,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
     {
         foreach (var expression in expressions)
         {
-            expression.AnimationIndex.ReplaceBlendShapeNames(targetPath, mapping);
+            expression.AnimationSet.ReplaceBlendShapeNames(targetPath, mapping);
         }
     }
 
@@ -55,7 +55,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         foreach (var expression in expressions)
         {
-            var shapes = expression.AnimationIndex.GetAllFirstFrameBlendShapeSet();
+            var shapes = expression.AnimationSet.GetAllFirstFrameBlendShapeSet();
             foreach (var shape in shapes.BlendShapes)
             {
                 if (trackedShapes.Contains(shape.Name))
@@ -68,7 +68,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
                 }
             }
 
-            expression.AnimationIndex.RemoveBlendShapes(shapesToRemove.Select(s => s.Name));
+            expression.AnimationSet.RemoveBlendShapes(shapesToRemove.Select(s => s.Name));
 
             if (shapesToWarning.Any())
             {

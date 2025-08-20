@@ -10,7 +10,7 @@ internal class AnimatorControllerImporter
     private readonly AnimatorController _animatorController;
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
-    private readonly Dictionary<AnimationIndex, AnimationClip> _clipMap;
+    private readonly Dictionary<AnimationSet, AnimationClip> _clipMap;
 
     public AnimatorControllerImporter(SessionContext context, AnimatorController animatorController)
     {
@@ -18,7 +18,7 @@ internal class AnimatorControllerImporter
         _animatorController = animatorController;
         _platformSupport = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
-        _clipMap = new Dictionary<AnimationIndex, AnimationClip>();
+        _clipMap = new Dictionary<AnimationSet, AnimationClip>();
         _allFacialBlendshapeCount = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Count();
     }
 
@@ -245,10 +245,10 @@ internal class AnimatorControllerImporter
     private void AddAnimationData(GameObject obj, List<GenericAnimation> nonFacialAnimations)
     {
         var animationData = obj.AddComponent<AnimationDataComponent>();
-        animationData.Clip = CreateClip(new AnimationIndex(nonFacialAnimations));
+        animationData.Clip = CreateClip(new AnimationSet(nonFacialAnimations));
     }
 
-    private AnimationClip CreateClip(AnimationIndex animations)
+    private AnimationClip CreateClip(AnimationSet animations)
     {
         if (_clipMap.TryGetValue(animations, out var clip))
         {
@@ -264,7 +264,7 @@ internal class AnimatorControllerImporter
         return newClip;
     }
 
-    private static string GetClipName(AnimationIndex animations)
+    private static string GetClipName(AnimationSet animations)
     {
         var type = animations.Animations
             .GroupBy(a => a.CurveBinding.Type?.Name ?? "UnknownType")
