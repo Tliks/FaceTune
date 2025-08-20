@@ -113,9 +113,11 @@ internal class FacialDataTargeting : IShapesEditorTargeting<FacialDataComponent>
         var result = new BlendShapeSet();
         dataManager.GetCurrentOverrides(result);
         var blendshapeAnimations = result.ToBlendShapeAnimations().ToList();
+        var getProperty = (SerializedObject so) => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations));
+        CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddBlendShapeAnimations(
             Target,
-            so => so.FindProperty(nameof(FacialDataComponent.BlendShapeAnimations)),
+            getProperty,
             blendshapeAnimations
         );
     }
@@ -133,9 +135,11 @@ internal class FacialStyleTargeting : IShapesEditorTargeting<FacialStyleComponen
         var result = new BlendShapeSet();
         dataManager.GetCurrentOverrides(result);
         var blendshapeAnimations = result.ToBlendShapeAnimations().ToList();
+        var getProperty = (SerializedObject so) => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
+        CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddBlendShapeAnimations(
             Target,
-            so => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations)),
+            getProperty,
             blendshapeAnimations
         );
     }
@@ -152,9 +156,11 @@ internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<AdvancedEyeBli
         if (Target == null) throw new Exception("Target is not set");
         var result = new BlendShapeSet();
         dataManager.GetCurrentOverrides(result);
+        var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
+        CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddShapesAsNames(
             Target, 
-            so => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName), 
+            getProperty, 
             result.Names.ToList()
         );
     }
@@ -171,9 +177,11 @@ internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<AdvancedLipSync
         if (Target == null) throw new Exception("Target is not set");
         var result = new BlendShapeSet();
         dataManager.GetCurrentOverrides(result);
+        var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedLipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName);
+        CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddShapesAsNames(
             Target, 
-            so => so.FindProperty(nameof(AdvancedLipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName), 
+            getProperty, 
             result.Names.ToList()
         );
     }

@@ -30,6 +30,16 @@ internal static class CustomEditorUtility
         if (window == null) return;
     }
 
+
+    public static void ClearAllElements(Component component, Func<SerializedObject, SerializedProperty> getProperty)
+    {
+        ModicyComponent(component, so =>
+        {
+            var property = getProperty(so);
+            ClearAllElements(property);
+        });
+    }
+    
     public static void ClearAllElements(SerializedProperty property)
     {
         property.arraySize = 0;
