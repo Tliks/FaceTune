@@ -9,8 +9,8 @@
     flex: 0 0 auto;
 }
 
-/* Shapes Panel */
-#style-shapes-panel {
+/* Base Panel */
+#base-shapes-panel {
     flex: 1 1 auto;
     margin-top: 5px;
 }
@@ -20,7 +20,7 @@
     margin-top: 10px;
 }
 
-#style-label-container, #selected-label-container {
+#base-label-container, #selected-label-container {
     flex: 0 0 auto;
     flex-direction: row;
     justify-content: flex-start;
@@ -28,23 +28,23 @@
 }
 
 /* Labels */
-#style-label, #selected-label {
+#base-label, #selected-label {
     -unity-font-style: bold;
     margin-right: auto;
 }
 
 /* Buttons */
-#style-set-all-100-button, #selected-set-all-100-button, #style-set-all-0-button, #selected-set-all-0-button, #style-reset-all-button, #remove-all-button {
+#base-set-all-100-button, #selected-set-all-100-button, #base-set-all-0-button, #selected-set-all-0-button, #base-reset-all-button, #remove-all-button {
     flex: 0 0 85px;
 }
 
 /* SimpleToggle */
-#style-zero-toggle, #selected-zero-toggle {
+#base-zero-toggle, #selected-zero-toggle {
     flex: 0 0 30px;
 }
 
 /* List Views */
-#style-list-view, #selected-list-view {
+#base-list-view, #selected-list-view {
     border-color: rgba(128, 128, 128, 0.8);
     border-width: 1px;
     border-radius: 5px;

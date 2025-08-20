@@ -153,7 +153,7 @@ internal class PreviewManager : IDisposable
         {
             result.Add(new BlendShapeWeight(shape, 0));
         }
-        foreach (var shape in _blendShapeOverrideManager.StyleSet)
+        foreach (var shape in _blendShapeOverrideManager.BaseSet)
         {
             result.Add(shape);
         }

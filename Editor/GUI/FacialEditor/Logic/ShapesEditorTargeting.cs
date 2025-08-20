@@ -44,7 +44,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
 {
     public override AnimationClip? Target { get; set; } = null;
     public bool AddZeroWeight { get; set; } = true;
-    public bool AddFacialStyle { get; set; } = true;
+    public bool AddBaseSet { get; set; } = true;
     public bool ExcludeTrackedShapes { get; set; } = true;
 
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
@@ -58,9 +58,9 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
             var zeroShapes = dataManager.AllKeys.Select(key => new BlendShapeWeight(key, 0f));
             animations.AddRange(zeroShapes.ToGenericAnimations(path));
         }
-        if (AddFacialStyle)
+        if (AddBaseSet)
         {
-            animations.AddRange(dataManager.StyleSet.ToGenericAnimations(path));
+            animations.AddRange(dataManager.BaseSet.ToGenericAnimations(path));
         }
         var overrides = new BlendShapeSet();
         dataManager.GetCurrentOverrides(overrides);
@@ -83,10 +83,10 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
             AddZeroWeight = evt.newValue;
         });
 
-        var addFacialStyleToggle = new Toggle("Add Facial Style") { value = AddFacialStyle };
-        addFacialStyleToggle.RegisterValueChangedCallback(evt =>
+        var addBaseSetToggle = new Toggle("Add Base Set") { value = AddBaseSet };
+        addBaseSetToggle.RegisterValueChangedCallback(evt =>
         {
-            AddFacialStyle = evt.newValue;
+            AddBaseSet = evt.newValue;
         });
 
         var excludeTrackedShapesToggle = new Toggle("Exclude Tracked Shapes") { value = ExcludeTrackedShapes };
@@ -96,7 +96,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
         });
 
         holdout.Add(addZeroWeightToggle);
-        holdout.Add(addFacialStyleToggle);
+        holdout.Add(addBaseSetToggle);
         holdout.Add(excludeTrackedShapesToggle);
 
         return holdout;

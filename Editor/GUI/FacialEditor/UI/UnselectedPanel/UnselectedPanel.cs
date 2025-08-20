@@ -143,7 +143,7 @@ internal class UnselectedPanel
         {
             var item = _allSource[i];
 
-            if (_blendShapeManager.IsStyleShape(item.KeyIndex))
+            if (_blendShapeManager.IsBaseShape(item.KeyIndex))
                 continue;
             
             if (_blendShapeManager.IsOverridden(item.KeyIndex))

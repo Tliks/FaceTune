@@ -171,7 +171,7 @@ internal class GeneralControls
         {
             if (_clip == null) return;
             var resutlt = new BlendShapeSet();
-            _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.StyleSet.ToBlendShapeAnimations().ToList());
+            _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList()); // Todo: BaseをFacialと区別すべき？
             _blendShapeManager.OverrideShapesAndSetWeight(resutlt.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
         };
 

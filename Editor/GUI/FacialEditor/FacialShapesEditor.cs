@@ -43,10 +43,10 @@ internal class FacialShapesEditor : EditorWindow
     }
 
     public static FacialShapesEditor? TryOpenEditor(
-        SkinnedMeshRenderer? renderer = null, IShapesEditorTargeting? targeting = null, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
+        SkinnedMeshRenderer? renderer = null, IShapesEditorTargeting? targeting = null, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? baseSet = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
-        window.RefreshTargetRenderer(renderer, facialStyleSet, defaultOverrides);
+        window.RefreshTargetRenderer(renderer, baseSet, defaultOverrides);
         targeting ??= new AnimationClipTargeting();
         window._targetManager.SetTargeting(targeting);
         return window;
@@ -86,10 +86,10 @@ internal class FacialShapesEditor : EditorWindow
         return ProcessUnsavedChanges(this);
     }
 
-    public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? facialStyleSet = null, IReadOnlyBlendShapeSet? defaultOverrides = null)
+    public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet = null, IReadOnlyBlendShapeSet? defaultOverrides = null)
     {
         _targetManager.SetTargetRenderer(renderer);
-        _dataManager.RefreshStyleAndDefaultOverrides(facialStyleSet, defaultOverrides);
+        _dataManager.RefreshBaseSetAndDefaultOverrides(baseSet, defaultOverrides);
     }
 
     private void OnTargetRendererChanged(SkinnedMeshRenderer? renderer)

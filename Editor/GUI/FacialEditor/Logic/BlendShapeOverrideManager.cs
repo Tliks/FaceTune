@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-// styleはは初期状態から変化した場合のみoverride
+// Baseは初期状態から変化した場合のみoverride
 // 通常のブレンドシェイプはweightに関わらず、overrideかどうかで判断
 [Serializable]
 internal class BlendShapeOverrideManager : IDisposable
@@ -12,11 +12,11 @@ internal class BlendShapeOverrideManager : IDisposable
     private SerializedProperty _overrideWeightsProperty;
 
     private string[] _allKeysArray = new string[0];
-    private IReadOnlyBlendShapeSet _styleSet = new BlendShapeSet();
+    private IReadOnlyBlendShapeSet _baseSet = new BlendShapeSet();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
-    public IReadOnlyBlendShapeSet StyleSet => _styleSet;
+    public IReadOnlyBlendShapeSet BaseSet => _baseSet;
     public event Action<int>? OnSingleShapeOverride;
     public event Action<IEnumerable<int>>? OnMultipleShapeOverride;
     public event Action<int>? OnSingleShapeUnoverride;
@@ -24,7 +24,7 @@ internal class BlendShapeOverrideManager : IDisposable
     public event Action<int>? OnSingleShapeWeightChanged;
     public event Action<IEnumerable<int>>? OnMultipleShapeWeightChanged;
     public event Action? OnUnknownChange;
-    public event Action? OnStyleSetChange;
+    public event Action? OnBaseSetChange;
     public event Action? OnAnyDataChange;
 
     public BlendShapeOverrideManager(SerializedObject serializedObject, SerializedProperty baseProperty)
@@ -50,18 +50,18 @@ internal class BlendShapeOverrideManager : IDisposable
         _serializedObject.Update();
     }
 
-    public void RefreshStyleAndDefaultOverrides(IReadOnlyBlendShapeSet? styleSet, IReadOnlyBlendShapeSet? defaultOverrides)
+    public void RefreshBaseSetAndDefaultOverrides(IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
     {
-        _styleSet = styleSet ?? new BlendShapeSet();
+        _baseSet = baseSet ?? new BlendShapeSet();
         var _defaultOverrides = defaultOverrides ?? new BlendShapeSet();
         ExecuteModification(() =>
         {
             for (int i = 0; i < _allKeysArray.Length; i++)
             {
                 _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = false;
-                if (_styleSet.TryGetValue(_allKeysArray[i], out var styleShape))
+                if (_baseSet.TryGetValue(_allKeysArray[i], out var baseShape))
                 {
-                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = styleShape.Weight;
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = baseShape.Weight;
                 }
                 if (_defaultOverrides.TryGetValue(_allKeysArray[i], out var defaultShape))
                 {
@@ -70,7 +70,7 @@ internal class BlendShapeOverrideManager : IDisposable
                 }
             }
         });
-        OnStyleSetChange?.Invoke();
+        OnBaseSetChange?.Invoke();
     }
 
     public void GetCurrentOverrides(BlendShapeSet resultToAdd)
@@ -97,9 +97,9 @@ internal class BlendShapeOverrideManager : IDisposable
         return _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue;
     }
     
-    public bool IsStyleShape(int index) 
+    public bool IsBaseShape(int index) 
     {
-        return _styleSet.Contains(_allKeysArray[index]);
+        return _baseSet.Contains(_allKeysArray[index]);
     }
     
     public float GetShapeWeight(int index) 
@@ -107,13 +107,13 @@ internal class BlendShapeOverrideManager : IDisposable
         return _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue;
     }
 
-    public float GetRequiredInitialStyleWeight(string shapeName)
+    public float GetRequiredInitialBaseWeight(string shapeName)
     {
-        return _styleSet.TryGetValue(shapeName, out var shape) ? shape.Weight : throw new Exception($"Shape {shapeName} not found in style set");
+        return _baseSet.TryGetValue(shapeName, out var shape) ? shape.Weight : throw new Exception($"Shape {shapeName} not found in base set");
     }
-    public bool IsInitialStyleWeight(int index)
+    public bool IsInitialBaseWeight(int index)
     {
-        return _styleSet.TryGetValue(_allKeysArray[index], out var shape) && Mathf.Approximately(shape.Weight, GetShapeWeight(index));
+        return _baseSet.TryGetValue(_allKeysArray[index], out var shape) && Mathf.Approximately(shape.Weight, GetShapeWeight(index));
     }
 
     private void ValidateData()
@@ -211,10 +211,10 @@ internal class BlendShapeOverrideManager : IDisposable
         // 先にweightを設定
         _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
         
-        // styleシェイプの場合、新しいweightでoverrideフラグを判定
-        if (IsStyleShape(index))
+        // baseシェイプの場合、新しいweightでoverrideフラグを判定
+        if (IsBaseShape(index))
         {
-            if (IsInitialStyleWeight(index))
+            if (IsInitialBaseWeight(index))
             {
                 _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
             }
@@ -255,7 +255,7 @@ internal class BlendShapeOverrideManager : IDisposable
     public float ResetShapeWeightWithOutApply(int index)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
-        var newWeight = GetRequiredInitialStyleWeight(_allKeysArray[index]);
+        var newWeight = GetRequiredInitialBaseWeight(_allKeysArray[index]);
         _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = newWeight;
         return newWeight;
     }
