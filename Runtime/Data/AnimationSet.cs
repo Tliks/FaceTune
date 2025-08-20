@@ -20,12 +20,12 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
     public IReadOnlyList<GenericAnimation> Animations => 
         _pathPropertyAnimationMap.Values.SelectMany(dict => dict.Values).ToList().AsReadOnly();
 
-    public AnimationSet(IEnumerable<GenericAnimation> animations)
+    public AnimationSet(IEnumerable<GenericAnimation> animations, DuplicatedAnimationKeyHandling handling = DuplicatedAnimationKeyHandling.PreferLatter)
     {
         _pathPropertyAnimationMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
         foreach (var animation in animations)
         {
-            AddInternal(animation);
+            AddInternal(animation, handling);
         }
     }
 
@@ -34,13 +34,33 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
         _pathPropertyAnimationMap = new Dictionary<string, Dictionary<string, GenericAnimation>>();
     }
 
-    private void AddInternal(GenericAnimation animation)
+    private void AddInternal(GenericAnimation animation, DuplicatedAnimationKeyHandling handling = DuplicatedAnimationKeyHandling.PreferLatter)
     {
         var path = animation.CurveBinding.Path;
         var propertyName = animation.CurveBinding.PropertyName;
         
-        // 重複は上書きする（最新のものを保持）
-        _pathPropertyAnimationMap.GetOrAddNew(path)[propertyName] = animation;
+        switch (handling)
+        {
+            case DuplicatedAnimationKeyHandling.PreferFormer:
+                _pathPropertyAnimationMap.GetOrAddNew(path).TryAdd(propertyName, animation);
+                break;
+            case DuplicatedAnimationKeyHandling.PreferLatter:
+                _pathPropertyAnimationMap.GetOrAddNew(path)[propertyName] = animation;
+                break;
+            case DuplicatedAnimationKeyHandling.ThrowException:
+                if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap) &&
+                    propertyMap.TryGetValue(propertyName, out var existing))
+                {
+                    throw new InvalidOperationException("Duplicated animation key");
+                }
+                else
+                {
+                    _pathPropertyAnimationMap.GetOrAddNew(path)[propertyName] = animation;
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(handling), handling, null);
+        }
     }
 
     private void InvalidateBlendShapeCache()
@@ -140,16 +160,23 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
     // ICollection implementation
     public void Add(GenericAnimation animation)
     {
-        AddInternal(animation);
+        AddInternal(animation, DuplicatedAnimationKeyHandling.PreferLatter);
         InvalidateBlendShapeCache();
     }
 
-    public void AddRange(IEnumerable<GenericAnimation> animations)
+    public void Add(GenericAnimation animation, DuplicatedAnimationKeyHandling handling)
+    {
+        AddInternal(animation, handling);
+        InvalidateBlendShapeCache();
+    }
+
+    public void AddRange(IEnumerable<GenericAnimation> animations, DuplicatedAnimationKeyHandling handling = DuplicatedAnimationKeyHandling.PreferLatter)
     {
         foreach (var animation in animations)
         {
-            Add(animation);
+            AddInternal(animation, handling);
         }
+        InvalidateBlendShapeCache();
     }
 
     public void AddSingleFrameBlendShapeAnimation(string path, string name, float weight)
@@ -332,11 +359,11 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
     }
 
     // Merge methods
-    public void MergeAnimation(IEnumerable<GenericAnimation> others)
+    public void MergeAnimation(IEnumerable<GenericAnimation> others, DuplicatedAnimationKeyHandling handling = DuplicatedAnimationKeyHandling.PreferLatter)
     {
         foreach (var animation in others)
         {
-            AddInternal(animation); // 重複は自動的に上書きされる
+            AddInternal(animation, handling);
         }
         InvalidateBlendShapeCache();
     }
@@ -414,4 +441,11 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
             return hash;
         }
     }
+}
+
+internal enum DuplicatedAnimationKeyHandling
+{
+    PreferLatter,
+    PreferFormer,
+    ThrowException
 }
