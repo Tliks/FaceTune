@@ -10,7 +10,6 @@ internal class AnimatorControllerImporter
     private readonly AnimatorController _animatorController;
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
-    private readonly Dictionary<AnimationSet, AnimationClip> _clipMap;
 
     public AnimatorControllerImporter(SessionContext context, AnimatorController animatorController)
     {
@@ -18,7 +17,6 @@ internal class AnimatorControllerImporter
         _animatorController = animatorController;
         _platformSupport = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
-        _clipMap = new Dictionary<AnimationSet, AnimationClip>();
         _allFacialBlendshapeCount = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Count();
     }
 
@@ -28,66 +26,66 @@ internal class AnimatorControllerImporter
         AssetDatabase.StartAssetEditing();
         try
         {
-        var expressionCount = 0;
-        var layers = _animatorController.layers;
-        GameObject? firstLayerObj = null;
-        for (int i = 0; i < layers.Length; i++)
-        {
-            var layer = layers[i];
-            var stateMachine = layer.stateMachine;
-            if (stateMachine == null) continue;
-
-            var conditionStateList = new List<(AnimatorCondition[] conditions, AnimatorState state)>();
-            CollectConditionsAndStates(stateMachine, conditionStateList);
-            Debug.Log($"Layer {i} collected: {conditionStateList.Count} condition-state pairs");
-            
-            if (conditionStateList.Count > 0)
+            var expressionCount = 0;
+            var layers = _animatorController.layers;
+            GameObject? firstLayerObj = null;
+            for (int i = 0; i < layers.Length; i++)
             {
-                var layerObj = new GameObject(layer.name);
-                firstLayerObj ??= layerObj;
-                layerObj.transform.parent = root.transform;
-                layerObj.AddComponent<PatternComponent>();
+                var layer = layers[i];
+                var stateMachine = layer.stateMachine;
+                if (stateMachine == null) continue;
 
-                var validExpressionPerLayer = 0;
-
-                foreach (var (conditions, state) in conditionStateList)
+                var conditionStateList = new List<(AnimatorCondition[] conditions, AnimatorState state)>();
+                CollectConditionsAndStates(stateMachine, conditionStateList);
+                Debug.Log($"Layer {i} collected: {conditionStateList.Count} condition-state pairs");
+                
+                if (conditionStateList.Count > 0)
                 {
-                    var clip = state.motion as AnimationClip;
-                    if (clip == null) continue;
+                    var layerObj = new GameObject(layer.name);
+                    firstLayerObj ??= layerObj;
+                    layerObj.transform.parent = root.transform;
+                    layerObj.AddComponent<PatternComponent>();
 
-                    var (facialAnimations, nonFacialAnimations) = AnalyzeAnimationClip(clip);
+                    var validExpressionPerLayer = 0;
 
-                    if (facialAnimations.Count > 0)
+                    foreach (var (conditions, state) in conditionStateList)
                     {
-                        var isfullAnimation = facialAnimations.Count >= _allFacialBlendshapeCount * 0.9 || ((_allFacialBlendshapeCount - facialAnimations.Count) < 100);
-                        var isBlending = !isfullAnimation;
-                        var obj = CreateConditionAndExpression(state, conditions, isBlending);
-                        obj.transform.parent = layerObj.transform;
+                        var clip = state.motion as AnimationClip;
+                        if (clip == null) continue;
 
-                        var expressionData = obj.AddComponent<ExpressionDataComponent>();
-                        expressionData.Clip = clip;
-                        expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
-                        
-                        validExpressionPerLayer++;
-                        expressionCount++;
+                        var facialBlendShapes = new List<BlendShapeWeightAnimation>();
+                        clip.GetAllBlendShapeAnimations(facialBlendShapes, _context.BodyPath);
+
+                        if (facialBlendShapes.Any())
+                        {
+                            var isBlending = IsBlending(facialBlendShapes);
+                            var obj = CreateConditionAndExpression(state, conditions, isBlending);
+                            obj.transform.parent = layerObj.transform;
+
+                            var expressionData = obj.AddComponent<ExpressionDataComponent>();
+                            expressionData.Clip = clip;
+                            expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
+                            
+                            validExpressionPerLayer++;
+                            expressionCount++;
+                        }
+                    }
+
+                    if (validExpressionPerLayer == 0)
+                    {
+                        Object.DestroyImmediate(layerObj);
                     }
                 }
-
-                if (validExpressionPerLayer == 0)
-                {
-                    Object.DestroyImmediate(layerObj);
-                }
             }
-        }
 
-        Undo.RegisterCreatedObjectUndo(root, "Import FX");
-        if (firstLayerObj != null)
-        {
-            Selection.activeObject = firstLayerObj;
-            EditorGUIUtility.PingObject(firstLayerObj);
-        }
+            Undo.RegisterCreatedObjectUndo(root, "Import FX");
+            if (firstLayerObj != null)
+            {
+                Selection.activeObject = firstLayerObj;
+                EditorGUIUtility.PingObject(firstLayerObj);
+            }
 
-        Debug.Log($"Finished to import {_animatorController.name}: {expressionCount} expressions");
+            Debug.Log($"Finished to import {_animatorController.name}: {expressionCount} expressions");
         }
         finally
         {
@@ -158,6 +156,17 @@ internal class AnimatorControllerImporter
         }
     }
 
+    private bool IsBlending(List<BlendShapeWeightAnimation> facialAnimations)
+    {
+        var count = facialAnimations.Count;
+        var zeroCount = facialAnimations.Count(a => a.IsZero);
+        var nonZeroCount = count - zeroCount;
+
+        // zeroCount < _allFacialBlendshapeCount * 0.9 && ((_allFacialBlendshapeCount - zeroCount) >= 100)
+
+        return !(nonZeroCount > 0 && zeroCount > 5);
+    }
+
     private GameObject CreateConditionAndExpression(AnimatorState state, AnimatorCondition[] conditions, bool isBlending)
     {
         var obj = new GameObject(state.name);
@@ -191,39 +200,4 @@ internal class AnimatorControllerImporter
 
         return obj;
     }
-
-    private (List<BlendShapeWeightAnimation> facialAnimations, List<GenericAnimation> nonFacialAnimations) AnalyzeAnimationClip(AnimationClip clip)
-    {
-        var facialAnimations = new List<BlendShapeWeightAnimation>();
-        var nonFacialAnimations = new List<GenericAnimation>();
-
-        var curveBindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
-        foreach (var binding in curveBindings)
-        {
-            var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
-            var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
-            if (binding.type == typeof(SkinnedMeshRenderer) &&
-                binding.path.ToLower() == _context.BodyPath.ToLower() &&
-                binding.propertyName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix))
-            {
-                var name = binding.propertyName.Replace(FaceTuneConstants.AnimatedBlendShapePrefix, string.Empty);
-                var animation = new BlendShapeWeightAnimation(name, curve);
-                facialAnimations.Add(animation);
-            }
-            else
-            {
-                nonFacialAnimations.Add(new GenericAnimation(serializableCurveBinding, curve));
-            }
-        }
-        var objectReferenceBindings = UnityEditor.AnimationUtility.GetObjectReferenceCurveBindings(clip);
-        foreach (var binding in objectReferenceBindings)
-        {
-            var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
-            var objectReferenceCurve = UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip, binding);
-            var serializableObjectReferenceCurve = objectReferenceCurve.Select(SerializableObjectReferenceKeyframe.FromEditorObjectReferenceKeyframe);
-            nonFacialAnimations.Add(new GenericAnimation(serializableCurveBinding, serializableObjectReferenceCurve.ToList()));
-        }
-        return (facialAnimations, nonFacialAnimations);
-    }
-
 }

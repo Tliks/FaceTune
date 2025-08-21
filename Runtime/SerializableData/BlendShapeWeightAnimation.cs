@@ -29,6 +29,8 @@ public record BlendShapeWeightAnimation // Immutable
     }
 
     internal float Time => curve.keys.Max(k => k.time);
+    internal bool IsZero => curve.keys.All(k => k.value == 0);
+    internal float Weight(float time) => curve.Evaluate(time);
 
     internal static BlendShapeWeightAnimation SingleFrame(string name, float weight)
     {
