@@ -134,6 +134,7 @@ namespace Aoyon.FaceTune.Gui
             if (GUILayout.Button("追加"))
             {
                 CreatePatternImpl(_handGesturePatternDetails[_selectedHandGesturePattern]);
+                GUIUtility.ExitGUI();
             }
             EditorGUILayout.EndVertical();
 
@@ -149,6 +150,7 @@ namespace Aoyon.FaceTune.Gui
             if (GUILayout.Button("追加"))
             {
                 CreatePatternImpl(_otherPatternDetails[_selectedOtherPattern]);
+                GUIUtility.ExitGUI();
             }
             EditorGUILayout.EndVertical();
 
@@ -160,6 +162,7 @@ namespace Aoyon.FaceTune.Gui
             if (GUILayout.Button("追加"))
             {
                 ImportAnimatorController();
+                GUIUtility.ExitGUI();
             }
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndVertical();
