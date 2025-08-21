@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune.Preview;
 // early
 internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpressionPreview>
 {
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result)
     {
         using var _ = ListPool<ExpressionComponent>.Get(out var components);
         context.GetComponentsInChildren<ExpressionComponent>(root, true, components);
@@ -36,7 +36,7 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpre
         context.GetComponentsInChildren<ExpressionDataComponent>(target.gameObject, true, dataComponents);
         foreach (var dataComponent in dataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleAnimations, observeContext);
+            dataComponent.GetBlendShapes(result, facialStyleAnimations, bodyPath, observeContext);
         }
     }
 }

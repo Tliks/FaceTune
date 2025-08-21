@@ -20,7 +20,7 @@ internal static class SessionContextBuilder
 
         var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(root.transform);
 
-        if (!TryGetFaceRenderer(root, out var faceRenderer, platformSupport, context))
+        if (!TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, platformSupport, context))
         {
             result = SessionContextBuildResult.NotFoundFaceRenderer;
             return false;
@@ -32,8 +32,6 @@ internal static class SessionContextBuilder
             result = SessionContextBuildResult.NotFoundFaceMesh;
             return false;
         }
-
-        var bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
 
         var zeroBlendShapes = new BlendShapeSet();
         faceRenderer.GetBlendShapesAndSetWeightToZero(zeroBlendShapes);
@@ -47,10 +45,10 @@ internal static class SessionContextBuilder
         return true;
     }
 
-    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, IMetabasePlatformSupport? platformSupport = null, IObserveContext? context = null)
+    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, [NotNullWhen(true)] out string? bodyPath, IMetabasePlatformSupport? platformSupport = null, IObserveContext? context = null)
     {
         context ??= new NonObserveContext();
-        platformSupport ??= Platforms.MetabasePlatformSupport.GetSupport(root.transform);
+        platformSupport ??= MetabasePlatformSupport.GetSupport(root.transform);
 
         using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
         context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
@@ -64,8 +62,10 @@ internal static class SessionContextBuilder
         faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null) ?? platformSupport.GetFaceRenderer();
         if (faceRenderer != null)
         {
+            bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
             return true;
         }
+        bodyPath = null;
         return false;
     }
 

@@ -64,24 +64,9 @@ internal class AnimatorControllerImporter
                         var obj = CreateConditionAndExpression(state, conditions, isBlending);
                         obj.transform.parent = layerObj.transform;
 
-                        if (nonFacialAnimations.Count == 0)
-                        {
-                            var expressionData = obj.AddComponent<ExpressionDataComponent>();
-                            expressionData.Clip = clip;
-                            expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
-                        }
-                        else
-                        {
-                            if (!isBlending)
-                            {
-                                facialAnimations = facialAnimations
-                                    .Where(fa => !fa.Curve.keys.All(k => k.value == 0))
-                                    .ToList();
-                            }
-                            var expressionData = obj.AddComponent<ExpressionDataComponent>();
-                            expressionData.BlendShapeAnimations = facialAnimations;
-                            expressionData.NonFacialClip = CreateClip(new AnimationSet(nonFacialAnimations));
-                        }
+                        var expressionData = obj.AddComponent<ExpressionDataComponent>();
+                        expressionData.Clip = clip;
+                        expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
                         
                         validExpressionPerLayer++;
                         expressionCount++;
@@ -241,54 +226,4 @@ internal class AnimatorControllerImporter
         return (facialAnimations, nonFacialAnimations);
     }
 
-    private AnimationClip CreateClip(AnimationSet animations)
-    {
-        if (_clipMap.TryGetValue(animations, out var clip))
-        {
-            return clip;
-        }
-        var newClip = new AnimationClip();
-        newClip.name = GetClipName(animations);
-        newClip.AddGenericAnimations(animations.Animations);
-        _clipMap.Add(animations, newClip);
-		var folderPath = GetClippath();
-		var assetPath = AssetDatabase.GenerateUniqueAssetPath($"{folderPath}/{newClip.name}.anim");
-		AssetDatabase.CreateAsset(newClip, assetPath);
-        return newClip;
-    }
-
-    private static string GetClipName(AnimationSet animations)
-    {
-        var type = animations.Animations
-            .GroupBy(a => a.CurveBinding.Type?.Name ?? "UnknownType")
-            .OrderByDescending(g => g.Count())
-            .First().Key;
-
-        var obj = animations.Animations
-            .GroupBy(a => !string.IsNullOrEmpty(a.CurveBinding.Path) ? a.CurveBinding.Path.Split('/').Last() : "Root")
-            .OrderByDescending(g => g.Count())
-            .First().Key;
-
-        return $"{type}_{obj}";
-    }
-
-	private string _clipFolderPath = "";
-	private string GetClippath()
-	{
-		if (string.IsNullOrEmpty(_clipFolderPath))
-		{
-			var absolutePath = EditorUtility.OpenFolderPanel("表情以外のアニメーションが検知されました。アニメーションクリップの保存先を選択してください", "Assets", "");
-			if (string.IsNullOrEmpty(absolutePath))
-			{
-				throw new Exception("アニメーションクリップの保存先が選択されていません。");
-			}
-			var relativePath = FileUtil.GetProjectRelativePath(absolutePath);
-			if (string.IsNullOrEmpty(relativePath) || !relativePath.StartsWith("Assets"))
-			{
-				throw new Exception("プロジェクト内のフォルダ（Assets配下）を選択してください。");
-			}
-			_clipFolderPath = relativePath.Replace("\\", "/");
-		}
-		return _clipFolderPath;
-	}
 }

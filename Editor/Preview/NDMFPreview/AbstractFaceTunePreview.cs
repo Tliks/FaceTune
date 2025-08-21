@@ -29,8 +29,8 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         foreach (var root in context.GetAvatarRoots())
         {
             if (!context.ActiveInHierarchy(root)) continue;
-            if (!SessionContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, null, observeContext)) continue;
-            groups.Add(RenderGroup.For(faceRenderer).WithData(root));
+            if (!SessionContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, null, observeContext)) continue;
+            groups.Add(RenderGroup.For(faceRenderer).WithData((root, bodyPath)));
         }
         return groups.ToImmutableList();
     }
@@ -54,13 +54,14 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
             var proxyMesh = proxy.sharedMesh;
             if (proxyMesh == null) return Error("SkinnedMeshRenderer.sharedMesh is null");
 
-            var root = group.GetData<GameObject>();
+            var (root, bodyPath) = group.GetData<(GameObject, string)>();
             if (root == null) return Error("GameObject not found");
+            if (bodyPath == null) return Error("bodyPath not found");
 
             using var _set = BlendShapeSetPool.Get(out var set);
             using var _2 = new ProfilingSampleScope($"{typeof(TFilter).Name}.QueryBlendShapes");
             {
-                QueryBlendShapes(original, proxy, root, context, set);
+                QueryBlendShapes(original, proxy, root, bodyPath, context, set);
             }
 
             return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(proxy, set.AsReadOnly()));
@@ -83,7 +84,7 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
     /// プレビューするブレンドシェイプを取得する
     /// IRenderFilter.Instantiate内で呼ばれるので適時Observe
     /// </summary>
-    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result);
+    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result);
 }
 
 internal class BlendShapePreviewNode : IRenderFilterNode

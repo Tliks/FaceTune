@@ -45,7 +45,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
     }
 
     // 無関係なオブジェクト同士の選択の切り替え時で更新がかかるらないように、_targetObjectのextractで監視する
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result)
     {
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
@@ -61,14 +61,14 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionDataComponent>(gameObject) : null, (a, b) => a == b);
         if (dataComponent != null)
         {
-            ProcessChildrenBlendShapes(dataComponent.gameObject, root, proxy, context, result);
+            ProcessChildrenBlendShapes(dataComponent.gameObject, root, bodyPath, proxy, context, result);
             return;
         }
 
         var expressionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionComponent>(gameObject) : null, (a, b) => a == b);
         if (expressionComponent != null)
         {
-            ProcessChildrenBlendShapes(expressionComponent.gameObject, root, proxy, context, result);
+            ProcessChildrenBlendShapes(expressionComponent.gameObject, root, bodyPath, proxy, context, result);
             return;
         }
 
@@ -79,7 +79,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
             conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
             if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
-                ProcessChildrenBlendShapes(conditionComponent.gameObject, root, proxy, context, result);
+                ProcessChildrenBlendShapes(conditionComponent.gameObject, root, bodyPath, proxy, context, result);
                 return;
             }
         }
@@ -88,7 +88,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
     }
 
     // プレビューの対象となり得るGameObjectであることが確定している場合
-    private static void ProcessChildrenBlendShapes(GameObject targetGameObject, GameObject root, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeSet result)
+    private static void ProcessChildrenBlendShapes(GameObject targetGameObject, GameObject root, string bodyPath, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeSet result)
     {
         var isEditorOnly = context.EditorOnlyInHierarchy(targetGameObject);
         if (isEditorOnly) return;
@@ -108,7 +108,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         context.GetComponentsInChildren<ExpressionDataComponent>(targetGameObject, true, childDataComponents);
         foreach (var dataComponent in childDataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleAnimations, observeContext);
+            dataComponent.GetBlendShapes(result, facialStyleAnimations, bodyPath, observeContext);
         }
     }
 }

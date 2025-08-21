@@ -44,7 +44,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
         SelectedShapesPreview.MayEnable();
     }
 
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, ComputeContext context, BlendShapeSet result)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result)
     {
     }
 }
