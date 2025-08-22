@@ -17,7 +17,7 @@ internal class AnimatorControllerImporter
         _animatorController = animatorController;
         _platformSupport = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
-        _allFacialBlendshapeCount = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Count();
+        _allFacialBlendshapeCount = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Length;
     }
 
     public void Import(GameObject root)
@@ -35,20 +35,13 @@ internal class AnimatorControllerImporter
                 var stateMachine = layer.stateMachine;
                 if (stateMachine == null) continue;
 
-                var conditionStateList = new List<(AnimatorCondition[] conditions, AnimatorState state)>();
-                CollectConditionsAndStates(stateMachine, conditionStateList);
-                Debug.Log($"Layer {i} collected: {conditionStateList.Count} condition-state pairs");
+                var stateConditions = new Dictionary<AnimatorState, List<List<Condition>>>();
+                CollectConditionsAndStates(stateMachine, stateConditions);
                 
-                if (conditionStateList.Count > 0)
+                var validExpressionsPerLayer = new List<GameObject>();
+                if (stateConditions.Count > 0)
                 {
-                    var layerObj = new GameObject(layer.name);
-                    firstLayerObj ??= layerObj;
-                    layerObj.transform.parent = root.transform;
-                    layerObj.AddComponent<PatternComponent>();
-
-                    var validExpressionPerLayer = 0;
-
-                    foreach (var (conditions, state) in conditionStateList)
+                    foreach (var (state, conditions) in stateConditions)
                     {
                         var clip = state.motion as AnimationClip;
                         if (clip == null) continue;
@@ -56,26 +49,43 @@ internal class AnimatorControllerImporter
                         var facialBlendShapes = new List<BlendShapeWeightAnimation>();
                         clip.GetAllBlendShapeAnimations(facialBlendShapes, _context.BodyPath);
 
-                        if (facialBlendShapes.Any())
+                        if (facialBlendShapes.Count > 0)
                         {
                             var isBlending = IsBlending(facialBlendShapes);
                             var obj = CreateConditionAndExpression(state, conditions, isBlending);
-                            obj.transform.parent = layerObj.transform;
 
                             var expressionData = obj.AddComponent<ExpressionDataComponent>();
                             expressionData.Clip = clip;
                             expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
                             
-                            validExpressionPerLayer++;
-                            expressionCount++;
+                            validExpressionsPerLayer.Add(obj);
                         }
                     }
 
-                    if (validExpressionPerLayer == 0)
+                    var count = validExpressionsPerLayer.Count;
+                    expressionCount += count;
+
+                    if (count == 1)
                     {
-                        Object.DestroyImmediate(layerObj);
+                        var obj = validExpressionsPerLayer[0];
+                        obj.transform.parent = root.transform;
+                        obj.name = layer.name + "_" + obj.name;
+                        // obj.AddComponent<PatternComponent>();
+                    }
+                    else if (count > 1)
+                    {
+                        var layerObj = new GameObject(layer.name);
+                        firstLayerObj ??= layerObj;
+                        layerObj.transform.parent = root.transform;
+                        layerObj.AddComponent<PatternComponent>();
+                        foreach (var obj in validExpressionsPerLayer)
+                        {
+                            obj.transform.parent = layerObj.transform;
+                        }
                     }
                 }
+
+                Debug.Log($"Layer {layer.name} collected: {validExpressionsPerLayer.Count}/{stateConditions.Count} valid expressions");
             }
 
             Undo.RegisterCreatedObjectUndo(root, "Import FX");
@@ -94,47 +104,57 @@ internal class AnimatorControllerImporter
         }
     }
 
-    private static void CollectConditionsAndStates(AnimatorStateMachine stateMachine, List<(AnimatorCondition[] conditions, AnimatorState state)> conditionStateList)
+    private void CollectConditionsAndStates(AnimatorStateMachine stateMachine, Dictionary<AnimatorState, List<List<Condition>>> conditionStateList)
     {
-        if (stateMachine.defaultState is { } defaultState)
-        {
-            if (defaultState.motion is AnimationClip)
-            {
-                conditionStateList.Add((new AnimatorCondition[0], defaultState));
-            }
-        }
-        
+        var count = 0;
+
         foreach (var transition in stateMachine.entryTransitions)
         {
             if (IsValidTransition(transition, out var state))
             {
-                conditionStateList.Add((transition.conditions, state));
+                AddAnimatorCondition(state, transition.conditions.ToList());
             }
         }
         
-        foreach (var transition in stateMachine.anyStateTransitions)
-        {
-            if (IsValidTransition(transition, out var state))
-            {
-                conditionStateList.Add((transition.conditions, state));
-            }
-        }
-
         foreach (var stateInfo in stateMachine.states)
         {
             foreach (var transition in stateInfo.state.transitions)
             {
                 if (IsValidTransition(transition, out var state))
                 {
-                    conditionStateList.Add((transition.conditions, state));
+                    AddAnimatorCondition(state, transition.conditions.ToList());
                 }
             }
+        }
+
+        var anyStateConditions = new List<(AnimatorState, List<AnimatorCondition>)>();
+        foreach (var transition in stateMachine.anyStateTransitions)
+        {
+            if (IsValidTransition(transition, out var state))
+            {
+                anyStateConditions.Add((state, transition.conditions.ToList()));
+            }
+        }
+        if (anyStateConditions.Count > 0)
+        {
+            ProcessAnyState(anyStateConditions);
         }
 
         foreach (var subStateMachine in stateMachine.stateMachines)
         {
             CollectConditionsAndStates(subStateMachine.stateMachine, conditionStateList);
         }
+
+        // 条件を設定できないため、デフォルトステートの追加は他が空の場合のみ
+        if (count == 0 && stateMachine.defaultState is { } defaultState)
+        {
+            if (defaultState.motion is AnimationClip)
+            {
+                AddCondition(defaultState, new());
+            }
+        }
+
+        return;
 
         static bool IsValidTransition(AnimatorTransitionBase transition, [NotNullWhen(true)] out AnimatorState? state)
         {
@@ -154,6 +174,50 @@ internal class AnimatorControllerImporter
             state = destinationState;
             return true;
         }
+        
+        Condition ToCondition(AnimatorCondition condition)
+        {
+            var (handGestureCondition, parameterCondition) = condition.ToCondition(_parameterTypes, (parameter) => Debug.LogWarning($"failed to find parameter: {parameter}"));
+            if (handGestureCondition != null)
+            {
+                return handGestureCondition;
+            }
+            if (parameterCondition != null)
+            {
+                return parameterCondition;
+            }
+            throw new InvalidOperationException("failed to convert condition");
+        }
+
+        void AddCondition(AnimatorState state, List<Condition> conditions)
+        {
+            conditionStateList.GetOrAddNew(state).Add(conditions);
+            count++;
+        }
+
+        void AddAnimatorCondition(AnimatorState state, List<AnimatorCondition> conditions)
+        {
+            AddCondition(state, conditions.Select(ToCondition).ToList());
+        }
+
+        // AnyStateの全条件の否定をAnyState以外の各条件が満たす必要がある
+        void ProcessAnyState(List<(AnimatorState, List<AnimatorCondition>)> anyStateConditionsPerState)
+        {
+            var convertedAnyStateConditionsPerState = anyStateConditionsPerState.Select(p => (p.Item1, p.Item2.Select(ToCondition).ToList())).ToList();
+            var convertedAnyStateConditions = convertedAnyStateConditionsPerState.Select(p => p.Item2).ToList();
+
+            foreach (var (state, orConditions) in conditionStateList)
+            {
+                foreach (var orCondition in orConditions)
+                {
+                    conditionStateList[state] = ConditionUtility.AddNegation(orCondition, convertedAnyStateConditions);
+                }
+            }
+            foreach (var (state, orConditions) in convertedAnyStateConditionsPerState)
+            {
+                AddCondition(state, orConditions);
+            }
+        }
     }
 
     private bool IsBlending(List<BlendShapeWeightAnimation> facialAnimations)
@@ -167,23 +231,28 @@ internal class AnimatorControllerImporter
         return !(nonZeroCount > 0 && zeroCount > 5);
     }
 
-    private GameObject CreateConditionAndExpression(AnimatorState state, AnimatorCondition[] conditions, bool isBlending)
+    private GameObject CreateConditionAndExpression(AnimatorState state, List<List<Condition>> conditions, bool isBlending)
     {
         var obj = new GameObject(state.name);
 
-        if (conditions.Length > 0)
+        if (conditions.Count > 0)
         {
-            var condition = obj.AddComponent<ConditionComponent>();
-            foreach (var animCondition in conditions)
+            var orConditions = conditions;
+            foreach (var animConditions in orConditions)
             {
-                var (handGestureCondition, parameterCondition) = animCondition.ToCondition(_parameterTypes, (parameter) => Debug.LogWarning($"failed to find parameter: {parameter}"));
-                if (handGestureCondition != null)
+                // ORは複数のConditionComponentで表現
+                var condition = obj.AddComponent<ConditionComponent>();
+                foreach (var animCondition in animConditions)
                 {
-                    condition.HandGestureConditions.Add(handGestureCondition);
-                }
-                if (parameterCondition != null)
-                {
-                    condition.ParameterConditions.Add(parameterCondition);
+                    // ANDは単一のConditionComponent内で表現
+                    if (animCondition is HandGestureCondition handGestureCondition)
+                    {
+                        condition.HandGestureConditions.Add(handGestureCondition);
+                    }
+                    else if (animCondition is ParameterCondition parameterCondition)
+                    {
+                        condition.ParameterConditions.Add(parameterCondition);
+                    }
                 }
             }
         }
