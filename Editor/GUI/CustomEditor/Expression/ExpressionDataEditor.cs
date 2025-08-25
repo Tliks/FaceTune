@@ -6,24 +6,32 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(ExpressionDataComponent))]
 internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataComponent>
 {
+    private SessionContext? _context;
+
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipOptionProperty = null!;
     private SerializedProperty _allBlendShapeAnimationAsFacialProperty = null!;
 
+    private string[] _missingBlendShapeNames = null!;
+
     public override void OnEnable()
     {
         base.OnEnable();
+        CustomEditorUtility.TryGetContext(Component.gameObject, out _context);
         _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations));
         _clipProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.Clip));
         _clipOptionProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.ClipOption));
         _allBlendShapeAnimationAsFacialProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.AllBlendShapeAnimationAsFacial));
+        _missingBlendShapeNames = GetMissingBlendShapeNames();
     }
 
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
 
+        DrawMissingBlendShapeGUI();
+        EditorGUILayout.Space();
         DrawFromAnimationClipModeGUI();
         EditorGUILayout.Space();
         DrawManualModeGUI();
@@ -31,6 +39,12 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
         DrawAdvancedOptionsGUI();
 
         serializedObject.ApplyModifiedProperties();
+    }
+
+    private void DrawMissingBlendShapeGUI()
+    {
+        if (_missingBlendShapeNames.Length == 0) return;
+        EditorGUILayout.HelpBox($"Missing BlendShapes: {string.Join(", ", _missingBlendShapeNames)}", MessageType.Warning);
     }
 
     private void DrawManualModeGUI()
@@ -68,6 +82,19 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
             EditorGUILayout.PropertyField(_allBlendShapeAnimationAsFacialProperty);
             EditorGUI.indentLevel--;
         }
+    }
+
+    private string[] GetMissingBlendShapeNames()
+    {
+        if (_context == null) return new string[0];
+        var allBlendShapes = _context.ZeroBlendShapes
+            .Select(x => x.Name)
+            .ToHashSet();
+        var missingBlendShapes = Component.BlendShapeAnimations
+            .Select(x => x.Name)
+            .Where(x => !allBlendShapes.Contains(x))
+            .ToArray();
+        return missingBlendShapes;
     }
 
     private void OpenEditor()
@@ -119,8 +146,21 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
         return true;
     }
 
-    private static AnimationClip CreateClip(AnimationSet animations)
+    private static bool _clipFolderPathSkipped = false;
+    private static AnimationClip? CreateClip(AnimationSet animations)
     {
+        if (_clipFolderPathSkipped) return null;
+        var result = EditorUtility.DisplayDialog(
+            "アニメーションクリップの作成",
+            "アニメーションクリップを作成しますか？",
+            "作成する",
+            "キャンセル"
+        );
+        if (!result)
+        {
+            _clipFolderPathSkipped = true;
+            return null;
+        }
         var newClip = new AnimationClip();
         newClip.name = GetClipName(animations);
         newClip.AddGenericAnimations(animations.Animations);
@@ -153,7 +193,8 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
 			var absolutePath = EditorUtility.OpenFolderPanel("表情以外のアニメーションが検知されました。アニメーションクリップの保存先を選択してください", "Assets", "");
 			if (string.IsNullOrEmpty(absolutePath))
 			{
-				throw new Exception("アニメーションクリップの保存先が選択されていません。");
+                Debug.LogWarning("アニメーションクリップの保存先が選択されていません。スキップします。");
+                return "";
 			}
 			var relativePath = FileUtil.GetProjectRelativePath(absolutePath);
 			if (string.IsNullOrEmpty(relativePath) || !relativePath.StartsWith("Assets"))
