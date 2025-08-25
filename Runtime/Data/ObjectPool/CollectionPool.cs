@@ -58,3 +58,7 @@ internal sealed class HashSetPool<T> : CollectionPool<HashSet<T>, T>
 internal sealed class BlendShapeSetPool : CollectionPool<BlendShapeSet, BlendShapeWeight>
 {
 }
+
+internal sealed class AnimationSetPool : CollectionPool<AnimationSet, GenericAnimation>
+{
+}

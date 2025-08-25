@@ -43,4 +43,15 @@ internal class NonObserveContext : IObserveContext
     {
         obj.GetComponentsInChildren<C>(includeInactive, results);
     }
+
+    public bool TryGetComponentInParent<C>(GameObject obj, GameObject root, bool includeInactive, [NotNullWhen(true)] out C? component) where C : Component
+    {
+        component = obj.GetComponentInParent<C>(includeInactive);
+        return component != null;
+    }
+
+    public void GetComponentsInParent<C>(GameObject obj, GameObject root, bool includeInactive, List<C> results) where C : Component
+    {
+        obj.GetComponentsInParent<C>(includeInactive, results);
+    }
 }

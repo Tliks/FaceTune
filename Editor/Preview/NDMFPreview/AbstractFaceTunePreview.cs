@@ -6,6 +6,7 @@ namespace Aoyon.FaceTune.Preview;
 internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where TFilter : IRenderFilter
 {
     protected virtual TogglablePreviewNode? ControlNode { get; }
+    private static IRenderFilterNode? _currentNode;
 
     public IEnumerable<TogglablePreviewNode> GetPreviewControlNodes()
     {
@@ -46,45 +47,69 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         try
         {
             var pair = proxyPairs.First();
-            if (pair.Item1 is not SkinnedMeshRenderer original) return Error("SkinnedMeshRenderer not found");
-            if (pair.Item2 is not SkinnedMeshRenderer proxy) return Error("SkinnedMeshRenderer not found");
+            if (pair.Item1 is not SkinnedMeshRenderer original) throw new Exception("SkinnedMeshRenderer not found");
+            if (pair.Item2 is not SkinnedMeshRenderer proxy) throw new Exception("SkinnedMeshRenderer not found");
 
             var originalMesh = original.sharedMesh;
-            if (originalMesh == null) return Error("SkinnedMeshRenderer.sharedMesh is null");
+            if (originalMesh == null) throw new Exception("originalMesh is null");
             var proxyMesh = proxy.sharedMesh;
-            if (proxyMesh == null) return Error("SkinnedMeshRenderer.sharedMesh is null");
+            if (proxyMesh == null) throw new Exception("proxyMesh is null");
 
             var (root, bodyPath) = group.GetData<(GameObject, string)>();
-            if (root == null) return Error("GameObject not found");
-            if (bodyPath == null) return Error("bodyPath not found");
+            if (root == null) throw new Exception("GameObject not found");
+            if (bodyPath == null) throw new Exception("bodyPath not found");
 
+            float defaultValue = -1;
             using var _set = BlendShapeSetPool.Get(out var set);
             using var _2 = new ProfilingSampleScope($"{typeof(TFilter).Name}.QueryBlendShapes");
             {
-                QueryBlendShapes(original, proxy, root, bodyPath, context, set);
+                QueryBlendShapes(original, proxy, root, bodyPath, context, set, ref defaultValue);
             }
 
-            return Task.FromResult<IRenderFilterNode>(new BlendShapePreviewNode(proxy, set.AsReadOnly()));
+            _currentNode = new BlendShapePreviewNode(proxy, set.AsReadOnly(), defaultValue);
+            return Task.FromResult(_currentNode);
         }
         catch (Exception e)
         {
-            return Error(e.Message);
-        }
-        
-        // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
-        static Task<IRenderFilterNode> Error(string? message = null)
-        {
-            if (message != null) Debug.LogError(message);
-            Debug.LogError("Failed to instantiate preview filter");
-            return Task.FromResult<IRenderFilterNode>(new EmptyNode());
+            Debug.LogError(e);
+            // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
+            _currentNode = new EmptyNode();
+            return Task.FromResult(_currentNode);
         }
     }
 
     /// <summary>
-    /// プレビューするブレンドシェイプを取得する
-    /// IRenderFilter.Instantiate内で呼ばれるので適時Observe
+    /// プレビューするブレンドシェイプを取得する。
+    /// IRenderFilter.Instantiate内で呼ばれるので適時Observe。
+    /// defaultValueはresultに含まれていない場合の扱い。-1の場合はプレビューしない(デフォルト)
     /// </summary>
-    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result);
+    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result, ref float defaultValue);
+
+    /// <summary>
+    ///  現在のNodeの内容を直接置き換える。
+    /// </summary>
+    /// <param name="set">置き換えるBlendShapeSet</param>
+    /// <param name="defaultValue">BlendShapeSetに含まれていない場合の扱い。-1の場合はプレビューしない</param>
+    protected static void SetCurrentNodeDirectly(IReadOnlyBlendShapeSet set, float defaultValue = -1)
+    {
+        if (_currentNode is BlendShapePreviewNode node && !node.Disposed)
+        {
+            node.SetDirectly(set, defaultValue);
+        }
+    }
+
+    /// <summary>
+    /// 現在のNodeの内容を直接編集する。
+    /// BlendShapeSetに含まれていない場合は現在の値を据え置く。
+    /// </summary>
+    /// <param name="set">編集するBlendShapeSet</param>
+    protected static void EditCurrentNodeDirectly(IReadOnlyBlendShapeSet set)
+    {
+        if (_currentNode is BlendShapePreviewNode node && !node.Disposed)
+        {
+            node.EditDirectly(set);
+        }
+    }
 }
 
 internal class BlendShapePreviewNode : IRenderFilterNode
@@ -97,7 +122,9 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 
     private SkinnedMeshRenderer? _latestProxy;
 
-    public BlendShapePreviewNode(SkinnedMeshRenderer smr, IReadOnlyBlendShapeSet set)
+    public bool Disposed { get; private set; }
+
+    public BlendShapePreviewNode(SkinnedMeshRenderer smr, IReadOnlyBlendShapeSet set, float defaultValue = -1)
     {
         var mesh = smr.sharedMesh;
         _blendShapeCount = mesh.blendShapeCount;
@@ -107,15 +134,17 @@ internal class BlendShapePreviewNode : IRenderFilterNode
             names.Add(mesh.GetBlendShapeName(i));
         }
         _blendShapeWeights = ListPool<float>.Get(out _);
-        RefreshInternal(set);
+        SetInternal(set, defaultValue);
     }
-    
-    private void RefreshInternal(IReadOnlyBlendShapeSet set)
+
+    /// defaultValueはsetになかった場合のハンドリング
+    /// プレビューしない場合は-1
+    private void SetInternal(IReadOnlyBlendShapeSet set, float defaultValue)
     {
+        if (Disposed) return;
+        var names = _blendShapeNames.Value;
         var current = _blendShapeWeights.Value;
         current.Clear();
-        var names = _blendShapeNames.Value;
-
         for (int i = 0; i < _blendShapeCount; i++)
         {
             if (set.TryGetValue(names[i], out var blendShape))
@@ -124,22 +153,46 @@ internal class BlendShapePreviewNode : IRenderFilterNode
             }
             else
             {
-                current.Add(-1);
+                current.Add(defaultValue);
             }
         }
     }
+
+    // setにあるもののみ上書き
+    private void EditInternal(IReadOnlyBlendShapeSet set)
+    {
+        if (Disposed) return;
+        var names = _blendShapeNames.Value;
+        var current = _blendShapeWeights.Value;
+        for (int i = 0; i < _blendShapeCount; i++)
+        {
+            if (set.TryGetValue(names[i], out var blendShape))
+            {
+                current[i] = blendShape.Weight;
+            }
+        }
+    }   
 
     // 外部から直接書き換えることで再生成を伴うことなく、高速にプレビューを更新する
     // 他のNodeの更新を必要しない下流かつ一時的な、また高頻度な更新を必要とするプレビュー用(EditingShapesPreview)
     // パフォーマンスは良いものの、NDMF Previewの設計から外れてていると思われ、将来の動作は保証されない
     // Todo: 今後のAPI変更に伴って書き換える
-    public void RefreshDirectly(IReadOnlyBlendShapeSet set)
+    public void SetDirectly(IReadOnlyBlendShapeSet set, float defaultValue)
     {
-        RefreshInternal(set);
+        SetInternal(set, defaultValue);
         if (_latestProxy != null)
         {
             // OnFrameがCamera.onPreCullを購読しているため、GUI等の一部の操作で発火しない
             // そのため明示的にOnFrameを呼び更新する
+            OnFrameInternal(_latestProxy);
+        }
+    }
+
+    public void EditDirectly(IReadOnlyBlendShapeSet set)
+    {
+        EditInternal(set);
+        if (_latestProxy != null)
+        {
             OnFrameInternal(_latestProxy);
         }
     }
@@ -155,8 +208,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 
     private void OnFrameInternal(SkinnedMeshRenderer proxy)
     {
-        var mesh = proxy.sharedMesh;
-        if (mesh == null) return;
+        if (Disposed) return;
 
         var weights = _blendShapeWeights.Value;
         var count = weights.Count;
@@ -168,10 +220,12 @@ internal class BlendShapePreviewNode : IRenderFilterNode
             proxy.SetBlendShapeWeight(i, weight);
         }
     }
+
     public void Dispose()
     {
         _blendShapeNames.Dispose();
         _blendShapeWeights.Dispose();
+        Disposed = true;
     }
 }
 

@@ -54,5 +54,24 @@ namespace Aoyon.FaceTune
                 resultToAdd.Add(animation.ToFirstFrameBlendShape());
             }
         }
+
+        internal void GetBlendShapeAnimations(ICollection<BlendShapeWeightAnimation> resultToAdd, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, string bodyPath, IObserveContext? observeContext = null)
+        {
+            observeContext ??= new NonObserveContext();
+            observeContext.Observe(this);
+
+            if (Clip != null)
+            {
+                var facialPath = AllBlendShapeAnimationAsFacial ? null : bodyPath;
+#if UNITY_EDITOR
+                Clip.GetBlendShapeAnimations(resultToAdd, ClipOption, facialAnimations, facialPath);
+#endif
+            }
+
+            foreach (var animation in BlendShapeAnimations)
+            {
+                resultToAdd.Add(animation);
+            }
+        }
     }
 }

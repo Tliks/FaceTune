@@ -4,23 +4,12 @@ internal class FacialStyleContext
 {
     public static bool TryGetFacialStyleAndObserve(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle, GameObject root, IObserveContext observeContext)
     {
-        using var _ = ListPool<FacialStyleComponent>.Get(out var facialStyleComponents);
-        target.GetComponentsInParent<FacialStyleComponent>(true, facialStyleComponents);
-        // GetComponentsInParentを監視できないのでその代わり
-        using var _2 = ListPool<FacialStyleComponent>.Get(out var tmp);
-        observeContext.GetComponentsInChildren<FacialStyleComponent>(root, true, tmp);
-
-        if (facialStyleComponents.Count == 0)
+        if (!observeContext.TryGetComponentInParent<FacialStyleComponent>(target, root, true, out facialStyle))
         {
             facialStyle = null;
             return false;
         }
-        else
-        {
-            var nearset = facialStyleComponents[0];
-            facialStyle = nearset;
-            return true;
-        }
+        return true;
     }
 
     public static bool TryGetFacialStyle(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle)

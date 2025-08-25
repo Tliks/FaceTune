@@ -50,4 +50,14 @@ internal class NDMFPreviewObserveContext : IObserveContext
     {
         _context.GetComponentsInChildren<C>(obj, includeInactive, results);
     }
+
+    public bool TryGetComponentInParent<C>(GameObject obj, GameObject root, bool includeInactive, [NotNullWhen(true)] out C? component) where C : Component
+    {
+        return _context.TryGetComponentInParent<C>(obj, root, includeInactive, out component);
+    }
+
+    public void GetComponentsInParent<C>(GameObject obj, GameObject root, bool includeInactive, List<C> results) where C : Component
+    {
+        _context.GetComponentsInParent<C>(obj, root, includeInactive, results);
+    }
 }

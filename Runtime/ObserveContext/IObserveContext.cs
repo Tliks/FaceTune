@@ -10,4 +10,6 @@ internal interface IObserveContext
     public C? GetComponentNullable<C>(GameObject obj) where C : Component;
     public void GetComponents<C>(GameObject obj, List<C> results) where C : Component;
     public void GetComponentsInChildren<C>(GameObject obj, bool includeInactive, List<C> results) where C : Component;
+    public bool TryGetComponentInParent<C>(GameObject obj, GameObject root, bool includeInactive, [NotNullWhen(true)] out C? component) where C : Component;
+    public void GetComponentsInParent<C>(GameObject obj, GameObject root, bool includeInactive, List<C> results) where C : Component;
 }

@@ -19,6 +19,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         }
     }
 
+    private static readonly MultiFramePreview _multiFramePreview = new();
+
     [InitializeOnLoadMethod]
     static void Init()
     {
@@ -42,73 +44,210 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         {
             _targetObject.Value = null;
         }
+        _multiFramePreview.Stop();
     }
 
     // 無関係なオブジェクト同士の選択の切り替え時で更新がかかるらないように、_targetObjectのextractで監視する
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result, ref float defaultValue)
     {
+        var animations = new List<BlendShapeWeightAnimation>();
+        if (TryCollectBlendShapeAnimations(context, root, bodyPath, animations, out var isLooping))
+        {
+            // 0で初期化し他の影響を打ち消す
+            defaultValue = 0;
+            // プレビュー対象のブレンドシェイプに関しては上書き
+            result.AddRange(animations.ToFirstFrameBlendShapes());
+            
+            if (animations.Any(a => a.IsMultiFrame)) {
+                _multiFramePreview.Start(animations, isLooping);
+            }
+            else{
+                _multiFramePreview.Stop();
+            }
+            
+            return;
+        }
+        else
+        {
+            // 空のプレビュー
+            _multiFramePreview.Stop();
+            return;
+        }
+    }
+
+    private static bool TryCollectBlendShapeAnimations(ComputeContext context, GameObject root, string bodyPath, List<BlendShapeWeightAnimation> resultToAdd, out bool isLooping)
+    {
+        isLooping = false;
+
+        // Clip 経路
         var clip = context.Observe(_targetObject, o => o as AnimationClip, (a, b) => a == b);
         if (clip != null)
         {
-            using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
-            clip.GetAllFirstFrameBlendShapes(result);
-            return;
+            clip.GetAllBlendShapeAnimations(resultToAdd, bodyPath);
+            isLooping = context.Observe(clip, c => c.isLooping, (a, b) => a == b); // NDMFのChangeStreamってアセットの変更も拾えるんだ…
+            return true;
         }
 
-        // 処理が軽い data >= expression > condition の順に監視し、早期リターン
-        
-        // extractが呼ばれる順序の保証はないので、extract内におけるGameObjectかどうかの確認は必要
+        // GameObject 経路
+        using var _dataComponents = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
+        if (TryGetExpressionData(context, root, dataComponents, out var expressionComponent))
+        { 
+            var observeContext = new NDMFPreviewObserveContext(context);
+
+            using var _facial = ListPool<BlendShapeWeightAnimation>.Get(out var facial);
+            FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(dataComponents[0].gameObject, facial, root, observeContext);
+
+            resultToAdd.AddRange(facial);
+
+            foreach (var dataComponent in dataComponents)
+            {
+                dataComponent.GetBlendShapeAnimations(resultToAdd, facial, bodyPath, observeContext);
+            }
+
+            if (expressionComponent != null)
+            {
+                isLooping = context.Observe(expressionComponent, e => e.ExpressionSettings.LoopTime, (a, b) => a == b);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // data > expression > condition の順で対象を決定し早期リターン
+    private static bool TryGetExpressionData(ComputeContext context, GameObject root, List<ExpressionDataComponent> dataComponents, out ExpressionComponent? expressionComponent)
+    {
+        expressionComponent = null;
+
         var dataComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionDataComponent>(gameObject) : null, (a, b) => a == b);
         if (dataComponent != null)
         {
-            ProcessChildrenBlendShapes(dataComponent.gameObject, root, bodyPath, proxy, context, result);
-            return;
+            var targetGameObject = dataComponent.gameObject;
+            if (!TryGetDataComponents(context, targetGameObject, dataComponents)) return false;
+            context.TryGetComponentInParent(targetGameObject, root, true, out expressionComponent);
+            return true;
         }
 
-        var expressionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionComponent>(gameObject) : null, (a, b) => a == b);
-        if (expressionComponent != null)
+        var _expressionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ExpressionComponent>(gameObject) : null, (a, b) => a == b);
+        if (_expressionComponent != null)
         {
-            ProcessChildrenBlendShapes(expressionComponent.gameObject, root, bodyPath, proxy, context, result);
-            return;
+            var targetGameObject = _expressionComponent.gameObject;
+            if (!TryGetDataComponents(context, targetGameObject, dataComponents)) return false;
+            expressionComponent = _expressionComponent;
+            return true;
         }
 
         var conditionComponent = context.Observe(_targetObject, o => o is GameObject gameObject ? context.GetComponent<ConditionComponent>(gameObject) : null, (a, b) => a == b);
         if (conditionComponent != null)
         {
             using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
-            conditionComponent.gameObject.GetComponentsInChildren<ConditionComponent>(true, childrenConditionComponents);
+            conditionComponent.gameObject.GetComponentsInChildren(true, childrenConditionComponents);
             if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
             {
-                ProcessChildrenBlendShapes(conditionComponent.gameObject, root, bodyPath, proxy, context, result);
-                return;
+                var targetGameObject = conditionComponent.gameObject;
+                if (!TryGetDataComponents(context, targetGameObject, dataComponents)) return false;
+                context.TryGetComponentInParent(targetGameObject, root, true, out expressionComponent);
+                return true;
             }
         }
 
-        return; // 空のプレビュー
+        return false;
+
+        static bool TryGetDataComponents(ComputeContext context, GameObject gameObject, List<ExpressionDataComponent> dataComponents)
+        {
+            context.GetComponentsInChildren(gameObject, true, dataComponents);
+            if (dataComponents.Count == 0) return false;
+            return true;
+        }
     }
 
-    // プレビューの対象となり得るGameObjectであることが確定している場合
-    private static void ProcessChildrenBlendShapes(GameObject targetGameObject, GameObject root, string bodyPath, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeSet result)
+    class MultiFramePreview : IDisposable
     {
-        var isEditorOnly = context.EditorOnlyInHierarchy(targetGameObject);
-        if (isEditorOnly) return;
+        public bool IsActive { get; private set; } = false;
+        public List<BlendShapeWeightAnimation>? Animations { get; private set; } = null;
+        public float Duration { get; private set; } = 0f;
+        public bool IsLooping { get; private set; } = false;
 
-        var observeContext = new NDMFPreviewObserveContext(context);
+        public double StartTime { get; private set; } = 0;
+        public double LastUpdateTime { get; private set; } = 0;
 
-        using var _ = BlendShapeSetPool.Get(out var zeroWeightBlendShapes);
-        proxy.GetBlendShapesAndSetWeightToZero(zeroWeightBlendShapes);
+        public const double UpdateIntervalSeconds = 1.0 / 30.0; // 30fpsにスロットリング
         
-        using var _2 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
-        FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(targetGameObject, facialStyleAnimations, root, observeContext);
-
-        result.AddRange(zeroWeightBlendShapes);
-        result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
-
-        using var _3 = ListPool<ExpressionDataComponent>.Get(out var childDataComponents);
-        context.GetComponentsInChildren<ExpressionDataComponent>(targetGameObject, true, childDataComponents);
-        foreach (var dataComponent in childDataComponents)
+        public MultiFramePreview()
         {
-            dataComponent.GetBlendShapes(result, facialStyleAnimations, bodyPath, observeContext);
+            EditorApplication.update += OnEditorUpdate;
+        }
+
+        public void Start(List<BlendShapeWeightAnimation> animations, bool isLooping)
+        {
+            IsActive = true;
+            Animations = animations;
+            Duration = animations.Max(a => a.Time);
+            IsLooping = isLooping;
+            StartTime = EditorApplication.timeSinceStartup;
+            LastUpdateTime = 0;
+        }
+
+        public void Stop()
+        {
+            IsActive = false;
+        }
+
+        private void OnEditorUpdate()
+        {
+            if (!IsActive) return;
+            if (Animations == null) return;
+
+            var now = EditorApplication.timeSinceStartup;
+            if (now - LastUpdateTime < UpdateIntervalSeconds) return; // スロットリング
+            LastUpdateTime = now;
+
+            var elapsed = now - StartTime;
+            var length = (double)(Duration > 0f ? Duration : 0f);
+            var endReached = false;
+            float t;
+            if (Duration > 0f)
+            {
+                if (IsLooping)
+                {
+                    t = (float)(elapsed % length);
+                }
+                else
+                {
+                    if (elapsed >= length)
+                    {
+                        t = Duration;
+                        endReached = true;
+                    }
+                    else
+                    {
+                        t = (float)elapsed;
+                    }
+                }
+            }
+            else
+            {
+                t = (float)elapsed;
+            }
+
+            using var _frameSet = BlendShapeSetPool.Get(out var frameSet);
+            foreach (var anim in Animations)
+            {
+                frameSet.Add(new BlendShapeWeight(anim.Name, anim.Weight(t)));
+            }
+
+            EditCurrentNodeDirectly(frameSet);
+
+            if (endReached)
+            {
+                Stop();
+            }
+        }
+
+        public void Dispose()
+        {
+            EditorApplication.update -= OnEditorUpdate;
         }
     }
 }
