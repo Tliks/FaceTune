@@ -5,23 +5,22 @@
         </ui:VisualElement>
 
         <ui:VisualElement name="base-shapes-panel">
-            <ui:VisualElement name="base-label-container">
+            <ui:VisualElement name="base-label-container" class="label-container">
                 <ui:Label name="base-label" class="ndmf-tr" text="FacialEditor:Base:Title" />
-                <ui:Button name="base-set-all-0-button" class="ndmf-tr" text="FacialEditor:Base:SetAll0" />
-                <ui:Button name="base-set-all-100-button" class="ndmf-tr" text="FacialEditor:Base:SetAll100" />
-                <ui:Button name="base-reset-all-button" class="ndmf-tr" text="FacialEditor:Base:ResetAll" />
-                <components:SimpleToggle name="base-zero-toggle" class="ndmf-tr" text="FacialEditor:Common:Zero" value="true" />
+                <components:SimpleToggle text="0" name="base-zero-toggle" value="true" class="control-button" />
+                <ui:Button name="base-0-100-toggle" class="control-button" />
+                <ui:Button name="base-reset-all-button" class="control-button" />
             </ui:VisualElement>
             <ui:ListView name="base-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
         </ui:VisualElement>
 
         <ui:VisualElement name="selected-shapes-panel">
-            <ui:VisualElement name="selected-label-container">
+            <ui:VisualElement name="selected-label-container" class="label-container">
                 <ui:Label name="selected-label" class="ndmf-tr" text="FacialEditor:Selected:Title" />
-                <ui:Button name="selected-set-all-0-button" class="ndmf-tr" text="FacialEditor:Selected:SetAll0" />
-                <ui:Button name="selected-set-all-100-button" class="ndmf-tr" text="FacialEditor:Selected:SetAll100" />
-                <ui:Button name="remove-all-button" class="ndmf-tr" text="FacialEditor:Selected:RemoveAll" />
-                <components:SimpleToggle name="selected-zero-toggle" class="ndmf-tr" text="FacialEditor:Common:Zero" value="true" />
+                <ui:Button name="selected-remove-all-0-button" text="FacialEditor:Selected:RemoveAll0" class="ndmf-tr" />
+                <components:SimpleToggle text="0" name="selected-zero-toggle" value="true" class="control-button" />
+                <ui:Button name="selected-0-100-toggle" class="control-button" />
+                <ui:Button name="remove-all-button" class="control-button" />
             </ui:VisualElement>
             <ui:ListView name="selected-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
         </ui:VisualElement>

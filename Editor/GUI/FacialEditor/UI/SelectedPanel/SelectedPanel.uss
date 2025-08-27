@@ -20,27 +20,27 @@
     margin-top: 10px;
 }
 
-#base-label-container, #selected-label-container {
-    flex: 0 0 auto;
+.label-container {
+    flex: 0 0 20px;
     flex-direction: row;
-    justify-content: flex-start;
     align-items: center;
 }
 
 /* Labels */
 #base-label, #selected-label {
     -unity-font-style: bold;
-    margin-right: auto;
+    margin-left: 0px;
 }
 
 /* Buttons */
-#base-set-all-100-button, #selected-set-all-100-button, #base-set-all-0-button, #selected-set-all-0-button, #base-reset-all-button, #remove-all-button {
-    flex: 0 0 85px;
+.control-button {
+    flex: 0 0 35px;
 }
 
 /* SimpleToggle */
 #base-zero-toggle, #selected-zero-toggle {
     flex: 0 0 30px;
+    margin-left: auto;
 }
 
 /* List Views */

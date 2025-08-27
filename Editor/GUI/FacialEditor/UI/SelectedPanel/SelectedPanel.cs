@@ -22,6 +22,7 @@ internal class SelectedPanel
     private ListView _selectedListView = null!;
     private SimpleToggle _baseZeroToggle = null!;
     private SimpleToggle _selectedZeroToggle = null!;
+    private Button _selectedRemoveAll0Button = null!;
     
     private struct ElementData
     {
@@ -67,8 +68,11 @@ internal class SelectedPanel
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnBaseSetChange += () => { RefreshTarget(); UpdateBaseListVisibility(); };
+        _blendShapeManager.OnAnyDataChange += () => UpdateSelectedRemoveAll0ButtonVisibility();
     }
 
+    private bool _baseZero = true;
+    private bool _selectedZero = true;
     private void SetupControls()
     {
         var commonControls = _element.Q<VisualElement>("common-controls-panel");
@@ -77,48 +81,61 @@ internal class SelectedPanel
 
         _baseShapesPanel = _element.Q("base-shapes-panel");
 
-        _baseShapesPanel.Q<Button>("base-set-all-100-button").clicked += () =>
-        {
-            var indices = _currentBaseSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, 100f);
-        };
-        _baseShapesPanel.Q<Button>("base-set-all-0-button").clicked += () =>
-        {
-            var indices = _currentBaseSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, 0f);
-        };
-        _baseShapesPanel.Q<Button>("base-reset-all-button").clicked += () =>
-        {
-            _blendShapeManager.ResetShapesWeight(_currentBaseSource.Select(item => item.KeyIndex));
-        };
         _baseZeroToggle = _baseShapesPanel.Q<SimpleToggle>("base-zero-toggle");
         _baseZeroToggle.RegisterValueChangedCallback(evt =>
         {
             BuildAndRefreshBaseListViewsSlow();
         });
 
+        var base0100Toggle = _baseShapesPanel.Q<Button>("base-0-100-toggle");
+        base0100Toggle.Add(new Image { image = _toggleIcon });
+        base0100Toggle.clicked += () =>
+        {
+            var indices = _currentBaseSource.Select(item => item.KeyIndex);
+            _blendShapeManager.SetShapesWeight(indices, _baseZero ? 100f : 0f);
+            _baseZero = !_baseZero;
+        };
+        
+        var baseResetAllButton = _baseShapesPanel.Q<Button>("base-reset-all-button");
+        baseResetAllButton.Add(new Image { image = _resetIcon });
+        baseResetAllButton.clicked += () =>
+        {
+            _blendShapeManager.ResetShapesWeight(_currentBaseSource.Select(item => item.KeyIndex));
+        };
+
         _selectedShapesPanel = _element.Q("selected-shapes-panel");
 
-        _selectedShapesPanel.Q<Button>("selected-set-all-100-button").clicked += () =>
+        _selectedRemoveAll0Button = _selectedShapesPanel.Q<Button>("selected-remove-all-0-button");
+        UpdateSelectedRemoveAll0ButtonVisibility();
+        _selectedRemoveAll0Button.clicked += () =>
         {
-            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, 100f);
-        };
-        _selectedShapesPanel.Q<Button>("selected-set-all-0-button").clicked += () =>
-        {
-            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, 0f);
-        };
-        _selectedShapesPanel.Q<Button>("remove-all-button").clicked += () =>
-        {
-            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
+            // 現在表示しているものに限らず全ブレンドシェイプから0値を削除
+            var indices = _blendShapeManager.GetOverridenIndices(weight => weight == 0f); 
             _blendShapeManager.UnoverrideShapes(indices);
         };
+
         _selectedZeroToggle = _selectedShapesPanel.Q<SimpleToggle>("selected-zero-toggle");
         _selectedZeroToggle.RegisterValueChangedCallback(evt =>
         {
             BuildAndRefreshSelectedListViewsSlow();
         });
+
+        var selected0100Toggle = _selectedShapesPanel.Q<Button>("selected-0-100-toggle");
+        selected0100Toggle.Add(new Image { image = _toggleIcon });
+        selected0100Toggle.clicked += () =>
+        {
+            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
+            _blendShapeManager.SetShapesWeight(indices, _selectedZero ? 100f : 0f);
+            _selectedZero = !_selectedZero;
+        };
+
+        var removeAllButton = _selectedShapesPanel.Q<Button>("remove-all-button");
+        removeAllButton.Add(new Image { image = _removeIcon });
+        removeAllButton.clicked += () =>
+        {
+            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
+            _blendShapeManager.UnoverrideShapes(indices);
+        };
     }
 
     private void SetupListViews()
@@ -261,6 +278,12 @@ internal class SelectedPanel
     {
         var hasStyleShapes = _currentBaseSource.Count > 0;
         _baseShapesPanel.style.display = hasStyleShapes ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private void UpdateSelectedRemoveAll0ButtonVisibility()
+    {
+        var anyZero = _blendShapeManager.GetOverridenIndices(weight => weight == 0f).Any();
+        _selectedRemoveAll0Button.SetVisible(anyZero);
     }
 
     private void BuildCurrentSource(bool isBase = true, bool selected = true)
