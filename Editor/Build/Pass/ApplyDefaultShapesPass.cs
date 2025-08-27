@@ -30,20 +30,14 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
             target = facialStyleComponents.First();
         }
 
+        // 未知のブレンドシェイプを上書きせず、既知のブレンドシェイプのみ0で上書きする
+
         var set = new BlendShapeSet();
         set.AddRange(sessionContext.ZeroBlendShapes);
         target.GetBlendShapes(set);
 
-        var faceRenderer = sessionContext.FaceRenderer;
-        var faceMesh = sessionContext.FaceMesh;
-        var blendShapeCount = faceMesh.blendShapeCount;
-        for (int i = 0; i < blendShapeCount; i++)
-        {
-            var name = faceMesh.GetBlendShapeName(i);
-            if (set.TryGetValue(name, out var blendShape))
-            {
-                faceRenderer.SetBlendShapeWeight(i, blendShape.Weight);
-            }
-        }
+        var renderer = sessionContext.FaceRenderer;
+        var mesh = sessionContext.FaceMesh;
+        renderer.ApplyBlendShapes(mesh, set, -1); 
     }
 }

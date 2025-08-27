@@ -33,6 +33,33 @@ internal static class BlendShapeUtility
         return blendShapes;
     }
 
+    /// <summary>
+    /// ブレンドシェイプを適用する
+    /// defaultValueはblendShapeSetに含まれないブレンドシェイプのハンドリング
+    /// -1のとき維持し、それ以外の場合は指定された値で上書き
+    /// </summary>
+    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet blendShapeSet, float defaultValue = -1, bool record = false)
+    {
+#if UNITY_EDITOR
+        if (record) UnityEditor.Undo.RecordObject(renderer, "Apply Blend Shape");
+#endif
+        var blendShapeCount = mesh.blendShapeCount;
+        for (var i = 0; i < blendShapeCount; i++)
+        {
+            var name = mesh.GetBlendShapeName(i);
+            var currentWeight = renderer.GetBlendShapeWeight(i);
+            if (blendShapeSet.TryGetValue(name, out var blendShape))
+            {
+                if (blendShape.Weight == currentWeight) continue; // 余分な変更を避ける
+                renderer.SetBlendShapeWeight(i, blendShape.Weight);
+            }
+            else if (defaultValue != -1)
+            {
+                if (currentWeight == defaultValue) continue;
+                renderer.SetBlendShapeWeight(i, defaultValue);
+            }
+        }
+    }
     
     public static BlendShapeWeightAnimation ToBlendShapeAnimation(this BlendShapeWeight blendShape)
     {
