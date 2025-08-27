@@ -4,14 +4,25 @@
 
 ## [Unreleased]
 ### Added
+- ローカライズ(英語/日本語)を追加しました。
+- SelectedExpressionPreviewがマルチフレームアニメーションに対応しました。
 
 ### Changed
+- Facial Dataコンポーネントの仕様を大きく変更し、Expression Dataコンポーネントへと名称を変更しました。
+  - AnimationClip Mode/Manual Modeの分岐を廃止し、Manual優先の形で併用可能としました。
+  - Animation Clipは表情以外のアニメーションを取り扱えるようになり、Animation Dataコンポーネントは廃止されました。
+  - 適用対象のRenderとパスが一致するブレンドシェイプアニメーションのみが表情アニメーションと扱われるようになりました。
+  - 全てのブレンドシェイプアニメーションを表情アニメーションとして扱う高度なオプションが追加されました。
+- AnimatorControllerImporterの動作を改善しました。
+- UIを改善しました。
 
 ### Deprecated
 
 ### Removed
+- Animation Dataコンポーネント
 
 ### Fixed
+- FacialShapesEditor保存時に結果が重複して保存される問題を修正。 
 
 ### Security
 
