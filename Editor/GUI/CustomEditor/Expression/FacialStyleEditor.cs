@@ -75,4 +75,19 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
         Undo.RegisterCreatedObjectUndo(defaultExpression, "Create Default Expression");
         EditorGUIUtility.PingObject(defaultExpression);
     }
+
+    [MenuItem($"CONTEXT/{nameof(FacialStyleComponent)}/Apply to SkinnedMeshRenderer")]
+    private static void ApplyToSkinnedMeshRenderer(MenuCommand command)
+    {
+        var component = command.context as FacialStyleComponent;
+        if (component == null) throw new InvalidOperationException("FacialStyleComponent not found");
+        if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
+        var blendShapeSet = new BlendShapeSet();
+        component.GetBlendShapes(blendShapeSet);
+        var faceRenderer = context.FaceRenderer;
+        var faceMesh = context.FaceMesh;
+        faceRenderer.ApplyBlendShapes(faceMesh, blendShapeSet, 0f, true); // FacialStyleの挙動を踏襲し未指定は0で上書き
+        Selection.activeGameObject = faceRenderer.gameObject;
+        EditorGUIUtility.PingObject(faceRenderer);
+    }
 }
