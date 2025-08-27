@@ -197,7 +197,7 @@ internal sealed class PatternGUI : IDisposable
         EditorGUILayout.HelpBox(Localization.S(info.DescriptionKey), MessageType.Info);
         if (GUILayout.Button(Localization.S("PatternGUI:AddButton")))
         {
-            CreatePattern(info.Guid);
+            CreatePattern(info.Guid, addInstaller: false); // Todo: テンプレートからInstallerが消された場合を想定して、Installerがない場合に追加すべき…?
         }
     }
 
@@ -222,9 +222,9 @@ internal sealed class PatternGUI : IDisposable
         }
     }
 
-    private void CreatePattern(string guid)
-    {
-        PrefabUtility.InstantiatePrefab(guid, true, _root);
+    private void CreatePattern(string guid, bool addInstaller = false)
+    {   
+        PrefabUtility.InstantiatePrefab(guid, true, _root, addInstaller: addInstaller);
     }
 
     private void ImportAnimatorController()

@@ -96,10 +96,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SourceMode: 0
-  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipOption: 1
+  BlendShapeAnimations: []
+  AllBlendShapeAnimationAsFacial: 0
 --- !u!1 &3112246864338959533
 GameObject:
   m_ObjectHideFlags: 0
@@ -110,7 +110,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5810532990172336924}
   - component: {fileID: 4850963173708307984}
-  - component: {fileID: 4509772171380548814}
   m_Layer: 0
   m_Name: Menu (blending)
   m_TagString: Untagged
@@ -166,20 +165,6 @@ MonoBehaviour:
   isDefault: 0
   automaticValue: 1
   label: 
---- !u!114 &4509772171380548814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3112246864338959533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7ef83cb0c23d4d7c9d41021e544a1978, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  menuToAppend: {fileID: 0}
-  installTargetMenu: {fileID: 0}
 --- !u!1 &3186688699208495892
 GameObject:
   m_ObjectHideFlags: 0
@@ -276,10 +261,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SourceMode: 0
-  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipOption: 1
+  BlendShapeAnimations: []
+  AllBlendShapeAnimationAsFacial: 0
 --- !u!1 &3971391735560565184
 GameObject:
   m_ObjectHideFlags: 0
@@ -376,7 +361,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7fedae0ee783c44dbb19061f9b7a048, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SourceMode: 0
-  BlendShapeAnimations: []
   Clip: {fileID: 0}
   ClipOption: 1
+  BlendShapeAnimations: []
+  AllBlendShapeAnimationAsFacial: 0

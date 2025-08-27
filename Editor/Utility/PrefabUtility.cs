@@ -1,3 +1,5 @@
+using nadena.dev.modular_avatar.core;
+
 namespace Aoyon.FaceTune;
 
 internal static class PrefabUtility
@@ -5,7 +7,8 @@ internal static class PrefabUtility
     public static GameObject InstantiatePrefab(string guid, 
         bool unpack,
         GameObject? parent = null, 
-        bool isFirstSibling = false
+        bool isFirstSibling = false,
+        bool addInstaller = false
     )
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
@@ -14,13 +17,14 @@ internal static class PrefabUtility
             throw new Exception("Prefab not found");
         }
 
-        return InstantiatePrefab(prefab, unpack, parent, isFirstSibling);
+        return InstantiatePrefab(prefab, unpack, parent, isFirstSibling, addInstaller);
     }
 
     public static GameObject InstantiatePrefab(GameObject prefab, 
         bool unpack,
         GameObject? parent = null, 
-        bool isFirstSibling = false
+        bool isFirstSibling = false,
+        bool addInstaller = false
     )
     {
         Undo.IncrementCurrentGroup();
@@ -43,6 +47,14 @@ internal static class PrefabUtility
         if (unpack)
         {
             UnityEditor.PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.UserAction);
+        }
+
+        if (addInstaller)
+        {
+            if (instance.GetComponentInParent<ModularAvatarMenuInstaller>() == null)
+            {
+                Undo.AddComponent<ModularAvatarMenuInstaller>(instance);
+            }
         }
 
         Selection.activeObject = instance;
