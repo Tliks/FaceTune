@@ -260,7 +260,7 @@ internal class ExpressionDataClipImporter
     private static bool TryGetClippath([NotNullWhen(true)] out string? clipFolderPath)
     {
         clipFolderPath = null;
-        var absolutePath = EditorUtility.OpenFolderPanel(Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:title"), "Assets", "");
+        var absolutePath = EditorUtility.OpenFolderPanel(Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:folder"), "Assets", "");
         if (string.IsNullOrEmpty(absolutePath))
         {
             Debug.LogError("folder not selected");

@@ -54,7 +54,7 @@
     "ExpressionDataClipImporter:ConfirmCreateClip:message": "表情以外のアニメーションが検知されました。表情以外のアニメーションを維持する為にアニメーションクリップを作成しますか？作成しない場合、表情アニメーションのみインポートされ、表情以外のアニメーションは引き継がれません。",
     "ExpressionDataClipImporter:ConfirmCreateClip:create": "作成する",
     "ExpressionDataClipImporter:ConfirmCreateClip:skip": "作成しない",
-    "ExpressionDataClipImporter:GetClippath:title": "表情以外のアニメーション用のアニメーションクリップの保存先を選択してください",
+    "ExpressionDataClipImporter:ConfirmCreateClip:folder": "表情以外のアニメーション用のアニメーションクリップの保存先を選択してください",
 
     "ExpressionComponent:FacialSettings": "表情設定",
     "ExpressionComponent:EnableRealTimePreview": "この表情を常にプレビューする",
@@ -146,7 +146,7 @@
     "FacialEditor:Selected:RemoveAll0": "0を全削除",
     "FacialEditor:Unselected:Title": "未選択",
     "FacialEditor:Unselected:AddAll": "全て追加",
-    "FacialEditor:Common:Weight": "値：",
+    "FacialEditor:Common:Weight": "値:",
     "FacialEditor:Target:Title": "適用対象",
     "FacialEditor:Target:Renderer": "対象のレンダラー",
     "FacialEditor:Common:Save": "保存（Ctrl+S）",

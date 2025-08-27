@@ -187,6 +187,8 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
             IsLooping = isLooping;
             StartTime = EditorApplication.timeSinceStartup;
             LastUpdateTime = 0;
+
+            if (Duration <= 0f) IsActive = false;
         }
 
         public void Stop()
@@ -204,31 +206,23 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
             LastUpdateTime = now;
 
             var elapsed = now - StartTime;
-            var length = (double)(Duration > 0f ? Duration : 0f);
             var endReached = false;
             float t;
-            if (Duration > 0f)
+            if (IsLooping)
             {
-                if (IsLooping)
-                {
-                    t = (float)(elapsed % length);
-                }
-                else
-                {
-                    if (elapsed >= length)
-                    {
-                        t = Duration;
-                        endReached = true;
-                    }
-                    else
-                    {
-                        t = (float)elapsed;
-                    }
-                }
+                t = (float)(elapsed % Duration);
             }
             else
             {
-                t = (float)elapsed;
+                if (elapsed >= Duration)
+                {
+                    t = Duration;
+                    endReached = true;
+                }
+                else
+                {
+                    t = (float)elapsed;
+                }
             }
 
             using var _frameSet = BlendShapeSetPool.Get(out var frameSet);

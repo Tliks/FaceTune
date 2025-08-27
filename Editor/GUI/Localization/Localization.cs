@@ -11,8 +11,8 @@ internal static class Localization
     private const string DefaultLanguage = "en-us";
     private static readonly Dictionary<string, string> LanguageToGUID = new()
     {
-        { "en-us", "2e2a97f8dd9377d4f9d96e335a1993b1" },
-        { "ja-jp", "0a33e6283053ed343b112905f9ffaa34" }
+        { "en-US", "2e2a97f8dd9377d4f9d96e335a1993b1" },
+        { "ja-JP", "0a33e6283053ed343b112905f9ffaa34" }
     };
     private static readonly string[] SupportedLanguages = LanguageToGUID.Keys.ToArray();
 

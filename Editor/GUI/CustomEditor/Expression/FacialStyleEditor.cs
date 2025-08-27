@@ -86,7 +86,8 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
         component.GetBlendShapes(blendShapeSet);
         var faceRenderer = context.FaceRenderer;
         var faceMesh = context.FaceMesh;
-        faceRenderer.ApplyBlendShapes(faceMesh, blendShapeSet, 0f, true); // FacialStyleの挙動を踏襲し未指定は0で上書き
+        Undo.RecordObject(faceRenderer, "Apply Blend Shape");
+        faceRenderer.ApplyBlendShapes(faceMesh, blendShapeSet, 0f); // FacialStyleの挙動を踏襲し未指定は0で上書き
         Selection.activeGameObject = faceRenderer.gameObject;
         EditorGUIUtility.PingObject(faceRenderer);
     }

@@ -4,6 +4,10 @@
     padding: 5px;
 }
 
+#search-field > .unity-base-field__label {
+    min-width: 0;
+}
+
 /* Common Controls-panel */
 #common-controls-panel {
     flex: 0 0 auto;
@@ -29,7 +33,7 @@
 /* Labels */
 #base-label, #selected-label {
     -unity-font-style: bold;
-    margin-left: 0px;
+    margin-right: auto;
 }
 
 /* Buttons */
@@ -40,7 +44,6 @@
 /* SimpleToggle */
 #base-zero-toggle, #selected-zero-toggle {
     flex: 0 0 30px;
-    margin-left: auto;
 }
 
 /* List Views */
@@ -50,4 +53,3 @@
     border-radius: 5px;
     margin-top: 5px;
 }
-

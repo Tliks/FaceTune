@@ -7,9 +7,22 @@
     -unity-font-style: bold;
 }
 
+#unselected-search-field > .unity-base-field__label {
+    min-width: 0;
+}
+
 #unselected-controls-container {
     flex-direction: row;
     align-items: center;
+}
+
+#add-weight-label {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+#add-weight-field {
+    flex: 0 0 40px;
 }
 
 #unselected-list-view {

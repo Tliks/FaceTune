@@ -38,11 +38,8 @@ internal static class BlendShapeUtility
     /// defaultValueはblendShapeSetに含まれないブレンドシェイプのハンドリング
     /// -1のとき維持し、それ以外の場合は指定された値で上書き
     /// </summary>
-    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet blendShapeSet, float defaultValue = -1, bool record = false)
+    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeSet blendShapeSet, float defaultValue = -1)
     {
-#if UNITY_EDITOR
-        if (record) UnityEditor.Undo.RecordObject(renderer, "Apply Blend Shape");
-#endif
         var blendShapeCount = mesh.blendShapeCount;
         for (var i = 0; i < blendShapeCount; i++)
         {
