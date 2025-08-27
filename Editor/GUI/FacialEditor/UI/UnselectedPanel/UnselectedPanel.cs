@@ -11,9 +11,9 @@ internal class UnselectedPanel
     private readonly VisualElement _element;
     public VisualElement Element => _element;
 
-    private static VisualTreeAsset _uxml = null!;
-    private static VisualTreeAsset _unselectedItemUxml = null!;
-    private static StyleSheet _uss = null!;
+    private static VisualTreeAsset? _uxml;
+    private static VisualTreeAsset? _unselectedItemUxml;
+    private static StyleSheet? _uss;
 
     private TextField _unselectedSearchField = null!;
     private FloatField _addWeightField = null!;
@@ -35,11 +35,14 @@ internal class UnselectedPanel
         _groupManager = groupManager;
         _previewManager = previewManager;
 
-        EnsureAssets();
+        var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "736ebf000f485f041ac2becabbde48d3");
+        var unselectedItemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _unselectedItemUxml, "3efe7e91dce1d544b873dd133a44039d");
+        var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "b9dfe6425f70d0544a5939a176bdf3b0");
         
-        _element = _uxml.CloneTree();
-        _element.styleSheets.Add(_uss);
-        
+        _element = uxml.CloneTree();
+        _element.styleSheets.Add(uss);
+        Localization.LocalizeUIElements(_element);
+                
         SetupControls();
         SetupListView();
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewSlow();
@@ -49,13 +52,6 @@ internal class UnselectedPanel
         _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => AddByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewSlow();
-    }
-
-    private void EnsureAssets()
-    {
-        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "736ebf000f485f041ac2becabbde48d3");
-        UIAssetHelper.EnsureUxmlWithGuid(ref _unselectedItemUxml, "3efe7e91dce1d544b873dd133a44039d");
-        UIAssetHelper.EnsureUssWithGuid(ref _uss, "b9dfe6425f70d0544a5939a176bdf3b0");
     }
 
     private void SetupControls()
@@ -87,7 +83,9 @@ internal class UnselectedPanel
 
         VisualElement MakeUnselectedElement()
         {
-            var element = _unselectedItemUxml.CloneTree();
+            var element = _unselectedItemUxml!.CloneTree();
+            Localization.LocalizeUIElements(element);
+            
             element.RegisterCallback<ClickEvent>(evt =>
             {
                 if (element.userData is ListViewItem data)

@@ -3,6 +3,17 @@ namespace Aoyon.FaceTune.Gui;
 [CustomPropertyDrawer(typeof(FacialSettings))]
 internal class FacialSettingsDrawer : PropertyDrawer
 {
+    private const float HeightMargin = 2;
+
+    private readonly LocalizedPopup _allowLipSyncPopup;
+    private readonly LocalizedPopup _allowEyeBlinkPopup;
+
+    public FacialSettingsDrawer()
+    {
+        _allowLipSyncPopup = new LocalizedPopup("FacialSettings:AllowLipSync", typeof(TrackingPermission));
+        _allowEyeBlinkPopup = new LocalizedPopup("FacialSettings:AllowEyeBlink", typeof(TrackingPermission));
+    }
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
@@ -12,17 +23,17 @@ internal class FacialSettingsDrawer : PropertyDrawer
         var propEnableBlending = property.FindPropertyRelative(FacialSettings.EnableBlendingPropName);
 
         position.height = EditorGUIUtility.singleLineHeight;
-        EditorGUI.PropertyField(position, propAllowLipSync);
-        position.y += EditorGUIUtility.singleLineHeight;
-        EditorGUI.PropertyField(position, propAllowEyeBlink);
-        position.y += EditorGUIUtility.singleLineHeight;
-        EditorGUI.PropertyField(position, propEnableBlending);
+        _allowLipSyncPopup.Field(position, propAllowLipSync);
+        position.y += EditorGUIUtility.singleLineHeight + HeightMargin;
+        _allowEyeBlinkPopup.Field(position, propAllowEyeBlink);
+        position.y += EditorGUIUtility.singleLineHeight + HeightMargin;
+        LocalizedUI.PropertyField(position, propEnableBlending, "FacialSettings:EnableBlending");
 
         EditorGUI.EndProperty();
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        return EditorGUIUtility.singleLineHeight * 3;
+        return EditorGUIUtility.singleLineHeight * 3 + HeightMargin * 2;
     }
 }

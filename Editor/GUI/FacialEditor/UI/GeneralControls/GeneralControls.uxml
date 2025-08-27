@@ -1,47 +1,38 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="general-controls-container">
 
-        <ui:VisualElement name="general-controls-unscroll-view">
-            <ui:Box name="target-panel">
-                <ui:Label name="target-title" text="Target" />
-                <uie:ObjectField name="target-renderer-field" label="Renderer" />
-                <ui:VisualElement name="targeting-container">
-                    <ui:DropdownField name="targeting-type-field" />
-                    <uie:ObjectField name="targeting-object-field"/>
-                    <ui:Button name="save-button" text="Save (Ctrl+S)" />
-                </ui:VisualElement>
-                <ui:VisualElement name="targeting-options-container" />
-            </ui:Box>
-        </ui:VisualElement>
+        <ui:Box name="target-panel">
+            <ui:Label name="target-title" class="ndmf-tr" text="FacialEditor:Target:Title" />
+            <uie:ObjectField name="target-renderer-field" class="ndmf-tr" label="FacialEditor:Target:Renderer" />
+            <ui:VisualElement name="targeting-container">
+                <ui:DropdownField name="targeting-type-field" />
+                <uie:ObjectField name="targeting-object-field"/>
+                <ui:Button name="save-button" class="ndmf-tr" text="FacialEditor:Common:Save" />
+            </ui:VisualElement>
+            <ui:VisualElement name="targeting-options-container" />
+        </ui:Box>
 
-        <ui:ScrollView name="general-controls-scroll-view">
-            <ui:Box name="group-filter-panel">
-                <ui:VisualElement name="filter-header">
-                    <ui:Label name="filter-title" text="Group" />
-                    <ui:Button name="all-button" text="All" />
-                    <ui:Button name="none-button" text="None" />
-                    <ui:Toggle name="left-toggle" text="Left" />
-                    <ui:Toggle name="right-toggle" text="Right" />
-                </ui:VisualElement>
-                <ui:VisualElement name="group-toggles-container" />
-            </ui:Box>
+        <ui:Box name="group-filter-panel">
+            <ui:VisualElement name="filter-header">
+                <ui:Label name="filter-title" class="ndmf-tr" text="FacialEditor:Filter:Title" />
+                <ui:Button name="all-button" class="ndmf-tr" text="FacialEditor:Filter:All" />
+                <ui:Button name="none-button" class="ndmf-tr" text="FacialEditor:Filter:None" />
+                <ui:Label text="FacialEditor:Filter:Left" class="ndmf-tr" />
+                <ui:Toggle name="left-toggle" />
+                <ui:Label text="FacialEditor:Filter:Right" class="ndmf-tr" />
+                <ui:Toggle name="right-toggle" />
+            </ui:VisualElement>
+            <ui:VisualElement name="group-toggles-container" />
+        </ui:Box>
 
-            <ui:Box name="clip-import-panel">
-                <ui:Label name="clip-import-title" text="Clip Import" />
-                <ui:VisualElement name="clip-import-container">
-                    <uie:ObjectField name="clip-field" label="Clip" />
-                    <uie:EnumField name="import-option-field" label="Import Option" />
-                    <ui:Button name="import-clip-button" text="Import Clip" />
-                </ui:VisualElement>
-            </ui:Box>
-
-            <ui:Box name="preview-setting-panel">
-                <ui:Label name="preview-setting-title" text="Preview Setting" />
-                <ui:VisualElement name="preview-setting-container">
-                    <ui:Toggle name="set-blendshape-to-100-on-hover-button" text="Set blendshape to 100 on hover" />
-                    <ui:Toggle name="highlight-blendshape-vertices-on-hover-button" text="Highlight blendshape vertices on hover" />
-                </ui:VisualElement>
-            </ui:Box>
-        </ui:ScrollView>
+        <ui:Box name="clip-import-panel">
+            <ui:Label name="clip-import-title" class="ndmf-tr" text="FacialEditor:ClipImport:Title" />
+            <ui:VisualElement name="clip-import-container">
+                <uie:ObjectField name="clip-field" class="ndmf-tr" label="FacialEditor:ClipImport:Clip" />
+                <uie:EnumField name="import-option-field" class="ndmf-tr" label="FacialEditor:ClipImport:ImportOption" />
+                <ui:Button name="import-clip-button" class="ndmf-tr" text="FacialEditor:ClipImport:Import" />
+            </ui:VisualElement>
+        </ui:Box>
+            
     </ui:VisualElement>
 </ui:UXML> 

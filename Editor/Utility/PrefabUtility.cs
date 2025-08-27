@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune;
 
 internal static class PrefabUtility
 {
-    public static void InstantiatePrefab(string guid, 
+    public static GameObject InstantiatePrefab(string guid, 
         bool unpack,
         GameObject? parent = null, 
         bool isFirstSibling = false
@@ -11,14 +11,13 @@ internal static class PrefabUtility
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
         if (prefab == null)
         {
-            Debug.LogError("Prefab not found");
-            return;
+            throw new Exception("Prefab not found");
         }
 
-        InstantiatePrefab(prefab, unpack, parent, isFirstSibling);
+        return InstantiatePrefab(prefab, unpack, parent, isFirstSibling);
     }
 
-    public static void InstantiatePrefab(GameObject prefab, 
+    public static GameObject InstantiatePrefab(GameObject prefab, 
         bool unpack,
         GameObject? parent = null, 
         bool isFirstSibling = false
@@ -49,5 +48,7 @@ internal static class PrefabUtility
         Selection.activeObject = instance;
         
         Undo.CollapseUndoOperations(groupIndex);
+
+        return instance;
     }
 }

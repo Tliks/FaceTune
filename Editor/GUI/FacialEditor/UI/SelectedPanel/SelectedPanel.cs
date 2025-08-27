@@ -11,9 +11,9 @@ internal class SelectedPanel
     private readonly VisualElement _element;
     public VisualElement Element => _element;
 
-    private static VisualTreeAsset _uxml = null!;
-    private static VisualTreeAsset _itemUxml = null!;
-    private static StyleSheet _uss = null!;
+    private static VisualTreeAsset? _uxml;
+    private static VisualTreeAsset? _itemUxml;
+    private static StyleSheet? _uss;
 
     private TextField _searchField = null!;
     private VisualElement _baseShapesPanel = null!;
@@ -45,10 +45,13 @@ internal class SelectedPanel
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
         
-        EnsureAssets();
+        var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
+        var itemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
+        var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
         
-        _element = _uxml.CloneTree();
-        _element.styleSheets.Add(_uss);
+        _element = uxml.CloneTree();
+        _element.styleSheets.Add(uss);
+        Localization.LocalizeUIElements(_element);
         
         SetupControls();
         SetupListViews();
@@ -64,13 +67,6 @@ internal class SelectedPanel
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnBaseSetChange += () => { RefreshTarget(); UpdateBaseListVisibility(); };
-    }
-
-    private void EnsureAssets()
-    {
-        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
-        UIAssetHelper.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
-        UIAssetHelper.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
     }
 
     private void SetupControls()
@@ -146,8 +142,9 @@ internal class SelectedPanel
 
         VisualElement MakeElement(bool isBase)
         {
-            var element = _itemUxml.CloneTree();
-            
+            var element = _itemUxml!.CloneTree();
+            Localization.LocalizeUIElements(element);
+
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var toggleButton = element.Q<Button>("toggle-button");

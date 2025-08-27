@@ -1,27 +1,27 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="selected-panel">
         <ui:VisualElement name="common-controls-panel">
-            <ui:TextField name="search-field" />
+            <ui:TextField name="search-field" class="ndmf-tr" label="FacialEditor:Common:Search" />
         </ui:VisualElement>
 
         <ui:VisualElement name="base-shapes-panel">
             <ui:VisualElement name="base-label-container">
-                <ui:Label name="base-label" text="Base Shapes" />
-                <ui:Button name="base-set-all-0-button" text="Set All to 0" />
-                <ui:Button name="base-set-all-100-button" text="Set All to 100" />
-                <ui:Button name="base-reset-all-button" text="Reset All" />
-                <components:SimpleToggle name="base-zero-toggle" text="0" value="true" />
+                <ui:Label name="base-label" class="ndmf-tr" text="FacialEditor:Base:Title" />
+                <ui:Button name="base-set-all-0-button" class="ndmf-tr" text="FacialEditor:Base:SetAll0" />
+                <ui:Button name="base-set-all-100-button" class="ndmf-tr" text="FacialEditor:Base:SetAll100" />
+                <ui:Button name="base-reset-all-button" class="ndmf-tr" text="FacialEditor:Base:ResetAll" />
+                <components:SimpleToggle name="base-zero-toggle" class="ndmf-tr" text="FacialEditor:Common:Zero" value="true" />
             </ui:VisualElement>
             <ui:ListView name="base-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
         </ui:VisualElement>
 
         <ui:VisualElement name="selected-shapes-panel">
             <ui:VisualElement name="selected-label-container">
-                <ui:Label name="selected-label" text="Selected Shapes" />
-                <ui:Button name="selected-set-all-0-button" text="Set All to 0" />
-                <ui:Button name="selected-set-all-100-button" text="Set All to 100" />
-                <ui:Button name="remove-all-button" text="Remove All" />
-                <components:SimpleToggle name="selected-zero-toggle" text="0" value="true" />
+                <ui:Label name="selected-label" class="ndmf-tr" text="FacialEditor:Selected:Title" />
+                <ui:Button name="selected-set-all-0-button" class="ndmf-tr" text="FacialEditor:Selected:SetAll0" />
+                <ui:Button name="selected-set-all-100-button" class="ndmf-tr" text="FacialEditor:Selected:SetAll100" />
+                <ui:Button name="remove-all-button" class="ndmf-tr" text="FacialEditor:Selected:RemoveAll" />
+                <components:SimpleToggle name="selected-zero-toggle" class="ndmf-tr" text="FacialEditor:Common:Zero" value="true" />
             </ui:VisualElement>
             <ui:ListView name="selected-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" />
         </ui:VisualElement>

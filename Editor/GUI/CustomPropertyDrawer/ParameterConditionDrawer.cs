@@ -3,9 +3,17 @@ namespace Aoyon.FaceTune.Gui;
 [CustomPropertyDrawer(typeof(ParameterCondition))]
 internal class ParameterConditionDrawer : PropertyDrawer
 {
-    private static readonly string[] FloatComparisonOptions = { "Greater Than", "Less Than" };
-    private static readonly int[] FloatComparisonValues = { (int)ComparisonType.GreaterThan, (int)ComparisonType.LessThan };
-    
+    private readonly LocalizedPopup _parameterTypePopup;
+    private readonly LocalizedPopup _comparisonTypePopup;
+
+    public ParameterConditionDrawer()
+    {
+        _parameterTypePopup = new LocalizedPopup(typeof(ParameterType));
+        _comparisonTypePopup = new LocalizedPopup(typeof(ComparisonType));
+    }
+
+    private SerializedProperty? _parameterNameProp;
+    private SerializedProperty? _parameterTypeProp;
     private SerializedProperty? _comparisonTypeProp;
     private SerializedProperty? _floatValueProp;
     private SerializedProperty? _intValueProp;
@@ -15,28 +23,28 @@ internal class ParameterConditionDrawer : PropertyDrawer
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        var parameterNameProp = property.FindPropertyRelative(ParameterCondition.ParameterNamePropName);
-        var parameterTypeProp = property.FindPropertyRelative(ParameterCondition.ParameterTypePropName);
+        _parameterNameProp ??= property.FindPropertyRelative(ParameterCondition.ParameterNamePropName);
+        _parameterTypeProp ??= property.FindPropertyRelative(ParameterCondition.ParameterTypePropName);
         
         Rect currentPosition = position;
         currentPosition.height = EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(currentPosition, parameterNameProp);
+        LocalizedUI.PropertyField(currentPosition, _parameterNameProp, "ParameterCondition:ParameterName");
         currentPosition.y += EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(currentPosition, parameterTypeProp);
+        _parameterTypePopup.Field(currentPosition, _parameterTypeProp);
         currentPosition.y += EditorGUIUtility.singleLineHeight;
 
-        ParameterType paramType = (ParameterType)parameterTypeProp.enumValueIndex;
+        ParameterType paramType = (ParameterType)_parameterTypeProp.enumValueIndex;
 
         switch (paramType)
         {
             case ParameterType.Int:
                 _comparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.ComparisonTypePropName);
                 _intValueProp ??= property.FindPropertyRelative(ParameterCondition.IntValuePropName);
-                EditorGUI.PropertyField(currentPosition, _comparisonTypeProp);
+                _comparisonTypePopup.Field(currentPosition, _comparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
-                EditorGUI.PropertyField(currentPosition, _intValueProp);
+                LocalizedUI.PropertyField(currentPosition, _intValueProp, "ParameterCondition:IntValue");
                 break;
             case ParameterType.Float:
                 _comparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.ComparisonTypePropName);
@@ -49,18 +57,13 @@ internal class ParameterConditionDrawer : PropertyDrawer
                     _comparisonTypeProp.enumValueIndex = (int)ComparisonType.GreaterThan;
                 }
                 
-                int selectedIndex = Array.IndexOf(FloatComparisonValues, _comparisonTypeProp.enumValueIndex);
-                if (selectedIndex == -1) selectedIndex = 0;
-                
-                int newIndex = EditorGUI.Popup(currentPosition, "Comparison Type", selectedIndex, FloatComparisonOptions);
-                _comparisonTypeProp.enumValueIndex = FloatComparisonValues[newIndex];
-                
+                _comparisonTypePopup.Field(currentPosition, _comparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
-                EditorGUI.PropertyField(currentPosition, _floatValueProp);
+                LocalizedUI.PropertyField(currentPosition, _floatValueProp, "ParameterCondition:FloatValue");
                 break;
             case ParameterType.Bool:
                 _boolValueProp ??= property.FindPropertyRelative(ParameterCondition.BoolValuePropName);
-                EditorGUI.PropertyField(currentPosition, _boolValueProp);
+                LocalizedUI.PropertyField(currentPosition, _boolValueProp, "ParameterCondition:BoolValue");
                 break;
         }
 

@@ -4,8 +4,8 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class FacialShapeUI
 {
-    private static VisualTreeAsset _uxml = null!;
-    private static StyleSheet _uss = null!;
+    private static VisualTreeAsset? _uxml;
+    private static StyleSheet? _uss;
 
     private GeneralControls _generalControls = null!;
     private SelectedPanel _selectedPanel = null!;
@@ -13,11 +13,13 @@ internal class FacialShapeUI
 
     public FacialShapeUI(VisualElement root, TargetManager targetManager, BlendShapeOverrideManager dataManager, BlendShapeGrouping groupManager, PreviewManager previewManager)
     {
-        EnsureUIAssets();
+        var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
+        var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
 
         root.Clear();
-        root.Add(_uxml.CloneTree());
-        root.styleSheets.Add(_uss);
+        root.Add(uxml.CloneTree());
+        root.styleSheets.Add(uss);
+        Localization.LocalizeUIElements(root);
 
         _generalControls = new GeneralControls(targetManager, dataManager, groupManager, previewManager);
         _selectedPanel = new SelectedPanel(dataManager, groupManager);
@@ -39,12 +41,6 @@ internal class FacialShapeUI
 				_unselectedPanel.ScrollToNearestKeyIndex(keyIndex, true, false);
 			});
 		};
-    }
-
-    private void EnsureUIAssets()
-    {
-        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
-        UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
     }
 
     public void RefreshTarget()

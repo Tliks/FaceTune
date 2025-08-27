@@ -10,8 +10,8 @@ internal class GeneralControls
     private readonly BlendShapeGrouping _groupManager;
     private readonly PreviewManager _previewManager;
 
-    private static VisualTreeAsset _uxml = null!;
-    private static StyleSheet _uss = null!;
+    private static VisualTreeAsset? _uxml;
+    private static StyleSheet? _uss;
     private readonly VisualElement _element;
     public VisualElement Element => _element;
     private VisualElement _targetingOptionsContainer = null!;
@@ -28,16 +28,14 @@ internal class GeneralControls
         _groupManager = groupManager;
         _previewManager = previewManager;
 
-        EnsureAssets();
-        _element = _uxml.CloneTree();
-        _element.styleSheets.Add(_uss);
-        SetupControls();
-    }
+        var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
+        var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
 
-    private void EnsureAssets()
-    {
-        UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
-        UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
+        _element = uxml.CloneTree();
+        _element.styleSheets.Add(uss);
+        Localization.LocalizeUIElements(_element);
+
+        SetupControls();
     }
 
     private static Dictionary<Type, Func<IShapesEditorTargeting>> _targetingTypes = new()
@@ -134,7 +132,7 @@ internal class GeneralControls
             }
             _groupManager.SelectAll(false);
         };
-
+        
         var leftToggle = _element.Q<Toggle>("left-toggle");
         leftToggle.SetValueWithoutNotify(_groupManager.IsLeftSelected);
         leftToggle.RegisterValueChangedCallback(evt =>
@@ -174,7 +172,8 @@ internal class GeneralControls
             _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList()); // Todo: BaseをFacialと区別すべき？
             _blendShapeManager.OverrideShapesAndSetWeight(resutlt.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
         };
-
+        
+        /*
         var previewSettingPanel = _element.Q<VisualElement>("preview-setting-panel");
 
         var setBlendShapeTo100OnHoverButton = previewSettingPanel.Q<Toggle>("set-blendshape-to-100-on-hover-button");
@@ -186,6 +185,7 @@ internal class GeneralControls
         highlightBlendShapeVerticesOnHoverButton.value = _previewManager.HighlightBlendShapeVerticesOnHover;
         highlightBlendShapeVerticesOnHoverButton.RegisterValueChangedCallback(evt => _previewManager.HighlightBlendShapeVerticesOnHover = evt.newValue);
         _previewManager.OnHighlightBlendShapeVerticesOnHoverChanged += (value) => highlightBlendShapeVerticesOnHoverButton.SetValueWithoutNotify(value);
+        */
     }
 
     private void RefreshTargetingContainer()

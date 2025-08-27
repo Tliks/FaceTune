@@ -1,10 +1,10 @@
-using Aoyon.FaceTune.Gui.ShapesEditor;
+    using Aoyon.FaceTune.Gui.ShapesEditor;
 
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(ExpressionDataComponent))]
-internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataComponent>
+internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComponent>
 {
     private SessionContext? _context;
 
@@ -12,7 +12,10 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
     private SerializedProperty _clipProperty = null!;
     private SerializedProperty _clipOptionProperty = null!;
     private SerializedProperty _allBlendShapeAnimationAsFacialProperty = null!;
+    private LocalizedPopup _clipOptionPopup = null!;
 
+    private int _facialClipAnimationCount = 0;
+    private int _nonFacialClipAnimationCount = 0;
     private string[] _missingBlendShapeNames = null!;
 
     public override void OnEnable()
@@ -23,78 +26,107 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
         _clipProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.Clip));
         _clipOptionProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.ClipOption));
         _allBlendShapeAnimationAsFacialProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.AllBlendShapeAnimationAsFacial));
-        _missingBlendShapeNames = GetMissingBlendShapeNames();
+        UpdateInfo();
+        _clipOptionPopup = new LocalizedPopup(typeof(ClipImportOption));
+        Undo.undoRedoPerformed += UpdateInfo;
     }
 
-    public override void OnInspectorGUI()
+    public override void OnDisable()
     {
-        serializedObject.Update();
+        base.OnDisable();
+        Undo.undoRedoPerformed -= UpdateInfo;
+    }
 
+    protected override void OnInnerInspectorGUI()
+    {   
         DrawMissingBlendShapeGUI();
         EditorGUILayout.Space();
-        DrawFromAnimationClipModeGUI();
+        DrawAnimationClipGUI();
         EditorGUILayout.Space();
-        DrawManualModeGUI();
+        DrawManualGUI();
         EditorGUILayout.Space();
         DrawAdvancedOptionsGUI();
-
-        serializedObject.ApplyModifiedProperties();
     }
 
     private void DrawMissingBlendShapeGUI()
     {
         if (_missingBlendShapeNames.Length == 0) return;
-        EditorGUILayout.HelpBox($"Missing BlendShapes: {string.Join(", ", _missingBlendShapeNames)}", MessageType.Warning);
+        EditorGUILayout.HelpBox($"{Localization.S($"{ComponentName}:MissingBlendShapes")}: {string.Join(", ", _missingBlendShapeNames)}", MessageType.Warning);
     }
 
-    private void DrawManualModeGUI()
+    private void DrawAnimationClipGUI()
     {
-        EditorGUILayout.PropertyField(_blendShapeAnimationsProperty);
+        EditorGUILayout.LabelField(Localization.G($"{ComponentName}:AnimationClipMode"), EditorStyles.boldLabel);
+
+        EditorGUI.BeginChangeCheck();
+        
+        EditorGUILayout.BeginHorizontal();
+        LocalizedPropertyField(_clipProperty);
+        if (GUILayout.Button(Localization.G($"{ComponentName}:Import"), GUILayout.Width(60)))
+        {
+            var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
+            var importer = new ExpressionDataClipImporter();
+            importer.ImportClip(components);
+        }
+        EditorGUILayout.EndHorizontal();
+
+        _clipOptionPopup.Field(_clipOptionProperty);
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            EditorApplication.delayCall += UpdateInfo;
+        }
+
+        var clipInfoText = $"{Localization.G($"{ComponentName}:Clip:FacialAnimationCount")}: {_facialClipAnimationCount}, {Localization.G($"{ComponentName}:Clip:NonFacialAnimationCount")}: {_nonFacialClipAnimationCount}";
+        EditorGUILayout.HelpBox(clipInfoText, MessageType.Info);
+    }
+
+    private void DrawManualGUI()
+    {        
+        LocalizedPropertyField(_blendShapeAnimationsProperty);
 
         EditorGUILayout.Space();
-        if (GUILayout.Button("Open Editor"))
+        if (GUILayout.Button(Localization.G($"{ComponentName}:OpenEditor")))
         {
             OpenEditor();
         }
     }
 
-    private void DrawFromAnimationClipModeGUI()
-    {
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.PropertyField(_clipProperty);
-        if (GUILayout.Button("Import", GUILayout.Width(60)))
-        {
-            var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
-            ImportClip(components);
-        }
-        EditorGUILayout.EndHorizontal();
-
-        EditorGUILayout.PropertyField(_clipOptionProperty);
-    }
-
     private bool _showAdvancedOptions = false;
     private void DrawAdvancedOptionsGUI()
     {
-        _showAdvancedOptions = EditorGUILayout.Foldout(_showAdvancedOptions, "Advanced Options");
+        _showAdvancedOptions = EditorGUILayout.Foldout(_showAdvancedOptions, Localization.G($"{ComponentName}:AdvancedOptions"));
         if (_showAdvancedOptions)
         {
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(_allBlendShapeAnimationAsFacialProperty);
+            LocalizedPropertyField(_allBlendShapeAnimationAsFacialProperty);
             EditorGUI.indentLevel--;
         }
     }
 
-    private string[] GetMissingBlendShapeNames()
+    private void UpdateInfo()
     {
-        if (_context == null) return new string[0];
+        if (_context == null)
+        {
+            _facialClipAnimationCount = 0;
+            _nonFacialClipAnimationCount = 0;
+            _missingBlendShapeNames = new string[0];
+            return;
+        }
+
+        var (facialAnimations, nonFacialAnimations) = Component.ProcessClip(_context.BodyPath);
+
+        _facialClipAnimationCount = facialAnimations.Count;
+        _nonFacialClipAnimationCount = nonFacialAnimations.Count;
+
         var allBlendShapes = _context.ZeroBlendShapes
             .Select(x => x.Name)
             .ToHashSet();
-        var missingBlendShapes = Component.BlendShapeAnimations
+        _missingBlendShapeNames = Component.BlendShapeAnimations.Concat(facialAnimations)
+            .Distinct()
             .Select(x => x.Name)
-            .Where(x => !allBlendShapes.Contains(x))
+            .Where(x => !string.IsNullOrEmpty(x) && !allBlendShapes.Contains(x))
             .ToArray();
-        return missingBlendShapes;
     }
 
     private void OpenEditor()
@@ -115,22 +147,37 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
     }
     
 
-    internal static void ImportClip(ExpressionDataComponent[] components)
+    [MenuItem($"CONTEXT/{nameof(ExpressionDataComponent)}/Export as Clip")]
+    private static void ExportAsClip(MenuCommand command)
+    {
+        var component = (command.context as ExpressionDataComponent)!;
+        ExpressionDataClipExporter.OpenWindow(component);
+    }
+
+}
+
+internal class ExpressionDataClipImporter
+{
+    private bool? _skipCreateClip;
+    private string? _clipFolderPath;
+
+    public ExpressionDataClipImporter(bool? skipCreateClip = null, string? clipFolderPath = null)
+    {
+        _skipCreateClip = skipCreateClip;
+        _clipFolderPath = clipFolderPath;
+    }
+
+    public void ImportClip(ExpressionDataComponent[] components)
     {
         CustomEditorUtility.TryGetContext(components[0].gameObject, out var context);
         if (context == null) throw new InvalidOperationException("Context not found");
-        ImportClip(components, context.BodyPath);
-    }
-
-    internal static void ImportClip(ExpressionDataComponent[] components, string bodyPath)
-    {
         foreach (var component in components)
         {
-            ImportClip(component, bodyPath);
+            ImportClip(component, context.BodyPath);
         }
     }
 
-    internal static bool ImportClip(ExpressionDataComponent component, string bodyPath)
+    public bool ImportClip(ExpressionDataComponent component, string bodyPath)
     {
         var (facialAnimations, nonFacialAnimations) = component.ProcessClip(bodyPath);
         if (facialAnimations.Count == 0)
@@ -140,34 +187,59 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
 
         var so = new SerializedObject(component);
         so.Update();
-        so.FindProperty(nameof(ExpressionDataComponent.Clip)).objectReferenceValue = nonFacialAnimations.Count > 0 ? CreateClip(new AnimationSet(nonFacialAnimations)) : null;
+        so.FindProperty(nameof(ExpressionDataComponent.Clip)).objectReferenceValue = nonFacialAnimations.Count == 0 ? null : CreateClip(new AnimationSet(nonFacialAnimations));
         CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations)), facialAnimations, false); // manualにある方を優先
         so.ApplyModifiedProperties();
         return true;
     }
 
-    private static bool _clipFolderPathSkipped = false;
-    private static AnimationClip? CreateClip(AnimationSet animations)
+    private AnimationClip? CreateClip(AnimationSet animations)
     {
-        if (_clipFolderPathSkipped) return null;
-        var result = EditorUtility.DisplayDialog(
-            "アニメーションクリップの作成",
-            "アニメーションクリップを作成しますか？",
-            "作成する",
-            "キャンセル"
-        );
-        if (!result)
-        {
-            _clipFolderPathSkipped = true;
-            return null;
-        }
+        if (!ConfirmCreateClip(out var clipFolderPath)) return null;
         var newClip = new AnimationClip();
         newClip.name = GetClipName(animations);
         newClip.AddGenericAnimations(animations.Animations);
-		var folderPath = GetClippath();
-		var assetPath = AssetDatabase.GenerateUniqueAssetPath($"{folderPath}/{newClip.name}.anim");
-		AssetDatabase.CreateAsset(newClip, assetPath);
+        var assetPath = AssetDatabase.GenerateUniqueAssetPath($"{clipFolderPath}/{newClip.name}.anim");
+        AssetDatabase.CreateAsset(newClip, assetPath);
         return newClip;
+    }
+
+    private bool ConfirmCreateClip([NotNullWhen(true)] out string? clipFolderPath)
+    {
+        clipFolderPath = null;
+
+        if (_skipCreateClip == null)
+        {
+            _skipCreateClip = !EditorUtility.DisplayDialog(
+                Localization.S($"ExpressionDataClipImporter:ConfirmCreateClip:title"),
+                Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:message"),
+                Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:create"),
+                Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:skip")
+            );
+        }
+
+        if (_skipCreateClip.Value)
+        {
+            return false;
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(_clipFolderPath))
+            {
+                if (!TryGetClippath(out clipFolderPath))
+                {
+                    _skipCreateClip = null;
+                    return false;
+                }
+                _clipFolderPath = clipFolderPath;
+                return true;
+            }
+            else
+            {
+                clipFolderPath = _clipFolderPath!;
+                return true;
+            }
+        }
     }
 
     private static string GetClipName(AnimationSet animations)
@@ -185,36 +257,27 @@ internal class ExpressionDataEditor : FaceTuneCustomEditorBase<ExpressionDataCom
         return $"{type}_{obj}";
     }
 
-	private static string _clipFolderPath = "";
-	private static string GetClippath()
-	{
-		if (string.IsNullOrEmpty(_clipFolderPath))
-		{
-			var absolutePath = EditorUtility.OpenFolderPanel("表情以外のアニメーションが検知されました。アニメーションクリップの保存先を選択してください", "Assets", "");
-			if (string.IsNullOrEmpty(absolutePath))
-			{
-                Debug.LogWarning("アニメーションクリップの保存先が選択されていません。スキップします。");
-                return "";
-			}
-			var relativePath = FileUtil.GetProjectRelativePath(absolutePath);
-			if (string.IsNullOrEmpty(relativePath) || !relativePath.StartsWith("Assets"))
-			{
-				throw new Exception("プロジェクト内のフォルダ（Assets配下）を選択してください。");
-			}
-			_clipFolderPath = relativePath.Replace("\\", "/");
-		}
-		return _clipFolderPath;
-	}
-
-    [MenuItem($"CONTEXT/{nameof(ExpressionDataComponent)}/Export as Clip")]
-    private static void ExportAsClip(MenuCommand command)
+    private static bool TryGetClippath([NotNullWhen(true)] out string? clipFolderPath)
     {
-        var component = (command.context as ExpressionDataComponent)!;
-        ExportFacialDataWindow.OpenWindow(component);
+        clipFolderPath = null;
+        var absolutePath = EditorUtility.OpenFolderPanel(Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:title"), "Assets", "");
+        if (string.IsNullOrEmpty(absolutePath))
+        {
+            Debug.LogError("folder not selected");
+            return false;
+        }
+        var relativePath = FileUtil.GetProjectRelativePath(absolutePath);
+        if (string.IsNullOrEmpty(relativePath) || !relativePath.StartsWith("Assets"))
+        {
+            Debug.LogError("folder not in project");
+            return false;
+        }
+        clipFolderPath = relativePath.Replace("\\", "/");
+        return true;
     }
 }
 
-internal class ExportFacialDataWindow : EditorWindow
+internal class ExpressionDataClipExporter : EditorWindow
 {
     private ExpressionDataComponent _component = null!;
 
@@ -227,7 +290,7 @@ internal class ExportFacialDataWindow : EditorWindow
 
     public static void OpenWindow(ExpressionDataComponent component)
     {
-        var window = GetWindow<ExportFacialDataWindow>();
+        var window = GetWindow<ExpressionDataClipExporter>();
         window._component = component;
         window.maxSize = new Vector2(WindowWidth, WindowHeight);
         window.Show();
@@ -277,289 +340,3 @@ internal class ExportFacialDataWindow : EditorWindow
         });
     }
 }
-
-/*
-[CanEditMultipleObjects]
-[CustomEditor(typeof(FacialExpressionComponent))]
-internal class FacialExpressionEditor : FaceTuneCustomEditorBase<FacialExpressionComponent>
-{
-    private SerializedProperty _facialSettingsProperty = null!;
-    private SerializedProperty _sourceModeProperty = null!;
-    private SerializedProperty _isSingleFrameProperty = null!;
-    private SerializedProperty _blendShapeAnimationsProperty = null!;
-    private SerializedProperty _clipProperty = null!;
-    private SerializedProperty _clipExcludeOptionProperty = null!;
-    private SerializedProperty _expressionSettingsProperty = null!;
-
-    private ReorderableList? _blendShapeAnimationList;
-
-    private bool _underMerge = false;
-
-    public override void OnEnable()
-    {
-        base.OnEnable();
-        _facialSettingsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.FacialSettings));
-        _sourceModeProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.SourceMode));
-        _isSingleFrameProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.IsSingleFrame));
-        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.BlendShapeAnimations));
-        _clipProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.Clip));
-        _clipExcludeOptionProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ClipExcludeOption));
-        _expressionSettingsProperty = serializedObject.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
-        _blendShapeAnimationList = null;
-
-        _underMerge = Component.GetComponentInParent<MergeExpressionComponent>(true) != null;
-    }
-    
-    private void SetupReorderableList()
-    {
-        _blendShapeAnimationList = new ReorderableList(serializedObject, _blendShapeAnimationsProperty, false, true, true, true);
-
-        _blendShapeAnimationList.drawHeaderCallback = rect =>
-        {
-            var headerText = _isSingleFrameProperty.boolValue ? "BlendShapes (Single Frame)" : "BlendShapes (Animation)";
-            EditorGUI.LabelField(rect, headerText);
-        };
-
-        _blendShapeAnimationList.drawElementCallback = (rect, index, isActive, isFocused) =>
-        {
-            var element = _blendShapeAnimationList.serializedProperty.GetArrayElementAtIndex(index);
-            rect.y += 2;
-
-            var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
-            var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
-
-            var nameRect = new Rect(rect.x, rect.y, rect.width * 0.35f - 10, EditorGUIUtility.singleLineHeight);
-            var valueRect = new Rect(rect.x + rect.width * 0.35f + 10, rect.y, rect.width * 0.65f - 20, EditorGUIUtility.singleLineHeight);
-
-            EditorGUI.PropertyField(nameRect, nameProp, GUIContent.none);
-
-            if (_isSingleFrameProperty.boolValue)
-            {
-                var curve = curveProp.animationCurveValue;
-                var value = curve != null && curve.keys.Length > 0 ? curve.Evaluate(0) : 0;
-                
-                EditorGUI.BeginChangeCheck();
-                var newValue = EditorGUI.Slider(valueRect, value, 0, 100);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    var newCurve = new AnimationCurve();
-                    newCurve.AddKey(0, newValue);
-                    curveProp.animationCurveValue = newCurve;
-                }
-            }
-            else
-            {
-                EditorGUI.PropertyField(valueRect, curveProp, GUIContent.none);
-            }
-        };
-    }
-
-    private bool _showExpressionSettings = false;
-    public override void OnInspectorGUI()
-    {
-        serializedObject.Update();
-        
-        GUI.enabled = !_underMerge;
-        EditorGUILayout.PropertyField(_facialSettingsProperty);
-        GUI.enabled = true;
-        EditorGUILayout.PropertyField(_sourceModeProperty);
-        var sourceMode = (AnimationSourceMode)_sourceModeProperty.enumValueIndex;
-        switch (sourceMode)
-        {
-            case AnimationSourceMode.Manual:
-                DrawManualModeGUI();
-                break;
-            case AnimationSourceMode.FromAnimationClip:
-                DrawFromAnimationClipModeGUI();
-                break;
-        }
-        serializedObject.ApplyModifiedProperties();
-    }
-    
-    private void DrawManualModeGUI()
-    {
-        EditorGUILayout.PropertyField(_isSingleFrameProperty);
-
-        if (_blendShapeAnimationList == null)
-        {
-            SetupReorderableList();
-        }
-        _blendShapeAnimationList!.DoLayoutList();
-        
-        if (_isSingleFrameProperty.boolValue)
-        {
-            if (GUILayout.Button("Open Editor"))
-            {
-                OpenFacialShapesEditor();
-            }
-        }
-        else
-        {
-            var isEditing = GenericAnimationEditor.IsEditing();
-            var label = isEditing ? "Stop Animation Window" : "Start Animation Window";
-            if (GUILayout.Button(label))
-            {
-                if (isEditing)
-                {
-                    GenericAnimationEditor.StopEditing();
-                }
-                else
-                {
-                    StartAnimationWindow();
-                }
-            }
-            _showExpressionSettings = EditorGUILayout.Foldout(_showExpressionSettings, "Advanced");
-            if (_showExpressionSettings)
-            {
-                EditorGUI.indentLevel++;
-                GUI.enabled = !_underMerge;
-                ExpressionSettingsDrawer.Draw(_expressionSettingsProperty);
-                GUI.enabled = true;
-                EditorGUI.indentLevel--;
-            }
-        }
-    }
-    
-    private void DrawFromAnimationClipModeGUI()
-    {
-        EditorGUILayout.PropertyField(_clipProperty);
-        EditorGUILayout.PropertyField(_clipExcludeOptionProperty);
-        
-        if (GUILayout.Button("Convert to Manual"))
-        {
-            ConvertToManual();
-        }
-        _showExpressionSettings = EditorGUILayout.Foldout(_showExpressionSettings, "Advanced");
-        if (_showExpressionSettings)
-        {
-            EditorGUI.indentLevel++;
-            GUI.enabled = !_underMerge;
-            ExpressionSettingsDrawer.DrawMotionTimeParameterName(_expressionSettingsProperty);
-            GUI.enabled = true;
-            EditorGUI.indentLevel--;
-        }
-    }
-
-    private void OpenFacialShapesEditor()
-    {
-        if (!CustomEditorUtility.TryGetContextWithDEC(Component.gameObject, out var context, out var dec)) return;
-        var defaultBlendShapes = dec.GetDefaultBlendShapeSet(Component.gameObject);
-        var shapes = new List<BlendShape>();
-        Component.GetMergedBlendShapeSet(dec, shapes);
-        var window = FacialShapesEditor.OpenEditor(context.FaceRenderer, context.FaceMesh, defaultBlendShapes, new(shapes));
-        if (window == null) return;
-        window.RegisterApplyCallback(RecieveEditorResult);
-    }
-
-    private void RecieveEditorResult(BlendShapeSet result)
-    {
-        var so = new SerializedObject(Component);
-        so.Update();
-        FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, result.BlendShapes.ToList());
-        so.ApplyModifiedProperties();
-    }
-
-    private void StartAnimationWindow()
-    {
-        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
-        var animator = context.Root.GetComponent<Animator>();
-        if (animator == null)
-        {
-            Debug.LogError("Animator component not found on the avatar root.");
-            return;
-        }
-
-        Action<AnimationClip> onClipModified = clip =>
-        {
-            Undo.RecordObject(Component, "Update Animations from Editor");
-            Component.BlendShapeAnimations = GenericAnimation.FromAnimationClip(clip).Select(a =>
-            {
-                if (a.TryToBlendShapeAnimation(out var animation))
-                {
-                    return animation;
-                }
-                return null;
-            }).OfType<BlendShapeAnimation>().ToList();
-        };
-        GenericAnimationEditor.StartEditingWithAnimations(animator, Component.BlendShapeAnimations.Select(a => a.ToGeneric(context.BodyPath)).ToList(), onClipModified);
-    }
-
-
-    [MenuItem($"CONTEXT/{nameof(FacialExpressionComponent)}/ToClip")]
-    private static void ToClip(MenuCommand command)
-    {
-        var component = (command.context as FacialExpressionComponent)!;
-        if (!CustomEditorUtility.TryGetContextWithDEC(component.gameObject, out var context, out var dec)) return;
-        var shapes = new List<BlendShape>();
-        component.GetMergedBlendShapeSet(dec, shapes);
-        CustomEditorUtility.ToClip(context.BodyPath, shapes);
-    }
-
-    private void ConvertToManual()
-    {
-        var components = targets.Select(t => t as FacialExpressionComponent).OfType<FacialExpressionComponent>().ToArray();
-        foreach (var component in components)
-        {
-            if (component.Clip == null) continue;
-            if (!CustomEditorUtility.TryGetContextWithDEC(component.gameObject, out var context, out var dec)) continue;
-            var defaultSet = dec.GetDefaultBlendShapeSet(component.gameObject);
-            var shapes = new List<BlendShape>();
-            component.GetBlendShapes(shapes, defaultSet);
-            var so = new SerializedObject(component);
-            so.Update();
-            FacialExpressionEditorUtility.AddShapesAsSingleFrame(so, shapes, true);
-            so.FindProperty(nameof(FacialExpressionComponent.SourceMode)).enumValueIndex = (int)AnimationSourceMode.Manual;
-            so.FindProperty(nameof(FacialExpressionComponent.IsSingleFrame)).boolValue = true;
-            var expressionSettingsProperty = so.FindProperty(nameof(FacialExpressionComponent.ExpressionSettings));
-            var settings = ExpressionSettings.FromAnimationClip(component.Clip);
-            expressionSettingsProperty.FindPropertyRelative(ExpressionSettings.LoopTimePropName).boolValue = settings.LoopTime;
-            expressionSettingsProperty.FindPropertyRelative(ExpressionSettings.MotionTimeParameterNamePropName).stringValue = settings.MotionTimeParameterName;
-            so.ApplyModifiedProperties();
-        }
-    }
-}
-
-public class FacialExpressionEditorUtility
-{
-    public static void ClearAnimations(SerializedObject so)
-    {
-        so.FindProperty(nameof(FacialExpressionComponent.BlendShapeAnimations)).arraySize = 0;
-    }
-
-    public static void AddShapesAsSingleFrame(SerializedObject so, IReadOnlyList<BlendShape> newShapes, bool clear = false)
-    {
-        var animations = newShapes.Select(shape => BlendShapeAnimation.SingleFrame(shape.Name, shape.Weight)).ToList();
-        if (clear)
-        {
-            ClearAnimations(so);
-        }
-        var animationsProperty = so.FindProperty(nameof(FacialExpressionComponent.BlendShapeAnimations));
-        animationsProperty.arraySize = animations.Count;
-        for (var i = 0; i < animations.Count; i++)
-        {
-            var element = animationsProperty.GetArrayElementAtIndex(i);
-            var nameProp = element.FindPropertyRelative(BlendShapeAnimation.NamePropName);
-            var curveProp = element.FindPropertyRelative(BlendShapeAnimation.CurvePropName);
-            nameProp.stringValue = animations[i].Name;
-            curveProp.animationCurveValue = animations[i].Curve;
-        }
-    }
-
-    public static void AddAnimations(SerializedObject so, IReadOnlyList<BlendShapeAnimation> newAnimations, bool clear = false)
-    {
-        if (clear)
-        {
-            ClearAnimations(so);
-        }
-        var animationsProperty = so.FindProperty(nameof(FacialExpressionComponent.BlendShapeAnimations));
-        animationsProperty.arraySize = newAnimations.Count;
-        for (var i = 0; i < newAnimations.Count; i++)
-        {
-            var element = animationsProperty.GetArrayElementAtIndex(i);
-            element.FindPropertyRelative(BlendShapeAnimation.NamePropName).stringValue = newAnimations[i].Name;
-            element.FindPropertyRelative(BlendShapeAnimation.CurvePropName).animationCurveValue = newAnimations[i].Curve;
-        }
-    }
-}
-
-*/

@@ -3,14 +3,6 @@
     flex: 0 0 auto;
 }
 
-#general-controls-unscroll-view {
-    flex: 0 0 auto;
-}
-
-#general-controls-scroll-view {
-    flex: 1 1 270px;
-}
-
 /* Panels */
 #target-panel, #group-filter-panel, #preview-setting-panel, #clip-import-panel {
     flex: 0 0 auto;
@@ -32,10 +24,6 @@
     align-items: center;
 }
 
-/* Filter Buttons */
-#all-button, #none-button {
-    width: 60px;
-}
 
 /* Group Toggles Container */
 #group-toggles-container {

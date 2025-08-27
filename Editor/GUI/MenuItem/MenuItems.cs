@@ -4,13 +4,17 @@ internal static class MenuItems
 {
     // Tools
     private const string ToolsPath = $"Tools/{FaceTuneConstants.Name}/";
-
+    
     public const string FacialShapesEditorPath = ToolsPath + "Facial Shapes Editor";
     public const int FacialShapesEditorPriority = 1000;
 
     private const string ToolsSettingsPath = ToolsPath + "Settings/";
     public const string SelectedExpressionPreviewPath = ToolsSettingsPath + "Selected Expression Preview";
     public const int SelectedExpressionPreviewPriority = 1100;
+
+    private const string ToolsDebugPath = ToolsPath + "Debug/";
+    public const string ReloadLocalizationPath = ToolsDebugPath + "Reload Localization";
+    public const int ReloadLocalizationPriority = 1200;
 
     // Assets
     private const string AssetsPath = $"Assets/{FaceTuneConstants.Name}/";

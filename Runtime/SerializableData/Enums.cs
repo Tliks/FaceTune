@@ -52,9 +52,3 @@ public enum ClipImportOption
     NonZero,
     FacialStyleOverridesOrNonZero
 }
-
-public enum AnimationSourceMode
-{
-    Manual,
-    AnimationClip
-}

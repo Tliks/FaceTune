@@ -4,11 +4,11 @@ namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(AdvancedEyeBlinkComponent))]
-internal class AdvancedEyeBlinkEditor : FaceTuneCustomEditorBase<AdvancedEyeBlinkComponent>
+internal class AdvancedEyeBlinkEditor : FaceTuneIMGUIEditorBase<AdvancedEyeBlinkComponent>
 {
-    public override void OnInspectorGUI()
+    protected override void OnInnerInspectorGUI()
     {
-        base.OnInspectorGUI();
+        DrawDefaultInspector(false);
 
         if (GUILayout.Button("Open Editor"))
         {

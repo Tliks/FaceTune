@@ -10,13 +10,11 @@ internal class BlendShapeDrawer : PropertyDrawer
         var propName = property.FindPropertyRelative(BlendShapeWeight.NamePropName);
         var propWeight = property.FindPropertyRelative(BlendShapeWeight.WeightPropName);
 
-        if (propName == null || propWeight == null) return;
-        
         position.height = EditorGUIUtility.singleLineHeight;
 
-        EditorGUI.PropertyField(position, propName);
+        LocalizedUI.PropertyField(position, propName, "BlendShapeWeight:Name");
         position.y += EditorGUIUtility.singleLineHeight;
-        EditorGUI.Slider(position, propWeight, 0f, 100f);
+        LocalizedUI.PropertyField(position, propWeight, "BlendShapeWeight:Weight");
 
         EditorGUI.EndProperty();
     }

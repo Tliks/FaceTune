@@ -4,11 +4,11 @@ namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(AdvancedLipSyncComponent))]
-internal class AdvancedLipSyncEditor : FaceTuneCustomEditorBase<AdvancedLipSyncComponent>
+internal class AdvancedLipSyncEditor : FaceTuneIMGUIEditorBase<AdvancedLipSyncComponent>
 {
-    public override void OnInspectorGUI()
+    protected override void OnInnerInspectorGUI()
     {
-        base.OnInspectorGUI();
+        DrawDefaultInspector(false);
         if (GUILayout.Button("Open Editor for Canceler BlendShape Names"))
         {
             var defaultOverride = new BlendShapeSet(Component.AdvancedLipSyncSettings.CancelerBlendShapeNames.Select(x => new BlendShapeWeight(x, 0.0f)));

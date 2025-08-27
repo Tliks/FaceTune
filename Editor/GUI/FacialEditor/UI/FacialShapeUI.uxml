@@ -3,6 +3,7 @@
 
         <ui:VisualElement name="left-panel">
             <ui:VisualElement name="general-controls-container" />
+            <ui:Box name="border-line" />
             <ui:VisualElement name="selected-content-container" />
         </ui:VisualElement>
 
