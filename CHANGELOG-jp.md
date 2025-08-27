@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0-beta.9] - 2025-08-28
+### Added
 - ローカライズ(英語/日本語)を追加しました。 `#80`
 - SelectedExpressionPreviewがマルチフレームアニメーションに対応しました。
 - FacialStyleコンポーネントの3点メニューに、EditMode上で顔つきをRendererに適用する機能が追加されました。`#89`
@@ -18,16 +31,12 @@
 - AnimatorControllerImporterの動作を改善しました。
 - UIを改善しました。
 
-### Deprecated
-
 ### Removed
 - Animation Dataコンポーネント
 
 ### Fixed
 - FacialShapesEditor保存時に結果が重複して保存される問題を修正。 
 - FaceTuneAssistantコンポーネントからメニューを用いた制御を追加する際に、MenuInstallerが重複する問題を修正。 `#86`
-
-### Security
 
 ## [0.1.0-beta.8] - 2025-08-13
 ### Changed

@@ -15,6 +15,29 @@
 
 ### Security
 
+## [0.1.0-beta.9] - 2025-08-28
+### Added
+- Added localization (English/Japanese). `#80`
+- SelectedExpressionPreview now supports multi-frame animation.
+- Added a feature to the three-dot menu of the FacialStyle component that allows applying facial expressions to the Renderer in EditMode. `#89`
+
+### Changed
+- Major changes to the Facial Data component specification; renamed to Expression Data component. `#82` `#83` `#84`
+  - Removed the split between AnimationClip Mode and Manual Mode; now both can be used together with Manual prioritized.
+  - This allows handling expressions that are non-destructively edited for only part of the data while keeping the original Clip reference.
+  - Animation Clips can now handle animations other than facial expressions, and the Animation Data component has been removed.
+  - Only blendshape animations whose target Renderer and path match are now treated as facial expression animations.
+  - Added an advanced option to treat all blendshape animations as facial expression animations.
+- Improved the behavior of AnimatorControllerImporter.
+- Improved the UI.
+
+### Removed
+- Animation Data component
+
+### Fixed
+- Fixed an issue where results were saved redundantly when saving in FacialShapesEditor.
+- Fixed an issue where MenuInstaller would be duplicated when adding controls via menu to the FaceTuneAssistant component. `#86`
+
 ## [0.1.0-beta.8] - 2025-08-13
 ### Changed
 - Adjusted FacialShapesEditor.
