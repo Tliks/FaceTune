@@ -306,17 +306,18 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
     }
 
     // Remove methods
-    public void RemoveProperties(IEnumerable<string> namesToRemove)
+    public List<string> RemoveProperties(IEnumerable<string> namesToRemove)
     {
         var nameSet = namesToRemove.ToHashSet();
         var pathsToRemove = new List<string>();
-        
+        var removed = new List<string>();
         foreach (var pathEntry in _pathPropertyAnimationMap)
         {
             var propertiesToRemove = pathEntry.Value.Keys.Where(nameSet.Contains).ToList();
             foreach (var property in propertiesToRemove)
             {
                 pathEntry.Value.Remove(property);
+                removed.Add(property);
             }
             
             if (pathEntry.Value.Count == 0)
@@ -331,22 +332,25 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
         }
         
         InvalidateBlendShapeCache();
+        return removed;
     }
 
-    public void RemoveBlendShapes(IEnumerable<string> namesToRemove)
+    public List<string> RemoveBlendShapes(IEnumerable<string> namesToRemove)
     {
         var propertyNamesToRemove = namesToRemove.Select(x => $"{BlendShapePrefix}{x}");
-        RemoveProperties(propertyNamesToRemove);
+        return RemoveProperties(propertyNamesToRemove);
     }
 
-    public void RemoveBlendShapes(string path, IEnumerable<string> namesToRemove)
+    public List<string> RemoveBlendShapes(string path, IEnumerable<string> namesToRemove)
     {
+        var removed = new List<string>();
         if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap))
         {
             var propertyNamesToRemove = namesToRemove.Select(x => $"{BlendShapePrefix}{x}").ToList();
             foreach (var propertyName in propertyNamesToRemove)
             {
                 propertyMap.Remove(propertyName);
+                removed.Add(propertyName);
             }
             
             if (propertyMap.Count == 0)
@@ -356,6 +360,7 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
             
             InvalidateBlendShapeCache();
         }
+        return removed;
     }
 
     // Merge methods

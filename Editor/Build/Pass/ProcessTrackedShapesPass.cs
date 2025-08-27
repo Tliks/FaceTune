@@ -50,35 +50,16 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
     private void RemoveAndWarning(IEnumerable<AvatarExpression> expressions, HashSet<string> trackedShapes)
     {
-        var shapesToRemove = new List<BlendShapeWeight>();
-        var shapesToWarning = new List<BlendShapeWeight>();
-
         foreach (var expression in expressions)
         {
-            var shapes = expression.AnimationSet.GetAllFirstFrameBlendShapeSet();
-            foreach (var shape in shapes.BlendShapes)
-            {
-                if (trackedShapes.Contains(shape.Name))
-                {
-                    shapesToRemove.Add(shape);
-                    if (shape.Weight != 0)
-                    {
-                        shapesToWarning.Add(shape);
-                    }
-                }
-            }
+            var removed = expression.AnimationSet.RemoveBlendShapes(trackedShapes);
 
-            expression.AnimationSet.RemoveBlendShapes(shapesToRemove.Select(s => s.Name));
-
-            if (shapesToWarning.Any())
+            if (removed.Any())
             {
-                var joinedShapes = string.Join(", ", shapesToWarning.Select(s => s.Name));
+                var joinedShapes = string.Join(", ", removed);
                 Debug.LogWarning($"Expression {expression.Name} contains tracked blend shapes [{joinedShapes}]. These will be removed and may cause unintended behavior.");
                 Debug.LogWarning($"Please either add AllowTrackedBlendShapesComponent or exclude these blend shapes.");
             }
-
-            shapesToRemove.Clear();
-            shapesToWarning.Clear();
         }
     }
 }
