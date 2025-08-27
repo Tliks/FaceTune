@@ -4,12 +4,14 @@
 
 ## [Unreleased]
 ### Added
-- ローカライズ(英語/日本語)を追加しました。
+- ローカライズ(英語/日本語)を追加しました。 `#80`
 - SelectedExpressionPreviewがマルチフレームアニメーションに対応しました。
+- FacialStyleコンポーネントの3点メニューに、EditMode上で顔つきをRendererに適用する機能が追加されました。`#89`
 
 ### Changed
-- Facial Dataコンポーネントの仕様を大きく変更し、Expression Dataコンポーネントへと名称を変更しました。
+- Facial Dataコンポーネントの仕様を大きく変更し、Expression Dataコンポーネントへと名称を変更しました。`#82` `#83` `#84` 
   - AnimationClip Mode/Manual Modeの分岐を廃止し、Manual優先の形で併用可能としました。
+  - これにより、Clipの参照をそのままに一部のみを非破壊的に編集した表情を取り扱えるようになります。
   - Animation Clipは表情以外のアニメーションを取り扱えるようになり、Animation Dataコンポーネントは廃止されました。
   - 適用対象のRenderとパスが一致するブレンドシェイプアニメーションのみが表情アニメーションと扱われるようになりました。
   - 全てのブレンドシェイプアニメーションを表情アニメーションとして扱う高度なオプションが追加されました。
@@ -23,6 +25,7 @@
 
 ### Fixed
 - FacialShapesEditor保存時に結果が重複して保存される問題を修正。 
+- FaceTuneAssistantコンポーネントからメニューを用いた制御を追加する際に、MenuInstallerが重複する問題を修正。 `#86`
 
 ### Security
 
