@@ -20,6 +20,8 @@
 - Added localization (English/Japanese). `#80`
 - SelectedExpressionPreview now supports multi-frame animation.
 - Added a feature to the three-dot menu of the FacialStyle component that allows applying facial expressions to the Renderer in EditMode. `#89`
+- Added parameters to forcibly disable blinking/lip sync.
+  - A menu to control these parameters is now included by default in the template.
 
 ### Changed
 - Major changes to the Facial Data component specification; renamed to Expression Data component. `#82` `#83` `#84`
