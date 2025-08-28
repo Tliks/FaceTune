@@ -1,3 +1,4 @@
+using System.IO;
 using nadena.dev.ndmf.localization;
 using nadena.dev.ndmf.ui;
 using Newtonsoft.Json;
@@ -8,13 +9,13 @@ namespace Aoyon.FaceTune.Gui;
 [InitializeOnLoad]
 internal static class Localization
 {
-    private const string DefaultLanguage = "en-us";
-    private static readonly Dictionary<string, string> LanguageToGUID = new()
-    {
-        { "en-US", "2e2a97f8dd9377d4f9d96e335a1993b1" },
-        { "ja-JP", "0a33e6283053ed343b112905f9ffaa34" }
-    };
-    private static readonly string[] SupportedLanguages = LanguageToGUID.Keys.ToArray();
+    private const string LocalizationFolderGUID = "a9a14ed168f25bc4dabf54f2e630fd78";
+    private static string LocalizationFolderPath => AssetDatabase.GUIDToAssetPath(LocalizationFolderGUID);
+
+    private const string DefaultLanguage = "en-US";
+    private static string[]? _supportedLanguages;
+
+    private static readonly Dictionary<string, Dictionary<string, string>> _languageToStringTable = new();
 
     private static Localizer _ndmfLocalizer;
 
@@ -24,7 +25,7 @@ internal static class Localization
     {
         _ndmfLocalizer = new Localizer(DefaultLanguage, () =>
         {
-            return SupportedLanguages.Select(l =>
+            return GetSupportedLanguages().Select(l =>
             {
                 Func<string, string?> fetcher;
                 if (!TryLoadStringTable(l, out var stringTable)) fetcher = (k) => null;
@@ -34,17 +35,42 @@ internal static class Localization
         });
         LanguagePrefs.RegisterLanguageChangeCallback(typeof(Localization), _ => OnLanguageChanged?.Invoke());
     }
+
+    private static string[] GetSupportedLanguages()
+    {
+        if (_supportedLanguages != null) return _supportedLanguages;
+
+        if (Directory.Exists(LocalizationFolderPath))
+        {
+            _supportedLanguages = Directory.GetFiles(LocalizationFolderPath, "*.json", SearchOption.TopDirectoryOnly)
+                .Select(f => Path.GetFileNameWithoutExtension(f))
+                .ToArray();
+        }
+        else
+        {
+            Debug.LogError($"Localization folder not found: {LocalizationFolderPath}");
+            _supportedLanguages = Array.Empty<string>();
+        }
+        return _supportedLanguages.ToArray();
+    }
     
-    private static bool TryLoadStringTable(string language, [NotNullWhen(true)]out Dictionary<string, string>? stringTable)
+    private static bool TryLoadStringTable(string language, [NotNullWhen(true)] out Dictionary<string, string>? stringTable)
     {
         stringTable = null;
         try
         {
-            var textAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(AssetDatabase.GUIDToAssetPath(LanguageToGUID[language]));
-            if (textAsset == null) throw new Exception($"String table for {language} not found");
-            var deserialized = JsonConvert.DeserializeObject<Dictionary<string, string>>(textAsset.text);
+            if (_languageToStringTable.TryGetValue(language, out var cached))
+            {
+                stringTable = cached;
+                return true;
+            }
+
+            var filePath = LocalizationFolderPath + "/" + language + ".json";
+            var json = File.ReadAllText(filePath);
+            var deserialized = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             if (deserialized == null) throw new Exception($"Failed to deserialize string table for {language}");
             stringTable = deserialized;
+            _languageToStringTable[language] = deserialized;
             return true;
         }
         catch (Exception e)
@@ -57,6 +83,8 @@ internal static class Localization
     [MenuItem(MenuItems.ReloadLocalizationPath, false, MenuItems.ReloadLocalizationPriority)]
     public static void ReloadLocalization()
     {
+        _supportedLanguages = null;
+        _languageToStringTable.Clear();
         Localizer.ReloadLocalizations();
     }
 
