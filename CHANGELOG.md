@@ -15,6 +15,11 @@
 
 ### Security
 
+## [0.1.0-beta.10] - 2025-08-28
+### Fixed
+- Fixed an issue where FacialShapesEditor could not be opened.
+- Fixed an issue where localization was not loaded during compilation, etc.
+
 ## [0.1.0-beta.9] - 2025-08-28
 ### Added
 - Added localization (English/Japanese). `#80`
