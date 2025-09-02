@@ -49,17 +49,17 @@ FaceTuneは、デフォルトでアバターに既に設定されている表情
 このコンポーネントが存在することにより実際にアバターに対する適用が行われます。
 基本的にはこのコンポーネントは単体ではなく、`Expression Data`コンポーネントや、`Condition`コンポーネントを併用します。Hierarchyにおいて下にあるほど高い優先度として動作します。
 
+一切の`Condition`と紐づかない場合、常に再生されるExpressionとなります。
+
 `他の表情とブレンドする`はOFF(デフォルト)のとき、設定されていない表情ブレンドシェイプを全て0として扱うことで、より優先度の低い表情アニメーションを無効化します。一方でtrueのとき、設定されたデータの再生のみを行うことで、より低い優先度のExpressionとの結合を可能にします。
 
-一切の`Condition`と紐づかない場合、常に再生されるExpressionとなります。また、一切の`Expression Data`等と紐づかない場合、`他の表情とブレンドする`がOFFのとき全表情ブレンドシェイプを0とするExpressionとなり、ONのとき空のExpressionとなります。
-
-### Exxpresio Data
+### Expression Data
 表情のブレンドシェイプのアニメーションや、表情以外のアニメーションを設定するコンポーネントです。アタッチされたGameObject以上の`Expression`コンポーネントと紐づきます。
 Animation Clipの割り当て、手動での設定、またはその併用などにより編集できます。
-同一の`Expression`コンポーネントに対し複数の`Facial Data`コンポーネントを紐づることができます。同じプロパティが設定されていた場合、Hierarchyにおいて下にあるコンポーネントの値が使用されます。
+同一の`Expression`コンポーネントに対し複数の`Expression Data`コンポーネントを紐づけることができます。同じプロパティが設定されていた場合、Hierarchyにおいて下にあるコンポーネントの値が使用されます。
 
 ### Facial Style
-顔つきのように、複数のExpressionで共通して適用されてほしい表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以下のの`Expression`コンポーネントに対し適用されます。このコンポーネントは各`Expression`コンポーネントに対する適用のみを行うため、この顔つきが適用された表情をデフォルトとして使用する場合、`デフォルトとして設定`ボタンから追加の`Condition`コンポーネントと紐づかない`Expression`コンポーネントを配置してください。このコンポーネントで設定された値は適用先の各Expressionで上書きできます。`他の表情とブレンドする`がONのExpressionに対しては動作しません。
+顔つきのように、複数のExpressionで共通して適用されてほしい表情用のブレンドシェイプを設定するコンポーネントです。アタッチされたGameObject以下の`Expression`コンポーネントに対し適用されます。このコンポーネントは各`Expression`コンポーネントに対する適用のみを行うため、この顔つきが適用された表情をデフォルトとして使用する場合、`デフォルトとして設定`ボタンから追加の`Condition`コンポーネントと紐づかない`Expression`コンポーネントを配置してください。このコンポーネントで設定された値は適用先の各Expressionで上書きできます。`他の表情とブレンドする`がONのExpressionに対しては動作しません。
 
 ### Advanced Eyeblink / Advanced LipSync
 高度なまばたき/リップシンクの設定を適用します。アタッチされたGameObject以下の`Expression`コンポーネントに対し適用されます。複数のコンポーネントが設定された場合、最も親子関係が近いコンポーネントが使用されます。
@@ -71,13 +71,13 @@ Animation Clipの割り当て、手動での設定、またはその併用など
 同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
 ### MenuItem (Modular Avatar)
-FaceTuneのコンポーネントではありませんが、Toggoe/Buttonの場合、boolの条件として`Condition`コンポーネント同様に動作します。パラメーターは設定されていない場合、自動で生成されます。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。またRadialの場合、Motion TImeとして動作します。アタッチされたGameObject以下の`Expression`コンポーネントに対しMotion Timeを設定します。
+FaceTuneのコンポーネントではありませんが、Toggle/Buttonの場合、boolの条件として`Condition`コンポーネント同様に動作します。パラメーターは設定されていない場合、自動で生成されます。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。またRadialの場合、Motion Timeとして動作します。アタッチされたGameObject以下の`Expression`コンポーネントに対しMotion Timeを設定します。
 
 ### Pattern
 アタッチされたGameObject以下の複数の`Condition`とそれに紐づく`Expression`を排他制御としてマークします。
 
 ### Preset
-アタッチされたGameObject以下の制御をプリセットとしてマークします。このプリセットをオンオフするメニューは同じ階層に自動生成されます。このPresetを複数配置することで、複数の制御をメニューから切り替えできるようになります。
+アタッチされたGameObject以下の制御をプリセットとしてマークします。このプリセットをオンオフするメニューは同じ階層に自動生成されます。このPresetコンポーネントを複数配置することで、複数の制御をメニューから切り替えできるようになります。
 
 ## その他
 
