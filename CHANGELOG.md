@@ -30,6 +30,7 @@
 
 ### Changed
 - Major changes to the Facial Data component specification; renamed to Expression Data component. `#82` `#83` `#84`
+  - Previously set expressions may be broken. In that case, please set the Animation Clip to None or reconfigure it.
   - Removed the split between AnimationClip Mode and Manual Mode; now both can be used together with Manual prioritized.
   - This allows handling expressions that are non-destructively edited for only part of the data while keeping the original Clip reference.
   - Animation Clips can now handle animations other than facial expressions, and the Animation Data component has been removed.

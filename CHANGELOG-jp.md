@@ -30,6 +30,7 @@
 
 ### Changed
 - Facial Dataコンポーネントの仕様を大きく変更し、Expression Dataコンポーネントへと名称を変更しました。`#82` `#83` `#84` 
+  - これまで設定された表情が壊れる可能性があります。その場合はAnimation ClipをNoneにするか、もしくは再設定をしてください。
   - AnimationClip Mode/Manual Modeの分岐を廃止し、Manual優先の形で併用可能としました。
   - これにより、Clipの参照をそのままに一部のみを非破壊的に編集した表情を取り扱えるようになります。
   - Animation Clipは表情以外のアニメーションを取り扱えるようになり、Animation Dataコンポーネントは廃止されました。
