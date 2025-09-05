@@ -52,7 +52,7 @@ internal class AnimatorControllerImporter
                         if (facialBlendShapes.Count > 0)
                         {
                             var isBlending = IsBlending(facialBlendShapes);
-                            var obj = CreateConditionAndExpression(state, conditions, isBlending);
+                            var obj = CreateConditionAndExpression(state, clip, conditions, isBlending);
 
                             var expressionData = obj.AddComponent<ExpressionDataComponent>();
                             expressionData.Clip = clip;
@@ -231,7 +231,7 @@ internal class AnimatorControllerImporter
         return !(nonZeroCount > 0 && zeroCount > 5);
     }
 
-    private GameObject CreateConditionAndExpression(AnimatorState state, List<List<Condition>> conditions, bool isBlending)
+    private GameObject CreateConditionAndExpression(AnimatorState state, AnimationClip clip, List<List<Condition>> conditions, bool isBlending)
     {
         var obj = new GameObject(state.name);
 
@@ -258,6 +258,13 @@ internal class AnimatorControllerImporter
         }
 
         var expression = obj.AddComponent<ExpressionComponent>();
+
+        expression.ExpressionSettings = new ExpressionSettings()
+        {
+            LoopTime = clip.isLooping,
+            MotionTimeParameterName = state.timeParameterActive && !string.IsNullOrEmpty(state.timeParameter) ? state.timeParameter : string.Empty
+        };
+
         var (eye, mouth) = _platformSupport.GetTrackingPermission(state) ?? (TrackingPermission.Disallow, TrackingPermission.Allow);
         expression.FacialSettings = new FacialSettings()
         {
