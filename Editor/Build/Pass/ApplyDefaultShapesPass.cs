@@ -11,9 +11,9 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
     {
         if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
-        var sessionContext = buildPassContext.SessionContext;
+        var avatarContext = buildPassContext.AvatarContext;
         
-        var facialStyleComponents = sessionContext.Root
+        var facialStyleComponents = avatarContext.Root
             .GetComponentsInChildren<FacialStyleComponent>(true)
             .Where(x => x.ApplyToRenderer);
 
@@ -33,11 +33,11 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
         // 未知のブレンドシェイプを上書きせず、既知のブレンドシェイプのみ0で上書きする
 
         var set = new BlendShapeSet();
-        set.AddRange(sessionContext.ZeroBlendShapes);
+        set.AddRange(avatarContext.ZeroBlendShapes);
         target.GetBlendShapes(set);
 
-        var renderer = sessionContext.FaceRenderer;
-        var mesh = sessionContext.FaceMesh;
+        var renderer = avatarContext.FaceRenderer;
+        var mesh = avatarContext.FaceMesh;
         renderer.ApplyBlendShapes(mesh, set, -1); 
     }
 }

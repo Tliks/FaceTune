@@ -3,18 +3,18 @@ using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune;
 
-internal static class SessionContextBuilder
+internal static class AvatarContextBuilder
 {
-    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out SessionContext? sessionContext, out SessionContextBuildResult result, IObserveContext? context = null)
+    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out AvatarContext? avatarContext, out AvatarContextBuildResult result, IObserveContext? context = null)
     {
-        sessionContext = null;
+        avatarContext = null;
 
         context ??= new NonObserveContext();
 
         var root = context.GetAvatarRoot(target);
         if (root == null)
         {
-            result = SessionContextBuildResult.NotFoundAvatarRoot;
+            result = AvatarContextBuildResult.NotFoundAvatarRoot;
             return false;
         }
 
@@ -22,14 +22,14 @@ internal static class SessionContextBuilder
 
         if (!TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, platformSupport, context))
         {
-            result = SessionContextBuildResult.NotFoundFaceRenderer;
+            result = AvatarContextBuildResult.NotFoundFaceRenderer;
             return false;
         }
 
         var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
         if (faceMesh == null)
         {
-            result = SessionContextBuildResult.NotFoundFaceMesh;
+            result = AvatarContextBuildResult.NotFoundFaceMesh;
             return false;
         }
 
@@ -40,8 +40,8 @@ internal static class SessionContextBuilder
 
         var safeZeroBlendShapes = new BlendShapeSet(zeroBlendShapes.Where(shape => !trackedBlendShapes.Contains(shape.Name)));
 
-        sessionContext = new SessionContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroBlendShapes, trackedBlendShapes, safeZeroBlendShapes);
-        result = SessionContextBuildResult.Success;
+        avatarContext = new AvatarContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroBlendShapes, trackedBlendShapes, safeZeroBlendShapes);
+        result = AvatarContextBuildResult.Success;
         return true;
     }
 
@@ -69,7 +69,7 @@ internal static class SessionContextBuilder
         return false;
     }
 
-    public enum SessionContextBuildResult
+    public enum AvatarContextBuildResult
     {
         Success,
         NotFoundAvatarRoot,

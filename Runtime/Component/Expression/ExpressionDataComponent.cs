@@ -15,12 +15,12 @@ namespace Aoyon.FaceTune
 
         public bool AllBlendShapeAnimationAsFacial = false;
 
-        internal void GetAnimations(AnimationSet resultToAdd, SessionContext sessionContext)
+        internal void GetAnimations(AnimationSet resultToAdd, AvatarContext avatarContext)
         {
-            var (facialAnimations, nonFacialAnimations) = ProcessClip(sessionContext.BodyPath);
-            resultToAdd.AddRange(facialAnimations.ToGenericAnimations(sessionContext.BodyPath));
+            var (facialAnimations, nonFacialAnimations) = ProcessClip(avatarContext.BodyPath);
+            resultToAdd.AddRange(facialAnimations.ToGenericAnimations(avatarContext.BodyPath));
             resultToAdd.AddRange(nonFacialAnimations);
-            resultToAdd.AddRange(BlendShapeAnimations.ToGenericAnimations(sessionContext.BodyPath)); // Manualを優先
+            resultToAdd.AddRange(BlendShapeAnimations.ToGenericAnimations(avatarContext.BodyPath)); // Manualを優先
         }
 
         internal (List<BlendShapeWeightAnimation> facialAnimations, List<GenericAnimation> nonFacialAnimations) ProcessClip(string bodyPath)

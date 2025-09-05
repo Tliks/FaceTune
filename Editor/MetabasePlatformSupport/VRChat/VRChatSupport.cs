@@ -72,9 +72,9 @@ internal class VRChatSupport : IMetabasePlatformSupport
     {
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
-        var sessionContext = buildPassContext.SessionContext;
+        var avatarContext = buildPassContext.AvatarContext;
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        var installer = new AnimatorInstaller(fx, sessionContext, useWriteDefaults);
+        var installer = new AnimatorInstaller(fx, avatarContext, useWriteDefaults);
         installer.Execute(installerData);
     }
 

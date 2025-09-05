@@ -19,13 +19,13 @@ internal class BuildPassState
 
     public BuildPassState(GameObject root)
     {
-        var canBuild = SessionContextBuilder.TryBuild(root, out var sessionContext, out var result);
+        var canBuild = AvatarContextBuilder.TryBuild(root, out var avatarContext, out var result);
         var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Count() > 0;
         Enabled = canBuild && anyComponents;
         if (!Enabled) return;
 
         var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(root.transform);
-        BuildPassContext = new BuildPassContext(sessionContext!, platformSupport);
+        BuildPassContext = new BuildPassContext(avatarContext!, platformSupport);
     }
 
     public bool TryGetBuildPassContext([NotNullWhen(true)] out BuildPassContext? buildPassContext)
@@ -42,12 +42,12 @@ internal class BuildPassState
 
 internal class BuildPassContext
 {
-    public SessionContext SessionContext { get; }
+    public AvatarContext AvatarContext { get; }
     public IMetabasePlatformSupport PlatformSupport { get; }
 
-    public BuildPassContext(SessionContext sessionContext, IMetabasePlatformSupport platformSupport)
+    public BuildPassContext(AvatarContext avatarContext, IMetabasePlatformSupport platformSupport)
     {
-        SessionContext = sessionContext;
+        AvatarContext = avatarContext;
         PlatformSupport = platformSupport;
     }
 }

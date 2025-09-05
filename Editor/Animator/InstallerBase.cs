@@ -7,7 +7,7 @@ namespace Aoyon.FaceTune.Animator;
 internal class InstallerBase
 {
     protected readonly VirtualAnimatorController _controller;
-    protected readonly SessionContext _sessionContext;
+    protected readonly AvatarContext _avatarContext;
     protected readonly IMetabasePlatformSupport _platformSupport;
 
     protected readonly bool _useWriteDefaults;
@@ -22,11 +22,11 @@ internal class InstallerBase
 
     protected const string TrueParameterName = $"{FaceTuneConstants.ParameterPrefix}/True";
 
-    public InstallerBase(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults)
+    public InstallerBase(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults)
     {
         _controller = virtualController;
-        _sessionContext = sessionContext;
-        _platformSupport = Platforms.MetabasePlatformSupport.GetSupport(_sessionContext.Root.transform);
+        _avatarContext = avatarContext;
+        _platformSupport = Platforms.MetabasePlatformSupport.GetSupport(_avatarContext.Root.transform);
         _useWriteDefaults = useWriteDefaults;
 
         _useWriteDefaults = useWriteDefaults;

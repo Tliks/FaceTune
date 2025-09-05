@@ -5,13 +5,13 @@ namespace Aoyon.FaceTune.Importer;
 
 internal class AnimatorControllerImporter
 {
-    private readonly SessionContext _context;
+    private readonly AvatarContext _context;
     private readonly int _allFacialBlendshapeCount;
     private readonly AnimatorController _animatorController;
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
 
-    public AnimatorControllerImporter(SessionContext context, AnimatorController animatorController)
+    public AnimatorControllerImporter(AvatarContext context, AnimatorController animatorController)
     {
         _context = context;
         _animatorController = animatorController;

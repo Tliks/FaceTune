@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal class SessionContext
+internal class AvatarContext
 {
     public readonly GameObject Root;
     public readonly SkinnedMeshRenderer FaceRenderer;
@@ -11,7 +11,7 @@ internal class SessionContext
     public readonly HashSet<string> TrackedBlendShapes;
     public readonly IReadOnlyBlendShapeSet SafeZeroBlendShapes;
 
-    public SessionContext(
+    public AvatarContext(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
         Mesh faceMesh,

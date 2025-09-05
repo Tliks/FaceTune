@@ -17,7 +17,7 @@ internal class LipSyncInstaller : InstallerBase
     private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
     private const string UseCancelerAAP = $"{ParameterPrefix}/UseCanceler"; // 1つ以上有効なCancelerがあるとき
 
-    public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
+    public LipSyncInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
         _controller.EnsureBoolParameterExists(ForceDisableLipSyncParameter);
         _controller.EnsureFloatParameterExists(AllowAAP);
@@ -159,7 +159,7 @@ internal class LipSyncInstaller : InstallerBase
             if (!settings.IsCancelerEnabled()) continue;
 
             var lipsyncing = AddState(cancelerLayer, $"Lipsyncing {index}", position);
-            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f).ToGeneric(_sessionContext.BodyPath));
+            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f).ToGeneric(_avatarContext.BodyPath));
             AddAnimationToState(lipsyncing, cancelerAnimation);
 
             // PassThrough -> lipsyncing

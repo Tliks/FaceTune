@@ -4,9 +4,9 @@ namespace Aoyon.FaceTune.Gui;
 
 internal static class CustomEditorUtility
 {
-    public static bool TryGetContext(GameObject obj, [NotNullWhen(true)] out SessionContext? context)
+    public static bool TryGetContext(GameObject obj, [NotNullWhen(true)] out AvatarContext? context)
     {
-        if (SessionContextBuilder.TryBuild(obj, out context, out var result))
+        if (AvatarContextBuilder.TryBuild(obj, out context, out var result))
         {
             return true;
         }

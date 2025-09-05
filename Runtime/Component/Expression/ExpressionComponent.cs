@@ -12,26 +12,26 @@ namespace Aoyon.FaceTune
 
         public bool EnableRealTimePreview = false;
 
-        internal AvatarExpression ToExpression(SessionContext sessionContext)
+        internal AvatarExpression ToExpression(AvatarContext avatarContext)
         {
             var animationSet = new AnimationSet();
 
             if (!FacialSettings.EnableBlending)
             {
-                var zeroAnimations = sessionContext.SafeZeroBlendShapes.ToGenericAnimations(sessionContext.BodyPath);
+                var zeroAnimations = avatarContext.SafeZeroBlendShapes.ToGenericAnimations(avatarContext.BodyPath);
                 animationSet.AddRange(zeroAnimations);
 
                 using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
                 if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialAnimations))
                 {
-                    animationSet.AddRange(facialAnimations.ToGenericAnimations(sessionContext.BodyPath));
+                    animationSet.AddRange(facialAnimations.ToGenericAnimations(avatarContext.BodyPath));
                 }
             }
 
             var dataComponents = gameObject.GetComponentsInChildren<ExpressionDataComponent>(true);
             foreach (var dataComponent in dataComponents)
             {
-                dataComponent.GetAnimations(animationSet, sessionContext);
+                dataComponent.GetAnimations(animationSet, avatarContext);
             }
 
             var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyeBlinkComponent>(true);
@@ -52,7 +52,7 @@ namespace Aoyon.FaceTune
             return new AvatarExpression(name, animationSet.Animations, ExpressionSettings, facialSettings);
         }
 
-        internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(SessionContext sessionContext)
+        internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(AvatarContext avatarContext)
         {
             // 親の GameObject ごとの Condition を取得する (OR の AND)
             var conditionComponentsByGameObject = new List<ConditionComponent[]>();
@@ -81,7 +81,7 @@ namespace Aoyon.FaceTune
                         x.HandGestureConditions.Select(y => y with { }),
                         x.ParameterConditions.Select(y => y with { })))
                     .ToList();
-                var expression = ToExpression(sessionContext);
+                var expression = ToExpression(avatarContext);
                 yield return new(conditions, expression);
             }
         }

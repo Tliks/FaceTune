@@ -20,11 +20,11 @@ internal class AnimatorInstaller : InstallerBase
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
 
-    public AnimatorInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
+    public AnimatorInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
         _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
-        _lipSyncInstaller = new LipSyncInstaller(virtualController, sessionContext, useWriteDefaults);
-        _blinkInstaller = new BlinkInstaller(virtualController, sessionContext, useWriteDefaults);
+        _lipSyncInstaller = new LipSyncInstaller(virtualController, avatarContext, useWriteDefaults);
+        _blinkInstaller = new BlinkInstaller(virtualController, avatarContext, useWriteDefaults);
     }
 
     public void Execute(InstallerData installerData)
@@ -73,15 +73,15 @@ internal class AnimatorInstaller : InstallerBase
         var animations = new List<GenericAnimation>();
         var mmdAnimations = new List<GenericAnimation>();
 
-        foreach (var shape in _sessionContext.FaceRenderer.GetBlendShapes(_sessionContext.FaceMesh).Where(b => !_sessionContext.TrackedBlendShapes.Contains(b.Name)))
+        foreach (var shape in _avatarContext.FaceRenderer.GetBlendShapes(_avatarContext.FaceMesh).Where(b => !_avatarContext.TrackedBlendShapes.Contains(b.Name)))
         {
             if (IsMMDBlendShapeName(shape.Name))
             {
-                mmdAnimations.Add(shape.ToGenericAnimation(_sessionContext.BodyPath));
+                mmdAnimations.Add(shape.ToGenericAnimation(_avatarContext.BodyPath));
             }
             else
             {
-                animations.Add(shape.ToGenericAnimation(_sessionContext.BodyPath));
+                animations.Add(shape.ToGenericAnimation(_avatarContext.BodyPath));
             }
         }
 
@@ -89,7 +89,7 @@ internal class AnimatorInstaller : InstallerBase
         var nonFacialBindings = new List<SerializableCurveBinding>();
         foreach (var binding in allBindings)
         {
-            if (binding.Path == _sessionContext.BodyPath &&
+            if (binding.Path == _avatarContext.BodyPath &&
                 binding.Type == typeof(SkinnedMeshRenderer) &&
                 binding.PropertyName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix))
             {
@@ -99,7 +99,7 @@ internal class AnimatorInstaller : InstallerBase
         }
         if (nonFacialBindings.Any())
         {
-            var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_sessionContext.Root, nonFacialBindings);
+            var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_avatarContext.Root, nonFacialBindings);
             animations.AddRange(propertiesAnimations);
         }
 
@@ -113,11 +113,11 @@ internal class AnimatorInstaller : InstallerBase
         {
             if (IsMMDBlendShapeName(shape.Name))
             {
-                _MMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_sessionContext.BodyPath));
+                _MMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_avatarContext.BodyPath));
             }
             else
             {
-                _nonMMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_sessionContext.BodyPath));
+                _nonMMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_avatarContext.BodyPath));
             }
         }
     }

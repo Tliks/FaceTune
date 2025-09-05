@@ -30,7 +30,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
     private static void NegotiateMAMenuItem(BuildPassContext buildPassContext)
     {
-        var root = buildPassContext.SessionContext.Root;
+        var root = buildPassContext.AvatarContext.Root;
         var platformSupport = buildPassContext.PlatformSupport;
 
         var usedParameterNames = new HashSet<string>();
@@ -180,7 +180,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     private static void ProcessPreset(BuildPassContext buildPassContext)
     {
         var platformSupport = buildPassContext.PlatformSupport;
-        var presetComponents = buildPassContext.SessionContext.Root.GetComponentsInChildren<PresetComponent>(true);
+        var presetComponents = buildPassContext.AvatarContext.Root.GetComponentsInChildren<PresetComponent>(true);
         var presetIndex = 0;   
         foreach (var presetComponent in presetComponents)
         {
@@ -205,7 +205,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     private static void NormalizeData(BuildPassContext buildPassContext)
     {
         // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
-        var root = buildPassContext.SessionContext.Root;
+        var root = buildPassContext.AvatarContext.Root;
         var expressionComponents = root.GetComponentsInChildren<ExpressionComponent>(true);
         foreach (var expressionComponent in expressionComponents)
         {

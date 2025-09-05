@@ -30,7 +30,7 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         foreach (var root in context.GetAvatarRoots())
         {
             if (!context.ActiveInHierarchy(root)) continue;
-            if (!SessionContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, null, observeContext)) continue;
+            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, null, observeContext)) continue;
             groups.Add(RenderGroup.For(faceRenderer).WithData((root, bodyPath)));
         }
         return groups.ToImmutableList();

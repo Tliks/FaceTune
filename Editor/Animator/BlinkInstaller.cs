@@ -20,7 +20,7 @@ internal class BlinkInstaller : InstallerBase
     private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
     private const string DelayMultiplier = $"{ParameterPrefix}/DelayMultiplier"; // 同上
 
-    public BlinkInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
+    public BlinkInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
         _controller.EnsureBoolParameterExists(ForceDisableEyeBlinkParameter);
         _controller.EnsureFloatParameterExists(AllowAAP);
@@ -212,7 +212,7 @@ internal class BlinkInstaller : InstallerBase
 
         Action<Mesh, Mesh> onClone = (Mesh o, Mesh n) => ObjectRegistry.RegisterReplacedObject(o, n);
         Action<string> onNotFound = (string name) => { Debug.LogError($"Shape not found: {name}"); };
-        _clonedShapesMapping = MeshHelper.CloneShapes(_sessionContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
+        _clonedShapesMapping = MeshHelper.CloneShapes(_avatarContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
         foreach (var (settings, index) in _advancedEyeBlinkIndex.ToList())
         {
             var newSettings = settings.GetRenamed(_clonedShapesMapping);
@@ -254,7 +254,7 @@ internal class BlinkInstaller : InstallerBase
             // 目を閉じたときの表情を設定 
             var blinkAnimations = new List<GenericAnimation>();
             var holdDuration = settings.HoldDurationSeconds;
-            var bodyPath = _sessionContext.BodyPath;
+            var bodyPath = _avatarContext.BodyPath;
             if (holdDuration < 0.01f) holdDuration = 0.01f; // 0fにするとExitTimeで遷移が直ぐに行われない
             foreach (var name in settings.BlinkBlendShapeNames)
             {

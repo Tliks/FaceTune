@@ -83,7 +83,7 @@ internal record PatternData
         OrderedItems = new List<IPatternElement>();
     }
 
-    public static PatternData Collect(SessionContext context)
+    public static PatternData Collect(AvatarContext context)
     {
         var orderedItems = new List<IPatternElement>();
         var processedGameObjects = new HashSet<GameObject>();

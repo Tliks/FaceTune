@@ -6,7 +6,7 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(ExpressionDataComponent))]
 internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComponent>
 {
-    private SessionContext? _context;
+    private AvatarContext? _context;
 
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _clipProperty = null!;
@@ -315,7 +315,7 @@ internal class ExpressionDataClipExporter : EditorWindow
     private void Export()
     {
         var animations = new AnimationSet();
-        if (!SessionContextBuilder.TryBuild(_component.gameObject, out var context, out var result))
+        if (!AvatarContextBuilder.TryBuild(_component.gameObject, out var context, out var result))
         {
             Debug.LogError($"Failed to build session context: {result}");
             return;

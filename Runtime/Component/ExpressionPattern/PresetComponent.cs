@@ -7,10 +7,10 @@ namespace Aoyon.FaceTune
         internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Preset";
 
-        internal Preset? GetPreset(SessionContext sessionContext)
+        internal Preset? GetPreset(AvatarContext avatarContext)
         {
             var patterns = gameObject.GetComponentsInChildren<PatternComponent>(true)
-                .Select(c => c.GetPattern(sessionContext))
+                .Select(c => c.GetPattern(avatarContext))
                 .OfType<ExpressionPattern>()
                 .ToList();
             if (patterns.Count == 0) return null;

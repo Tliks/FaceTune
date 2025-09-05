@@ -11,7 +11,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
     {
         if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
-        var sessionContext = buildPassContext.SessionContext;
+        var avatarContext = buildPassContext.AvatarContext;
 
         var patternData = context.GetState<PatternData>();
 
@@ -23,16 +23,16 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         var trackedShapes = buildPassContext.PlatformSupport.GetTrackedBlendShape().ToHashSet();
 
-        if (sessionContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
+        if (avatarContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
-            var setteledShapes = allExpressions.SelectMany(e => e.AnimationSet.GetBlendShapeNames(sessionContext.BodyPath)).ToHashSet();
+            var setteledShapes = allExpressions.SelectMany(e => e.AnimationSet.GetBlendShapeNames(avatarContext.BodyPath)).ToHashSet();
 
-            var shapeNames = sessionContext.FaceRenderer.GetBlendShapes(sessionContext.FaceMesh).Select(b => b.Name);
+            var shapeNames = avatarContext.FaceRenderer.GetBlendShapes(avatarContext.FaceMesh).Select(b => b.Name);
             var shapesToClone = trackedShapes.Intersect(shapeNames);
             _ = shapesToClone;
             if (!shapesToClone.Any()) return;
-            var mapping = MeshHelper.CloneShapes(sessionContext.FaceRenderer, shapesToClone.ToHashSet(), (o, n) => ObjectRegistry.RegisterReplacedObject(o, n), _ => {}, "_clone.tracked");
-            ModifyData(allExpressions, sessionContext.BodyPath, mapping);
+            var mapping = MeshHelper.CloneShapes(avatarContext.FaceRenderer, shapesToClone.ToHashSet(), (o, n) => ObjectRegistry.RegisterReplacedObject(o, n), _ => {}, "_clone.tracked");
+            ModifyData(allExpressions, avatarContext.BodyPath, mapping);
         }
         else
         {
