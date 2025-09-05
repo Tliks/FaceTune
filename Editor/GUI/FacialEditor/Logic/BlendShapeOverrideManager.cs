@@ -71,6 +71,7 @@ internal class BlendShapeOverrideManager : IDisposable
             }
         });
         OnBaseSetChange?.Invoke();
+        OnAnyDataChange?.Invoke();
     }
 
     public void GetCurrentOverrides(BlendShapeSet resultToAdd)
@@ -116,11 +117,11 @@ internal class BlendShapeOverrideManager : IDisposable
         return _baseSet.TryGetValue(_allKeysArray[index], out var shape) && Mathf.Approximately(shape.Weight, GetShapeWeight(index));
     }
 
-    public IEnumerable<int> GetOverridenIndices(Func<float, bool> predicate)
+    public IEnumerable<int> GetOverridenIndices(Func<int, bool> predicate)
     {
         for (int i = 0; i < _allKeysArray.Length; i++)
         {
-            if (IsOverridden(i) && predicate(GetShapeWeight(i))) yield return i;
+            if (IsOverridden(i) && predicate(i)) yield return i;
         }
     }
 

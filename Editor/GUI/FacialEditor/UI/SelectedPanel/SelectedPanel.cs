@@ -110,7 +110,7 @@ internal class SelectedPanel
         _selectedRemoveAll0Button.clicked += () =>
         {
             // 現在表示しているものに限らず全ブレンドシェイプから0値を削除
-            var indices = _blendShapeManager.GetOverridenIndices(weight => weight == 0f); 
+            var indices = _blendShapeManager.GetOverridenIndices(index => !_blendShapeManager.IsBaseShape(index) && _blendShapeManager.GetShapeWeight(index) == 0f); 
             _blendShapeManager.UnoverrideShapes(indices);
         };
 
@@ -282,7 +282,7 @@ internal class SelectedPanel
 
     private void UpdateSelectedRemoveAll0ButtonVisibility()
     {
-        var anyZero = _blendShapeManager.GetOverridenIndices(weight => weight == 0f).Any();
+        var anyZero = _blendShapeManager.GetOverridenIndices(index => !_blendShapeManager.IsBaseShape(index) && _blendShapeManager.GetShapeWeight(index) == 0f).Any();
         _selectedRemoveAll0Button.SetVisible(anyZero);
     }
 
