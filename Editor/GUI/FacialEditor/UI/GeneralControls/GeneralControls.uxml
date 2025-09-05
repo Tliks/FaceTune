@@ -29,7 +29,7 @@
             <ui:Label name="clip-import-title" class="ndmf-tr" text="FacialEditor:ClipImport:Title" />
             <ui:VisualElement name="clip-import-container">
                 <uie:ObjectField name="clip-field" class="ndmf-tr" label="FacialEditor:ClipImport:Clip" />
-                <uie:EnumField name="import-option-field" label="Option" />
+                <uie:EnumField name="import-option-field" class="ndmf-tr" label="FacialEditor:ClipImport:ImportOption" />
                 <ui:Button name="import-clip-button" class="ndmf-tr" text="FacialEditor:ClipImport:Import" />
             </ui:VisualElement>
         </ui:Box>
