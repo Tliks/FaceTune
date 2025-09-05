@@ -1,4 +1,4 @@
-    using Aoyon.FaceTune.Gui.ShapesEditor;
+using Aoyon.FaceTune.Gui.ShapesEditor;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -77,8 +77,11 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
             EditorApplication.delayCall += UpdateInfo;
         }
 
-        var clipInfoText = $"{Localization.G($"{ComponentName}:Clip:FacialAnimationCount")}: {_facialClipAnimationCount}, {Localization.G($"{ComponentName}:Clip:NonFacialAnimationCount")}: {_nonFacialClipAnimationCount}";
-        EditorGUILayout.HelpBox(clipInfoText, MessageType.Info);
+        if (_clipProperty.objectReferenceValue != null)
+        {
+            var clipInfoText = $"{Localization.S($"{ComponentName}:Clip:FacialAnimationCount")}: {_facialClipAnimationCount}, {Localization.S($"{ComponentName}:Clip:NonFacialAnimationCount")}: {_nonFacialClipAnimationCount}";
+            EditorGUILayout.HelpBox(clipInfoText, MessageType.Info);
+        }
     }
 
     private void DrawManualGUI()
