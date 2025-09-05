@@ -19,8 +19,8 @@ internal class LipSyncInstaller : InstallerBase
 
     public LipSyncInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
-        _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, ForceDisableLipSyncParameter).defaultBool = false;
-        _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP).defaultFloat = 1f;
+        _controller.EnsureBoolParameterExists(ForceDisableLipSyncParameter);
+        _controller.EnsureFloatParameterExists(AllowAAP);
     }
 
     public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
@@ -41,8 +41,8 @@ internal class LipSyncInstaller : InstallerBase
         {
             _shouldAddLayer = true;
 
-            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAdvancedAAP);
-            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
+            _controller.EnsureFloatParameterExists(UseAdvancedAAP);
+            _controller.EnsureFloatParameterExists(ModeAAP);
 
             // UseAdvanced
             var useAdvancedCurve = new AnimationCurve();
@@ -59,7 +59,7 @@ internal class LipSyncInstaller : InstallerBase
             {
                 _shouldAddCancelerLayer = true;
                 
-                _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, UseCancelerAAP);
+                _controller.EnsureFloatParameterExists(UseCancelerAAP);
 
                 // UseCanceler
                 var useCancelerCurve = new AnimationCurve();
@@ -151,7 +151,7 @@ internal class LipSyncInstaller : InstallerBase
         AsPassThrough(passThrough);
 
         var voiceParam = "Voice"; // Todo
-        _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, voiceParam);
+        _controller.EnsureFloatParameterExists(voiceParam);
 
         var position = passThroughPosition + new Vector3(PositionXStep, 0, 0);
         foreach (var (settings, index) in _indexForAdvancedSettings.OrderBy(kvp => kvp.Value))

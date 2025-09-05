@@ -22,8 +22,8 @@ internal class BlinkInstaller : InstallerBase
 
     public BlinkInstaller(VirtualAnimatorController virtualController, SessionContext sessionContext, bool useWriteDefaults) : base(virtualController, sessionContext, useWriteDefaults)
     {
-        _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, ForceDisableEyeBlinkParameter).defaultBool = false;
-        _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, AllowAAP);
+        _controller.EnsureBoolParameterExists(ForceDisableEyeBlinkParameter);
+        _controller.EnsureFloatParameterExists(AllowAAP);
     }
 
     public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
@@ -44,9 +44,9 @@ internal class BlinkInstaller : InstallerBase
         {
             _shouldAddLayer = true;
 
-            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, UseAnimationAAP);
-            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, ModeAAP);
-            _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, DelayMultiplier);
+            _controller.EnsureFloatParameterExists(UseAnimationAAP);
+            _controller.EnsureFloatParameterExists(ModeAAP);
+            _controller.EnsureFloatParameterExists(DelayMultiplier);
             
             // UseAnimation
             var useAnimationCurve = new AnimationCurve();

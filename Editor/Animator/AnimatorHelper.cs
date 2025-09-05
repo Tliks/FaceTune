@@ -262,32 +262,65 @@ internal static class AnimatorHelper
         return clip;
     }
 
-    public static AnimatorControllerParameter EnsureParameterExists(this VirtualAnimatorController controller, AnimatorControllerParameterType parameterType, string parameter)
+    public static void EnsureBoolParameterExists(this VirtualAnimatorController controller, string parameter, bool defaultValue = false)
     {
         if (!controller.Parameters.ContainsKey(parameter))
         {
             var param = new AnimatorControllerParameter
             {
                 name = parameter,
-                type = parameterType
+                type = AnimatorControllerParameterType.Bool,
+                defaultBool = defaultValue
             };
-
-            switch (parameterType)
-            {
-                case AnimatorControllerParameterType.Bool:
-                    param.defaultBool = false;
-                    break;
-                case AnimatorControllerParameterType.Int:
-                    param.defaultInt = 0;
-                    break;
-                case AnimatorControllerParameterType.Float:
-                    param.defaultFloat = 0f;
-                    break;
-            }
             controller.Parameters = controller.Parameters.Add(parameter, param);
         }
+    }
 
-        return controller.Parameters[parameter];
+    public static void EnsureIntParameterExists(this VirtualAnimatorController controller, string parameter, int defaultValue = 0)
+    {
+        if (!controller.Parameters.ContainsKey(parameter))
+        {
+            var param = new AnimatorControllerParameter
+            {
+                name = parameter,
+                type = AnimatorControllerParameterType.Int,
+                defaultInt = defaultValue
+            };
+            controller.Parameters = controller.Parameters.Add(parameter, param);
+        }
+    }
+
+    public static void EnsureFloatParameterExists(this VirtualAnimatorController controller, string parameter, float defaultValue = 0f)
+    {
+        if (!controller.Parameters.ContainsKey(parameter))
+        {
+            var param = new AnimatorControllerParameter
+            {
+                name = parameter,
+                type = AnimatorControllerParameterType.Float,
+                defaultFloat = defaultValue
+            };
+            controller.Parameters = controller.Parameters.Add(parameter, param);
+        }
+    }
+
+    public static void EnsureParameterExists(this VirtualAnimatorController controller, AnimatorControllerParameterType type, string parameter)
+    {
+        switch (type)
+        {
+            case AnimatorControllerParameterType.Bool:
+            case AnimatorControllerParameterType.Trigger:
+                EnsureBoolParameterExists(controller, parameter);
+                break;
+            case AnimatorControllerParameterType.Int:
+                EnsureIntParameterExists(controller, parameter);
+                break;
+            case AnimatorControllerParameterType.Float:
+                EnsureFloatParameterExists(controller, parameter);
+                break;
+            default:
+                throw new ArgumentException($"Invalid parameter type: {type}");
+        }
     }
 
     public static List<VirtualStateTransition> SetORConditions(VirtualStateTransition transition, IEnumerable<AnimatorCondition> conditions)

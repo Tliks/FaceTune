@@ -32,7 +32,7 @@ internal class InstallerBase
         _useWriteDefaults = useWriteDefaults;
         _emptyClip = AnimatorHelper.CreateCustomEmpty();
 
-        _controller.EnsureParameterExists(AnimatorControllerParameterType.Bool, TrueParameterName).defaultBool = true;
+        _controller.EnsureBoolParameterExists(TrueParameterName, true);
     }
 
     protected VirtualLayer AddLayer(string layerName, int priority, bool addMMDLayerControl = true)
