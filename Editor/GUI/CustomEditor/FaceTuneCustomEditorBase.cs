@@ -21,7 +21,7 @@ internal abstract class FaceTuneIMGUIEditorBase<T> : FaceTuneCustomEditorBase<T>
 {
     public override void OnInspectorGUI()
     {
-        Localization.LanguageSwitcherGUI();
+        Localization.DrawLanguageSwitcher();
         EditorGUILayout.Space();
         serializedObject.Update();
         OnInnerInspectorGUI();
@@ -78,7 +78,7 @@ internal abstract class FaceTuneUElementEditorBase<T> : FaceTuneCustomEditorBase
             _visualElement.Clear();
         }
 
-        _visualElement.Add(Localization.CreateLanguageSwitcherUI());
+        _visualElement.Add(Localization.CreateLanguageSwitcher());
 
         _visualElement.Add(new VisualElement { style = { height = 8 } });
 

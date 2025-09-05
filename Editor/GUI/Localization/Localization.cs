@@ -11,14 +11,12 @@ internal static class Localization
 {
     private const string LocalizationFolderGUID = "a9a14ed168f25bc4dabf54f2e630fd78";
     private static string LocalizationFolderPath => AssetDatabase.GUIDToAssetPath(LocalizationFolderGUID);
-
     private const string DefaultLanguage = "en-US";
-    private static string[]? _supportedLanguages;
 
+    private static string[]? _supportedLanguages;
     private static readonly Dictionary<string, Dictionary<string, string>> _languageToStringTable = new();
 
-    private static Localizer _ndmfLocalizer;
-
+    private static readonly Localizer _ndmfLocalizer;
     public static event Action? OnLanguageChanged;
 
     static Localization()
@@ -28,7 +26,7 @@ internal static class Localization
             return GetSupportedLanguages().Select(l =>
             {
                 Func<string, string?> fetcher;
-                if (!TryLoadStringTable(l, out var stringTable)) fetcher = (k) => null;
+                if (!TryGetStringTable(l, out var stringTable)) fetcher = (k) => null;
                 else fetcher = key => stringTable.TryGetValue(key, out var value) ? value : null;
                 return (l, fetcher);
             }).ToList();
@@ -54,7 +52,7 @@ internal static class Localization
         return _supportedLanguages.ToArray();
     }
     
-    private static bool TryLoadStringTable(string language, [NotNullWhen(true)] out Dictionary<string, string>? stringTable)
+    private static bool TryGetStringTable(string language, [NotNullWhen(true)] out Dictionary<string, string>? stringTable)
     {
         stringTable = null;
         try
@@ -86,6 +84,7 @@ internal static class Localization
         _supportedLanguages = null;
         _languageToStringTable.Clear();
         Localizer.ReloadLocalizations();
+        OnLanguageChanged?.Invoke();
     }
 
     private const string TooltipSuffix = ":tooltip";
@@ -102,6 +101,6 @@ internal static class Localization
 
     public static void LocalizeUIElements(VisualElement element) => _ndmfLocalizer.LocalizeUIElements(element);
 
-    public static void LanguageSwitcherGUI() => LanguageSwitcher.DrawImmediate();
-    public static VisualElement CreateLanguageSwitcherUI() => new LanguageSwitcher();
+    public static void DrawLanguageSwitcher() => LanguageSwitcher.DrawImmediate();
+    public static VisualElement CreateLanguageSwitcher() => new LanguageSwitcher();
 }
