@@ -1,8 +1,6 @@
-using System.IO;
 using Aoyon.FaceTune.Gui;
 using nadena.dev.ndmf.localization;
 using nadena.dev.ndmf.ui;
-using Newtonsoft.Json;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune;
@@ -11,79 +9,30 @@ namespace Aoyon.FaceTune;
 internal static class Localization
 {
     private const string LocalizationFolderGUID = "a9a14ed168f25bc4dabf54f2e630fd78";
-    private static string LocalizationFolderPath => AssetDatabase.GUIDToAssetPath(LocalizationFolderGUID);
     private const string DefaultLanguage = "en-US";
 
-    private static string[]? _supportedLanguages;
-    private static readonly Dictionary<string, Dictionary<string, string>> _languageToStringTable = new();
-
     private static readonly Localizer _ndmfLocalizer;
+    public static Localizer NdmfLocalizer => _ndmfLocalizer;
+
     public static event Action? OnLanguageChanged;
 
     static Localization()
     {
         _ndmfLocalizer = new Localizer(DefaultLanguage, () =>
         {
-            return GetSupportedLanguages().Select(l =>
+            var localizationFolderPath = AssetDatabase.GUIDToAssetPath(LocalizationFolderGUID);
+            return new List<LocalizationAsset>
             {
-                Func<string, string?> fetcher;
-                if (!TryGetStringTable(l, out var stringTable)) fetcher = (k) => null;
-                else fetcher = key => stringTable.TryGetValue(key, out var value) ? value : null;
-                return (l, fetcher);
-            }).ToList();
+                AssetDatabase.LoadAssetAtPath<LocalizationAsset>(localizationFolderPath + "/" + "en-US.po"),
+                AssetDatabase.LoadAssetAtPath<LocalizationAsset>(localizationFolderPath + "/" + "ja-JP.po"),
+            };
         });
         LanguagePrefs.RegisterLanguageChangeCallback(typeof(Localization), _ => OnLanguageChanged?.Invoke());
     }
-
-    private static string[] GetSupportedLanguages()
-    {
-        if (_supportedLanguages != null) return _supportedLanguages;
-
-        if (Directory.Exists(LocalizationFolderPath))
-        {
-            _supportedLanguages = Directory.GetFiles(LocalizationFolderPath, "*.json", SearchOption.TopDirectoryOnly)
-                .Select(f => Path.GetFileNameWithoutExtension(f))
-                .ToArray();
-        }
-        else
-        {
-            Debug.LogError($"Localization folder not found: {LocalizationFolderPath}");
-            _supportedLanguages = Array.Empty<string>();
-        }
-        return _supportedLanguages.ToArray();
-    }
     
-    private static bool TryGetStringTable(string language, [NotNullWhen(true)] out Dictionary<string, string>? stringTable)
-    {
-        stringTable = null;
-        try
-        {
-            if (_languageToStringTable.TryGetValue(language, out var cached))
-            {
-                stringTable = cached;
-                return true;
-            }
-
-            var filePath = LocalizationFolderPath + "/" + language + ".json";
-            var json = File.ReadAllText(filePath);
-            var deserialized = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            if (deserialized == null) throw new Exception($"Failed to deserialize string table for {language}");
-            stringTable = deserialized;
-            _languageToStringTable[language] = deserialized;
-            return true;
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Failed to load string table for {language}: {e.Message}");
-            return false;
-        }
-    }
-
     [MenuItem(MenuItems.ReloadLocalizationPath, false, MenuItems.ReloadLocalizationPriority)]
     public static void ReloadLocalization()
     {
-        _supportedLanguages = null;
-        _languageToStringTable.Clear();
         Localizer.ReloadLocalizations();
         OnLanguageChanged?.Invoke();
     }
@@ -104,4 +53,10 @@ internal static class Localization
 
     public static void DrawLanguageSwitcher() => LanguageSwitcher.DrawImmediate();
     public static VisualElement CreateLanguageSwitcher() => new LanguageSwitcher();
+}
+
+internal static class LocalizationExtensions
+{
+    public static string GLS(this string key) => Localization.S(key);
+    public static GUIContent GLG(this string key) => Localization.G(key);
 }
