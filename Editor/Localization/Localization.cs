@@ -5,29 +5,41 @@ using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune;
 
-[InitializeOnLoad]
 internal static class Localization
 {
     private const string LocalizationFolderGUID = "a9a14ed168f25bc4dabf54f2e630fd78";
     private const string DefaultLanguage = "en-US";
+    private static readonly string[] SupportedLanguages = new string[] { "en-US", "ja-JP" };
 
-    private static readonly Localizer _ndmfLocalizer;
-    public static Localizer NdmfLocalizer => _ndmfLocalizer;
+    private static Localizer? _ndmfLocalizer;
+    public static Localizer NdmfLocalizer => _ndmfLocalizer ??= InitializeLocalizer();
 
     public static event Action? OnLanguageChanged;
 
-    static Localization()
+    [InitializeOnLoadMethod]
+    static void Init()
     {
-        _ndmfLocalizer = new Localizer(DefaultLanguage, () =>
+        LanguagePrefs.RegisterLanguageChangeCallback(typeof(Localization), _ => OnLanguageChanged?.Invoke());
+    }
+
+    private static Localizer InitializeLocalizer()
+    {
+        return new Localizer(DefaultLanguage, () =>
         {
             var localizationFolderPath = AssetDatabase.GUIDToAssetPath(LocalizationFolderGUID);
-            return new List<LocalizationAsset>
+            var assets = new List<LocalizationAsset>();
+            foreach (var language in SupportedLanguages)
             {
-                AssetDatabase.LoadAssetAtPath<LocalizationAsset>(localizationFolderPath + "/" + "en-US.po"),
-                AssetDatabase.LoadAssetAtPath<LocalizationAsset>(localizationFolderPath + "/" + "ja-JP.po"),
-            };
+                var asset = AssetDatabase.LoadAssetAtPath<LocalizationAsset>(localizationFolderPath + "/" + language + ".po");
+                if (asset == null)
+                {
+                    Debug.LogError($"Localization asset not found for language: {language}");
+                    continue;
+                }
+                assets.Add(asset);
+            }
+            return assets;
         });
-        LanguagePrefs.RegisterLanguageChangeCallback(typeof(Localization), _ => OnLanguageChanged?.Invoke());
     }
     
     [MenuItem(MenuItems.ReloadLocalizationPath, false, MenuItems.ReloadLocalizationPriority)]
@@ -38,18 +50,18 @@ internal static class Localization
     }
 
     private const string TooltipSuffix = ":tooltip";
-    public static string S(string key) => _ndmfLocalizer.GetLocalizedString(key);
+    public static string S(string key) => NdmfLocalizer.GetLocalizedString(key);
     public static GUIContent G(string key)
     {
-        var localized = _ndmfLocalizer.GetLocalizedString(key);
-        if (_ndmfLocalizer.TryGetLocalizedString(key + TooltipSuffix, out var tooltip))
+        var localized = NdmfLocalizer.GetLocalizedString(key);
+        if (NdmfLocalizer.TryGetLocalizedString(key + TooltipSuffix, out var tooltip))
         {
             return new GUIContent(localized, tooltip);
         }
         return new GUIContent(localized);
     }
 
-    public static void LocalizeUIElements(VisualElement element) => _ndmfLocalizer.LocalizeUIElements(element);
+    public static void LocalizeUIElements(VisualElement element) => NdmfLocalizer.LocalizeUIElements(element);
 
     public static void DrawLanguageSwitcher() => LanguageSwitcher.DrawImmediate();
     public static VisualElement CreateLanguageSwitcher() => new LanguageSwitcher();
@@ -57,6 +69,6 @@ internal static class Localization
 
 internal static class LocalizationExtensions
 {
-    public static string GLS(this string key) => Localization.S(key);
-    public static GUIContent GLG(this string key) => Localization.G(key);
+    public static string S(this string key) => Localization.S(key);
+    public static GUIContent G(this string key) => Localization.G(key);
 }
