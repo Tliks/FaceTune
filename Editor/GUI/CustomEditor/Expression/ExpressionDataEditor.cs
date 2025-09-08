@@ -51,18 +51,18 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
     private void DrawMissingBlendShapeGUI()
     {
         if (_missingBlendShapeNames.Length == 0) return;
-        EditorGUILayout.HelpBox($"{Localization.S($"{ComponentName}:MissingBlendShapes")}: {string.Join(", ", _missingBlendShapeNames)}", MessageType.Warning);
+        EditorGUILayout.HelpBox($"{$"{ComponentName}:label:MissingBlendShapes".S()}: {string.Join(", ", _missingBlendShapeNames)}", MessageType.Warning);
     }
 
     private void DrawAnimationClipGUI()
     {
-        EditorGUILayout.LabelField(Localization.G($"{ComponentName}:AnimationClipMode"), EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"{ComponentName}:label:AnimationClipMode".G(), EditorStyles.boldLabel);
 
         EditorGUI.BeginChangeCheck();
         
         EditorGUILayout.BeginHorizontal();
         LocalizedPropertyField(_clipProperty);
-        if (GUILayout.Button(Localization.G($"{ComponentName}:Import"), GUILayout.Width(60)))
+        if (GUILayout.Button($"{ComponentName}:button:Import".G(), GUILayout.Width(60)))
         {
             var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
             var importer = new ExpressionDataClipImporter();
@@ -79,7 +79,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
 
         if (_clipProperty.objectReferenceValue != null)
         {
-            var clipInfoText = $"{Localization.S($"{ComponentName}:Clip:FacialAnimationCount")}: {_facialClipAnimationCount}, {Localization.S($"{ComponentName}:Clip:NonFacialAnimationCount")}: {_nonFacialClipAnimationCount}";
+            var clipInfoText = $"{$"{ComponentName}:label:ClipFacialAnimationCount".S()}: {_facialClipAnimationCount}, {$"{ComponentName}:label:ClipNonFacialAnimationCount".S()}: {_nonFacialClipAnimationCount}";
             EditorGUILayout.HelpBox(clipInfoText, MessageType.Info);
         }
     }
@@ -89,7 +89,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         LocalizedPropertyField(_blendShapeAnimationsProperty);
 
         EditorGUILayout.Space();
-        if (GUILayout.Button(Localization.G($"{ComponentName}:OpenEditor")))
+        if (GUILayout.Button($"{ComponentName}:button:OpenEditor".G()))
         {
             OpenEditor();
         }
@@ -98,7 +98,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
     private bool _showAdvancedOptions = false;
     private void DrawAdvancedOptionsGUI()
     {
-        _showAdvancedOptions = EditorGUILayout.Foldout(_showAdvancedOptions, Localization.G($"{ComponentName}:AdvancedOptions"));
+        _showAdvancedOptions = EditorGUILayout.Foldout(_showAdvancedOptions, $"{ComponentName}:label:AdvancedOptions".G());
         if (_showAdvancedOptions)
         {
             EditorGUI.indentLevel++;
@@ -214,10 +214,10 @@ internal class ExpressionDataClipImporter
         if (_skipCreateClip == null)
         {
             _skipCreateClip = !EditorUtility.DisplayDialog(
-                Localization.S($"ExpressionDataClipImporter:ConfirmCreateClip:title"),
-                Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:message"),
-                Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:create"),
-                Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:skip")
+                "ExpressionDataClipImporter:dialog:ConfirmCreateClip:title".S(),
+                "ExpressionDataClipImporter:dialog:ConfirmCreateClip:message".S(),
+                "ExpressionDataClipImporter:dialog:ConfirmCreateClip:create".S(),
+                "ExpressionDataClipImporter:dialog:ConfirmCreateClip:skip".S()
             );
         }
 
@@ -263,7 +263,7 @@ internal class ExpressionDataClipImporter
     private static bool TryGetClippath([NotNullWhen(true)] out string? clipFolderPath)
     {
         clipFolderPath = null;
-        var absolutePath = EditorUtility.OpenFolderPanel(Localization.S("ExpressionDataClipImporter:ConfirmCreateClip:folder"), "Assets", "");
+        var absolutePath = EditorUtility.OpenFolderPanel("ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder".S(), "Assets", "");
         if (string.IsNullOrEmpty(absolutePath))
         {
             Debug.LogError("folder not selected");

@@ -26,6 +26,8 @@ internal class FaceTuneAssistantEditor : FaceTuneIMGUIEditorBase<FaceTuneAssista
     protected override void OnInnerInspectorGUI()
     {
         _patternProvider.Draw();
+        EditorGUILayout.Space();
+        EditorGUILayout.HelpBox("FaceTuneAssistant:label:ExpressionDescription".S(), MessageType.Info);
         // EditorGUILayout.Space();
         // _suggestionProvider.Draw();
     }
@@ -92,23 +94,23 @@ internal static class PatternInfos
 
     private static readonly Dictionary<HandGesturePatternType, PatternInfo> handGestureInfos = new()
     {
-        { HandGesturePatternType.LeftOnly, new("HandGesturePatternType:LeftOnly:Desc", "8321eef2d75950543bc39fcdc9709128")    },
-        { HandGesturePatternType.RightOnly, new("HandGesturePatternType:RightOnly:Desc", "82eca51c1b5f4374da399ddf321509cb") },
-        { HandGesturePatternType.BasicRight, new("HandGesturePatternType:BasicRight:Desc", "c259edc6efd4aaa4bba3b1636557cc3b") },
-        { HandGesturePatternType.BasicLeft, new("HandGesturePatternType:BasicLeft:Desc", "376099cca4d264b4fbfbeeb7901dc770") },
-        { HandGesturePatternType.HandSign, new("HandGesturePatternType:HandSign:Desc", "e7a261d8cf051454ea0c41e427463276") },
-        { HandGesturePatternType.Blending, new("HandGesturePatternType:Blending:Desc", "9eb5bf9eeb8dc81488fb9453d21f3510") },
+        { HandGesturePatternType.LeftOnly, new("HandGesturePatternType:enum:LeftOnly:Desc", "8321eef2d75950543bc39fcdc9709128")    },
+        { HandGesturePatternType.RightOnly, new("HandGesturePatternType:enum:RightOnly:Desc", "82eca51c1b5f4374da399ddf321509cb") },
+        { HandGesturePatternType.BasicRight, new("HandGesturePatternType:enum:BasicRight:Desc", "c259edc6efd4aaa4bba3b1636557cc3b") },
+        { HandGesturePatternType.BasicLeft, new("HandGesturePatternType:enum:BasicLeft:Desc", "376099cca4d264b4fbfbeeb7901dc770") },
+        { HandGesturePatternType.HandSign, new("HandGesturePatternType:enum:HandSign:Desc", "e7a261d8cf051454ea0c41e427463276") },
+        { HandGesturePatternType.Blending, new("HandGesturePatternType:enum:Blending:Desc", "9eb5bf9eeb8dc81488fb9453d21f3510") },
     };
 
     private static readonly Dictionary<MenuPatternType, PatternInfo> menuInfos = new()
     {
-        { MenuPatternType.ExclusiveMenu, new("MenuPatternType:ExclusiveMenu:Desc", "9e1741e66ac069742976cf8c7e785a35") },
-        { MenuPatternType.BlendingMenu, new("MenuPatternType:BlendingMenu:Desc", "557c13125870f764bb20173aa14b004f") },
+        { MenuPatternType.ExclusiveMenu, new("MenuPatternType:enum:ExclusiveMenu:Desc", "9e1741e66ac069742976cf8c7e785a35") },
+        { MenuPatternType.BlendingMenu, new("MenuPatternType:enum:BlendingMenu:Desc", "557c13125870f764bb20173aa14b004f") },
     };
 
     private static readonly Dictionary<OtherPatternType, PatternInfo> otherInfos = new()
     {
-        { OtherPatternType.HeadContact, new("OtherPatternType:HeadContact:Desc", "def9fc6b2a3e6204abe8182548963b41") },
+        { OtherPatternType.HeadContact, new("OtherPatternType:enum:HeadContact:Desc", "def9fc6b2a3e6204abe8182548963b41") },
     };
 }
 
@@ -142,9 +144,9 @@ internal sealed class PatternGUI : IDisposable
 
         _toolbar = new LocalizedToolbar(typeof(PatternGUIMode));
 
-        _gesturePopup = new LocalizedPopup(typeof(PatternInfos.HandGesturePatternType));
-        _menuPopup = new LocalizedPopup(typeof(PatternInfos.MenuPatternType));
-        _otherPopup = new LocalizedPopup(typeof(PatternInfos.OtherPatternType));
+        _gesturePopup = new LocalizedPopup("PatternGUI:label:SelectedHandGesturePattern", typeof(PatternInfos.HandGesturePatternType));
+        _menuPopup = new LocalizedPopup("PatternGUI:label:SelectedMenuPattern", typeof(PatternInfos.MenuPatternType));
+        _otherPopup = new LocalizedPopup("PatternGUI:label:SelectedOtherPattern", typeof(PatternInfos.OtherPatternType));
 
         var support = MetabasePlatformSupport.GetSupportInParents(_root.transform);
         _selectedAnimatorController = support?.GetAnimatorController();
@@ -152,7 +154,7 @@ internal sealed class PatternGUI : IDisposable
 
     public void Draw()
     {
-        EditorGUILayout.LabelField(Localization.S("PatternGUI:Title"), EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("PatternGUI:label:Title".G(), EditorStyles.boldLabel);
 
         _currentMode = (PatternGUIMode)_toolbar.Draw((int)_currentMode);
 
@@ -173,18 +175,14 @@ internal sealed class PatternGUI : IDisposable
                 DrawHeadContactSection();
                 break;
         }
-
-        EditorGUILayout.Space();
-
-        EditorGUILayout.HelpBox(Localization.S("PatternGUI:ExpressionDescription"), MessageType.Info);
     }
 
     private void DrawGestureSection()
     {
         _selectedHandGesturePattern = (PatternInfos.HandGesturePatternType)_gesturePopup.Draw((int)_selectedHandGesturePattern);
         var info = PatternInfos.GetInfo(_selectedHandGesturePattern);
-        EditorGUILayout.HelpBox(Localization.S(info.DescriptionKey), MessageType.Info);
-        if (GUILayout.Button(Localization.S("PatternGUI:AddButton")))
+        EditorGUILayout.HelpBox(info.DescriptionKey.S(), MessageType.Info);
+        if (GUILayout.Button("PatternGUI:button:Add".S()))
         {
             CreatePattern(info.Guid);
         }
@@ -194,8 +192,8 @@ internal sealed class PatternGUI : IDisposable
     {
         _selectedMenuPattern = (PatternInfos.MenuPatternType)_menuPopup.Draw((int)_selectedMenuPattern);
         var info = PatternInfos.GetInfo(_selectedMenuPattern);
-        EditorGUILayout.HelpBox(Localization.S(info.DescriptionKey), MessageType.Info);
-        if (GUILayout.Button(Localization.S("PatternGUI:AddButton")))
+        EditorGUILayout.HelpBox(info.DescriptionKey.S(), MessageType.Info);
+        if (GUILayout.Button("PatternGUI:button:Add".S()))
         {
             CreatePattern(info.Guid, addInstaller: false); // Todo: テンプレートからInstallerが消された場合を想定して、Installerがない場合に追加すべき…?
         }
@@ -203,9 +201,9 @@ internal sealed class PatternGUI : IDisposable
 
     private void DrawAnimatorControllerSection()
     {
-        _selectedAnimatorController = (AnimatorController)EditorGUILayout.ObjectField(Localization.S("PatternGUI:AC:Selected"), _selectedAnimatorController, typeof(AnimatorController), false);
-        EditorGUILayout.HelpBox(Localization.S("PatternGUI:AC:Desc"), MessageType.Info);
-        if (_selectedAnimatorController != null && GUILayout.Button(Localization.S("PatternGUI:AddButton")))
+        _selectedAnimatorController = (AnimatorController)EditorGUILayout.ObjectField("PatternGUI:label:SelectedAnimatorControllerPattern".S(), _selectedAnimatorController, typeof(AnimatorController), false);
+        EditorGUILayout.HelpBox("PatternGUI:label:AnimatorControllerPattern:Desc".S(), MessageType.Info);
+        if (_selectedAnimatorController != null && GUILayout.Button("PatternGUI:button:Add".S()))
         {
             ImportAnimatorController();
         }
@@ -215,8 +213,8 @@ internal sealed class PatternGUI : IDisposable
     {
         _selectedOtherPattern = (PatternInfos.OtherPatternType)_otherPopup.Draw((int)_selectedOtherPattern);
         var info = PatternInfos.GetInfo(_selectedOtherPattern);
-        EditorGUILayout.HelpBox(Localization.S(info.DescriptionKey), MessageType.Info);
-        if (GUILayout.Button(Localization.S("PatternGUI:AddButton")))
+        EditorGUILayout.HelpBox(info.DescriptionKey.S(), MessageType.Info);
+        if (GUILayout.Button("PatternGUI:button:Add".S()))
         {
             CreatePattern(info.Guid);
         }

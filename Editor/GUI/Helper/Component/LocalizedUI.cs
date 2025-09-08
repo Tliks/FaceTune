@@ -4,12 +4,12 @@ internal static class LocalizedUI
 {
     public static void PropertyField(SerializedProperty property, string key, bool includeChildren = true)
     {
-        EditorGUILayout.PropertyField(property, Localization.G(key), includeChildren);
+        EditorGUILayout.PropertyField(property, key.G(), includeChildren);
     }
 
     public static void PropertyField(Rect position, SerializedProperty property, string key, bool includeChildren = true)
     {
-        EditorGUI.PropertyField(position, property, Localization.G(key), includeChildren);
+        EditorGUI.PropertyField(position, property, key.G(), includeChildren);
     }
 }
 
@@ -36,17 +36,17 @@ internal sealed class LocalizedPopup : IDisposable
 
 	/// <summary>
 	/// labelKey: labelKey
-	/// optionKeys: {enumType.Name}:enumValue
+	/// optionKeys: {enumType.Name}:enum:enumValue
 	/// </summary>
-	public LocalizedPopup(string labelKey, Type enumType) : this(labelKey, enumType.GetEnumNames().Select(k => $"{enumType.Name}:{k}"))
+	public LocalizedPopup(string labelKey, Type enumType) : this(labelKey, enumType.GetEnumNames().Select(k => $"{enumType.Name}:enum:{k}"))
 	{
 	}
 
 	/// <summary>
 	/// labelKey: {enumType.Name}
-	/// optionKeys: {enumType.Name}:enumValue
+	/// optionKeys: {enumType.Name}:enum:enumValue
 	/// </summary>
-	public LocalizedPopup(Type enumType) : this(enumType.Name, enumType.GetEnumNames().Select(k => $"{enumType.Name}:{k}"))
+	public LocalizedPopup(Type enumType) : this(enumType.Name, enumType.GetEnumNames().Select(k => $"{enumType.Name}:enum:{k}"))
 	{
 	}
 
@@ -58,8 +58,8 @@ internal sealed class LocalizedPopup : IDisposable
 
 	private (GUIContent? labelContent, GUIContent[] displayContents) BuildDisplayContents()
 	{
-		_labelContent = _labelKey == null ? null : Localization.G(_labelKey);
-        _displayContents = _optionKeys.Select(Localization.G).ToArray();
+		_labelContent = _labelKey == null ? null : _labelKey.G();
+        _displayContents = _optionKeys.Select(k => k.G()).ToArray();
 		return (_labelContent, _displayContents);
 	}
 
@@ -133,9 +133,9 @@ internal sealed class LocalizedToolbar : IDisposable
 	}
 
 	/// <summary>
-	/// optionKeys: {enumType.Name}:enumValue
+	/// optionKeys: {enumType.Name}:enum:enumValue
 	/// </summary>
-	public LocalizedToolbar(Type enumType) : this(enumType.GetEnumNames().Select(k => $"{enumType.Name}:{k}"))
+	public LocalizedToolbar(Type enumType) : this(enumType.GetEnumNames().Select(k => $"{enumType.Name}:enum:{k}"))
 	{
 	}
 
@@ -148,7 +148,7 @@ internal sealed class LocalizedToolbar : IDisposable
 
 	private GUIContent[] BuildDisplayContents()
 	{
-        return _optionKeys.Select(Localization.G).ToArray();
+        return _optionKeys.Select(k => k.G()).ToArray();
 	}
 
 	public int Draw(int selectedIndex, params GUILayoutOption[] options)

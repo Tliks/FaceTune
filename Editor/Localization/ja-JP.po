@@ -5,341 +5,377 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ja-JP\n"
 
-msgid "PatternGUI:Title"
+# PatternGUI
+
+msgid "PatternGUI:label:Title"
 msgstr "表情制御を追加"
 
-msgid "PatternGUI:AddButton"
-msgstr "追加"
-
-msgid "PatternGUI:ExpressionDescription"
-msgstr "追加されるExpressionコンポーネントはヒエラルキーにおいて、下にあるほど優先されます。"
-
-msgid "PatternGUIMode:Gesture"
-msgstr "ジェスチャー"
-
-msgid "PatternGUIMode:Menu"
-msgstr "メニュー"
-
-msgid "PatternGUIMode:AnimatorController"
-msgstr "アニメーターコントローラー"
-
-msgid "PatternGUIMode:Others"
-msgstr "その他"
-
-msgid "HandGesturePatternType"
+msgid "PatternGUI:label:SelectedHandGesturePattern"
 msgstr "選択中のパターン："
 
-msgid "HandGesturePatternType:LeftOnly"
+msgid "PatternGUI:label:SelectedMenuPattern"
+msgstr "選択中のパターン："
+
+msgid "PatternGUI:label:SelectedAnimatorControllerPattern"
+msgstr "選択中のアニメーターコントローラー："
+
+msgid "PatternGUI:label:AnimatorControllerPattern:Desc"
+msgstr "アニメーターコントローラーを解析し、出来るだけ近い動作をする表情制御を生成します。"
+
+msgid "PatternGUI:label:SelectedOtherPattern"
+msgstr "選択中のパターン："
+
+msgid "PatternGUI:button:Add"
+msgstr "追加"
+
+# PatternGUIMode(enum)
+
+msgid "PatternGUIMode:enum:Gesture"
+msgstr "ジェスチャー"
+
+msgid "PatternGUIMode:enum:Menu"
+msgstr "メニュー"
+
+msgid "PatternGUIMode:enum:AnimatorController"
+msgstr "アニメーターコントローラー"
+
+msgid "PatternGUIMode:enum:Others"
+msgstr "その他"
+
+# HandGesturePatternType(enum)
+
+msgid "HandGesturePatternType:enum:LeftOnly"
 msgstr "左手のみ"
 
-msgid "HandGesturePatternType:LeftOnly:Desc"
+msgid "HandGesturePatternType:enum:LeftOnly:Desc"
 msgstr "左手のみのパターンです。(8通り)"
 
-msgid "HandGesturePatternType:RightOnly"
+msgid "HandGesturePatternType:enum:RightOnly"
 msgstr "右手のみ"
 
-msgid "HandGesturePatternType:RightOnly:Desc"
+msgid "HandGesturePatternType:enum:RightOnly:Desc"
 msgstr "右手のみのパターンです。(8通り)"
 
-msgid "HandGesturePatternType:BasicRight"
+msgid "HandGesturePatternType:enum:BasicRight"
 msgstr "右手優先"
 
-msgid "HandGesturePatternType:BasicRight:Desc"
+msgid "HandGesturePatternType:enum:BasicRight:Desc"
 msgstr "右手が優先される基本的なパターンです。(16通り)"
 
 msgid "HandGesturePatternType:BasicLeft"
 msgstr "左手優先"
 
-msgid "HandGesturePatternType:BasicLeft:Desc"
+msgid "HandGesturePatternType:enum:BasicLeft:Desc"
 msgstr "左手が優先される基本的なパターンです。(16通り)"
 
-msgid "HandGesturePatternType:HandSign"
+msgid "HandGesturePatternType:enum:HandSign"
 msgstr "両手全パターン"
 
-msgid "HandGesturePatternType:HandSign:Desc"
+msgid "HandGesturePatternType:enum:HandSign:Desc"
 msgstr "左手と右手の組み合わせで最大64通りのジェスチャーを作成できるパターンです。(64通り)"
 
-msgid "HandGesturePatternType:Blending"
+msgid "HandGesturePatternType:enum:Blending"
 msgstr "両手のブレンド"
 
-msgid "HandGesturePatternType:Blending:Desc"
+msgid "HandGesturePatternType:enum:Blending:Desc"
 msgstr "片手ごとのアニメーションがブレンドさせるパターンです。目と口の制御をそれぞれの手に割り当てる際などに便利です。(64通り)"
 
-msgid "MenuPatternType"
-msgstr "選択中のパターン："
+# MenuPatternType(enum)
 
-msgid "MenuPatternType:ExclusiveMenu"
+msgid "MenuPatternType:enum:ExclusiveMenu"
 msgstr "排他メニュー"
 
-msgid "MenuPatternType:ExclusiveMenu:Desc"
+msgid "MenuPatternType:enum:ExclusiveMenu:Desc"
 msgstr "排他のメニューを生成するサンプルです。"
 
-msgid "MenuPatternType:BlendingMenu"
+msgid "MenuPatternType:enum:BlendingMenu"
 msgstr "ブレンドメニュー"
 
-msgid "MenuPatternType:BlendingMenu:Desc"
+msgid "MenuPatternType:enum:BlendingMenu:Desc"
 msgstr "他の表情とブレンドするメニューを生成するサンプルです。"
 
-msgid "OtherPatternType"
-msgstr "選択中のパターン："
+# OtherPatternType(enum)
 
-msgid "OtherPatternType:HeadContact"
+msgid "OtherPatternType:enum:HeadContact"
 msgstr "ヘッドコンタクト"
 
-msgid "OtherPatternType:HeadContact:Desc"
+msgid "OtherPatternType:enum:HeadContact:Desc"
 msgstr "コンタクトを用いたサンプルです。撫でられた際の表情を指定する際などに便利です。"
 
-msgid "PatternGUI:AC:Selected"
-msgstr "選択中のアニメーターコントローラー"
+# FaceTuneAssistant
 
-msgid "PatternGUI:AC:Desc"
-msgstr "アニメーターコントローラーを解析し、出来るだけ近い動作をする表情制御を生成します。"
+msgid "FaceTuneAssistant:label:ExpressionDescription"
+msgstr "追加されるExpressionコンポーネントはヒエラルキーにおいて、下にあるほど優先されます。"
 
-msgid "ExpressionDataComponent:MissingBlendShapes"
+# ExpressionDataComponent
+
+msgid "ExpressionDataComponent:label:MissingBlendShapes"
 msgstr "見つからないブレンドシェイプ"
 
-msgid "ExpressionDataComponent:AnimationClipMode"
+msgid "ExpressionDataComponent:label:AnimationClipMode"
 msgstr "アニメーションクリップ"
 
-msgid "ExpressionDataComponent:Clip"
+msgid "ExpressionDataComponent:prop:Clip"
 msgstr "アニメーションクリップ"
 
-msgid "ExpressionDataComponent:Clip:FacialAnimationCount"
-msgstr "表情アニメーションの数"
-
-msgid "ExpressionDataComponent:Clip:NonFacialAnimationCount"
-msgstr "表情以外のアニメーションの数"
-
-msgid "ExpressionDataComponent:Clip:tooltip"
+msgid "ExpressionDataComponent:prop:Clip:tooltip"
 msgstr "このアニメーションクリップは、表情用のブレンドシェイプアニメーションを主に適用しますが、耳の動きなど他の種類のアニメーションも含めることができ、ビルド時に適用されます。"
 
-msgid "ExpressionDataComponent:Import"
+msgid "ExpressionDataComponent:button:Import"
 msgstr "インポート"
 
-msgid "ExpressionDataComponent:Import:tooltip"
+msgid "ExpressionDataComponent:button:Import:tooltip"
 msgstr "アニメーションクリップをインポートします。インポートしない場合でも動作します。インポートは表情アニメーションを手動設定へと変換し、表情以外のアニメーションは専用のアニメーションクリップが作成されます。"
 
-msgid "ExpressionDataComponent:BlendShapeAnimations"
+msgid "ExpressionDataComponent:label:ClipFacialAnimationCount"
+msgstr "表情アニメーションの数"
+
+msgid "ExpressionDataComponent:label:ClipNonFacialAnimationCount"
+msgstr "表情以外のアニメーションの数"
+
+msgid "ExpressionDataComponent:prop:BlendShapeAnimations"
 msgstr "表情アニメーション"
 
-msgid "ExpressionDataComponent:BlendShapeAnimations:tooltip"
+msgid "ExpressionDataComponent:prop:BlendShapeAnimations:tooltip"
 msgstr "手動設定用の表情用アニメーションです。アニメーションクリップとは併用でき、どちらか一方のみを使用することもできます。同じブレンドシェイプが同時に設定された場合は手動設定が優先されます。"
 
-msgid "ExpressionDataComponent:OpenEditor"
+msgid "ExpressionDataComponent:button:OpenEditor"
 msgstr "エディタを開く"
 
-msgid "ExpressionDataComponent:AdvancedOptions"
+msgid "ExpressionDataComponent:label:AdvancedOptions"
 msgstr "高度な設定"
 
-msgid "ExpressionDataComponent:AllBlendShapeAnimationAsFacial"
+msgid "ExpressionDataComponent:prop:AllBlendShapeAnimationAsFacial"
 msgstr "全てのブレンドシェイプアニメーションを表情用アニメーションとして扱う"
 
-msgid "ExpressionDataComponent:AllBlendShapeAnimationAsFacial:tooltip"
+msgid "ExpressionDataComponent:prop:AllBlendShapeAnimationAsFacial:tooltip"
 msgstr "アニメーションクリップに含まれるブレンドシェイプアニメーションを全て表情用アニメーションとして扱います。他のアバター向けのアニメーションクリップのように、パスが異なるものを扱う場合に便利です。"
 
-msgid "ExpressionDataClipImporter:ConfirmCreateClip:title"
+# ExpressionDataClipImporter
+
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:title"
 msgstr "アニメーションクリップを作成しますか？"
 
-msgid "ExpressionDataClipImporter:ConfirmCreateClip:message"
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:message"
 msgstr "表情以外のアニメーションが検知されました。表情以外のアニメーションを維持する為にアニメーションクリップを作成しますか？作成しない場合、表情アニメーションのみインポートされ、表情以外のアニメーションは引き継がれません。"
 
-msgid "ExpressionDataClipImporter:ConfirmCreateClip:create"
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:create"
 msgstr "作成する"
 
-msgid "ExpressionDataClipImporter:ConfirmCreateClip:skip"
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:skip"
 msgstr "作成しない"
 
-msgid "ExpressionDataClipImporter:ConfirmCreateClip:folder"
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder"
 msgstr "表情以外のアニメーション用のアニメーションクリップの保存先を選択してください"
 
-msgid "ExpressionComponent:FacialSettings"
-msgstr "表情設定"
+# ExpressionComponent
 
-msgid "ExpressionComponent:EnableRealTimePreview"
+msgid "ExpressionComponent:prop:EnableRealTimePreview"
 msgstr "この表情を常にプレビューする"
 
-msgid "ExpressionComponent:EnableRealTimePreview:tooltip"
+msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
 msgstr "この表情を常にプレビューする場合に設定します。アバター内で1つの表情のみ有効にできます。"
 
-msgid "ExpressionComponent:ExpressionSettings"
-msgstr "アニメーション設定"
+# FacialSettings
 
-msgid "FacialStyleComponent:BlendShapeAnimations"
-msgstr "表情アニメーション"
+msgid "FacialSettings"
+msgstr "表情設定"
 
-msgid "FacialStyleComponent:BlendShapeAnimations:tooltip"
-msgstr "表情アニメーション(顔つき)の設定です。ここで設定された内容がこのGameObject以下の表情に全て適用されます。"
-
-msgid "FacialStyleComponent:ApplyToRenderer"
-msgstr "SkinnedMeshRendererに適用する"
-
-msgid "FacialStyleComponent:ApplyToRenderer:tooltip"
-msgstr "ビルド時にSkinnedMeshRendererにこの表情を適用します。アニメーションが動作しない環境下で顔つきを適用したい場合に有効です。"
-
-msgid "FacialStyleComponent:UpdateFromScene"
-msgstr "SkinnedMeshRendererから取得"
-
-msgid "FacialStyleComponent:UpdateFromScene:tooltip"
-msgstr "適用対象のSkinnedMeshRendererに設定されているブレンドシェイプを取得します"
-
-msgid "FacialStyleComponent:OpenEditor"
-msgstr "エディタを開く"
-
-msgid "FacialStyleComponent:AsDefault"
-msgstr "デフォルトとして設定"
-
-msgid "FacialStyleComponent:AsDefault:tooltip"
-msgstr "この表情をデフォルトとして設定します。この顔つきの影響を受け、かつ常に再生される表情(ExpressionComponent)を子に生成します。グレーアウトしている場合既に設定されています。"
-
-msgid "ConditionComponent:HandGestureConditions"
-msgstr "ハンドジェスチャー"
-
-msgid "ConditionComponent:ParameterConditions"
-msgstr "パラメーター"
-
-msgid "PatternComponent:Description"
-msgstr "このコンポーネントはアタッチされたGameObject以下のExpressionを排他制御にします。各Expressionに紐づいたConditionが排他ではない場合、Hierarchyにおいて下にあるExpressionが優先されます。このコンポーネントを使用した上で排他のConditionを設定することを推奨します。"
-
-msgid "BlendShapeWeight:Name"
-msgstr "ブレンドシェイプ名"
-
-msgid "BlendShapeWeight:Weight"
-msgstr "値"
-
-msgid "ExpressionSettings:LoopTime"
-msgstr "ループ"
-
-msgid "ExpressionSettings:LoopTime:tooltip"
-msgstr "アニメーションをループする場合に設定します。マルチフレームアニメーションのときに有効です。"
-
-msgid "ExpressionSettings:MotionTimeParameterName"
-msgstr "MotionTime用のパラメーター名"
-
-msgid "ExpressionSettings:MotionTimeParameterName:tooltip"
-msgstr "MotionTime用のパラメーター(float)の名前を指定します。このパラメータの値に応じて、マルチフレームアニメーションの再生地点が変化します。マルチフレームアニメーションかつループがOFFのときに有効です。"
-
-msgid "FacialSettings:AllowLipSync"
+msgid "FacialSettings:prop:AllowLipSync"
 msgstr "リップシンクを有効にする"
 
-msgid "FacialSettings:AllowLipSync:tooltip"
+msgid "FacialSettings:prop:AllowLipSync:tooltip"
 msgstr "表情を再生する際にリップシンクを有効にするかどうかを設定します。`維持`の場合、より優先度が低い表情の設定が用いられます。"
 
-msgid "FacialSettings:AllowEyeBlink"
+msgid "FacialSettings:prop:AllowEyeBlink"
 msgstr "まばたきを有効にする"
 
-msgid "FacialSettings:AllowEyeBlink:tooltip"
+msgid "FacialSettings:prop:AllowEyeBlink:tooltip"
 msgstr "表情を再生する際にまばたきを有効にするかどうかを設定します。`維持`の場合、より優先度が低い表情の設定が用いられます。"
 
-msgid "FacialSettings:EnableBlending"
+msgid "FacialSettings:prop:EnableBlending"
 msgstr "他の表情とブレンドする"
 
-msgid "FacialSettings:EnableBlending:tooltip"
+msgid "FacialSettings:prop:EnableBlending:tooltip"
 msgstr "より優先度が低い表情とブレンドするかどうかを設定します。例えば、現在の表情に瞬きのブレンドシェイプをブレンドしたい場合などです。OFFのとき、指定されていない表情用ブレンドシェイプを全て0として扱うことで、より優先度が低い表情を完全に上書きします。デフォルトでOFFです。"
 
-msgid "HandGestureCondition:EqualityComparison"
-msgstr "条件"
+# ExpressionSettings
 
-msgid "HandGestureCondition:EqualityComparison:Equal"
-msgstr "一致"
+msgid "ExpressionSettings"
+msgstr "アニメーション設定"
 
-msgid "HandGestureCondition:EqualityComparison:NotEqual"
-msgstr "一致しない"
+msgid "ExpressionSettings:prop:LoopTime"
+msgstr "ループ"
 
-msgid "ParameterCondition:ParameterName"
-msgstr "パラメーター名"
+msgid "ExpressionSettings:prop:LoopTime:tooltip"
+msgstr "アニメーションをループする場合に設定します。マルチフレームアニメーションのときに有効です。"
 
-msgid "ParameterCondition:IntValue"
-msgstr "値(int)"
+msgid "ExpressionSettings:prop:MotionTimeParameterName"
+msgstr "MotionTime用のパラメーター名"
 
-msgid "ParameterCondition:FloatValue"
-msgstr "値(float)"
+msgid "ExpressionSettings:prop:MotionTimeParameterName:tooltip"
+msgstr "MotionTime用のパラメーター(float)の名前を指定します。このパラメータの値に応じて、マルチフレームアニメーションの再生地点が変化します。マルチフレームアニメーションかつループがOFFのときに有効です。"
 
-msgid "ParameterCondition:BoolValue"
-msgstr "値(bool)"
+# FacialStyleComponent
 
-msgid "HandGesture"
+msgid "FacialStyleComponent:prop:BlendShapeAnimations"
+msgstr "表情アニメーション"
+
+msgid "FacialStyleComponent:prop:BlendShapeAnimations:tooltip"
+msgstr "表情アニメーション(顔つき)の設定です。ここで設定された内容がこのGameObject以下の表情に全て適用されます。"
+
+msgid "FacialStyleComponent:prop:ApplyToRenderer"
+msgstr "SkinnedMeshRendererに適用する"
+
+msgid "FacialStyleComponent:prop:ApplyToRenderer:tooltip"
+msgstr "ビルド時にSkinnedMeshRendererにこの表情を適用します。アニメーションが動作しない環境下で顔つきを適用したい場合に有効です。"
+
+msgid "FacialStyleComponent:button:UpdateFromScene"
+msgstr "SkinnedMeshRendererから取得"
+
+msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
+msgstr "適用対象のSkinnedMeshRendererに設定されているブレンドシェイプを取得します"
+
+msgid "FacialStyleComponent:button:OpenEditor"
+msgstr "エディタを開く"
+
+msgid "FacialStyleComponent:button:AsDefault"
+msgstr "デフォルトとして設定"
+
+msgid "FacialStyleComponent:button:AsDefault:tooltip"
+msgstr "この表情をデフォルトとして設定します。この顔つきの影響を受け、かつ常に再生される表情(ExpressionComponent)を子に生成します。グレーアウトしている場合既に設定されています。"
+
+# PatternComponent
+
+msgid "PatternComponent:label:Desc"
+msgstr "このコンポーネントはアタッチされたGameObject以下のExpressionを排他制御にします。各Expressionに紐づいたConditionが排他ではない場合、Hierarchyにおいて下にあるExpressionが優先されます。このコンポーネントを使用した上で排他のConditionを設定することを推奨します。"
+
+# BlendShapeWeight
+
+msgid "BlendShapeWeight:prop:Name"
+msgstr "ブレンドシェイプ名"
+
+msgid "BlendShapeWeight:prop:Weight"
+msgstr "値"
+
+# ConditionComponent
+
+msgid "ConditionComponent:prop:HandGestureConditions"
 msgstr "ハンドジェスチャー"
 
-msgid "HandGesture:Neutral"
-msgstr "Neutral"
+msgid "ConditionComponent:prop:ParameterConditions"
+msgstr "パラメーター"
 
-msgid "HandGesture:Fist"
-msgstr "Fist"
-
-msgid "HandGesture:HandOpen"
-msgstr "HandOpen"
-
-msgid "HandGesture:FingerPoint"
-msgstr "FingerPoint"
-
-msgid "HandGesture:Victory"
-msgstr "Victory"
-
-msgid "HandGesture:RockNRoll"
-msgstr "RockNRoll"
-
-msgid "HandGesture:HandGun"
-msgstr "HandGun"
-
-msgid "HandGesture:ThumbsUp"
-msgstr "ThumbsUp"
+# Hand(enum)
 
 msgid "Hand"
 msgstr "右手/左手"
 
-msgid "Hand:Left"
+msgid "Hand:enum:Left"
 msgstr "左手"
 
-msgid "Hand:Right"
+msgid "Hand:enum:Right"
 msgstr "右手"
+
+# HandGesture(enum)
+
+msgid "HandGesture"
+msgstr "ハンドジェスチャー"
+
+msgid "HandGesture:enum:Neutral"
+msgstr "Neutral"
+
+msgid "HandGesture:enum:Fist"
+msgstr "Fist"
+
+msgid "HandGesture:enum:HandOpen"
+msgstr "HandOpen"
+
+msgid "HandGesture:enum:FingerPoint"
+msgstr "FingerPoint"
+
+msgid "HandGesture:enum:Victory"
+msgstr "Victory"
+
+msgid "HandGesture:enum:RockNRoll"
+msgstr "RockNRoll"
+
+msgid "HandGesture:enum:HandGun"
+msgstr "HandGun"
+
+msgid "HandGesture:enum:ThumbsUp"
+msgstr "ThumbsUp"
+
+# EqualityComparison(enum)
+msgid "EqualityComparison"
+msgstr "条件"
+
+msgid "EqualityComparison:enum:Equal"
+msgstr "一致"
+
+msgid "EqualityComparison:enum:NotEqual"
+msgstr "一致しない"
+
+# ParameterCondition
+
+msgid "ParameterCondition:prop:ParameterName"
+msgstr "パラメーター名"
+
+msgid "ParameterCondition:prop:IntValue"
+msgstr "値(int)"
+
+msgid "ParameterCondition:prop:FloatValue"
+msgstr "値(float)"
+
+msgid "ParameterCondition:prop:BoolValue"
+msgstr "値(bool)"
+
+# ParameterType(enum)
 
 msgid "ParameterType"
 msgstr "パラメーターの種類"
 
-msgid "ParameterType:Int"
+msgid "ParameterType:enum:Int"
 msgstr "int"
 
-msgid "ParameterType:Float"
+msgid "ParameterType:enum:Float"
 msgstr "float"
 
-msgid "ParameterType:Bool"
+msgid "ParameterType:enum:Bool"
 msgstr "bool"
+
+# ComparisonType(enum)
 
 msgid "ComparisonType"
 msgstr "比較演算子"
 
-msgid "ComparisonType:Equal"
+msgid "ComparisonType:enum:Equal"
 msgstr "等しい"
 
-msgid "ComparisonType:NotEqual"
+msgid "ComparisonType:enum:NotEqual"
 msgstr "等しくない"
 
-msgid "ComparisonType:GreaterThan"
+msgid "ComparisonType:enum:GreaterThan"
 msgstr "より大きい"
 
-msgid "ComparisonType:LessThan"
+msgid "ComparisonType:enum:LessThan"
 msgstr "より小さい"
 
-msgid "EqualityComparison"
-msgstr "等価性"
-
-msgid "EqualityComparison:Equal"
-msgstr "等しい"
-
-msgid "EqualityComparison:NotEqual"
-msgstr "等しくない"
+# TrackingPermission(enum)
 
 msgid "TrackingPermission"
 msgstr "トラッキング"
 
-msgid "TrackingPermission:Allow"
+msgid "TrackingPermission:enum:Allow"
 msgstr "有効"
 
-msgid "TrackingPermission:Disallow"
+msgid "TrackingPermission:enum:Disallow"
 msgstr "無効"
 
-msgid "TrackingPermission:Keep"
+msgid "TrackingPermission:enum:Keep"
 msgstr "維持"
+
+# ClipImportOption(enum)
 
 msgid "ClipImportOption"
 msgstr "表情アニメーションの取り込み"
@@ -347,83 +383,85 @@ msgstr "表情アニメーションの取り込み"
 msgid "ClipImportOption:tooltip"
 msgstr "アニメーションクリップに含まれる表情アニメーションの取り扱いに関するオプションです。"
 
-msgid "ClipImportOption:All"
+msgid "ClipImportOption:enum:All"
 msgstr "すべて"
 
-msgid "ClipImportOption:NonZero"
+msgid "ClipImportOption:enum:NonZero"
 msgstr "0以外"
 
-msgid "ClipImportOption:FacialStyleOverridesOrNonZero"
+msgid "ClipImportOption:enum:FacialStyleOverridesOrNonZero"
 msgstr "顔つきの上書きまたは0以外"
 
-msgid "FacialEditor:Common:Search"
+# FacialEditor
+
+msgid "FacialEditor:label:CommonSearch"
 msgstr "検索:"
 
-msgid "FacialEditor:Base:Title"
+msgid "FacialEditor:label:BaseShapes"
 msgstr "ベース"
 
-msgid "FacialEditor:Selected:Title"
+msgid "FacialEditor:label:SelectedShapes"
 msgstr "選択中"
 
-msgid "FacialEditor:Selected:RemoveAll0"
-msgstr "0を全削除"
-
-msgid "FacialEditor:Unselected:Title"
+msgid "FacialEditor:label:UnselectedShapes"
 msgstr "未選択"
 
-msgid "FacialEditor:Unselected:AddAll"
+msgid "FacialEditor:button:RemoveAll0"
+msgstr "0を全削除"
+
+msgid "FacialEditor:button:AddAll"
 msgstr "全て追加"
 
-msgid "FacialEditor:Common:Weight"
+msgid "FacialEditor:label:Weight"
 msgstr "値:"
 
-msgid "FacialEditor:Target:Title"
+msgid "FacialEditor:label:Target"
 msgstr "適用対象"
 
-msgid "FacialEditor:Target:Renderer"
+msgid "FacialEditor:label:TargetRenderer"
 msgstr "対象のレンダラー"
 
-msgid "FacialEditor:Common:Save"
+msgid "FacialEditor:button:Save"
 msgstr "保存（Ctrl+S）"
 
-msgid "FacialEditor:Filter:Title"
+msgid "FacialEditor:label:filter"
 msgstr "グルーピング"
 
-msgid "FacialEditor:Filter:All"
+msgid "FacialEditor:button:Filter:All"
 msgstr "全選択"
 
-msgid "FacialEditor:Filter:None"
+msgid "FacialEditor:button:Filter:None"
 msgstr "全解除"
 
-msgid "FacialEditor:Filter:Left"
+msgid "FacialEditor:button:Filter:Left"
 msgstr "左"
 
-msgid "FacialEditor:Filter:Right"
+msgid "FacialEditor:button:Filter:Right"
 msgstr "右"
 
-msgid "FacialEditor:ClipImport:Title"
+msgid "FacialEditor:label:ClipImport"
 msgstr "アニメーションクリップのインポート"
 
-msgid "FacialEditor:ClipImport:Clip"
+msgid "FacialEditor:label:Clip"
 msgstr "アニメーションクリップ"
 
-msgid "FacialEditor:ClipImport:ImportOption"
+msgid "FacialEditor:label:ImportOption"
 msgstr "インポート設定"
 
-msgid "FacialEditor:ClipImport:Import"
+msgid "FacialEditor:button:Import"
 msgstr "インポート"
 
-msgid "FacialEditor:UnsavedChanges:Title"
+msgid "FacialEditor:dialog:UnsavedChanges:title"
 msgstr "未保存の変更"
 
-msgid "FacialEditor:UnsavedChanges:Message"
+msgid "FacialEditor:dialog:UnsavedChanges:message"
 msgstr "このウィンドウには保存していない変更があります。保存しますか？"
 
-msgid "FacialEditor:UnsavedChanges:Save"
+msgid "FacialEditor:dialog:UnsavedChanges:save"
 msgstr "保存"
 
-msgid "FacialEditor:UnsavedChanges:Discard"
+msgid "FacialEditor:dialog:UnsavedChanges:discard"
 msgstr "破棄"
 
-msgid "FacialEditor:UnsavedChanges:Cancel"
+msgid "FacialEditor:dialog:UnsavedChanges:cancel"
 msgstr "キャンセル"

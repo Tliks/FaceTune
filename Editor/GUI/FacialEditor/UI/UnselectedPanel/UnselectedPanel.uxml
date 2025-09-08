@@ -1,11 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
     <ui:VisualElement name="unselected-shapes-panel">
-        <ui:Label name="unselected-label" class="ndmf-tr" text="FacialEditor:Unselected:Title" />
-        <ui:TextField name="unselected-search-field" class="ndmf-tr" label="FacialEditor:Common:Search" />
+        <ui:Label name="unselected-label" class="ndmf-tr" text="FacialEditor:label:UnselectedShapes" />
+        <ui:TextField name="unselected-search-field" class="ndmf-tr" label="FacialEditor:label:CommonSearch" />
         <ui:VisualElement name="unselected-controls-container">
-            <ui:Label name="add-weight-label" class="ndmf-tr" text="FacialEditor:Common:Weight" />
+            <ui:Label name="add-weight-label" class="ndmf-tr" text="FacialEditor:label:Weight" />
             <engine:FloatField name="add-weight-field" value="100"/>
-            <ui:Button name="add-all-button" class="ndmf-tr" text="FacialEditor:Unselected:AddAll" />
+            <ui:Button name="add-all-button" class="ndmf-tr" text="FacialEditor:button:AddAll" />
         </ui:VisualElement>
         <ui:ListView name="unselected-list-view" focusable="false" selection-type="None" show-alternating-row-backgrounds="ContentOnly" style="flex-grow: 1; margin-top: 5px;" />
     </ui:VisualElement>
