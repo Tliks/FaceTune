@@ -1,10 +1,11 @@
 using System.IO;
+using Aoyon.FaceTune.Gui;
 using nadena.dev.ndmf.localization;
 using nadena.dev.ndmf.ui;
 using Newtonsoft.Json;
 using UnityEngine.UIElements;
 
-namespace Aoyon.FaceTune.Gui;
+namespace Aoyon.FaceTune;
 
 [InitializeOnLoad]
 internal static class Localization
