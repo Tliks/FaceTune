@@ -70,6 +70,8 @@ Animation Clipの割り当て、手動での設定、またはその併用など
 条件を設定します。アタッチされたGameObject以下の`Expression`コンポーネントと紐づきます。ハンドジェスチャーもしくはパラメーターを用いた条件が設定でき、複数の条件はAND演算となります。
 同じGameObjectに複数のConditionをアタッチした場合はそれらのOR演算となり、ConditionをアタッチしたGameObjectを入れ子にした場合はそれらのAND演算となります。
 
+このコンポーネントに設定するパラメータをModular Avatar Parametersで定義している場合、自動リネーム機能がオンの場合には対応していません。自動リネームをオフにし、リネームを用いる場合はリネーム後の名前をこのコンポーネントに設定するようにしてください。
+
 ### MenuItem (Modular Avatar)
 FaceTuneのコンポーネントではありませんが、Toggle/Buttonの場合、boolの条件として`Condition`コンポーネント同様に動作します。パラメーターは設定されていない場合、自動で生成されます。メニューとして使う場合はMenu Installer (Modular Avatar) を同時に使用してください。またRadialの場合、Motion Timeとして動作します。アタッチされたGameObject以下の`Expression`コンポーネントに対しMotion Timeを設定します。
 
