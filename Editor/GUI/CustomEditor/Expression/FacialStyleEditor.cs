@@ -16,16 +16,16 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
     protected override void OnInnerInspectorGUI()
     {
         DrawDefaultInspector(true);
-        if (GUILayout.Button("FacialStyleComponent:button:UpdateFromScene".G()))
+        if (GUILayout.Button("FacialStyleComponent:button:UpdateFromScene".LG()))
         {
             UpdateFromScene();
         }
-        if (GUILayout.Button("FacialStyleComponent:button:OpenEditor".G()))
+        if (GUILayout.Button("FacialStyleComponent:button:OpenEditor".LG()))
         {
             OpenEditor();
         }
         GUI.enabled = !_hasDefault;
-        if (GUILayout.Button("FacialStyleComponent:button:AsDefault".G()))
+        if (GUILayout.Button("FacialStyleComponent:button:AsDefault".LG()))
         {
             AsDefault();
         }

@@ -69,6 +69,6 @@ internal static class Localization
 
 internal static class LocalizationExtensions
 {
-    public static string S(this string key) => Localization.S(key);
-    public static GUIContent G(this string key) => Localization.G(key);
+    public static string LS(this string key) => Localization.S(key);
+    public static GUIContent LG(this string key) => Localization.G(key);
 }

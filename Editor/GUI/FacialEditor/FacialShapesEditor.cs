@@ -63,7 +63,7 @@ internal class FacialShapesEditor : EditorWindow
 
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
         titleContent = new GUIContent("Facial Shapes Editor");
-        saveChangesMessage = Localization.S("FacialEditor:UnsavedChanges:Message");
+        saveChangesMessage = "FacialEditor:UnsavedChanges:Message".LS();
 
         hasUnsavedChanges = false;
         SetupKeyboardShortcuts();
@@ -106,11 +106,11 @@ internal class FacialShapesEditor : EditorWindow
     private bool ProcessUnsavedChanges(FacialShapesEditor window)
     {
         var result = EditorUtility.DisplayDialogComplex(
-            Localization.S("FacialEditor:UnsavedChanges:Title"),
-            Localization.S("FacialEditor:UnsavedChanges:Message"), 
-            Localization.S("FacialEditor:UnsavedChanges:Save"), 
-            Localization.S("FacialEditor:UnsavedChanges:Discard"), 
-            Localization.S("FacialEditor:UnsavedChanges:Cancel")
+            "FacialEditor:UnsavedChanges:Title".LS(),
+            "FacialEditor:UnsavedChanges:Message".LS(), 
+            "FacialEditor:UnsavedChanges:Save".LS(), 
+            "FacialEditor:UnsavedChanges:Discard".LS(), 
+            "FacialEditor:UnsavedChanges:Cancel".LS()
         );
 
         bool processed;

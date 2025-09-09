@@ -4,12 +4,12 @@ internal static class LocalizedUI
 {
     public static void PropertyField(SerializedProperty property, string key, bool includeChildren = true)
     {
-        EditorGUILayout.PropertyField(property, key.G(), includeChildren);
+        EditorGUILayout.PropertyField(property, key.LG(), includeChildren);
     }
 
     public static void PropertyField(Rect position, SerializedProperty property, string key, bool includeChildren = true)
     {
-        EditorGUI.PropertyField(position, property, key.G(), includeChildren);
+        EditorGUI.PropertyField(position, property, key.LG(), includeChildren);
     }
 }
 
@@ -58,8 +58,8 @@ internal sealed class LocalizedPopup : IDisposable
 
 	private (GUIContent? labelContent, GUIContent[] displayContents) BuildDisplayContents()
 	{
-		_labelContent = _labelKey == null ? null : _labelKey.G();
-        _displayContents = _optionKeys.Select(k => k.G()).ToArray();
+		_labelContent = _labelKey == null ? null : _labelKey.LG();
+        _displayContents = _optionKeys.Select(k => k.LG()).ToArray();
 		return (_labelContent, _displayContents);
 	}
 
@@ -148,7 +148,7 @@ internal sealed class LocalizedToolbar : IDisposable
 
 	private GUIContent[] BuildDisplayContents()
 	{
-        return _optionKeys.Select(k => k.G()).ToArray();
+        return _optionKeys.Select(k => k.LG()).ToArray();
 	}
 
 	public int Draw(int selectedIndex, params GUILayoutOption[] options)

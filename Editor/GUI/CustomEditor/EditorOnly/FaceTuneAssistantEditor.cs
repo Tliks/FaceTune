@@ -27,7 +27,7 @@ internal class FaceTuneAssistantEditor : FaceTuneIMGUIEditorBase<FaceTuneAssista
     {
         _patternProvider.Draw();
         EditorGUILayout.Space();
-        EditorGUILayout.HelpBox("FaceTuneAssistant:label:ExpressionDescription".S(), MessageType.Info);
+        EditorGUILayout.HelpBox("FaceTuneAssistant:label:ExpressionDescription".LS(), MessageType.Info);
         // EditorGUILayout.Space();
         // _suggestionProvider.Draw();
     }
@@ -154,7 +154,7 @@ internal sealed class PatternGUI : IDisposable
 
     public void Draw()
     {
-        EditorGUILayout.LabelField("PatternGUI:label:Title".G(), EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("PatternGUI:label:Title".LG(), EditorStyles.boldLabel);
 
         _currentMode = (PatternGUIMode)_toolbar.Draw((int)_currentMode);
 
@@ -181,8 +181,8 @@ internal sealed class PatternGUI : IDisposable
     {
         _selectedHandGesturePattern = (PatternInfos.HandGesturePatternType)_gesturePopup.Draw((int)_selectedHandGesturePattern);
         var info = PatternInfos.GetInfo(_selectedHandGesturePattern);
-        EditorGUILayout.HelpBox(info.DescriptionKey.S(), MessageType.Info);
-        if (GUILayout.Button("PatternGUI:button:Add".S()))
+        EditorGUILayout.HelpBox(info.DescriptionKey.LS(), MessageType.Info);
+        if (GUILayout.Button("PatternGUI:button:Add".LS()))
         {
             CreatePattern(info.Guid);
         }
@@ -192,8 +192,8 @@ internal sealed class PatternGUI : IDisposable
     {
         _selectedMenuPattern = (PatternInfos.MenuPatternType)_menuPopup.Draw((int)_selectedMenuPattern);
         var info = PatternInfos.GetInfo(_selectedMenuPattern);
-        EditorGUILayout.HelpBox(info.DescriptionKey.S(), MessageType.Info);
-        if (GUILayout.Button("PatternGUI:button:Add".S()))
+        EditorGUILayout.HelpBox(info.DescriptionKey.LS(), MessageType.Info);
+        if (GUILayout.Button("PatternGUI:button:Add".LS()))
         {
             CreatePattern(info.Guid, addInstaller: false); // Todo: テンプレートからInstallerが消された場合を想定して、Installerがない場合に追加すべき…?
         }
@@ -201,9 +201,9 @@ internal sealed class PatternGUI : IDisposable
 
     private void DrawAnimatorControllerSection()
     {
-        _selectedAnimatorController = (AnimatorController)EditorGUILayout.ObjectField("PatternGUI:label:SelectedAnimatorControllerPattern".S(), _selectedAnimatorController, typeof(AnimatorController), false);
-        EditorGUILayout.HelpBox("PatternGUI:label:AnimatorControllerPattern:Desc".S(), MessageType.Info);
-        if (_selectedAnimatorController != null && GUILayout.Button("PatternGUI:button:Add".S()))
+        _selectedAnimatorController = (AnimatorController)EditorGUILayout.ObjectField("PatternGUI:label:SelectedAnimatorControllerPattern".LS(), _selectedAnimatorController, typeof(AnimatorController), false);
+        EditorGUILayout.HelpBox("PatternGUI:label:AnimatorControllerPattern:Desc".LS(), MessageType.Info);
+        if (_selectedAnimatorController != null && GUILayout.Button("PatternGUI:button:Add".LS()))
         {
             ImportAnimatorController();
         }
@@ -213,8 +213,8 @@ internal sealed class PatternGUI : IDisposable
     {
         _selectedOtherPattern = (PatternInfos.OtherPatternType)_otherPopup.Draw((int)_selectedOtherPattern);
         var info = PatternInfos.GetInfo(_selectedOtherPattern);
-        EditorGUILayout.HelpBox(info.DescriptionKey.S(), MessageType.Info);
-        if (GUILayout.Button("PatternGUI:button:Add".S()))
+        EditorGUILayout.HelpBox(info.DescriptionKey.LS(), MessageType.Info);
+        if (GUILayout.Button("PatternGUI:button:Add".LS()))
         {
             CreatePattern(info.Guid);
         }
