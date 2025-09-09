@@ -10,8 +10,8 @@ internal class FacialSettingsDrawer : PropertyDrawer
 
     public FacialSettingsDrawer()
     {
-        _allowLipSyncPopup = new LocalizedPopup("FacialSettings:AllowLipSync", typeof(TrackingPermission));
-        _allowEyeBlinkPopup = new LocalizedPopup("FacialSettings:AllowEyeBlink", typeof(TrackingPermission));
+        _allowLipSyncPopup = new LocalizedPopup("FacialSettings:prop:AllowLipSync", typeof(TrackingPermission));
+        _allowEyeBlinkPopup = new LocalizedPopup("FacialSettings:prop:AllowEyeBlink", typeof(TrackingPermission));
     }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -27,7 +27,7 @@ internal class FacialSettingsDrawer : PropertyDrawer
         position.y += EditorGUIUtility.singleLineHeight + HeightMargin;
         _allowEyeBlinkPopup.Field(position, propAllowEyeBlink);
         position.y += EditorGUIUtility.singleLineHeight + HeightMargin;
-        LocalizedUI.PropertyField(position, propEnableBlending, "FacialSettings:EnableBlending");
+        LocalizedUI.PropertyField(position, propEnableBlending, "FacialSettings:prop:EnableBlending");
 
         EditorGUI.EndProperty();
     }

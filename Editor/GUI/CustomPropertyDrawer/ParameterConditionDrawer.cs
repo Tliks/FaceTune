@@ -29,7 +29,7 @@ internal class ParameterConditionDrawer : PropertyDrawer
         Rect currentPosition = position;
         currentPosition.height = EditorGUIUtility.singleLineHeight;
 
-        LocalizedUI.PropertyField(currentPosition, _parameterNameProp, "ParameterCondition:ParameterName");
+        LocalizedUI.PropertyField(currentPosition, _parameterNameProp, "ParameterCondition:prop:ParameterName");
         currentPosition.y += EditorGUIUtility.singleLineHeight;
 
         _parameterTypePopup.Field(currentPosition, _parameterTypeProp);
@@ -44,7 +44,7 @@ internal class ParameterConditionDrawer : PropertyDrawer
                 _intValueProp ??= property.FindPropertyRelative(ParameterCondition.IntValuePropName);
                 _comparisonTypePopup.Field(currentPosition, _comparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
-                LocalizedUI.PropertyField(currentPosition, _intValueProp, "ParameterCondition:IntValue");
+                LocalizedUI.PropertyField(currentPosition, _intValueProp, "ParameterCondition:prop:IntValue");
                 break;
             case ParameterType.Float:
                 _comparisonTypeProp ??= property.FindPropertyRelative(ParameterCondition.ComparisonTypePropName);
@@ -59,11 +59,11 @@ internal class ParameterConditionDrawer : PropertyDrawer
                 
                 _comparisonTypePopup.Field(currentPosition, _comparisonTypeProp);
                 currentPosition.y += EditorGUIUtility.singleLineHeight;
-                LocalizedUI.PropertyField(currentPosition, _floatValueProp, "ParameterCondition:FloatValue");
+                LocalizedUI.PropertyField(currentPosition, _floatValueProp, "ParameterCondition:prop:FloatValue");
                 break;
             case ParameterType.Bool:
                 _boolValueProp ??= property.FindPropertyRelative(ParameterCondition.BoolValuePropName);
-                LocalizedUI.PropertyField(currentPosition, _boolValueProp, "ParameterCondition:BoolValue");
+                LocalizedUI.PropertyField(currentPosition, _boolValueProp, "ParameterCondition:prop:BoolValue");
                 break;
         }
 

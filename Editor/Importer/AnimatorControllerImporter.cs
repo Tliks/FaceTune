@@ -22,7 +22,7 @@ internal class AnimatorControllerImporter
 
     public void Import(GameObject root)
     {
-        Debug.Log($"Importing {_animatorController.name}");
+        LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing", _animatorController.name);
         AssetDatabase.StartAssetEditing();
         try
         {
@@ -85,7 +85,7 @@ internal class AnimatorControllerImporter
                     }
                 }
 
-                Debug.Log($"Layer {layer.name} collected: {validExpressionsPerLayer.Count}/{stateConditions.Count} valid expressions");
+                LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected", layer.name, validExpressionsPerLayer.Count, stateConditions.Count);
             }
 
             Undo.RegisterCreatedObjectUndo(root, "Import FX");
@@ -95,7 +95,7 @@ internal class AnimatorControllerImporter
                 EditorGUIUtility.PingObject(firstLayerObj);
             }
 
-            Debug.Log($"Finished to import {_animatorController.name}: {expressionCount} expressions");
+            LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting", _animatorController.name, expressionCount);
         }
         finally
         {
@@ -177,7 +177,7 @@ internal class AnimatorControllerImporter
         
         Condition ToCondition(AnimatorCondition condition)
         {
-            var (handGestureCondition, parameterCondition) = condition.ToCondition(_parameterTypes, (parameter) => Debug.LogWarning($"failed to find parameter: {parameter}"));
+            var (handGestureCondition, parameterCondition) = condition.ToCondition(_parameterTypes, (parameter) => LocalizedLog.Warning("AnimatorControllerImporter:Log:warning:AnimatorControllerImporter:FailedToFindParameter", parameter));
             if (handGestureCondition != null)
             {
                 return handGestureCondition;

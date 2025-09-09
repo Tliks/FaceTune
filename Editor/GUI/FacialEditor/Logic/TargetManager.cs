@@ -152,13 +152,13 @@ internal class TargetManager
         _serializedObject.Update();
         if (_cachedTargetRendererForUndo != TargetRenderer)
         {
-            Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} != {TargetRenderer}");
+            //Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} != {TargetRenderer}");
             _cachedTargetRendererForUndo = TargetRenderer;
             OnTargetRendererChanged?.Invoke(TargetRenderer);
         }
         else
         {
-            Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} == {TargetRenderer}");
+            //Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} == {TargetRenderer}");
         }
         OnTargetingChanged?.Invoke(Targeting);
         UpdateCanSave();

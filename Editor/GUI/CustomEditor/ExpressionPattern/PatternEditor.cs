@@ -7,6 +7,6 @@ internal class PatternEditor : FaceTuneIMGUIEditorBase<PatternComponent>
     protected override void OnInnerInspectorGUI()
     {
         DrawDefaultInspector(true);
-        EditorGUILayout.HelpBox(Localization.S("PatternComponent:Description"), MessageType.Info);
+        EditorGUILayout.HelpBox("PatternComponent:label:Desc".S(), MessageType.Info);
     }
 }

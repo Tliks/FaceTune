@@ -57,8 +57,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
             if (removed.Any())
             {
                 var joinedShapes = string.Join(", ", removed);
-                Debug.LogWarning($"Expression {expression.Name} contains tracked blend shapes [{joinedShapes}]. These will be removed and may cause unintended behavior.");
-                Debug.LogWarning($"Please either add AllowTrackedBlendShapesComponent or exclude these blend shapes.");
+                LocalizedLog.Warning("Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound", $"{expression}:{joinedShapes}");
             }
         }
     }

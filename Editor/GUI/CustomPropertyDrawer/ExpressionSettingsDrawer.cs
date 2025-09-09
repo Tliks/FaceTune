@@ -19,7 +19,7 @@ internal class ExpressionSettingsDrawer : PropertyDrawer
         var currentPosition = position;
         
         var loopTimeProp = property.FindPropertyRelative(ExpressionSettings.LoopTimePropName);
-        LocalizedUI.PropertyField(currentPosition, loopTimeProp, "ExpressionSettings:LoopTime");
+        LocalizedUI.PropertyField(currentPosition, loopTimeProp, "ExpressionSettings:prop:LoopTime");
         currentPosition.y += EditorGUIUtility.singleLineHeight + HeightMargin;
 
         var lineHeight = EditorGUIUtility.singleLineHeight;
@@ -35,7 +35,7 @@ internal class ExpressionSettingsDrawer : PropertyDrawer
         GUI.enabled = !loopTimeProp.boolValue;
         var motionTimeParameterNameProp = property.FindPropertyRelative(ExpressionSettings.MotionTimeParameterNamePropName);
 
-        LocalizedUI.PropertyField(motionTimeParameterNameRect, motionTimeParameterNameProp, "ExpressionSettings:MotionTimeParameterName");
+        LocalizedUI.PropertyField(motionTimeParameterNameRect, motionTimeParameterNameProp, "ExpressionSettings:prop:MotionTimeParameterName");
 
         // If the current value is not found in presets OR is empty, select "Custom"
         var currentMotionTimeParameterName = motionTimeParameterNameProp.stringValue;

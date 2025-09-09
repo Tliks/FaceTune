@@ -1,12 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="selected-panel">
         <ui:VisualElement name="common-controls-panel">
-            <ui:TextField name="search-field" class="ndmf-tr" label="FacialEditor:Common:Search" />
+            <ui:TextField name="search-field" class="ndmf-tr" label="FacialEditor:label:CommonSearch" />
         </ui:VisualElement>
 
         <ui:VisualElement name="base-shapes-panel">
             <ui:VisualElement name="base-label-container" class="label-container">
-                <ui:Label name="base-label" class="ndmf-tr" text="FacialEditor:Base:Title" />
+                <ui:Label name="base-label" class="ndmf-tr" text="FacialEditor:label:BaseShapes" />
                 <components:SimpleToggle text="0" name="base-zero-toggle" value="true" class="control-button" />
                 <ui:Button name="base-0-100-toggle" class="control-button" />
                 <ui:Button name="base-reset-all-button" class="control-button" />
@@ -16,8 +16,8 @@
 
         <ui:VisualElement name="selected-shapes-panel">
             <ui:VisualElement name="selected-label-container" class="label-container">
-                <ui:Label name="selected-label" class="ndmf-tr" text="FacialEditor:Selected:Title" />
-                <ui:Button name="selected-remove-all-0-button" text="FacialEditor:Selected:RemoveAll0" class="ndmf-tr" />
+                <ui:Label name="selected-label" class="ndmf-tr" text="FacialEditor:label:SelectedShapes" />
+                <ui:Button name="selected-remove-all-0-button"/>
                 <components:SimpleToggle text="0" name="selected-zero-toggle" value="true" class="control-button" />
                 <ui:Button name="selected-0-100-toggle" class="control-button" />
                 <ui:Button name="remove-all-button" class="control-button" />

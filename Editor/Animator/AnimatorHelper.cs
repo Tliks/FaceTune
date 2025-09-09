@@ -84,7 +84,7 @@ internal static class AnimatorHelper
             switch (target)
             {
                 case null:
-                    Debug.LogWarning($"Target is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}");
+                    // Debug.LogWarning($"Target is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}");
                     continue;
                 case UnityEngine.Animator:
                     //Debug.Log($"{curveBinding.path}, {curveBinding.type}, {propName}, AAP");
@@ -159,7 +159,7 @@ internal static class AnimatorHelper
 
             using var so = new SerializedObject(target);
             using var prop = so.FindProperty(propName);
-            if (prop == null) { Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}"); continue; }
+            // if (prop == null) { Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}"); continue; }
             switch (prop.propertyType)
             {
                 case SerializedPropertyType.Boolean:

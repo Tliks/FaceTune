@@ -12,9 +12,9 @@ internal class BlendShapeDrawer : PropertyDrawer
 
         position.height = EditorGUIUtility.singleLineHeight;
 
-        LocalizedUI.PropertyField(position, propName, "BlendShapeWeight:Name");
+        LocalizedUI.PropertyField(position, propName, "BlendShapeWeight:prop:Name");
         position.y += EditorGUIUtility.singleLineHeight;
-        LocalizedUI.PropertyField(position, propWeight, "BlendShapeWeight:Weight");
+        LocalizedUI.PropertyField(position, propWeight, "BlendShapeWeight:prop:Weight");
 
         EditorGUI.EndProperty();
     }

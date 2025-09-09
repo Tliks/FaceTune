@@ -11,14 +11,7 @@ internal class HandGestureConditionDrawer : PropertyDrawer
     {
         _handPopup = new LocalizedPopup(typeof(Hand));
         _handGesturePopup = new LocalizedPopup(typeof(HandGesture));
-        _equalityComparisonPopup = new LocalizedPopup( // オーバーライド
-            "HandGestureCondition:EqualityComparison",
-            new[]
-            {
-                "HandGestureCondition:EqualityComparison:Equal",
-                "HandGestureCondition:EqualityComparison:NotEqual"
-            }
-        );
+        _equalityComparisonPopup = new LocalizedPopup(typeof(EqualityComparison));
     }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

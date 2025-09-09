@@ -54,7 +54,7 @@ internal static class AvatarContextBuilder
         context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
         if (overrideFaceRenderers.Count > 1)
         {
-            Debug.LogWarning($"Found {overrideFaceRenderers.Count} OverrideFaceRendererComponent on {root.name}. Only one is allowed.");
+            LocalizedLog.Warning("Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer", null, overrideFaceRenderers);
         }
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから

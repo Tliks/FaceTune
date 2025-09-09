@@ -20,16 +20,16 @@ internal class ExpressionEditor : FaceTuneIMGUIEditorBase<ExpressionComponent>
 
     protected override void OnInnerInspectorGUI()
     {
-        EditorGUILayout.LabelField(Localization.S("ExpressionComponent:FacialSettings"), EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("FacialSettings".G(), EditorStyles.boldLabel);
 
-        LocalizedPropertyDrawer(_facialSettingsProperty);
+        LocalizedPropertyField(_facialSettingsProperty);
         LocalizedPropertyField(_enableRealTimePreviewProperty);
 
         EditorGUILayout.Space();
 
         _showExpressionSettings = EditorGUILayout.Foldout(
             _showExpressionSettings,
-            Localization.S($"{ComponentName}:ExpressionSettings"),
+            "ExpressionSettings".G(),
             true,
             GUIStyleHelper.BoldFoldout
         );
@@ -38,7 +38,7 @@ internal class ExpressionEditor : FaceTuneIMGUIEditorBase<ExpressionComponent>
 
         if (_showExpressionSettings)
         {
-            LocalizedPropertyDrawer(_expressionSettingsProperty);
+            LocalizedPropertyField(_expressionSettingsProperty);
         }
     }
 }

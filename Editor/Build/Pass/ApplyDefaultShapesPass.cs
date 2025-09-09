@@ -22,7 +22,7 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
         FacialStyleComponent target;
         if (componentCount > 1)
         {
-            Debug.LogWarning("ApplyDefaultShapesPass: Multiple FacialStyleComponent with ApplyToRenderer are found");
+            LocalizedLog.Warning("Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer");
             target = facialStyleComponents.Last();
         }
         else

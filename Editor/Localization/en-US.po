@@ -1,0 +1,511 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en-US\n"
+
+# PatternGUI
+
+msgid "PatternGUI:label:Title"
+msgstr "Add Expression Control"
+
+msgid "PatternGUI:label:SelectedHandGesturePattern"
+msgstr "Selected Pattern:"
+
+msgid "PatternGUI:label:SelectedMenuPattern"
+msgstr "Selected Pattern:"
+
+msgid "PatternGUI:label:SelectedAnimatorControllerPattern"
+msgstr "Selected Animator Controller:"
+
+msgid "PatternGUI:label:AnimatorControllerPattern:Desc"
+msgstr "Analyzes the Animator Controller and generates expression controls that behave as closely as possible."
+
+msgid "PatternGUI:label:SelectedOtherPattern"
+msgstr "Selected Pattern:"
+
+msgid "PatternGUI:button:Add"
+msgstr "Add"
+
+# PatternGUIMode(enum)
+
+msgid "PatternGUIMode:enum:Gesture"
+msgstr "Gesture"
+
+msgid "PatternGUIMode:enum:Menu"
+msgstr "Menu"
+
+msgid "PatternGUIMode:enum:AnimatorController"
+msgstr "Animator Controller"
+
+msgid "PatternGUIMode:enum:Others"
+msgstr "Others"
+
+# HandGesturePatternType(enum)
+
+msgid "HandGesturePatternType:enum:LeftOnly"
+msgstr "Left Hand Only"
+
+msgid "HandGesturePatternType:enum:LeftOnly:Desc"
+msgstr "Pattern for left hand only (8 types)."
+
+msgid "HandGesturePatternType:enum:RightOnly"
+msgstr "Right Hand Only"
+
+msgid "HandGesturePatternType:enum:RightOnly:Desc"
+msgstr "Pattern for right hand only (8 types)."
+
+msgid "HandGesturePatternType:enum:BasicRight"
+msgstr "Right Hand Priority"
+
+msgid "HandGesturePatternType:enum:BasicRight:Desc"
+msgstr "Basic pattern with right hand priority (16 types)."
+
+msgid "HandGesturePatternType:BasicLeft"
+msgstr "Left Hand Priority"
+
+msgid "HandGesturePatternType:enum:BasicLeft:Desc"
+msgstr "Basic pattern with left hand priority (16 types)."
+
+msgid "HandGesturePatternType:enum:HandSign"
+msgstr "All Two-Handed Patterns"
+
+msgid "HandGesturePatternType:enum:HandSign:Desc"
+msgstr "Pattern that allows creating up to 64 gestures with left and right hand combinations (64 types)."
+
+msgid "HandGesturePatternType:enum:Blending"
+msgstr "Two-Hand Blending"
+
+msgid "HandGesturePatternType:enum:Blending:Desc"
+msgstr "Pattern where animations for each hand are blended. Useful when assigning eye and mouth controls to respective hands (64 types)."
+
+# MenuPatternType(enum)
+
+msgid "MenuPatternType:enum:ExclusiveMenu"
+msgstr "Exclusive Menu"
+
+msgid "MenuPatternType:enum:ExclusiveMenu:Desc"
+msgstr "A sample that generates exclusive menus."
+
+msgid "MenuPatternType:enum:BlendingMenu"
+msgstr "Blending Menu"
+
+msgid "MenuPatternType:enum:BlendingMenu:Desc"
+msgstr "A sample that generates menus that blend with other expressions."
+
+# OtherPatternType(enum)
+
+msgid "OtherPatternType:enum:HeadContact"
+msgstr "Head Contact"
+
+msgid "OtherPatternType:enum:HeadContact:Desc"
+msgstr "A sample using contact. Useful for specifying expressions when being petted."
+
+# FaceTuneAssistant
+
+msgid "FaceTuneAssistant:label:ExpressionDescription"
+msgstr "Expression components added will be prioritized based on their position lower in the hierarchy."
+
+# ExpressionDataComponent
+
+msgid "ExpressionDataComponent:label:MissingBlendShapes"
+msgstr "Missing Blend Shapes"
+
+msgid "ExpressionDataComponent:label:AnimationClipMode"
+msgstr "Animation Clip"
+
+msgid "ExpressionDataComponent:prop:Clip"
+msgstr "Animation Clip"
+
+msgid "ExpressionDataComponent:prop:Clip:tooltip"
+msgstr "This animation clip primarily applies blend shape animations for expressions, but can also include other types of animations such as ear movements, which are applied at build time."
+
+msgid "ExpressionDataComponent:button:Import"
+msgstr "Import"
+
+msgid "ExpressionDataComponent:button:Import:tooltip"
+msgstr "Imports an animation clip. It will still work even if not imported. Importing converts expression animations to manual settings, and a dedicated animation clip is created for non-expression animations."
+
+msgid "ExpressionDataComponent:label:ClipFacialAnimationCount"
+msgstr "Number of Facial Animations"
+
+msgid "ExpressionDataComponent:label:ClipNonFacialAnimationCount"
+msgstr "Number of Non-Facial Animations"
+
+msgid "ExpressionDataComponent:prop:BlendShapeAnimations"
+msgstr "Facial Animations"
+
+msgid "ExpressionDataComponent:prop:BlendShapeAnimations:tooltip"
+msgstr "These are manually set facial animations. They can be used in conjunction with animation clips, or either one can be used alone. If the same blend shape is set simultaneously, manual settings take precedence."
+
+msgid "ExpressionDataComponent:button:OpenEditor"
+msgstr "Open Editor"
+
+msgid "ExpressionDataComponent:label:AdvancedOptions"
+msgstr "Advanced Options"
+
+msgid "ExpressionDataComponent:prop:AllBlendShapeAnimationAsFacial"
+msgstr "Treat all blend shape animations as facial animations"
+
+msgid "ExpressionDataComponent:prop:AllBlendShapeAnimationAsFacial:tooltip"
+msgstr "Treats all blend shape animations included in the animation clip as facial animations. This is useful when dealing with animation clips for other avatars where paths may differ."
+
+# ExpressionDataClipImporter
+
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:title"
+msgstr "Create Animation Clip?"
+
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:message"
+msgstr "Non-facial animations were detected. Do you want to create an animation clip to preserve non-facial animations? If you don't create it, only facial animations will be imported, and non-facial animations will not be carried over."
+
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:create"
+msgstr "Create"
+
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:skip"
+msgstr "Skip"
+
+msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder"
+msgstr "Select a save destination for animation clips for non-facial animations."
+
+msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotSelected"
+msgstr "Folder is not selected."
+
+msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotInProject"
+msgstr "Folder is not in the project."
+
+# ExpressionComponent
+
+msgid "ExpressionComponent:prop:EnableRealTimePreview"
+msgstr "Always Preview This Expression"
+
+msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
+msgstr "Set this if you want to always preview this expression. Only one expression can be active at a time within an avatar."
+
+# FacialSettings
+
+msgid "FacialSettings"
+msgstr "Facial Settings"
+
+msgid "FacialSettings:prop:AllowLipSync"
+msgstr "Enable Lip Sync"
+
+msgid "FacialSettings:prop:AllowLipSync:tooltip"
+msgstr "Sets whether to enable lip sync when playing expressions. If set to `Keep`, settings from lower priority expressions will be used."
+
+msgid "FacialSettings:prop:AllowEyeBlink"
+msgstr "Enable Eye Blink"
+
+msgid "FacialSettings:prop:AllowEyeBlink:tooltip"
+msgstr "Sets whether to enable eye blinking when playing expressions. If set to `Keep`, settings from lower priority expressions will be used."
+
+msgid "FacialSettings:prop:EnableBlending"
+msgstr "Blend with Other Expressions"
+
+msgid "FacialSettings:prop:EnableBlending:tooltip"
+msgstr "Sets whether to blend with lower priority expressions. For example, if you want to blend blink blend shapes into the current expression. When OFF, all unspecified facial blend shapes are treated as 0, completely overriding lower priority expressions. Default is OFF."
+
+# ExpressionSettings
+
+msgid "ExpressionSettings"
+msgstr "Animation Settings"
+
+msgid "ExpressionSettings:prop:LoopTime"
+msgstr "Loop"
+
+msgid "ExpressionSettings:prop:LoopTime:tooltip"
+msgstr "Set this to loop the animation. Effective for multi-frame animations."
+
+msgid "ExpressionSettings:prop:MotionTimeParameterName"
+msgstr "Parameter Name for MotionTime"
+
+msgid "ExpressionSettings:prop:MotionTimeParameterName:tooltip"
+msgstr "Specify the name of the parameter (float) for MotionTime. The playback point of multi-frame animation changes according to the value of this parameter. Effective for multi-frame animations when looping is OFF."
+
+# FacialStyleComponent
+
+msgid "FacialStyleComponent:prop:BlendShapeAnimations"
+msgstr "Facial Animations"
+
+msgid "FacialStyleComponent:prop:BlendShapeAnimations:tooltip"
+msgstr "Settings for facial animations (expression). The contents set here will be applied to all expressions under this GameObject."
+
+msgid "FacialStyleComponent:prop:ApplyToRenderer"
+msgstr "Apply to SkinnedMeshRenderer"
+
+msgid "FacialStyleComponent:prop:ApplyToRenderer:tooltip"
+msgstr "Applies this expression to SkinnedMeshRenderer at build time. This is effective when you want to apply an expression in an environment where animations do not work."
+
+msgid "FacialStyleComponent:button:UpdateFromScene"
+msgstr "Get from SkinnedMeshRenderer"
+
+msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
+msgstr "Retrieves blend shapes set in the target SkinnedMeshRenderer."
+
+msgid "FacialStyleComponent:button:OpenEditor"
+msgstr "Open Editor"
+
+msgid "FacialStyleComponent:button:AsDefault"
+msgstr "Set as Default"
+
+msgid "FacialStyleComponent:button:AsDefault:tooltip"
+msgstr "Sets this expression as default. It will generate a child ExpressionComponent that is affected by this facial style and is always playing. Grayed out if already set."
+
+# PatternComponent
+
+msgid "PatternComponent:label:Desc"
+msgstr "This component makes expressions under the attached GameObject mutually exclusive. If the Condition linked to each Expression is not exclusive, the Expression lower in the Hierarchy will be prioritized. It is recommended to set exclusive Conditions while using this component."
+
+# BlendShapeWeight
+
+msgid "BlendShapeWeight:prop:Name"
+msgstr "Blend Shape Name"
+
+msgid "BlendShapeWeight:prop:Weight"
+msgstr "Value"
+
+# ConditionComponent
+
+msgid "ConditionComponent:prop:HandGestureConditions"
+msgstr "Hand Gestures"
+
+msgid "ConditionComponent:prop:ParameterConditions"
+msgstr "Parameters"
+
+# Hand(enum)
+
+msgid "Hand"
+msgstr "Right Hand/Left Hand"
+
+msgid "Hand:enum:Left"
+msgstr "Left Hand"
+
+msgid "Hand:enum:Right"
+msgstr "Right Hand"
+
+# HandGesture(enum)
+
+msgid "HandGesture"
+msgstr "Hand Gesture"
+
+msgid "HandGesture:enum:Neutral"
+msgstr "Neutral"
+
+msgid "HandGesture:enum:Fist"
+msgstr "Fist"
+
+msgid "HandGesture:enum:HandOpen"
+msgstr "HandOpen"
+
+msgid "HandGesture:enum:FingerPoint"
+msgstr "FingerPoint"
+
+msgid "HandGesture:enum:Victory"
+msgstr "Victory"
+
+msgid "HandGesture:enum:RockNRoll"
+msgstr "RockNRoll"
+
+msgid "HandGesture:enum:HandGun"
+msgstr "HandGun"
+
+msgid "HandGesture:enum:ThumbsUp"
+msgstr "ThumbsUp"
+
+# EqualityComparison(enum)
+msgid "EqualityComparison"
+msgstr "Condition"
+
+msgid "EqualityComparison:enum:Equal"
+msgstr "Equal"
+
+msgid "EqualityComparison:enum:NotEqual"
+msgstr "Not Equal"
+
+# ParameterCondition
+
+msgid "ParameterCondition:prop:ParameterName"
+msgstr "Parameter Name"
+
+msgid "ParameterCondition:prop:IntValue"
+msgstr "Value (int)"
+
+msgid "ParameterCondition:prop:FloatValue"
+msgstr "Value (float)"
+
+msgid "ParameterCondition:prop:BoolValue"
+msgstr "Value (bool)"
+
+# ParameterType(enum)
+
+msgid "ParameterType"
+msgstr "Parameter Type"
+
+msgid "ParameterType:enum:Int"
+msgstr "Int"
+
+msgid "ParameterType:enum:Float"
+msgstr "Float"
+
+msgid "ParameterType:enum:Bool"
+msgstr "Bool"
+
+# ComparisonType(enum)
+
+msgid "ComparisonType"
+msgstr "Comparison Operator"
+
+msgid "ComparisonType:enum:Equal"
+msgstr "Equal To"
+
+msgid "ComparisonType:enum:NotEqual"
+msgstr "Not Equal To"
+
+msgid "ComparisonType:enum:GreaterThan"
+msgstr "Greater Than"
+
+msgid "ComparisonType:enum:LessThan"
+msgstr "Less Than"
+
+# TrackingPermission(enum)
+
+msgid "TrackingPermission"
+msgstr "Tracking"
+
+msgid "TrackingPermission:enum:Allow"
+msgstr "Allow"
+
+msgid "TrackingPermission:enum:Disallow"
+msgstr "Disallow"
+
+msgid "TrackingPermission:enum:Keep"
+msgstr "Keep"
+
+# ClipImportOption(enum)
+
+msgid "ClipImportOption"
+msgstr "Expression Animation Import"
+
+msgid "ClipImportOption:tooltip"
+msgstr "Options for handling facial animations included in the animation clip."
+
+msgid "ClipImportOption:enum:All"
+msgstr "All"
+
+msgid "ClipImportOption:enum:NonZero"
+msgstr "Non-Zero"
+
+msgid "ClipImportOption:enum:FacialStyleOverridesOrNonZero"
+msgstr "Facial Style Overrides or Non-Zero"
+
+# FacialEditor
+
+msgid "FacialEditor:label:CommonSearch"
+msgstr "Search:"
+
+msgid "FacialEditor:label:BaseShapes"
+msgstr "Base"
+
+msgid "FacialEditor:label:SelectedShapes"
+msgstr "Selected"
+
+msgid "FacialEditor:label:UnselectedShapes"
+msgstr "Unselected"
+
+msgid "FacialEditor:button:RemoveAll0"
+msgstr "Remove All Zeros"
+
+msgid "FacialEditor:button:AddAll"
+msgstr "Add All"
+
+msgid "FacialEditor:label:Weight"
+msgstr "Value:"
+
+msgid "FacialEditor:label:Target"
+msgstr "Target"
+
+msgid "FacialEditor:label:TargetRenderer"
+msgstr "Target Renderer"
+
+msgid "FacialEditor:button:Save"
+msgstr "Save (Ctrl+S)"
+
+msgid "FacialEditor:label:filter"
+msgstr "Grouping"
+
+msgid "FacialEditor:button:Filter:All"
+msgstr "Select All"
+
+msgid "FacialEditor:button:Filter:None"
+msgstr "Deselect All"
+
+msgid "FacialEditor:button:Filter:Left"
+msgstr "Left"
+
+msgid "FacialEditor:button:Filter:Right"
+msgstr "Right"
+
+msgid "FacialEditor:label:ClipImport"
+msgstr "Animation Clip Import"
+
+msgid "FacialEditor:label:Clip"
+msgstr "Animation Clip"
+
+msgid "FacialEditor:label:ImportOption"
+msgstr "Import Settings"
+
+msgid "FacialEditor:button:Import"
+msgstr "Import"
+
+msgid "FacialEditor:dialog:UnsavedChanges:title"
+msgstr "Unsaved Changes"
+
+msgid "FacialEditor:dialog:UnsavedChanges:message"
+msgstr "There are unsaved changes in this window. Do you want to save them?"
+
+msgid "FacialEditor:dialog:UnsavedChanges:save"
+msgstr "Save"
+
+msgid "FacialEditor:dialog:UnsavedChanges:discard"
+msgstr "Discard"
+
+msgid "FacialEditor:dialog:UnsavedChanges:cancel"
+msgstr "Cancel"
+
+# AnimatorControllerImporter
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing"
+msgstr "Importing Animator Controller"
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected"
+msgstr "Layers Collected"
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting"
+msgstr "Finished Importing Animator Controller"
+
+# Preview
+
+msgid "Preview:Log:error:failedToInstantiate"
+msgstr "Failed to process preview."
+
+msgid "RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview"
+msgstr "Multiple Expression components with 'Always Preview This Expression' enabled were found. Only one can be enabled at a time."
+
+# build
+
+msgid "Log:error:CloneShapes:ShapeNotFound"
+msgstr "Source blend shape not found."
+
+msgid "Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer"
+msgstr "Multiple FacialStyleComponents with the 'Apply to SkinnedMeshRenderer' option enabled were found. Only one can be set."
+
+msgid "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound"
+msgstr "Unallowed blend shapes were found. Please add an AllowTrackedBlendShapes component or exclude these blend shapes."
+
+# other log
+
+msgid "Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer"
+msgstr "Multiple OverrideFaceRendererComponents were found. Only one can be set."
+
+msgid "Log:error:AvatarContextBuilder:FailedToBuild"
+msgstr "Failed to build avatar context."

@@ -48,17 +48,12 @@ internal abstract class FaceTuneIMGUIEditorBase<T> : FaceTuneCustomEditorBase<T>
     }
 
     /// <summary>
-    /// keyは省略された場合$"{コンポーネント名}:{プロパティ名}"を使用
+    /// keyは省略された場合$"{コンポーネント名}:prop:{プロパティ名}"を使用
     /// </summary>
     protected void LocalizedPropertyField(SerializedProperty property, string? key = null, bool includeChildren = true)
     {
-        key ??= $"{typeof(T).Name}:{property.name}";
+        key ??= $"{typeof(T).Name}:prop:{property.name}";
         LocalizedUI.PropertyField(property, key, includeChildren);
-    }
-
-    protected void LocalizedPropertyDrawer(SerializedProperty property)
-    {
-        EditorGUILayout.PropertyField(property, true);
     }
 }
 
