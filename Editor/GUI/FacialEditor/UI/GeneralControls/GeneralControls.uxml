@@ -7,7 +7,7 @@
             <ui:VisualElement name="targeting-container">
                 <ui:DropdownField name="targeting-type-field" />
                 <uie:ObjectField name="targeting-object-field"/>
-                <ui:Button name="save-button" class="ndmf-tr" text="FacialEditor:Common:Save" />
+                <ui:Button name="save-button" class="ndmf-tr" text="FacialEditor:button:Save" />
             </ui:VisualElement>
             <ui:VisualElement name="targeting-options-container" />
         </ui:Box>

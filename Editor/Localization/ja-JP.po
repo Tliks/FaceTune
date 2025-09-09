@@ -168,6 +168,12 @@ msgstr "作成しない"
 msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder"
 msgstr "表情以外のアニメーション用のアニメーションクリップの保存先を選択してください"
 
+msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotSelected"
+msgstr "フォルダーが選択されていません。"
+
+msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotInProject"
+msgstr "フォルダーがプロジェクト内にありません。"
+
 # ExpressionComponent
 
 msgid "ExpressionComponent:prop:EnableRealTimePreview"
@@ -465,3 +471,41 @@ msgstr "破棄"
 
 msgid "FacialEditor:dialog:UnsavedChanges:cancel"
 msgstr "キャンセル"
+
+# AnimatorControllerImporter
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing"
+msgstr "アニメーターコントローラーをインポート中"
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected"
+msgstr "レイヤーを収集"
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting"
+msgstr "アニメーターコントローラーをインポート完了"
+
+# Preview
+
+msgid "Preview:Log:error:failedToInstantiate"
+msgstr "プレビュー処理に失敗しました。"
+
+msgid "RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview"
+msgstr "常に表情をプレビューする機能が有効なExpressionコンポーネントが複数見つかりました。1つのみ有効にすることが許可されています。"
+
+# build
+
+msgid "Log:error:CloneShapes:ShapeNotFound"
+msgstr "クローン元のブレンドシェイプが見つかりません"
+
+msgid "Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer"
+msgstr "SkinnedMeshRendererに適用するオプションが有効なFacialStyleComponentが複数見つかりました。1つのみ設定することが許可されています。"
+
+msgid "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound"
+msgstr "許可されていないブレンドシェイプが見つかりました。AllowTrackedBlendShapesコンポーネントを追加するか、これらのブレンドシェイプを除外してください。"
+
+# other log
+
+msgid "Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer"
+msgstr "OverrideFaceRendererComponentが複数見つかりました。1つのみ設定することが許可されています。"
+
+msgid "Log:error:AvatarContextBuilder:FailedToBuild"
+msgstr "アバターコンテキストのビルドに失敗しました。"

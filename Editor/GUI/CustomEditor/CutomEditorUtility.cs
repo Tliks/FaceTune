@@ -10,7 +10,7 @@ internal static class CustomEditorUtility
         {
             return true;
         }
-        Debug.LogError($"Failed to get context: {result}");
+        LocalizedLog.Error("Log:error:AvatarContextBuilder:FailedToBuild", result.ToString());
         return false;
     }
 

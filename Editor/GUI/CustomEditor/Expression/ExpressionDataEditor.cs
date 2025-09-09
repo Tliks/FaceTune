@@ -266,13 +266,13 @@ internal class ExpressionDataClipImporter
         var absolutePath = EditorUtility.OpenFolderPanel("ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder".S(), "Assets", "");
         if (string.IsNullOrEmpty(absolutePath))
         {
-            Debug.LogError("folder not selected");
+            LocalizedLog.Error("ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotSelected");
             return false;
         }
         var relativePath = FileUtil.GetProjectRelativePath(absolutePath);
         if (string.IsNullOrEmpty(relativePath) || !relativePath.StartsWith("Assets"))
         {
-            Debug.LogError("folder not in project");
+            LocalizedLog.Error("ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotInProject");
             return false;
         }
         clipFolderPath = relativePath.Replace("\\", "/");
@@ -317,7 +317,7 @@ internal class ExpressionDataClipExporter : EditorWindow
         var animations = new AnimationSet();
         if (!AvatarContextBuilder.TryBuild(_component.gameObject, out var context, out var result))
         {
-            Debug.LogError($"Failed to build session context: {result}");
+            LocalizedLog.Error("Log:error:AvatarContextBuilder:FailedToBuild", result.ToString());
             return;
         }
         if (_addZeroWeight)

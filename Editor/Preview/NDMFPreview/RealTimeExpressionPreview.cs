@@ -17,7 +17,7 @@ internal class RealTimeExpressionPreview : AbstractFaceTunePreview<RealTimeExpre
             if (!enabled) continue;
             var isEditorOnly = context.EditorOnlyInHierarchy(component.gameObject);
             if (isEditorOnly) continue;
-            if (target != null) Debug.LogWarning("RealTimeExpressionPreview: Multiple ExpressionComponent with EnableRealTimePreview are found");
+            if (target != null) LocalizedLog.Warning("RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview");
             target = component;
         }
         if (target == null) return;

@@ -71,7 +71,7 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
+            LocalizedLog.Error("Preview:Log:error:failedToInstantiate", e.Message);
             // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
             _currentNode = new EmptyNode();
             return Task.FromResult(_currentNode);

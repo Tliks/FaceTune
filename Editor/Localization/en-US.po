@@ -168,6 +168,12 @@ msgstr "Skip"
 msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder"
 msgstr "Select a save destination for animation clips for non-facial animations."
 
+msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotSelected"
+msgstr "Folder is not selected."
+
+msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotInProject"
+msgstr "Folder is not in the project."
+
 # ExpressionComponent
 
 msgid "ExpressionComponent:prop:EnableRealTimePreview"
@@ -465,3 +471,41 @@ msgstr "Discard"
 
 msgid "FacialEditor:dialog:UnsavedChanges:cancel"
 msgstr "Cancel"
+
+# AnimatorControllerImporter
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing"
+msgstr "Importing Animator Controller"
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected"
+msgstr "Layers Collected"
+
+msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting"
+msgstr "Finished Importing Animator Controller"
+
+# Preview
+
+msgid "Preview:Log:error:failedToInstantiate"
+msgstr "Failed to process preview."
+
+msgid "RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview"
+msgstr "Multiple Expression components with 'Always Preview This Expression' enabled were found. Only one can be enabled at a time."
+
+# build
+
+msgid "Log:error:CloneShapes:ShapeNotFound"
+msgstr "Source blend shape not found."
+
+msgid "Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer"
+msgstr "Multiple FacialStyleComponents with the 'Apply to SkinnedMeshRenderer' option enabled were found. Only one can be set."
+
+msgid "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound"
+msgstr "Unallowed blend shapes were found. Please add an AllowTrackedBlendShapes component or exclude these blend shapes."
+
+# other log
+
+msgid "Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer"
+msgstr "Multiple OverrideFaceRendererComponents were found. Only one can be set."
+
+msgid "Log:error:AvatarContextBuilder:FailedToBuild"
+msgstr "Failed to build avatar context."
