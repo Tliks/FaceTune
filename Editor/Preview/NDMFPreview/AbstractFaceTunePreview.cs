@@ -31,6 +31,8 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         {
             if (!context.ActiveInHierarchy(root)) continue;
             if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, null, observeContext)) continue;
+            var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
+            if (faceMesh == null) continue;
             groups.Add(RenderGroup.For(faceRenderer).WithData((root, bodyPath)));
         }
         return groups.ToImmutableList();
