@@ -70,13 +70,17 @@ internal class ExpressionEditor : FaceTuneIMGUIEditorBase<ExpressionComponent>
         if (!_showConnectedComponents) return;
 
         EditorGUILayout.LabelField("ExpressionComponent:label:ConnectedComponents:ConditionComponent".LG());
+        GUI.enabled = false;
         foreach (var conditionComponent in _conditionComponents)
         {
             EditorGUILayout.ObjectField(conditionComponent, typeof(ConditionComponent), true);
         }
+        GUI.enabled = true;
 
         EditorGUILayout.LabelField("ExpressionComponent:label:ConnectedComponents:FacialStyleComponent".LG());
+        GUI.enabled = false;
         EditorGUILayout.ObjectField(_facialStyleComponent, typeof(FacialStyleComponent), true);
+        GUI.enabled = true;
 
         using (new EditorGUILayout.HorizontalScope())
         {
@@ -91,7 +95,9 @@ internal class ExpressionEditor : FaceTuneIMGUIEditorBase<ExpressionComponent>
         {
             using (new EditorGUILayout.HorizontalScope())
             {
+                GUI.enabled = false;
                 EditorGUILayout.ObjectField(expressionDataComponent, typeof(ExpressionDataComponent), true);
+                GUI.enabled = true;
                 if (GUILayout.Button("ExpressionComponent:button:ConnectedComponents:ExpressionDataComponent:OpenEditor".LG(), GUILayout.Width(100)))
                 {
                     OpenExpressionDataComponentEditor(expressionDataComponent);
