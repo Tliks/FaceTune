@@ -182,6 +182,24 @@ msgstr "Always Preview This Expression"
 msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
 msgstr "Set this if you want to always preview this expression. Only one expression can be active at a time within an avatar."
 
+msgid "ExpressionComponent:label:ConnectedComponents"
+msgstr "Connected Components"
+
+msgid "ExpressionComponent:label:ConnectedComponents:FacialStyleComponent"
+msgstr "Facial Style"
+
+msgid "ExpressionComponent:label:ConnectedComponents:ConditionComponent"
+msgstr "Condition"
+
+msgid "ExpressionComponent:label:ConnectedComponents:ExpressionDataComponent"
+msgstr "Expression Data"
+
+msgid "ExpressionComponent:button:ConnectedComponents:ExpressionDataComponent:Add"
+msgstr "Add"
+
+msgid "ExpressionComponent:button:ConnectedComponents:ExpressionDataComponent:OpenEditor"
+msgstr "Open Editor"
+
 # FacialSettings
 
 msgid "FacialSettings"
