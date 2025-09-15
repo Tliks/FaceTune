@@ -51,3 +51,18 @@ internal class BuildPassContext
         PlatformSupport = platformSupport;
     }
 }
+
+internal class PatternDataState
+{
+    public PatternData PatternData { get; }
+
+    public PatternDataState(PatternData patternData)
+    {
+        PatternData = patternData;
+    }
+
+    public PatternDataState()
+    {
+        throw new Exception("PatternDataState is not initialized");
+    }
+}

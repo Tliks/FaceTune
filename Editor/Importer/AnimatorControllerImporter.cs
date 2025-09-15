@@ -35,7 +35,7 @@ internal class AnimatorControllerImporter
                 var stateMachine = layer.stateMachine;
                 if (stateMachine == null) continue;
 
-                var stateConditions = new Dictionary<AnimatorState, List<List<Condition>>>();
+                var stateConditions = new Dictionary<AnimatorState, ICondition>();
                 CollectConditionsAndStates(stateMachine, stateConditions);
                 
                 var validExpressionsPerLayer = new List<GameObject>();
@@ -77,7 +77,6 @@ internal class AnimatorControllerImporter
                         var layerObj = new GameObject(layer.name);
                         firstLayerObj ??= layerObj;
                         layerObj.transform.parent = root.transform;
-                        layerObj.AddComponent<PatternComponent>();
                         foreach (var obj in validExpressionsPerLayer)
                         {
                             obj.transform.parent = layerObj.transform;
@@ -104,7 +103,7 @@ internal class AnimatorControllerImporter
         }
     }
 
-    private void CollectConditionsAndStates(AnimatorStateMachine stateMachine, Dictionary<AnimatorState, List<List<Condition>>> conditionStateList)
+    private void CollectConditionsAndStates(AnimatorStateMachine stateMachine, Dictionary<AnimatorState, ICondition> conditionsPerState)
     {
         var count = 0;
 
@@ -112,7 +111,7 @@ internal class AnimatorControllerImporter
         {
             if (IsValidTransition(transition, out var state))
             {
-                AddAnimatorCondition(state, transition.conditions.ToList());
+                AddAnimatorCondition(state, transition.conditions);
             }
         }
         
@@ -122,17 +121,17 @@ internal class AnimatorControllerImporter
             {
                 if (IsValidTransition(transition, out var state))
                 {
-                    AddAnimatorCondition(state, transition.conditions.ToList());
+                    AddAnimatorCondition(state, transition.conditions);
                 }
             }
         }
 
-        var anyStateConditions = new List<(AnimatorState, List<AnimatorCondition>)>();
+        var anyStateConditions = new List<(AnimatorState, AnimatorCondition[])>();
         foreach (var transition in stateMachine.anyStateTransitions)
         {
             if (IsValidTransition(transition, out var state))
             {
-                anyStateConditions.Add((state, transition.conditions.ToList()));
+                anyStateConditions.Add((state, transition.conditions));
             }
         }
         if (anyStateConditions.Count > 0)
@@ -142,7 +141,7 @@ internal class AnimatorControllerImporter
 
         foreach (var subStateMachine in stateMachine.stateMachines)
         {
-            CollectConditionsAndStates(subStateMachine.stateMachine, conditionStateList);
+            CollectConditionsAndStates(subStateMachine.stateMachine, conditionsPerState);
         }
 
         // 条件を設定できないため、デフォルトステートの追加は他が空の場合のみ
@@ -150,7 +149,7 @@ internal class AnimatorControllerImporter
         {
             if (defaultState.motion is AnimationClip)
             {
-                AddCondition(defaultState, new());
+                AddCondition(defaultState, new TrueCondition());
             }
         }
 
@@ -175,48 +174,44 @@ internal class AnimatorControllerImporter
             return true;
         }
         
-        Condition ToCondition(AnimatorCondition condition)
+        void AddCondition(AnimatorState state, ICondition condition, bool isOr = true)
         {
-            var (handGestureCondition, parameterCondition) = condition.ToCondition(_parameterTypes, (parameter) => LocalizedLog.Warning("AnimatorControllerImporter:Log:warning:AnimatorControllerImporter:FailedToFindParameter", parameter));
-            if (handGestureCondition != null)
+            if (!conditionsPerState.TryGetValue(state, out var existingCondition))
             {
-                return handGestureCondition;
+                conditionsPerState[state] = isOr ? existingCondition.Or(condition) : existingCondition.And(condition);
             }
-            if (parameterCondition != null)
+            else
             {
-                return parameterCondition;
+                conditionsPerState[state] = condition;
             }
-            throw new InvalidOperationException("failed to convert condition");
-        }
-
-        void AddCondition(AnimatorState state, List<Condition> conditions)
-        {
-            conditionStateList.GetOrAddNew(state).Add(conditions);
             count++;
         }
 
-        void AddAnimatorCondition(AnimatorState state, List<AnimatorCondition> conditions)
+        void AddAnimatorCondition(AnimatorState state, ICollection<AnimatorCondition> conditions)
         {
-            AddCondition(state, conditions.Select(ToCondition).ToList());
+            var baseConditions = new AndCondition(conditions.Select(ToCondition).OfType<IBaseCondition>().ToList());
+            AddCondition(state, baseConditions);
         }
 
         // AnyStateの全条件の否定をAnyState以外の各条件が満たす必要がある
-        void ProcessAnyState(List<(AnimatorState, List<AnimatorCondition>)> anyStateConditionsPerState)
+        void ProcessAnyState(List<(AnimatorState, AnimatorCondition[])> anyStateConditionsPerState)
         {
-            var convertedAnyStateConditionsPerState = anyStateConditionsPerState.Select(p => (p.Item1, p.Item2.Select(ToCondition).ToList())).ToList();
-            var convertedAnyStateConditions = convertedAnyStateConditionsPerState.Select(p => p.Item2).ToList();
+            var convertedAnyStateConditionsPerState = anyStateConditionsPerState.Select(p => (p.Item1, p.Item2.Select(ToCondition).OfType<IBaseCondition>().ToList())).ToList();
 
-            foreach (var (state, orConditions) in conditionStateList)
+            foreach (var (state, andConditions) in convertedAnyStateConditionsPerState)
             {
-                foreach (var orCondition in orConditions)
-                {
-                    conditionStateList[state] = ConditionUtility.AddNegation(orCondition, convertedAnyStateConditions);
-                }
+                AddCondition(state, new AndCondition(andConditions).Not(), false);
             }
-            foreach (var (state, orConditions) in convertedAnyStateConditionsPerState)
+            foreach (var (state, andConditions) in convertedAnyStateConditionsPerState)
             {
-                AddCondition(state, orConditions);
+                AddCondition(state, new AndCondition(andConditions), true);
             }
+        }
+
+        IBaseCondition? ToCondition(AnimatorCondition condition)
+        {
+            var baseCondition = condition.ToBaseCondition(_parameterTypes, (parameter) => LocalizedLog.Warning("AnimatorControllerImporter:Log:warning:AnimatorControllerImporter:FailedToFindParameter", parameter));
+            return baseCondition;
         }
     }
 
@@ -231,27 +226,29 @@ internal class AnimatorControllerImporter
         return !(nonZeroCount > 0 && zeroCount > 5);
     }
 
-    private GameObject CreateConditionAndExpression(AnimatorState state, AnimationClip clip, List<List<Condition>> conditions, bool isBlending)
+    private GameObject CreateConditionAndExpression(AnimatorState state, AnimationClip clip, ICondition conditions, bool isBlending)
     {
         var obj = new GameObject(state.name);
 
-        if (conditions.Count > 0)
+        var dnfVisitor = new DnfVisitor();
+        var dnfConditions = conditions.Accept(dnfVisitor);
+
+        if (dnfConditions.Count > 0)
         {
-            var orConditions = conditions;
-            foreach (var animConditions in orConditions)
+            foreach (var andClause in dnfConditions)
             {
                 // ORは複数のConditionComponentで表現
-                var condition = obj.AddComponent<ConditionComponent>();
-                foreach (var animCondition in animConditions)
+                var conditionComponent = obj.AddComponent<ConditionComponent>();
+                foreach (var condition in andClause.Conditions)
                 {
-                    // ANDは単一のConditionComponent内で表現
-                    if (animCondition is HandGestureCondition handGestureCondition)
+                    var (handGestureCondition, parameterCondition) = condition.ToSerializableCondition();
+                    if (handGestureCondition != null)
                     {
-                        condition.HandGestureConditions.Add(handGestureCondition);
+                        conditionComponent.HandGestureConditions.Add(handGestureCondition);
                     }
-                    else if (animCondition is ParameterCondition parameterCondition)
+                    else if (parameterCondition != null)
                     {
-                        condition.ParameterConditions.Add(parameterCondition);
+                        conditionComponent.ParameterConditions.Add(parameterCondition);
                     }
                 }
             }

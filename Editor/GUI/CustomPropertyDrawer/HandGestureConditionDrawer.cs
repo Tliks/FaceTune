@@ -18,9 +18,9 @@ internal class HandGestureConditionDrawer : PropertyDrawer
     {
         EditorGUI.BeginProperty(position, label, property);
 
-        var handProp = property.FindPropertyRelative(HandGestureCondition.HandPropName);
-        var handGestureProp = property.FindPropertyRelative(HandGestureCondition.HandGesturePropName);
-        var equalityComparisonProp = property.FindPropertyRelative(HandGestureCondition.EqualityComparisonPropName);
+        var handProp = property.FindPropertyRelative(nameof(HandGestureCondition.Hand));
+        var handGestureProp = property.FindPropertyRelative(nameof(HandGestureCondition.HandGesture));
+        var equalityComparisonProp = property.FindPropertyRelative(nameof(HandGestureCondition.EqualityComparison));
 
         var currentPosition = position;
         currentPosition.height = EditorGUIUtility.singleLineHeight;

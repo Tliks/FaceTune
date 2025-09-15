@@ -54,8 +54,6 @@ internal static class AssetsMenu
             dataComponent.ClipOption = ClipImportOption.NonZero;
         }
 
-        menuObject.AddComponent<PatternComponent>();
-
         SceneManager.MoveGameObjectToScene(menuObject, SceneManager.GetActiveScene());
         Selection.activeGameObject = menuObject;
 

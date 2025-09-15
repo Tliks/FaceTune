@@ -13,7 +13,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         var avatarContext = buildPassContext.AvatarContext;
 
-        var patternData = context.GetState<PatternData>();
+        var patternData = context.GetState<PatternDataState>().PatternData;
 
         List<AvatarExpression> allExpressions = new();
         if (!patternData.IsEmpty)

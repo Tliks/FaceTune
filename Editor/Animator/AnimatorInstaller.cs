@@ -34,18 +34,16 @@ internal class AnimatorInstaller : InstallerBase
 
         CreateInitializationLayer(patternData, InitLayerPriority);
 
-        foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
+        foreach (var group in patternData.Groups)
         {
-            var type = patternGroup.Type;
-            if (type == typeof(Preset))
+            var isBlending = group.IsBlending;
+            if (isBlending)
             {
-                var presets = patternGroup.Group.Select(item => (Preset)item).ToList();
-                InstallPresetGroup(presets, LayerPriority);
+                InstallBlending(group, LayerPriority);
             }
-            else if (type == typeof(SingleExpressionPattern))
+            else
             {
-                var singleExpressionPatterns = patternGroup.Group.Select(item => (SingleExpressionPattern)item).ToList();
-                InstallSingleExpressionPatternGroup(singleExpressionPatterns, LayerPriority);
+                InstallNonBlending(group, LayerPriority);
             }
         }
         
@@ -122,88 +120,60 @@ internal class AnimatorInstaller : InstallerBase
         }
     }
 
-    private void InstallPresetGroup(IReadOnlyList<Preset> presets, int priority)
+    private void InstallBlending(ExpressionWithConditionGroup group, int priority)
     {
-        var maxPatterns = presets.Max(p => p.Patterns.Count); 
-        if (maxPatterns == 0) return;
-
-        VirtualLayer[] layers = new VirtualLayer[maxPatterns];
-        VirtualState[] defaultStates = new VirtualState[maxPatterns];
-
-        for (int i = 0; i < maxPatterns; i++)
+        for (int i = 0; i < group.ExpressionWithConditions.Count; i++)
         {
-            bool layerCreatedForThisIndex = false;
-            foreach (var preset in presets)
-            {
-                if (i >= preset.Patterns.Count) continue;
-                var pattern = preset.Patterns[i];
-                if (pattern == null || pattern.ExpressionWithConditions == null || !pattern.ExpressionWithConditions.Any()) continue;
-
-                if (!layerCreatedForThisIndex)
-                {
-                    layers[i] = AddLayer($"Preset Pattern Group {i}", priority); 
-                    defaultStates[i] = AddState(layers[i], "PassThrough", ExclusiveStatePosition);
-                    AsPassThrough(defaultStates[i]);
-                    layerCreatedForThisIndex = true;
-                }
-                
-                var basePosition = layers[i].StateMachine!.States.Last().Position + new Vector3(0, 2 * PositionYStep, 0);
-                AddExpressionWithConditions(layers[i], defaultStates[i], pattern.ExpressionWithConditions, basePosition);
-            }
-        }
-    }
-
-    private void InstallSingleExpressionPatternGroup(IReadOnlyList<SingleExpressionPattern> singleExpressionPatterns, int priority)
-    {
-        for (int i = 0; i < singleExpressionPatterns.Count; i++)
-        {
-            var singleExpressionPattern = singleExpressionPatterns[i];
-            if (singleExpressionPattern == null || singleExpressionPattern.ExpressionPattern.ExpressionWithConditions == null || 
-                !singleExpressionPattern.ExpressionPattern.ExpressionWithConditions.Any()) continue;
-
-            var layer = AddLayer(singleExpressionPattern.Name, priority);
+            var expressionWithDnfCondition = group.ExpressionWithConditions[i];
+            var layer = AddLayer("Blending" + expressionWithDnfCondition.Expression.Name, priority);
             var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
             AsPassThrough(defaultState);
             var basePosition = ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-            AddExpressionWithConditions(layer, defaultState, singleExpressionPattern.ExpressionPattern.ExpressionWithConditions, basePosition); 
-        }
-    }
 
-    private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IReadOnlyList<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
-    {
-        var trueCondition = new[] { ParameterCondition.Bool(TrueParameterName, true) };
-        // Pattern内で下のExpressionが優先されることを保証するため、Animatorにおいて上のStateが優先される仕様を用いるためにReverseする。
-        // ワークアラウンド
-        var expressionWithConditionList = expressionWithConditions.Reverse().Select(e =>
-        {
-            if (!e.Conditions.Any())
+            var states = AddExclusiveStates(layer, defaultState, expressionWithDnfCondition.Condition, _transitionDurationSeconds, basePosition);
+            for (int j = 0; j < states.Length; j++)
             {
-                e.SetConditions(e.Conditions.Concat(trueCondition).ToList());
+                var expression = expressionWithDnfCondition.Expression;
+                var state = states[j];
+                state.Name = expression.Name;
+                AddExpressionToState(state, expression);
             }
-            return e;
-        }).ToList();
-        var duration = _transitionDurationSeconds;
-        var conditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.Conditions).ToArray();
-        var states = AddExclusiveStates(layer, defaultState, conditionsPerState, duration, basePosition);
-        for (int i = 0; i < states.Length; i++)
-        {
-            var expressionWithCondition = expressionWithConditionList[i];
-            var state = states[i];
-            state.Name = expressionWithCondition.Expression.Name;
-            AddExpressionToState(state, expressionWithCondition.Expression);
         }
     }
 
-    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, IEnumerable<Condition>[] conditionsPerState, float duration, Vector3 basePosition)
+    private void InstallNonBlending(ExpressionWithConditionGroup group, int priority)
     {
-        var states = new VirtualState[conditionsPerState.Length];
+        var layer = AddLayer("NonBlending", priority);
+        var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
+        AsPassThrough(defaultState);
+        var basePosition = ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+
+        for (int i = 0; i < group.ExpressionWithConditions.Count; i++)
+        {
+            var expressionWithDnfCondition = group.ExpressionWithConditions[i];
+
+            var states = AddExclusiveStates(layer, defaultState, expressionWithDnfCondition.Condition, _transitionDurationSeconds, basePosition);
+            for (int j = 0; j < states.Length; j++)
+            {
+                var expression = expressionWithDnfCondition.Expression;
+                var state = states[j];
+                state.Name = expression.Name;
+                AddExpressionToState(state, expression);
+            }
+        }
+    }
+
+    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, DnfCondition conditionPerState, float duration, Vector3 basePosition)
+    {
+        var count = conditionPerState.Clauses.Count;
+        var states = new VirtualState[count];
         var newEntryTransitions = new List<VirtualTransition>();
 
         var position = basePosition;
 
-        for (int i = 0; i < conditionsPerState.Length; i++)
+        for (int i = 0; i < count; i++)
         {
-            var conditions = conditionsPerState[i];
+            var clause = conditionPerState.Clauses[i];
 
             var state = AddState(layer, "unnamed", position);
             states[i] = state;
@@ -211,15 +181,15 @@ internal class AnimatorInstaller : InstallerBase
 
             var entryTransition = VirtualTransition.Create();
             entryTransition.SetDestination(state);
-            entryTransition.Conditions = ToAnimatorConditions(conditions).ToImmutableList();
+            entryTransition.Conditions = clause.Conditions.Select(ToAnimatorCondition).ToImmutableList();
             newEntryTransitions.Add(entryTransition);
 
             var newExpressionStateTransitions = new List<VirtualStateTransition>();
-            foreach (var condition in conditions)
+            foreach (var condition in clause.Conditions)
             {
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.ToNegation()));
+                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition((IBaseCondition)condition.ToNegation())); // Todo
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -241,19 +211,7 @@ internal class AnimatorInstaller : InstallerBase
         return states;
     }
     
-    private IEnumerable<AnimatorCondition> ToAnimatorConditions(IEnumerable<Condition> conditions)
-    {
-        if (!conditions.Any()) return new List<AnimatorCondition>();
-        var transitionConditions = new List<AnimatorCondition>();
-        foreach (var cond in conditions)
-        {
-            var animatorCondition = ToAnimatorCondition(cond);
-            transitionConditions.Add(animatorCondition);
-        }
-        return transitionConditions;
-    }
-
-    private AnimatorCondition ToAnimatorCondition(Condition condition)
+    private AnimatorCondition ToAnimatorCondition(IBaseCondition condition)
     {
         var (animatorCondition, parameter, parameterType) = condition.ToAnimatorCondition();
         _controller.EnsureParameterExists(parameterType, parameter);

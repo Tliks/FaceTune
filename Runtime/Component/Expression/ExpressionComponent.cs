@@ -52,38 +52,40 @@ namespace Aoyon.FaceTune
             return new AvatarExpression(name, animationSet.Animations, ExpressionSettings, facialSettings);
         }
 
-        internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(AvatarContext avatarContext)
+        internal ExpressionWithCondition GetExpressionWithConditions(AvatarContext avatarContext)
         {
-            // 親の GameObject ごとの Condition を取得する (OR の AND)
-            var conditionComponentsByGameObject = new List<ConditionComponent[]>();
+            var conditionTree = BuildConditionTreeFromHierarchy(avatarContext);
+            var expression = ToExpression(avatarContext);
+            return new(conditionTree, expression); 
+        }
+
+        private ICondition BuildConditionTreeFromHierarchy(AvatarContext avatarContext)
+        {
+            var orConditions = new List<ICondition>();
             var current = transform;
+
+            // 1. 親をたどりながら、各GameObjectが持つ条件を収集
             while (current != null)
             {
                 var conditionComponents = current.GetComponents<ConditionComponent>();
                 if (conditionComponents.Length > 0)
                 {
-                    conditionComponentsByGameObject.Add(conditionComponents);
+                    // 2. 同じGameObject上の条件はすべてANDで結合する
+                    var andConditionsOnGameObject = new List<ICondition>();
+                    foreach (var conditionComponent in conditionComponents)
+                    {
+                        andConditionsOnGameObject.Add(conditionComponent.ToCondition(avatarContext));
+                    }
+                    if (andConditionsOnGameObject.Any())
+                    {
+                        // 3. GameObject間の条件はすべてORで結合する
+                        orConditions.Add(new AndCondition(andConditionsOnGameObject));
+                    }
                 }
                 current = current.parent;
             }
 
-            // 親の GameObject ごとの Condition の直積を求める (AND の OR)
-            var conditionComponentsByExpression = conditionComponentsByGameObject
-                .Aggregate(
-                    Enumerable.Repeat(Enumerable.Empty<ConditionComponent>(), 1),
-                    (acc, set) => acc.SelectMany(_ => set, (x, y) => x.Append(y))
-                );
-
-            foreach (var conditionComponents in conditionComponentsByExpression)
-            {
-                var conditions = conditionComponents
-                    .SelectMany(x => Enumerable.Concat<Condition>(
-                        x.HandGestureConditions.Select(y => y with { }),
-                        x.ParameterConditions.Select(y => y with { })))
-                    .ToList();
-                var expression = ToExpression(avatarContext);
-                yield return new(conditions, expression);
-            }
-        }
+            return new OrCondition(orConditions.ToArray());
+        }    
     }
 }

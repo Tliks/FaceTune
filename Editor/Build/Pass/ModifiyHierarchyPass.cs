@@ -24,8 +24,6 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         ProcessPreset(buildPassContext);
         // Expression
         // 
-        // Pattern
-        NormalizeData(buildPassContext);
     }
 
     private static void NegotiateMAMenuItem(BuildPassContext buildPassContext)
@@ -192,27 +190,13 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
             conditionComponent.ParameterConditions.Add(presetCondition);
 
             // 条件を発火させるMenuItemを設定
-            var menuTarget = presetComponent.GetMenuTarget();
+            var menuTarget = presetComponent.GetORCreateMenuTarget();
             var menuItem = menuTarget.EnsureComponent<ModularAvatarMenuItem>();
             menuItem.PortableControl.Type = PortableControlType.Toggle;
             menuItem.PortableControl.Parameter = Preset_Index_Parameter;  // Todo 上書きしていいかどうか。
             menuItem.PortableControl.Value = presetIndex;
 
             presetIndex++;
-        }
-    }
-
-    private static void NormalizeData(BuildPassContext buildPassContext)
-    {
-        // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
-        var root = buildPassContext.AvatarContext.Root;
-        var expressionComponents = root.GetComponentsInChildren<ExpressionComponent>(true);
-        foreach (var expressionComponent in expressionComponents)
-        {
-            if (expressionComponent.GetComponentInParentNullable<PatternComponent>(true) == null)
-            {
-                expressionComponent.gameObject.EnsureComponent<PatternComponent>();
-            }
         }
     }
 }

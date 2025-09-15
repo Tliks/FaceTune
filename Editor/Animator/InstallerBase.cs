@@ -20,7 +20,7 @@ internal class InstallerBase
     protected const float PositionXStep = 250;
     protected const float PositionYStep = 50;
 
-    protected const string TrueParameterName = $"{FaceTuneConstants.ParameterPrefix}/True";
+    protected const string TrueParameterName = FaceTuneConstants.TrueParameterName;
 
     public InstallerBase(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults)
     {

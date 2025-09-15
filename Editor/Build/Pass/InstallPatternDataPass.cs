@@ -12,7 +12,7 @@ internal class InstallPatternDataPass : Pass<InstallPatternDataPass>
     {
         if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
 
-        var patternData = context.GetState<PatternData>();
+        var patternData = context.GetState<PatternDataState>().PatternData;
 
         Profiler.BeginSample("InstallPatternData");
         buildPassContext.PlatformSupport.InstallPatternData(buildPassContext, context, new InstallerData(patternData));
