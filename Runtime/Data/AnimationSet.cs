@@ -42,10 +42,10 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
         switch (handling)
         {
             case DuplicatedAnimationKeyHandling.PreferFormer:
-                _pathPropertyAnimationMap.GetOrAdd(path).TryAdd(propertyName, animation);
+                _pathPropertyAnimationMap.GetOrAddNew(path).TryAdd(propertyName, animation);
                 break;
             case DuplicatedAnimationKeyHandling.PreferLatter:
-                _pathPropertyAnimationMap.GetOrAdd(path)[propertyName] = animation;
+                _pathPropertyAnimationMap.GetOrAddNew(path)[propertyName] = animation;
                 break;
             case DuplicatedAnimationKeyHandling.ThrowException:
                 if (_pathPropertyAnimationMap.TryGetValue(path, out var propertyMap) &&
@@ -55,7 +55,7 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
                 }
                 else
                 {
-                    _pathPropertyAnimationMap.GetOrAdd(path)[propertyName] = animation;
+                    _pathPropertyAnimationMap.GetOrAddNew(path)[propertyName] = animation;
                 }
                 break;
             default:
@@ -82,7 +82,7 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
                 {
                     if (propertyEntry.Value.TryToBlendShapeAnimation(out var blendShapeAnimation))
                     {
-                        mapping.GetOrAdd(pathEntry.Key)[propertyEntry.Key] = blendShapeAnimation;
+                        mapping.GetOrAddNew(pathEntry.Key)[propertyEntry.Key] = blendShapeAnimation;
                     }
                 }
             }

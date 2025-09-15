@@ -39,7 +39,7 @@ internal static class DictionaryExtensions
         return dict[key];
     }
 
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : new()
+    public static TValue GetOrAddNew<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : new()
     {
         dict.TryAddNew(key);
         return dict[key];
