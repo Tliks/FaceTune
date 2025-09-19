@@ -11,18 +11,18 @@ internal record class ExpressionWithCondition
         Expression = expression;
     }
 
-    public ExpressionWithDnfCondition ToDnfCondition(DnfVisitor dnfVisitor)
+    public ExpressionWithNormalizedCondition NormalizeAndOptimize()
     {
-        return new ExpressionWithDnfCondition(new DnfCondition(Condition.Accept(dnfVisitor)), Expression);
+        return new ExpressionWithNormalizedCondition(Condition.Normalize().Optimize(), Expression);
     }
 }
 
-internal record class ExpressionWithDnfCondition
+internal record class ExpressionWithNormalizedCondition
 {
-    public DnfCondition Condition { get; private set; }
+    public NormalizedCondition Condition { get; private set; }
     public AvatarExpression Expression { get; private set; }
 
-    public ExpressionWithDnfCondition(DnfCondition condition, AvatarExpression expression)
+    public ExpressionWithNormalizedCondition(NormalizedCondition condition, AvatarExpression expression)
     {
         Condition = condition;
         Expression = expression;
@@ -32,9 +32,9 @@ internal record class ExpressionWithDnfCondition
 internal record class ExpressionWithConditionGroup
 {
     public bool IsBlending { get; private set; }
-    public List<ExpressionWithDnfCondition> ExpressionWithConditions { get; private set; }
+    public List<ExpressionWithNormalizedCondition> ExpressionWithConditions { get; private set; }
 
-    public ExpressionWithConditionGroup(bool isBlending, List<ExpressionWithDnfCondition> expressionWithConditions)
+    public ExpressionWithConditionGroup(bool isBlending, List<ExpressionWithNormalizedCondition> expressionWithConditions)
     {
         IsBlending = isBlending;
         ExpressionWithConditions = expressionWithConditions;

@@ -14,14 +14,13 @@ internal class CollectDataPass : Pass<CollectDataPass>
         var rawGroups = CollectRawGroups(buildPassContext.AvatarContext);
         var resultGroups = new List<ExpressionWithConditionGroup>();
 
-        var dnfVisitor = new DnfVisitor();
         foreach (var rawGroup in rawGroups)
         {
             if (!rawGroup.IsBlending)
             {
-                rawGroup.PrioritizeNonBlendingConditions();
+                // rawGroup.PrioritizeNonBlendingConditions();
             }
-            resultGroups.Add(rawGroup.ToGroup(dnfVisitor));
+            resultGroups.Add(rawGroup.ToOptimizedGroup());
         }
 
         var patternData = new PatternData(resultGroups);
@@ -100,9 +99,14 @@ internal class CollectDataPass : Pass<CollectDataPass>
             }
         }
 
-        public ExpressionWithConditionGroup ToGroup(DnfVisitor dnfVisitor)
+        public ExpressionWithConditionGroup ToOptimizedGroup()
         {
-            return new ExpressionWithConditionGroup(IsBlending, ExpressionWithConditions.Select(e => e.ToDnfCondition(dnfVisitor)).ToList());
+            var dnfExpressionWithConditions = new List<ExpressionWithNormalizedCondition>();
+            foreach (var expressionWithCondition in ExpressionWithConditions)
+            {
+                dnfExpressionWithConditions.Add(expressionWithCondition.NormalizeAndOptimize());
+            }
+            return new ExpressionWithConditionGroup(IsBlending, dnfExpressionWithConditions);
         }
     }
 }
