@@ -7,7 +7,7 @@ internal interface ICondition // Immutable
 }
 
 /// <summary>
-/// FloatConditionやIntConditionなど単一で基本的な条件
+/// FloatConditionやTrueConditionなど単一で基本的な条件
 /// </summary>
 internal interface IBaseCondition : ICondition
 {
@@ -28,8 +28,8 @@ internal interface IConditionVisitor<TResult>
     TResult Visit(FloatCondition condition);
     TResult Visit(IntCondition condition);
     TResult Visit(BoolCondition condition);
-    TResult Visit(AndCondition condition);
-    TResult Visit(OrCondition condition);
     TResult Visit(TrueCondition condition);
     TResult Visit(FalseCondition condition);
+    TResult Visit(AndCondition condition);
+    TResult Visit(OrCondition condition);
 }

@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal class DnfVisitor : IConditionVisitor<IReadOnlyList<AndClause>>
+internal class NormalizationVisitor : IConditionVisitor<IReadOnlyList<AndClause>>
 {
     public IReadOnlyList<AndClause> Visit(FloatCondition condition)
     {
@@ -63,6 +63,17 @@ internal class DnfVisitor : IConditionVisitor<IReadOnlyList<AndClause>>
                 return Visit(new FalseCondition());
             }
             
+            // 組み合わせ爆発を防ぐための制限を追加
+            const int MaxClauses = 1000; // 適切な制限値を設定
+            if (resultClauses.Count * nextChildClauses.Count > MaxClauses)
+            {
+                throw new InvalidOperationException($"条件の組み合わせが複雑すぎます。制限値: {MaxClauses} 実際: {resultClauses.Count * nextChildClauses.Count}");
+            }
+            else
+            {
+                Debug.Log($"条件の組み合わせ {resultClauses.Count * nextChildClauses.Count} /n {string.Join("\n", resultClauses.Select(c => c.ToString()))}");
+            }
+            
             // デカルト積を計算して畳み込む
             var combined = new List<AndClause>();
             foreach (var clause1 in resultClauses)
@@ -76,5 +87,15 @@ internal class DnfVisitor : IConditionVisitor<IReadOnlyList<AndClause>>
             resultClauses = combined;
         }
         return resultClauses;
+    }
+
+    public IReadOnlyList<AndClause> Visit(AndClause condition)
+    {
+        return new[] { condition };
+    }
+
+    public IReadOnlyList<AndClause> Visit(NormalizedCondition condition)
+    {
+        return condition.Clauses;
     }
 }

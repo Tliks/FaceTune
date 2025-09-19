@@ -230,7 +230,7 @@ internal class AnimatorControllerImporter
     {
         var obj = new GameObject(state.name);
 
-        var dnfVisitor = new DnfVisitor();
+        var dnfVisitor = new NormalizationVisitor();
         var dnfConditions = conditions.Accept(dnfVisitor);
 
         if (dnfConditions.Count > 0)

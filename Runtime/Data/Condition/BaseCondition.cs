@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune;
 
 // Immutable
 
-internal sealed class FloatCondition : IBaseCondition
+internal record FloatCondition : IBaseCondition
 {
     public string ParameterName { get; }
     public float Value { get; }
@@ -39,7 +39,7 @@ internal sealed class FloatCondition : IBaseCondition
     }
 }
 
-internal sealed class IntCondition : IBaseCondition
+internal record IntCondition : IBaseCondition
 {
     public string ParameterName { get; }
     public int Value { get; }
@@ -70,7 +70,7 @@ internal sealed class IntCondition : IBaseCondition
     }
 }
 
-internal sealed class BoolCondition : IBaseCondition
+internal record BoolCondition : IBaseCondition
 {
     public string ParameterName { get; }
     public bool Value { get; }
@@ -92,8 +92,9 @@ internal sealed class BoolCondition : IBaseCondition
     }
 }
 
-internal sealed class TrueCondition : IBaseCondition
-{
+internal record TrueCondition : IBaseCondition
+{   
+    public static readonly TrueCondition Instance = new();
     public ICondition ToNegation() => new FalseCondition();
     TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
     {
@@ -101,8 +102,9 @@ internal sealed class TrueCondition : IBaseCondition
     }
 }
 
-internal sealed class FalseCondition : IBaseCondition
+internal record FalseCondition : IBaseCondition
 {
+    public static readonly FalseCondition Instance = new();
     public ICondition ToNegation() => new TrueCondition();
     TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
     {

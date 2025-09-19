@@ -323,7 +323,7 @@ internal static class AnimatorHelper
         }
     }
 
-    public static List<VirtualStateTransition> SetORConditions(VirtualStateTransition transition, IEnumerable<AnimatorCondition> conditions)
+    public static List<VirtualStateTransition> CloneForORConditions(VirtualStateTransition transition, IEnumerable<AnimatorCondition> conditions)
     {
         var transitions = new List<VirtualStateTransition>();
         foreach (var condition in conditions)

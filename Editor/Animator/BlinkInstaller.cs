@@ -110,7 +110,7 @@ internal class BlinkInstaller : InstallerBase
                 threshold = 0.99f // 安全側(Stare)に倒す
             }
         };
-        var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabled, disableORConditions);
+        var orTransitions = AnimatorHelper.CloneForORConditions(enabledToDisabled, disableORConditions);
         enabled.Transitions = enabled.Transitions.AddRange(orTransitions);
 
         // Disabled -> Enabled
@@ -310,7 +310,7 @@ internal class BlinkInstaller : InstallerBase
                 mode = AnimatorConditionMode.Less,
                 threshold = 0.99f // 同上
             });
-            var orTransitions = AnimatorHelper.SetORConditions(stareToGate, orConditions);
+            var orTransitions = AnimatorHelper.CloneForORConditions(stareToGate, orConditions);
             stare.Transitions = stare.Transitions.AddRange(orTransitions);
 
             // stare -> entryPassThrough

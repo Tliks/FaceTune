@@ -39,11 +39,11 @@ internal class AnimatorInstaller : InstallerBase
             var isBlending = group.IsBlending;
             if (isBlending)
             {
-                InstallBlending(group, LayerPriority);
+                InstallBlending(group);
             }
             else
             {
-                InstallNonBlending(group, LayerPriority);
+                InstallNonBlending(group);
             }
         }
         
@@ -120,95 +120,78 @@ internal class AnimatorInstaller : InstallerBase
         }
     }
 
-    private void InstallBlending(ExpressionWithConditionGroup group, int priority)
+    private void InstallBlending(ExpressionWithConditionGroup group)
     {
-        for (int i = 0; i < group.ExpressionWithConditions.Count; i++)
+        foreach (var expressionWithNormalizedCondition in group.ExpressionWithConditions)
         {
-            var expressionWithDnfCondition = group.ExpressionWithConditions[i];
-            var layer = AddLayer("Blending" + expressionWithDnfCondition.Expression.Name, priority);
-            var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
-            AsPassThrough(defaultState);
-            var basePosition = ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-
-            var states = AddExclusiveStates(layer, defaultState, expressionWithDnfCondition.Condition, _transitionDurationSeconds, basePosition);
-            for (int j = 0; j < states.Length; j++)
-            {
-                var expression = expressionWithDnfCondition.Expression;
-                var state = states[j];
-                state.Name = expression.Name;
-                AddExpressionToState(state, expression);
-            }
+            CreateLayerForExpressions(LayerPriority, "Blending: " + expressionWithNormalizedCondition.Expression.Name, expressionWithNormalizedCondition);
         }
     }
 
-    private void InstallNonBlending(ExpressionWithConditionGroup group, int priority)
+    private void InstallNonBlending(ExpressionWithConditionGroup group)
     {
-        var layer = AddLayer("NonBlending", priority);
-        var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
-        AsPassThrough(defaultState);
+        CreateLayerForExpressions(LayerPriority, "Non-Blending", group.ExpressionWithConditions.ToArray());
+    }
+
+    private void CreateLayerForExpressions(int priority, string layerName, params ExpressionWithNormalizedCondition[] expressionWithConditions)
+    {
+        if (expressionWithConditions.Length == 0) return;
+
+        var layer = AddLayer(layerName, priority);
+
+        var passThroughState = AddState(layer, "PassThrough", ExclusiveStatePosition);
+        AsPassThrough(passThroughState);
+
+        var stateMachine = layer.StateMachine!;
+
         var basePosition = ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0);
-
-        for (int i = 0; i < group.ExpressionWithConditions.Count; i++)
-        {
-            var expressionWithDnfCondition = group.ExpressionWithConditions[i];
-
-            var states = AddExclusiveStates(layer, defaultState, expressionWithDnfCondition.Condition, _transitionDurationSeconds, basePosition);
-            for (int j = 0; j < states.Length; j++)
-            {
-                var expression = expressionWithDnfCondition.Expression;
-                var state = states[j];
-                state.Name = expression.Name;
-                AddExpressionToState(state, expression);
-            }
-        }
-    }
-
-    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, DnfCondition conditionPerState, float duration, Vector3 basePosition)
-    {
-        var count = conditionPerState.Clauses.Count;
-        var states = new VirtualState[count];
-        var newEntryTransitions = new List<VirtualTransition>();
-
         var position = basePosition;
 
-        for (int i = 0; i < count; i++)
-        {
-            var clause = conditionPerState.Clauses[i];
+        var passThroughToExitConditions = new List<ICondition>();
 
-            var state = AddState(layer, "unnamed", position);
-            states[i] = state;
+        for (int i = 0; i < expressionWithConditions.Length; i++)
+        {
+            var expressionWithNormalizedCondition = expressionWithConditions[i];
+
+            var expression = expressionWithNormalizedCondition.Expression;
+            var condition = expressionWithNormalizedCondition.Condition;
+
+            var state = AddState(layer, expression.Name, position);
             position.y += PositionYStep;
 
+            AddExpressionToState(state, expression);
+
+            // Entry
             var entryTransition = VirtualTransition.Create();
             entryTransition.SetDestination(state);
-            entryTransition.Conditions = clause.Conditions.Select(ToAnimatorCondition).ToImmutableList();
-            newEntryTransitions.Add(entryTransition);
+            stateMachine.EntryTransitions = stateMachine.EntryTransitions.AddRange(NormalizedContiditnToTransitions(condition, entryTransition));
 
-            var newExpressionStateTransitions = new List<VirtualStateTransition>();
-            foreach (var condition in clause.Conditions)
-            {
-                var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
-                exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition((IBaseCondition)condition.ToNegation())); // Todo
-                newExpressionStateTransitions.Add(exitTransition);
-            }
-            state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
-        }
-
-        // entry to expressinの全TrasntionのORをdefault to Exitに入れる
-        var exitTransitionsFromDefault = new List<VirtualStateTransition>();
-        foreach (var entryTr in newEntryTransitions)
-        {
-            var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
+            // ExitはExntryのNegation
+            var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(_transitionDurationSeconds);
             exitTransition.SetExitDestination();
-            exitTransition.Conditions = entryTr.Conditions; // newEntryTransition の条件をそのまま使用
-            exitTransitionsFromDefault.Add(exitTransition);
+            state.Transitions = state.Transitions.AddRange(NormalizedContiditnToTransitions(condition.ToNegation().Optimize(), exitTransition));
+
+            // PassThrough to Exitに、各ExpressionのEntry条件を追加
+            // passThroughToExitConditions.Add(condition);
         }
-        defaultState.Transitions = ImmutableList.CreateRange(defaultState.Transitions.Concat(exitTransitionsFromDefault));
 
-        layer.StateMachine!.EntryTransitions = ImmutableList.CreateRange(layer.StateMachine!.EntryTransitions.Concat(newEntryTransitions));
+        var defaultExitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(_transitionDurationSeconds);
+        defaultExitTransition.SetExitDestination();
+        var passThroughToExitCondition = new OrCondition(passThroughToExitConditions);
+        passThroughState.Transitions = passThroughState.Transitions.AddRange(NormalizedContiditnToTransitions(passThroughToExitCondition.Normalize().Optimize(), defaultExitTransition));
+    }
 
-        return states;
+    public List<T> NormalizedContiditnToTransitions<T>(NormalizedCondition condition, T referenceTransition) where T : VirtualTransitionBase
+    {
+        var newTransitions = new List<T>();
+        foreach (var clause in condition.Clauses) // OR
+        {
+            var duplicate = (referenceTransition.Clone() as T)!;
+            var andConditions = clause.Conditions.Select(c => ToAnimatorCondition(c));
+            duplicate.Conditions = ImmutableList.CreateRange(andConditions);
+            newTransitions.Add(duplicate);
+        }
+        return newTransitions;
     }
     
     private AnimatorCondition ToAnimatorCondition(IBaseCondition condition)

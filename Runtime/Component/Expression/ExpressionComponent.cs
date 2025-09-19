@@ -61,7 +61,7 @@ namespace Aoyon.FaceTune
 
         private ICondition BuildConditionTreeFromHierarchy(AvatarContext avatarContext)
         {
-            var orConditions = new List<ICondition>();
+            List<ICondition> conditions = new();
             var current = transform;
 
             // 1. 親をたどりながら、各GameObjectが持つ条件を収集
@@ -70,22 +70,27 @@ namespace Aoyon.FaceTune
                 var conditionComponents = current.GetComponents<ConditionComponent>();
                 if (conditionComponents.Length > 0)
                 {
-                    // 2. 同じGameObject上の条件はすべてANDで結合する
-                    var andConditionsOnGameObject = new List<ICondition>();
+                    // 2. 同じGameObject上の条件はすべてORで結合する
+                    List<ICondition> orConditionsOnGameObject = new();
                     foreach (var conditionComponent in conditionComponents)
                     {
-                        andConditionsOnGameObject.Add(conditionComponent.ToCondition(avatarContext));
+                        orConditionsOnGameObject.Add(conditionComponent.ToCondition(avatarContext));
                     }
-                    if (andConditionsOnGameObject.Any())
+                    if (orConditionsOnGameObject.Count > 0)
                     {
-                        // 3. GameObject間の条件はすべてORで結合する
-                        orConditions.Add(new AndCondition(andConditionsOnGameObject));
+                        conditions.Add(new OrCondition(orConditionsOnGameObject));
                     }
                 }
                 current = current.parent;
             }
+            
+            if (conditions.Count == 0)
+            {
+                return TrueCondition.Instance; // Todo: これで良いか考える
+            }
 
-            return new OrCondition(orConditions.ToArray());
+            // 3. GameObject間の条件はすべてAndで結合する
+            return new AndCondition(conditions);
         }    
     }
 }

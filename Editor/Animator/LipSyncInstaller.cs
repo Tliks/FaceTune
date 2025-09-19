@@ -113,7 +113,7 @@ internal class LipSyncInstaller : InstallerBase
                 threshold = 0.99f // 安全側(Mute)に倒す
             }
         };
-        var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabledTransition, disableORConditions);
+        var orTransitions = AnimatorHelper.CloneForORConditions(enabledToDisabledTransition, disableORConditions);
         enabled.Transitions = ImmutableList.CreateRange(orTransitions);
 
         var disabledToEnabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
@@ -210,7 +210,7 @@ internal class LipSyncInstaller : InstallerBase
                 mode = AnimatorConditionMode.Less,
                 threshold = CancelerThreshold
             });
-            var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToPassThrough, orConditions);
+            var orTransitions = AnimatorHelper.CloneForORConditions(lipsyncingToPassThrough, orConditions);
             lipsyncing.Transitions = lipsyncing.Transitions.AddRange(orTransitions);
 
             position.y += PositionYStep;

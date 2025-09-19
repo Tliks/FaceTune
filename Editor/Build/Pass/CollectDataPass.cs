@@ -14,14 +14,13 @@ internal class CollectDataPass : Pass<CollectDataPass>
         var rawGroups = CollectRawGroups(buildPassContext.AvatarContext);
         var resultGroups = new List<ExpressionWithConditionGroup>();
 
-        var dnfVisitor = new DnfVisitor();
         foreach (var rawGroup in rawGroups)
         {
             if (!rawGroup.IsBlending)
             {
-                rawGroup.PrioritizeNonBlendingConditions();
+                // rawGroup.PrioritizeNonBlendingConditions();
             }
-            resultGroups.Add(rawGroup.ToGroup(dnfVisitor));
+            resultGroups.Add(rawGroup.ToOptimizedGroup());
         }
 
         var patternData = new PatternData(resultGroups);
@@ -68,30 +67,23 @@ internal class CollectDataPass : Pass<CollectDataPass>
             ExpressionWithConditions = expressionWithConditions;
         }
 
-        public void PrioritizeNonBlendingConditions()
+        public void PrioritizeLatterExpressions()
         {
             var originalConditions = ExpressionWithConditions.Select(e => e.Condition).ToList();
+            originalConditions.Reverse();
 
             var prioritizedConditions = new List<ICondition>(originalConditions.Count);
 
-            // 後ろから見ていったときの「後続条件のNOTのAND結合」を保持する変数
-            // 初期値は「制約なし」を意味するTrueCondition
-            ICondition negatedSuffix = new TrueCondition();
+            prioritizedConditions.Add(originalConditions.First());
+            ICondition negatedSuffix = originalConditions.First().Not();
 
-            // リストを末尾から先頭に向かって処理
-            for (int i = originalConditions.Count - 1; i >= 0; i--)
+            foreach (var currentOriginal in originalConditions.Skip(1))
             {
-                var currentOriginal = originalConditions[i];
-                
-                // 現在の条件に、それより後ろの条件のNOTのAND結合を追加
                 var newCondition = currentOriginal.And(negatedSuffix);
                 prioritizedConditions.Add(newCondition);
-                
-                // 次のループ（一つ前の要素）のために、現在の条件のNOTを追加しておく
                 negatedSuffix = negatedSuffix.And(currentOriginal.Not());
             }
 
-            // 後ろから構築したため、最後にリストを反転させる
             prioritizedConditions.Reverse();
 
             for (int i = 0; i < prioritizedConditions.Count; i++)
@@ -100,9 +92,14 @@ internal class CollectDataPass : Pass<CollectDataPass>
             }
         }
 
-        public ExpressionWithConditionGroup ToGroup(DnfVisitor dnfVisitor)
+        public ExpressionWithConditionGroup ToOptimizedGroup()
         {
-            return new ExpressionWithConditionGroup(IsBlending, ExpressionWithConditions.Select(e => e.ToDnfCondition(dnfVisitor)).ToList());
+            var dnfExpressionWithConditions = new List<ExpressionWithNormalizedCondition>();
+            foreach (var expressionWithCondition in ExpressionWithConditions)
+            {
+                dnfExpressionWithConditions.Add(expressionWithCondition.NormalizeAndOptimize());
+            }
+            return new ExpressionWithConditionGroup(IsBlending, dnfExpressionWithConditions);
         }
     }
 }
