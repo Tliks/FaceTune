@@ -3,7 +3,7 @@ namespace Aoyon.FaceTune;
 internal interface ICondition // Immutable
 {
     ICondition ToNegation();
-    TResult Accept<TResult>(IConditionVisitor<TResult> visitor);
+    void Accept(IConditionVisitor visitor);
 }
 
 /// <summary>
@@ -23,13 +23,15 @@ internal interface ICompositeCondition : ICondition
 // <summary>
 /// Conditionの各具象クラスを訪問するインターフェース
 /// </summary>
-internal interface IConditionVisitor<TResult>
+internal interface IConditionVisitor
 {
-    TResult Visit(FloatCondition condition);
-    TResult Visit(IntCondition condition);
-    TResult Visit(BoolCondition condition);
-    TResult Visit(TrueCondition condition);
-    TResult Visit(FalseCondition condition);
-    TResult Visit(AndCondition condition);
-    TResult Visit(OrCondition condition);
+    void Visit(FloatCondition condition);
+    void Visit(IntCondition condition);
+    void Visit(BoolCondition condition);
+    void Visit(TrueCondition condition);
+    void Visit(FalseCondition condition);
+    void Visit(AndCondition condition);
+    void Visit(OrCondition condition);
+    void Visit(AndClause condition);
+    void Visit(NormalizedCondition condition);
 }

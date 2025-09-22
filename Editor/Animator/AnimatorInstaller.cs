@@ -169,7 +169,7 @@ internal class AnimatorInstaller : InstallerBase
             // ExitはExntryのNegation
             var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(_transitionDurationSeconds);
             exitTransition.SetExitDestination();
-            state.Transitions = state.Transitions.AddRange(NormalizedContiditnToTransitions(condition.ToNegation().Optimize(), exitTransition));
+            state.Transitions = state.Transitions.AddRange(NormalizedContiditnToTransitions(condition.Not().Normalize().Optimize(), exitTransition));
 
             // PassThrough to Exitに、各ExpressionのEntry条件を追加
             // passThroughToExitConditions.Add(condition);

@@ -23,8 +23,9 @@ internal static class ConditionExtensions
 
     public static NormalizedCondition Normalize(this ICondition condition)
     {
-        var dnfVisitor = new NormalizationVisitor();
-        return new NormalizedCondition(condition.Accept(dnfVisitor));
+        var text = ConditionTreeDebugVisitor.Dump(condition);
+        Debug.Log(text);
+        return NormalizationVisitor.Normalize(condition);
     }
 
     public static NormalizedCondition Optimize(this NormalizedCondition condition)

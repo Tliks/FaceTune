@@ -18,7 +18,7 @@ internal class CollectDataPass : Pass<CollectDataPass>
         {
             if (!rawGroup.IsBlending)
             {
-                // rawGroup.PrioritizeNonBlendingConditions();
+                rawGroup.PrioritizeLatterExpressions();
             }
             resultGroups.Add(rawGroup.ToOptimizedGroup());
         }

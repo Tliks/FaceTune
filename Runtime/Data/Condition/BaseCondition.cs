@@ -19,13 +19,12 @@ internal record FloatCondition : IBaseCondition
         ComparisonType = comparisonType;
     }
 
-    private const float FloatTolerance = 0.00001f;
     public ICondition ToNegation()
     {
         return ComparisonType switch
         {
-            ComparisonType.GreaterThan => new FloatCondition(ParameterName, Value + FloatTolerance, ComparisonType.LessThan),
-            ComparisonType.LessThan => new FloatCondition(ParameterName, Value - FloatTolerance, ComparisonType.GreaterThan),
+            ComparisonType.GreaterThan => new FloatCondition(ParameterName, FloatUtility.NextFloat(Value), ComparisonType.LessThan),
+            ComparisonType.LessThan => new FloatCondition(ParameterName, FloatUtility.PreviousFloat(Value), ComparisonType.GreaterThan),
             // EqualやNotEqualをここで弾く(既に弾いているはず)
             // なお別にAND条件で表現は可能ではある。
             // Todo: このハンドリングを変えるか考える。
@@ -33,9 +32,9 @@ internal record FloatCondition : IBaseCondition
         };
     }
 
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }
 
@@ -64,9 +63,9 @@ internal record IntCondition : IBaseCondition
         };
     }
 
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }
 
@@ -86,9 +85,9 @@ internal record BoolCondition : IBaseCondition
         return new BoolCondition(ParameterName, !Value);
     }
 
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }
 
@@ -96,9 +95,9 @@ internal record TrueCondition : IBaseCondition
 {   
     public static readonly TrueCondition Instance = new();
     public ICondition ToNegation() => new FalseCondition();
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }
 
@@ -106,8 +105,8 @@ internal record FalseCondition : IBaseCondition
 {
     public static readonly FalseCondition Instance = new();
     public ICondition ToNegation() => new TrueCondition();
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }

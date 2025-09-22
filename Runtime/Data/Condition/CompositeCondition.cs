@@ -15,9 +15,9 @@ internal record AndCondition(IReadOnlyList<ICondition> Conditions) : ICompositeC
         return new OrCondition(Conditions.Select(c => c.ToNegation()).ToList());
     }
 
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }
 
@@ -34,8 +34,8 @@ internal record OrCondition(IReadOnlyList<ICondition> Conditions) : ICompositeCo
         return new AndCondition(Conditions.Select(c => c.ToNegation()).ToList());
     }
 
-    TResult ICondition.Accept<TResult>(IConditionVisitor<TResult> visitor)
+    void ICondition.Accept(IConditionVisitor visitor)
     {
-        return visitor.Visit(this);
+        visitor.Visit(this);
     }
 }

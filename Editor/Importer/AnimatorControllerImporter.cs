@@ -52,7 +52,7 @@ internal class AnimatorControllerImporter
                         if (facialBlendShapes.Count > 0)
                         {
                             var isBlending = IsBlending(facialBlendShapes);
-                            var obj = CreateConditionAndExpression(state, clip, conditions, isBlending);
+                            var obj = CreateConditionAndExpression(state, clip, conditions.Normalize(), isBlending);
 
                             var expressionData = obj.AddComponent<ExpressionDataComponent>();
                             expressionData.Clip = clip;
@@ -226,22 +226,19 @@ internal class AnimatorControllerImporter
         return !(nonZeroCount > 0 && zeroCount > 5);
     }
 
-    private GameObject CreateConditionAndExpression(AnimatorState state, AnimationClip clip, ICondition conditions, bool isBlending)
+    private GameObject CreateConditionAndExpression(AnimatorState state, AnimationClip clip, NormalizedCondition condition, bool isBlending)
     {
         var obj = new GameObject(state.name);
 
-        var dnfVisitor = new NormalizationVisitor();
-        var dnfConditions = conditions.Accept(dnfVisitor);
-
-        if (dnfConditions.Count > 0)
+        if (condition.Clauses.Count > 0)
         {
-            foreach (var andClause in dnfConditions)
+            foreach (var andClause in condition.Clauses)
             {
                 // ORは複数のConditionComponentで表現
                 var conditionComponent = obj.AddComponent<ConditionComponent>();
-                foreach (var condition in andClause.Conditions)
+                foreach (var baseCondition in andClause.Conditions)
                 {
-                    var (handGestureCondition, parameterCondition) = condition.ToSerializableCondition();
+                    var (handGestureCondition, parameterCondition) = baseCondition.ToSerializableCondition();
                     if (handGestureCondition != null)
                     {
                         conditionComponent.HandGestureConditions.Add(handGestureCondition);
