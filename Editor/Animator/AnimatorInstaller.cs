@@ -62,7 +62,7 @@ internal class AnimatorInstaller : InstallerBase
 
     private void CreateInitializationLayer(PatternData patternData, int priority)
     {
-        var nonMMDLayer = AddLayer("Initial", priority, false);
+        var nonMMDLayer = AddLayer("Initial", priority, true);
         var nonMMDState = AddState(nonMMDLayer, "Initial", position: ExclusiveStatePosition);
         _nonMMDInitializationClip = nonMMDState.CreateClip(nonMMDState.Name);
 
