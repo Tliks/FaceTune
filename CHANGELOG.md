@@ -15,6 +15,16 @@
 
 ### Security
 
+## [0.1.0-beta.11] - 2025-12-26
+### Changed
+- Improved Animator Controller import process.
+- Localized some console messages.
+- Changed supported NDMF version to >=1.9.0.rc.0
+
+### Fixed
+- Fixed an issue where FacialShapesEditor was not updating.
+- Fixed an issue where specifying multiple parameters as conditions from the Inspector did not work correctly.
+
 ## [0.1.0-beta.10] - 2025-08-28
 ### Fixed
 - Fixed an issue where FacialShapesEditor could not be opened.
