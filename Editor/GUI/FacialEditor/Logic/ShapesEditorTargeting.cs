@@ -62,7 +62,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
         {
             animations.AddRange(dataManager.BaseSet.ToGenericAnimations(path));
         }
-        var overrides = new BlendShapeSet();
+        var overrides = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(overrides);
         animations.AddRange(overrides.ToGenericAnimations(path));
 
@@ -110,7 +110,7 @@ internal class ExpressionDataTargeting : IShapesEditorTargeting<ExpressionDataCo
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeSet();
+        var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var blendshapeAnimations = result.ToBlendShapeAnimations().ToList();
         var getProperty = (SerializedObject so) => so.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations));
@@ -132,7 +132,7 @@ internal class FacialStyleTargeting : IShapesEditorTargeting<FacialStyleComponen
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeSet();
+        var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var blendshapeAnimations = result.ToBlendShapeAnimations().ToList();
         var getProperty = (SerializedObject so) => so.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
@@ -154,14 +154,14 @@ internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<AdvancedEyeBli
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeSet();
+        var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedEyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
         CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddShapesAsNames(
             Target, 
             getProperty, 
-            result.Names.ToList()
+            result.Keys.ToList()
         );
     }
 
@@ -175,14 +175,14 @@ internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<AdvancedLipSync
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeSet();
+        var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var getProperty = (SerializedObject so) => so.FindProperty(nameof(AdvancedLipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName);
         CustomEditorUtility.ClearAllElements(Target, getProperty);
         CustomEditorUtility.AddShapesAsNames(
             Target, 
             getProperty, 
-            result.Names.ToList()
+            result.Keys.ToList()
         );
     }
 

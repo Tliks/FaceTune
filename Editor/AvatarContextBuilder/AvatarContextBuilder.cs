@@ -33,12 +33,12 @@ internal static class AvatarContextBuilder
             return false;
         }
 
-        var zeroBlendShapes = new BlendShapeSet();
+        var zeroBlendShapes = new BlendShapeWeightSet();
         faceRenderer.GetBlendShapesAndSetWeightToZero(zeroBlendShapes);
 
         var trackedBlendShapes = new HashSet<string>(platformSupport.GetTrackedBlendShape());
 
-        var safeZeroBlendShapes = new BlendShapeSet(zeroBlendShapes.Where(shape => !trackedBlendShapes.Contains(shape.Name)));
+        var safeZeroBlendShapes = new BlendShapeWeightSet(zeroBlendShapes.Where(shape => !trackedBlendShapes.Contains(shape.Name)));
 
         avatarContext = new AvatarContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroBlendShapes, trackedBlendShapes, safeZeroBlendShapes);
         result = AvatarContextBuildResult.Success;

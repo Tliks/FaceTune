@@ -19,7 +19,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
         }
     }
 
-    private static readonly MultiFramePreview _multiFramePreview = new();
+    private static readonly MultiFramePreview _multiFramePreview = new(EditCurrentNodeDirectly);
 
     [InitializeOnLoadMethod]
     static void Init()
@@ -48,7 +48,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
     }
 
     // 無関係なオブジェクト同士の選択の切り替え時で更新がかかるらないように、_targetObjectのextractで監視する
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result, ref float defaultValue)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue)
     {
         var animations = new List<BlendShapeWeightAnimation>();
         if (TryCollectBlendShapeAnimations(context, root, bodyPath, animations, out var isLooping))
@@ -159,89 +159,6 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
             context.GetComponentsInChildren(gameObject, true, dataComponents);
             if (dataComponents.Count == 0) return false;
             return true;
-        }
-    }
-
-    class MultiFramePreview : IDisposable
-    {
-        public bool IsActive { get; private set; } = false;
-        public List<BlendShapeWeightAnimation>? Animations { get; private set; } = null;
-        public float Duration { get; private set; } = 0f;
-        public bool IsLooping { get; private set; } = false;
-
-        public double StartTime { get; private set; } = 0;
-        public double LastUpdateTime { get; private set; } = 0;
-
-        public const double UpdateIntervalSeconds = 1.0 / 30.0; // 30fpsにスロットリング
-        
-        public MultiFramePreview()
-        {
-            EditorApplication.update += OnEditorUpdate;
-        }
-
-        public void Start(List<BlendShapeWeightAnimation> animations, bool isLooping)
-        {
-            IsActive = true;
-            Animations = animations;
-            Duration = animations.Max(a => a.Time);
-            IsLooping = isLooping;
-            StartTime = EditorApplication.timeSinceStartup;
-            LastUpdateTime = 0;
-
-            if (Duration <= 0f) IsActive = false;
-        }
-
-        public void Stop()
-        {
-            IsActive = false;
-        }
-
-        private void OnEditorUpdate()
-        {
-            if (!IsActive) return;
-            if (Animations == null) return;
-
-            var now = EditorApplication.timeSinceStartup;
-            if (now - LastUpdateTime < UpdateIntervalSeconds) return; // スロットリング
-            LastUpdateTime = now;
-
-            var elapsed = now - StartTime;
-            var endReached = false;
-            float t;
-            if (IsLooping)
-            {
-                t = (float)(elapsed % Duration);
-            }
-            else
-            {
-                if (elapsed >= Duration)
-                {
-                    t = Duration;
-                    endReached = true;
-                }
-                else
-                {
-                    t = (float)elapsed;
-                }
-            }
-
-            using var _frameSet = BlendShapeSetPool.Get(out var frameSet);
-            foreach (var anim in Animations)
-            {
-                frameSet.Add(new BlendShapeWeight(anim.Name, anim.Weight(t)));
-            }
-
-            EditCurrentNodeDirectly(frameSet);
-
-            if (endReached)
-            {
-                Stop();
-            }
-        }
-
-        public void Dispose()
-        {
-            EditorApplication.update -= OnEditorUpdate;
         }
     }
 }

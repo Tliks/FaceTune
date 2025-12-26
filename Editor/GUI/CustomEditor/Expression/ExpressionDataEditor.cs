@@ -139,10 +139,10 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
         FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialStyleAnimations);
 
-        var defaultOverride = new BlendShapeSet();
+        var defaultOverride = new BlendShapeWeightSet();
         defaultOverride.AddRange(component.BlendShapeAnimations.ToFirstFrameBlendShapes());
 
-        var baseSet = new BlendShapeSet();
+        var baseSet = new BlendShapeWeightSet();
         baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
         baseSet.AddRange(component.ProcessClip(bodyPath).facialAnimations.ToFirstFrameBlendShapes());
 

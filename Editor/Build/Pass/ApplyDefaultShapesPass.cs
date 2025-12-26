@@ -32,7 +32,7 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
 
         // 未知のブレンドシェイプを上書きせず、既知のブレンドシェイプのみ0で上書きする
 
-        var set = new BlendShapeSet();
+        var set = new BlendShapeWeightSet();
         set.AddRange(avatarContext.ZeroBlendShapes);
         target.GetBlendShapes(set);
 
