@@ -91,7 +91,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         EditorGUILayout.Space();
         if (GUILayout.Button($"{ComponentName}:button:OpenEditor".LG()))
         {
-            OpenEditor(Component);
+            OpenEditor();
         }
     }
 
@@ -132,21 +132,21 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
             .ToArray();
     }
 
-    internal static void OpenEditor(ExpressionDataComponent component)
+    private void OpenEditor()
     {
-        if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
         var bodyPath = context.BodyPath;
         var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
-        FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialStyleAnimations);
+        FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
 
         var defaultOverride = new BlendShapeWeightSet();
-        defaultOverride.AddRange(component.BlendShapeAnimations.ToFirstFrameBlendShapes());
+        defaultOverride.AddRange(Component.BlendShapeAnimations.ToFirstFrameBlendShapes());
 
         var baseSet = new BlendShapeWeightSet();
         baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
-        baseSet.AddRange(component.ProcessClip(bodyPath).facialAnimations.ToFirstFrameBlendShapes());
+        baseSet.AddRange(Component.ProcessClip(bodyPath).facialAnimations.ToFirstFrameBlendShapes());
 
-        CustomEditorUtility.OpenEditor(component.gameObject, new ExpressionDataTargeting(){ Target = component }, defaultOverride, baseSet);
+        CustomEditorUtility.OpenEditor(Component.gameObject, new ExpressionDataTargeting(){ Target = Component }, defaultOverride, baseSet);
     }
     
 

@@ -182,24 +182,6 @@ msgstr "この表情を常にプレビューする"
 msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
 msgstr "この表情を常にプレビューする場合に設定します。アバター内で1つの表情のみ有効にできます。"
 
-msgid "ExpressionComponent:label:ConnectedComponents"
-msgstr "紐づいているコンポーネント"
-
-msgid "ExpressionComponent:label:ConnectedComponents:FacialStyleComponent"
-msgstr "Facial Style"
-
-msgid "ExpressionComponent:label:ConnectedComponents:ConditionComponent"
-msgstr "Condition"
-
-msgid "ExpressionComponent:label:ConnectedComponents:ExpressionDataComponent"
-msgstr "Expression Data"
-
-msgid "ExpressionComponent:button:ConnectedComponents:ExpressionDataComponent:Add"
-msgstr "追加"
-
-msgid "ExpressionComponent:button:ConnectedComponents:ExpressionDataComponent:OpenEditor"
-msgstr "エディタを開く"
-
 # FacialSettings
 
 msgid "FacialSettings"
