@@ -48,7 +48,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
     }
 
     // 無関係なオブジェクト同士の選択の切り替え時で更新がかかるらないように、_targetObjectのextractで監視する
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result, ref float defaultValue)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue)
     {
         var animations = new List<BlendShapeWeightAnimation>();
         if (TryCollectBlendShapeAnimations(context, root, bodyPath, animations, out var isLooping))

@@ -11,7 +11,7 @@ internal class PreviewManager : IDisposable
     private readonly VisualElement _rootElement;
     private IVisualElementScheduledItem _updateScheduler;
     private const int UpdateIntervalMs = 33; // 約30fps
-    private readonly BlendShapeSet _previewSet;
+    private readonly BlendShapeWeightSet _previewSet;
 
     private bool _setBlendShapeTo100OnHover;
     public bool SetBlendShapeTo100OnHover
@@ -89,7 +89,7 @@ internal class PreviewManager : IDisposable
         else
         {
             _isEnabled = true;
-            var defaultSet = new BlendShapeSet();
+            var defaultSet = new BlendShapeWeightSet();
             GetCurrentSet(defaultSet);
             EditingShapesPreview.Start(renderer, defaultSet);
             _highlightBlendShapeProcessor.RefreshTarget(renderer, renderer.sharedMesh);
@@ -146,7 +146,7 @@ internal class PreviewManager : IDisposable
         }
     }
 
-    private void GetCurrentSet(BlendShapeSet result)
+    private void GetCurrentSet(BlendShapeWeightSet result)
     {
         result.Clear();
         foreach (var shape in _blendShapeOverrideManager.AllKeys)

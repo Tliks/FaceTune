@@ -6,7 +6,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
 {
     private static readonly PublishedValue<SkinnedMeshRenderer?> _target = new(null);
     public override bool IsEnabled(ComputeContext context) => context.Observe(_target, t => t != null, (a, b) => a == b);
-    private static BlendShapeSet _currentSet = new();
+    private static BlendShapeWeightSet _currentSet = new();
 
     public static void Start(SkinnedMeshRenderer? target, IReadOnlyBlendShapeSet? defaultSet = null)
     {
@@ -32,7 +32,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
         SelectedShapesPreview.MayEnable();
     }
 
-    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result, ref float defaultValue)
+    protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue)
     {
         defaultValue = 0;
         result.AddRange(_currentSet);

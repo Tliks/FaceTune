@@ -168,7 +168,7 @@ internal class GeneralControls
         importClipButton.clicked += () =>
         {
             if (_clip == null) return;
-            var resutlt = new BlendShapeSet();
+            var resutlt = new BlendShapeWeightSet();
             _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList()); // Todo: BaseをFacialと区別すべき？
             _blendShapeManager.OverrideShapesAndSetWeight(resutlt.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
         };

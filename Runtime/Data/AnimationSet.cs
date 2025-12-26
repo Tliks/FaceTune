@@ -121,7 +121,7 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
         return pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.Select(y => y.Value.Name)).Distinct();
     }
 
-    public bool TryGetFirstFrameBlendShapeSet(string path, [NotNullWhen(true)] out BlendShapeSet? blendShapeSet)
+    public bool TryGetFirstFrameBlendShapeSet(string path, [NotNullWhen(true)] out BlendShapeWeightSet? blendShapeSet)
     {
         if (!_blendShapeCacheValid || _pathFirstFrameBlendShapeSets == null)
         {
@@ -131,7 +131,7 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
             foreach (var pathEntry in pathNameToBlendShapeAnimationsMap)
             {
                 var blendShapes = pathEntry.Value.Values.Select(x => x.ToFirstFrameBlendShape()).ToList();
-                _pathFirstFrameBlendShapeSets[pathEntry.Key] = new BlendShapeSet(blendShapes);
+                _pathFirstFrameBlendShapeSets[pathEntry.Key] = new BlendShapeWeightSet(blendShapes);
             }
             _blendShapeCacheValid = true;
         }
@@ -146,13 +146,13 @@ internal class AnimationSet : ICollection<GenericAnimation>, IEquatable<Animatio
         return false;
     }
 
-    public BlendShapeSet GetAllFirstFrameBlendShapeSet()
+    public BlendShapeWeightSet GetAllFirstFrameBlendShapeSet()
     {
         if (_allFirstFrameBlendShapeSet == null)
         {
             var pathNameToBlendShapeAnimationsMap = GetPathNameToBlendShapeAnimationsMap();
             var blendShapes = pathNameToBlendShapeAnimationsMap.SelectMany(x => x.Value.Values.Select(y => y.ToFirstFrameBlendShape())).ToList();
-            _allFirstFrameBlendShapeSet = new BlendShapeSet(blendShapes);
+            _allFirstFrameBlendShapeSet = new BlendShapeWeightSet(blendShapes);
         }
         return _allFirstFrameBlendShapeSet.Clone();
     }

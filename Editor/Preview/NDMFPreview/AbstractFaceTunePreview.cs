@@ -85,7 +85,7 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
     /// IRenderFilter.Instantiate内で呼ばれるので適時Observe。
     /// defaultValueはresultに含まれていない場合の扱い。-1の場合はプレビューしない(デフォルト)
     /// </summary>
-    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeSet result, ref float defaultValue);
+    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue);
 
     /// <summary>
     ///  現在のNodeの内容を直接置き換える。
