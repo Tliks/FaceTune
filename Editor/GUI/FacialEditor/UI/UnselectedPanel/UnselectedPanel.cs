@@ -47,9 +47,9 @@ internal class UnselectedPanel
         SetupListView();
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewSlow();
         _groupManager.OnRightSelectionChanged += (isRightSelected) => BuildAndRefreshListViewSlow();
-        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
+        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RefreshItemByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewSlow();
-        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => AddByKeyIndex(keyIndex);
+        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RefreshItemByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewSlow();
     }
@@ -109,6 +109,7 @@ internal class UnselectedPanel
             var item = _currentSource[index];
             element.userData = item;
             element.Q<Label>("name").text = item.ShapeName;
+            element.SetEnabled(!_blendShapeManager.IsOverridden(item.KeyIndex));
         }
     }   
 
@@ -141,12 +142,6 @@ internal class UnselectedPanel
         {
             var item = _allSource[i];
 
-            if (_blendShapeManager.IsBaseShape(item.KeyIndex))
-                continue;
-            
-            if (_blendShapeManager.IsOverridden(item.KeyIndex))
-                continue;
-                
             if (hasSearchText && !item.ShapeName.ToLower().Contains(searchText))
                 continue;
                 
@@ -157,44 +152,13 @@ internal class UnselectedPanel
         }
     }
 
-    // ソートされているので二分探索をしても良い
-    public bool AddByKeyIndex(int keyIndex)
+    public void RefreshItemByKeyIndex(int keyIndex)
     {
-        using var _ = new ProfilingSampleScope("UnselectedPanel.AddByKeyIndex");
-        var item = _allSource[keyIndex];
-        
-        for (int i = 0; i < _currentSource.Count; i++)
+        int idx = FindListIndexByKeyIndex(keyIndex);
+        if (idx >= 0)
         {
-            if (_currentSource[i].KeyIndex == keyIndex)
-                return false; // 既に存在する
-                
-            if (_currentSource[i].KeyIndex > keyIndex)
-            {
-                _currentSource.Insert(i, item);
-                _unselectedListView.RefreshItems();
-                return true;
-            }
+            _unselectedListView.RefreshItem(idx);
         }
-        
-        // 末尾に追加
-        _currentSource.Add(item);
-        _unselectedListView.RefreshItems();
-        return true;
-    }
-    
-    public bool RemoveByKeyIndex(int keyIndex)
-    {
-        using var _ = new ProfilingSampleScope("UnselectedPanel.RemoveByKeyIndex");
-        for (int i = 0; i < _currentSource.Count; i++)
-        {
-            if (_currentSource[i].KeyIndex == keyIndex)
-            {
-                _currentSource.RemoveAt(i);
-                _unselectedListView.RefreshItems();
-                return true;
-            }
-        }
-        return false;
     }
 
     // BuildCurrentSourceを呼んでいて重いので全体更新をしたい場合に呼ぶ
@@ -204,7 +168,7 @@ internal class UnselectedPanel
         _unselectedListView.RefreshItems();
     }
 
-    private int FindNearestListIndexByKeyIndex(int targetKeyIndex)
+    private int FindListIndexByKeyIndex(int targetKeyIndex)
     {
         if (_currentSource == null || _currentSource.Count == 0) return -1;
 
@@ -218,17 +182,12 @@ internal class UnselectedPanel
             else hi = mid - 1;
         }
 
-        if (lo >= _currentSource.Count) return _currentSource.Count - 1;
-        if (hi < 0) return 0;
-
-        int loDiff = System.Math.Abs(_currentSource[lo].KeyIndex - targetKeyIndex);
-        int hiDiff = System.Math.Abs(_currentSource[hi].KeyIndex - targetKeyIndex);
-        return (loDiff < hiDiff) ? lo : hi;
+        return -1;
     }
 
     public bool ScrollToNearestKeyIndex(int targetKeyIndex, bool select = false, bool notify = false)
     {
-        int idx = FindNearestListIndexByKeyIndex(targetKeyIndex);
+        int idx = FindListIndexByKeyIndex(targetKeyIndex);
         if (idx < 0) return false;
 
         if (select)
