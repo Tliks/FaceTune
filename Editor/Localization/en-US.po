@@ -177,7 +177,7 @@ msgstr "Folder is not in the project."
 # ExpressionComponent
 
 msgid "ExpressionComponent:prop:EnableRealTimePreview"
-msgstr "Always Preview This Expression"
+msgstr "Always Preview"
 
 msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
 msgstr "Set this if you want to always preview this expression. Only one expression can be active at a time within an avatar."
@@ -188,19 +188,19 @@ msgid "FacialSettings"
 msgstr "Facial Settings"
 
 msgid "FacialSettings:prop:AllowLipSync"
-msgstr "Enable Lip Sync"
+msgstr "Lip Sync"
 
 msgid "FacialSettings:prop:AllowLipSync:tooltip"
 msgstr "Sets whether to enable lip sync when playing expressions. If set to `Keep`, settings from lower priority expressions will be used."
 
 msgid "FacialSettings:prop:AllowEyeBlink"
-msgstr "Enable Eye Blink"
+msgstr "Eye Blink"
 
 msgid "FacialSettings:prop:AllowEyeBlink:tooltip"
 msgstr "Sets whether to enable eye blinking when playing expressions. If set to `Keep`, settings from lower priority expressions will be used."
 
 msgid "FacialSettings:prop:EnableBlending"
-msgstr "Blend with Other Expressions"
+msgstr "Blend with Expressions"
 
 msgid "FacialSettings:prop:EnableBlending:tooltip"
 msgstr "Sets whether to blend with lower priority expressions. For example, if you want to blend blink blend shapes into the current expression. When OFF, all unspecified facial blend shapes are treated as 0, completely overriding lower priority expressions. Default is OFF."
@@ -322,9 +322,32 @@ msgstr "Equal"
 msgid "EqualityComparison:enum:NotEqual"
 msgstr "Not Equal"
 
+# HandGestureCondition
+
+msgid "HandGestureCondition:label:Connector1"
+msgstr "to"
+
+msgid "HandGestureCondition:label:Connector2"
+msgstr "is"
+
+msgid "HandGestureCondition:label:Order"
+msgstr "0,3,4,1,2"
+
 # ParameterCondition
 
+msgid "ParameterCondition:label:Connector1"
+msgstr ""
+
+msgid "ParameterCondition:label:Connector2"
+msgstr "is"
+
+msgid "ParameterCondition:label:Order"
+msgstr "0,1,5,2,3"
+
 msgid "ParameterCondition:prop:ParameterName"
+msgstr "Parameter Name"
+
+msgid "ParameterCondition:prop:ParameterName:placeholder"
 msgstr "Parameter Name"
 
 msgid "ParameterCondition:prop:IntValue"
@@ -400,50 +423,20 @@ msgstr "Facial Style Overrides or Non-Zero"
 
 # FacialEditor
 
-msgid "FacialEditor:label:CommonSearch"
-msgstr "Search:"
-
 msgid "FacialEditor:label:BaseShapes"
 msgstr "Base"
 
 msgid "FacialEditor:label:SelectedShapes"
 msgstr "Selected"
 
-msgid "FacialEditor:label:UnselectedShapes"
-msgstr "Unselected"
-
-msgid "FacialEditor:button:RemoveAll0"
-msgstr "Remove All Zeros"
-
-msgid "FacialEditor:button:AddAll"
-msgstr "Add All"
-
-msgid "FacialEditor:label:Weight"
-msgstr "Value:"
-
-msgid "FacialEditor:label:Target"
-msgstr "Target"
-
 msgid "FacialEditor:label:TargetRenderer"
-msgstr "Target Renderer"
+msgstr "Target"
 
 msgid "FacialEditor:button:Save"
 msgstr "Save (Ctrl+S)"
 
 msgid "FacialEditor:label:filter"
-msgstr "Grouping"
-
-msgid "FacialEditor:button:Filter:All"
-msgstr "Select All"
-
-msgid "FacialEditor:button:Filter:None"
-msgstr "Deselect All"
-
-msgid "FacialEditor:button:Filter:Left"
-msgstr "Left"
-
-msgid "FacialEditor:button:Filter:Right"
-msgstr "Right"
+msgstr "Filter"
 
 msgid "FacialEditor:label:ClipImport"
 msgstr "Animation Clip Import"
@@ -457,19 +450,19 @@ msgstr "Import Settings"
 msgid "FacialEditor:button:Import"
 msgstr "Import"
 
-msgid "FacialEditor:dialog:UnsavedChanges:title"
+msgid "FacialEditor:UnsavedChanges:Title"
 msgstr "Unsaved Changes"
 
-msgid "FacialEditor:dialog:UnsavedChanges:message"
+msgid "FacialEditor:UnsavedChanges:Message"
 msgstr "There are unsaved changes in this window. Do you want to save them?"
 
-msgid "FacialEditor:dialog:UnsavedChanges:save"
+msgid "FacialEditor:UnsavedChanges:Save"
 msgstr "Save"
 
-msgid "FacialEditor:dialog:UnsavedChanges:discard"
+msgid "FacialEditor:UnsavedChanges:Discard"
 msgstr "Discard"
 
-msgid "FacialEditor:dialog:UnsavedChanges:cancel"
+msgid "FacialEditor:UnsavedChanges:Cancel"
 msgstr "Cancel"
 
 # AnimatorControllerImporter

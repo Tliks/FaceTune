@@ -1,11 +1,13 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements">
-    <ui:VisualElement name="root">
+    <ui:VisualElement name="root" class="border-line">
 
         <ui:VisualElement name="left-panel">
             <ui:VisualElement name="general-controls-container" />
-            <ui:Box name="border-line" />
+            <ui:Box class="divider-line" />
             <ui:VisualElement name="selected-content-container" />
         </ui:VisualElement>
+
+        <ui:VisualElement class="vertical-divider" />
 
         <ui:VisualElement name="right-panel">
             <ui:VisualElement name="unselected-content-container" />

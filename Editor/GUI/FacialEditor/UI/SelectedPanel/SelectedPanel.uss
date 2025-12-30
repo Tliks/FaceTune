@@ -1,55 +1,53 @@
-/* Selected Panel */
-#selected-panel {
-    flex-direction: column;
-    padding: 5px;
-}
-
-#search-field > .unity-base-field__label {
-    min-width: 0;
-}
-
-/* Common Controls-panel */
 #common-controls-panel {
-    flex: 0 0 auto;
+    flex: 0 0 var(--element-height);
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--main-gap);
 }
 
-/* Base Panel */
 #base-shapes-panel {
-    flex: 1 1 auto;
-    margin-top: 5px;
+    flex: 0 1 auto;
+    margin-bottom: var(--main-gap);
 }
 
 #selected-shapes-panel {
     flex: 1 1 auto;
-    margin-top: 10px;
+    margin-bottom: var(--main-gap);
+}
+
+#search-field {
+    flex: 1 1 auto;
+    margin: 0px;
+    margin-right: var(--main-gap);
+}
+
+#zero-toggle {
+    flex: 0 0 35px;
+    margin: 0px;
+    margin-right: var(--main-gap);
 }
 
 .label-container {
-    flex: 0 0 20px;
+    flex: 0 0 var(--element-height);
     flex-direction: row;
     align-items: center;
+    margin-bottom: var(--main-gap);
 }
 
-/* Labels */
 #base-label, #selected-label {
     -unity-font-style: bold;
-    margin-right: auto;
+    flex: 1 0 auto;
 }
 
-/* Buttons */
 .control-button {
     flex: 0 0 35px;
+    margin: 0px;
+    margin-right: var(--main-gap);
+    padding: 0px;
 }
 
-/* SimpleToggle */
-#base-zero-toggle, #selected-zero-toggle {
-    flex: 0 0 30px;
-}
 
-/* List Views */
 #base-list-view, #selected-list-view {
-    border-color: rgba(128, 128, 128, 0.8);
-    border-width: 1px;
-    border-radius: 5px;
-    margin-top: 5px;
+    flex: 1 1 auto;
+    justify-content: center;
 }

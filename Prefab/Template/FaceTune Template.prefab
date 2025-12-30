@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5731356164830962727}
   - component: {fileID: 5427458973660454188}
   m_Layer: 0
-  m_Name: FaceTune Base Template
+  m_Name: FaceTune Template
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -158,7 +158,7 @@ MonoBehaviour:
     allowEyeBlink: 0
     allowLipSync: 0
     enableBlending: 0
-  EnableRealTimePreview: 0
+  EnableRealTimePreview: 1
 --- !u!1001 &1595297564434488521
 PrefabInstance:
   m_ObjectHideFlags: 0

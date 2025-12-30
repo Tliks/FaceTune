@@ -1,0 +1,34 @@
+#list-item-container {
+    flex: 0 0 var(--element-height);
+    flex-direction: row;
+    align-items: center;
+    padding: 0px;
+    margin: 0px;
+}
+
+#name {
+    flex: 1 0 120px;
+    -unity-text-align: middle-left;
+    margin: 0px;
+    padding: 5px;
+}
+
+#slider-float-field {
+    flex: 2 0 120px;
+    margin: 0px;
+    padding: 0px;
+}
+
+#toggle-button {
+    flex: 0 0 35px;
+    margin: 0px;
+    margin-right: var(--main-gap);
+    padding: 0px;
+}
+
+#action {
+    flex: 0 0 35px;
+    margin: 0px;
+    margin-right: var(--main-gap);
+    padding: 0px;
+}

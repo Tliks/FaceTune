@@ -12,7 +12,6 @@ internal abstract class IShapesEditorTargeting
     public event Action? OnTargetChanged;
     protected void RaiseTargetChanged() => OnTargetChanged?.Invoke();
     public abstract void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager);
-    public abstract float InitialAddWeight { get; }
     public abstract VisualElement? DrawOptions();
 }
 
@@ -71,8 +70,6 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
         Target.SaveChanges();
     }
 
-    public override float InitialAddWeight => 100f;
-
     public override VisualElement? DrawOptions()
     {
         var holdout = new Foldout { text = "Options", value = false };
@@ -122,7 +119,6 @@ internal class ExpressionDataTargeting : IShapesEditorTargeting<ExpressionDataCo
         );
     }
 
-    public override float InitialAddWeight => 100f;
 }
 
 internal class FacialStyleTargeting : IShapesEditorTargeting<FacialStyleComponent>
@@ -144,7 +140,6 @@ internal class FacialStyleTargeting : IShapesEditorTargeting<FacialStyleComponen
         );
     }
 
-    public override float InitialAddWeight => 100f;
 }
 
 internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<AdvancedEyeBlinkComponent>
@@ -165,7 +160,6 @@ internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<AdvancedEyeBli
         );
     }
 
-    public override float InitialAddWeight => 0f;
 }
 
 internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<AdvancedLipSyncComponent>
@@ -186,6 +180,5 @@ internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<AdvancedLipSync
         );
     }
 
-    public override float InitialAddWeight => 0f;
 }
 

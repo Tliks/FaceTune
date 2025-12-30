@@ -1,76 +1,113 @@
+/* Container */
 #general-controls-container {
-    flex-direction: column;
-    flex: 0 0 auto;
+    padding: var(--main-gap);
 }
 
-/* Panels */
-#target-panel, #group-filter-panel, #preview-setting-panel, #clip-import-panel {
-    flex: 0 0 auto;
-    padding: 5px;
-}
-
-#group-filter-panel, #preview-setting-panel, #clip-import-panel {
-    margin-top: 10px;
-}
-
-/* lablels */
-#target-title, #filter-title, #preview-setting-title, #clip-import-title {
-    -unity-font-style: bold;
-}
-
-/* Filter Header */
-#filter-header {
+/* Targeting (Rendererのすぐ下の横並び) */
+#targeting-container {
     flex-direction: row;
+    margin-bottom: var(--main-gap);
+}
+
+#targeting-type-field {
+    flex: 2;
+}
+
+#targeting-object-field {
+    flex: 3;
+    margin-left: 2px;
+}
+
+/* Action Buttons (Save, Undo, Redo) */
+#top-actions-container {
+    flex-direction: row;
+}
+
+.top-action-button {
+    flex: 1;
+    margin: 0 1px;
+    height: var(--element-height);
+    flex-direction: row;
+    justify-content: center;
     align-items: center;
 }
 
+#save-button {
+    flex: 3;
+}
 
-/* Group Toggles Container */
+#undo-button, #redo-button {
+    flex: 1;
+}
+
+.top-action-button Image {
+    width: 16px;
+    height: 16px;
+}
+
+/* Toolbar & Content */
+#toolbar-container {
+    height: var(--element-height);
+    margin-bottom: var(--main-gap);
+}
+
+#content-container {
+    padding: var(--main-gap);
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.toolbar-content {
+    display: none;
+}
+
+.toolbar-content--visible {
+    display: flex;
+}
+
+/* Filter Section */
+#filter-header {
+    flex-direction: row;
+    align-items: center;
+    height: var(--element-height);
+    margin-bottom: var(--main-gap);
+}
+
+#all-button, #none-button {
+    flex: 0 0 30px;
+    height: var(--element-height);
+    padding: 0;
+    margin-right: 2px;
+}
+
+/* Group Toggles (Compact Button Style) */
 #group-toggles-container {
     flex-direction: row;
     flex-wrap: wrap;
-    margin-top: 5px;
 }
 
-/* Group Toggles */
 .group-toggle {
-    margin-right: 5px;
+    margin-right: 3px;
     margin-bottom: 2px;
-    padding: 2px 6px;
+    padding: 0 4px;
     border-radius: 3px;
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.group-toggle:checked Label {
-    color: rgb(140, 180, 230);
-}
-
-.group-toggle:checked {
-    background-color: rgba(100, 120, 160, 0.15);
-}
-
-.group-toggle:hover {
-    background-color: rgba(100, 100, 100, 0.1);
-}
-
-.group-toggle:checked:hover {
-    background-color: rgba(100, 120, 160, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
+    height: 18px; /* 文字に合わせた低めの高さ */
 }
 
 .group-toggle .unity-toggle__checkmark {
     display: none;
 }
 
-#targeting-container {
-    flex-direction: row;
-    align-items: center;
+.group-toggle:checked {
+    background-color: rgba(100, 120, 160, 0.2);
 }
 
-#targeting-type-field, #targeting-object-field {
-    flex: 1 1 auto;
+.group-toggle:checked Label {
+    color: rgb(140, 180, 230);
 }
 
-#save-button {
-    flex: 0 0 110px;
+.group-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
