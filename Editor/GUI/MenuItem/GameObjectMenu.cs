@@ -14,8 +14,9 @@ internal static class GameObjectMenu
         PrefabUtility.InstantiatePrefab(guid, unpack: true, parent: parent, isFirstSibling: false, addInstaller: addInstaller);
     }
     
-    [M(MenuItems.BaseTemplatePath, false, MenuItems.BaseTemplatePriority)] 
-    static void TemplateBase() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e");
+    [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 
+    static void Template() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e");
+
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 
     static void Condition() => IP("20aca02f84d174940bb4ca676555589a");
