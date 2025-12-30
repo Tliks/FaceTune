@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:aoyon="Aoyon.FaceTune.Gui.Components">
-    <ui:VisualElement name="list-item-container" style="height: 20px; flex-direction: row; align-items: center;">
-        <ui:Label name="name" style="flex: 1 0 120px; -unity-text-align: middle-left; padding-left: 5px;" />
-        <aoyon:SliderFloatField name="slider-float-field" low-value="0" high-value="100" style="flex: 2 0 120px;" />
-        <ui:Button name="toggle-button" style="flex: 0 0 35px;" />
-        <ui:Button name="action" style="flex: 0 0 35px;" />
+    <ui:VisualElement name="list-item-container">
+        <ui:Label name="name" />
+        <aoyon:SliderFloatField name="slider-float-field" low-value="0" high-value="100"/>
+        <ui:Button name="toggle-button" />
+        <ui:Button name="action" />
     </ui:VisualElement>
 </ui:UXML> 

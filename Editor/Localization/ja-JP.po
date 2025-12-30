@@ -400,53 +400,23 @@ msgstr "顔つきの上書きまたは0以外"
 
 # FacialEditor
 
-msgid "FacialEditor:label:CommonSearch"
-msgstr "検索:"
-
 msgid "FacialEditor:label:BaseShapes"
 msgstr "ベース"
 
 msgid "FacialEditor:label:SelectedShapes"
 msgstr "選択中"
 
-msgid "FacialEditor:label:UnselectedShapes"
-msgstr "未選択"
-
-msgid "FacialEditor:button:RemoveAll0"
-msgstr "0を全削除"
-
-msgid "FacialEditor:button:AddAll"
-msgstr "全て追加"
-
-msgid "FacialEditor:label:Weight"
-msgstr "値:"
-
-msgid "FacialEditor:label:Target"
-msgstr "適用対象"
-
 msgid "FacialEditor:label:TargetRenderer"
-msgstr "対象のレンダラー"
+msgstr "対象"
 
 msgid "FacialEditor:button:Save"
 msgstr "保存（Ctrl+S）"
 
 msgid "FacialEditor:label:filter"
-msgstr "グルーピング"
-
-msgid "FacialEditor:button:Filter:All"
-msgstr "全選択"
-
-msgid "FacialEditor:button:Filter:None"
-msgstr "全解除"
-
-msgid "FacialEditor:button:Filter:Left"
-msgstr "左"
-
-msgid "FacialEditor:button:Filter:Right"
-msgstr "右"
+msgstr "フィルター"
 
 msgid "FacialEditor:label:ClipImport"
-msgstr "アニメーションクリップのインポート"
+msgstr "インポート"
 
 msgid "FacialEditor:label:Clip"
 msgstr "アニメーションクリップ"
@@ -457,19 +427,19 @@ msgstr "インポート設定"
 msgid "FacialEditor:button:Import"
 msgstr "インポート"
 
-msgid "FacialEditor:dialog:UnsavedChanges:title"
+msgid "FacialEditor:UnsavedChanges:Title"
 msgstr "未保存の変更"
 
-msgid "FacialEditor:dialog:UnsavedChanges:message"
+msgid "FacialEditor:UnsavedChanges:Message"
 msgstr "このウィンドウには保存していない変更があります。保存しますか？"
 
-msgid "FacialEditor:dialog:UnsavedChanges:save"
+msgid "FacialEditor:UnsavedChanges:Save"
 msgstr "保存"
 
-msgid "FacialEditor:dialog:UnsavedChanges:discard"
+msgid "FacialEditor:UnsavedChanges:Discard"
 msgstr "破棄"
 
-msgid "FacialEditor:dialog:UnsavedChanges:cancel"
+msgid "FacialEditor:UnsavedChanges:Cancel"
 msgstr "キャンセル"
 
 # AnimatorControllerImporter

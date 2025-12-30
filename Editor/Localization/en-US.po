@@ -400,50 +400,20 @@ msgstr "Facial Style Overrides or Non-Zero"
 
 # FacialEditor
 
-msgid "FacialEditor:label:CommonSearch"
-msgstr "Search:"
-
 msgid "FacialEditor:label:BaseShapes"
 msgstr "Base"
 
 msgid "FacialEditor:label:SelectedShapes"
 msgstr "Selected"
 
-msgid "FacialEditor:label:UnselectedShapes"
-msgstr "Unselected"
-
-msgid "FacialEditor:button:RemoveAll0"
-msgstr "Remove All Zeros"
-
-msgid "FacialEditor:button:AddAll"
-msgstr "Add All"
-
-msgid "FacialEditor:label:Weight"
-msgstr "Value:"
-
-msgid "FacialEditor:label:Target"
-msgstr "Target"
-
 msgid "FacialEditor:label:TargetRenderer"
-msgstr "Target Renderer"
+msgstr "Target"
 
 msgid "FacialEditor:button:Save"
 msgstr "Save (Ctrl+S)"
 
 msgid "FacialEditor:label:filter"
-msgstr "Grouping"
-
-msgid "FacialEditor:button:Filter:All"
-msgstr "Select All"
-
-msgid "FacialEditor:button:Filter:None"
-msgstr "Deselect All"
-
-msgid "FacialEditor:button:Filter:Left"
-msgstr "Left"
-
-msgid "FacialEditor:button:Filter:Right"
-msgstr "Right"
+msgstr "Filter"
 
 msgid "FacialEditor:label:ClipImport"
 msgstr "Animation Clip Import"
@@ -457,19 +427,19 @@ msgstr "Import Settings"
 msgid "FacialEditor:button:Import"
 msgstr "Import"
 
-msgid "FacialEditor:dialog:UnsavedChanges:title"
+msgid "FacialEditor:UnsavedChanges:Title"
 msgstr "Unsaved Changes"
 
-msgid "FacialEditor:dialog:UnsavedChanges:message"
+msgid "FacialEditor:UnsavedChanges:Message"
 msgstr "There are unsaved changes in this window. Do you want to save them?"
 
-msgid "FacialEditor:dialog:UnsavedChanges:save"
+msgid "FacialEditor:UnsavedChanges:Save"
 msgstr "Save"
 
-msgid "FacialEditor:dialog:UnsavedChanges:discard"
+msgid "FacialEditor:UnsavedChanges:Discard"
 msgstr "Discard"
 
-msgid "FacialEditor:dialog:UnsavedChanges:cancel"
+msgid "FacialEditor:UnsavedChanges:Cancel"
 msgstr "Cancel"
 
 # AnimatorControllerImporter

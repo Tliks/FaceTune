@@ -16,9 +16,9 @@ internal class UnselectedPanel
     private static StyleSheet? _uss;
 
     private TextField _unselectedSearchField = null!;
-    private FloatField _addWeightField = null!;
     private ListView _unselectedListView = null!;
     
+    private static readonly Texture _selectAllIcon = EditorGUIUtility.IconContent("d_Toolbar Plus").image;
     
     private struct ListViewItem
     {
@@ -59,10 +59,13 @@ internal class UnselectedPanel
         _unselectedSearchField = _element.Q<TextField>("unselected-search-field");
         _unselectedSearchField.RegisterValueChangedCallback(_ => BuildAndRefreshListViewSlow());
         
-        _addWeightField = _element.Q<FloatField>("add-weight-field");
-        _element.Q<Button>("add-all-button").clicked += () =>
+        var selectAllButton = _element.Q<Button>("select-all-button");
+        selectAllButton.Add(new Image { image = _selectAllIcon });
+        selectAllButton.clicked += () =>
         {
-            _blendShapeManager.OverrideShapesAndSetWeight(_currentSource.Select(item => item.KeyIndex), _addWeightField.value);
+            _blendShapeManager.OverrideShapesAndSetWeight(_currentSource
+                .Where(item => !_blendShapeManager.IsBaseShape(item.KeyIndex) && !_blendShapeManager.IsOverridden(item.KeyIndex))
+                .Select(item => item.KeyIndex), 0);
             BuildAndRefreshListViewSlow();
         };
     }
@@ -70,6 +73,9 @@ internal class UnselectedPanel
     private void SetupListView()
     {
         _unselectedListView = _element.Q<ListView>("unselected-list-view");
+        _unselectedListView.focusable = false;
+        _unselectedListView.selectionType = SelectionType.None;
+        _unselectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
         RefreshTarget();
 
@@ -90,7 +96,7 @@ internal class UnselectedPanel
             {
                 if (element.userData is ListViewItem data)
                 {
-                    _blendShapeManager.OverrideShapeAndSetWeight(data.KeyIndex, _addWeightField.value);
+                    _blendShapeManager.OverrideShapeAndSetWeight(data.KeyIndex, 100);
                 }
             });
             
