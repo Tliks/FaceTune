@@ -4,14 +4,17 @@
 
 ## [Unreleased]
 ### Added
+- 右クリックメニューにFXコントローラーの内容がインポートされたテンプレートを生成するメニューを追加追加
 
 ### Changed
+- UIを調整
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+- テンプレートでデフォルト表情の常時プレビューが誤ってOFFになっていた問題を修正
 
 ### Security
 
