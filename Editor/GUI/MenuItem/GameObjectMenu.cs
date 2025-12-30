@@ -8,15 +8,25 @@ namespace Aoyon.FaceTune.Gui;
 
 internal static class GameObjectMenu
 {
-    private static void IP(string guid, bool addInstaller = false)
+    private static GameObject IP(string guid, bool addInstaller = false)
     {
         var parent = Selection.activeGameObject;
-        PrefabUtility.InstantiatePrefab(guid, unpack: true, parent: parent, isFirstSibling: false, addInstaller: addInstaller);
+        return PrefabUtility.InstantiatePrefab(guid, unpack: true, parent: parent, isFirstSibling: false, addInstaller: addInstaller);
     }
     
     [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 
     static void Template() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e");
 
+    [M(MenuItems.ImportFxPath, false, MenuItems.ImportFxPriority)] 
+    static void ImportFx() {
+        var root = IP("e643b160cc0f24a4fa8e33fb4df1fe7e");
+        if (!CustomEditorUtility.TryGetContext(root, out var context)) throw new Exception("Failed to get context");
+        var support = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
+        var animatorController = support?.GetAnimatorController();
+        if (animatorController == null) throw new Exception("Failed to get animator controller");
+        var importer = new AnimatorControllerImporter(context, animatorController);
+        importer.Import(root);
+    }
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 
     static void Condition() => IP("20aca02f84d174940bb4ca676555589a");

@@ -32,6 +32,9 @@ internal static class MenuItems
     public const string TemplatePath = GameObjectPath + "Template";
     public const int TemplatePriority = 100;
 
+    public const string ImportFxPath = GameObjectPath + "Import FX";
+    public const int ImportFxPriority = 101;
+
     public const string ConditionPath = GameObjectPath + "Condition";
     public const int ConditionPriority = 200;
 
