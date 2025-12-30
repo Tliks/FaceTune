@@ -4,19 +4,26 @@
 
 ## [Unreleased]
 ### Added
-- Added a menu in the right-click menu to generate a template with the FX controller contents imported.
 
 ### Changed
-- Adjusted the UI
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
-- Fixed an issue where real-time preview for the default expression in the template was mistakenly turned off
 
 ### Security
+
+## [0.1.0-beta.12] - 2025-12-30
+### Added
+- Added a menu in the right-click menu to generate a template with the FX controller contents imported.
+
+### Changed
+- Adjusted the UI
+
+### Fixed
+- Fixed an issue where real-time preview for the default expression in the template was mistakenly turned off
 
 ## [0.1.0-beta.11] - 2025-12-26
 ### Changed
