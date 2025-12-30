@@ -177,7 +177,7 @@ msgstr "フォルダーがプロジェクト内にありません。"
 # ExpressionComponent
 
 msgid "ExpressionComponent:prop:EnableRealTimePreview"
-msgstr "この表情を常にプレビューする"
+msgstr "常にプレビュー"
 
 msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
 msgstr "この表情を常にプレビューする場合に設定します。アバター内で1つの表情のみ有効にできます。"
@@ -188,19 +188,19 @@ msgid "FacialSettings"
 msgstr "表情設定"
 
 msgid "FacialSettings:prop:AllowLipSync"
-msgstr "リップシンクを有効にする"
+msgstr "リップシンク"
 
 msgid "FacialSettings:prop:AllowLipSync:tooltip"
 msgstr "表情を再生する際にリップシンクを有効にするかどうかを設定します。`維持`の場合、より優先度が低い表情の設定が用いられます。"
 
 msgid "FacialSettings:prop:AllowEyeBlink"
-msgstr "まばたきを有効にする"
+msgstr "まばたき"
 
 msgid "FacialSettings:prop:AllowEyeBlink:tooltip"
 msgstr "表情を再生する際にまばたきを有効にするかどうかを設定します。`維持`の場合、より優先度が低い表情の設定が用いられます。"
 
 msgid "FacialSettings:prop:EnableBlending"
-msgstr "他の表情とブレンドする"
+msgstr "表情をブレンド"
 
 msgid "FacialSettings:prop:EnableBlending:tooltip"
 msgstr "より優先度が低い表情とブレンドするかどうかを設定します。例えば、現在の表情に瞬きのブレンドシェイプをブレンドしたい場合などです。OFFのとき、指定されていない表情用ブレンドシェイプを全て0として扱うことで、より優先度が低い表情を完全に上書きします。デフォルトでOFFです。"
@@ -231,7 +231,7 @@ msgid "FacialStyleComponent:prop:BlendShapeAnimations:tooltip"
 msgstr "表情アニメーション(顔つき)の設定です。ここで設定された内容がこのGameObject以下の表情に全て適用されます。"
 
 msgid "FacialStyleComponent:prop:ApplyToRenderer"
-msgstr "SkinnedMeshRendererに適用する"
+msgstr "SkinnedMeshRendererに適用"
 
 msgid "FacialStyleComponent:prop:ApplyToRenderer:tooltip"
 msgstr "ビルド時にSkinnedMeshRendererにこの表情を適用します。アニメーションが動作しない環境下で顔つきを適用したい場合に有効です。"
@@ -322,9 +322,29 @@ msgstr "一致"
 msgid "EqualityComparison:enum:NotEqual"
 msgstr "一致しない"
 
+# HandGestureCondition
+
+msgid "HandGestureCondition:label:Connector1"
+msgstr "が"
+
+msgid "HandGestureCondition:label:Connector2"
+msgstr "と"
+
+msgid "HandGestureCondition:label:Order"
+msgstr "0,1,2,3,4"
+
 # ParameterCondition
 
+msgid "ParameterCondition:label:Connector1"
+msgstr "が"
+
+msgid "ParameterCondition:label:Order"
+msgstr "0,1,4,3,2"
+
 msgid "ParameterCondition:prop:ParameterName"
+msgstr "パラメーター名"
+
+msgid "ParameterCondition:prop:ParameterName:placeholder"
 msgstr "パラメーター名"
 
 msgid "ParameterCondition:prop:IntValue"
@@ -356,10 +376,10 @@ msgid "ComparisonType"
 msgstr "比較演算子"
 
 msgid "ComparisonType:enum:Equal"
-msgstr "等しい"
+msgstr "と等しい"
 
 msgid "ComparisonType:enum:NotEqual"
-msgstr "等しくない"
+msgstr "と等しくない"
 
 msgid "ComparisonType:enum:GreaterThan"
 msgstr "より大きい"

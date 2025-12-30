@@ -51,6 +51,7 @@ internal static class Localization
 
     private const string TooltipSuffix = ":tooltip";
     public static string S(string key) => NdmfLocalizer.GetLocalizedString(key);
+    public static bool TryGetLocalizedString(string key, out string value) => NdmfLocalizer.TryGetLocalizedString(key, out value);
     public static GUIContent G(string key)
     {
         var localized = NdmfLocalizer.GetLocalizedString(key);

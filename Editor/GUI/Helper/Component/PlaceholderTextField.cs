@@ -84,5 +84,36 @@ internal class PlaceholderTextField : TextField
         base.SetValueWithoutNotify(newValue);
         UpdatePlaceholderVisibility();
     }
+
+    private static GUIStyle? _placeholderStyle;
+    private static GUIStyle PlaceholderStyle => _placeholderStyle ??= new GUIStyle(EditorStyles.label)
+    {
+        fontStyle = FontStyle.Italic,
+        padding = new RectOffset(EditorStyles.textField.padding.left + 1, 0, 0, 0),
+        normal = { textColor = new Color(0.7f, 0.7f, 0.7f, 0.5f) }
+    };
+
+    public static void TextField(Rect position, SerializedProperty property, string placeholder)
+    {
+        TextField(position, GUIContent.none, property, placeholder);
+    }
+
+    public static void TextField(Rect position, GUIContent label, SerializedProperty property, string placeholder)
+    {
+        EditorGUI.PropertyField(position, property, label);
+        if (string.IsNullOrEmpty(property.stringValue) && !string.IsNullOrEmpty(placeholder))
+        {
+            var inputRect = new Rect(position);
+            if (label != null && label != GUIContent.none && !string.IsNullOrEmpty(label.text))
+            {
+                inputRect.xMin += EditorGUIUtility.labelWidth;
+            }
+
+            using (new EditorGUI.DisabledGroupScope(true))
+            {
+                GUI.Label(inputRect, placeholder, PlaceholderStyle);
+            }
+        }
+    }
 }
 
