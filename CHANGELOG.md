@@ -15,6 +15,13 @@
 
 ### Security
 
+## [0.1.0-beta.13] - 2025-01-04
+### Changed
+- Changed the supported version of NDMF to >=1.9.0
+
+### Fixed
+- Fixed a syntax error in package.json
+
 ## [0.1.0-beta.12] - 2025-12-30
 ### Added
 - Added a menu in the right-click menu to generate a template with the FX controller contents imported.
