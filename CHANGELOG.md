@@ -7,6 +7,7 @@
 
 ### Changed
 - In the expression editor, the contents of higher-priority Expression Data within the same Expression are now shown as the base.
+- Adjusted the UI
 
 ### Deprecated
 
