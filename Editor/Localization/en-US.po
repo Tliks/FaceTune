@@ -140,7 +140,7 @@ msgid "ExpressionDataComponent:prop:BlendShapeAnimations:tooltip"
 msgstr "These are manually set facial animations. They can be used in conjunction with animation clips, or either one can be used alone. If the same blend shape is set simultaneously, manual settings take precedence."
 
 msgid "ExpressionDataComponent:button:OpenEditor"
-msgstr "Open Editor"
+msgstr "Edit Facial Expressions"
 
 msgid "ExpressionDataComponent:label:AdvancedOptions"
 msgstr "Advanced Options"
@@ -243,7 +243,7 @@ msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
 msgstr "Retrieves blend shapes set in the target SkinnedMeshRenderer."
 
 msgid "FacialStyleComponent:button:OpenEditor"
-msgstr "Open Editor"
+msgstr "Edit Facial Expressions"
 
 msgid "FacialStyleComponent:button:AsDefault"
 msgstr "Set as Default"

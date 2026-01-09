@@ -140,7 +140,7 @@ msgid "ExpressionDataComponent:prop:BlendShapeAnimations:tooltip"
 msgstr "手動設定用の表情用アニメーションです。アニメーションクリップとは併用でき、どちらか一方のみを使用することもできます。同じブレンドシェイプが同時に設定された場合は手動設定が優先されます。"
 
 msgid "ExpressionDataComponent:button:OpenEditor"
-msgstr "エディタを開く"
+msgstr "表情を編集する"
 
 msgid "ExpressionDataComponent:label:AdvancedOptions"
 msgstr "高度な設定"
@@ -243,7 +243,7 @@ msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
 msgstr "適用対象のSkinnedMeshRendererに設定されているブレンドシェイプを取得します"
 
 msgid "FacialStyleComponent:button:OpenEditor"
-msgstr "エディタを開く"
+msgstr "表情を編集する"
 
 msgid "FacialStyleComponent:button:AsDefault"
 msgstr "デフォルトとして設定"
