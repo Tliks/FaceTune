@@ -29,11 +29,6 @@ internal class NonObserveContext : IObserveContext
         return obj.IsEditorOnlyInHierarchy();
     }
 
-    public C? GetComponentNullable<C>(GameObject obj) where C : Component
-    {
-        return obj.GetComponentNullable<C>();
-    }
-
     public void GetComponents<C>(GameObject obj, List<C> results) where C : Component
     {
         obj.GetComponents<C>(results);

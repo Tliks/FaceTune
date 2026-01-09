@@ -20,41 +20,15 @@ internal static class HierarchyUtility
         return result;
     }
 
-    public static T? GetComponentNullable<T>(this GameObject gameObject) where T : Component
+    public static bool TryGetComponentInParent<T>(this GameObject gameObject, bool includeInactive, [NotNullWhen(true)] out T? result) where T : Component
     {
-        //return gameObject.GetComponent<T>().NullCast();
-
-        if (gameObject.TryGetComponent<T>(out var component))
-        {
-            return component;
-        }
-
-        return null;
+        result = gameObject.GetComponentInParent<T>(includeInactive);
+        return result != null;
     }
 
-    public static T? GetComponentNullable<T>(this Component component) where T : Component
+    public static bool TryGetComponentInParent<T>(this Component component, bool includeInactive, [NotNullWhen(true)] out T? result) where T : Component
     {
-        return GetComponentNullable<T>(component.gameObject);
-    }
-
-    public static T? GetComponentInParentNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
-    {
-        return gameObject.GetComponentInParent<T>(includeInactive).DestroyedAsNull();
-    }
-
-    public static T? GetComponentInParentNullable<T>(this Component component, bool includeInactive = false) where T : Component
-    {
-        return GetComponentInParentNullable<T>(component.gameObject, includeInactive);
-    }
-
-    public static T? GetComponentInChildrenNullable<T>(this GameObject gameObject, bool includeInactive = false) where T : Component
-    {
-        return gameObject.GetComponentInChildren<T>(includeInactive).DestroyedAsNull();
-    }
-
-    public static T? GetComponentInChildrenNullable<T>(this Component component, bool includeInactive = false) where T : Component
-    {
-        return GetComponentInChildrenNullable<T>(component.gameObject, includeInactive);
+        return TryGetComponentInParent<T>(component.gameObject, includeInactive, out result);
     }
 
     public static List<TInterface> GetInterfacesInChildComponents<TComponent, TInterface>(this GameObject gameObject, bool includeInactive = false)

@@ -6,6 +6,7 @@
 ### Added
 
 ### Changed
+- 表情エディタにおいて、同一のExpression内かつ自分より優先度が高いExpression Dataの内容がベースとして表示されるようになりました。
 
 ### Deprecated
 

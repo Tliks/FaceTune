@@ -59,7 +59,7 @@ internal static class AvatarContextBuilder
 
         // LastOrNullなのはhierarchy上で一番下のものを取りたいから
         var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c.FaceObject)).OfType<GameObject>();
-        faceRenderer = faceObjects.Select(c => context.GetComponentNullable<SkinnedMeshRenderer>(c)).LastOrNull(r => r != null) ?? platformSupport.GetFaceRenderer();
+        faceRenderer = faceObjects.Select(c => c.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null).LastOrNull(r => r != null) ?? platformSupport.GetFaceRenderer();
         if (faceRenderer != null)
         {
             bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
