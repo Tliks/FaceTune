@@ -21,7 +21,7 @@ internal class FallbackSupport : IMetabasePlatformSupport
             var child = _root.GetChild(i);
             if (child.name == "Body")
             {
-                faceRenderer = child.GetComponentNullable<SkinnedMeshRenderer>();
+                faceRenderer = child.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null;
                 if (faceRenderer != null) { break; }
             }
         }

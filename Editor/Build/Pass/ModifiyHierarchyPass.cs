@@ -209,7 +209,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         var expressionComponents = root.GetComponentsInChildren<ExpressionComponent>(true);
         foreach (var expressionComponent in expressionComponents)
         {
-            if (expressionComponent.GetComponentInParentNullable<PatternComponent>(true) == null)
+            if (expressionComponent.TryGetComponentInParent<PatternComponent>(true, out _) is false)
             {
                 expressionComponent.gameObject.EnsureComponent<PatternComponent>();
             }
