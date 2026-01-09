@@ -20,7 +20,6 @@ internal class AnimatorInstaller : InstallerBase
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
     private static readonly Condition TrueCondition = ParameterCondition.Bool(TrueParameterName, true);
-    private static readonly Condition FixFacialCondition = ParameterCondition.Bool(FaceTuneConstants.FixFacialParameter, false);
 
     public AnimatorInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
@@ -186,8 +185,6 @@ internal class AnimatorInstaller : InstallerBase
                 conditions.Add(TrueCondition);
             }
 
-            conditions.Add(FixFacialCondition);
-
             e.SetAndConditions(conditions);
             return e;
         }).ToList();
@@ -210,6 +207,9 @@ internal class AnimatorInstaller : InstallerBase
 
         var position = basePosition;
 
+        // 各状態からexitには表情固定が無効(false)である条件を追加する。
+        var fixFacialCondition = new AnimatorCondition { parameter = FaceTuneConstants.FixFacialParameter, mode = AnimatorConditionMode.IfNot };
+
         for (int i = 0; i < andConditionsPerState.Length; i++)
         {
             var andConditions = andConditionsPerState[i];
@@ -228,7 +228,8 @@ internal class AnimatorInstaller : InstallerBase
             {
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(andCondition.ToNegation()));
+                // 表情固定の条件を追加する。
+                exitTransition.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition> { ToAnimatorCondition(andCondition.ToNegation()), fixFacialCondition });
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -240,7 +241,8 @@ internal class AnimatorInstaller : InstallerBase
         {
             var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
             exitTransition.SetExitDestination();
-            exitTransition.Conditions = entryTr.Conditions; // newEntryTransition の条件をそのまま使用
+            // entry-expressionの各transitionの条件が基本。ここでは表情固定の為に条件を追加する。
+            exitTransition.Conditions = ImmutableList.CreateRange(entryTr.Conditions).Add(fixFacialCondition);
             exitTransitionsFromDefault.Add(exitTransition);
         }
         defaultState.Transitions = ImmutableList.CreateRange(defaultState.Transitions.Concat(exitTransitionsFromDefault));
