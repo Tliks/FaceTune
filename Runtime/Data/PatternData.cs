@@ -2,18 +2,18 @@ namespace Aoyon.FaceTune;
 
 internal record class ExpressionWithConditions
 {
-    public IReadOnlyList<Condition> Conditions { get; private set; }
+    public IReadOnlyList<Condition> AndConditions { get; private set; }
     public AvatarExpression Expression { get; private set; }
 
     public ExpressionWithConditions(IReadOnlyList<Condition> conditions, AvatarExpression expression)
     {
-        Conditions = conditions;
+        AndConditions = conditions;
         Expression = expression;
     }
 
-    public void SetConditions(IReadOnlyList<Condition> conditions)
+    public void SetAndConditions(IReadOnlyList<Condition> conditions)
     {
-        Conditions = conditions;
+        AndConditions = conditions;
     }
 
     public void SetExpression(AvatarExpression expression)
@@ -154,7 +154,7 @@ internal record PatternData
         {
             foreach (var expressionWithCondition in orderedItem.AllExpressionWithConditions)
             {
-                conditions.AddRange(expressionWithCondition.Conditions);
+                conditions.AddRange(expressionWithCondition.AndConditions);
             }
         }
         return conditions;

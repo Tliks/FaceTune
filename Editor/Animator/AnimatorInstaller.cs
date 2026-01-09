@@ -19,12 +19,14 @@ internal class AnimatorInstaller : InstallerBase
     private readonly BlinkInstaller _blinkInstaller;
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
+    private static readonly Condition TrueCondition = ParameterCondition.Bool(TrueParameterName, true);
 
     public AnimatorInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
         _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
         _lipSyncInstaller = new LipSyncInstaller(virtualController, avatarContext, useWriteDefaults);
         _blinkInstaller = new BlinkInstaller(virtualController, avatarContext, useWriteDefaults);
+        _controller.EnsureBoolParameterExists(FaceTuneConstants.FixFacialParameter, false);
     }
 
     public void Execute(InstallerData installerData)
@@ -171,20 +173,21 @@ internal class AnimatorInstaller : InstallerBase
 
     private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IReadOnlyList<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
     {
-        var trueCondition = new[] { ParameterCondition.Bool(TrueParameterName, true) };
         // Pattern内で下のExpressionが優先されることを保証するため、Animatorにおいて上のStateが優先される仕様を用いるためにReverseする。
         // ワークアラウンド
         var expressionWithConditionList = expressionWithConditions.Reverse().Select(e =>
         {
-            if (!e.Conditions.Any())
+            // 空の条件と紐づくExpressionを常に実行する仕様より、条件がない場合はTrue条件を追加する。
+            if (e.AndConditions.Count == 0)
             {
-                e.SetConditions(e.Conditions.Concat(trueCondition).ToList());
+                e.SetAndConditions(new List<Condition> { TrueCondition });
             }
+
             return e;
         }).ToList();
         var duration = _transitionDurationSeconds;
-        var conditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.Conditions).ToArray();
-        var states = AddExclusiveStates(layer, defaultState, conditionsPerState, duration, basePosition);
+        var andConditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.AndConditions).ToArray();
+        var states = AddExclusiveStates(layer, defaultState, andConditionsPerState, duration, basePosition);
         for (int i = 0; i < states.Length; i++)
         {
             var expressionWithCondition = expressionWithConditionList[i];
@@ -194,16 +197,19 @@ internal class AnimatorInstaller : InstallerBase
         }
     }
 
-    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, IEnumerable<Condition>[] conditionsPerState, float duration, Vector3 basePosition)
+    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, IEnumerable<Condition>[] andConditionsPerState, float duration, Vector3 basePosition)
     {
-        var states = new VirtualState[conditionsPerState.Length];
+        var states = new VirtualState[andConditionsPerState.Length];
         var newEntryTransitions = new List<VirtualTransition>();
 
         var position = basePosition;
 
-        for (int i = 0; i < conditionsPerState.Length; i++)
+        // 各状態からexitには表情固定が無効(false)である条件を追加する。
+        var fixFacialCondition = new AnimatorCondition { parameter = FaceTuneConstants.FixFacialParameter, mode = AnimatorConditionMode.IfNot };
+
+        for (int i = 0; i < andConditionsPerState.Length; i++)
         {
-            var conditions = conditionsPerState[i];
+            var andConditions = andConditionsPerState[i];
 
             var state = AddState(layer, "unnamed", position);
             states[i] = state;
@@ -211,15 +217,16 @@ internal class AnimatorInstaller : InstallerBase
 
             var entryTransition = VirtualTransition.Create();
             entryTransition.SetDestination(state);
-            entryTransition.Conditions = ToAnimatorConditions(conditions).ToImmutableList();
+            entryTransition.Conditions = ToAnimatorConditions(andConditions).ToImmutableList();
             newEntryTransitions.Add(entryTransition);
 
             var newExpressionStateTransitions = new List<VirtualStateTransition>();
-            foreach (var condition in conditions)
+            foreach (var andCondition in andConditions)
             {
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.ToNegation()));
+                // 表情固定の条件を追加する。
+                exitTransition.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition> { ToAnimatorCondition(andCondition.ToNegation()), fixFacialCondition });
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -231,7 +238,8 @@ internal class AnimatorInstaller : InstallerBase
         {
             var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
             exitTransition.SetExitDestination();
-            exitTransition.Conditions = entryTr.Conditions; // newEntryTransition の条件をそのまま使用
+            // entry-expressionの各transitionの条件が基本。ここでは表情固定の為に条件を追加する。
+            exitTransition.Conditions = ImmutableList.CreateRange(entryTr.Conditions).Add(fixFacialCondition);
             exitTransitionsFromDefault.Add(exitTransition);
         }
         defaultState.Transitions = ImmutableList.CreateRange(defaultState.Transitions.Concat(exitTransitionsFromDefault));
