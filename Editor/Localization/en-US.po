@@ -246,7 +246,7 @@ msgid "FacialStyleComponent:button:OpenEditor"
 msgstr "Edit Facial Style"
 
 msgid "FacialStyleComponent:button:AsDefault"
-msgstr "Set as Default"
+msgstr "Set as Default Expression"
 
 msgid "FacialStyleComponent:button:AsDefault:tooltip"
 msgstr "Sets this expression as default. It will generate a child ExpressionComponent that is affected by this facial style and is always playing. Grayed out if already set."
