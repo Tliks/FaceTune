@@ -19,6 +19,7 @@ internal class AnimatorInstaller : InstallerBase
     private readonly BlinkInstaller _blinkInstaller;
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
+    private static readonly Condition TrueCondition = ParameterCondition.Bool(TrueParameterName, true);
 
     public AnimatorInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
@@ -171,17 +172,16 @@ internal class AnimatorInstaller : InstallerBase
 
     private void AddExpressionWithConditions(VirtualLayer layer, VirtualState defaultState, IReadOnlyList<ExpressionWithConditions> expressionWithConditions, Vector3 basePosition)
     {
-        var trueCondition = new[] { ParameterCondition.Bool(TrueParameterName, true) };
         // Pattern内で下のExpressionが優先されることを保証するため、Animatorにおいて上のStateが優先される仕様を用いるためにReverseする。
         // ワークアラウンド
         var expressionWithConditionList = expressionWithConditions.Reverse().Select(e =>
         {
-            var conditions = e.AndConditions;
+            var conditions = e.AndConditions.ToList();
 
             // 空の条件と紐づくExpressionを常に実行する仕様より、条件がない場合はTrue条件を追加する。
-            if (!e.AndConditions.Any())
+            if (!conditions.Any())
             {
-                conditions = conditions.Concat(trueCondition).ToList();
+                conditions.Add(TrueCondition);
             }
 
             e.SetAndConditions(conditions);
