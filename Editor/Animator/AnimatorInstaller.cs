@@ -176,15 +176,20 @@ internal class AnimatorInstaller : InstallerBase
         // ワークアラウンド
         var expressionWithConditionList = expressionWithConditions.Reverse().Select(e =>
         {
-            if (!e.Conditions.Any())
+            var conditions = e.AndConditions;
+
+            // 空の条件と紐づくExpressionを常に実行する仕様より、条件がない場合はTrue条件を追加する。
+            if (!e.AndConditions.Any())
             {
-                e.SetConditions(e.Conditions.Concat(trueCondition).ToList());
+                conditions = conditions.Concat(trueCondition).ToList();
             }
+
+            e.SetAndConditions(conditions);
             return e;
         }).ToList();
         var duration = _transitionDurationSeconds;
-        var conditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.Conditions).ToArray();
-        var states = AddExclusiveStates(layer, defaultState, conditionsPerState, duration, basePosition);
+        var andConditionsPerState = expressionWithConditionList.Select(e => (IEnumerable<Condition>)e.AndConditions).ToArray();
+        var states = AddExclusiveStates(layer, defaultState, andConditionsPerState, duration, basePosition);
         for (int i = 0; i < states.Length; i++)
         {
             var expressionWithCondition = expressionWithConditionList[i];
@@ -194,16 +199,16 @@ internal class AnimatorInstaller : InstallerBase
         }
     }
 
-    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, IEnumerable<Condition>[] conditionsPerState, float duration, Vector3 basePosition)
+    private VirtualState[] AddExclusiveStates(VirtualLayer layer, VirtualState defaultState, IEnumerable<Condition>[] andConditionsPerState, float duration, Vector3 basePosition)
     {
-        var states = new VirtualState[conditionsPerState.Length];
+        var states = new VirtualState[andConditionsPerState.Length];
         var newEntryTransitions = new List<VirtualTransition>();
 
         var position = basePosition;
 
-        for (int i = 0; i < conditionsPerState.Length; i++)
+        for (int i = 0; i < andConditionsPerState.Length; i++)
         {
-            var conditions = conditionsPerState[i];
+            var andConditions = andConditionsPerState[i];
 
             var state = AddState(layer, "unnamed", position);
             states[i] = state;
@@ -211,15 +216,15 @@ internal class AnimatorInstaller : InstallerBase
 
             var entryTransition = VirtualTransition.Create();
             entryTransition.SetDestination(state);
-            entryTransition.Conditions = ToAnimatorConditions(conditions).ToImmutableList();
+            entryTransition.Conditions = ToAnimatorConditions(andConditions).ToImmutableList();
             newEntryTransitions.Add(entryTransition);
 
             var newExpressionStateTransitions = new List<VirtualStateTransition>();
-            foreach (var condition in conditions)
+            foreach (var andCondition in andConditions)
             {
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
-                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(condition.ToNegation()));
+                exitTransition.Conditions = ImmutableList.Create(ToAnimatorCondition(andCondition.ToNegation()));
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
