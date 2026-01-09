@@ -21,7 +21,7 @@
   - Newly created templates will now include a menu for expression locking.
 
 ### Changed
-- In the expression editor, the contents of higher-priority Expression Data within the same Expression are now shown as the base.
+- In the expression editor, the contents of low-priority Expression Data within the same Expression are now shown as the base.
 - Adjusted the UI
 
 ## [0.1.0-beta.13] - 2025-01-04
