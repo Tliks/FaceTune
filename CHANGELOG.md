@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 ### Added
+- Added an expression lock feature.
+  - Newly created templates will now include a menu for expression locking.
 
 ### Changed
 - In the expression editor, the contents of higher-priority Expression Data within the same Expression are now shown as the base.
