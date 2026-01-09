@@ -13,5 +13,5 @@ internal static class FaceTuneConstants
     // Public parameters
     public const string ForceDisableEyeBlinkParameter = $"{ParameterPrefix}/ForceDisableEyeBlink"; // bool
     public const string ForceDisableLipSyncParameter = $"{ParameterPrefix}/ForceDisableLipSync"; // bool
-    public const string FixFacialParameter = $"{ParameterPrefix}/FixFacial"; // bool
+    public const string LockFacialParameter = $"{ParameterPrefix}/LockFacial"; // bool
 }

@@ -200,7 +200,7 @@ GameObject:
   - component: {fileID: 5355466952388137089}
   - component: {fileID: 2914227401139532267}
   m_Layer: 0
-  m_Name: Fix Facial
+  m_Name: Lock Facial
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -238,7 +238,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     type: 102
     parameter:
-      name: FaceTune/FixFacial
+      name: FaceTune/LockFacial
     value: 1
     style: 0
     subMenu: {fileID: 0}

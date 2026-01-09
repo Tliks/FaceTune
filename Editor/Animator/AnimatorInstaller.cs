@@ -26,7 +26,7 @@ internal class AnimatorInstaller : InstallerBase
         _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
         _lipSyncInstaller = new LipSyncInstaller(virtualController, avatarContext, useWriteDefaults);
         _blinkInstaller = new BlinkInstaller(virtualController, avatarContext, useWriteDefaults);
-        _controller.EnsureBoolParameterExists(FaceTuneConstants.FixFacialParameter, false);
+        _controller.EnsureBoolParameterExists(FaceTuneConstants.LockFacialParameter, false);
     }
 
     public void Execute(InstallerData installerData)
@@ -205,7 +205,7 @@ internal class AnimatorInstaller : InstallerBase
         var position = basePosition;
 
         // 各状態からexitには表情固定が無効(false)である条件を追加する。
-        var fixFacialCondition = new AnimatorCondition { parameter = FaceTuneConstants.FixFacialParameter, mode = AnimatorConditionMode.IfNot };
+        var lockFacialCondition = new AnimatorCondition { parameter = FaceTuneConstants.LockFacialParameter, mode = AnimatorConditionMode.IfNot };
 
         for (int i = 0; i < andConditionsPerState.Length; i++)
         {
@@ -226,7 +226,7 @@ internal class AnimatorInstaller : InstallerBase
                 var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
                 exitTransition.SetExitDestination();
                 // 表情固定の条件を追加する。
-                exitTransition.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition> { ToAnimatorCondition(andCondition.ToNegation()), fixFacialCondition });
+                exitTransition.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition> { ToAnimatorCondition(andCondition.ToNegation()), lockFacialCondition });
                 newExpressionStateTransitions.Add(exitTransition);
             }
             state.Transitions = ImmutableList.CreateRange(state.Transitions.Concat(newExpressionStateTransitions));
@@ -239,7 +239,7 @@ internal class AnimatorInstaller : InstallerBase
             var exitTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
             exitTransition.SetExitDestination();
             // entry-expressionの各transitionの条件が基本。ここでは表情固定の為に条件を追加する。
-            exitTransition.Conditions = ImmutableList.CreateRange(entryTr.Conditions).Add(fixFacialCondition);
+            exitTransition.Conditions = ImmutableList.CreateRange(entryTr.Conditions).Add(lockFacialCondition);
             exitTransitionsFromDefault.Add(exitTransition);
         }
         defaultState.Transitions = ImmutableList.CreateRange(defaultState.Transitions.Concat(exitTransitionsFromDefault));
