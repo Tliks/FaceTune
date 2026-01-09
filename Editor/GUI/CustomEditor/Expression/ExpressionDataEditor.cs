@@ -143,7 +143,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
 
         var baseSet = new BlendShapeWeightSet();
         baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
-        if (Component.TryGetComponent<ExpressionComponent>(out var expressionComponent)){
+        if (Component.TryGetComponentInParent<ExpressionComponent>(true, out var expressionComponent)){
             foreach (var upperData in expressionComponent.GetComponentsInChildren<ExpressionDataComponent>()) {
                 if (upperData == Component) break;
                 upperData.GetBlendShapes(baseSet, facialStyleAnimations, bodyPath);
