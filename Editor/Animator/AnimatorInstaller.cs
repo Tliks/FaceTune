@@ -177,15 +177,12 @@ internal class AnimatorInstaller : InstallerBase
         // ワークアラウンド
         var expressionWithConditionList = expressionWithConditions.Reverse().Select(e =>
         {
-            var conditions = e.AndConditions.ToList();
-
             // 空の条件と紐づくExpressionを常に実行する仕様より、条件がない場合はTrue条件を追加する。
-            if (!conditions.Any())
+            if (e.AndConditions.Count == 0)
             {
-                conditions.Add(TrueCondition);
+                e.SetAndConditions(new List<Condition> { TrueCondition });
             }
 
-            e.SetAndConditions(conditions);
             return e;
         }).ToList();
         var duration = _transitionDurationSeconds;
