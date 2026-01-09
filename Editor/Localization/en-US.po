@@ -243,7 +243,7 @@ msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
 msgstr "Retrieves blend shapes set in the target SkinnedMeshRenderer."
 
 msgid "FacialStyleComponent:button:OpenEditor"
-msgstr "Edit Facial Expressions"
+msgstr "Edit Facial Style"
 
 msgid "FacialStyleComponent:button:AsDefault"
 msgstr "Set as Default"

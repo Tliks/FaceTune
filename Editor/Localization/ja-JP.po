@@ -243,7 +243,7 @@ msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
 msgstr "適用対象のSkinnedMeshRendererに設定されているブレンドシェイプを取得します"
 
 msgid "FacialStyleComponent:button:OpenEditor"
-msgstr "表情を編集する"
+msgstr "顔つきを編集する"
 
 msgid "FacialStyleComponent:button:AsDefault"
 msgstr "デフォルトとして設定"
