@@ -140,7 +140,7 @@ msgid "ExpressionDataComponent:prop:BlendShapeAnimations:tooltip"
 msgstr "手動設定用の表情用アニメーションです。アニメーションクリップとは併用でき、どちらか一方のみを使用することもできます。同じブレンドシェイプが同時に設定された場合は手動設定が優先されます。"
 
 msgid "ExpressionDataComponent:button:OpenEditor"
-msgstr "エディタを開く"
+msgstr "表情を編集する"
 
 msgid "ExpressionDataComponent:label:AdvancedOptions"
 msgstr "高度な設定"
@@ -225,28 +225,28 @@ msgstr "MotionTime用のパラメーター(float)の名前を指定します。�
 # FacialStyleComponent
 
 msgid "FacialStyleComponent:prop:BlendShapeAnimations"
-msgstr "表情アニメーション"
+msgstr "顔つき"
 
 msgid "FacialStyleComponent:prop:BlendShapeAnimations:tooltip"
 msgstr "表情アニメーション(顔つき)の設定です。ここで設定された内容がこのGameObject以下の表情に全て適用されます。"
 
 msgid "FacialStyleComponent:prop:ApplyToRenderer"
-msgstr "SkinnedMeshRendererに適用"
+msgstr "スキンドメッシュに適用する"
 
 msgid "FacialStyleComponent:prop:ApplyToRenderer:tooltip"
-msgstr "ビルド時にSkinnedMeshRendererにこの表情を適用します。アニメーションが動作しない環境下で顔つきを適用したい場合に有効です。"
+msgstr "ビルド時にスキンドメッシュにこの表情を適用します。アニメーションが動作しない環境下で顔つきを適用したい場合に有効です。"
 
 msgid "FacialStyleComponent:button:UpdateFromScene"
-msgstr "SkinnedMeshRendererから取得"
+msgstr "スキンドメッシュから取得"
 
 msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
-msgstr "適用対象のSkinnedMeshRendererに設定されているブレンドシェイプを取得します"
+msgstr "適用対象のスキンドメッシュに設定されているブレンドシェイプを取得します"
 
 msgid "FacialStyleComponent:button:OpenEditor"
-msgstr "エディタを開く"
+msgstr "顔つきを編集する"
 
 msgid "FacialStyleComponent:button:AsDefault"
-msgstr "デフォルトとして設定"
+msgstr "デフォルト表情として設定"
 
 msgid "FacialStyleComponent:button:AsDefault:tooltip"
 msgstr "この表情をデフォルトとして設定します。この顔つきの影響を受け、かつ常に再生される表情(ExpressionComponent)を子に生成します。グレーアウトしている場合既に設定されています。"

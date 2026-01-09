@@ -6,30 +6,44 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(FacialStyleComponent))]
 internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
 {
+    private SerializedProperty _blendShapeAnimationsProperty = null!;
+    private SerializedProperty _applyToRendererProperty = null!;
+
     private bool _hasDefault = false;
     public override void OnEnable()
     {
         base.OnEnable();
+        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
+        _applyToRendererProperty = serializedObject.FindProperty(nameof(FacialStyleComponent.ApplyToRenderer));
         _hasDefault = HasDefault();
     }
 
     protected override void OnInnerInspectorGUI()
     {
-        DrawDefaultInspector(true);
-        if (GUILayout.Button("FacialStyleComponent:button:UpdateFromScene".LG()))
-        {
-            UpdateFromScene();
-        }
+        LocalizedPropertyField(_blendShapeAnimationsProperty);
         if (GUILayout.Button("FacialStyleComponent:button:OpenEditor".LG()))
         {
             OpenEditor();
         }
-        GUI.enabled = !_hasDefault;
-        if (GUILayout.Button("FacialStyleComponent:button:AsDefault".LG()))
+        LocalizedPropertyField(_applyToRendererProperty);
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
+        using (new EditorGUILayout.HorizontalScope())
         {
-            AsDefault();
+            var buttonWidth = (EditorGUIUtility.currentViewWidth) / 2f;
+            if (GUILayout.Button("FacialStyleComponent:button:UpdateFromScene".LG(), GUILayout.Width(buttonWidth)))
+            {
+                UpdateFromScene();
+            }
+            GUI.enabled = !_hasDefault;
+            if (GUILayout.Button("FacialStyleComponent:button:AsDefault".LG(), GUILayout.Width(buttonWidth)))
+            {
+                AsDefault();
+            }
+            GUI.enabled = true;
         }
-        GUI.enabled = true;
     }
 
     private void OpenEditor()

@@ -60,27 +60,28 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
 
         EditorGUI.BeginChangeCheck();
         
-        EditorGUILayout.BeginHorizontal();
-        LocalizedPropertyField(_clipProperty);
-        if (GUILayout.Button($"{ComponentName}:button:Import".LG(), GUILayout.Width(60)))
+        using (new EditorGUILayout.HorizontalScope())
         {
-            var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
-            var importer = new ExpressionDataClipImporter();
-            importer.ImportClip(components);
+            LocalizedPropertyField(_clipProperty);
+
+            if (GUILayout.Button($"{ComponentName}:button:Import".LG(), GUILayout.Width(60)))
+            {
+                var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
+                var importer = new ExpressionDataClipImporter();
+                importer.ImportClip(components);
+            }
+
+            var clipInfoText = $"{$"{ComponentName}:label:ClipFacialAnimationCount".LS()}: {_facialClipAnimationCount}, {$"{ComponentName}:label:ClipNonFacialAnimationCount".LS()}: {_nonFacialClipAnimationCount}";
+            var infoContent = EditorGUIUtility.IconContent("console.infoicon.sml");
+            infoContent.tooltip = clipInfoText;
+            GUILayout.Label(infoContent, GUIStyleHelper.IconLabel, GUILayout.Width(16), GUILayout.Height(EditorGUIUtility.singleLineHeight));
         }
-        EditorGUILayout.EndHorizontal();
 
         _clipOptionPopup.Field(_clipOptionProperty);
 
         if (EditorGUI.EndChangeCheck())
         {
             EditorApplication.delayCall += UpdateInfo;
-        }
-
-        if (_clipProperty.objectReferenceValue != null)
-        {
-            var clipInfoText = $"{$"{ComponentName}:label:ClipFacialAnimationCount".LS()}: {_facialClipAnimationCount}, {$"{ComponentName}:label:ClipNonFacialAnimationCount".LS()}: {_nonFacialClipAnimationCount}";
-            EditorGUILayout.HelpBox(clipInfoText, MessageType.Info);
         }
     }
 
