@@ -1,38 +1,52 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="general-controls-container">
 
-        <ui:Box name="target-panel">
-            <ui:Label name="target-title" class="ndmf-tr" text="FacialEditor:label:Target" />
-            <uie:ObjectField name="target-renderer-field" class="ndmf-tr" label="FacialEditor:label:TargetRenderer" />
+        <ui:VisualElement name="top-actions-container">
+            <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
+            <ui:Button name="undo-button" class="top-action-button" />
+            <ui:Button name="redo-button" class="top-action-button" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="divider-line"/>
+
+        <uie:ObjectField name="target-renderer-field" class="ndmf-tr" label="FacialEditor:label:TargetRenderer" />
+
+        <!-- Targeting Content (Always visible under Renderer) -->
+        <ui:VisualElement name="targeting-content">
             <ui:VisualElement name="targeting-container">
                 <ui:DropdownField name="targeting-type-field" />
                 <uie:ObjectField name="targeting-object-field"/>
-                <ui:Button name="save-button" class="ndmf-tr" text="FacialEditor:button:Save" />
             </ui:VisualElement>
             <ui:VisualElement name="targeting-options-container" />
-        </ui:Box>
+        </ui:VisualElement>
 
-        <ui:Box name="group-filter-panel">
-            <ui:VisualElement name="filter-header">
-                <ui:Label name="filter-title" class="ndmf-tr" text="FacialEditor:label:filter" />
-                <ui:Button name="all-button" class="ndmf-tr" text="FacialEditor:button:Filter:All" />
-                <ui:Button name="none-button" class="ndmf-tr" text="FacialEditor:button:Filter:None" />
-                <ui:Label text="FacialEditor:button:Filter:Left" class="ndmf-tr" />
-                <ui:Toggle name="left-toggle" />
-                <ui:Label text="FacialEditor:button:Filter:Right" class="ndmf-tr" />
-                <ui:Toggle name="right-toggle" />
-            </ui:VisualElement>
-            <ui:VisualElement name="group-toggles-container" />
-        </ui:Box>
+        <ui:VisualElement class="divider-line"/>
 
-        <ui:Box name="clip-import-panel">
-            <ui:Label name="clip-import-title" class="ndmf-tr" text="FacialEditor:label:ClipImport" />
-            <ui:VisualElement name="clip-import-container">
-                <uie:ObjectField name="clip-field" class="ndmf-tr" label="FacialEditor:label:Clip" />
-                <uie:EnumField name="import-option-field" class="ndmf-tr" label="FacialEditor:label:ImportOption" />
-                <ui:Button name="import-clip-button" class="ndmf-tr" text="FacialEditor:button:Import" />
-            </ui:VisualElement>
-        </ui:Box>
-            
+        <!-- Toolbar (IMGUI) -->
+        <ui:IMGUIContainer name="toolbar-container" />
+
+        <!-- Dynamic Content Container -->
+        <ui:VisualElement name="content-container">
+             <!-- Filter Content -->
+             <ui:VisualElement name="filter-content" class="toolbar-content">
+                <ui:VisualElement name="filter-header">
+                    <ui:Button name="all-button"/>
+                    <ui:Button name="none-button"/>
+                    <ui:Toggle name="left-toggle" />
+                    <ui:Toggle name="right-toggle" />
+                </ui:VisualElement>
+                <ui:VisualElement name="group-toggles-container" />
+             </ui:VisualElement>
+
+             <!-- Clip Import Content -->
+             <ui:VisualElement name="clip-content" class="toolbar-content">
+                <ui:VisualElement name="clip-import-container">
+                    <uie:ObjectField name="clip-field" class="ndmf-tr" label="FacialEditor:label:Clip" />
+                    <uie:EnumField name="import-option-field" class="ndmf-tr" label="FacialEditor:label:ImportOption" />
+                    <ui:Button name="import-clip-button" class="ndmf-tr" text="FacialEditor:button:Import" />
+                </ui:VisualElement>
+             </ui:VisualElement>
+        </ui:VisualElement>
+
     </ui:VisualElement>
-</ui:UXML> 
+</ui:UXML>

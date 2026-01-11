@@ -16,8 +16,8 @@ FaceTuneはモジュール的に設計された、アバター向けの表情編
 
 ## クイックスタート
 1.  テンプレートの追加:
-    - Hierarchyからアバターを右クリックし、メニューから `FaceTune` > `Base Template` を選択します。
-    - `Base Template` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
+    - Hierarchyからアバターを右クリックし、メニューから `FaceTune` > `Template` を選択します。
+    - `FaceTune Template` GameObjectが追加されます。このルートに `FaceTune Assistant` コンポーネントがあります。
 2.  表情制御の追加:
     - `FaceTune Assistant`のInspectorに表示される「表情制御を追加」セクションで、作りたい表情制御の種類を選びます。
         - ハンドジェスチャー: 片手制御、基本的な両手制御、両手で表情をブレンドする表情制御などが作成できます。

@@ -54,12 +54,18 @@ internal class FacialShapesEditor : EditorWindow
 
     private void OnEnable()
     {
+        Undo.IncrementCurrentGroup();
+        Undo.SetCurrentGroupName("Facial Shapes Editor: Window Opened");
+        Undo.RecordObject(this, "Facial Shapes Editor: Window Opened");
+        Undo.IncrementCurrentGroup();
+        _initialUndoGroup = Undo.GetCurrentGroup();
+
         _serializedObject = new SerializedObject(this);
         _dataManager = new BlendShapeOverrideManager(_serializedObject, _serializedObject.FindProperty(nameof(_dataManager))); // 初期化
         _targetManager = new TargetManager(_serializedObject, _serializedObject.FindProperty(nameof(_targetManager)), _dataManager); // 初期化
         _groupManager = new BlendShapeGrouping(_targetManager, _dataManager);
         _previewManager = new PreviewManager(_dataManager, rootVisualElement);
-        _ui = new FacialShapeUI(rootVisualElement, _targetManager, _dataManager, _groupManager, _previewManager);
+        _ui = new FacialShapeUI(rootVisualElement, _targetManager, _dataManager, _groupManager, _previewManager, _initialUndoGroup);
 
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
         titleContent = new GUIContent("Facial Shapes Editor");
@@ -67,9 +73,6 @@ internal class FacialShapesEditor : EditorWindow
 
         hasUnsavedChanges = false;
         SetupKeyboardShortcuts();
-        Undo.IncrementCurrentGroup();
-        Undo.SetCurrentGroupName("Facial Shapes Editor: OnEnable");
-        _initialUndoGroup = Undo.GetCurrentGroup();
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
 
         _targetManager.RenderChangeConditions.Add(renderer => CanRefreshTargetRenderer());
@@ -187,6 +190,11 @@ internal class FacialShapesEditor : EditorWindow
         {
             _previewManager.Dispose();
             _previewManager = null!;
+        }
+        if (_ui != null)
+        {
+            _ui.Dispose();
+            _ui = null!;
         }
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Undo.CollapseUndoOperations(_initialUndoGroup);

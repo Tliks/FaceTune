@@ -1,11 +1,20 @@
-/* Facial Shape UI Styles */
 #root {
     flex-direction: row;
+    --main-gap: 3px;
+    --border-color: rgba(128, 128, 128, 0.8);
+    --element-height: 20px;
 }
 
 #left-panel {
     flex: 1 1 65%;
     flex-direction: column;
+    margin : var(--main-gap);
+}
+
+#right-panel {
+    flex: 1 1 35%;
+    flex-direction: column;
+    margin : var(--main-gap);
 }
 
 #general-controls-container {
@@ -16,14 +25,22 @@
     flex: 1 1 auto;
 }
 
-#right-panel {
-    flex: 1 1 35%;
-    flex-direction: column;
+.divider-line {
+    height: 1px;
+    background-color: var(--border-color);
+    margin-top: var(--main-gap);
+    margin-bottom: var(--main-gap);
 }
 
-#border-line {
-    height: 1px;
-    background-color: rgba(128, 128, 128, 0.8);
-    margin-top: 10px;
-    margin-bottom: 5px;
+.vertical-divider {
+    width: 1px;
+    background-color: var(--border-color);
+    margin-left: var(--main-gap);
+    margin-right: var(--main-gap);
+}
+
+.border-line {
+    border-color: var(--border-color);
+    border-width: 1px;
+    border-radius: 5px;
 }

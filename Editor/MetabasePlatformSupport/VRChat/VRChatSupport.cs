@@ -32,7 +32,7 @@ internal class VRChatSupport : IMetabasePlatformSupport
     public void Initialize(Transform root)
     {
         _root = root;
-        _descriptor = root.GetComponentNullable<VRCAvatarDescriptor>()!;
+        _descriptor = root.TryGetComponent<VRCAvatarDescriptor>(out var descriptor) ? descriptor : null!;
     }
 
     public SkinnedMeshRenderer? GetFaceRenderer()
@@ -59,7 +59,7 @@ internal class VRChatSupport : IMetabasePlatformSupport
                 var child = avatarRoot.GetChild(i);
                 if (child != null && child.name == "Body")
                 {
-                    faceRenderer = child.GetComponentNullable<SkinnedMeshRenderer>();
+                    faceRenderer = child.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null;
                     if (faceRenderer != null) { break; }
                 }
             }

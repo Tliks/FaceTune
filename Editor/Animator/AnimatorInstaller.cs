@@ -19,12 +19,14 @@ internal class AnimatorInstaller : InstallerBase
     private readonly BlinkInstaller _blinkInstaller;
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
+    // private static readonly Condition TrueCondition = ParameterCondition.Bool(TrueParameterName, true);
 
     public AnimatorInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
     {
         _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
         _lipSyncInstaller = new LipSyncInstaller(virtualController, avatarContext, useWriteDefaults);
         _blinkInstaller = new BlinkInstaller(virtualController, avatarContext, useWriteDefaults);
+        _controller.EnsureBoolParameterExists(FaceTuneConstants.LockFacialParameter, false);
     }
 
     public void Execute(InstallerData installerData)

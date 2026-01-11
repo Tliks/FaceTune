@@ -60,27 +60,28 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
 
         EditorGUI.BeginChangeCheck();
         
-        EditorGUILayout.BeginHorizontal();
-        LocalizedPropertyField(_clipProperty);
-        if (GUILayout.Button($"{ComponentName}:button:Import".LG(), GUILayout.Width(60)))
+        using (new EditorGUILayout.HorizontalScope())
         {
-            var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
-            var importer = new ExpressionDataClipImporter();
-            importer.ImportClip(components);
+            LocalizedPropertyField(_clipProperty);
+
+            if (GUILayout.Button($"{ComponentName}:button:Import".LG(), GUILayout.Width(60)))
+            {
+                var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
+                var importer = new ExpressionDataClipImporter();
+                importer.ImportClip(components);
+            }
+
+            var clipInfoText = $"{$"{ComponentName}:label:ClipFacialAnimationCount".LS()}: {_facialClipAnimationCount}, {$"{ComponentName}:label:ClipNonFacialAnimationCount".LS()}: {_nonFacialClipAnimationCount}";
+            var infoContent = EditorGUIUtility.IconContent("console.infoicon.sml");
+            infoContent.tooltip = clipInfoText;
+            GUILayout.Label(infoContent, GUIStyleHelper.IconLabel, GUILayout.Width(16), GUILayout.Height(EditorGUIUtility.singleLineHeight));
         }
-        EditorGUILayout.EndHorizontal();
 
         _clipOptionPopup.Field(_clipOptionProperty);
 
         if (EditorGUI.EndChangeCheck())
         {
             EditorApplication.delayCall += UpdateInfo;
-        }
-
-        if (_clipProperty.objectReferenceValue != null)
-        {
-            var clipInfoText = $"{$"{ComponentName}:label:ClipFacialAnimationCount".LS()}: {_facialClipAnimationCount}, {$"{ComponentName}:label:ClipNonFacialAnimationCount".LS()}: {_nonFacialClipAnimationCount}";
-            EditorGUILayout.HelpBox(clipInfoText, MessageType.Info);
         }
     }
 
@@ -91,7 +92,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         EditorGUILayout.Space();
         if (GUILayout.Button($"{ComponentName}:button:OpenEditor".LG()))
         {
-            OpenEditor(Component);
+            OpenEditor();
         }
     }
 
@@ -132,21 +133,30 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
             .ToArray();
     }
 
-    internal static void OpenEditor(ExpressionDataComponent component)
+    private void OpenEditor()
     {
-        if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
+        if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
+
         var bodyPath = context.BodyPath;
+
         var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
-        FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialStyleAnimations);
+        FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
 
-        var defaultOverride = new BlendShapeSet();
-        defaultOverride.AddRange(component.BlendShapeAnimations.ToFirstFrameBlendShapes());
-
-        var baseSet = new BlendShapeSet();
+        var baseSet = new BlendShapeWeightSet();
         baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
-        baseSet.AddRange(component.ProcessClip(bodyPath).facialAnimations.ToFirstFrameBlendShapes());
+        if (Component.TryGetComponentInParent<ExpressionComponent>(true, out var expressionComponent)){
+            foreach (var upperData in expressionComponent.GetComponentsInChildren<ExpressionDataComponent>()) {
+                if (upperData == Component) break;
+                upperData.GetBlendShapes(baseSet, facialStyleAnimations, bodyPath);
 
-        CustomEditorUtility.OpenEditor(component.gameObject, new ExpressionDataTargeting(){ Target = component }, defaultOverride, baseSet);
+            }
+        }
+        baseSet.AddRange(Component.ProcessClip(bodyPath).facialAnimations.ToFirstFrameBlendShapes());
+
+        var defaultOverride = new BlendShapeWeightSet();
+        defaultOverride.AddRange(Component.BlendShapeAnimations.ToFirstFrameBlendShapes());
+
+        CustomEditorUtility.OpenEditor(Component.gameObject, new ExpressionDataTargeting(){ Target = Component }, defaultOverride, baseSet);
     }
     
 

@@ -2,7 +2,7 @@ using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune;
 
-internal static class PrefabUtility
+internal static class PrefabAssets
 {
     public static GameObject InstantiatePrefab(string guid, 
         bool unpack,

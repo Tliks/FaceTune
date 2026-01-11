@@ -6,6 +6,7 @@
 ### Added
 
 ### Changed
+- When creating a template, only "Option" is excluded from unpacking.
 
 ### Deprecated
 
@@ -14,6 +15,42 @@
 ### Fixed
 
 ### Security
+
+## [0.1.0-beta.14] - 2025-01-09
+### Added
+- Added an expression lock feature.
+  - Newly created templates will now include a menu for expression locking.
+
+### Changed
+- In the expression editor, the contents of low-priority Expression Data within the same Expression are now shown as the base.
+- Adjusted the UI
+
+## [0.1.0-beta.13] - 2025-01-04
+### Changed
+- Changed the supported version of NDMF to >=1.9.0
+
+### Fixed
+- Fixed a syntax error in package.json
+
+## [0.1.0-beta.12] - 2025-12-30
+### Added
+- Added a menu in the right-click menu to generate a template with the FX controller contents imported.
+
+### Changed
+- Adjusted the UI
+
+### Fixed
+- Fixed an issue where real-time preview for the default expression in the template was mistakenly turned off
+
+## [0.1.0-beta.11] - 2025-12-26
+### Changed
+- Improved Animator Controller import process.
+- Localized some console messages.
+- Changed supported NDMF version to >=1.9.0.rc.0
+
+### Fixed
+- Fixed an issue where FacialShapesEditor was not updating.
+- Fixed an issue where specifying multiple parameters as conditions from the Inspector did not work correctly.
 
 ## [0.1.0-beta.10] - 2025-08-28
 ### Fixed

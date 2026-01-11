@@ -2,7 +2,7 @@ using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-internal class FacialShapeUI
+internal class FacialShapeUI : IDisposable
 {
     private static VisualTreeAsset? _uxml;
     private static StyleSheet? _uss;
@@ -11,7 +11,7 @@ internal class FacialShapeUI
     private SelectedPanel _selectedPanel = null!;
     private UnselectedPanel _unselectedPanel = null!;
 
-    public FacialShapeUI(VisualElement root, TargetManager targetManager, BlendShapeOverrideManager dataManager, BlendShapeGrouping groupManager, PreviewManager previewManager)
+    public FacialShapeUI(VisualElement root, TargetManager targetManager, BlendShapeOverrideManager dataManager, BlendShapeGrouping groupManager, PreviewManager previewManager, int initialUndoGroup)
     {
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
@@ -21,7 +21,7 @@ internal class FacialShapeUI
         root.styleSheets.Add(uss);
         Localization.LocalizeUIElements(root);
 
-        _generalControls = new GeneralControls(targetManager, dataManager, groupManager, previewManager);
+        _generalControls = new GeneralControls(targetManager, dataManager, groupManager, previewManager, initialUndoGroup);
         _selectedPanel = new SelectedPanel(dataManager, groupManager);
         _unselectedPanel = new UnselectedPanel(dataManager, groupManager, previewManager);
 
@@ -48,5 +48,10 @@ internal class FacialShapeUI
         _generalControls.RefreshTarget();
         _selectedPanel.RefreshTarget();
         _unselectedPanel.RefreshTarget();
+    }
+
+    public void Dispose()
+    {
+        _generalControls.Dispose();
     }
 }

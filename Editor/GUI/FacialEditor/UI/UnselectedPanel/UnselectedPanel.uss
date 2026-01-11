@@ -1,33 +1,22 @@
-/* Unselected Panel Styles */
-#unselected-shapes-panel {
-    padding-left: 5px;
-}
-
-#unselected-label {
-    -unity-font-style: bold;
-}
-
-#unselected-search-field > .unity-base-field__label {
-    min-width: 0;
-}
-
-#unselected-controls-container {
+#horizontal-container {
+    flex: 0 0 var(--element-height);
     flex-direction: row;
     align-items: center;
-}
-
-#add-weight-label {
-    flex: 0 0 auto;
-    margin-left: auto;
-}
-
-#add-weight-field {
-    flex: 0 0 40px;
+    margin-bottom: var(--main-gap);
 }
 
 #unselected-list-view {
-    border-color: rgba(128, 128, 128, 0.8);
-    border-width: 1px;
-    border-radius: 5px;
-    margin-top: 5px;
-} 
+    flex: 1 1 auto;
+}
+
+#unselected-search-field {
+    flex: 1 1 auto;
+    margin : 0px;
+    margin-right : var(--main-gap);
+}
+
+#select-all-button {
+    flex: 0 0 auto;
+    margin : 0px;
+    padding : 0px;
+}

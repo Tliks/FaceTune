@@ -29,8 +29,11 @@ internal static class MenuItems
     // GameObject
     private const string GameObjectPath = $"GameObject/{FaceTuneConstants.Name}/";
 
-    public const string BaseTemplatePath = GameObjectPath + "Base Template";
-    public const int BaseTemplatePriority = 100;
+    public const string TemplatePath = GameObjectPath + "Template";
+    public const int TemplatePriority = 100;
+
+    public const string ImportFxPath = GameObjectPath + "Import FX";
+    public const int ImportFxPriority = 101;
 
     public const string ConditionPath = GameObjectPath + "Condition";
     public const int ConditionPriority = 200;

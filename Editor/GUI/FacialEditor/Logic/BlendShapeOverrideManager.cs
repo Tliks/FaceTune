@@ -12,7 +12,7 @@ internal class BlendShapeOverrideManager : IDisposable
     private SerializedProperty _overrideWeightsProperty;
 
     private string[] _allKeysArray = new string[0];
-    private IReadOnlyBlendShapeSet _baseSet = new BlendShapeSet();
+    private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
@@ -52,8 +52,8 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void RefreshBaseSetAndDefaultOverrides(IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
     {
-        _baseSet = baseSet ?? new BlendShapeSet();
-        var _defaultOverrides = defaultOverrides ?? new BlendShapeSet();
+        _baseSet = baseSet ?? new BlendShapeWeightSet();
+        var _defaultOverrides = defaultOverrides ?? new BlendShapeWeightSet();
         ExecuteModification(() =>
         {
             for (int i = 0; i < _allKeysArray.Length; i++)
@@ -74,7 +74,7 @@ internal class BlendShapeOverrideManager : IDisposable
         OnAnyDataChange?.Invoke();
     }
 
-    public void GetCurrentOverrides(BlendShapeSet resultToAdd)
+    public void GetCurrentOverrides(BlendShapeWeightSet resultToAdd)
     {
         var length = _allKeysArray.Length;
         for (int i = 0; i < length; i++)
@@ -100,7 +100,7 @@ internal class BlendShapeOverrideManager : IDisposable
     
     public bool IsBaseShape(int index) 
     {
-        return _baseSet.Contains(_allKeysArray[index]);
+        return _baseSet.ContainsKey(_allKeysArray[index]);
     }
     
     public float GetShapeWeight(int index) 

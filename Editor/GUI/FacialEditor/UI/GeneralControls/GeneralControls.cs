@@ -1,9 +1,11 @@
+using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-internal class GeneralControls
+internal class GeneralControls : IDisposable
 {
     private readonly TargetManager _targetManager;
     private readonly BlendShapeOverrideManager _blendShapeManager;
@@ -14,19 +16,37 @@ internal class GeneralControls
     private static StyleSheet? _uss;
     private readonly VisualElement _element;
     public VisualElement Element => _element;
+
     private VisualElement _targetingOptionsContainer = null!;
     private VisualElement _groupTogglesContainer = null!;
     private readonly List<Toggle> _groupToggles = new();
 
+    private VisualElement _targetingContent = null!;
+    private VisualElement _clipContent = null!;
+    private VisualElement _filterContent = null!;
+    private readonly List<VisualElement> _contentElements = new();
+    private readonly LocalizedToolbar _toolbar;
+    private int _selectedToolbarIndex = 0;
+    private readonly int _initialUndoGroup;
+
+    private Button _undoButton = null!;
+    private Button _redoButton = null!;
+
     private AnimationClip? _clip;
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
 
-    public GeneralControls(TargetManager targetManager, BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager)
+    private static readonly Texture _selectAllIcon = EditorGUIUtility.IconContent("d_Toolbar Plus").image;
+    private static readonly Texture _selectNoneIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
+    private static readonly Texture _undoIcon = EditorGUIUtility.IconContent("d_StepLeftButton").image;
+    private static readonly Texture _redoIcon = EditorGUIUtility.IconContent("d_StepButton").image;
+
+    public GeneralControls(TargetManager targetManager, BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager, int initialUndoGroup)
     {
         _targetManager = targetManager;
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
         _previewManager = previewManager;
+        _initialUndoGroup = initialUndoGroup;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
@@ -35,7 +55,21 @@ internal class GeneralControls
         _element.styleSheets.Add(uss);
         Localization.LocalizeUIElements(_element);
 
+        _toolbar = new LocalizedToolbar(new[] { "FacialEditor:label:filter", "FacialEditor:label:ClipImport" });
+
+        Undo.undoRedoPerformed += UpdateUndoRedoState;
+
         SetupControls();
+    }
+
+    private void UpdateUndoRedoState()
+    {
+        if (_undoButton == null || _redoButton == null) return;
+        
+        string undoName = Undo.GetCurrentGroupName();
+        bool canUndo = !string.IsNullOrEmpty(undoName) && undoName != "Facial Shapes Editor: Window Opened";
+        _undoButton.SetEnabled(canUndo);
+        _redoButton.SetEnabled(true);
     }
 
     private static Dictionary<Type, Func<IShapesEditorTargeting>> _targetingTypes = new()
@@ -50,9 +84,8 @@ internal class GeneralControls
 
     private void SetupControls()
     {
-        var targetPanel = _element.Q<VisualElement>("target-panel");
-
-        var targetRendererField = targetPanel.Q<ObjectField>("target-renderer-field");
+        // Renderer Field (Always visible)
+        var targetRendererField = _element.Q<ObjectField>("target-renderer-field");
         targetRendererField.objectType = typeof(SkinnedMeshRenderer);
         targetRendererField.RegisterValueChangedCallback(evt =>
         {
@@ -63,7 +96,45 @@ internal class GeneralControls
             targetRendererField.SetValueWithoutNotify(renderer);
         };
 
-        var targetingField = targetPanel.Q<ObjectField>("targeting-object-field");
+        // Top Actions (Save, Undo, Redo)
+        var saveButton = _element.Q<Button>("save-button");
+        saveButton.clicked += () => _targetManager.Save();
+        saveButton.SetEnabled(_targetManager.CanSave);
+        _targetManager.OnCanSaveChanged += (canSave) => saveButton.SetEnabled(canSave);
+
+        _undoButton = _element.Q<Button>("undo-button");
+        _undoButton.Add(new Image { image = _undoIcon, scaleMode = ScaleMode.ScaleToFit });
+        _undoButton.clicked += () => Undo.PerformUndo();
+
+        _redoButton = _element.Q<Button>("redo-button");
+        _redoButton.Add(new Image { image = _redoIcon, scaleMode = ScaleMode.ScaleToFit });
+        _redoButton.clicked += () => Undo.PerformRedo();
+
+        UpdateUndoRedoState();
+
+        // Toolbar logic (IMGUI Container)
+        _targetingContent = _element.Q<VisualElement>("targeting-content");
+        _clipContent = _element.Q<VisualElement>("clip-content");
+        _filterContent = _element.Q<VisualElement>("filter-content");
+        _contentElements.AddRange(new[] { _filterContent, _clipContent });
+
+        var toolbarContainer = _element.Q<IMGUIContainer>("toolbar-container");
+        toolbarContainer.onGUIHandler = () =>
+        {
+            UpdateUndoRedoState();
+            var newIndex = _toolbar.Draw(_selectedToolbarIndex);
+            if (newIndex != _selectedToolbarIndex)
+            {
+                _selectedToolbarIndex = newIndex;
+                UpdateTabVisibility();
+            }
+        };
+
+        // Default selection
+        UpdateTabVisibility();
+
+        // --- Targeting Content ---
+        var targetingField = _targetingContent.Q<ObjectField>("targeting-object-field");
         targetingField.RegisterValueChangedCallback(evt =>
         {
             _targetManager.Targeting?.SetTarget(evt.newValue);
@@ -73,7 +144,7 @@ internal class GeneralControls
             targetingField.SetValueWithoutNotify(targeting?.GetTarget());
         };
 
-        var targetingTypeField = targetPanel.Q<DropdownField>("targeting-type-field");
+        var targetingTypeField = _targetingContent.Q<DropdownField>("targeting-type-field");
         targetingTypeField.choices = _targetingTypeNames.Keys.ToList();
         targetingTypeField.RegisterValueChangedCallback(evt =>
         {
@@ -96,26 +167,45 @@ internal class GeneralControls
             }
         };
 
-        _targetingOptionsContainer = targetPanel.Q<VisualElement>("targeting-options-container");
+        _targetingOptionsContainer = _targetingContent.Q<VisualElement>("targeting-options-container");
         RefreshTargetingContainer();
         _targetManager.OnTargetingChanged += (targeting) =>
         {
             RefreshTargetingContainer();
         };
 
-        var saveButton = targetPanel.Q<Button>("save-button");
-        saveButton.clicked += () =>
+        // --- Clip Import Content ---
+        var clipField = _clipContent.Q<ObjectField>("clip-field");
+        clipField.objectType = typeof(AnimationClip);
+        clipField.RegisterValueChangedCallback(evt =>
         {
-            _targetManager.Save();
-        };
-        saveButton.SetEnabled(_targetManager.CanSave);
-        _targetManager.OnCanSaveChanged += (canSave) => saveButton.SetEnabled(canSave);
+            _clip = evt.newValue as AnimationClip;
+        });
 
-        _groupTogglesContainer = _element.Q<VisualElement>("group-toggles-container");
+        var clipImportOptionField = _clipContent.Q<EnumField>("import-option-field");
+        clipImportOptionField.Init(_clipImportOption);
+        clipImportOptionField.RegisterValueChangedCallback(evt =>
+        {
+            _clipImportOption = (ClipImportOption)evt.newValue;
+        });
+
+        var importClipButton = _clipContent.Q<Button>("import-clip-button");
+        importClipButton.clicked += () =>
+        {
+            if (_clip == null) return;
+            var resutlt = new BlendShapeWeightSet();
+            _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList());
+            _blendShapeManager.OverrideShapesAndSetWeight(resutlt.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
+        };
+
+        // --- Filter Content ---
+        _groupTogglesContainer = _filterContent.Q<VisualElement>("group-toggles-container");
         RefreshGroupToggles();
         _groupManager.OnGroupSelectionChanged += (groups) => RefreshGroupToggles();
 
-        _element.Q<Button>("all-button").clicked += () =>
+        var allButton = _filterContent.Q<Button>("all-button");
+        allButton.Add(new Image { image = _selectAllIcon });
+        allButton.clicked += () =>
         {
             for (int i = 0; i < _groupManager.Groups.Count; i++)
             {
@@ -124,7 +214,9 @@ internal class GeneralControls
             _groupManager.SelectAll(true);
         };
         
-        _element.Q<Button>("none-button").clicked += () =>
+        var noneButton = _filterContent.Q<Button>("none-button");
+        noneButton.Add(new Image { image = _selectNoneIcon });
+        noneButton.clicked += () =>
         {
             for (int i = 0; i < _groupManager.Groups.Count; i++)
             {
@@ -133,59 +225,40 @@ internal class GeneralControls
             _groupManager.SelectAll(false);
         };
         
-        var leftToggle = _element.Q<Toggle>("left-toggle");
+        var leftToggle = _filterContent.Q<Toggle>("left-toggle");
         leftToggle.SetValueWithoutNotify(_groupManager.IsLeftSelected);
         leftToggle.RegisterValueChangedCallback(evt =>
         {
             _groupManager.IsLeftSelected = evt.newValue;
         });
         
-        var rightToggle = _element.Q<Toggle>("right-toggle");
+        var rightToggle = _filterContent.Q<Toggle>("right-toggle");
         rightToggle.SetValueWithoutNotify(_groupManager.IsRightSelected);
         rightToggle.RegisterValueChangedCallback(evt =>
         {
             _groupManager.IsRightSelected = evt.newValue;
         });
+    }
 
-
-        var clipImportPanel = _element.Q<VisualElement>("clip-import-panel");
-        
-        var clipField = clipImportPanel.Q<ObjectField>("clip-field");
-        clipField.objectType = typeof(AnimationClip);
-        clipField.RegisterValueChangedCallback(evt =>
+    private void UpdateTabVisibility()
+    {
+        for (int i = 0; i < _contentElements.Count; i++)
         {
-            _clip = evt.newValue as AnimationClip;
-        });
+            if (i == _selectedToolbarIndex)
+            {
+                _contentElements[i].AddToClassList("toolbar-content--visible");
+            }
+            else
+            {
+                _contentElements[i].RemoveFromClassList("toolbar-content--visible");
+            }
+        }
+    }
 
-        var clipImportOptionField = clipImportPanel.Q<EnumField>("import-option-field");
-        clipImportOptionField.Init(_clipImportOption);
-        clipImportOptionField.RegisterValueChangedCallback(evt =>
-        {
-            _clipImportOption = (ClipImportOption)evt.newValue;
-        });
-
-        var importClipButton = clipImportPanel.Q<Button>("import-clip-button");
-        importClipButton.clicked += () =>
-        {
-            if (_clip == null) return;
-            var resutlt = new BlendShapeSet();
-            _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList()); // Todo: BaseをFacialと区別すべき？
-            _blendShapeManager.OverrideShapesAndSetWeight(resutlt.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
-        };
-        
-        /*
-        var previewSettingPanel = _element.Q<VisualElement>("preview-setting-panel");
-
-        var setBlendShapeTo100OnHoverButton = previewSettingPanel.Q<Toggle>("set-blendshape-to-100-on-hover-button");
-        setBlendShapeTo100OnHoverButton.value = _previewManager.SetBlendShapeTo100OnHover;
-        setBlendShapeTo100OnHoverButton.RegisterValueChangedCallback(evt => _previewManager.SetBlendShapeTo100OnHover = evt.newValue);
-        _previewManager.OnSetBlendShapeTo100OnHoverChanged += (value) => setBlendShapeTo100OnHoverButton.SetValueWithoutNotify(value);
-
-        var highlightBlendShapeVerticesOnHoverButton = previewSettingPanel.Q<Toggle>("highlight-blendshape-vertices-on-hover-button");
-        highlightBlendShapeVerticesOnHoverButton.value = _previewManager.HighlightBlendShapeVerticesOnHover;
-        highlightBlendShapeVerticesOnHoverButton.RegisterValueChangedCallback(evt => _previewManager.HighlightBlendShapeVerticesOnHover = evt.newValue);
-        _previewManager.OnHighlightBlendShapeVerticesOnHoverChanged += (value) => highlightBlendShapeVerticesOnHoverButton.SetValueWithoutNotify(value);
-        */
+    public void Dispose()
+    {
+        _toolbar.Dispose();
+        Undo.undoRedoPerformed -= UpdateUndoRedoState;
     }
 
     private void RefreshTargetingContainer()
@@ -200,7 +273,6 @@ internal class GeneralControls
 
     public void RefreshTarget()
     {
-        // RefreshTargetingContainer();
         RefreshGroupToggles();
     }
 

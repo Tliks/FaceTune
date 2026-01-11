@@ -14,14 +14,17 @@ internal class SelectedPanel
     private static VisualTreeAsset? _uxml;
     private static VisualTreeAsset? _itemUxml;
     private static StyleSheet? _uss;
+    private static StyleSheet? _itemUss;
 
     private TextField _searchField = null!;
+    private SimpleToggle _zeroToggle = null!;
+
     private VisualElement _baseShapesPanel = null!;
     private VisualElement _selectedShapesPanel = null!;
+
     private ListView _baseListView = null!;
     private ListView _selectedListView = null!;
-    private SimpleToggle _baseZeroToggle = null!;
-    private SimpleToggle _selectedZeroToggle = null!;
+    
     private Button _selectedRemoveAll0Button = null!;
     
     private struct ElementData
@@ -35,9 +38,9 @@ internal class SelectedPanel
     private List<ElementData> _currentBaseSource = null!;
     private List<ElementData> _currentSelectedSource = null!;
 
-    private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff@2x").image;
-    private static readonly Texture _resetIcon = EditorGUIUtility.IconContent("d_Toolbar Minus@2x").image;
-    private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus@2x").image;
+    private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff").image;
+    private static readonly Texture _resetIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
+    private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
 
 	public event Action<int>? OnSelectedItemNameClicked;
 
@@ -49,6 +52,7 @@ internal class SelectedPanel
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
         var itemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
+        var itemUss = UIAssetHelper.EnsureUssWithGuid(ref _itemUss, "a00c7162d21d9e34ab15764bdb0d1173");
         
         _element = uxml.CloneTree();
         _element.styleSheets.Add(uss);
@@ -79,13 +83,10 @@ internal class SelectedPanel
         _searchField = commonControls.Q<TextField>("search-field");
         _searchField.RegisterValueChangedCallback(_ => BuildAndRefreshListViewsSlow());
 
-        _baseShapesPanel = _element.Q("base-shapes-panel");
+        _zeroToggle = commonControls.Q<SimpleToggle>("zero-toggle");
+        _zeroToggle.RegisterValueChangedCallback(evt => BuildAndRefreshListViewsSlow());
 
-        _baseZeroToggle = _baseShapesPanel.Q<SimpleToggle>("base-zero-toggle");
-        _baseZeroToggle.RegisterValueChangedCallback(evt =>
-        {
-            BuildAndRefreshBaseListViewsSlow();
-        });
+        _baseShapesPanel = _element.Q("base-shapes-panel");
 
         var base0100Toggle = _baseShapesPanel.Q<Button>("base-0-100-toggle");
         base0100Toggle.Add(new Image { image = _toggleIcon });
@@ -113,12 +114,6 @@ internal class SelectedPanel
             var indices = _blendShapeManager.GetOverridenIndices(index => !_blendShapeManager.IsBaseShape(index) && _blendShapeManager.GetShapeWeight(index) == 0f); 
             _blendShapeManager.UnoverrideShapes(indices);
         };
-
-        _selectedZeroToggle = _selectedShapesPanel.Q<SimpleToggle>("selected-zero-toggle");
-        _selectedZeroToggle.RegisterValueChangedCallback(evt =>
-        {
-            BuildAndRefreshSelectedListViewsSlow();
-        });
 
         var selected0100Toggle = _selectedShapesPanel.Q<Button>("selected-0-100-toggle");
         selected0100Toggle.Add(new Image { image = _toggleIcon });
@@ -160,6 +155,7 @@ internal class SelectedPanel
         VisualElement MakeElement(bool isBase)
         {
             var element = _itemUxml!.CloneTree();
+            element.styleSheets.Add(_itemUss!);
             Localization.LocalizeUIElements(element);
 
             var nameLabel = element.Q<Label>("name");
@@ -311,14 +307,14 @@ internal class SelectedPanel
 
             if (isBase && item.IsBase)
             {
-                if (!_baseZeroToggle.value && _blendShapeManager.GetShapeWeight(item.KeyIndex) == 0f)
+                if (!_zeroToggle.value && _blendShapeManager.GetShapeWeight(item.KeyIndex) == 0f)
                     continue;
 
                 _currentBaseSource.Add(item);
             }
             else if (selected)
             {
-                if (!_selectedZeroToggle.value && _blendShapeManager.GetShapeWeight(item.KeyIndex) == 0f)
+                if (!_zeroToggle.value && _blendShapeManager.GetShapeWeight(item.KeyIndex) == 0f)
                     continue;
 
                 if (_blendShapeManager.IsOverridden(item.KeyIndex))
