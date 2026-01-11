@@ -15,11 +15,24 @@ internal static class GameObjectMenu
     }
     
     [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 
-    static void Template() => IP("e643b160cc0f24a4fa8e33fb4df1fe7e");
+    static GameObject Template() {
+        var root = IP("e643b160cc0f24a4fa8e33fb4df1fe7e", unpack: false);
+
+        // Unpackするが、直下のOptionのみ除外する。
+        // 後から追加されるオプションを入れたい。
+        PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
+        foreach (Transform child in root.transform)
+        {
+            if (child.name == "Option") continue;
+            PrefabUtility.UnpackPrefabInstance(child.gameObject, PrefabUnpackMode.Completely, InteractionMode.UserAction);
+        }
+
+        return root;
+    }
 
     [M(MenuItems.ImportFxPath, false, MenuItems.ImportFxPriority)] 
     static void ImportFx() {
-        var root = IP("e643b160cc0f24a4fa8e33fb4df1fe7e");
+        var root = Template();
         if (!CustomEditorUtility.TryGetContext(root, out var context)) throw new Exception("Failed to get context");
         var support = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         var animatorController = support?.GetAnimatorController();
