@@ -6,6 +6,7 @@
 ### Added
 
 ### Changed
+- When creating a template, only "Option" is excluded from unpacking.
 
 ### Deprecated
 
