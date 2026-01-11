@@ -222,7 +222,7 @@ internal sealed class PatternGUI : IDisposable
 
     private void CreatePattern(string guid, bool addInstaller = false)
     {   
-        PrefabUtility.InstantiatePrefab(guid, true, _root, addInstaller: addInstaller);
+        PrefabAssets.InstantiatePrefab(guid, true, _root, addInstaller: addInstaller);
     }
 
     private void ImportAnimatorController()

@@ -6,6 +6,7 @@
 ### Added
 
 ### Changed
+- テンプレート作成時、OptionのみUnpackの対象から除外するように。
 
 ### Deprecated
 
