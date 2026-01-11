@@ -8,10 +8,10 @@ namespace Aoyon.FaceTune.Gui;
 
 internal static class GameObjectMenu
 {
-    private static GameObject IP(string guid, bool addInstaller = false)
+    private static GameObject IP(string guid, bool unpack = true, bool isFirstSibling = false, bool addInstaller = false)
     {
         var parent = Selection.activeGameObject;
-        return PrefabUtility.InstantiatePrefab(guid, unpack: true, parent: parent, isFirstSibling: false, addInstaller: addInstaller);
+        return PrefabAssets.InstantiatePrefab(guid, unpack: unpack, parent: parent, isFirstSibling: isFirstSibling, addInstaller: addInstaller);
     }
     
     [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 
@@ -32,13 +32,13 @@ internal static class GameObjectMenu
     static void Condition() => IP("20aca02f84d174940bb4ca676555589a");
     
     [M(MenuItems.MenuSinglePath, false, MenuItems.MenuSinglePriority)] 
-    static void MenuSingle() => IP("a045ae2cad411ae43b4c008ff814957e", true);
+    static void MenuSingle() => IP("a045ae2cad411ae43b4c008ff814957e", addInstaller: true); // Installerが必要
 
     [M(MenuItems.MenuExclusivePath, false, MenuItems.MenuExclusivePriority)] 
-    static void MenuExclusive() => IP("9e1741e66ac069742976cf8c7e785a35", true);
+    static void MenuExclusive() => IP("9e1741e66ac069742976cf8c7e785a35", addInstaller: true); // Installerが必要
 
     [M(MenuItems.MenuBlendingPath, false, MenuItems.MenuBlendingPriority)] 
-    static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", true);
+    static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", addInstaller: true); // Installerが必要
 
     [M(MenuItems.DebugModifyHierarchyPassPath, false, MenuItems.DebugModifyHierarchyPassPriority)]
     static void DebugModifyHierarchyPass()
