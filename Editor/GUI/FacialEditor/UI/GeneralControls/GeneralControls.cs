@@ -282,7 +282,7 @@ internal class GeneralControls : IDisposable
         _groupToggles.Clear();
         foreach (var group in _groupManager.Groups)
         {
-            var toggle = new Toggle($"{group.Name} ({group.BlendShapeIndices.Count})") { value = group.IsSelected };
+            var toggle = new Toggle(group.Name) { value = group.IsSelected };
             toggle.AddToClassList("group-toggle");
             toggle.RegisterValueChangedCallback(evt =>
             {
