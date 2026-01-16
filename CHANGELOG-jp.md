@@ -7,6 +7,7 @@
 
 ### Changed
 - テンプレート作成時、OptionのみUnpackの対象から除外するように。
+- 表情エディタを調整。
 
 ### Deprecated
 
