@@ -56,10 +56,6 @@ internal class BlendShapeGrouping
     public BlendShapeGrouping(TargetManager targetManager, BlendShapeOverrideManager dataManager)
     {
         Groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };
-        targetManager.OnTargetingChanged += (targeting) =>
-        {
-            Refresh(dataManager.AllKeys);
-        };
     }
 
     public void Refresh(IReadOnlyList<string> allKeys)
