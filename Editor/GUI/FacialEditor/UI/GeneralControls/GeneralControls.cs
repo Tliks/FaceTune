@@ -33,6 +33,7 @@ internal class GeneralControls : IDisposable
     private Button _redoButton = null!;
     private Button _restoreInitialOverridesButton = null!;
     private Button _restoreEditedOverridesButton = null!;
+    private readonly EditorApplication.CallbackFunction _undoStateUpdateCallback;
 
     private AnimationClip? _clip;
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
@@ -51,6 +52,7 @@ internal class GeneralControls : IDisposable
         _groupManager = groupManager;
         _previewManager = previewManager;
         _initialUndoGroup = initialUndoGroup;
+        _undoStateUpdateCallback = UpdateUndoRedoState;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
@@ -61,9 +63,15 @@ internal class GeneralControls : IDisposable
 
         _toolbar = new LocalizedToolbar(new[] { "FacialEditor:label:filter", "FacialEditor:label:ClipImport" });
 
-        Undo.undoRedoPerformed += UpdateUndoRedoState;
+        Undo.undoRedoPerformed += QueueUndoStateUpdate;
 
         SetupControls();
+    }
+
+    private void QueueUndoStateUpdate()
+    {
+        EditorApplication.delayCall -= _undoStateUpdateCallback;
+        EditorApplication.delayCall += _undoStateUpdateCallback;
     }
 
     private void UpdateUndoRedoState()
@@ -153,6 +161,11 @@ internal class GeneralControls : IDisposable
         UpdateUndoRedoState();
         UpdateOverrideRestoreButtonsState();
 
+        _targetManager.OnTargetRendererChanged += _ => UpdateOverrideRestoreButtonsState();
+        _blendShapeManager.OnAnyDataChange += UpdateOverrideRestoreButtonsState;
+        _targetManager.OnTargetRendererChanged += _ => QueueUndoStateUpdate();
+        _blendShapeManager.OnAnyDataChange += QueueUndoStateUpdate;
+
         // Toolbar logic (IMGUI Container)
         _targetingContent = _element.Q<VisualElement>("targeting-content");
         _clipContent = _element.Q<VisualElement>("clip-content");
@@ -162,8 +175,6 @@ internal class GeneralControls : IDisposable
         var toolbarContainer = _element.Q<IMGUIContainer>("toolbar-container");
         toolbarContainer.onGUIHandler = () =>
         {
-            UpdateUndoRedoState();
-            UpdateOverrideRestoreButtonsState();
             var newIndex = _toolbar.Draw(_selectedToolbarIndex);
             if (newIndex != _selectedToolbarIndex)
             {
@@ -309,7 +320,8 @@ internal class GeneralControls : IDisposable
     public void Dispose()
     {
         _toolbar.Dispose();
-        Undo.undoRedoPerformed -= UpdateUndoRedoState;
+        Undo.undoRedoPerformed -= QueueUndoStateUpdate;
+        EditorApplication.delayCall -= _undoStateUpdateCallback;
     }
 
     private void RefreshTargetingContainer()
