@@ -36,7 +36,7 @@
     flex: 3;
 }
 
-#undo-button, #redo-button {
+#undo-button, #redo-button, #restore-initial-overrides-button, #restore-edited-overrides-button {
     flex: 1;
 }
 

@@ -31,6 +31,8 @@ internal class GeneralControls : IDisposable
 
     private Button _undoButton = null!;
     private Button _redoButton = null!;
+    private Button _restoreInitialOverridesButton = null!;
+    private Button _restoreEditedOverridesButton = null!;
 
     private AnimationClip? _clip;
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
@@ -39,6 +41,8 @@ internal class GeneralControls : IDisposable
     private static readonly Texture _selectNoneIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
     private static readonly Texture _undoIcon = EditorGUIUtility.IconContent("d_StepLeftButton").image;
     private static readonly Texture _redoIcon = EditorGUIUtility.IconContent("d_StepButton").image;
+    private static readonly Texture _restoreInitialOverridesIcon = EditorGUIUtility.IconContent("Animation.FirstKey@2x").image;
+    private static readonly Texture _restoreEditedOverridesIcon = EditorGUIUtility.IconContent("Animation.LastKey@2x").image;
 
     public GeneralControls(TargetManager targetManager, BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager, int initialUndoGroup)
     {
@@ -110,7 +114,24 @@ internal class GeneralControls : IDisposable
         _redoButton.Add(new Image { image = _redoIcon, scaleMode = ScaleMode.ScaleToFit });
         _redoButton.clicked += () => Undo.PerformRedo();
 
+        _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
+        _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon, scaleMode = ScaleMode.ScaleToFit });
+        _restoreInitialOverridesButton.clicked += () =>
+        {
+            _blendShapeManager.TryRestoreInitialOverrides();
+            UpdateOverrideRestoreButtonsState();
+        };
+
+        _restoreEditedOverridesButton = _element.Q<Button>("restore-edited-overrides-button");
+        _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon, scaleMode = ScaleMode.ScaleToFit });
+        _restoreEditedOverridesButton.clicked += () =>
+        {
+            _blendShapeManager.TryRestoreEditedOverrides();
+            UpdateOverrideRestoreButtonsState();
+        };
+
         UpdateUndoRedoState();
+        UpdateOverrideRestoreButtonsState();
 
         // Toolbar logic (IMGUI Container)
         _targetingContent = _element.Q<VisualElement>("targeting-content");
@@ -122,6 +143,7 @@ internal class GeneralControls : IDisposable
         toolbarContainer.onGUIHandler = () =>
         {
             UpdateUndoRedoState();
+            UpdateOverrideRestoreButtonsState();
             var newIndex = _toolbar.Draw(_selectedToolbarIndex);
             if (newIndex != _selectedToolbarIndex)
             {
@@ -253,6 +275,15 @@ internal class GeneralControls : IDisposable
                 _contentElements[i].RemoveFromClassList("toolbar-content--visible");
             }
         }
+    }
+
+    private void UpdateOverrideRestoreButtonsState()
+    {
+        if (_restoreInitialOverridesButton == null || _restoreEditedOverridesButton == null) return;
+
+        var hasTarget = _targetManager.TargetRenderer != null;
+        _restoreInitialOverridesButton.SetEnabled(hasTarget);
+        _restoreEditedOverridesButton.SetEnabled(hasTarget && _blendShapeManager.CanRestoreEditedOverrides);
     }
 
     public void Dispose()

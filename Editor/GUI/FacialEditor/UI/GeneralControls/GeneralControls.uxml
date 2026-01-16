@@ -5,6 +5,8 @@
             <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
             <ui:Button name="undo-button" class="top-action-button" />
             <ui:Button name="redo-button" class="top-action-button" />
+            <ui:Button name="restore-initial-overrides-button" class="top-action-button" />
+            <ui:Button name="restore-edited-overrides-button" class="top-action-button" />
         </ui:VisualElement>
 
         <ui:VisualElement class="divider-line"/>

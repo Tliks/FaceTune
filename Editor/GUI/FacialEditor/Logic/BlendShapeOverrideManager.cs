@@ -5,11 +5,27 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 [Serializable]
 internal class BlendShapeOverrideManager : IDisposable
 {
+    private readonly struct OverrideStateSnapshot
+    {
+        public readonly bool[] Flags;
+        public readonly float[] Weights;
+
+        public OverrideStateSnapshot(bool[] flags, float[] weights)
+        {
+            Flags = flags;
+            Weights = weights;
+        }
+    }
+
     private SerializedObject _serializedObject;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
     private SerializedProperty _overrideFlagsProperty;
     private SerializedProperty _overrideWeightsProperty;
+
+    private OverrideStateSnapshot? _initialSnapshot;
+    private OverrideStateSnapshot? _editedSnapshotBeforeRestoreInitial;
+    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue;
 
     private string[] _allKeysArray = new string[0];
     private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
@@ -70,8 +86,59 @@ internal class BlendShapeOverrideManager : IDisposable
                 }
             }
         });
+
+        _initialSnapshot = CaptureCurrentSnapshot();
+        _editedSnapshotBeforeRestoreInitial = null;
+
         OnBaseSetChange?.Invoke();
         OnAnyDataChange?.Invoke();
+    }
+
+    private OverrideStateSnapshot CaptureCurrentSnapshot()
+    {
+        _serializedObject.Update();
+        var length = _overrideFlagsProperty.arraySize;
+        var flags = new bool[length];
+        var weights = new float[length];
+        for (int i = 0; i < length; i++)
+        {
+            flags[i] = _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue;
+            weights[i] = _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue;
+        }
+        return new OverrideStateSnapshot(flags, weights);
+    }
+
+    private void ApplySnapshot(OverrideStateSnapshot snapshot)
+    {
+        ExecuteModification(() =>
+        {
+            _overrideFlagsProperty.arraySize = snapshot.Flags.Length;
+            _overrideWeightsProperty.arraySize = snapshot.Weights.Length;
+            var length = Mathf.Min(_overrideFlagsProperty.arraySize, _overrideWeightsProperty.arraySize);
+            for (int i = 0; i < length; i++)
+            {
+                _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = snapshot.Flags[i];
+                _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = snapshot.Weights[i];
+            }
+        });
+        OnUnknownChange?.Invoke();
+        OnAnyDataChange?.Invoke();
+    }
+
+    public bool TryRestoreInitialOverrides()
+    {
+        if (!_initialSnapshot.HasValue) return false;
+        _editedSnapshotBeforeRestoreInitial = CaptureCurrentSnapshot();
+        ApplySnapshot(_initialSnapshot.Value);
+        return true;
+    }
+
+    public bool TryRestoreEditedOverrides()
+    {
+        if (!_editedSnapshotBeforeRestoreInitial.HasValue) return false;
+        ApplySnapshot(_editedSnapshotBeforeRestoreInitial.Value);
+        _editedSnapshotBeforeRestoreInitial = null;
+        return true;
     }
 
     public void GetCurrentOverrides(BlendShapeWeightSet resultToAdd)
