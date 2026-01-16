@@ -70,10 +70,30 @@ internal class GeneralControls : IDisposable
     {
         if (_undoButton == null || _redoButton == null) return;
         
-        string undoName = Undo.GetCurrentGroupName();
-        bool canUndo = !string.IsNullOrEmpty(undoName) && undoName != "Facial Shapes Editor: Window Opened";
-        _undoButton.SetEnabled(canUndo);
-        _redoButton.SetEnabled(true);
+        _undoButton.SetEnabled(CanUndoForThisWindow());
+        _redoButton.SetEnabled(CanRedoPolicy());
+    }
+
+    private static bool CanUndoForThisWindow()
+    {
+        if (UndoUtility.TryHasUndo(out var canUndoFromUndo))
+        {
+            if (!canUndoFromUndo) return false;
+            return Undo.GetCurrentGroupName() != "Facial Shapes Editor: Window Opened";
+        }
+
+        var fallbackName = Undo.GetCurrentGroupName();
+        return !string.IsNullOrEmpty(fallbackName) && fallbackName != "Facial Shapes Editor: Window Opened";
+    }
+
+    private static bool CanRedoPolicy()
+    {
+        if (UndoUtility.TryHasRedo(out var canRedoFromUndo))
+        {
+            return canRedoFromUndo;
+        }
+
+        return true;
     }
 
     private static Dictionary<Type, Func<IShapesEditorTargeting>> _targetingTypes = new()
