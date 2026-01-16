@@ -277,20 +277,22 @@ internal class BlendShapeOverrideManager : IDisposable
     }
     public void OverrideShapesAndSetWeight(IEnumerable<int> indices, float weight)
     {
+        var indicesList = indices as IReadOnlyList<int> ?? indices.ToList();
         ExecuteModification(() =>
         {
-            foreach (var index in indices) OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnMultipleShapeOverride?.Invoke(indices);
+            foreach (var index in indicesList) OverrideShapeAndSetWeightWithOutApply(index, weight);
+            OnMultipleShapeOverride?.Invoke(indicesList);
             OnAnyDataChange?.Invoke();
         });
     }
 
     public void OverrideShapesAndSetWeight(IEnumerable<(int, float)> indicesAndWeights)
     {
+        var list = indicesAndWeights.ToList();
         ExecuteModification(() =>
         {
-            foreach (var (index, weight) in indicesAndWeights) OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnMultipleShapeOverride?.Invoke(indicesAndWeights.Select(x => x.Item1));
+            foreach (var (index, weight) in list) OverrideShapeAndSetWeightWithOutApply(index, weight);
+            OnMultipleShapeOverride?.Invoke(list.Select(x => x.Item1).ToList());
             OnAnyDataChange?.Invoke();
         });
     }
