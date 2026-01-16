@@ -31,6 +31,9 @@ internal class GeneralControls : IDisposable
 
     private Button _undoButton = null!;
     private Button _redoButton = null!;
+    private Button _restoreInitialOverridesButton = null!;
+    private Button _restoreEditedOverridesButton = null!;
+    private readonly EditorApplication.CallbackFunction _undoStateUpdateCallback;
 
     private AnimationClip? _clip;
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
@@ -39,6 +42,8 @@ internal class GeneralControls : IDisposable
     private static readonly Texture _selectNoneIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
     private static readonly Texture _undoIcon = EditorGUIUtility.IconContent("d_StepLeftButton").image;
     private static readonly Texture _redoIcon = EditorGUIUtility.IconContent("d_StepButton").image;
+    private static readonly Texture _restoreInitialOverridesIcon = EditorGUIUtility.IconContent("Animation.FirstKey@2x").image;
+    private static readonly Texture _restoreEditedOverridesIcon = EditorGUIUtility.IconContent("Animation.LastKey@2x").image;
 
     public GeneralControls(TargetManager targetManager, BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager, int initialUndoGroup)
     {
@@ -47,6 +52,7 @@ internal class GeneralControls : IDisposable
         _groupManager = groupManager;
         _previewManager = previewManager;
         _initialUndoGroup = initialUndoGroup;
+        _undoStateUpdateCallback = UpdateUndoRedoState;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
@@ -57,19 +63,45 @@ internal class GeneralControls : IDisposable
 
         _toolbar = new LocalizedToolbar(new[] { "FacialEditor:label:filter", "FacialEditor:label:ClipImport" });
 
-        Undo.undoRedoPerformed += UpdateUndoRedoState;
+        Undo.undoRedoPerformed += QueueUndoStateUpdate;
 
         SetupControls();
+    }
+
+    private void QueueUndoStateUpdate()
+    {
+        EditorApplication.delayCall -= _undoStateUpdateCallback;
+        EditorApplication.delayCall += _undoStateUpdateCallback;
     }
 
     private void UpdateUndoRedoState()
     {
         if (_undoButton == null || _redoButton == null) return;
         
-        string undoName = Undo.GetCurrentGroupName();
-        bool canUndo = !string.IsNullOrEmpty(undoName) && undoName != "Facial Shapes Editor: Window Opened";
-        _undoButton.SetEnabled(canUndo);
-        _redoButton.SetEnabled(true);
+        _undoButton.SetEnabled(CanUndoForThisWindow());
+        _redoButton.SetEnabled(CanRedoPolicy());
+    }
+
+    private static bool CanUndoForThisWindow()
+    {
+        if (UndoUtility.TryHasUndo(out var canUndoFromUndo))
+        {
+            if (!canUndoFromUndo) return false;
+            return Undo.GetCurrentGroupName() != "Facial Shapes Editor: Window Opened";
+        }
+
+        var fallbackName = Undo.GetCurrentGroupName();
+        return !string.IsNullOrEmpty(fallbackName) && fallbackName != "Facial Shapes Editor: Window Opened";
+    }
+
+    private static bool CanRedoPolicy()
+    {
+        if (UndoUtility.TryHasRedo(out var canRedoFromUndo))
+        {
+            return canRedoFromUndo;
+        }
+
+        return true;
     }
 
     private static Dictionary<Type, Func<IShapesEditorTargeting>> _targetingTypes = new()
@@ -110,7 +142,29 @@ internal class GeneralControls : IDisposable
         _redoButton.Add(new Image { image = _redoIcon, scaleMode = ScaleMode.ScaleToFit });
         _redoButton.clicked += () => Undo.PerformRedo();
 
+        _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
+        _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon, scaleMode = ScaleMode.ScaleToFit });
+        _restoreInitialOverridesButton.clicked += () =>
+        {
+            _blendShapeManager.TryRestoreInitialOverrides();
+            UpdateOverrideRestoreButtonsState();
+        };
+
+        _restoreEditedOverridesButton = _element.Q<Button>("restore-edited-overrides-button");
+        _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon, scaleMode = ScaleMode.ScaleToFit });
+        _restoreEditedOverridesButton.clicked += () =>
+        {
+            _blendShapeManager.TryRestoreEditedOverrides();
+            UpdateOverrideRestoreButtonsState();
+        };
+
         UpdateUndoRedoState();
+        UpdateOverrideRestoreButtonsState();
+
+        _targetManager.OnTargetRendererChanged += _ => UpdateOverrideRestoreButtonsState();
+        _blendShapeManager.OnAnyDataChange += UpdateOverrideRestoreButtonsState;
+        _targetManager.OnTargetRendererChanged += _ => QueueUndoStateUpdate();
+        _blendShapeManager.OnAnyDataChange += QueueUndoStateUpdate;
 
         // Toolbar logic (IMGUI Container)
         _targetingContent = _element.Q<VisualElement>("targeting-content");
@@ -121,7 +175,6 @@ internal class GeneralControls : IDisposable
         var toolbarContainer = _element.Q<IMGUIContainer>("toolbar-container");
         toolbarContainer.onGUIHandler = () =>
         {
-            UpdateUndoRedoState();
             var newIndex = _toolbar.Draw(_selectedToolbarIndex);
             if (newIndex != _selectedToolbarIndex)
             {
@@ -255,10 +308,20 @@ internal class GeneralControls : IDisposable
         }
     }
 
+    private void UpdateOverrideRestoreButtonsState()
+    {
+        if (_restoreInitialOverridesButton == null || _restoreEditedOverridesButton == null) return;
+
+        var hasTarget = _targetManager.TargetRenderer != null;
+        _restoreInitialOverridesButton.SetEnabled(hasTarget && _blendShapeManager.IsChangedFromInitialState);
+        _restoreEditedOverridesButton.SetEnabled(hasTarget && _blendShapeManager.CanRestoreEditedOverrides);
+    }
+
     public void Dispose()
     {
         _toolbar.Dispose();
-        Undo.undoRedoPerformed -= UpdateUndoRedoState;
+        Undo.undoRedoPerformed -= QueueUndoStateUpdate;
+        EditorApplication.delayCall -= _undoStateUpdateCallback;
     }
 
     private void RefreshTargetingContainer()
@@ -282,7 +345,7 @@ internal class GeneralControls : IDisposable
         _groupToggles.Clear();
         foreach (var group in _groupManager.Groups)
         {
-            var toggle = new Toggle($"{group.Name} ({group.BlendShapeIndices.Count})") { value = group.IsSelected };
+            var toggle = new Toggle(group.Name) { value = group.IsSelected };
             toggle.AddToClassList("group-toggle");
             toggle.RegisterValueChangedCallback(evt =>
             {

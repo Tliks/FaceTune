@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine.UIElements;
 using Aoyon.FaceTune.Gui.Components;
 
@@ -26,6 +27,8 @@ internal class SelectedPanel
     private ListView _selectedListView = null!;
     
     private Button _selectedRemoveAll0Button = null!;
+    private readonly Dictionary<int, double> _flashExpiryByKeyIndex = new();
+    private IVisualElementScheduledItem? _flashCleanupSchedule;
     
     private struct ElementData
     {
@@ -64,8 +67,16 @@ internal class SelectedPanel
         // rebuild sourcce
         _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewsSlow();
         _groupManager.OnLeftSelectionChanged += (isLeftSelected) => BuildAndRefreshListViewsSlow();
-        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => AddByKeyIndex(keyIndex);
-        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewsSlow();
+        _blendShapeManager.OnSingleShapeOverride += (keyIndex) =>
+        {
+            AddByKeyIndex(keyIndex);
+            FlashOverrides(new[] { keyIndex });
+        };
+        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) =>
+        {
+            BuildAndRefreshListViewsSlow();
+            FlashOverrides(keyIndices);
+        };
         _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
         _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewsSlow();
         // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => BuildAndRefreshListViewsSlow();
@@ -158,6 +169,10 @@ internal class SelectedPanel
             element.styleSheets.Add(_itemUss!);
             Localization.LocalizeUIElements(element);
 
+            var flashOverlay = new VisualElement { name = "flash-overlay", pickingMode = PickingMode.Ignore };
+            flashOverlay.AddToClassList("flash-overlay");
+            element.Insert(0, flashOverlay);
+
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var toggleButton = element.Q<Button>("toggle-button");
@@ -230,6 +245,15 @@ internal class SelectedPanel
         {
             var item = isBase ? _currentBaseSource[index] : _currentSelectedSource[index];
             element.userData = item;
+
+            var flashOverlay = element.Q<VisualElement>("flash-overlay");
+            if (flashOverlay != null)
+            {
+                if (_flashExpiryByKeyIndex.ContainsKey(item.KeyIndex))
+                    flashOverlay.style.opacity = 1f;
+                else
+                    flashOverlay.style.opacity = 0f;
+            }
              
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
@@ -248,6 +272,55 @@ internal class SelectedPanel
                 actionButton.SetEnabled(!_blendShapeManager.IsInitialBaseWeight(item.KeyIndex));
             }
         }
+    }
+
+    private void FlashOverrides(IEnumerable<int> keyIndices)
+    {
+        var now = EditorApplication.timeSinceStartup;
+        const double fadeInSeconds = 0.5;
+        var expiry = now + fadeInSeconds;
+
+        foreach (var keyIndex in keyIndices)
+        {
+            _flashExpiryByKeyIndex[keyIndex] = expiry;
+        }
+
+        _baseListView.RefreshItems();
+        _selectedListView.RefreshItems();
+
+        _flashCleanupSchedule ??= _element.schedule.Execute(() =>
+        {
+            if (_flashExpiryByKeyIndex.Count == 0)
+            {
+                _flashCleanupSchedule?.Pause();
+                return;
+            }
+
+            var current = EditorApplication.timeSinceStartup;
+            using var _ = new ProfilingSampleScope("SelectedPanel.FlashOverrides.Cleanup");
+            var removedAny = false;
+            foreach (var pair in _flashExpiryByKeyIndex.ToList())
+            {
+                if (pair.Value <= current)
+                {
+                    _flashExpiryByKeyIndex.Remove(pair.Key);
+                    removedAny = true;
+                }
+            }
+
+            if (removedAny)
+            {
+                _baseListView.RefreshItems();
+                _selectedListView.RefreshItems();
+            }
+
+            if (_flashExpiryByKeyIndex.Count == 0)
+            {
+                _flashCleanupSchedule?.Pause();
+            }
+        }).Every(100);
+
+        _flashCleanupSchedule.Resume();
     }
 
     public void RefreshTarget()

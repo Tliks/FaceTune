@@ -5,11 +5,32 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 [Serializable]
 internal class BlendShapeOverrideManager : IDisposable
 {
+    private readonly struct OverrideStateSnapshot
+    {
+        public readonly bool[] Flags;
+        public readonly float[] Weights;
+
+        public OverrideStateSnapshot(bool[] flags, float[] weights)
+        {
+            Flags = flags;
+            Weights = weights;
+        }
+    }
+
     private SerializedObject _serializedObject;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
     private SerializedProperty _overrideFlagsProperty;
     private SerializedProperty _overrideWeightsProperty;
+
+    private OverrideStateSnapshot? _initialSnapshot;
+    private OverrideStateSnapshot? _editedSnapshotBeforeRestoreInitial;
+    private int _modificationRevision;
+    private int? _restoreEditedRevision;
+    public bool IsChangedFromInitialState => _initialSnapshot.HasValue && !IsSameAsSnapshot(_initialSnapshot.Value);
+    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue &&
+                                            _restoreEditedRevision.HasValue &&
+                                            _restoreEditedRevision.Value == _modificationRevision;
 
     private string[] _allKeysArray = new string[0];
     private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
@@ -63,6 +84,10 @@ internal class BlendShapeOverrideManager : IDisposable
                 {
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = baseShape.Weight;
                 }
+                else
+                {
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = 0f;
+                }
                 if (_defaultOverrides.TryGetValue(_allKeysArray[i], out var defaultShape))
                 {
                     _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = true;
@@ -70,8 +95,93 @@ internal class BlendShapeOverrideManager : IDisposable
                 }
             }
         });
+
+        _initialSnapshot = CaptureCurrentSnapshot();
+        _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
+
         OnBaseSetChange?.Invoke();
         OnAnyDataChange?.Invoke();
+    }
+
+    private OverrideStateSnapshot CaptureCurrentSnapshot()
+    {
+        var length = _overrideFlagsProperty.arraySize;
+        var flags = new bool[length];
+        var weights = new float[length];
+        for (int i = 0; i < length; i++)
+        {
+            flags[i] = _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue;
+            weights[i] = _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue;
+        }
+        return new OverrideStateSnapshot(flags, weights);
+    }
+
+    private bool IsSameAsSnapshot(OverrideStateSnapshot snapshot)
+    {
+        if (_overrideFlagsProperty.arraySize != snapshot.Flags.Length) return false;
+        if (_overrideWeightsProperty.arraySize != snapshot.Weights.Length) return false;
+
+        var length = snapshot.Flags.Length;
+        for (int i = 0; i < length; i++)
+        {
+            if (_overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue != snapshot.Flags[i]) return false;
+            if (!Mathf.Approximately(_overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue, snapshot.Weights[i])) return false;
+        }
+        return true;
+    }
+
+    private void ApplySnapshot(OverrideStateSnapshot snapshot)
+    {
+        ExecuteModification(() =>
+        {
+            _overrideFlagsProperty.arraySize = snapshot.Flags.Length;
+            _overrideWeightsProperty.arraySize = snapshot.Weights.Length;
+            var length = Mathf.Min(_overrideFlagsProperty.arraySize, _overrideWeightsProperty.arraySize);
+            for (int i = 0; i < length; i++)
+            {
+                _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = snapshot.Flags[i];
+                _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = snapshot.Weights[i];
+            }
+        });
+        OnUnknownChange?.Invoke();
+        OnAnyDataChange?.Invoke();
+    }
+
+    public bool TryRestoreInitialOverrides()
+    {
+        if (!_initialSnapshot.HasValue) return false;
+        if (!IsChangedFromInitialState) return false;
+        _editedSnapshotBeforeRestoreInitial = CaptureCurrentSnapshot();
+        ApplySnapshot(_initialSnapshot.Value);
+        _restoreEditedRevision = _modificationRevision;
+        return true;
+    }
+
+    public bool TryDiscardToInitialOverrides()
+    {
+        if (!_initialSnapshot.HasValue) return false;
+        _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
+        ApplySnapshot(_initialSnapshot.Value);
+        return true;
+    }
+
+    public void MarkCurrentAsInitialState()
+    {
+        _initialSnapshot = CaptureCurrentSnapshot();
+        _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
+        OnAnyDataChange?.Invoke();
+    }
+
+    public bool TryRestoreEditedOverrides()
+    {
+        if (!CanRestoreEditedOverrides) return false;
+        ApplySnapshot(_editedSnapshotBeforeRestoreInitial!.Value);
+        _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
+        return true;
     }
 
     public void GetCurrentOverrides(BlendShapeWeightSet resultToAdd)
@@ -144,6 +254,7 @@ internal class BlendShapeOverrideManager : IDisposable
     private void ExecuteModification(Action action)
     {
         _serializedObject.Update();
+        _modificationRevision++;
         action();
         _serializedObject.ApplyModifiedProperties();
         _serializedObject.Update();
@@ -166,20 +277,22 @@ internal class BlendShapeOverrideManager : IDisposable
     }
     public void OverrideShapesAndSetWeight(IEnumerable<int> indices, float weight)
     {
+        var indicesList = indices as IReadOnlyList<int> ?? indices.ToList();
         ExecuteModification(() =>
         {
-            foreach (var index in indices) OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnMultipleShapeOverride?.Invoke(indices);
+            foreach (var index in indicesList) OverrideShapeAndSetWeightWithOutApply(index, weight);
+            OnMultipleShapeOverride?.Invoke(indicesList);
             OnAnyDataChange?.Invoke();
         });
     }
 
     public void OverrideShapesAndSetWeight(IEnumerable<(int, float)> indicesAndWeights)
     {
+        var list = indicesAndWeights.ToList();
         ExecuteModification(() =>
         {
-            foreach (var (index, weight) in indicesAndWeights) OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnMultipleShapeOverride?.Invoke(indicesAndWeights.Select(x => x.Item1));
+            foreach (var (index, weight) in list) OverrideShapeAndSetWeightWithOutApply(index, weight);
+            OnMultipleShapeOverride?.Invoke(list.Select(x => x.Item1).ToList());
             OnAnyDataChange?.Invoke();
         });
     }

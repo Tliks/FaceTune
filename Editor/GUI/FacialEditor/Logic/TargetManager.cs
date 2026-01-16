@@ -8,24 +8,18 @@ internal class TargetManager
     private SerializedObject _serializedObject;
     private BlendShapeOverrideManager _dataManager;
 
+    private IReadOnlyBlendShapeSet? _currentBaseSet;
+    private IReadOnlyBlendShapeSet? _currentDefaultOverrides;
+
     [SerializeField] private SkinnedMeshRenderer? _targetRenderer;
     public SkinnedMeshRenderer? TargetRenderer
     {
         get => _targetRendererProperty.objectReferenceValue as SkinnedMeshRenderer;
-        set
-        {
-            _serializedObject.Update();
-            _targetRendererProperty.objectReferenceValue = value;
-            _serializedObject.ApplyModifiedProperties();
-            _serializedObject.Update();
-            _cachedTargetRendererForUndo = value;
-            OnTargetRendererChanged?.Invoke(value);
-            UpdateCanSave();
-        }
     }
     private SerializedProperty _targetRendererProperty;
     public List<Func<SkinnedMeshRenderer?, bool>> RenderChangeConditions;
     public event Action<SkinnedMeshRenderer?>? OnTargetRendererChanged;
+    public event Action<SkinnedMeshRenderer?, IReadOnlyBlendShapeSet?, IReadOnlyBlendShapeSet?>? OnTargetRendererChangedWithSets;
     private SkinnedMeshRenderer? _cachedTargetRendererForUndo;
 
     private Transform? _targetRoot;
@@ -91,26 +85,58 @@ internal class TargetManager
         TargetingChangeConditions = new();
     }
 
+    private void ApplyTargetRendererToSerializedObject(SkinnedMeshRenderer? value)
+    {
+        _serializedObject.Update();
+        _targetRendererProperty.objectReferenceValue = value;
+        _serializedObject.ApplyModifiedProperties();
+        _serializedObject.Update();
+
+        _cachedTargetRendererForUndo = value;
+        OnTargetRendererChanged?.Invoke(value);
+        OnTargetRendererChangedWithSets?.Invoke(value, _currentBaseSet, _currentDefaultOverrides);
+        UpdateCanSave();
+    }
+
     public bool TrySetTargetRenderer(SkinnedMeshRenderer? renderer)
     {
-        if (TargetRenderer == renderer) return false;
+        return TrySetTargetRenderer(renderer, null, null);
+    }
+
+    public bool TrySetTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
+    {
+        if (TargetRenderer == renderer && baseSet == _currentBaseSet && defaultOverrides == _currentDefaultOverrides) return false;
         foreach (var condition in RenderChangeConditions)
         {
             if (!condition(renderer)) return false;
         }
-        SetTargetRenderer(renderer);
+        SetTargetRenderer(renderer, baseSet, defaultOverrides);
         return true;
     }
 
     public void SetTargetRenderer(SkinnedMeshRenderer? renderer)
     {
-        if (TargetRenderer == renderer) return;
+        SetTargetRenderer(renderer, null, null);
+    }
+
+    public void SetTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
+    {
+        var rendererChanged = TargetRenderer != renderer;
+        _currentBaseSet = baseSet;
+        _currentDefaultOverrides = defaultOverrides;
+
+        if (!rendererChanged)
+        {
+            OnTargetRendererChangedWithSets?.Invoke(renderer, _currentBaseSet, _currentDefaultOverrides);
+            UpdateCanSave();
+            return;
+        }
         if (renderer != null)
         {
             _targetRoot = RuntimeUtil.FindAvatarInParents(renderer.transform);
             if (_targetRoot == null) throw new Exception("TargetRenderer is not a child of an avatar");
         }
-        TargetRenderer = renderer;
+        ApplyTargetRendererToSerializedObject(renderer);
     }
 
     public bool TrySetTargeting(IShapesEditorTargeting targeting)
@@ -144,6 +170,7 @@ internal class TargetManager
         if (TargetRenderer == null) throw new Exception("TargetRenderer is not set");
         if (_targetRoot == null) throw new Exception("TargetRoot is not set");
         Targeting?.Save(_targetRoot.gameObject, TargetRenderer, _dataManager);
+        _dataManager.MarkCurrentAsInitialState();
         HasUnsavedChanges = false;
     }
 
@@ -155,6 +182,7 @@ internal class TargetManager
             //Debug.Log($"OnUndoRedo: {_cachedTargetRendererForUndo} != {TargetRenderer}");
             _cachedTargetRendererForUndo = TargetRenderer;
             OnTargetRendererChanged?.Invoke(TargetRenderer);
+            OnTargetRendererChangedWithSets?.Invoke(TargetRenderer, _currentBaseSet, _currentDefaultOverrides);
         }
         else
         {

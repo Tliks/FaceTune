@@ -7,6 +7,7 @@
 
 ### Changed
 - When creating a template, only "Option" is excluded from unpacking.
+- Adjusted Facial Editor.
 
 ### Deprecated
 
