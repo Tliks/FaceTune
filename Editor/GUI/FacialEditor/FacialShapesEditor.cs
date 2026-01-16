@@ -76,12 +76,17 @@ internal class FacialShapesEditor : EditorWindow
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
 
         _targetManager.RenderChangeConditions.Add(renderer => CanRefreshTargetRenderer());
-        _targetManager.OnTargetRendererChanged += (renderer) => OnTargetRendererChanged(renderer);
+        _targetManager.OnTargetRendererChangedWithSets += (renderer, baseSet, defaultOverrides) => OnTargetRendererChanged(renderer, baseSet, defaultOverrides);
         _targetManager.TargetingChangeConditions.Add(targeting => true);
         _targetManager.OnTargetingChanged += (targeting) => {};
         _targetManager.OnTargetChanged += () => {};
         _targetManager.OnHasUnsavedChangesChanged += (hasUnsavedChanges) => this.hasUnsavedChanges = hasUnsavedChanges;
-        _dataManager.OnAnyDataChange += () => _targetManager.HasUnsavedChanges = true;
+        _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
+    }
+
+    private void SyncUnsavedChangesFromData()
+    {
+        _targetManager.HasUnsavedChanges = _dataManager.IsChangedFromInitialState;
     }
 
     private bool CanRefreshTargetRenderer()
@@ -92,17 +97,17 @@ internal class FacialShapesEditor : EditorWindow
 
     public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet = null, IReadOnlyBlendShapeSet? defaultOverrides = null)
     {
-        _targetManager.SetTargetRenderer(renderer);
-        _dataManager.RefreshBaseSetAndDefaultOverrides(baseSet, defaultOverrides);
+        _targetManager.SetTargetRenderer(renderer, baseSet, defaultOverrides);
     }
 
-    private void OnTargetRendererChanged(SkinnedMeshRenderer? renderer)
+    private void OnTargetRendererChanged(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
     {
         _dataManager.RefreshTargetRenderer(renderer);
+        _dataManager.RefreshBaseSetAndDefaultOverrides(baseSet, defaultOverrides);
         _groupManager.Refresh(_dataManager.AllKeys);
         _previewManager.RefreshTargetRenderer(renderer);
         _ui.RefreshTarget();
-        EditorApplication.delayCall += () => _targetManager.HasUnsavedChanges = false;
+        EditorApplication.delayCall += SyncUnsavedChangesFromData;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: OnTargetRendererChanged: {renderer?.name}");
     }
 
@@ -124,6 +129,7 @@ internal class FacialShapesEditor : EditorWindow
                 processed = true;
                 break;
             case 1: // Discard
+                _dataManager.TryDiscardToInitialOverrides();
                 window.hasUnsavedChanges = false;
                 processed = true;
                 break;

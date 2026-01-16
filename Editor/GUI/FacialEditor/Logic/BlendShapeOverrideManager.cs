@@ -25,7 +25,12 @@ internal class BlendShapeOverrideManager : IDisposable
 
     private OverrideStateSnapshot? _initialSnapshot;
     private OverrideStateSnapshot? _editedSnapshotBeforeRestoreInitial;
-    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue;
+    private int _modificationRevision;
+    private int? _restoreEditedRevision;
+    public bool IsChangedFromInitialState => _initialSnapshot.HasValue && !IsSameAsSnapshot(_initialSnapshot.Value);
+    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue &&
+                                            _restoreEditedRevision.HasValue &&
+                                            _restoreEditedRevision.Value == _modificationRevision;
 
     private string[] _allKeysArray = new string[0];
     private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
@@ -79,6 +84,10 @@ internal class BlendShapeOverrideManager : IDisposable
                 {
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = baseShape.Weight;
                 }
+                else
+                {
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = 0f;
+                }
                 if (_defaultOverrides.TryGetValue(_allKeysArray[i], out var defaultShape))
                 {
                     _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = true;
@@ -89,6 +98,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
         _initialSnapshot = CaptureCurrentSnapshot();
         _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
 
         OnBaseSetChange?.Invoke();
         OnAnyDataChange?.Invoke();
@@ -96,7 +106,6 @@ internal class BlendShapeOverrideManager : IDisposable
 
     private OverrideStateSnapshot CaptureCurrentSnapshot()
     {
-        _serializedObject.Update();
         var length = _overrideFlagsProperty.arraySize;
         var flags = new bool[length];
         var weights = new float[length];
@@ -106,6 +115,20 @@ internal class BlendShapeOverrideManager : IDisposable
             weights[i] = _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue;
         }
         return new OverrideStateSnapshot(flags, weights);
+    }
+
+    private bool IsSameAsSnapshot(OverrideStateSnapshot snapshot)
+    {
+        if (_overrideFlagsProperty.arraySize != snapshot.Flags.Length) return false;
+        if (_overrideWeightsProperty.arraySize != snapshot.Weights.Length) return false;
+
+        var length = snapshot.Flags.Length;
+        for (int i = 0; i < length; i++)
+        {
+            if (_overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue != snapshot.Flags[i]) return false;
+            if (!Mathf.Approximately(_overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue, snapshot.Weights[i])) return false;
+        }
+        return true;
     }
 
     private void ApplySnapshot(OverrideStateSnapshot snapshot)
@@ -128,16 +151,36 @@ internal class BlendShapeOverrideManager : IDisposable
     public bool TryRestoreInitialOverrides()
     {
         if (!_initialSnapshot.HasValue) return false;
+        if (!IsChangedFromInitialState) return false;
         _editedSnapshotBeforeRestoreInitial = CaptureCurrentSnapshot();
+        ApplySnapshot(_initialSnapshot.Value);
+        _restoreEditedRevision = _modificationRevision;
+        return true;
+    }
+
+    public bool TryDiscardToInitialOverrides()
+    {
+        if (!_initialSnapshot.HasValue) return false;
+        _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
         ApplySnapshot(_initialSnapshot.Value);
         return true;
     }
 
+    public void MarkCurrentAsInitialState()
+    {
+        _initialSnapshot = CaptureCurrentSnapshot();
+        _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
+        OnAnyDataChange?.Invoke();
+    }
+
     public bool TryRestoreEditedOverrides()
     {
-        if (!_editedSnapshotBeforeRestoreInitial.HasValue) return false;
-        ApplySnapshot(_editedSnapshotBeforeRestoreInitial.Value);
+        if (!CanRestoreEditedOverrides) return false;
+        ApplySnapshot(_editedSnapshotBeforeRestoreInitial!.Value);
         _editedSnapshotBeforeRestoreInitial = null;
+        _restoreEditedRevision = null;
         return true;
     }
 
@@ -211,6 +254,7 @@ internal class BlendShapeOverrideManager : IDisposable
     private void ExecuteModification(Action action)
     {
         _serializedObject.Update();
+        _modificationRevision++;
         action();
         _serializedObject.ApplyModifiedProperties();
         _serializedObject.Update();

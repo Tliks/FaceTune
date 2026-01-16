@@ -282,7 +282,7 @@ internal class GeneralControls : IDisposable
         if (_restoreInitialOverridesButton == null || _restoreEditedOverridesButton == null) return;
 
         var hasTarget = _targetManager.TargetRenderer != null;
-        _restoreInitialOverridesButton.SetEnabled(hasTarget);
+        _restoreInitialOverridesButton.SetEnabled(hasTarget && _blendShapeManager.IsChangedFromInitialState);
         _restoreEditedOverridesButton.SetEnabled(hasTarget && _blendShapeManager.CanRestoreEditedOverrides);
     }
 
