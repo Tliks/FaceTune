@@ -2,11 +2,11 @@
     <ui:VisualElement name="general-controls-container">
 
         <ui:VisualElement name="top-actions-container">
-            <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
             <ui:Button name="undo-button" class="top-action-button" />
             <ui:Button name="redo-button" class="top-action-button" />
             <ui:Button name="restore-initial-overrides-button" class="top-action-button" />
             <ui:Button name="restore-edited-overrides-button" class="top-action-button" />
+            <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
         </ui:VisualElement>
 
         <ui:VisualElement class="divider-line"/>
