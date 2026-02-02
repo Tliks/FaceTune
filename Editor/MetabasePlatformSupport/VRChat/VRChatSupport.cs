@@ -75,7 +75,18 @@ internal class VRChatSupport : IMetabasePlatformSupport
         var avatarContext = buildPassContext.AvatarContext;
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
         var installer = new AnimatorInstaller(fx, avatarContext, useWriteDefaults);
-        installer.Execute(installerData);
+        var missingBindings = installer.Execute(installerData);
+        foreach (var mb in missingBindings)
+        {
+            if (mb.MissingReason == MissingBindingInfo.Reason.Missing)
+            {
+                LocalizedLog.Warning("Log:warning:MissingBinding:Missing", null, mb.Binding.path, mb.Binding.type.ToString(), mb.Binding.propertyName);
+            }
+            else
+            {
+                LocalizedLog.Warning("Log:warning:MissingBinding:MultipleValues", null, mb.Binding.path, mb.Binding.type.ToString(), mb.Binding.propertyName);
+            }
+        }
     }
 
     public IEnumerable<string> GetTrackedBlendShape()

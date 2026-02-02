@@ -29,12 +29,12 @@ internal class AnimatorInstaller : InstallerBase
         _controller.EnsureBoolParameterExists(FaceTuneConstants.LockFacialParameter, false);
     }
 
-    public void Execute(InstallerData installerData)
+    public List<MissingBindingInfo> Execute(InstallerData installerData)
     {
         var patternData = installerData.PatternData;
-        if (patternData.IsEmpty) return;
+        if (patternData.IsEmpty) return new();
 
-        CreateInitializationLayer(patternData, InitLayerPriority);
+        var missingBindings = CreateInitializationLayer(patternData, InitLayerPriority);
 
         foreach (var patternGroup in patternData.GetConsecutiveTypeGroups())
         {
@@ -60,9 +60,11 @@ internal class AnimatorInstaller : InstallerBase
         }
 
         _lipSyncInstaller.MayAddLipSyncLayers();
+
+        return missingBindings;
     }
 
-    private void CreateInitializationLayer(PatternData patternData, int priority)
+    private List<MissingBindingInfo> CreateInitializationLayer(PatternData patternData, int priority)
     {
         var nonMMDLayer = AddLayer("Initial", priority, false);
         var nonMMDState = AddState(nonMMDLayer, "Initial", position: ExclusiveStatePosition);
@@ -99,14 +101,18 @@ internal class AnimatorInstaller : InstallerBase
             }
             nonFacialBindings.Add(binding);
         }
+        List<MissingBindingInfo> missingBindings = new();
         if (nonFacialBindings.Any())
         {
-            var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_avatarContext.Root, nonFacialBindings);
+            var (propertiesAnimations, _missingBindings) = AnimatorHelper.GetDefaultValueAnimations(_avatarContext.Root, nonFacialBindings);
+            missingBindings = _missingBindings;
             animations.AddRange(propertiesAnimations);
         }
 
         _MMDInitializationClip.AddAnimations(mmdAnimations);
         _nonMMDInitializationClip.AddAnimations(animations);
+
+        return missingBindings;
     }
 
     private void AddBlendShapeInitialization(IEnumerable<BlendShapeWeight> blendShapes)

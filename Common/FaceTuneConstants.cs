@@ -9,6 +9,7 @@ internal static class FaceTuneConstants
     public const string ParameterPrefix = Name;
 
     public const string AnimatedBlendShapePrefix = "blendShape.";
+    public const string AnimatedMaterialPrefix = "material.";
 
     // Public parameters
     public const string ForceDisableEyeBlinkParameter = $"{ParameterPrefix}/ForceDisableEyeBlink"; // bool

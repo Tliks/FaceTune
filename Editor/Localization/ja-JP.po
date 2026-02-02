@@ -473,6 +473,14 @@ msgstr "レイヤーを収集"
 msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting"
 msgstr "アニメーターコントローラーをインポート完了"
 
+# MissingBindingInfo
+
+msgid "Log:warning:MissingBinding:Missing"
+msgstr "デフォルト値が存在せず決定できなかったプロパティがあります: {0}.<{1}>.{2}"
+
+msgid "Log:warning:MissingBinding:MultipleValues"
+msgstr "デフォルト値が複数存在し決定できなかったプロパティがあります: {0}.<{1}>.{2}"
+
 # Preview
 
 msgid "Preview:Log:error:failedToInstantiate"

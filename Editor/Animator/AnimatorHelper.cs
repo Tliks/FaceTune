@@ -73,9 +73,10 @@ internal static class AnimatorHelper
     }
 
     // https://gist.github.com/nekobako/5a38c040261e2eb815330535857003ca
-    public static List<GenericAnimation> GetDefaultValueAnimations(GameObject root, IEnumerable<SerializableCurveBinding> curveBindings)
+    public static (List<GenericAnimation>, List<MissingBindingInfo>) GetDefaultValueAnimations(GameObject root, IEnumerable<SerializableCurveBinding> curveBindings)
     {
         var animations = new List<GenericAnimation>();
+        var missingBindings = new List<MissingBindingInfo>();
         foreach (var curveBinding_ in curveBindings)
         {
             var curveBinding = curveBinding_.ToEditorCurveBinding();
@@ -93,6 +94,37 @@ internal static class AnimatorHelper
                     var index = renderer.sharedMesh.GetBlendShapeIndex(propName);
                     var weight = renderer.GetBlendShapeWeight(index);
                     animations.Add(CreateFloatCurveAnimation(curveBinding_, weight));
+                    continue;
+                case SkinnedMeshRenderer renderer when (curveBinding.type == typeof(Renderer) || curveBinding.type == typeof(SkinnedMeshRenderer)) && propName.StartsWith(FaceTuneConstants.AnimatedMaterialPrefix):
+                    // material._SomeProperty
+                    var material = renderer.sharedMaterial;
+                    if (material == null)
+                    {
+                        missingBindings.Add(new MissingBindingInfo(curveBinding, MissingBindingInfo.Reason.Missing));
+                        continue;
+                    }
+                    var matPropName = propName.Substring(FaceTuneConstants.AnimatedMaterialPrefix.Length);
+                    var materials = renderer.sharedMaterials;
+                    // (value, isColor)[]
+                    var values = materials.Select(mat => GetMaterialProperty(mat, matPropName)).Where(v => v.Item1.HasValue).Select(v => (v.Item1!.Value, v.Item2)).Distinct().ToArray();
+                    
+                    // TODO: colorの場合4つの値が全て等しくなければならないのでいったん一律スルー
+                    if (values.Any(v => v.Item2))
+                    {
+                        missingBindings.Add(new MissingBindingInfo(curveBinding, MissingBindingInfo.Reason.Missing));
+                    }
+                    else if (values.Length == 1)
+                    {
+                        animations.Add(CreateFloatCurveAnimation(curveBinding_, values[0].Value));
+                    }
+                    else if (values.Length == 0)
+                    {
+                        missingBindings.Add(new MissingBindingInfo(curveBinding, MissingBindingInfo.Reason.Missing));
+                    }
+                    else
+                    {
+                        missingBindings.Add(new MissingBindingInfo(curveBinding, MissingBindingInfo.Reason.MultipleValues));
+                    }
                     continue;
                 case Transform transform:
                 {
@@ -159,7 +191,12 @@ internal static class AnimatorHelper
 
             using var so = new SerializedObject(target);
             using var prop = so.FindProperty(propName);
-            // if (prop == null) { Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}"); continue; }
+            if (prop == null)
+            {
+                missingBindings.Add(new MissingBindingInfo(curveBinding, MissingBindingInfo.Reason.Missing));
+                Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}");
+                continue;
+            }
             switch (prop.propertyType)
             {
                 case SerializedPropertyType.Boolean:
@@ -178,7 +215,49 @@ internal static class AnimatorHelper
                     continue;
             }
         }
-        return animations;
+        return (animations, missingBindings);
+    }
+
+    private static (float?, bool) GetMaterialProperty(Material mat, string matPropName)
+    {
+        var floatPropNames = mat.GetPropertyNames(MaterialPropertyType.Float).ToHashSet();
+        var colorPropNames = mat.GetPropertyNames(MaterialPropertyType.Vector).ToHashSet();
+        if (floatPropNames.Contains(matPropName))
+        {
+            var floatValue = mat.GetFloat(matPropName);
+            return (floatValue, false);
+        }
+        else
+        {
+            var start = matPropName.Substring(0, matPropName.Length - 2);
+            if (colorPropNames.Contains(start))
+            {
+                var colorValue = mat.GetColor(start);
+                var ending = matPropName.Substring(matPropName.Length - 2);
+                switch (ending)
+                {
+                    case ".r":
+                        return (colorValue.r, true);
+                    case ".g":
+                        return (colorValue.g, true);
+                    case ".b":
+                        return (colorValue.b, true);
+                    case ".a":
+                        return (colorValue.a, true);
+                    case ".x":
+                        return (colorValue.r, true);
+                    case ".y":
+                        return (colorValue.g, true);
+                    case ".z":
+                        return (colorValue.b, true);
+                    case ".w":
+                        return (colorValue.a, true);
+                    default:
+                        return (null, false);
+                }
+            }
+        }
+        return (null, false);
     }
 
     private static GenericAnimation CreateFloatCurveAnimation(SerializableCurveBinding binding, float value)

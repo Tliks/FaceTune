@@ -476,6 +476,14 @@ msgstr "Layers Collected"
 msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting"
 msgstr "Finished Importing Animator Controller"
 
+# MissingBindingInfo
+
+msgid "Log:warning:MissingBinding:Missing"
+msgstr "Property could not be determined because no default value exists: {0}.<{1}>.{2}"
+
+msgid "Log:warning:MissingBinding:MultipleValues"
+msgstr "Multiple default values exist and could not be determined for property: {0}.<{1}>.{2}"
+
 # Preview
 
 msgid "Preview:Log:error:failedToInstantiate"
