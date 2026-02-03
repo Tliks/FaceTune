@@ -159,7 +159,11 @@ internal static class AnimatorHelper
 
             using var so = new SerializedObject(target);
             using var prop = so.FindProperty(propName);
-            // if (prop == null) { Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}"); continue; }
+            if (prop == null)
+            {
+                Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}");
+                continue;
+            }
             switch (prop.propertyType)
             {
                 case SerializedPropertyType.Boolean:
