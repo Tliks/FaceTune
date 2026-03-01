@@ -28,17 +28,10 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         var groups = new List<RenderGroup>();
         var observeContext = new NDMFPreviewObserveContext(context);
 
-        // VRC Avatar DescriptorとNDMF Avatar Rootが別々のアバターとして認識され、rootに同じアバターが入るのを防ぐためのHashSetです
-        // Rendererが重複しているというエラーはこれが原因
-        HashSet<GameObject> processedRootObject = new();
-
-        foreach (var root in context.GetAvatarRoots())
+        // VRC Avatar DescriptorとNDMF Avatar Rootが別々のアバターとして認識され、rootに同じアバターが入るのを防ぐためのDistinct()です
+        foreach (var root in context.GetAvatarRoots().Distinct())
         {
             if (!context.ActiveInHierarchy(root)) continue;
-            
-            if (processedRootObject.Contains(root)) continue;
-            processedRootObject.Add(root);
-
             if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, null, observeContext)) continue;
             var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
             if (faceMesh == null) continue;
