@@ -59,7 +59,7 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
             result.AddRange(animations.ToFirstFrameBlendShapes());
             
             if (animations.Any(a => a.IsMultiFrame)) {
-                _multiFramePreview.Start(animations, isLooping);
+                _multiFramePreview.Start(animations, isLooping, original);
             }
             else{
                 _multiFramePreview.Stop();
@@ -95,7 +95,15 @@ internal class SelectedShapesPreview : AbstractFaceTunePreview<SelectedShapesPre
             var observeContext = new NDMFPreviewObserveContext(context);
 
             using var _facial = ListPool<BlendShapeWeightAnimation>.Get(out var facial);
-            FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(dataComponents[0].gameObject, facial, root, observeContext);
+            var gameObject = dataComponents[0].gameObject;
+            if (gameObject.transform.IsChildOf(root.transform))
+            {
+                FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(gameObject, facial, root, observeContext);
+            }
+            else
+            {
+                FacialStyleContext.TryGetFirstFacialStyleAnimationsAndObserve(root, facial, observeContext);
+            }
 
             resultToAdd.AddRange(facial);
 

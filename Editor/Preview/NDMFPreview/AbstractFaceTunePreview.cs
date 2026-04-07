@@ -1,12 +1,18 @@
 using System.Threading.Tasks;
 using nadena.dev.ndmf.preview;
+using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune.Preview;
 
 internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where TFilter : IRenderFilter
 {
     protected virtual TogglablePreviewNode? ControlNode { get; }
-    private static IRenderFilterNode? _currentNode;
+    private static readonly Dictionary<SkinnedMeshRenderer, BlendShapePreviewNode> _currentNodes = new();
+    private readonly PropCache<int, ImmutableList<RenderGroup>> _groupsCache = new(
+        $"{typeof(TFilter).Name}.GetTargetGroups", 
+        (ctx, _) => GetTargetGroupsImpl(ctx),
+        (a, b) => a.SequenceEqual(b)
+    );
 
     public IEnumerable<TogglablePreviewNode> GetPreviewControlNodes()
     {
@@ -20,22 +26,27 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         return context.Observe(ControlNode.IsEnabled);
     }
 
+    ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
+    {
+        return _groupsCache.Get(context, 0);
+    }
+
     // FaceTuneTagComponentが一つでもあれば対象に加える or 全て対象
     // => 全て対象にする
-    ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
+    private static ImmutableList<RenderGroup> GetTargetGroupsImpl(ComputeContext context)
     {
         using var _ = new ProfilingSampleScope($"{typeof(TFilter).Name}.GetTargetGroups");
         var groups = new List<RenderGroup>();
         var observeContext = new NDMFPreviewObserveContext(context);
 
         // VRC Avatar DescriptorとNDMF Avatar Rootが別々のアバターとして認識され、rootに同じアバターが入るのを防ぐためのDistinct()です
-        foreach (var root in context.GetAvatarRoots().Distinct())
+        foreach (var root in context.GetAvatarRoots().Distinct().OrderBy(r => r.GetInstanceID()))
         {
             if (!context.ActiveInHierarchy(root)) continue;
-            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, null, observeContext)) continue;
+            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var _, null, observeContext)) continue;
             var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
             if (faceMesh == null) continue;
-            groups.Add(RenderGroup.For(faceRenderer).WithData((root, bodyPath)));
+            groups.Add(RenderGroup.For(faceRenderer).WithData(root));
         }
         return groups.ToImmutableList();
     }
@@ -48,20 +59,22 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
     protected virtual Task<IRenderFilterNode> Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
         using var _ = new ProfilingSampleScope($"{typeof(TFilter).Name}.Instantiate");
+        SkinnedMeshRenderer? original = null;
         try
         {
             var pair = proxyPairs.First();
-            if (pair.Item1 is not SkinnedMeshRenderer original) throw new Exception("SkinnedMeshRenderer not found");
+            if (pair.Item1 is not SkinnedMeshRenderer originalRenderer) throw new Exception("SkinnedMeshRenderer not found");
             if (pair.Item2 is not SkinnedMeshRenderer proxy) throw new Exception("SkinnedMeshRenderer not found");
+            original = originalRenderer;
 
             var originalMesh = original.sharedMesh;
             if (originalMesh == null) throw new Exception("originalMesh is null");
             var proxyMesh = proxy.sharedMesh;
             if (proxyMesh == null) throw new Exception("proxyMesh is null");
 
-            var (root, bodyPath) = group.GetData<(GameObject, string)>();
+            var root = group.GetData<GameObject>();
             if (root == null) throw new Exception("GameObject not found");
-            if (bodyPath == null) throw new Exception("bodyPath not found");
+            var bodyPath = RuntimeUtil.RelativePath(root, proxy.gameObject)!;
 
             float defaultValue = -1;
             using var _set = BlendShapeSetPool.Get(out var set);
@@ -70,15 +83,19 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
                 QueryBlendShapes(original, proxy, root, bodyPath, context, set, ref defaultValue);
             }
 
-            _currentNode = new BlendShapePreviewNode(proxy, set.AsReadOnly(), defaultValue);
-            return Task.FromResult(_currentNode);
+            var node = new BlendShapePreviewNode(proxy, set.AsReadOnly(), defaultValue);
+            _currentNodes[original] = node;
+            return Task.FromResult<IRenderFilterNode>(node);
         }
         catch (Exception e)
         {
+            if (original != null)
+            {
+                _currentNodes.Remove(original);
+            }
             LocalizedLog.Error("Preview:Log:error:failedToInstantiate", e.Message);
             // 現状nullや例外を返すとNDMF側で永続的なエラーを引き起こすのでこれはそのワークアラウンド
-            _currentNode = new EmptyNode();
-            return Task.FromResult(_currentNode);
+            return Task.FromResult<IRenderFilterNode>(new EmptyNode());
         }
     }
 
@@ -94,12 +111,11 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
     /// </summary>
     /// <param name="set">置き換えるBlendShapeSet</param>
     /// <param name="defaultValue">BlendShapeSetに含まれていない場合の扱い。-1の場合はプレビューしない</param>
-    protected static void SetCurrentNodeDirectly(IReadOnlyBlendShapeSet set, float defaultValue = -1)
+    protected static void SetCurrentNodeDirectly(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet set, float defaultValue = -1)
     {
-        if (_currentNode is BlendShapePreviewNode node && !node.Disposed)
-        {
-            node.SetDirectly(set, defaultValue);
-        }
+        if (renderer == null) return;
+        if (!TryGetNode(renderer, out var node)) return;
+        node.SetDirectly(set, defaultValue);
     }
 
     /// <summary>
@@ -107,12 +123,24 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
     /// BlendShapeSetに含まれていない場合は現在の値を据え置く。
     /// </summary>
     /// <param name="set">編集するBlendShapeSet</param>
-    protected static void EditCurrentNodeDirectly(IReadOnlyBlendShapeSet set)
+    protected static void EditCurrentNodeDirectly(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet set)
     {
-        if (_currentNode is BlendShapePreviewNode node && !node.Disposed)
+        if (renderer == null) return;
+        if (!TryGetNode(renderer, out var node)) return;
+        node.EditDirectly(set);
+    }
+
+    private static bool TryGetNode(SkinnedMeshRenderer renderer, [NotNullWhen(true)] out BlendShapePreviewNode? node)
+    {
+        node = null;
+        if (!_currentNodes.TryGetValue(renderer, out node)) return false;
+        if (node.Disposed)
         {
-            node.EditDirectly(set);
+            _currentNodes.Remove(renderer);
+            node = null;
+            return false;
         }
+        return true;
     }
 }
 
@@ -225,6 +253,14 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         }
     }
 
+    public Task<IRenderFilterNode> Refresh(IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context, RenderAspects updatedAspects)
+    {
+        if (updatedAspects != 0 && (updatedAspects & RenderAspects.Shapes) == 0)
+        {
+            return Task.FromResult<IRenderFilterNode>(this);
+        }
+        return Task.FromResult<IRenderFilterNode>(null!);
+    }
     public void Dispose()
     {
         _blendShapeNames.Dispose();

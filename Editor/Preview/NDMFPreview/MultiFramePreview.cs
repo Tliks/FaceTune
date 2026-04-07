@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune.Preview;
 
 class MultiFramePreview : IDisposable
 {
-    private readonly Action<IReadOnlyBlendShapeSet> _editAction;
+    private readonly Action<SkinnedMeshRenderer?, IReadOnlyBlendShapeSet> _editAction;
     
     public bool IsActive { get; private set; } = false;
     public IReadOnlyList<BlendShapeWeightAnimation>? Animations { get; private set; } = null;
@@ -14,18 +14,21 @@ class MultiFramePreview : IDisposable
 
     public const double UpdateIntervalSeconds = 1.0 / 30.0; // 30fpsにスロットリング
     
-    public MultiFramePreview(Action<IReadOnlyBlendShapeSet> editAction)
+    private SkinnedMeshRenderer? _targetRenderer;
+
+    public MultiFramePreview(Action<SkinnedMeshRenderer?, IReadOnlyBlendShapeSet> editAction)
     {
         EditorApplication.update += OnEditorUpdate;
         _editAction = editAction;
     }
 
-    public void Start(IReadOnlyList<BlendShapeWeightAnimation> animations, bool isLooping)
+    public void Start(IReadOnlyList<BlendShapeWeightAnimation> animations, bool isLooping, SkinnedMeshRenderer? targetRenderer)
     {
         IsActive = true;
         Animations = animations;
         Duration = animations.Max(a => a.Time);
         IsLooping = isLooping;
+        _targetRenderer = targetRenderer;
         StartTime = EditorApplication.timeSinceStartup;
         LastUpdateTime = 0;
 
@@ -35,6 +38,7 @@ class MultiFramePreview : IDisposable
     public void Stop()
     {
         IsActive = false;
+        _targetRenderer = null;
     }
 
     private void OnEditorUpdate()
@@ -72,7 +76,7 @@ class MultiFramePreview : IDisposable
             frameSet.Add(new BlendShapeWeight(anim.Name, anim.Weight(t)));
         }
 
-        _editAction(frameSet);
+        _editAction(_targetRenderer, frameSet);
 
         if (endReached)
         {

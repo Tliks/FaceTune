@@ -5,7 +5,6 @@ namespace Aoyon.FaceTune.Preview;
 internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPreview>
 {
     private static readonly PublishedValue<SkinnedMeshRenderer?> _target = new(null);
-    public override bool IsEnabled(ComputeContext context) => context.Observe(_target, t => t != null, (a, b) => a == b);
     private static BlendShapeWeightSet _currentSet = new();
 
     public static void Start(SkinnedMeshRenderer? target, IReadOnlyBlendShapeSet? defaultSet = null)
@@ -22,7 +21,7 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
         set.CloneTo(_currentSet);
         if (_target.Value == null) return;
         if (NDMFPreview.DisablePreviewDepth != 0) return;
-        SetCurrentNodeDirectly(_currentSet, 0);
+        SetCurrentNodeDirectly(_target.Value, _currentSet, 0);
     }
 
     public static void Stop()
@@ -34,6 +33,9 @@ internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPrevi
 
     protected override void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue)
     {
+        var target = context.Observe(_target, t => t, (a, b) => a == b);
+        if (target == null) return;
+        if (!target.transform.IsChildOf(root.transform)) return;
         defaultValue = 0;
         result.AddRange(_currentSet);
     }
