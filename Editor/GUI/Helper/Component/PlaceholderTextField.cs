@@ -2,8 +2,12 @@ using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.Components;
 
-internal class PlaceholderTextField : TextField
+#if UNITY_6000_4_OR_NEWER
+[UxmlElement]
+#endif
+internal partial class PlaceholderTextField : TextField
 {
+#if !UNITY_6000_4_OR_NEWER
     public new class UxmlFactory : UxmlFactory<PlaceholderTextField, UxmlTraits> { }
 
     public new class UxmlTraits : TextField.UxmlTraits
@@ -17,10 +21,11 @@ internal class PlaceholderTextField : TextField
             element.Placeholder = _placeholderAttribute.GetValueFromBag(bag, cc);
         }
     }
-
+#endif
     private readonly Label _placeholderLabel;
     private string _placeholder = string.Empty;
 
+    [UxmlAttribute("placeholder")]
     public string Placeholder
     {
         get => _placeholder;
