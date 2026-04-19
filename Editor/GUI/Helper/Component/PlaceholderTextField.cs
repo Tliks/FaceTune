@@ -25,7 +25,9 @@ internal partial class PlaceholderTextField : TextField
     private readonly Label _placeholderLabel;
     private string _placeholder = string.Empty;
 
+#if UNITY_6000_4_OR_NEWER
     [UxmlAttribute("placeholder")]
+#endif
     public string Placeholder
     {
         get => _placeholder;
