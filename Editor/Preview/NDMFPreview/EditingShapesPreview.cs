@@ -4,8 +4,16 @@ namespace Aoyon.FaceTune.Preview;
 
 internal class EditingShapesPreview : AbstractFaceTunePreview<EditingShapesPreview>
 {
+    private static readonly ComputeContext _editingContext = new("EditingShapesPreview");
     private static readonly PublishedValue<SkinnedMeshRenderer?> _target = new(null);
-    private static BlendShapeWeightSet _currentSet = new();
+    private static readonly BlendShapeWeightSet _currentSet = new();
+
+
+    [InitializeOnLoadMethod]
+    static void Init()
+    {
+        _editingContext.InvokeOnInvalidate("ignored", _ => Refresh());
+    }
 
     public static void Start(SkinnedMeshRenderer? target, IReadOnlyBlendShapeSet? defaultSet = null)
     {

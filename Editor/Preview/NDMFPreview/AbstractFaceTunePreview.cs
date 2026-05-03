@@ -8,11 +8,6 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
 {
     protected virtual TogglablePreviewNode? ControlNode { get; }
     private static readonly Dictionary<SkinnedMeshRenderer, BlendShapePreviewNode> _currentNodes = new();
-    private readonly PropCache<int, ImmutableList<RenderGroup>> _groupsCache = new(
-        $"{typeof(TFilter).Name}.GetTargetGroups", 
-        (ctx, _) => GetTargetGroupsImpl(ctx),
-        (a, b) => a.SequenceEqual(b)
-    );
 
     public IEnumerable<TogglablePreviewNode> GetPreviewControlNodes()
     {
@@ -28,28 +23,25 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
 
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
-        return _groupsCache.Get(context, 0);
-    }
-
-    // FaceTuneTagComponentが一つでもあれば対象に加える or 全て対象
-    // => 全て対象にする
-    private static ImmutableList<RenderGroup> GetTargetGroupsImpl(ComputeContext context)
-    {
         using var _ = new ProfilingSampleScope($"{typeof(TFilter).Name}.GetTargetGroups");
         var groups = new List<RenderGroup>();
         var observeContext = new NDMFPreviewObserveContext(context);
 
         // VRC Avatar DescriptorとNDMF Avatar Rootが別々のアバターとして認識され、rootに同じアバターが入るのを防ぐためのDistinct()です
-        foreach (var root in context.GetAvatarRoots().Distinct().OrderBy(r => r.GetInstanceID()))
+        foreach (var root in context.GetAvatarRoots().Distinct())
         {
-            if (!context.ActiveInHierarchy(root)) continue;
             if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var _, null, observeContext)) continue;
             var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
             if (faceMesh == null) continue;
-            groups.Add(RenderGroup.For(faceRenderer).WithData(root));
+
+            var targetGroup = GetTarget(context, root, faceRenderer);
+            if (targetGroup == null) continue;
+            groups.Add(targetGroup);
         }
         return groups.ToImmutableList();
     }
+
+    protected abstract RenderGroup? GetTarget(ComputeContext context, GameObject root, SkinnedMeshRenderer faceRenderer);
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
@@ -72,15 +64,11 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
             var proxyMesh = proxy.sharedMesh;
             if (proxyMesh == null) throw new Exception("proxyMesh is null");
 
-            var root = group.GetData<GameObject>();
-            if (root == null) throw new Exception("GameObject not found");
-            var bodyPath = RuntimeUtil.RelativePath(root, proxy.gameObject)!;
-
             float defaultValue = -1;
             using var _set = BlendShapeSetPool.Get(out var set);
             using var _2 = new ProfilingSampleScope($"{typeof(TFilter).Name}.QueryBlendShapes");
             {
-                QueryBlendShapes(original, proxy, root, bodyPath, context, set, ref defaultValue);
+                QueryBlendShapes(group, original, proxy, context, set, ref defaultValue);
             }
 
             var node = new BlendShapePreviewNode(proxy, set.AsReadOnly(), defaultValue);
@@ -104,7 +92,7 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
     /// IRenderFilter.Instantiate内で呼ばれるので適時Observe。
     /// defaultValueはresultに含まれていない場合の扱い。-1の場合はプレビューしない(デフォルト)
     /// </summary>
-    protected abstract void QueryBlendShapes(SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, GameObject root, string bodyPath, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue);
+    protected abstract void QueryBlendShapes(RenderGroup group, SkinnedMeshRenderer original, SkinnedMeshRenderer proxy, ComputeContext context, BlendShapeWeightSet result, ref float defaultValue);
 
     /// <summary>
     ///  現在のNodeの内容を直接置き換える。
@@ -241,6 +229,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
     private void OnFrameInternal(SkinnedMeshRenderer proxy)
     {
         if (Disposed) return;
+        if (!proxy.enabled) return;
 
         var weights = _blendShapeWeights.Value;
         var count = weights.Count;
@@ -249,13 +238,14 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         {
             var weight = weights[i];
             if (weight == -1) continue; // 対象外
+            // if (proxy.GetBlendShapeWeight(i) == weight) continue;
             proxy.SetBlendShapeWeight(i, weight);
         }
     }
 
     public Task<IRenderFilterNode> Refresh(IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context, RenderAspects updatedAspects)
     {
-        if (updatedAspects != 0 && (updatedAspects & RenderAspects.Shapes) == 0)
+        if (updatedAspects != 0 && (updatedAspects & RenderAspects.Mesh) == 0)
         {
             return Task.FromResult<IRenderFilterNode>(this);
         }
