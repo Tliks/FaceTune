@@ -26,9 +26,7 @@ internal abstract class AbstractFaceTunePreview<TFilter> : IRenderFilter where T
         using var _ = new ProfilingSampleScope($"{typeof(TFilter).Name}.GetTargetGroups");
         var groups = new List<RenderGroup>();
         var observeContext = new NDMFPreviewObserveContext(context);
-
-        // VRC Avatar DescriptorとNDMF Avatar Rootが別々のアバターとして認識され、rootに同じアバターが入るのを防ぐためのDistinct()です
-        foreach (var root in context.GetAvatarRoots().Distinct())
+        foreach (var root in context.GetAvatarRoots())
         {
             if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var _, null, observeContext)) continue;
             var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
