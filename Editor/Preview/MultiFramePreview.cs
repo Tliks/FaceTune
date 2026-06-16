@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune.Preview;
 
 class MultiFramePreview : IDisposable
 {
-    private readonly Action<SkinnedMeshRenderer?, IReadOnlyBlendShapeSet> _editAction;
+    private readonly Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> _editAction;
     
     public bool IsActive { get; private set; } = false;
     public IReadOnlyList<BlendShapeWeightAnimation>? Animations { get; private set; } = null;
@@ -16,7 +16,7 @@ class MultiFramePreview : IDisposable
     
     private SkinnedMeshRenderer? _targetRenderer;
 
-    public MultiFramePreview(Action<SkinnedMeshRenderer?, IReadOnlyBlendShapeSet> editAction)
+    public MultiFramePreview(Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> editAction)
     {
         EditorApplication.update += OnEditorUpdate;
         _editAction = editAction;
@@ -44,6 +44,7 @@ class MultiFramePreview : IDisposable
     private void OnEditorUpdate()
     {
         if (!IsActive) return;
+        if (_targetRenderer == null) return;
         if (Animations == null) return;
 
         var now = EditorApplication.timeSinceStartup;

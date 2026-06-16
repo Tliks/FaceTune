@@ -16,29 +16,14 @@ internal static class AnimationUtility
 
     private static readonly List<BlendShapeWeightAnimation> _emptyFacialAnimations = new();
 
-    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShapeWeight> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, string? facialPath = null)
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeight> resultToAdd, string? facialPath = null, IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
     {
-        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))), facialPath);
+        ProcessBlendShapeBindings(clip, option, facialAnimations ?? _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))), facialPath);
     }
-
-    public static void GetAllFirstFrameBlendShapes(this AnimationClip clip, ICollection<BlendShapeWeight> resultToAdd, string? facialPath = null)
+    
+    public static void GetBlendShapeAnimations(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeightAnimation> resultToAdd, string? facialPath = null, IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
     {
-        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))), facialPath);
-    }
-
-    public static void GetNonZeroBlendShapes(this AnimationClip clip, ICollection<BlendShapeWeight> resultToAdd, string? facialPath = null)
-    {
-        ProcessBlendShapeBindings(clip, ClipImportOption.NonZero, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))), facialPath);
-    }
-
-    public static void GetBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeWeightAnimation> resultToAdd, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, string? facialPath = null)
-    {
-        ProcessBlendShapeBindings(clip, option, facialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)), facialPath);
-    }
-
-    public static void GetAllBlendShapeAnimations(this AnimationClip clip, ICollection<BlendShapeWeightAnimation> resultToAdd, string? facialPath = null)
-    {
-        ProcessBlendShapeBindings(clip, ClipImportOption.All, _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)), facialPath);
+        ProcessBlendShapeBindings(clip, option, facialAnimations ?? _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)), facialPath);
     }
 
     private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, Action<string, AnimationCurve> addAction, string? facialPath = null)

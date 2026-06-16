@@ -42,26 +42,6 @@ internal class FacialStyleContext
         }
     }
 
-    public static bool TryGetFacialStyleShapesAndObserve(GameObject target, ICollection<BlendShapeWeight> resultToAdd, GameObject root, IObserveContext observeContext)
-    {
-        if (!TryGetFacialStyleAndObserve(target, out var facialStyle, root, observeContext))
-        {
-            return false;
-        }
-        facialStyle.GetBlendShapes(resultToAdd, observeContext);
-        return true;
-    }
-    
-    public static bool TryGetFacialStyleShapes(GameObject target, ICollection<BlendShapeWeight> resultToAdd)
-    {
-        if (!TryGetFacialStyle(target, out var facialStyle))
-        {
-            return false;
-        }
-        facialStyle.GetBlendShapes(resultToAdd);
-        return true;
-    }
-
     public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd)
     {
         if (!TryGetFacialStyle(target, out var facialStyle))
@@ -81,15 +61,4 @@ internal class FacialStyleContext
         facialStyle.GetBlendShapeAnimations(resultToAdd, observeContext);
         return true;
     }
-
-    public static bool TryGetFirstFacialStyleAnimationsAndObserve(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd, IObserveContext observeContext)
-    {
-        if (!TryGetFirstFacialStyleAndObserve(target, out var facialStyle, observeContext))
-        {
-            return false;
-        }
-        facialStyle.GetBlendShapeAnimations(resultToAdd);
-        return true;
-    }
-
 }

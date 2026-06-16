@@ -31,10 +31,7 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         });
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
-        sequence = InPhase(BuildPhase.Optimizing)
-            .AfterPlugin("nadena.dev.modular-avatar")
-            .AfterPlugin("net.rs64.tex-trans-tool")
-            .AfterPlugin("com.anatawa12.avatar-optimizer");
+        sequence = InPhase(BuildPhase.PlatformFinish);
         sequence.Run("Empty Pass", _ => { })
             .PreviewingWith(new EditingShapesPreview(), new SelectedShapesPreview());
     }

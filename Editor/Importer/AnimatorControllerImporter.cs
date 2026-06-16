@@ -47,7 +47,7 @@ internal class AnimatorControllerImporter
                         if (clip == null) continue;
 
                         var facialBlendShapes = new List<BlendShapeWeightAnimation>();
-                        clip.GetAllBlendShapeAnimations(facialBlendShapes, _context.BodyPath);
+                        clip.GetBlendShapeAnimations(ClipImportOption.All, facialBlendShapes, _context.BodyPath);
 
                         if (facialBlendShapes.Count > 0)
                         {

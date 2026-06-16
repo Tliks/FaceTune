@@ -121,6 +121,7 @@ internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IRe
 
     public void CloneTo(TSelf other)
     {
+        other.Clear();
         other.AddRange(map.Values);
     }
 
