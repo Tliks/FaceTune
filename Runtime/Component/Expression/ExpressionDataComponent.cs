@@ -45,7 +45,7 @@ namespace Aoyon.FaceTune
             {
                 var facialPath = AllBlendShapeAnimationAsFacial ? null : bodyPath;
 #if UNITY_EDITOR
-                Clip.GetFirstFrameBlendShapes(resultToAdd, ClipOption, facialAnimations, facialPath);
+                Clip.GetFirstFrameBlendShapes(ClipOption, resultToAdd, facialPath, facialAnimations);
 #endif
             }
 
@@ -64,7 +64,7 @@ namespace Aoyon.FaceTune
             {
                 var facialPath = AllBlendShapeAnimationAsFacial ? null : bodyPath;
 #if UNITY_EDITOR
-                Clip.GetBlendShapeAnimations(resultToAdd, ClipOption, facialAnimations, facialPath);
+                Clip.GetBlendShapeAnimations(ClipOption, resultToAdd, facialPath, facialAnimations);
 #endif
             }
 

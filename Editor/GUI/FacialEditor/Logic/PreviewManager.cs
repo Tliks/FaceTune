@@ -6,7 +6,6 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 internal class PreviewManager : IDisposable
 {
     private readonly BlendShapeOverrideManager _blendShapeOverrideManager;
-    private  HighlightBlendShapeProcessor _highlightBlendShapeProcessor;
     
     private readonly VisualElement _rootElement;
     private IVisualElementScheduledItem _updateScheduler;
@@ -62,14 +61,12 @@ internal class PreviewManager : IDisposable
         _blendShapeOverrideManager = blendShapeOverrideManager;
         _rootElement = rootElement;
         _previewSet = new();
-        _highlightBlendShapeProcessor = new HighlightBlendShapeProcessor();
         SetBlendShapeTo100OnHover = true;
         HighlightBlendShapeVerticesOnHover = false;
 
         
         _blendShapeOverrideManager.OnAnyDataChange += RequestShapeRefresh;
         OnSetBlendShapeTo100OnHoverChanged += (value) => { RequestShapeRefresh(); };
-        OnHighlightBlendShapeVerticesOnHoverChanged += (value) => { _highlightBlendShapeProcessor.ClearHighlight(); };
         
         // UI Elementsスケジューラーで定期的に両方の更新をチェック
         // UpdateIntervalMsで更新の頻度を制限する
@@ -89,10 +86,9 @@ internal class PreviewManager : IDisposable
         else
         {
             _isEnabled = true;
-            var defaultSet = new BlendShapeWeightSet();
-            GetCurrentSet(defaultSet);
-            EditingShapesPreview.Start(renderer, defaultSet);
-            _highlightBlendShapeProcessor.RefreshTarget(renderer, renderer.sharedMesh);
+            EditingShapesPreview.Start(renderer);
+            GetCurrentSet(_previewSet);
+            EditingShapesPreview.Refresh(_previewSet, 0);
             RequestShapeRefresh();
         }
     }
@@ -126,19 +122,7 @@ internal class PreviewManager : IDisposable
                 var key = _blendShapeOverrideManager.AllKeys[index];
                 _previewSet.Add(new BlendShapeWeight(key, 100));
             }
-            EditingShapesPreview.Refresh(_previewSet);
-
-            if (HighlightBlendShapeVerticesOnHover)
-            {
-                if (index != -1)
-                {
-                    _highlightBlendShapeProcessor.HilightBlendShapeFor(index);
-                }
-                else
-                {
-                    _highlightBlendShapeProcessor.ClearHighlight();
-                }
-            }
+            EditingShapesPreview.Refresh(_previewSet, 0);
         }
         catch (Exception e)
         {
@@ -149,22 +133,15 @@ internal class PreviewManager : IDisposable
     private void GetCurrentSet(BlendShapeWeightSet result)
     {
         result.Clear();
-        foreach (var shape in _blendShapeOverrideManager.AllKeys)
-        {
-            result.Add(new BlendShapeWeight(shape, 0));
-        }
-        foreach (var shape in _blendShapeOverrideManager.BaseSet)
-        {
-            result.Add(shape);
-        }
+        result.AddRange(_blendShapeOverrideManager.BaseSet);
         _blendShapeOverrideManager.GetCurrentOverrides(result);
     }
+
     public void Dispose()
     {
         _isEnabled = false;
         _blendShapeOverrideManager.OnAnyDataChange -= RequestShapeRefresh;
         _updateScheduler?.Pause();
         EditingShapesPreview.Stop();
-        _highlightBlendShapeProcessor.Dispose();
     }
 }

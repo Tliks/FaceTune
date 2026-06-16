@@ -247,7 +247,7 @@ internal class GeneralControls : IDisposable
         {
             if (_clip == null) return;
             var resutlt = new BlendShapeWeightSet();
-            _clip.GetFirstFrameBlendShapes(resutlt, _clipImportOption, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList());
+            _clip.GetFirstFrameBlendShapes(_clipImportOption, resutlt, null, _blendShapeManager.BaseSet.ToBlendShapeAnimations().ToList());
             _blendShapeManager.OverrideShapesAndSetWeight(resutlt.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
         };
 
