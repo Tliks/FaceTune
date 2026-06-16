@@ -86,7 +86,7 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
 
     private static bool HasAnyComponent(ComputeContext context, GameObject root)
     {
-        var components = context.GetComponentsInChildren<FaceTuneAssistantComponent>(root, true);
+        var components = context.GetComponentsInChildren<FaceTuneTagComponent>(root, true);
         return components.Length > 0;
     }
 }
@@ -114,21 +114,21 @@ internal class SelectedShapesPreviewSession : IDisposable
         _clearPreview = clearPreview;
         _onInvalidate = onInvalidate;
         _context = new($"{nameof(SelectedShapesPreviewSession)}:{nameof(_context)}");
-        _writers = CreateWriters(_context, selection);
+        _writers = CreateWriters(selection);
         _context.InvokeOnInvalidate(this, s => s.OnInvalidate());
     }
 
-    private List<Writer> CreateWriters(ComputeContext context, Object selection)
+    private List<Writer> CreateWriters(Object selection)
     {
         var writers = new List<Writer>();
 
         if (selection is AnimationClip clip)
         {
-            AddWriterForClip(context, clip, writers);
+            AddWriterForClip(clip, writers);
         }
         else if (selection is GameObject obj)
         {
-            AddWriterForGameObject(context, obj, writers);
+            AddWriterForGameObject(obj, writers);
         }
         else
         {
@@ -152,9 +152,9 @@ internal class SelectedShapesPreviewSession : IDisposable
         _writers.Clear();
     }
     
-    private void AddWriterForClip(ComputeContext context, AnimationClip clip, List<Writer> resultToAdd)
+    private void AddWriterForClip(AnimationClip clip, List<Writer> resultToAdd)
     {
-        var isLooping = context.Observe(clip, c => c.isLooping, (a, b) => a == b);
+        var isLooping = _context.Observe(clip, c => c.isLooping, (a, b) => a == b);
 
         foreach (var (_, renderer, path) in _targets)
         {
@@ -166,14 +166,14 @@ internal class SelectedShapesPreviewSession : IDisposable
         }
     }
 
-    private void AddWriterForGameObject(ComputeContext context, GameObject obj, List<Writer> resultToAdd)
+    private void AddWriterForGameObject(GameObject obj, List<Writer> resultToAdd)
     {
         var target = _targets
             .FirstOrDefault(pair => obj.transform.IsChildOf(pair.root.transform));
         if (target == default) return;
 
         var animations = new List<BlendShapeWeightAnimation>();
-        if (!TryGetGameObjectAnimations(context, obj, target.root, target.path, animations, out var isLooping)) return;
+        if (!TryGetGameObjectAnimations(_context, obj, target.root, target.path, animations, out var isLooping)) return;
 
         // GameObject preview は選択表情の facial style を含めて完全に置き換える。
         resultToAdd.Add(Writer.Create(target.renderer, animations, isLooping, (r, s) => _setPreview(r, s, 0), _clearPreview));
