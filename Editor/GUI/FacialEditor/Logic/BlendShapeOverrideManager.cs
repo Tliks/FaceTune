@@ -1,7 +1,6 @@
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-// Baseは初期状態から変化した場合のみoverride
-// 通常のブレンドシェイプはweightに関わらず、overrideかどうかで判断
+// override状態はflagで判断する。weightはflagが立っている場合だけoverride値として意味を持つ。
 [Serializable]
 internal class BlendShapeOverrideManager : IDisposable
 {
@@ -218,6 +217,12 @@ internal class BlendShapeOverrideManager : IDisposable
         return _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue;
     }
 
+    public float GetEffectiveShapeWeight(int index)
+    {
+        if (IsOverridden(index)) return GetShapeWeight(index);
+        return _baseSet.TryGetValue(_allKeysArray[index], out var shape) ? shape.Weight : 0f;
+    }
+
     public float GetRequiredInitialBaseWeight(string shapeName)
     {
         return _baseSet.TryGetValue(shapeName, out var shape) ? shape.Weight : throw new Exception($"Shape {shapeName} not found in base set");
@@ -330,21 +335,8 @@ internal class BlendShapeOverrideManager : IDisposable
     // weight
     public void SetShapeWeightWithOutApply(int index, float weight)
     {        
-        // 先にweightを設定
         _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
-        
-        // baseシェイプの場合、新しいweightでoverrideフラグを判定
-        if (IsBaseShape(index))
-        {
-            if (IsInitialBaseWeight(index))
-            {
-                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
-            }
-            else
-            {
-                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
-            }
-        }
+        _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
     }
     public void SetShapeWeight(int index, float weight)
     {

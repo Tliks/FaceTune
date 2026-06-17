@@ -18,12 +18,11 @@ internal class SelectedPanel
     private static StyleSheet? _itemUss;
 
     private TextField _searchField = null!;
+    private SimpleToggle _baseToggle = null!;
     private SimpleToggle _zeroToggle = null!;
 
-    private VisualElement _baseShapesPanel = null!;
     private VisualElement _selectedShapesPanel = null!;
 
-    private ListView _baseListView = null!;
     private ListView _selectedListView = null!;
     
     private Button _selectedRemoveAll0Button = null!;
@@ -38,11 +37,9 @@ internal class SelectedPanel
     }
 
     private IReadOnlyList<ElementData> _allSource = null!;
-    private List<ElementData> _currentBaseSource = null!;
-    private List<ElementData> _currentSelectedSource = null!;
+    private List<ElementData> _currentSource = null!;
 
     private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff").image;
-    private static readonly Texture _resetIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
     private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
 
 	public event Action<int>? OnSelectedItemNameClicked;
@@ -69,7 +66,7 @@ internal class SelectedPanel
         _groupManager.OnLeftSelectionChanged += (isLeftSelected) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnSingleShapeOverride += (keyIndex) =>
         {
-            AddByKeyIndex(keyIndex);
+            BuildAndRefreshListViewsSlow();
             FlashOverrides(new[] { keyIndex });
         };
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) =>
@@ -77,16 +74,15 @@ internal class SelectedPanel
             BuildAndRefreshListViewsSlow();
             FlashOverrides(keyIndices);
         };
-        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RemoveByKeyIndex(keyIndex);
+        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewsSlow();
         // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => BuildAndRefreshListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();
-        _blendShapeManager.OnBaseSetChange += () => { RefreshTarget(); UpdateBaseListVisibility(); };
+        _blendShapeManager.OnBaseSetChange += RefreshTarget;
         _blendShapeManager.OnAnyDataChange += () => UpdateSelectedRemoveAll0ButtonVisibility();
     }
 
-    private bool _baseZero = true;
     private bool _selectedZero = true;
     private void SetupControls()
     {
@@ -94,28 +90,13 @@ internal class SelectedPanel
         _searchField = commonControls.Q<TextField>("search-field");
         _searchField.RegisterValueChangedCallback(_ => BuildAndRefreshListViewsSlow());
 
-        _zeroToggle = commonControls.Q<SimpleToggle>("zero-toggle");
-        _zeroToggle.RegisterValueChangedCallback(evt => BuildAndRefreshListViewsSlow());
-
-        _baseShapesPanel = _element.Q("base-shapes-panel");
-
-        var base0100Toggle = _baseShapesPanel.Q<Button>("base-0-100-toggle");
-        base0100Toggle.Add(new Image { image = _toggleIcon });
-        base0100Toggle.clicked += () =>
-        {
-            var indices = _currentBaseSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, _baseZero ? 100f : 0f);
-            _baseZero = !_baseZero;
-        };
-        
-        var baseResetAllButton = _baseShapesPanel.Q<Button>("base-reset-all-button");
-        baseResetAllButton.Add(new Image { image = _resetIcon });
-        baseResetAllButton.clicked += () =>
-        {
-            _blendShapeManager.ResetShapesWeight(_currentBaseSource.Select(item => item.KeyIndex));
-        };
-
         _selectedShapesPanel = _element.Q("selected-shapes-panel");
+
+        _baseToggle = _selectedShapesPanel.Q<SimpleToggle>("base-toggle");
+        _baseToggle.RegisterValueChangedCallback(evt => BuildAndRefreshListViewsSlow());
+
+        _zeroToggle = _selectedShapesPanel.Q<SimpleToggle>("zero-toggle");
+        _zeroToggle.RegisterValueChangedCallback(evt => BuildAndRefreshListViewsSlow());
 
         _selectedRemoveAll0Button = _selectedShapesPanel.Q<Button>("selected-remove-all-0-button");
         UpdateSelectedRemoveAll0ButtonVisibility();
@@ -130,7 +111,7 @@ internal class SelectedPanel
         selected0100Toggle.Add(new Image { image = _toggleIcon });
         selected0100Toggle.clicked += () =>
         {
-            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
+            var indices = _currentSource.Select(item => item.KeyIndex);
             _blendShapeManager.SetShapesWeight(indices, _selectedZero ? 100f : 0f);
             _selectedZero = !_selectedZero;
         };
@@ -139,31 +120,26 @@ internal class SelectedPanel
         removeAllButton.Add(new Image { image = _removeIcon });
         removeAllButton.clicked += () =>
         {
-            var indices = _currentSelectedSource.Select(item => item.KeyIndex);
+            var indices = _currentSource
+                .Select(item => item.KeyIndex)
+                .Where(index => _blendShapeManager.IsOverridden(index));
             _blendShapeManager.UnoverrideShapes(indices);
         };
     }
 
     private void SetupListViews()
     {
-        _baseListView = _element.Q<ListView>("base-list-view");
         _selectedListView = _element.Q<ListView>("selected-list-view");
-        _baseListView.focusable = true;
         _selectedListView.focusable = true;
-        _baseListView.selectionType = SelectionType.None;
         _selectedListView.selectionType = SelectionType.None;
-        _baseListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
         _selectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
         RefreshTarget();
 
-        _baseListView.makeItem = () => MakeElement(true);
-        _baseListView.bindItem = (e, i) => BindElement(e, i, true);
+        _selectedListView.makeItem = MakeElement;
+        _selectedListView.bindItem = BindElement;
 
-        _selectedListView.makeItem = () => MakeElement(false);
-        _selectedListView.bindItem = (e, i) => BindElement(e, i, false);
-
-        VisualElement MakeElement(bool isBase)
+        VisualElement MakeElement()
         {
             var element = _itemUxml!.CloneTree();
             element.styleSheets.Add(_itemUss!);
@@ -191,32 +167,32 @@ internal class SelectedPanel
                 if (element.userData is ElementData item)
                 {
                     _blendShapeManager.SetShapeWeight(item.KeyIndex, evt.newValue);
-                    UpdateActionButton(item, isBase, actionButton);
+                    UpdateActionButton(item, actionButton);
                 }
             });
             _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) =>
             {
                 if (element.userData is ElementData item && item.KeyIndex == keyIndex)
                 {
-                    sliderFloatField.SetValueWithoutNotify(_blendShapeManager.GetShapeWeight(keyIndex));
-                    UpdateActionButton(item, isBase, actionButton);
+                    sliderFloatField.SetValueWithoutNotify(_blendShapeManager.GetEffectiveShapeWeight(keyIndex));
+                    UpdateActionButton(item, actionButton);
                 }
             };
-            
+             
             toggleButton.text = "";
             toggleButton.Add(new Image { image = _toggleIcon });
             actionButton.text = "";
-            actionButton.Add(new Image { image = isBase ? _resetIcon : _removeIcon });
+            actionButton.Add(new Image { image = _removeIcon });
 
             toggleButton.clicked += () =>
             {
                 if (element.userData is ElementData item)
                 {
-                    var currentWeight = _blendShapeManager.GetShapeWeight(item.KeyIndex);
+                    var currentWeight = _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex);
                     var newWeight = currentWeight == 0f ? 100f : 0f;
                     _blendShapeManager.SetShapeWeight(item.KeyIndex, newWeight);
                     sliderFloatField.SetValueWithoutNotify(newWeight);
-                    UpdateActionButton(item, isBase, actionButton);
+                    UpdateActionButton(item, actionButton);
                 }
             };
                         
@@ -224,26 +200,18 @@ internal class SelectedPanel
             {
                 if (element.userData is ElementData item)
                 {
-                    if (isBase) // reset
-                    {
-                        var weight = _blendShapeManager.ResetShapeWeight(item.KeyIndex);
-                        sliderFloatField.SetValueWithoutNotify(weight);
-                    }
-                    else // remove
-                    {
-                        _blendShapeManager.UnoverrideShape(item.KeyIndex);
-                        RemoveByKeyIndex(item.KeyIndex);
-                    }
-                    UpdateActionButton(item, isBase, actionButton);
+                    _blendShapeManager.UnoverrideShape(item.KeyIndex);
+                    sliderFloatField.SetValueWithoutNotify(_blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex));
+                    UpdateActionButton(item, actionButton);
                 }
             };
             
 			return element;
         }
 
-        void BindElement(VisualElement element, int index, bool isBase)
+        void BindElement(VisualElement element, int index)
         {
-            var item = isBase ? _currentBaseSource[index] : _currentSelectedSource[index];
+            var item = _currentSource[index];
             element.userData = item;
 
             var flashOverlay = element.Q<VisualElement>("flash-overlay");
@@ -260,17 +228,14 @@ internal class SelectedPanel
             var actionButton = element.Q<Button>("action");
             
             nameLabel.text = item.ShapeName;
-            var currentWeight = _blendShapeManager.GetShapeWeight(item.KeyIndex);
+            var currentWeight = _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex);
             sliderFloatField.SetValueWithoutNotify(currentWeight);
-            UpdateActionButton(item, isBase, actionButton);
+            UpdateActionButton(item, actionButton);
         }
 
-        void UpdateActionButton(ElementData item, bool isBase, Button actionButton)
+        void UpdateActionButton(ElementData item, Button actionButton)
         {
-            if (isBase)
-            {
-                actionButton.SetEnabled(!_blendShapeManager.IsInitialBaseWeight(item.KeyIndex));
-            }
+            actionButton.SetEnabled(_blendShapeManager.IsOverridden(item.KeyIndex));
         }
     }
 
@@ -285,7 +250,6 @@ internal class SelectedPanel
             _flashExpiryByKeyIndex[keyIndex] = expiry;
         }
 
-        _baseListView.RefreshItems();
         _selectedListView.RefreshItems();
 
         _flashCleanupSchedule ??= _element.schedule.Execute(() =>
@@ -310,7 +274,6 @@ internal class SelectedPanel
 
             if (removedAny)
             {
-                _baseListView.RefreshItems();
                 _selectedListView.RefreshItems();
             }
 
@@ -332,21 +295,12 @@ internal class SelectedPanel
             allSource.Add(new ElementData { ShapeName = allKeys[i], KeyIndex = i, IsBase = _blendShapeManager.IsBaseShape(i) });
         }
         _allSource = allSource.AsReadOnly();
-        _currentBaseSource = new();
-        _currentSelectedSource = new();
+        _currentSource = new();
         BuildCurrentSource();
 
-        _baseListView.itemsSource = _currentBaseSource;
-        _selectedListView.itemsSource = _currentSelectedSource;
+        _selectedListView.itemsSource = _currentSource;
 
-        _baseListView.RefreshItems();
         _selectedListView.RefreshItems();
-    }
-
-    private void UpdateBaseListVisibility()
-    {
-        var hasStyleShapes = _currentBaseSource.Count > 0;
-        _baseShapesPanel.style.display = hasStyleShapes ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     private void UpdateSelectedRemoveAll0ButtonVisibility()
@@ -355,14 +309,11 @@ internal class SelectedPanel
         _selectedRemoveAll0Button.SetVisible(anyZero);
     }
 
-    private void BuildCurrentSource(bool isBase = true, bool selected = true)
+    private void BuildCurrentSource()
     {
         using var _ = new ProfilingSampleScope("SelectedPanel.BuildCurrentSource");
 
-        if (isBase)
-            _currentBaseSource.Clear();
-        if (selected)
-            _currentSelectedSource.Clear();
+        _currentSource.Clear();
 
         var searchText = _searchField.value?.ToLower() ?? "";
         var hasSearchText = !string.IsNullOrEmpty(searchText);
@@ -378,91 +329,24 @@ internal class SelectedPanel
             if (_groupManager.IsLeftSelected && !_groupManager.IsBlendShapeVisible(item.KeyIndex))
                 continue;
 
-            if (isBase && item.IsBase)
-            {
-                if (!_zeroToggle.value && _blendShapeManager.GetShapeWeight(item.KeyIndex) == 0f)
-                    continue;
+            var isOverridden = _blendShapeManager.IsOverridden(item.KeyIndex);
+            if (!item.IsBase && !isOverridden)
+                continue;
 
-                _currentBaseSource.Add(item);
-            }
-            else if (selected)
-            {
-                if (!_zeroToggle.value && _blendShapeManager.GetShapeWeight(item.KeyIndex) == 0f)
-                    continue;
+            if (!_baseToggle.value && item.IsBase && !isOverridden)
+                continue;
 
-                if (_blendShapeManager.IsOverridden(item.KeyIndex))
-                    _currentSelectedSource.Add(item);
-            }
+            if (!_zeroToggle.value && _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex) == 0f)
+                continue;
+
+            _currentSource.Add(item);
         }
     }
 
-
-    public bool AddByKeyIndex(int keyIndex)
-    {
-        using var _ = new ProfilingSampleScope("SelectedPanel.AddByKeyIndex");
-        var item = _allSource[keyIndex];
-
-        return AddItemToSortedList(
-            item.IsBase ? _currentBaseSource : _currentSelectedSource,
-            item,
-            item.IsBase ? _baseListView : _selectedListView
-        );
-    }
-
-    private bool AddItemToSortedList(List<ElementData> list, ElementData item, ListView listView)
-    {
-        for (int i = 0; i < list.Count; i++)
-        {
-            if (list[i].KeyIndex == item.KeyIndex)
-                return false;
-
-            if (list[i].KeyIndex > item.KeyIndex)
-            {
-                list.Insert(i, item);
-                listView.RefreshItems();
-                return true;
-            }
-        }
-        list.Add(item);
-        listView.RefreshItems();
-        return true;
-    }
-    
-    public bool RemoveByKeyIndex(int keyIndex)
-    {
-        using var _ = new ProfilingSampleScope("SelectedPanel.RemoveByKeyIndex");
-        
-        // 選択済みリストから削除
-        for (int i = 0; i < _currentSelectedSource.Count; i++)
-        {
-            if (_currentSelectedSource[i].KeyIndex == keyIndex)
-            {
-                _currentSelectedSource.RemoveAt(i);
-                _selectedListView.RefreshItems();
-                return true;
-            }
-        }
-        
-        // Baseからは削除しない
-        return false;
-    }
-
-    private void BuildAndRefreshBaseListViewsSlow()
-    {
-        BuildCurrentSource(isBase: true, selected: false);
-        _baseListView.RefreshItems();
-    }
-
-    private void BuildAndRefreshSelectedListViewsSlow()
-    {
-        BuildCurrentSource(isBase: false, selected: true);
-        _selectedListView.RefreshItems();
-    }
 
     private void BuildAndRefreshListViewsSlow()
     {
         BuildCurrentSource();
-        _baseListView.RefreshItems();
         _selectedListView.RefreshItems();
     }
 }

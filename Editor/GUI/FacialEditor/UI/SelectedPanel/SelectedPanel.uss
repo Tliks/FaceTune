@@ -5,11 +5,6 @@
     margin-bottom: var(--main-gap);
 }
 
-#base-shapes-panel {
-    flex: 0 1 auto;
-    margin-bottom: var(--main-gap);
-}
-
 #selected-shapes-panel {
     flex: 1 1 auto;
     margin-bottom: var(--main-gap);
@@ -21,7 +16,7 @@
     margin-right: var(--main-gap);
 }
 
-#zero-toggle {
+#base-toggle, #zero-toggle {
     flex: 0 0 35px;
     margin: 0px;
     margin-right: var(--main-gap);
@@ -34,7 +29,7 @@
     margin-bottom: var(--main-gap);
 }
 
-#base-label, #selected-label {
+#selected-label {
     -unity-font-style: bold;
     flex: 1 0 auto;
 }
@@ -47,7 +42,7 @@
 }
 
 
-#base-list-view, #selected-list-view {
+#selected-list-view {
     flex: 1 1 auto;
     justify-content: center;
 }
