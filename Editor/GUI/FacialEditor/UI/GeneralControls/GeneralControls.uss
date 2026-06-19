@@ -44,10 +44,29 @@
     height: 16px;
 }
 
-/* Toolbar & Content */
-#toolbar-container {
-    height: var(--element-height);
+#clip-import-container {
+    flex-direction: row;
+    align-items: center;
     margin-bottom: var(--main-gap);
+}
+
+#clip-import-label {
+    flex: 0 0 auto;
+    margin-right: var(--main-gap);
+}
+
+#clip-field-container {
+    flex: 1 1 auto;
+    margin-right: var(--main-gap);
+}
+
+#import-option-field-container {
+    flex: 0 0 120px;
+}
+
+.clip-import-field {
+    flex: 1 1 auto;
+    margin: 0px;
 }
 
 #content-container {
@@ -56,15 +75,6 @@
     border-radius: 4px;
 }
 
-.toolbar-content {
-    display: none;
-}
-
-.toolbar-content--visible {
-    display: flex;
-}
-
-/* Filter Section */
 #filter-header {
     flex-direction: row;
     align-items: center;

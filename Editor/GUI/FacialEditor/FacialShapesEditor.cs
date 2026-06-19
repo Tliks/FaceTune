@@ -76,19 +76,25 @@ internal class FacialShapesEditor : EditorWindow
     {
         EndContext();
 
-        _context = FacialShapesEditorContext.Create(
-            this,
+        targeting ??= new AnimationClipTargeting();
+
+        var serializedObject = new SerializedObject(this);
+        _dataManager = new BlendShapeOverrideManager(
+            serializedObject,
+            serializedObject.FindProperty(nameof(_dataManager)));
+        serializedObject.Update();
+        _dataManager.SetInitialState(renderer, styleSet, baseSet, defaultOverrides);
+        _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
+
+        _context = new FacialShapesEditorContext(
+            serializedObject,
+            _dataManager,
             rootVisualElement,
-            nameof(_dataManager),
             renderer,
             targeting,
-            styleSet,
-            baseSet,
-            defaultOverrides,
+            targeting is AnimationClipTargeting,
             TryChangeRenderer,
             SaveChanges);
-        _dataManager = _context.DataManager;
-        _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         hasUnsavedChanges = false;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");

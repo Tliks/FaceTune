@@ -37,38 +37,6 @@ internal sealed class FacialShapesEditorContext : IDisposable
         UI = new FacialShapeUI(root, this, tryChangeRenderer, save);
     }
 
-    public static FacialShapesEditorContext Create(
-        EditorWindow owner,
-        VisualElement root,
-        string dataManagerPropertyName,
-        SkinnedMeshRenderer? renderer,
-        IShapesEditorTargeting? targeting,
-        IReadOnlyBlendShapeSet? styleSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? defaultOverrides,
-        Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
-        Action save)
-    {
-        targeting ??= new AnimationClipTargeting();
-        var serializedObject = new SerializedObject(owner);
-        var dataManager = new BlendShapeOverrideManager(
-            serializedObject,
-            serializedObject.FindProperty(dataManagerPropertyName),
-            renderer,
-            styleSet,
-            baseSet,
-            defaultOverrides);
-        return new FacialShapesEditorContext(
-            serializedObject,
-            dataManager,
-            root,
-            renderer,
-            targeting,
-            targeting is AnimationClipTargeting,
-            tryChangeRenderer,
-            save);
-    }
-
     public void Dispose()
     {
         UI.Dispose();

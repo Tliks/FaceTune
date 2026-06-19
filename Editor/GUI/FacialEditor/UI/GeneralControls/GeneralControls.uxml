@@ -22,13 +22,16 @@
 
         <ui:VisualElement class="divider-line"/>
 
-        <!-- Toolbar (IMGUI) -->
-        <ui:IMGUIContainer name="toolbar-container" />
+        <ui:VisualElement name="clip-import-container">
+            <ui:Label name="clip-import-label" class="ndmf-tr" text="FacialEditor:button:Import" />
+            <ui:VisualElement name="clip-field-container" />
+            <ui:VisualElement name="import-option-field-container" />
+        </ui:VisualElement>
 
-        <!-- Dynamic Content Container -->
+        <ui:VisualElement class="divider-line"/>
+
         <ui:VisualElement name="content-container">
-             <!-- Filter Content -->
-             <ui:VisualElement name="filter-content" class="toolbar-content">
+            <ui:VisualElement name="filter-content">
                 <ui:VisualElement name="filter-header">
                     <ui:Button name="all-button"/>
                     <ui:Button name="none-button"/>
@@ -36,16 +39,7 @@
                     <ui:Toggle name="right-toggle" />
                 </ui:VisualElement>
                 <ui:VisualElement name="group-toggles-container" />
-             </ui:VisualElement>
-
-             <!-- Clip Import Content -->
-             <ui:VisualElement name="clip-content" class="toolbar-content">
-                <ui:VisualElement name="clip-import-container">
-                    <uie:ObjectField name="clip-field" class="ndmf-tr" label="FacialEditor:label:Clip" />
-                    <uie:EnumField name="import-option-field" class="ndmf-tr" label="FacialEditor:label:ImportOption" />
-                    <ui:Button name="import-clip-button" class="ndmf-tr" text="FacialEditor:button:Import" />
-                </ui:VisualElement>
-             </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
 
     </ui:VisualElement>

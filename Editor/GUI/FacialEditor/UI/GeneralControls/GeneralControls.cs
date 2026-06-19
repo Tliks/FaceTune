@@ -23,11 +23,7 @@ internal class GeneralControls : IDisposable
     private readonly List<SimpleToggle> _groupToggles = new();
     private const float GroupToggleHorizontalPadding = 8f;
 
-    private VisualElement _clipContent = null!;
     private VisualElement _filterContent = null!;
-    private readonly List<VisualElement> _contentElements = new();
-    private readonly LocalizedToolbar _toolbar;
-    private int _selectedToolbarIndex = 0;
 
     private Button _saveButton = null!;
     private Button _undoButton = null!;
@@ -36,7 +32,6 @@ internal class GeneralControls : IDisposable
     private Button _restoreEditedOverridesButton = null!;
     private readonly EditorApplication.CallbackFunction _undoStateUpdateCallback;
 
-    private AnimationClip? _clip;
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
 
     private static readonly Texture _selectAllIcon = EditorGUIUtility.IconContent("d_Toolbar Plus").image;
@@ -64,8 +59,6 @@ internal class GeneralControls : IDisposable
         _element = uxml.CloneTree();
         _element.styleSheets.Add(uss);
         Localization.LocalizeUIElements(_element);
-
-        _toolbar = new LocalizedToolbar(new[] { "FacialEditor:label:filter", "FacialEditor:label:ClipImport" });
 
         Undo.undoRedoPerformed += QueueUndoStateUpdate;
 
@@ -172,39 +165,24 @@ internal class GeneralControls : IDisposable
         _blendShapeManager.OnAnyDataChange += UpdateActionButtonStates;
         _blendShapeManager.OnAnyDataChange += QueueUndoStateUpdate;
 
-        _clipContent = _element.Q<VisualElement>("clip-content");
-        _filterContent = _element.Q<VisualElement>("filter-content");
-        _contentElements.AddRange(new[] { _filterContent, _clipContent });
-
-        var toolbarContainer = _element.Q<IMGUIContainer>("toolbar-container");
-        toolbarContainer.onGUIHandler = () =>
+        var clipField = new ObjectField { objectType = typeof(AnimationClip) };
+        clipField.AddToClassList("clip-import-field");
+        clipField.RegisterValueChangedCallback(evt =>
         {
-            var newIndex = _toolbar.Draw(_selectedToolbarIndex);
-            if (newIndex != _selectedToolbarIndex)
+            if (evt.newValue is AnimationClip clip)
             {
-                _selectedToolbarIndex = newIndex;
-                UpdateTabVisibility();
+                ImportClip(clip);
+                clipField.SetValueWithoutNotify(null);
             }
-        };
-        UpdateTabVisibility();
+        });
+        _element.Q<VisualElement>("clip-field-container").Add(clipField);
 
-        var clipField = _clipContent.Q<ObjectField>("clip-field");
-        clipField.objectType = typeof(AnimationClip);
-        clipField.RegisterValueChangedCallback(evt => _clip = evt.newValue as AnimationClip);
-
-        var clipImportOptionField = _clipContent.Q<EnumField>("import-option-field");
-        clipImportOptionField.Init(_clipImportOption);
+        var clipImportOptionField = new EnumField(_clipImportOption);
+        clipImportOptionField.AddToClassList("clip-import-field");
         clipImportOptionField.RegisterValueChangedCallback(evt => _clipImportOption = (ClipImportOption)evt.newValue);
+        _element.Q<VisualElement>("import-option-field-container").Add(clipImportOptionField);
 
-        var importClipButton = _clipContent.Q<Button>("import-clip-button");
-        importClipButton.clicked += () =>
-        {
-            if (_clip == null) return;
-            var result = new BlendShapeWeightSet();
-            _clip.GetFirstFrameBlendShapes(_clipImportOption, result, null, _blendShapeManager.EffectiveBaseSet.ToBlendShapeAnimations().ToList());
-            _blendShapeManager.OverrideShapesAndSetWeight(result.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
-        };
-
+        _filterContent = _element.Q<VisualElement>("filter-content");
         _groupTogglesContainer = _filterContent.Q<VisualElement>("group-toggles-container");
         RebuildGroupToggles();
         _groupManager.OnGroupSelectionChanged += _ => RebuildGroupToggles();
@@ -240,19 +218,11 @@ internal class GeneralControls : IDisposable
         rightToggle.RegisterValueChangedCallback(evt => _groupManager.IsRightSelected = evt.newValue);
     }
 
-    private void UpdateTabVisibility()
+    private void ImportClip(AnimationClip clip)
     {
-        for (int i = 0; i < _contentElements.Count; i++)
-        {
-            if (i == _selectedToolbarIndex)
-            {
-                _contentElements[i].AddToClassList("toolbar-content--visible");
-            }
-            else
-            {
-                _contentElements[i].RemoveFromClassList("toolbar-content--visible");
-            }
-        }
+        var result = new BlendShapeWeightSet();
+        clip.GetFirstFrameBlendShapes(_clipImportOption, result, null, _blendShapeManager.EffectiveBaseSet.ToBlendShapeAnimations().ToList());
+        _blendShapeManager.OverrideShapesAndSetWeight(result.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
     }
 
     private void UpdateActionButtonStates()
@@ -265,7 +235,6 @@ internal class GeneralControls : IDisposable
 
     public void Dispose()
     {
-        _toolbar.Dispose();
         Undo.undoRedoPerformed -= QueueUndoStateUpdate;
         EditorApplication.delayCall -= _undoStateUpdateCallback;
         _blendShapeManager.OnAnyDataChange -= UpdateActionButtonStates;

@@ -58,13 +58,7 @@ internal class BlendShapeOverrideManager : IDisposable
     public event Action? OnBaseSetChange;
     public event Action? OnAnyDataChange;
 
-    public BlendShapeOverrideManager(
-        SerializedObject serializedObject,
-        SerializedProperty baseProperty,
-        SkinnedMeshRenderer? targetRenderer,
-        IReadOnlyBlendShapeSet? styleSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? defaultOverrides)
+    public BlendShapeOverrideManager(SerializedObject serializedObject, SerializedProperty baseProperty)
     {
         _serializedObject = serializedObject;
         _overrideFlagsProperty = baseProperty.FindPropertyRelative(nameof(_overrideFlags));
@@ -74,7 +68,14 @@ internal class BlendShapeOverrideManager : IDisposable
             ValidateData();
             // DebugLog();
         };
+    }
 
+    public void SetInitialState(
+        SkinnedMeshRenderer? targetRenderer,
+        IReadOnlyBlendShapeSet? styleSet,
+        IReadOnlyBlendShapeSet? baseSet,
+        IReadOnlyBlendShapeSet? defaultOverrides)
+    {
         InitializeTargetRenderer(targetRenderer);
         InitializeSourceSets(styleSet, baseSet, defaultOverrides);
     }
@@ -280,12 +281,15 @@ internal class BlendShapeOverrideManager : IDisposable
 
             _overrideFlagsProperty.arraySize = _allKeysArray.Length;
             _overrideWeightsProperty.arraySize = _allKeysArray.Length;
+            _serializedObject.ApplyModifiedProperties();
+            _serializedObject.Update();
         }
     }
 
     private void ExecuteModification(Action action)
     {
         _serializedObject.Update();
+        ValidateData();
         _modificationRevision++;
         action();
         _serializedObject.ApplyModifiedProperties();
@@ -424,8 +428,8 @@ internal class BlendShapeOverrideManager : IDisposable
     public void OnUndoRedo()
     {
         _serializedObject.Update();
-        OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
+        OnUnknownChange?.Invoke();
     }
 
     public void Dispose()
