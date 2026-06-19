@@ -23,10 +23,10 @@ internal static class CustomEditorUtility
         AssetDatabase.CreateAsset(clip, path);
     }
 
-    public static void OpenEditor(GameObject obj, IShapesEditorTargeting targeting, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? facialStyleSet = null)
+    public static void OpenEditor(GameObject obj, IShapesEditorTargeting targeting, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? styleSet = null, IReadOnlyBlendShapeSet? baseSet = null)
     {
         if (!TryGetContext(obj, out var context)) return;
-        var window = FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaultOverrides, facialStyleSet);
+        var window = FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaultOverrides, styleSet, baseSet);
         if (window == null) return;
     }
 

@@ -23,6 +23,7 @@
 #toggle-button {
     flex: 0 0 35px;
     margin: 0px;
+    height: var(--element-height);
     margin-right: var(--main-gap);
     padding: 0px;
 }

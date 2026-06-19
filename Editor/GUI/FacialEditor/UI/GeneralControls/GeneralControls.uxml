@@ -1,25 +1,23 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="general-controls-container">
 
+        <!-- Target display -->
+        <ui:VisualElement name="targeting-content">
+            <ui:VisualElement name="targeting-container">
+                <uie:ObjectField name="target-renderer-field" />
+                <uie:ObjectField name="targeting-object-field"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="targeting-options-container" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="divider-line"/>
+
         <ui:VisualElement name="top-actions-container">
             <ui:Button name="undo-button" class="top-action-button" />
             <ui:Button name="redo-button" class="top-action-button" />
             <ui:Button name="restore-initial-overrides-button" class="top-action-button" />
             <ui:Button name="restore-edited-overrides-button" class="top-action-button" />
             <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
-        </ui:VisualElement>
-
-        <ui:VisualElement class="divider-line"/>
-
-        <uie:ObjectField name="target-renderer-field" class="ndmf-tr" label="FacialEditor:label:TargetRenderer" />
-
-        <!-- Targeting Content (Always visible under Renderer) -->
-        <ui:VisualElement name="targeting-content">
-            <ui:VisualElement name="targeting-container">
-                <ui:DropdownField name="targeting-type-field" />
-                <uie:ObjectField name="targeting-object-field"/>
-            </ui:VisualElement>
-            <ui:VisualElement name="targeting-options-container" />
         </ui:VisualElement>
 
         <ui:VisualElement class="divider-line"/>

@@ -56,7 +56,7 @@ internal class PreviewManager : IDisposable
     private int _currentAppliedHoverIndex = -1;
     private bool _needsShapeRefresh = false;
 
-    public PreviewManager(BlendShapeOverrideManager blendShapeOverrideManager, VisualElement rootElement)
+    public PreviewManager(BlendShapeOverrideManager blendShapeOverrideManager, VisualElement rootElement, SkinnedMeshRenderer? renderer)
     {
         _blendShapeOverrideManager = blendShapeOverrideManager;
         _rootElement = rootElement;
@@ -73,10 +73,11 @@ internal class PreviewManager : IDisposable
         _updateScheduler = _rootElement.schedule
             .Execute(CheckAndApplyUpdates)
             .Every(UpdateIntervalMs);
-        
+
+        InitializeTargetRenderer(renderer);
     }
 
-    public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer)
+    private void InitializeTargetRenderer(SkinnedMeshRenderer? renderer)
     {
         EditingShapesPreview.Stop();
         if (renderer == null)
@@ -133,7 +134,7 @@ internal class PreviewManager : IDisposable
     private void GetCurrentSet(BlendShapeWeightSet result)
     {
         result.Clear();
-        result.AddRange(_blendShapeOverrideManager.BaseSet);
+        result.AddRange(_blendShapeOverrideManager.EffectiveBaseSet);
         _blendShapeOverrideManager.GetCurrentOverrides(result);
     }
 

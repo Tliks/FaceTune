@@ -1,17 +1,13 @@
 using UnityEngine.UIElements;
+using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class FacialShapesEditor : EditorWindow
 {
-    private SerializedObject _serializedObject = null!;
-    
-    [SerializeField] private TargetManager _targetManager = null!;
     [SerializeField] private BlendShapeOverrideManager _dataManager = null!;
-    private BlendShapeGrouping _groupManager = null!;
-    private PreviewManager _previewManager = null!;
 
-    private FacialShapeUI _ui = null!;
+    private FacialShapesEditorContext? _context;
 
     private const int MIN_WINDOW_WIDTH = 500;
     private const int MIN_WINDOW_HEIGHT = 500;
@@ -43,12 +39,14 @@ internal class FacialShapesEditor : EditorWindow
     }
 
     public static FacialShapesEditor? TryOpenEditor(
-        SkinnedMeshRenderer? renderer = null, IShapesEditorTargeting? targeting = null, IReadOnlyBlendShapeSet? defaultOverrides = null, IReadOnlyBlendShapeSet? baseSet = null)
+        SkinnedMeshRenderer? renderer = null,
+        IShapesEditorTargeting? targeting = null,
+        IReadOnlyBlendShapeSet? defaultOverrides = null,
+        IReadOnlyBlendShapeSet? styleSet = null,
+        IReadOnlyBlendShapeSet? baseSet = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
-        window.RefreshTargetRenderer(renderer, baseSet, defaultOverrides);
-        targeting ??= new AnimationClipTargeting();
-        window._targetManager.SetTargeting(targeting);
+        window.StartContext(renderer, targeting, styleSet, baseSet, defaultOverrides);
         return window;
     }
 
@@ -60,13 +58,6 @@ internal class FacialShapesEditor : EditorWindow
         Undo.IncrementCurrentGroup();
         _initialUndoGroup = Undo.GetCurrentGroup();
 
-        _serializedObject = new SerializedObject(this);
-        _dataManager = new BlendShapeOverrideManager(_serializedObject, _serializedObject.FindProperty(nameof(_dataManager))); // 初期化
-        _targetManager = new TargetManager(_serializedObject, _serializedObject.FindProperty(nameof(_targetManager)), _dataManager); // 初期化
-        _groupManager = new BlendShapeGrouping(_targetManager, _dataManager);
-        _previewManager = new PreviewManager(_dataManager, rootVisualElement);
-        _ui = new FacialShapeUI(rootVisualElement, _targetManager, _dataManager, _groupManager, _previewManager, _initialUndoGroup);
-
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
         titleContent = new GUIContent("Facial Shapes Editor");
         saveChangesMessage = "FacialEditor:UnsavedChanges:Message".LS();
@@ -74,50 +65,81 @@ internal class FacialShapesEditor : EditorWindow
         hasUnsavedChanges = false;
         SetupKeyboardShortcuts();
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
+    }
 
-        _targetManager.RenderChangeConditions.Add(renderer => CanRefreshTargetRenderer());
-        _targetManager.OnTargetRendererChangedWithSets += (renderer, baseSet, defaultOverrides) => OnTargetRendererChanged(renderer, baseSet, defaultOverrides);
-        _targetManager.TargetingChangeConditions.Add(targeting => true);
-        _targetManager.OnTargetingChanged += (targeting) => {};
-        _targetManager.OnTargetChanged += () => {};
-        _targetManager.OnHasUnsavedChangesChanged += (hasUnsavedChanges) => this.hasUnsavedChanges = hasUnsavedChanges;
+    private void StartContext(
+        SkinnedMeshRenderer? renderer,
+        IShapesEditorTargeting? targeting,
+        IReadOnlyBlendShapeSet? styleSet,
+        IReadOnlyBlendShapeSet? baseSet,
+        IReadOnlyBlendShapeSet? defaultOverrides)
+    {
+        EndContext();
+
+        _context = FacialShapesEditorContext.Create(
+            this,
+            rootVisualElement,
+            nameof(_dataManager),
+            renderer,
+            targeting,
+            styleSet,
+            baseSet,
+            defaultOverrides,
+            TryChangeRenderer,
+            SaveChanges);
+        _dataManager = _context.DataManager;
         _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
+
+        hasUnsavedChanges = false;
+        Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");
+    }
+
+    private void EndContext()
+    {
+        if (_context != null)
+        {
+            _context.DataManager.OnAnyDataChange -= SyncUnsavedChangesFromData;
+            _context.Dispose();
+            _context = null;
+            _dataManager = null!;
+        }
     }
 
     private void SyncUnsavedChangesFromData()
     {
-        _targetManager.HasUnsavedChanges = _dataManager.IsChangedFromInitialState;
+        hasUnsavedChanges = _context?.DataManager.IsChangedFromInitialState == true;
     }
 
-    private bool CanRefreshTargetRenderer()
+    private bool CanDiscardCurrentContext()
     {
-        if (!_targetManager.HasUnsavedChanges) return true;
+        if (!hasUnsavedChanges) return true;
         return ProcessUnsavedChanges(this);
     }
 
-    public void RefreshTargetRenderer(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet = null, IReadOnlyBlendShapeSet? defaultOverrides = null)
+    private bool TryChangeRenderer(SkinnedMeshRenderer? renderer)
     {
-        _targetManager.SetTargetRenderer(renderer, baseSet, defaultOverrides);
-    }
+        if (_context == null || !_context.CanChangeRenderer) return false;
+        if (_context.Renderer == renderer) return false;
+        if (!CanDiscardCurrentContext()) return false;
 
-    private void OnTargetRendererChanged(SkinnedMeshRenderer? renderer, IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
-    {
-        _dataManager.RefreshTargetRenderer(renderer);
-        _dataManager.RefreshBaseSetAndDefaultOverrides(baseSet, defaultOverrides);
-        _groupManager.Refresh(_dataManager.AllKeys);
-        _previewManager.RefreshTargetRenderer(renderer);
-        _ui.RefreshTarget();
-        EditorApplication.delayCall += SyncUnsavedChangesFromData;
-        Undo.SetCurrentGroupName($"Facial Shapes Editor: OnTargetRendererChanged: {renderer?.name}");
+        var targeting = _context.Targeting;
+        EditorApplication.delayCall += () =>
+        {
+            var nextWindow = CreateInstance<FacialShapesEditor>();
+            nextWindow.Show();
+            nextWindow.StartContext(renderer, targeting, null, null, null);
+            Close();
+        };
+        return true;
     }
 
     private bool ProcessUnsavedChanges(FacialShapesEditor window)
     {
         var result = EditorUtility.DisplayDialogComplex(
             "FacialEditor:UnsavedChanges:Title".LS(),
-            "FacialEditor:UnsavedChanges:Message".LS(), 
-            "FacialEditor:UnsavedChanges:Save".LS(), 
-            "FacialEditor:UnsavedChanges:Discard".LS(), 
+            "FacialEditor:UnsavedChanges:Message".LS(),
+            "FacialEditor:UnsavedChanges:Save".LS(),
+            "FacialEditor:UnsavedChanges:Discard".LS(),
             "FacialEditor:UnsavedChanges:Cancel".LS()
         );
 
@@ -129,7 +151,7 @@ internal class FacialShapesEditor : EditorWindow
                 processed = true;
                 break;
             case 1: // Discard
-                _dataManager.TryDiscardToInitialOverrides();
+                _context?.DataManager.TryDiscardToInitialOverrides();
                 window.hasUnsavedChanges = false;
                 processed = true;
                 break;
@@ -161,55 +183,28 @@ internal class FacialShapesEditor : EditorWindow
 
     public override void SaveChanges()
     {
-        _targetManager.Save();
+        if (_context?.Renderer == null) throw new Exception("TargetRenderer is not set");
+
+        var targetRoot = RuntimeUtil.FindAvatarInParents(_context.Renderer.transform);
+        if (targetRoot == null) throw new Exception("TargetRenderer is not a child of an avatar");
+
+        _context.Targeting.Save(targetRoot.gameObject, _context.Renderer, _context.DataManager);
+        _context.DataManager.MarkCurrentAsInitialState();
+        SyncUnsavedChangesFromData();
     }
 
     private void OnUndoRedoPerformed()
     {
-        _targetManager.OnUndoRedo();
-        _dataManager.OnUndoRedo();
+        if (_context == null) return;
+
+        _context.DataManager.OnUndoRedo();
+        SyncUnsavedChangesFromData();
     }
 
     private void OnDisable()
     {
-        if (_serializedObject != null)
-        {
-            _serializedObject.Dispose();
-            _serializedObject = null!;
-        }
-        if (_targetManager != null)
-        {
-            // _targetManager.Dispose();
-            _targetManager = null!;
-        }
-        if (_dataManager != null)
-        {
-            _dataManager.Dispose();
-            _dataManager = null!;
-        }
-        if (_groupManager != null)
-        {
-            // _groupManager.Dispose();
-            _groupManager = null!;
-        }
-        if (_previewManager != null)
-        {
-            _previewManager.Dispose();
-            _previewManager = null!;
-        }
-        if (_ui != null)
-        {
-            _ui.Dispose();
-            _ui = null!;
-        }
+        EndContext();
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
         Undo.CollapseUndoOperations(_initialUndoGroup);
-    }
-
-    private void DebugLog(string message)
-    {
-#if FACETUNE_SHAPESEDITOR_DEBUG
-        Debug.Log(message);
-#endif
     }
 }

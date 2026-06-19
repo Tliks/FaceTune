@@ -45,19 +45,19 @@ internal class UnselectedPanel
                 
         SetupControls();
         SetupListView();
-        _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewSlow();
-        _groupManager.OnRightSelectionChanged += (isRightSelected) => BuildAndRefreshListViewSlow();
-        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RefreshItemByKeyIndex(keyIndex);
-        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => BuildAndRefreshListViewSlow();
-        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RefreshItemByKeyIndex(keyIndex);
-        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewSlow();
-        _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewSlow();
+        _groupManager.OnGroupSelectionChanged += (groups) => RebuildListViewSlow();
+        _groupManager.OnRightSelectionChanged += (isRightSelected) => RebuildListViewSlow();
+        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RedrawItemByKeyIndex(keyIndex);
+        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => RebuildListViewSlow();
+        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RedrawItemByKeyIndex(keyIndex);
+        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => RebuildListViewSlow();
+        _blendShapeManager.OnUnknownChange += () => RebuildListViewSlow();
     }
 
     private void SetupControls()
     {
         _unselectedSearchField = _element.Q<TextField>("unselected-search-field");
-        _unselectedSearchField.RegisterValueChangedCallback(_ => BuildAndRefreshListViewSlow());
+        _unselectedSearchField.RegisterValueChangedCallback(_ => RebuildListViewSlow());
         
         var selectAllButton = _element.Q<Button>("select-all-button");
         selectAllButton.Add(new Image { image = _selectAllIcon });
@@ -66,7 +66,7 @@ internal class UnselectedPanel
             _blendShapeManager.OverrideShapesAndSetWeight(_currentSource
                 .Where(item => !_blendShapeManager.IsBaseShape(item.KeyIndex) && !_blendShapeManager.IsOverridden(item.KeyIndex))
                 .Select(item => item.KeyIndex), 0);
-            BuildAndRefreshListViewSlow();
+            RebuildListViewSlow();
         };
     }
 
@@ -77,7 +77,7 @@ internal class UnselectedPanel
         _unselectedListView.selectionType = SelectionType.None;
         _unselectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
-        RefreshTarget();
+        InitializeListSource();
 
         _unselectedListView.makeItem = MakeUnselectedElement;
         _unselectedListView.bindItem = (e, i) => BindUnselectedElement(e, i);
@@ -119,7 +119,7 @@ internal class UnselectedPanel
         }
     }   
 
-    public void RefreshTarget()
+    private void InitializeListSource()
     {
         var allSource = new List<ListViewItem>();
         var allKeys = _blendShapeManager.AllKeys;
@@ -158,7 +158,7 @@ internal class UnselectedPanel
         }
     }
 
-    public void RefreshItemByKeyIndex(int keyIndex)
+    public void RedrawItemByKeyIndex(int keyIndex)
     {
         int idx = FindListIndexByKeyIndex(keyIndex);
         if (idx >= 0)
@@ -168,7 +168,7 @@ internal class UnselectedPanel
     }
 
     // BuildCurrentSourceを呼んでいて重いので全体更新をしたい場合に呼ぶ
-    private void BuildAndRefreshListViewSlow()
+    private void RebuildListViewSlow()
     {
         BuildCurrentSource();
         _unselectedListView.RefreshItems();

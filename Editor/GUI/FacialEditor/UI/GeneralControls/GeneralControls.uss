@@ -3,19 +3,18 @@
     padding: var(--main-gap);
 }
 
-/* Targeting (Rendererのすぐ下の横並び) */
 #targeting-container {
     flex-direction: row;
     margin-bottom: var(--main-gap);
 }
 
-#targeting-type-field {
-    flex: 2;
+#target-renderer-field {
+    flex: 1;
+    margin-right: 2px;
 }
 
 #targeting-object-field {
-    flex: 3;
-    margin-left: 2px;
+    flex: 1;
 }
 
 /* Action Buttons (Save, Undo, Redo) */
@@ -80,7 +79,6 @@
     margin-right: 2px;
 }
 
-/* Group Toggles (Compact Button Style) */
 #group-toggles-container {
     flex-direction: row;
     flex-wrap: wrap;
@@ -90,24 +88,6 @@
     margin-right: 3px;
     margin-bottom: 2px;
     padding: 0 4px;
-    border-radius: 3px;
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.15);
-    height: 18px; /* 文字に合わせた低めの高さ */
-}
-
-.group-toggle .unity-toggle__checkmark {
-    display: none;
-}
-
-.group-toggle:checked {
-    background-color: rgba(100, 120, 160, 0.2);
-}
-
-.group-toggle:checked Label {
-    color: rgb(140, 180, 230);
-}
-
-.group-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    height: var(--element-height);
+    -unity-text-align: middle-center;
 }

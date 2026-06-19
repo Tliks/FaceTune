@@ -18,10 +18,11 @@ internal class SelectedPanel
     private static StyleSheet? _itemUss;
 
     private TextField _searchField = null!;
+    private SimpleToggle _styleToggle = null!;
     private SimpleToggle _baseToggle = null!;
     private SimpleToggle _zeroToggle = null!;
 
-    private VisualElement _selectedShapesPanel = null!;
+    private VisualElement _control = null!;
 
     private ListView _selectedListView = null!;
     
@@ -34,6 +35,7 @@ internal class SelectedPanel
         public string ShapeName;
         public int KeyIndex;
         public bool IsBase;
+        public bool IsStyle;
     }
 
     private IReadOnlyList<ElementData> _allSource = null!;
@@ -62,43 +64,44 @@ internal class SelectedPanel
         SetupListViews();
         
         // rebuild sourcce
-        _groupManager.OnGroupSelectionChanged += (groups) => BuildAndRefreshListViewsSlow();
-        _groupManager.OnLeftSelectionChanged += (isLeftSelected) => BuildAndRefreshListViewsSlow();
+        _groupManager.OnGroupSelectionChanged += (groups) => RebuildListViewsSlow();
+        _groupManager.OnLeftSelectionChanged += (isLeftSelected) => RebuildListViewsSlow();
         _blendShapeManager.OnSingleShapeOverride += (keyIndex) =>
         {
-            BuildAndRefreshListViewsSlow();
+            RebuildListViewsSlow();
             FlashOverrides(new[] { keyIndex });
         };
         _blendShapeManager.OnMultipleShapeOverride += (keyIndices) =>
         {
-            BuildAndRefreshListViewsSlow();
+            RebuildListViewsSlow();
             FlashOverrides(keyIndices);
         };
-        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => BuildAndRefreshListViewsSlow();
-        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => BuildAndRefreshListViewsSlow();
-        // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => BuildAndRefreshListViewsSlow();
-        _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => BuildAndRefreshListViewsSlow();
-        _blendShapeManager.OnUnknownChange += () => BuildAndRefreshListViewsSlow();
-        _blendShapeManager.OnBaseSetChange += RefreshTarget;
+        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RebuildListViewsSlow();
+        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => RebuildListViewsSlow();
+        // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => RebuildListViewsSlow();
+        _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => RebuildListViewsSlow();
+        _blendShapeManager.OnUnknownChange += () => RebuildListViewsSlow();
         _blendShapeManager.OnAnyDataChange += () => UpdateSelectedRemoveAll0ButtonVisibility();
     }
 
     private bool _selectedZero = true;
     private void SetupControls()
     {
-        var commonControls = _element.Q<VisualElement>("common-controls-panel");
-        _searchField = commonControls.Q<TextField>("search-field");
-        _searchField.RegisterValueChangedCallback(_ => BuildAndRefreshListViewsSlow());
+        _searchField = _element.Q<TextField>("search-field");
+        _searchField.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 
-        _selectedShapesPanel = _element.Q("selected-shapes-panel");
+        _control = _element.Q("selected-shapes-controls");
 
-        _baseToggle = _selectedShapesPanel.Q<SimpleToggle>("base-toggle");
-        _baseToggle.RegisterValueChangedCallback(evt => BuildAndRefreshListViewsSlow());
+        _styleToggle = _control.Q<SimpleToggle>("style-toggle");
+        _styleToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
 
-        _zeroToggle = _selectedShapesPanel.Q<SimpleToggle>("zero-toggle");
-        _zeroToggle.RegisterValueChangedCallback(evt => BuildAndRefreshListViewsSlow());
+        _baseToggle = _control.Q<SimpleToggle>("base-toggle");
+        _baseToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
 
-        _selectedRemoveAll0Button = _selectedShapesPanel.Q<Button>("selected-remove-all-0-button");
+        _zeroToggle = _control.Q<SimpleToggle>("zero-toggle");
+        _zeroToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
+
+        _selectedRemoveAll0Button = _control.Q<Button>("selected-remove-all-0-button");
         UpdateSelectedRemoveAll0ButtonVisibility();
         _selectedRemoveAll0Button.clicked += () =>
         {
@@ -107,7 +110,7 @@ internal class SelectedPanel
             _blendShapeManager.UnoverrideShapes(indices);
         };
 
-        var selected0100Toggle = _selectedShapesPanel.Q<Button>("selected-0-100-toggle");
+        var selected0100Toggle = _control.Q<Button>("selected-0-100-toggle");
         selected0100Toggle.Add(new Image { image = _toggleIcon });
         selected0100Toggle.clicked += () =>
         {
@@ -116,7 +119,7 @@ internal class SelectedPanel
             _selectedZero = !_selectedZero;
         };
 
-        var removeAllButton = _selectedShapesPanel.Q<Button>("remove-all-button");
+        var removeAllButton = _control.Q<Button>("remove-all-button");
         removeAllButton.Add(new Image { image = _removeIcon });
         removeAllButton.clicked += () =>
         {
@@ -134,7 +137,7 @@ internal class SelectedPanel
         _selectedListView.selectionType = SelectionType.None;
         _selectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 
-        RefreshTarget();
+        InitializeListSource();
 
         _selectedListView.makeItem = MakeElement;
         _selectedListView.bindItem = BindElement;
@@ -286,13 +289,21 @@ internal class SelectedPanel
         _flashCleanupSchedule.Resume();
     }
 
-    public void RefreshTarget()
+    private void InitializeListSource()
     {
+        UpdateSourceToggleVisibility();
+
         var allSource = new List<ElementData>();
         var allKeys = _blendShapeManager.AllKeys;
         for (int i = 0; i < allKeys.Count; i++)
         {
-            allSource.Add(new ElementData { ShapeName = allKeys[i], KeyIndex = i, IsBase = _blendShapeManager.IsBaseShape(i) });
+            allSource.Add(new ElementData
+            {
+                ShapeName = allKeys[i],
+                KeyIndex = i,
+                IsBase = _blendShapeManager.IsBaseShape(i),
+                IsStyle = _blendShapeManager.IsStyleShape(i)
+            });
         }
         _allSource = allSource.AsReadOnly();
         _currentSource = new();
@@ -301,6 +312,12 @@ internal class SelectedPanel
         _selectedListView.itemsSource = _currentSource;
 
         _selectedListView.RefreshItems();
+    }
+
+    private void UpdateSourceToggleVisibility()
+    {
+        _styleToggle.SetVisible(_blendShapeManager.StyleSet.Count > 0);
+        _baseToggle.SetVisible(_blendShapeManager.BaseSet.Count > 0);
     }
 
     private void UpdateSelectedRemoveAll0ButtonVisibility()
@@ -330,7 +347,10 @@ internal class SelectedPanel
                 continue;
 
             var isOverridden = _blendShapeManager.IsOverridden(item.KeyIndex);
-            if (!item.IsBase && !isOverridden)
+            if (!item.IsStyle && !item.IsBase && !isOverridden)
+                continue;
+
+            if (!_styleToggle.value && item.IsStyle && !isOverridden)
                 continue;
 
             if (!_baseToggle.value && item.IsBase && !isOverridden)
@@ -344,7 +364,7 @@ internal class SelectedPanel
     }
 
 
-    private void BuildAndRefreshListViewsSlow()
+    private void RebuildListViewsSlow()
     {
         BuildCurrentSource();
         _selectedListView.RefreshItems();
