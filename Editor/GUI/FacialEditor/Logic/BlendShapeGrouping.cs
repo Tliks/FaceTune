@@ -23,7 +23,7 @@ internal class BlendShapeGrouping
     public IReadOnlyList<BlendShapeGroup> Groups { get; private set; }
     public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
-    private bool _isLeftSelected = false;
+    private bool _isLeftSelected = true;
     public event Action<bool>? OnLeftSelectionChanged;
     public bool IsLeftSelected
     {

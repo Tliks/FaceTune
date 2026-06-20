@@ -1,83 +1,59 @@
 namespace Aoyon.FaceTune.Preview;
 
-class MultiFramePreview : IDisposable
+abstract class MultiFramePreviewBase : IDisposable
 {
-    private readonly Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> _editAction;
-    
-    public bool IsActive { get; private set; } = false;
-    public IReadOnlyList<BlendShapeWeightAnimation>? Animations { get; private set; } = null;
-    public float Duration { get; private set; } = 0f;
-    public bool IsLooping { get; private set; } = false;
+    private const double UpdateIntervalSeconds = 1.0 / 30.0; // 30fpsにスロットリング
 
-    public double StartTime { get; private set; } = 0;
-    public double LastUpdateTime { get; private set; } = 0;
+    private readonly bool _isLooping;
+    private readonly float _duration;
+    private readonly double _startTime;
+    private double _lastUpdateTime;
+    private bool _isActive;
 
-    public const double UpdateIntervalSeconds = 1.0 / 30.0; // 30fpsにスロットリング
-    
-    private SkinnedMeshRenderer? _targetRenderer;
-
-    public MultiFramePreview(Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> editAction)
+    protected MultiFramePreviewBase(float duration, bool isLooping)
     {
+        _isLooping = isLooping;
+        _duration = duration;
+        _startTime = EditorApplication.timeSinceStartup;
+        _lastUpdateTime = 0;
+        _isActive = _duration > 0f;
+
         EditorApplication.update += OnEditorUpdate;
-        _editAction = editAction;
     }
 
-    public void Start(IReadOnlyList<BlendShapeWeightAnimation> animations, bool isLooping, SkinnedMeshRenderer? targetRenderer)
-    {
-        IsActive = true;
-        Animations = animations;
-        Duration = animations.Max(a => a.Time);
-        IsLooping = isLooping;
-        _targetRenderer = targetRenderer;
-        StartTime = EditorApplication.timeSinceStartup;
-        LastUpdateTime = 0;
+    protected abstract void ApplyFrame(float time);
 
-        if (Duration <= 0f) IsActive = false;
-    }
-
-    public void Stop()
+    private void Stop()
     {
-        IsActive = false;
-        _targetRenderer = null;
+        _isActive = false;
     }
 
     private void OnEditorUpdate()
     {
-        if (!IsActive) return;
-        if (_targetRenderer == null) return;
-        if (Animations == null) return;
+        if (!_isActive) return;
 
         var now = EditorApplication.timeSinceStartup;
-        if (now - LastUpdateTime < UpdateIntervalSeconds) return; // スロットリング
-        LastUpdateTime = now;
+        if (now - _lastUpdateTime < UpdateIntervalSeconds) return;
+        _lastUpdateTime = now;
 
-        var elapsed = now - StartTime;
+        var elapsed = now - _startTime;
         var endReached = false;
-        float t;
-        if (IsLooping)
+        float time;
+        if (_isLooping)
         {
-            t = (float)(elapsed % Duration);
+            time = (float)(elapsed % _duration);
+        }
+        else if (elapsed >= _duration)
+        {
+            time = _duration;
+            endReached = true;
         }
         else
         {
-            if (elapsed >= Duration)
-            {
-                t = Duration;
-                endReached = true;
-            }
-            else
-            {
-                t = (float)elapsed;
-            }
+            time = (float)elapsed;
         }
 
-        using var _frameSet = BlendShapeSetPool.Get(out var frameSet);
-        foreach (var anim in Animations)
-        {
-            frameSet.Add(new BlendShapeWeight(anim.Name, anim.Weight(t)));
-        }
-
-        _editAction(_targetRenderer, frameSet);
+        ApplyFrame(time);
 
         if (endReached)
         {
@@ -88,5 +64,41 @@ class MultiFramePreview : IDisposable
     public void Dispose()
     {
         EditorApplication.update -= OnEditorUpdate;
+        Stop();
+    }
+}
+
+sealed class BlendShapeMultiFramePreview : MultiFramePreviewBase
+{
+    private readonly SkinnedMeshRenderer _renderer;
+    private readonly IReadOnlyList<BlendShapeWeightAnimation> _animations;
+    private readonly Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> _editAction;
+
+    public BlendShapeMultiFramePreview(
+        SkinnedMeshRenderer renderer,
+        IReadOnlyList<BlendShapeWeightAnimation> animations,
+        bool isLooping,
+        Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> editAction)
+        : base(GetDuration(animations), isLooping)
+    {
+        _renderer = renderer;
+        _animations = animations;
+        _editAction = editAction;
+    }
+
+    private static float GetDuration(IReadOnlyList<BlendShapeWeightAnimation> animations)
+    {
+        return animations.Count == 0 ? 0f : animations.Max(animation => animation.Time);
+    }
+
+    protected override void ApplyFrame(float time)
+    {
+        using var _frameSet = BlendShapeSetPool.Get(out var frameSet);
+        foreach (var animation in _animations)
+        {
+            frameSet.Add(new BlendShapeWeight(animation.Name, animation.Weight(time)));
+        }
+
+        _editAction(_renderer, frameSet);
     }
 }

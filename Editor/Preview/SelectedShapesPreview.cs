@@ -261,10 +261,10 @@ internal class SelectedShapesPreviewSession : IDisposable
     sealed class Writer : IDisposable
     {
         private readonly SkinnedMeshRenderer _renderer;
-        private readonly MultiFramePreview? _multiFrame;
+        private readonly IDisposable? _multiFrame;
         private readonly Action<SkinnedMeshRenderer> _clearPreview;
         
-        private Writer(SkinnedMeshRenderer renderer, MultiFramePreview? multiFrame, Action<SkinnedMeshRenderer> clearPreview)
+        private Writer(SkinnedMeshRenderer renderer, IDisposable? multiFrame, Action<SkinnedMeshRenderer> clearPreview)
         {
             _renderer = renderer;
             _multiFrame = multiFrame;
@@ -280,8 +280,7 @@ internal class SelectedShapesPreviewSession : IDisposable
         {
             if (animations.Any(a => a.IsMultiFrame))
             {
-                var multiFrame = new MultiFramePreview(apply);
-                multiFrame.Start(animations, isLooping, renderer);
+                var multiFrame = new BlendShapeMultiFramePreview(renderer, animations, isLooping, apply);
                 return new Writer(renderer, multiFrame, clearPreview);
             }
 

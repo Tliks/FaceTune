@@ -77,17 +77,20 @@
 
 #filter-header {
     flex-direction: row;
-    align-items: center;
-    height: var(--element-height);
     margin-bottom: var(--main-gap);
 }
 
 #all-button, #none-button {
     flex: 0 0 30px;
-    height: var(--element-height);
     padding: 0;
     margin-right: 2px;
 }
+
+#left-toggle, #right-toggle {
+    padding: 0;
+    margin-right: 2px;
+}
+
 
 #group-toggles-container {
     flex-direction: row;
@@ -95,9 +98,5 @@
 }
 
 .group-toggle {
-    margin-right: 3px;
-    margin-bottom: 2px;
-    padding: 0 4px;
-    height: var(--element-height);
-    -unity-text-align: middle-center;
+    padding: 0px;
 }
