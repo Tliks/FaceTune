@@ -3,12 +3,12 @@ using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.Components;
 
-#if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
 [UxmlElement]
 #endif
 internal partial class SimpleToggle : Button, INotifyValueChanged<bool>
 {
-#if !UNITY_6000_4_OR_NEWER
+#if !UNITY_6000_0_OR_NEWER
     public new class UxmlFactory : UxmlFactory<SimpleToggle, UxmlTraits> { }
 
     public new class UxmlTraits : VisualElement.UxmlTraits
@@ -31,7 +31,7 @@ internal partial class SimpleToggle : Button, INotifyValueChanged<bool>
 
     private bool _value;
 
-#if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
     [UxmlAttribute]
 #endif
     public bool value

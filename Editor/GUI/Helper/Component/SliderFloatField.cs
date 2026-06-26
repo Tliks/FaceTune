@@ -1,13 +1,13 @@
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.Components;
-#if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
 [UxmlElement]
 #endif
 internal partial class SliderFloatField : VisualElement
 {
 
-#if !UNITY_6000_4_OR_NEWER
+#if !UNITY_6000_0_OR_NEWER
     public new class UxmlFactory : UxmlFactory<SliderFloatField, UxmlTraits> { }
 
     public new class UxmlTraits : VisualElement.UxmlTraits
@@ -31,7 +31,7 @@ internal partial class SliderFloatField : VisualElement
     private readonly Slider _slider;
     private readonly FloatField _floatField;
 
-#if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
     [UxmlAttribute]
 #endif
     public float value
@@ -45,7 +45,7 @@ internal partial class SliderFloatField : VisualElement
         }
     }
 
-#if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
     [UxmlAttribute]
 #endif
     public float lowValue
@@ -54,7 +54,7 @@ internal partial class SliderFloatField : VisualElement
         set => _slider.lowValue = value;
     }
 
-#if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
     [UxmlAttribute]
 #endif
     public float highValue
