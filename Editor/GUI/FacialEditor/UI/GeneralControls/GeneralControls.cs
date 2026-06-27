@@ -36,8 +36,8 @@ internal class GeneralControls : IDisposable
 
     private static readonly Texture _selectAllIcon = EditorGUIUtility.IconContent("d_Toolbar Plus").image;
     private static readonly Texture _selectNoneIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
-    private static readonly Texture _undoIcon = EditorGUIUtility.IconContent("d_StepLeftButton").image;
-    private static readonly Texture _redoIcon = EditorGUIUtility.IconContent("d_StepButton").image;
+    private static readonly Texture _undoIcon = EditorGUIUtility.IconContent("Animation.PrevKey@2x").image;
+    private static readonly Texture _redoIcon = EditorGUIUtility.IconContent("Animation.NextKey@2x").image;
     private static readonly Texture _restoreInitialOverridesIcon = EditorGUIUtility.IconContent("Animation.FirstKey@2x").image;
     private static readonly Texture _restoreEditedOverridesIcon = EditorGUIUtility.IconContent("Animation.LastKey@2x").image;
 
@@ -136,15 +136,15 @@ internal class GeneralControls : IDisposable
         _saveButton.clicked += _save;
 
         _undoButton = _element.Q<Button>("undo-button");
-        _undoButton.Add(new Image { image = _undoIcon, scaleMode = ScaleMode.ScaleToFit });
+        _undoButton.Add(new Image { image = _undoIcon });
         _undoButton.clicked += () => Undo.PerformUndo();
 
         _redoButton = _element.Q<Button>("redo-button");
-        _redoButton.Add(new Image { image = _redoIcon, scaleMode = ScaleMode.ScaleToFit });
+        _redoButton.Add(new Image { image = _redoIcon });
         _redoButton.clicked += () => Undo.PerformRedo();
 
         _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
-        _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon, scaleMode = ScaleMode.ScaleToFit });
+        _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
         _restoreInitialOverridesButton.clicked += () =>
         {
             _blendShapeManager.TryRestoreInitialOverrides();
@@ -152,7 +152,7 @@ internal class GeneralControls : IDisposable
         };
 
         _restoreEditedOverridesButton = _element.Q<Button>("restore-edited-overrides-button");
-        _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon, scaleMode = ScaleMode.ScaleToFit });
+        _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon });
         _restoreEditedOverridesButton.clicked += () =>
         {
             _blendShapeManager.TryRestoreEditedOverrides();

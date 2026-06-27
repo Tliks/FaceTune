@@ -1,18 +1,24 @@
 #search-field {
-    /* margin: 0px; */
+    margin: 0px;
+    margin-bottom: var(--main-gap);
 }
 
 #selected-shapes-controls {
-    flex-direction: row;
-    /* height: 30px; */
+    flex: 0 0 var(--element-height);
+    align-items: center;
+    margin-bottom: var(--main-gap);
 }
 
-#selected-controls-spacer {
-    flex: 1 1 auto;
+#selected-shapes-controls > * {
+    margin-right: var(--main-gap);
 }
 
 .filter-toggle {
     flex: 0 0 55px;
+}
+
+#control-spacer {
+    flex: 1 1 auto;
 }
 
 .control-button {

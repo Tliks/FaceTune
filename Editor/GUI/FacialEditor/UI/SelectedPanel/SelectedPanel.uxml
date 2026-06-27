@@ -1,15 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <components:PlaceholderTextField name="search-field" placeholder="Search"/>
 
-    <ui:VisualElement name="selected-shapes-controls">
-        <components:SimpleToggle text="Style" name="style-toggle" value="false" class="filter-toggle" />
-        <components:SimpleToggle text="Base" name="base-toggle" value="true" class="filter-toggle" />
-        <components:SimpleToggle text="0" name="zero-toggle" value="true" class="filter-toggle" />
-        <ui:VisualElement name="selected-controls-spacer" />
+    <components:HorizontalElement name="selected-shapes-controls">
+        <components:SimpleToggle text="Style" name="style-toggle" class="filter-toggle" value="false" />
+        <components:SimpleToggle text="Base" name="base-toggle" class="filter-toggle" value="true" />
+        <components:SimpleToggle text="0" name="zero-toggle" class="filter-toggle" value="true" />
+        <ui:VisualElement name="control-spacer" />
         <ui:Button name="selected-remove-all-0-button" class="control-button" text="0-" />
         <ui:Button name="selected-0-100-toggle" class="control-button" />
         <ui:Button name="remove-all-button" class="control-button" />
-    </ui:VisualElement>
+    </components:HorizontalElement>
 
     <ui:ListView name="selected-list-view" class="border-line" />
 </ui:UXML>

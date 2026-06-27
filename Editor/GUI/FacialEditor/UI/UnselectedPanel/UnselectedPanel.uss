@@ -1,22 +1,21 @@
-#horizontal-container {
+#search-row {
     flex: 0 0 var(--element-height);
-    flex-direction: row;
     align-items: center;
     margin-bottom: var(--main-gap);
 }
 
-#unselected-list-view {
-    flex: 1 1 auto;
-}
-
 #unselected-search-field {
     flex: 1 1 auto;
-    margin : 0px;
-    margin-right : var(--main-gap);
+    margin: 0px;
+    margin-right: var(--main-gap);
 }
 
 #select-all-button {
     flex: 0 0 auto;
-    margin : 0px;
-    padding : 0px;
+    margin: 0px;
+    padding: 0px;
+}
+
+#unselected-list-view {
+    flex: 1 1 auto;
 }

@@ -1,9 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
-    <ui:VisualElement name="unselected-shapes-panel">
-        <ui:VisualElement name="horizontal-container">
-            <components:PlaceholderTextField name="unselected-search-field" placeholder="Search"/>
-            <ui:Button name="select-all-button"/>
-        </ui:VisualElement>
-        <ui:ListView name="unselected-list-view" class="border-line" />
-    </ui:VisualElement>
+    <components:HorizontalElement name="search-row">
+        <components:PlaceholderTextField name="unselected-search-field" placeholder="Search"/>
+        <ui:Button name="select-all-button"/>
+    </components:HorizontalElement>
+    <ui:ListView name="unselected-list-view" class="border-line" />
 </ui:UXML> 
