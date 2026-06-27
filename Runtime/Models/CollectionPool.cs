@@ -43,6 +43,28 @@ internal class CollectionPool<TCollection, TItem> where TCollection : class, ICo
     public static void Release(TCollection collection) => _pool.Release(collection);
 }
 
+internal sealed class PooledObject<T> : IDisposable where T : class
+{
+    public T Value { get; }
+    private readonly IObjectPool<T> _pool;
+    public bool Disposed { get; private set; } = false;
+
+    internal PooledObject(T value, IObjectPool<T> pool)
+    {
+        Value = value;
+        _pool = pool;
+    }
+
+    public void Dispose()
+    {
+        if (!Disposed)
+        {
+            _pool.Release(Value);
+            Disposed = true;
+        }
+    }
+}
+
 internal sealed class ListPool<T> : CollectionPool<List<T>, T>
 {
 }
