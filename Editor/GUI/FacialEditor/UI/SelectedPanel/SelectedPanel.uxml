@@ -1,25 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
-    <ui:VisualElement name="common-controls-panel">
-        <components:PlaceholderTextField name="search-field" placeholder="Search"/>
-        <components:SimpleToggle text="0" name="zero-toggle" value="true" class="control-button" />
-    </ui:VisualElement>
+    <components:PlaceholderTextField name="search-field" placeholder="Search"/>
 
-    <ui:VisualElement name="base-shapes-panel">
-        <ui:VisualElement name="base-label-container" class="label-container">
-            <ui:Label name="base-label" class="ndmf-tr" text="FacialEditor:label:BaseShapes" />
-            <ui:Button name="base-0-100-toggle" class="control-button" />
-            <ui:Button name="base-reset-all-button" class="control-button" />
-        </ui:VisualElement>
-        <ui:ListView name="base-list-view" class="border-line" />
-    </ui:VisualElement>
+    <components:HorizontalElement name="selected-shapes-controls">
+        <components:SimpleToggle text="Style" name="style-toggle" class="filter-toggle" value="false" />
+        <components:SimpleToggle text="Base" name="base-toggle" class="filter-toggle" value="true" />
+        <components:SimpleToggle text="0" name="zero-toggle" class="filter-toggle" value="true" />
+        <ui:VisualElement name="control-spacer" />
+        <ui:Button name="selected-remove-all-0-button" class="control-button" text="0-" />
+        <ui:Button name="selected-0-100-toggle" class="control-button" />
+        <ui:Button name="remove-all-button" class="control-button" />
+    </components:HorizontalElement>
 
-    <ui:VisualElement name="selected-shapes-panel">
-        <ui:VisualElement name="selected-label-container" class="label-container">
-            <ui:Label name="selected-label" class="ndmf-tr" text="FacialEditor:label:SelectedShapes" />
-            <ui:Button name="selected-remove-all-0-button" text="Remove 0" />
-            <ui:Button name="selected-0-100-toggle" class="control-button" />
-            <ui:Button name="remove-all-button" class="control-button" />
-        </ui:VisualElement>
-        <ui:ListView name="selected-list-view" class="border-line" />
-    </ui:VisualElement>
+    <ui:ListView name="selected-list-view" class="border-line" />
 </ui:UXML>

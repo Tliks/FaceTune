@@ -1,113 +1,65 @@
-/* Container */
 #general-controls-container {
-    padding: var(--main-gap);
 }
 
-/* Targeting (Rendererのすぐ下の横並び) */
 #targeting-container {
-    flex-direction: row;
-    margin-bottom: var(--main-gap);
 }
 
-#targeting-type-field {
-    flex: 2;
+#target-renderer-field {
+    flex: 1 1 50%;
 }
 
 #targeting-object-field {
-    flex: 3;
-    margin-left: 2px;
-}
-
-/* Action Buttons (Save, Undo, Redo) */
-#top-actions-container {
-    flex-direction: row;
+    flex: 1 1 50%;
 }
 
 .top-action-button {
     flex: 1;
-    margin: 0 1px;
-    height: var(--element-height);
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
+    height: 20px;
+    padding: 0px;
 }
+
+/* .top-action-button Image {
+    width: 20px;
+    height: 20px;
+} */
+
 
 #save-button {
     flex: 3;
 }
 
-#undo-button, #redo-button, #restore-initial-overrides-button, #restore-edited-overrides-button {
-    flex: 1;
+
+#clip-field-container {
+    flex: 1 1 auto;
 }
 
-.top-action-button Image {
-    width: 16px;
-    height: 16px;
+#import-option-field-container {
+    flex: 0 0 100px;
 }
 
-/* Toolbar & Content */
-#toolbar-container {
-    height: var(--element-height);
-    margin-bottom: var(--main-gap);
-}
 
-#content-container {
-    padding: var(--main-gap);
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-}
-
-.toolbar-content {
-    display: none;
-}
-
-.toolbar-content--visible {
-    display: flex;
-}
-
-/* Filter Section */
 #filter-header {
-    flex-direction: row;
-    align-items: center;
-    height: var(--element-height);
-    margin-bottom: var(--main-gap);
+    /* align-items: center; */
+    /* padding: 0px; */
+}
+
+.filter-control {
+    /* align-items: center; */
 }
 
 #all-button, #none-button {
-    flex: 0 0 30px;
-    height: var(--element-height);
-    padding: 0;
-    margin-right: 2px;
+    padding: 0px;
 }
 
-/* Group Toggles (Compact Button Style) */
+#left-toggle, #right-toggle {
+    /* height: 50px;
+    width: 50px; */
+}
+
 #group-toggles-container {
-    flex-direction: row;
     flex-wrap: wrap;
 }
 
 .group-toggle {
-    margin-right: 3px;
-    margin-bottom: 2px;
-    padding: 0 4px;
-    border-radius: 3px;
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.15);
-    height: 18px; /* 文字に合わせた低めの高さ */
-}
-
-.group-toggle .unity-toggle__checkmark {
-    display: none;
-}
-
-.group-toggle:checked {
-    background-color: rgba(100, 120, 160, 0.2);
-}
-
-.group-toggle:checked Label {
-    color: rgb(140, 180, 230);
-}
-
-.group-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    padding: 0px;
 }

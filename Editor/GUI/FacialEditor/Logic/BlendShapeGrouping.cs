@@ -23,7 +23,7 @@ internal class BlendShapeGrouping
     public IReadOnlyList<BlendShapeGroup> Groups { get; private set; }
     public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
-    private bool _isLeftSelected = false;
+    private bool _isLeftSelected = true;
     public event Action<bool>? OnLeftSelectionChanged;
     public bool IsLeftSelected
     {
@@ -53,12 +53,16 @@ internal class BlendShapeGrouping
         }
     }
 
-    public BlendShapeGrouping(TargetManager targetManager, BlendShapeOverrideManager dataManager)
+    public BlendShapeGrouping(BlendShapeOverrideManager dataManager)
     {
-        Groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };
+        Groups = BuildGroups(dataManager.AllKeys);
+        foreach (var group in Groups)
+        {
+            group.OnSelectionChanged += (selected) => OnGroupSelectionChanged?.Invoke(new[] { (group, selected) });
+        }
     }
 
-    public void Refresh(IReadOnlyList<string> allKeys)
+    private static IReadOnlyList<BlendShapeGroup> BuildGroups(IReadOnlyList<string> allKeys)
     {
         var groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };
 
@@ -73,11 +77,7 @@ internal class BlendShapeGrouping
             }
             groups.Last().BlendShapeIndices.Add(index);
         }
-        Groups = groups.AsReadOnly();
-        foreach (var group in Groups)
-        {
-            group.OnSelectionChanged += (selected) => OnGroupSelectionChanged?.Invoke(new[] { (group, selected) });
-        }
+        return groups.AsReadOnly();
     }
 
     public bool IsBlendShapeVisible(int index)

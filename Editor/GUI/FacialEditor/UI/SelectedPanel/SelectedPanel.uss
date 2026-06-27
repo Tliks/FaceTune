@@ -1,53 +1,30 @@
-#common-controls-panel {
-    flex: 0 0 var(--element-height);
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: var(--main-gap);
-}
-
-#base-shapes-panel {
-    flex: 0 1 auto;
-    margin-bottom: var(--main-gap);
-}
-
-#selected-shapes-panel {
-    flex: 1 1 auto;
-    margin-bottom: var(--main-gap);
-}
-
 #search-field {
-    flex: 1 1 auto;
     margin: 0px;
-    margin-right: var(--main-gap);
+    margin-bottom: var(--main-gap);
 }
 
-#zero-toggle {
-    flex: 0 0 35px;
-    margin: 0px;
-    margin-right: var(--main-gap);
-}
-
-.label-container {
+#selected-shapes-controls {
     flex: 0 0 var(--element-height);
-    flex-direction: row;
     align-items: center;
     margin-bottom: var(--main-gap);
 }
 
-#base-label, #selected-label {
-    -unity-font-style: bold;
-    flex: 1 0 auto;
+#selected-shapes-controls > * {
+    margin-right: var(--main-gap);
+}
+
+.filter-toggle {
+    flex: 0 0 55px;
+}
+
+#control-spacer {
+    flex: 1 1 auto;
 }
 
 .control-button {
     flex: 0 0 35px;
-    margin: 0px;
-    margin-right: var(--main-gap);
-    padding: 0px;
 }
 
-
-#base-list-view, #selected-list-view {
+#selected-list-view {
     flex: 1 1 auto;
-    justify-content: center;
 }

@@ -59,7 +59,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
         }
         if (AddBaseSet)
         {
-            animations.AddRange(dataManager.BaseSet.ToGenericAnimations(path));
+            animations.AddRange(dataManager.EffectiveBaseSet.ToGenericAnimations(path));
         }
         var overrides = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(overrides);

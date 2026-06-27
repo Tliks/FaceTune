@@ -1,53 +1,45 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
     <ui:VisualElement name="general-controls-container">
 
-        <ui:VisualElement name="top-actions-container">
-            <ui:Button name="undo-button" class="top-action-button" />
-            <ui:Button name="redo-button" class="top-action-button" />
-            <ui:Button name="restore-initial-overrides-button" class="top-action-button" />
-            <ui:Button name="restore-edited-overrides-button" class="top-action-button" />
-            <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
-        </ui:VisualElement>
-
-        <ui:VisualElement class="divider-line"/>
-
-        <uie:ObjectField name="target-renderer-field" class="ndmf-tr" label="FacialEditor:label:TargetRenderer" />
-
-        <!-- Targeting Content (Always visible under Renderer) -->
+        <!-- Target display -->
         <ui:VisualElement name="targeting-content">
-            <ui:VisualElement name="targeting-container">
-                <ui:DropdownField name="targeting-type-field" />
+            <components:HorizontalElement name="targeting-container">
+                <uie:ObjectField name="target-renderer-field" />
                 <uie:ObjectField name="targeting-object-field"/>
-            </ui:VisualElement>
+            </components:HorizontalElement>
             <ui:VisualElement name="targeting-options-container" />
         </ui:VisualElement>
 
         <ui:VisualElement class="divider-line"/>
 
-        <!-- Toolbar (IMGUI) -->
-        <ui:IMGUIContainer name="toolbar-container" />
+        <components:HorizontalElement name="top-actions-container">
+            <ui:Button name="undo-button" class="top-action-button" />
+            <ui:Button name="redo-button" class="top-action-button" />
+            <ui:Button name="restore-initial-overrides-button" class="top-action-button" />
+            <ui:Button name="restore-edited-overrides-button" class="top-action-button" />
+            <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
+        </components:HorizontalElement>
 
-        <!-- Dynamic Content Container -->
+        <ui:VisualElement class="divider-line"/>
+
+        <components:HorizontalElement name="clip-import-container">
+            <ui:Label name="clip-import-label" class="ndmf-tr" text="FacialEditor:button:Import" />
+            <ui:VisualElement name="clip-field-container" />
+            <ui:VisualElement name="import-option-field-container" />
+        </components:HorizontalElement>
+
+        <ui:VisualElement class="divider-line"/>
+
         <ui:VisualElement name="content-container">
-             <!-- Filter Content -->
-             <ui:VisualElement name="filter-content" class="toolbar-content">
-                <ui:VisualElement name="filter-header">
-                    <ui:Button name="all-button"/>
-                    <ui:Button name="none-button"/>
-                    <ui:Toggle name="left-toggle" />
-                    <ui:Toggle name="right-toggle" />
-                </ui:VisualElement>
-                <ui:VisualElement name="group-toggles-container" />
-             </ui:VisualElement>
-
-             <!-- Clip Import Content -->
-             <ui:VisualElement name="clip-content" class="toolbar-content">
-                <ui:VisualElement name="clip-import-container">
-                    <uie:ObjectField name="clip-field" class="ndmf-tr" label="FacialEditor:label:Clip" />
-                    <uie:EnumField name="import-option-field" class="ndmf-tr" label="FacialEditor:label:ImportOption" />
-                    <ui:Button name="import-clip-button" class="ndmf-tr" text="FacialEditor:button:Import" />
-                </ui:VisualElement>
-             </ui:VisualElement>
+            <ui:VisualElement name="filter-content">
+                <components:HorizontalElement name="filter-header">
+                    <ui:Button name="all-button" class="filter-control"/>
+                    <ui:Button name="none-button" class="filter-control"/>
+                    <ui:Toggle name="left-toggle" class="filter-control" />
+                    <ui:Toggle name="right-toggle" class="filter-control" />
+                </components:HorizontalElement>
+                <components:HorizontalElement name="group-toggles-container" />
+            </ui:VisualElement>
         </ui:VisualElement>
 
     </ui:VisualElement>

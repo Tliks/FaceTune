@@ -142,8 +142,10 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
         FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
 
+        var styleSet = new BlendShapeWeightSet();
+        styleSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
+
         var baseSet = new BlendShapeWeightSet();
-        baseSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
         if (Component.TryGetComponentInParent<ExpressionComponent>(true, out var expressionComponent)){
             foreach (var upperData in expressionComponent.GetComponentsInChildren<ExpressionDataComponent>()) {
                 if (upperData == Component) break;
@@ -156,7 +158,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         var defaultOverride = new BlendShapeWeightSet();
         defaultOverride.AddRange(Component.BlendShapeAnimations.ToFirstFrameBlendShapes());
 
-        CustomEditorUtility.OpenEditor(Component.gameObject, new ExpressionDataTargeting(){ Target = Component }, defaultOverride, baseSet);
+        CustomEditorUtility.OpenEditor(Component.gameObject, new ExpressionDataTargeting(){ Target = Component }, defaultOverride, styleSet, baseSet);
     }
     
 
