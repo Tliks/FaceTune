@@ -51,10 +51,12 @@ internal static class PrefabAssets
 
         if (addInstaller)
         {
+#if FT_VRCSDK3_AVATARS
             if (instance.GetComponentInParent<ModularAvatarMenuInstaller>() == null)
             {
                 Undo.AddComponent<ModularAvatarMenuInstaller>(instance);
             }
+#endif
         }
 
         Selection.activeObject = instance;

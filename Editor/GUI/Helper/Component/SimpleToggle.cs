@@ -3,8 +3,12 @@ using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.Components;
 
-internal class SimpleToggle : Button, INotifyValueChanged<bool>
+#if UNITY_6000_0_OR_NEWER
+[UxmlElement]
+#endif
+internal partial class SimpleToggle : Button, INotifyValueChanged<bool>
 {
+#if !UNITY_6000_0_OR_NEWER
     public new class UxmlFactory : UxmlFactory<SimpleToggle, UxmlTraits> { }
 
     public new class UxmlTraits : VisualElement.UxmlTraits
@@ -20,9 +24,16 @@ internal class SimpleToggle : Button, INotifyValueChanged<bool>
             element.text = textAttribute.GetValueFromBag(bag, cc);
         }
     }
+#else
+    [UxmlAttribute("text")]
+    public string TextStub { get => text; set => text = value; }
+#endif
 
     private bool _value;
 
+#if UNITY_6000_0_OR_NEWER
+    [UxmlAttribute]
+#endif
     public bool value
     {
         get => _value;
