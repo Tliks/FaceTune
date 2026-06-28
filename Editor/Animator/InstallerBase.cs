@@ -53,10 +53,10 @@ internal class InstallerBase
         return state;
     }
 
-    protected VirtualClip AddAnimationToState(VirtualState state, IEnumerable<GenericAnimation> animations)
+    protected VirtualClip AddBlendShapeAnimationsToState(VirtualState state, IEnumerable<BlendShapeWeightAnimation> animations)
     {
         var clip = state.GetOrCreateClip(state.Name);
-        clip.AddAnimations(animations);
+        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, animations);
         return clip;
     }
 

@@ -17,6 +17,20 @@ internal class BlendShapeWeightAnimationSet : NamedItemSetBase<BlendShapeWeightA
     {
     }
 
+    public IEnumerable<string> GetBlendShapeNames() => Keys;
+
+    public void ReplaceBlendShapeNames(Dictionary<string, string> mapping)
+    {
+        ReplaceKeys(mapping);
+    }
+
+    public IEnumerable<string> RemoveBlendShapes(HashSet<string> names)
+    {
+        var removed = Keys.Where(names.Contains).ToList();
+        RemoveRange(removed);
+        return removed;
+    }
+
     public bool Equals(BlendShapeWeightAnimationSet? other)
     {
         if (other is null) return false;

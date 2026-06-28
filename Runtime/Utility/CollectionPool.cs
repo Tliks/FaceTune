@@ -81,6 +81,6 @@ internal sealed class BlendShapeSetPool : CollectionPool<BlendShapeWeightSet, Bl
 {
 }
 
-internal sealed class AnimationSetPool : CollectionPool<AnimationSet, GenericAnimation>
+internal sealed class BlendShapeWeightAnimationSetPool : CollectionPool<BlendShapeWeightAnimationSet, BlendShapeWeightAnimation>
 {
 }

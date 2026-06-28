@@ -159,8 +159,8 @@ internal class LipSyncInstaller : InstallerBase
             if (!settings.IsCancelerEnabled()) continue;
 
             var lipsyncing = AddState(cancelerLayer, $"Lipsyncing {index}", position);
-            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f).ToGeneric(_avatarContext.BodyPath));
-            AddAnimationToState(lipsyncing, cancelerAnimation);
+            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f));
+            AddBlendShapeAnimationsToState(lipsyncing, cancelerAnimation);
 
             // PassThrough -> lipsyncing
             var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerEntryDurationSeconds);

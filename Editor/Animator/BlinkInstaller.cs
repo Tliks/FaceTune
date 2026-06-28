@@ -252,16 +252,15 @@ internal class BlinkInstaller : InstallerBase
             AsPassThrough(exitPassThrough);
 
             // 目を閉じたときの表情を設定 
-            var blinkAnimations = new List<GenericAnimation>();
+            var blinkAnimations = new List<BlendShapeWeightAnimation>();
             var holdDuration = settings.HoldDurationSeconds;
-            var bodyPath = _avatarContext.BodyPath;
             if (holdDuration < 0.01f) holdDuration = 0.01f; // 0fにするとExitTimeで遷移が直ぐに行われない
             foreach (var name in settings.BlinkBlendShapeNames)
             {
                 var curve = new AnimationCurve();
                 curve.AddKey(0, 100);
                 curve.AddKey(holdDuration, 100);
-                blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve).ToGeneric(bodyPath));
+                blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve));
             }
             if (settings.IsCancelerEnabled())
             {
@@ -270,10 +269,10 @@ internal class BlinkInstaller : InstallerBase
                     var curve = new AnimationCurve();
                     curve.AddKey(0, 0);
                     curve.AddKey(holdDuration, 0);
-                    blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve).ToGeneric(bodyPath));
+                    blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve));
                 }
             }
-            AddAnimationToState(blink, blinkAnimations);
+            AddBlendShapeAnimationsToState(blink, blinkAnimations);
 
             // AnimationGate -> Stare
             var gateToStare = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);

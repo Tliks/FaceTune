@@ -3,7 +3,7 @@ namespace Aoyon.FaceTune;
 internal class AvatarExpression : IEquatable<AvatarExpression> // 可変
 {
     public string Name { get; private set; }
-    public AnimationSet AnimationSet;
+    public BlendShapeWeightAnimationSet AnimationSet;
     
     private ExpressionSettings _expressionSettings;
     public ExpressionSettings ExpressionSettings { get => _expressionSettings; private set => _expressionSettings = value; }
@@ -11,24 +11,14 @@ internal class AvatarExpression : IEquatable<AvatarExpression> // 可変
     public FacialSettings FacialSettings { get => _facialSettings; private set => _facialSettings = value; }
 
 
-    public AvatarExpression(string name, IEnumerable<GenericAnimation> animations, ExpressionSettings expressionSettings, FacialSettings? settings = null)
+    public AvatarExpression(string name, BlendShapeWeightAnimationSet animations, ExpressionSettings expressionSettings, FacialSettings? settings = null)
     {
         Name = name;
-        AnimationSet = new AnimationSet(animations);
+        AnimationSet = new(animations);
         _expressionSettings = expressionSettings;
         _facialSettings = settings ?? FacialSettings.Keep;
     }
     
-    public void MergeExpression(AvatarExpression other)
-    {
-        MergeAnimation(other.AnimationSet);
-        MergeExpressionSettings(other.ExpressionSettings);
-        MergeFacialSettings(other.FacialSettings);
-    }
-    public void MergeAnimation(IEnumerable<GenericAnimation> others) => AnimationSet.MergeAnimation(others);
-    public void MergeExpressionSettings(ExpressionSettings other) => _expressionSettings = _expressionSettings.Merge(other);
-    public void MergeFacialSettings(FacialSettings other) => _facialSettings = _facialSettings.Merge(other);
-
     public bool Equals(AvatarExpression other)
     {
         if (other is null) return false;

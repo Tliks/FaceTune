@@ -14,17 +14,16 @@ namespace Aoyon.FaceTune
 
         internal AvatarExpression ToExpression(AvatarContext avatarContext)
         {
-            var animationSet = new AnimationSet();
+            var animationSet = new BlendShapeWeightAnimationSet();
 
             if (!FacialSettings.EnableBlending)
             {
-                var zeroAnimations = avatarContext.SafeZeroBlendShapes.ToGenericAnimations(avatarContext.BodyPath);
-                animationSet.AddRange(zeroAnimations);
+                animationSet.AddRange(avatarContext.SafeZeroBlendShapes.ToBlendShapeAnimations());
 
                 using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
                 if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialAnimations))
                 {
-                    animationSet.AddRange(facialAnimations.ToGenericAnimations(avatarContext.BodyPath));
+                    animationSet.AddRange(facialAnimations);
                 }
             }
 
@@ -49,7 +48,7 @@ namespace Aoyon.FaceTune
                 AdvancedLipSyncSettings = lipSyncSettings
             };
 
-            return new AvatarExpression(name, animationSet.Animations, ExpressionSettings, facialSettings);
+            return new AvatarExpression(name, animationSet, ExpressionSettings, facialSettings);
         }
 
         internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(AvatarContext avatarContext)

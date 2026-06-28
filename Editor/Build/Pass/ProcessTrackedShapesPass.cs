@@ -25,7 +25,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         if (avatarContext.Root.GetComponentsInChildren<AllowTrackedBlendShapesComponent>(true).Any())
         {
-            var setteledShapes = allExpressions.SelectMany(e => e.AnimationSet.GetBlendShapeNames(avatarContext.BodyPath)).ToHashSet();
+            var setteledShapes = allExpressions.SelectMany(e => e.AnimationSet.GetBlendShapeNames()).ToHashSet();
 
             var shapeNames = avatarContext.FaceRenderer.GetBlendShapes(avatarContext.FaceMesh).Select(b => b.Name);
             var shapesToClone = trackedShapes.Intersect(shapeNames);
@@ -44,7 +44,7 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
     {
         foreach (var expression in expressions)
         {
-            expression.AnimationSet.ReplaceBlendShapeNames(targetPath, mapping);
+            expression.AnimationSet.ReplaceBlendShapeNames(mapping);
         }
     }
 

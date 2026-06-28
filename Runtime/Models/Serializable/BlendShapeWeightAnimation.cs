@@ -2,9 +2,6 @@ namespace Aoyon.FaceTune;
 
 // 明示的な適用対象(Binding)を持たずnameのみで適用対象を決定する
 // ブレンドシェイプを汎用的に取り扱えるようにするため。似たブレンドシェイプを持つ異なる対象への適用や、キメラ対応などが楽になる。
-// Todo: 明示的な適用対象を持っていて後で書き換えるようにしてもいいかも？
-// <= 本来不要なプロパティをセーブデータとして公開することになる。
-// <= 仮の値の場合、そのフラグが必要になる。
 [Serializable]
 public record BlendShapeWeightAnimation // Immutable
 {
@@ -52,12 +49,6 @@ public record BlendShapeWeightAnimation // Immutable
         var curve = new AnimationCurve();
         curve.AddKey(Time, this.curve.Evaluate(Time));
         return new BlendShapeWeightAnimation(Name, curve);
-    }
-
-    internal GenericAnimation ToGeneric(string path)
-    {
-        var binding = SerializableCurveBinding.FloatCurve(path, typeof(SkinnedMeshRenderer), FaceTuneConstants.AnimatedBlendShapePrefix + Name);
-        return new GenericAnimation(binding, curve);
     }
 
     internal BlendShapeWeight ToFirstFrameBlendShape()

@@ -72,124 +72,6 @@ internal static class AnimatorHelper
         return transition;
     }
 
-    // https://gist.github.com/nekobako/5a38c040261e2eb815330535857003ca
-    public static List<GenericAnimation> GetDefaultValueAnimations(GameObject root, IEnumerable<SerializableCurveBinding> curveBindings)
-    {
-        var animations = new List<GenericAnimation>();
-        foreach (var curveBinding_ in curveBindings)
-        {
-            var curveBinding = curveBinding_.ToEditorCurveBinding();
-            var target = UnityEditor.AnimationUtility.GetAnimatedObject(root, curveBinding);
-            var propName = curveBinding.propertyName;
-            switch (target)
-            {
-                case null:
-                    // Debug.LogWarning($"Target is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}");
-                    continue;
-                case UnityEngine.Animator:
-                    //Debug.Log($"{curveBinding.path}, {curveBinding.type}, {propName}, AAP");
-                    continue;
-                case SkinnedMeshRenderer renderer when curveBinding.type == typeof(SkinnedMeshRenderer) && propName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix):
-                    var index = renderer.sharedMesh.GetBlendShapeIndex(propName);
-                    var weight = renderer.GetBlendShapeWeight(index);
-                    animations.Add(CreateFloatCurveAnimation(curveBinding_, weight));
-                    continue;
-                case Transform transform:
-                {
-                    if (propName.StartsWith("localPosition."))
-                    {
-                        var pos = transform.localPosition;
-                        float? value = null;
-                        if (propName.EndsWith(".x")) value = pos.x;
-                        else if (propName.EndsWith(".y")) value = pos.y;
-                        else if (propName.EndsWith(".z")) value = pos.z;
-
-                        if (value.HasValue)
-                        {
-                            animations.Add(CreateFloatCurveAnimation(curveBinding_, value.Value));
-                            continue;
-                        }
-                    }
-                    else if (propName.StartsWith("localRotation."))
-                    {
-                        var rot = transform.localRotation;
-                        float? value = null;
-                        if (propName.EndsWith(".x")) value = rot.x;
-                        else if (propName.EndsWith(".y")) value = rot.y;
-                        else if (propName.EndsWith(".z")) value = rot.z;
-                        else if (propName.EndsWith(".w")) value = rot.w;
-
-                        if (value.HasValue)
-                        {
-                            animations.Add(CreateFloatCurveAnimation(curveBinding_, value.Value));
-                            continue;
-                        }
-                    }
-                    if (propName.StartsWith("localEulerAnglesRaw."))
-                    {
-                        var euler = transform.localEulerAngles;
-                        float? value = null;
-                        if (propName.EndsWith(".x")) value = euler.x;
-                        else if (propName.EndsWith(".y")) value = euler.y;
-                        else if (propName.EndsWith(".z")) value = euler.z;
-
-                        if (value.HasValue)
-                        {
-                            animations.Add(CreateFloatCurveAnimation(curveBinding_, value.Value));
-                            continue;
-                        }
-                    }
-                    else if (propName.StartsWith("localScale."))
-                    {
-                        var scale = transform.localScale;
-                        float? value = null;
-                        if (propName.EndsWith(".x")) value = scale.x;
-                        else if (propName.EndsWith(".y")) value = scale.y;
-                        else if (propName.EndsWith(".z")) value = scale.z;
-
-                        if (value.HasValue)
-                        {
-                            animations.Add(CreateFloatCurveAnimation(curveBinding_, value.Value));
-                            continue;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            using var so = new SerializedObject(target);
-            using var prop = so.FindProperty(propName);
-            if (prop == null)
-            {
-                Debug.LogWarning($"Property is null: path: {curveBinding.path}, type: {curveBinding.type}, propertyName: {propName}, target: {target}");
-                continue;
-            }
-            switch (prop.propertyType)
-            {
-                case SerializedPropertyType.Boolean:
-                    var value = prop.boolValue ? 1f : 0f;
-                    animations.Add(CreateFloatCurveAnimation(curveBinding_, value));
-                    break;
-                case SerializedPropertyType.Float:
-                    animations.Add(CreateFloatCurveAnimation(curveBinding_, prop.floatValue));
-                    break;
-                case SerializedPropertyType.ObjectReference:
-                    var objectReference = prop.objectReferenceValue;
-                    if (objectReference == null) { continue; }
-                    animations.Add(new GenericAnimation(curveBinding_, new List<SerializableObjectReferenceKeyframe>(){ new(0, objectReference) }));
-                    break;
-                default:
-                    continue;
-            }
-        }
-        return animations;
-    }
-
-    private static GenericAnimation CreateFloatCurveAnimation(SerializableCurveBinding binding, float value)
-    {
-        return new GenericAnimation(binding, new AnimationCurve(new Keyframe(0, value)));
-    }
-
     public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)
     {
         var motion = state.Motion as VirtualClip;
@@ -228,17 +110,16 @@ internal static class AnimatorHelper
         return clip;
     }
 
-    public static void AddAnimation(this VirtualClip clip, GenericAnimation animation)
+    public static void AddBlendShapeAnimation(this VirtualClip clip, string bodyPath, BlendShapeWeightAnimation animation)
     {
-        var binding = animation.CurveBinding.ToEditorCurveBinding();
-        clip.SetFloatCurve(binding.path, binding.type, binding.propertyName, animation.Curve);
+        clip.SetFloatCurve(bodyPath, typeof(SkinnedMeshRenderer), FaceTuneConstants.AnimatedBlendShapePrefix + animation.Name, animation.Curve);
     }
 
-    public static void AddAnimations(this VirtualClip clip, IEnumerable<GenericAnimation> animations)
+    public static void AddBlendShapeAnimations(this VirtualClip clip, string bodyPath, IEnumerable<BlendShapeWeightAnimation> animations)
     {
         foreach (var animation in animations)
         {
-            AddAnimation(clip, animation);
+            AddBlendShapeAnimation(clip, bodyPath, animation);
         }
     }
 

@@ -80,70 +80,6 @@ internal static class AnimationUtility
         }
     }
 
-    public static void ProcessAllBindings(this AnimationClip clip, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialstyle, List<BlendShapeWeightAnimation> facialAnimations, List<GenericAnimation> nonFacialAnimations, string? facialPath = null)
-    {
-        var facialStyleCurves = facialstyle.ToDictionary(a => a.Name, a => a.Curve);
-
-        var curveBindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
-        foreach (var binding in curveBindings)
-        {
-            var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
-            if (curve != null && curve.keys.Length > 0)
-            {
-                if (IsFacialBinding(binding, facialPath))
-                {
-                    var name = binding.propertyName.Replace(BlendShapePropertyName, string.Empty);
-                    var isZero = curve.keys.All(k => k.value == 0);
-                    switch (option)
-                    {
-                        case ClipImportOption.All:
-                            facialAnimations.Add(new BlendShapeWeightAnimation(name, curve));
-                            break;
-                        case ClipImportOption.NonZero:
-                            if (!isZero)
-                            {
-                                facialAnimations.Add(new BlendShapeWeightAnimation(name, curve));
-                            }
-                            break;
-                        case ClipImportOption.FacialStyleOverridesOrNonZero:
-                            if (facialStyleCurves.TryGetValue(name, out var facialCurve))
-                            {
-                                if (!facialCurve.Equals(curve))
-                                {
-                                    facialAnimations.Add(new BlendShapeWeightAnimation(name, curve)); // override
-                                }
-                                break;
-                            }
-                            else
-                            {
-                                if (!isZero)
-                                {
-                                    facialAnimations.Add(new BlendShapeWeightAnimation(name, curve));
-                                }
-                                break;
-                            }
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(option), option, null);
-                    }
-                }
-                else
-                {
-                    var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
-                    nonFacialAnimations.Add(new GenericAnimation(serializableCurveBinding, curve));
-                }
-            }
-        }
-
-        var objectReferenceBindings = UnityEditor.AnimationUtility.GetObjectReferenceCurveBindings(clip);
-        foreach (var binding in objectReferenceBindings)
-        {
-            var serializableCurveBinding = SerializableCurveBinding.FromEditorCurveBinding(binding);
-            var objectReferenceCurve = UnityEditor.AnimationUtility.GetObjectReferenceCurve(clip, binding);
-            var serializableObjectReferenceCurve = objectReferenceCurve.Select(SerializableObjectReferenceKeyframe.FromEditorObjectReferenceKeyframe);
-            nonFacialAnimations.Add(new GenericAnimation(serializableCurveBinding, serializableObjectReferenceCurve.ToList()));
-        }
-    }
-
 
     private static bool IsFacialBinding(UnityEditor.EditorCurveBinding binding, string? facialPath)
     {
@@ -161,14 +97,6 @@ internal static class AnimationUtility
         return false;
     }
 
-    public static void GetGenericAnimations(this AnimationClip clip, ICollection<GenericAnimation> resultToAdd)
-    {
-        foreach (var animation in GenericAnimation.FromAnimationClip(clip))
-        {
-            resultToAdd.Add(animation);
-        }
-    }
-
     public static void AddBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)
     {
         var bindings = new List<UnityEditor.EditorCurveBinding>();
@@ -184,15 +112,15 @@ internal static class AnimationUtility
         UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
     }
 
-    public static void AddGenericAnimations(this AnimationClip clip, IEnumerable<GenericAnimation> genericAnimations)
+    public static void AddBlendShapeAnimations(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeightAnimation> animations)
     {
         var bindings = new List<UnityEditor.EditorCurveBinding>();
         var curves = new List<AnimationCurve>();
-        foreach (var genericAnimation in genericAnimations)
+        foreach (var animation in animations)
         {
-            var binding = genericAnimation.CurveBinding.ToEditorCurveBinding();
+            var binding = UnityEditor.EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), BlendShapePropertyName + animation.Name);
             bindings.Add(binding);
-            curves.Add(genericAnimation.Curve);
+            curves.Add(animation.Curve);
         }
         UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
     }

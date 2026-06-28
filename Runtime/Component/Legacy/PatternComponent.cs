@@ -2,6 +2,7 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
+    [Obsolete]
     public class PatternComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Pattern";

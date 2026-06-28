@@ -4,6 +4,7 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
+    [Obsolete]
     public class OverrideFaceRendererComponent : FaceTuneTagComponent, IHasObjectReferences
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Override Face Renderer";

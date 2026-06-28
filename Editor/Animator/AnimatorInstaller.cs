@@ -72,41 +72,23 @@ internal class AnimatorInstaller : InstallerBase
         var MMDState = AddState(MMDLayer, "Initial (MMD)", position: ExclusiveStatePosition);
         _MMDInitializationClip = MMDState.CreateClip(MMDState.Name);
 
-        var animations = new List<GenericAnimation>();
-        var mmdAnimations = new List<GenericAnimation>();
+        var animations = new List<BlendShapeWeightAnimation>();
+        var mmdAnimations = new List<BlendShapeWeightAnimation>();
 
         foreach (var shape in _avatarContext.FaceRenderer.GetBlendShapes(_avatarContext.FaceMesh).Where(b => !_avatarContext.TrackedBlendShapes.Contains(b.Name)))
         {
             if (IsMMDBlendShapeName(shape.Name))
             {
-                mmdAnimations.Add(shape.ToGenericAnimation(_avatarContext.BodyPath));
+                mmdAnimations.Add(shape.ToBlendShapeAnimation());
             }
             else
             {
-                animations.Add(shape.ToGenericAnimation(_avatarContext.BodyPath));
+                animations.Add(shape.ToBlendShapeAnimation());
             }
         }
 
-        var allBindings = patternData.GetAllExpressions().SelectMany(e => e.AnimationSet.Animations).Select(a => a.CurveBinding).Distinct();
-        var nonFacialBindings = new List<SerializableCurveBinding>();
-        foreach (var binding in allBindings)
-        {
-            if (binding.Path == _avatarContext.BodyPath &&
-                binding.Type == typeof(SkinnedMeshRenderer) &&
-                binding.PropertyName.StartsWith(FaceTuneConstants.AnimatedBlendShapePrefix))
-            {
-                continue;
-            }
-            nonFacialBindings.Add(binding);
-        }
-        if (nonFacialBindings.Any())
-        {
-            var propertiesAnimations = AnimatorHelper.GetDefaultValueAnimations(_avatarContext.Root, nonFacialBindings);
-            animations.AddRange(propertiesAnimations);
-        }
-
-        _MMDInitializationClip.AddAnimations(mmdAnimations);
-        _nonMMDInitializationClip.AddAnimations(animations);
+        _MMDInitializationClip.AddBlendShapeAnimations(_avatarContext.BodyPath, mmdAnimations);
+        _nonMMDInitializationClip.AddBlendShapeAnimations(_avatarContext.BodyPath, animations);
     }
 
     private void AddBlendShapeInitialization(IEnumerable<BlendShapeWeight> blendShapes)
@@ -115,11 +97,11 @@ internal class AnimatorInstaller : InstallerBase
         {
             if (IsMMDBlendShapeName(shape.Name))
             {
-                _MMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_avatarContext.BodyPath));
+                _MMDInitializationClip.AddBlendShapeAnimation(_avatarContext.BodyPath, shape.ToBlendShapeAnimation());
             }
             else
             {
-                _nonMMDInitializationClip.AddAnimation(shape.ToGenericAnimation(_avatarContext.BodyPath));
+                _nonMMDInitializationClip.AddBlendShapeAnimation(_avatarContext.BodyPath, shape.ToBlendShapeAnimation());
             }
         }
     }
@@ -293,7 +275,7 @@ internal class AnimatorInstaller : InstallerBase
 
         void Impl(VirtualClip clip)
         {
-            clip.AddAnimations(expression.AnimationSet);
+            clip.AddBlendShapeAnimations(_avatarContext.BodyPath, expression.AnimationSet);
             SetExpressionSettings(state, clip, expression.ExpressionSettings);
             SetFacialSettings(clip, expression.FacialSettings);
         }

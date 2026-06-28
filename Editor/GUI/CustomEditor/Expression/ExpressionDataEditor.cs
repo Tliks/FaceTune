@@ -118,10 +118,11 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
             return;
         }
 
-        var (facialAnimations, nonFacialAnimations) = Component.ProcessClip(_context.BodyPath);
+        var facialAnimations = new List<BlendShapeWeightAnimation>();
+        Component.GetBlendShapeAnimations(facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), _context.BodyPath);
 
         _facialClipAnimationCount = facialAnimations.Count;
-        _nonFacialClipAnimationCount = nonFacialAnimations.Count;
+        _nonFacialClipAnimationCount = 0;
 
         var allBlendShapes = _context.ZeroBlendShapes
             .Select(x => x.Name)
@@ -153,7 +154,9 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
 
             }
         }
-        baseSet.AddRange(Component.ProcessClip(bodyPath).facialAnimations.ToFirstFrameBlendShapes());
+        var componentClipAnimations = new List<BlendShapeWeightAnimation>();
+        Component.GetBlendShapeAnimations(componentClipAnimations, facialStyleAnimations, bodyPath);
+        baseSet.AddRange(componentClipAnimations.ToFirstFrameBlendShapes());
 
         var defaultOverride = new BlendShapeWeightSet();
         defaultOverride.AddRange(Component.BlendShapeAnimations.ToFirstFrameBlendShapes());
@@ -194,7 +197,8 @@ internal class ExpressionDataClipImporter
 
     public bool ImportClip(DataComponent component, string bodyPath)
     {
-        var (facialAnimations, nonFacialAnimations) = component.ProcessClip(bodyPath);
+        var facialAnimations = new List<BlendShapeWeightAnimation>();
+        component.GetBlendShapeAnimations(facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), bodyPath);
         if (facialAnimations.Count == 0)
         {
             return false;
@@ -202,21 +206,10 @@ internal class ExpressionDataClipImporter
 
         var so = new SerializedObject(component);
         so.Update();
-        so.FindProperty(nameof(DataComponent.Clip)).objectReferenceValue = nonFacialAnimations.Count == 0 ? null : CreateClip(new AnimationSet(nonFacialAnimations));
+        so.FindProperty(nameof(DataComponent.Clip)).objectReferenceValue = null;
         CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(DataComponent.BlendShapeAnimations)), facialAnimations, false); // manualにある方を優先
         so.ApplyModifiedProperties();
         return true;
-    }
-
-    private AnimationClip? CreateClip(AnimationSet animations)
-    {
-        if (!ConfirmCreateClip(out var clipFolderPath)) return null;
-        var newClip = new AnimationClip();
-        newClip.name = GetClipName(animations);
-        newClip.AddGenericAnimations(animations.Animations);
-        var assetPath = AssetDatabase.GenerateUniqueAssetPath($"{clipFolderPath}/{newClip.name}.anim");
-        AssetDatabase.CreateAsset(newClip, assetPath);
-        return newClip;
     }
 
     private bool ConfirmCreateClip([NotNullWhen(true)] out string? clipFolderPath)
@@ -255,21 +248,6 @@ internal class ExpressionDataClipImporter
                 return true;
             }
         }
-    }
-
-    private static string GetClipName(AnimationSet animations)
-    {
-        var type = animations.Animations
-            .GroupBy(a => a.CurveBinding.Type?.Name ?? "UnknownType")
-            .OrderByDescending(g => g.Count())
-            .First().Key;
-
-        var obj = animations.Animations
-            .GroupBy(a => !string.IsNullOrEmpty(a.CurveBinding.Path) ? a.CurveBinding.Path.Split('/').Last() : "Root")
-            .OrderByDescending(g => g.Count())
-            .First().Key;
-
-        return $"{type}_{obj}";
     }
 
     private static bool TryGetClippath([NotNullWhen(true)] out string? clipFolderPath)
@@ -326,7 +304,7 @@ internal class ExpressionDataClipExporter : EditorWindow
 
     private void Export()
     {
-        var animations = new AnimationSet();
+        var animations = new BlendShapeWeightAnimationSet();
         if (!AvatarContextBuilder.TryBuild(_component.gameObject, out var context, out var result))
         {
             LocalizedLog.Error("Log:error:AvatarContextBuilder:FailedToBuild", result.ToString());
@@ -334,14 +312,14 @@ internal class ExpressionDataClipExporter : EditorWindow
         }
         if (_addZeroWeight)
         {
-            animations.AddRange(context.ZeroBlendShapes.ToGenericAnimations(context.BodyPath));
+            animations.AddRange(context.ZeroBlendShapes.ToBlendShapeAnimations());
         }
         if (_addFacialStyle)
         {
             var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
             if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, facialStyleAnimations))
             {
-                animations.AddRange(facialStyleAnimations.ToGenericAnimations(context.BodyPath));
+                animations.AddRange(facialStyleAnimations);
             }
         }
         _component.GetAnimations(animations, context);
@@ -351,7 +329,7 @@ internal class ExpressionDataClipExporter : EditorWindow
         }
         CustomEditorUtility.SaveAsClip(clip =>
         {
-            clip.AddGenericAnimations(animations);
+            clip.AddBlendShapeAnimations(context.BodyPath, animations);
         });
     }
 }

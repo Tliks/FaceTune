@@ -15,25 +15,9 @@ namespace Aoyon.FaceTune
 
         public bool AllBlendShapeAnimationAsFacial = false;
 
-        internal void GetAnimations(AnimationSet resultToAdd, AvatarContext avatarContext)
+        internal void GetAnimations(BlendShapeWeightAnimationSet resultToAdd, AvatarContext avatarContext)
         {
-            var (facialAnimations, nonFacialAnimations) = ProcessClip(avatarContext.BodyPath);
-            resultToAdd.AddRange(facialAnimations.ToGenericAnimations(avatarContext.BodyPath));
-            resultToAdd.AddRange(nonFacialAnimations);
-            resultToAdd.AddRange(BlendShapeAnimations.ToGenericAnimations(avatarContext.BodyPath)); // Manualを優先
-        }
-
-        internal (List<BlendShapeWeightAnimation> facialAnimations, List<GenericAnimation> nonFacialAnimations) ProcessClip(string bodyPath)
-        {
-            var result = (facialAnimations: new List<BlendShapeWeightAnimation>(), nonFacialAnimations: new List<GenericAnimation>());
-            if (Clip == null) return result;
-            var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
-            FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialStyleAnimations);
-            var facialPath = AllBlendShapeAnimationAsFacial ? null : bodyPath;
-#if UNITY_EDITOR
-            Clip.ProcessAllBindings(ClipOption, facialStyleAnimations, result.facialAnimations, result.nonFacialAnimations, facialPath);
-#endif
-            return result;
+            GetBlendShapeAnimations(resultToAdd, Array.Empty<BlendShapeWeightAnimation>(), avatarContext.BodyPath);
         }
 
         internal void GetBlendShapes(ICollection<BlendShapeWeight> resultToAdd, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, string bodyPath, IObserveContext? observeContext = null)
