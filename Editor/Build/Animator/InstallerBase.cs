@@ -2,7 +2,7 @@ using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Platforms;
 
-namespace Aoyon.FaceTune.Animator;
+namespace Aoyon.FaceTune.Build.Animator;
 
 internal class InstallerBase
 {

@@ -1,7 +1,7 @@
 using UnityEditor.Animations;
 using nadena.dev.ndmf.animator;
 
-namespace Aoyon.FaceTune.Animator;
+namespace Aoyon.FaceTune.Build.Animator;
 
 internal class LipSyncInstaller : InstallerBase
 {

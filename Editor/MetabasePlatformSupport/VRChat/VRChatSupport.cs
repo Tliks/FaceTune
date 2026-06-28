@@ -9,7 +9,7 @@ using VRC.SDK3.Avatars.Components;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Animator;
+using Aoyon.FaceTune.Build.Animator;
 
 namespace Aoyon.FaceTune.Platforms;
 

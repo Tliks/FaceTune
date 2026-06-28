@@ -3,7 +3,7 @@ using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
 
-namespace Aoyon.FaceTune.Animator;
+namespace Aoyon.FaceTune.Build.Animator;
 
 internal class BlinkInstaller : InstallerBase
 {
