@@ -5,11 +5,11 @@ namespace Aoyon.FaceTune
     public class PatternComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Pattern";
-        internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + Legacy + "/" + ComponentName;
         
         internal ExpressionPattern? GetPattern(AvatarContext avatarContext)
         {
-            var expressionWithConditions = gameObject.GetComponentsInChildren<ExpressionComponent>(true)
+            var expressionWithConditions = gameObject.GetComponentsInChildren<FaceTuneComponent>(true)
                 .SelectMany(c => c.GetExpressionWithConditions(avatarContext))
                 .ToList();
             if (expressionWithConditions.Count == 0) return null;

@@ -48,8 +48,8 @@ internal static class AssetsMenu
             toggleComponent.PortableControl.Parameter = uniqueParameterId;
             toggleComponent.PortableControl.Value = i;
 
-            toggle.AddComponent<ExpressionComponent>();
-            var dataComponent = toggle.AddComponent<ExpressionDataComponent>();
+            toggle.AddComponent<FaceTuneComponent>();
+            var dataComponent = toggle.AddComponent<DataComponent>();
             dataComponent.Clip = clip;
             dataComponent.ClipOption = ClipImportOption.NonZero;
         }

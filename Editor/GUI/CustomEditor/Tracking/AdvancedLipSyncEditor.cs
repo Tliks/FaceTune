@@ -3,8 +3,8 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(AdvancedLipSyncComponent))]
-internal class AdvancedLipSyncEditor : FaceTuneIMGUIEditorBase<AdvancedLipSyncComponent>
+[CustomEditor(typeof(LipSyncComponent))]
+internal class AdvancedLipSyncEditor : FaceTuneIMGUIEditorBase<LipSyncComponent>
 {
     protected override void OnInnerInspectorGUI()
     {

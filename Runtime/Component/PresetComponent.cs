@@ -4,8 +4,8 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPath)]
     public class PresetComponent : FaceTuneTagComponent
     {
-        internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Preset";
+        internal const string MenuPath = BasePath + "/" + ComponentName;
 
         internal Preset? GetPreset(AvatarContext avatarContext)
         {

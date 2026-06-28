@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
     public class ConditionComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Condition";
-        internal const string MenuPath = BasePath + "/" + ExpressionPattern + "/" + ComponentName;
+        internal const string MenuPath = BasePath + "/" + ComponentName;
 
         public List<HandGestureCondition> HandGestureConditions = new();
         public List<ParameterCondition> ParameterConditions = new();

@@ -2,10 +2,10 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
-    public class FacialStyleComponent : FaceTuneTagComponent
+    public class StyleComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Facial Style";
-        internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Style";
+        internal const string MenuPath = BasePath + "/" + ComponentName;
 
         public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 

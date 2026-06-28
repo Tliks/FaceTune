@@ -3,8 +3,8 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(AdvancedEyeBlinkComponent))]
-internal class AdvancedEyeBlinkEditor : FaceTuneIMGUIEditorBase<AdvancedEyeBlinkComponent>
+[CustomEditor(typeof(EyeBlinkComponent))]
+internal class AdvancedEyeBlinkEditor : FaceTuneIMGUIEditorBase<EyeBlinkComponent>
 {
     protected override void OnInnerInspectorGUI()
     {
@@ -23,7 +23,7 @@ internal class AdvancedEyeBlinkEditor : FaceTuneIMGUIEditorBase<AdvancedEyeBlink
 
     private void EnableEyeBlinkInAllChildExpressions()
     {
-        var expressions = Component.GetComponentsInChildren<ExpressionComponent>();
+        var expressions = Component.GetComponentsInChildren<FaceTuneComponent>();
         if (expressions.Length == 0) return;
 
         Undo.RecordObjects(expressions, "Enable Eye Blink in All Child Expressions");

@@ -3,8 +3,8 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(ExpressionDataComponent))]
-internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComponent>
+[CustomEditor(typeof(DataComponent))]
+internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
 {
     private AvatarContext? _context;
 
@@ -22,10 +22,10 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
     {
         base.OnEnable();
         CustomEditorUtility.TryGetContext(Component.gameObject, out _context);
-        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations));
-        _clipProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.Clip));
-        _clipOptionProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.ClipOption));
-        _allBlendShapeAnimationAsFacialProperty = serializedObject.FindProperty(nameof(ExpressionDataComponent.AllBlendShapeAnimationAsFacial));
+        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(DataComponent.BlendShapeAnimations));
+        _clipProperty = serializedObject.FindProperty(nameof(DataComponent.Clip));
+        _clipOptionProperty = serializedObject.FindProperty(nameof(DataComponent.ClipOption));
+        _allBlendShapeAnimationAsFacialProperty = serializedObject.FindProperty(nameof(DataComponent.AllBlendShapeAnimationAsFacial));
         UpdateInfo();
         _clipOptionPopup = new LocalizedPopup(typeof(ClipImportOption));
         Undo.undoRedoPerformed += UpdateInfo;
@@ -66,7 +66,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
 
             if (GUILayout.Button($"{ComponentName}:button:Import".LG(), GUILayout.Width(60)))
             {
-                var components = targets.Select(t => t as ExpressionDataComponent).OfType<ExpressionDataComponent>().ToArray();
+                var components = targets.Select(t => t as DataComponent).OfType<DataComponent>().ToArray();
                 var importer = new ExpressionDataClipImporter();
                 importer.ImportClip(components);
             }
@@ -146,8 +146,8 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
         styleSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
         var baseSet = new BlendShapeWeightSet();
-        if (Component.TryGetComponentInParent<ExpressionComponent>(true, out var expressionComponent)){
-            foreach (var upperData in expressionComponent.GetComponentsInChildren<ExpressionDataComponent>()) {
+        if (Component.TryGetComponentInParent<FaceTuneComponent>(true, out var expressionComponent)){
+            foreach (var upperData in expressionComponent.GetComponentsInChildren<DataComponent>()) {
                 if (upperData == Component) break;
                 upperData.GetBlendShapes(baseSet, facialStyleAnimations, bodyPath);
 
@@ -162,10 +162,10 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<ExpressionDataComp
     }
     
 
-    [MenuItem($"CONTEXT/{nameof(ExpressionDataComponent)}/Export as Clip")]
+    [MenuItem($"CONTEXT/{nameof(DataComponent)}/Export as Clip")]
     private static void ExportAsClip(MenuCommand command)
     {
-        var component = (command.context as ExpressionDataComponent)!;
+        var component = (command.context as DataComponent)!;
         ExpressionDataClipExporter.OpenWindow(component);
     }
 
@@ -182,7 +182,7 @@ internal class ExpressionDataClipImporter
         _clipFolderPath = clipFolderPath;
     }
 
-    public void ImportClip(ExpressionDataComponent[] components)
+    public void ImportClip(DataComponent[] components)
     {
         CustomEditorUtility.TryGetContext(components[0].gameObject, out var context);
         if (context == null) throw new InvalidOperationException("Context not found");
@@ -192,7 +192,7 @@ internal class ExpressionDataClipImporter
         }
     }
 
-    public bool ImportClip(ExpressionDataComponent component, string bodyPath)
+    public bool ImportClip(DataComponent component, string bodyPath)
     {
         var (facialAnimations, nonFacialAnimations) = component.ProcessClip(bodyPath);
         if (facialAnimations.Count == 0)
@@ -202,8 +202,8 @@ internal class ExpressionDataClipImporter
 
         var so = new SerializedObject(component);
         so.Update();
-        so.FindProperty(nameof(ExpressionDataComponent.Clip)).objectReferenceValue = nonFacialAnimations.Count == 0 ? null : CreateClip(new AnimationSet(nonFacialAnimations));
-        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(ExpressionDataComponent.BlendShapeAnimations)), facialAnimations, false); // manualにある方を優先
+        so.FindProperty(nameof(DataComponent.Clip)).objectReferenceValue = nonFacialAnimations.Count == 0 ? null : CreateClip(new AnimationSet(nonFacialAnimations));
+        CustomEditorUtility.AddBlendShapeAnimations(so.FindProperty(nameof(DataComponent.BlendShapeAnimations)), facialAnimations, false); // manualにある方を優先
         so.ApplyModifiedProperties();
         return true;
     }
@@ -294,7 +294,7 @@ internal class ExpressionDataClipImporter
 
 internal class ExpressionDataClipExporter : EditorWindow
 {
-    private ExpressionDataComponent _component = null!;
+    private DataComponent _component = null!;
 
     private bool _addZeroWeight = true;
     private bool _addFacialStyle = false;
@@ -303,7 +303,7 @@ internal class ExpressionDataClipExporter : EditorWindow
     private const int WindowWidth = 300;
     private const int WindowHeight = 100;
 
-    public static void OpenWindow(ExpressionDataComponent component)
+    public static void OpenWindow(DataComponent component)
     {
         var window = GetWindow<ExpressionDataClipExporter>();
         window._component = component;

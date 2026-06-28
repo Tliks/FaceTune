@@ -3,8 +3,8 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(FacialStyleComponent))]
-internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
+[CustomEditor(typeof(StyleComponent))]
+internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<StyleComponent>
 {
     private SerializedProperty _blendShapeAnimationsProperty = null!;
     private SerializedProperty _applyToRendererProperty = null!;
@@ -13,8 +13,8 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
     public override void OnEnable()
     {
         base.OnEnable();
-        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
-        _applyToRendererProperty = serializedObject.FindProperty(nameof(FacialStyleComponent.ApplyToRenderer));
+        _blendShapeAnimationsProperty = serializedObject.FindProperty(nameof(StyleComponent.BlendShapeAnimations));
+        _applyToRendererProperty = serializedObject.FindProperty(nameof(StyleComponent.ApplyToRenderer));
         _hasDefault = HasDefault();
     }
 
@@ -58,7 +58,7 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
         var blendShapes = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Where(shape => shape.Weight > 0).ToList();
         serializedObject.Update();
-        var property = serializedObject.FindProperty(nameof(FacialStyleComponent.BlendShapeAnimations));
+        var property = serializedObject.FindProperty(nameof(StyleComponent.BlendShapeAnimations));
         CustomEditorUtility.ClearAllElements(property);
         CustomEditorUtility.AddBlendShapeAnimations(property, blendShapes.ToBlendShapeAnimations().ToList());
         serializedObject.ApplyModifiedProperties();
@@ -69,7 +69,7 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
     {
         var defaultExpression = Component.transform.Find("Default");
         if (defaultExpression == null) return false;
-        var defaultExpressionComponent = defaultExpression.GetComponent<ExpressionComponent>();
+        var defaultExpressionComponent = defaultExpression.GetComponent<FaceTuneComponent>();
         if (defaultExpressionComponent == null) return false;
         var hasConditions = defaultExpression.GetComponentsInChildren<ConditionComponent>(true)
             .Any(c => c.HandGestureConditions.Count > 0 || c.ParameterConditions.Count > 0);
@@ -83,17 +83,17 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<FacialStyleComponent>
         defaultExpression.transform.parent = Component.transform;
         defaultExpression.transform.SetAsFirstSibling();
 
-        var defaultExpressionComponent = defaultExpression.AddComponent<ExpressionComponent>();
+        var defaultExpressionComponent = defaultExpression.AddComponent<FaceTuneComponent>();
         defaultExpressionComponent.FacialSettings = new(TrackingPermission.Allow, TrackingPermission.Allow, false);
 
         Undo.RegisterCreatedObjectUndo(defaultExpression, "Create Default Expression");
         EditorGUIUtility.PingObject(defaultExpression);
     }
 
-    [MenuItem($"CONTEXT/{nameof(FacialStyleComponent)}/Apply to SkinnedMeshRenderer")]
+    [MenuItem($"CONTEXT/{nameof(StyleComponent)}/Apply to SkinnedMeshRenderer")]
     private static void ApplyToSkinnedMeshRenderer(MenuCommand command)
     {
-        var component = command.context as FacialStyleComponent;
+        var component = command.context as StyleComponent;
         if (component == null) throw new InvalidOperationException("FacialStyleComponent not found");
         if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
         var blendShapeSet = new BlendShapeWeightSet();

@@ -54,7 +54,7 @@ internal class AnimatorControllerImporter
                             var isBlending = IsBlending(facialBlendShapes);
                             var obj = CreateConditionAndExpression(state, clip, conditions, isBlending);
 
-                            var expressionData = obj.AddComponent<ExpressionDataComponent>();
+                            var expressionData = obj.AddComponent<DataComponent>();
                             expressionData.Clip = clip;
                             expressionData.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
                             
@@ -257,7 +257,7 @@ internal class AnimatorControllerImporter
             }
         }
 
-        var expression = obj.AddComponent<ExpressionComponent>();
+        var expression = obj.AddComponent<FaceTuneComponent>();
 
         expression.ExpressionSettings = new ExpressionSettings()
         {

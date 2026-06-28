@@ -183,7 +183,7 @@ internal class SelectedShapesPreviewSession : IDisposable
     {
         isLooping = false;
 
-        using var _dataComponents = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
+        using var _dataComponents = ListPool<DataComponent>.Get(out var dataComponents);
         if (TryGetExpressionData(context, target, root, dataComponents, out var expressionComponent))
         { 
             var observeContext = new NDMFPreviewObserveContext(context);
@@ -211,11 +211,11 @@ internal class SelectedShapesPreviewSession : IDisposable
     }
 
     // data > expression > condition の順で対象を決定し早期リターン
-    private static bool TryGetExpressionData(ComputeContext context, GameObject gameObject, GameObject root, List<ExpressionDataComponent> dataComponents, out ExpressionComponent? expressionComponent)
+    private static bool TryGetExpressionData(ComputeContext context, GameObject gameObject, GameObject root, List<DataComponent> dataComponents, out FaceTuneComponent? expressionComponent)
     {
         expressionComponent = null;
 
-        var dataComponent = context.GetComponent<ExpressionDataComponent>(gameObject);
+        var dataComponent = context.GetComponent<DataComponent>(gameObject);
         if (dataComponent != null)
         {
             var targetGameObject = dataComponent.gameObject;
@@ -224,7 +224,7 @@ internal class SelectedShapesPreviewSession : IDisposable
             return true;
         }
 
-        var _expressionComponent = context.GetComponent<ExpressionComponent>(gameObject);
+        var _expressionComponent = context.GetComponent<FaceTuneComponent>(gameObject);
         if (_expressionComponent != null)
         {
             var targetGameObject = _expressionComponent.gameObject;
@@ -250,7 +250,7 @@ internal class SelectedShapesPreviewSession : IDisposable
 
         return false;
 
-        static bool TryGetDataComponentsInChildren(ComputeContext context, GameObject gameObject, List<ExpressionDataComponent> dataComponents)
+        static bool TryGetDataComponentsInChildren(ComputeContext context, GameObject gameObject, List<DataComponent> dataComponents)
         {
             context.GetComponentsInChildren(gameObject, true, dataComponents);
             if (dataComponents.Count == 0) return false;

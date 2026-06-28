@@ -48,8 +48,8 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 
         foreach (var menuItem in menuItems)
         {    
-            using var _ = ListPool<ExpressionComponent>.Get(out var expressionComponents);
-            menuItem.GetComponentsInChildren<ExpressionComponent>(true, expressionComponents);
+            using var _ = ListPool<FaceTuneComponent>.Get(out var expressionComponents);
+            menuItem.GetComponentsInChildren<FaceTuneComponent>(true, expressionComponents);
             if (expressionComponents.Any() is false) continue;
 
             var menuItemType = menuItem.PortableControl.Type;
@@ -206,7 +206,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     {
         // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
         var root = buildPassContext.AvatarContext.Root;
-        var expressionComponents = root.GetComponentsInChildren<ExpressionComponent>(true);
+        var expressionComponents = root.GetComponentsInChildren<FaceTuneComponent>(true);
         foreach (var expressionComponent in expressionComponents)
         {
             if (expressionComponent.TryGetComponentInParent<PatternComponent>(true, out _) is false)

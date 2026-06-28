@@ -1,10 +1,10 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(MenuPath)]
-    public class ExpressionDataComponent : FaceTuneTagComponent
+    public class DataComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Expression Data";
-        internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
+        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Data";
+        internal const string MenuPath = BasePath + "/" + ComponentName;
 
         // AnimationClip
         public AnimationClip? Clip = null;

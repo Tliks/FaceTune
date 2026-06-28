@@ -2,10 +2,10 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
-    public class ExpressionComponent : FaceTuneTagComponent
+    public class FaceTuneComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Expression";
-        internal const string MenuPath = BasePath + "/" + Expression + "/" + ComponentName;
+        internal const string ComponentName = FaceTuneConstants.Name;
+        internal const string MenuPath = BasePath  + "/" + ComponentName;
 
         public ExpressionSettings ExpressionSettings = new();
         public FacialSettings FacialSettings = new();
@@ -28,18 +28,18 @@ namespace Aoyon.FaceTune
                 }
             }
 
-            var dataComponents = gameObject.GetComponentsInChildren<ExpressionDataComponent>(true);
+            var dataComponents = gameObject.GetComponentsInChildren<DataComponent>(true);
             foreach (var dataComponent in dataComponents)
             {
                 dataComponent.GetAnimations(animationSet, avatarContext);
             }
 
-            var advancedEyeBlinkComponent = gameObject.GetComponentInParent<AdvancedEyeBlinkComponent>(true);
+            var advancedEyeBlinkComponent = gameObject.GetComponentInParent<EyeBlinkComponent>(true);
             var blinkSettings = advancedEyeBlinkComponent == null
                 ? AdvancedEyeBlinkSettings.Disabled() 
                 : advancedEyeBlinkComponent.AdvancedEyeBlinkSettings;
 
-            var advancedLipSyncComponent = gameObject.GetComponentInParent<AdvancedLipSyncComponent>(true);
+            var advancedLipSyncComponent = gameObject.GetComponentInParent<LipSyncComponent>(true);
             var lipSyncSettings = advancedLipSyncComponent == null
                 ? AdvancedLipSyncSettings.Disabled()
                 : advancedLipSyncComponent.AdvancedLipSyncSettings;

@@ -14,12 +14,12 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
         var avatarContext = buildPassContext.AvatarContext;
         
         var facialStyleComponents = avatarContext.Root
-            .GetComponentsInChildren<FacialStyleComponent>(true)
+            .GetComponentsInChildren<StyleComponent>(true)
             .Where(x => x.ApplyToRenderer);
 
         var componentCount = facialStyleComponents.Count();
         if (componentCount == 0) return;
-        FacialStyleComponent target;
+        StyleComponent target;
         if (componentCount > 1)
         {
             LocalizedLog.Warning("Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer");

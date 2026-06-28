@@ -2,9 +2,9 @@ namespace Aoyon.FaceTune;
 
 internal class FacialStyleContext
 {
-    public static bool TryGetFacialStyleAndObserve(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle, GameObject root, IObserveContext observeContext)
+    public static bool TryGetFacialStyleAndObserve(GameObject target, [NotNullWhen(true)]out StyleComponent? facialStyle, GameObject root, IObserveContext observeContext)
     {
-        if (!observeContext.TryGetComponentInParent<FacialStyleComponent>(target, root, true, out facialStyle))
+        if (!observeContext.TryGetComponentInParent<StyleComponent>(target, root, true, out facialStyle))
         {
             facialStyle = null;
             return false;
@@ -12,9 +12,9 @@ internal class FacialStyleContext
         return true;
     }
 
-    public static bool TryGetFacialStyle(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle)
+    public static bool TryGetFacialStyle(GameObject target, [NotNullWhen(true)]out StyleComponent? facialStyle)
     {
-        facialStyle = target.GetComponentInParent<FacialStyleComponent>(true);
+        facialStyle = target.GetComponentInParent<StyleComponent>(true);
         if (facialStyle == null)
         {
             facialStyle = null;
@@ -26,10 +26,10 @@ internal class FacialStyleContext
         }
     }
 
-    public static bool TryGetFirstFacialStyleAndObserve(GameObject target, [NotNullWhen(true)]out FacialStyleComponent? facialStyle, IObserveContext observeContext)
+    public static bool TryGetFirstFacialStyleAndObserve(GameObject target, [NotNullWhen(true)]out StyleComponent? facialStyle, IObserveContext observeContext)
     {
-        using var _ = ListPool<FacialStyleComponent>.Get(out var facialStyles);
-        observeContext.GetComponentsInChildren<FacialStyleComponent>(target, true, facialStyles);
+        using var _ = ListPool<StyleComponent>.Get(out var facialStyles);
+        observeContext.GetComponentsInChildren<StyleComponent>(target, true, facialStyles);
         if (facialStyles.Count == 0)
         {
             facialStyle = null;

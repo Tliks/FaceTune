@@ -1,8 +1,8 @@
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(ExpressionComponent))]
-internal class ExpressionEditor : FaceTuneIMGUIEditorBase<ExpressionComponent>
+[CustomEditor(typeof(FaceTuneComponent))]
+internal class ExpressionEditor : FaceTuneIMGUIEditorBase<FaceTuneComponent>
 {
     private SerializedProperty _expressionSettingsProperty = null!;
     private SerializedProperty _facialSettingsProperty = null!;
@@ -13,9 +13,9 @@ internal class ExpressionEditor : FaceTuneIMGUIEditorBase<ExpressionComponent>
     public override void OnEnable()
     {
         base.OnEnable();
-        _expressionSettingsProperty = serializedObject.FindProperty(nameof(ExpressionComponent.ExpressionSettings));
-        _facialSettingsProperty = serializedObject.FindProperty(nameof(ExpressionComponent.FacialSettings));
-        _enableRealTimePreviewProperty = serializedObject.FindProperty(nameof(ExpressionComponent.EnableRealTimePreview));
+        _expressionSettingsProperty = serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings));
+        _facialSettingsProperty = serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings));
+        _enableRealTimePreviewProperty = serializedObject.FindProperty(nameof(FaceTuneComponent.EnableRealTimePreview));
     }
 
     protected override void OnInnerInspectorGUI()
