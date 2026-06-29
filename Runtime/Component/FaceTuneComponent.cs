@@ -1,88 +1,17 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(MenuPath)]
-    public class FaceTuneComponent : FaceTuneTagComponent
+    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    internal class FaceTuneComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = FaceTuneConstants.Name;
-        internal const string MenuPath = BasePath  + "/" + ComponentName;
 
+        public Condition Condition = new();
         public ExpressionSettings ExpressionSettings = new();
         public FacialSettings FacialSettings = new();
+        public ExpressionData Data = new();
 
-        public bool EnableRealTimePreview = false;
+        [Obsolete] public bool EnableRealTimePreview = false;
 
-        internal AvatarExpression ToExpression(AvatarContext avatarContext)
-        {
-            var animationSet = new BlendShapeWeightAnimationSet();
-
-            if (!FacialSettings.EnableBlending)
-            {
-                animationSet.AddRange(avatarContext.SafeZeroBlendShapes.ToBlendShapeAnimations());
-
-                using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
-                if (FacialStyleContext.TryGetFacialStyleAnimations(gameObject, facialAnimations))
-                {
-                    animationSet.AddRange(facialAnimations);
-                }
-            }
-
-            var dataComponents = gameObject.GetComponentsInChildren<DataComponent>(true);
-            foreach (var dataComponent in dataComponents)
-            {
-                dataComponent.GetAnimations(animationSet, avatarContext);
-            }
-
-            var advancedEyeBlinkComponent = gameObject.GetComponentInParent<EyeBlinkComponent>(true);
-            var blinkSettings = advancedEyeBlinkComponent == null
-                ? AdvancedEyeBlinkSettings.Disabled() 
-                : advancedEyeBlinkComponent.AdvancedEyeBlinkSettings;
-
-            var advancedLipSyncComponent = gameObject.GetComponentInParent<LipSyncComponent>(true);
-            var lipSyncSettings = advancedLipSyncComponent == null
-                ? AdvancedLipSyncSettings.Disabled()
-                : advancedLipSyncComponent.AdvancedLipSyncSettings;
-
-            var facialSettings = FacialSettings with {
-                AdvancedEyBlinkSettings = blinkSettings,
-                AdvancedLipSyncSettings = lipSyncSettings
-            };
-
-            return new AvatarExpression(name, animationSet, ExpressionSettings, facialSettings);
-        }
-
-        internal IEnumerable<ExpressionWithConditions> GetExpressionWithConditions(AvatarContext avatarContext)
-        {
-            // 親の GameObject ごとの Condition を取得する (OR の AND)
-            var conditionComponentsByGameObject = new List<ConditionComponent[]>();
-            var current = transform;
-            while (current != null)
-            {
-                var conditionComponents = current.GetComponents<ConditionComponent>();
-                if (conditionComponents.Length > 0)
-                {
-                    conditionComponentsByGameObject.Add(conditionComponents);
-                }
-                current = current.parent;
-            }
-
-            // 親の GameObject ごとの Condition の直積を求める (AND の OR)
-            var conditionComponentsByExpression = conditionComponentsByGameObject
-                .Aggregate(
-                    Enumerable.Repeat(Enumerable.Empty<ConditionComponent>(), 1),
-                    (acc, set) => acc.SelectMany(_ => set, (x, y) => x.Append(y))
-                );
-
-            foreach (var conditionComponents in conditionComponentsByExpression)
-            {
-                var conditions = conditionComponents
-                    .SelectMany(x => Enumerable.Concat<Condition>(
-                        x.HandGestureConditions.Select(y => y with { }),
-                        x.ParameterConditions.Select(y => y with { })))
-                    .ToList();
-                var expression = ToExpression(avatarContext);
-                yield return new(conditions, expression);
-            }
-        }
     }
 }

@@ -3,9 +3,9 @@ namespace Aoyon.FaceTune
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPath)]
     [Obsolete]
-    public class AllowTrackedBlendShapesComponent : FaceTuneTagComponent
+    internal class AllowTrackedBlendShapesComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Allow Tracked BlendShapes";
-        internal const string MenuPath = BasePath + "/" + Legacy + "/" + ComponentName;
+        internal const string MenuPath = BaseMenuPath + "/" + LegacyMenuName + "/" + ComponentName;
     }
 }

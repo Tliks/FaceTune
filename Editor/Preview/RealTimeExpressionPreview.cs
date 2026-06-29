@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using nadena.dev.ndmf.preview;
 
+
 namespace Aoyon.FaceTune.Preview;
 
 // early
@@ -8,11 +9,10 @@ internal class RealTimeExpressionPreview : IRenderFilter
 {
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
-        var observeContext = new NDMFPreviewObserveContext(context);
         var builder = ImmutableList.CreateBuilder<RenderGroup>();
         foreach (var root in context.GetAvatarRoots())
         {
-            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var facePath, null, observeContext)) continue;
+            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var facePath, null, context)) continue;
             
             var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
             if (faceMesh == null) continue;
@@ -78,17 +78,16 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
     private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, FaceTuneComponent target, GameObject root, string bodyPath)
     {
-        var observeContext = new NDMFPreviewObserveContext(context);
-
         using var _3 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
-        FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(target.gameObject, facialStyleAnimations, root, observeContext);
+        FacialStyleContext.TryGetFacialStyleAnimations(target.gameObject, facialStyleAnimations, root, context);
         result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
         using var _4 = ListPool<DataComponent>.Get(out var dataComponents);
         context.GetComponentsInChildren<DataComponent>(target.gameObject, true, dataComponents);
         foreach (var dataComponent in dataComponents)
         {
-            dataComponent.GetBlendShapes(result, facialStyleAnimations, bodyPath, observeContext);
+            context.Observe(dataComponent);
+            ExpressionDataUtility.ResolveBlendShapes(dataComponent, result, facialStyleAnimations, bodyPath);
         }
     }
 }

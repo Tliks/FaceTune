@@ -2,7 +2,6 @@
     "name": "Aoyon.FaceTune.Runtime",
     "rootNamespace": "",
     "references": [
-        "Aoyon.FaceTune.Common",
         "nadena.dev.ndmf.runtime",
         "nadena.dev.modular-avatar.core"
     ],
@@ -11,7 +10,6 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "System.Collections.Immutable.dll",
         "VRCSDKBase.dll"
     ],
     "autoReferenced": false,

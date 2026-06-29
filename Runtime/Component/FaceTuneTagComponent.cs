@@ -2,10 +2,10 @@ using nadena.dev.ndmf;
 
 namespace Aoyon.FaceTune;
 
-public abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
+internal abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
 {
-    internal const string BasePath = FaceTuneConstants.Name;
-    internal const string Legacy = "Legacy";
+    internal const string BaseMenuPath = FaceTuneConstants.Name;
+    internal const string LegacyMenuName = "Legacy";
 }
 
 internal interface IHasObjectReferences

@@ -2,7 +2,6 @@
     "name": "Aoyon.FaceTune.Editor",
     "rootNamespace": "",
     "references": [
-        "Aoyon.FaceTune.Common",
         "Aoyon.FaceTune.Runtime",
         "nadena.dev.ndmf",
         "nadena.dev.ndmf.runtime",

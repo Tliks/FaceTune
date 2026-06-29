@@ -1,12 +1,13 @@
 namespace Aoyon.FaceTune
 {
-    [AddComponentMenu(MenuPath)]
-    public class ConditionComponent : FaceTuneTagComponent
+    [AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
+    internal class ConditionComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Condition";
-        internal const string MenuPath = BasePath + "/" + ComponentName;
 
-        public List<HandGestureCondition> HandGestureConditions = new();
-        public List<ParameterCondition> ParameterConditions = new();
+        public Condition Condition = new();
+
+        [Obsolete] public List<HandGestureCondition> HandGestureConditions = new();
+        [Obsolete] public List<ParameterCondition> ParameterConditions = new();
     }
 }

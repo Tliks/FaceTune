@@ -1,21 +1,10 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(MenuPath)]
-    public class PresetComponent : FaceTuneTagComponent
+    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    internal class PresetComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Preset";
-        internal const string MenuPath = BasePath + "/" + ComponentName;
-
-        internal Preset? GetPreset(AvatarContext avatarContext)
-        {
-            var patterns = gameObject.GetComponentsInChildren<PatternComponent>(true)
-                .Select(c => c.GetPattern(avatarContext))
-                .OfType<ExpressionPattern>()
-                .ToList();
-            if (patterns.Count == 0) return null;
-            return new Preset(gameObject.name, patterns);
-        }
 
         internal GameObject GetMenuTarget()
         {

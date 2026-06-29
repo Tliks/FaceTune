@@ -5,7 +5,6 @@ using nadena.dev.ndmf;
 namespace Aoyon.FaceTune.Build;
 
 // Hierarchy上のデータを弄るパスは基本的にここに置く
-// なお、PatternDataを必要とする場合は後続のパス。
 internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
 {
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.modify-hierarchy";

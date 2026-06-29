@@ -1,5 +1,6 @@
 #if FaceTune_VRCSDK3_AVATARS
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -8,6 +9,7 @@ using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
+using Aoyon.FaceTune;
 using Aoyon.FaceTune.Build;
 using Aoyon.FaceTune.Build.Animator;
 
@@ -20,6 +22,9 @@ internal class VRChatSupport : IMetabasePlatformSupport
     {
         MetabasePlatformSupport.Register(new VRChatSupport());
     }
+
+    private const string GestureLeftParameter = "GestureLeft";
+    private const string GestureRightParameter = "GestureRight";
 
     private Transform _root = null!;
     private VRCAvatarDescriptor _descriptor = null!;
@@ -68,14 +73,52 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return faceRenderer;
     }
 
-    public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
+    public void InstallExpressionProgram(BuildPassContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
     {
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var avatarContext = buildPassContext.AvatarContext;
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
         var installer = new AnimatorInstaller(fx, avatarContext, useWriteDefaults);
-        installer.Execute(installerData);
+        installer.Execute(expressionProgram);
+    }
+
+    public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
+    {
+        var gesture = condition.HandGesture;
+        return condition.Match switch
+        {
+            HandGestureMatch.LeftHand => HandRule(Hand.Left, EqualityComparison.Equal, gesture),
+            HandGestureMatch.RightHand => HandRule(Hand.Right, EqualityComparison.Equal, gesture),
+            HandGestureMatch.BothHands => HandRule(Hand.Left, EqualityComparison.Equal, gesture)
+                .And(HandRule(Hand.Right, EqualityComparison.Equal, gesture)),
+            HandGestureMatch.AtLeastOneHand => HandRule(Hand.Left, EqualityComparison.Equal, gesture)
+                .Or(HandRule(Hand.Right, EqualityComparison.Equal, gesture)),
+            HandGestureMatch.ExactlyOneHand => HandRule(Hand.Left, EqualityComparison.Equal, gesture)
+                .And(HandRule(Hand.Right, EqualityComparison.NotEqual, gesture))
+                .Or(HandRule(Hand.Left, EqualityComparison.NotEqual, gesture)
+                    .And(HandRule(Hand.Right, EqualityComparison.Equal, gesture))),
+            HandGestureMatch.NeitherHand => HandRule(Hand.Left, EqualityComparison.NotEqual, gesture)
+                .And(HandRule(Hand.Right, EqualityComparison.NotEqual, gesture)),
+            _ => throw new NotSupportedException($"Hand gesture match {condition.Match} is not supported by VRChat")
+        };
+    }
+
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    {
+        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition));
+    }
+
+    private static DnfCondition HandRule(Hand hand, EqualityComparison equalityComparison, HandGesture handGesture)
+    {
+        return DnfCondition.Single(new AnimatorConditionRule(
+            new AnimatorCondition
+            {
+                parameter = hand == Hand.Left ? GestureLeftParameter : GestureRightParameter,
+                mode = equalityComparison == EqualityComparison.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
+                threshold = (int)handGesture
+            },
+            AnimatorControllerParameterType.Int));
     }
 
     public IEnumerable<string> GetTrackedBlendShape()

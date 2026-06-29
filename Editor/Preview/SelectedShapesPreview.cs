@@ -1,6 +1,7 @@
 using nadena.dev.ndmf.preview;
 using Aoyon.FaceTune.Settings;
 
+
 namespace Aoyon.FaceTune.Preview;
 
 internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPreview>
@@ -69,10 +70,9 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
     protected override void GetTargetRenderers(ComputeContext context, List<SkinnedMeshRenderer> targetRenderers)
     {
         _targets.Clear();
-        var observeContext = new NDMFPreviewObserveContext(context);
         foreach (var root in context.GetAvatarRoots())
         {
-            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var path, null, observeContext)) continue;
+            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var path, null, context)) continue;
             if (!_hasAnyComponent.Get(context, root)) continue;
             _targets.Add((root, faceRenderer, path));
             targetRenderers.Add(faceRenderer);
@@ -186,17 +186,16 @@ internal class SelectedShapesPreviewSession : IDisposable
         using var _dataComponents = ListPool<DataComponent>.Get(out var dataComponents);
         if (TryGetExpressionData(context, target, root, dataComponents, out var expressionComponent))
         { 
-            var observeContext = new NDMFPreviewObserveContext(context);
-
             // dataCompononentのデータ取得用および、代入用にに顔つきを取得する
             using var _facial = ListPool<BlendShapeWeightAnimation>.Get(out var facial);
-            FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(dataComponents[0].gameObject, facial, root, observeContext);
+            FacialStyleContext.TryGetFacialStyleAnimations(dataComponents[0].gameObject, facial, root, context);
             
             resultToAdd.AddRange(facial);
 
             foreach (var dataComponent in dataComponents)
             {
-                dataComponent.GetBlendShapeAnimations(resultToAdd, facial, bodyPath, observeContext);
+                context.Observe(dataComponent);
+                ExpressionDataUtility.ResolveAnimations(dataComponent, resultToAdd, facial, bodyPath);
             }
 
             if (expressionComponent != null)

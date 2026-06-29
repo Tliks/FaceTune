@@ -270,7 +270,7 @@ internal class AnimatorControllerImporter
         {
             AllowEyeBlink = eye,
             AllowLipSync = mouth,
-            EnableBlending = isBlending,
+            WriteMode = isBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace,
             AdvancedEyBlinkSettings = AdvancedEyeBlinkSettings.Disabled()
         };
 

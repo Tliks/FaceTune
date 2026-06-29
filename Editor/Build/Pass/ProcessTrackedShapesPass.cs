@@ -13,12 +13,12 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
 
         var avatarContext = buildPassContext.AvatarContext;
 
-        var patternData = context.GetState<PatternData>();
+        var expressionProgram = context.GetState<ExpressionProgram>();
 
         List<AvatarExpression> allExpressions = new();
-        if (!patternData.IsEmpty)
+        if (!expressionProgram.IsEmpty)
         {
-            allExpressions.AddRange(patternData.GetAllExpressions());
+            allExpressions.AddRange(expressionProgram.GetAllExpressions());
         }
 
         var trackedShapes = buildPassContext.PlatformSupport.GetTrackedBlendShape().ToHashSet();

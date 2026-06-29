@@ -34,7 +34,7 @@ internal static class AnimatorHelper
 
     public static TBehavior EnsureBehavior<TBehavior>(this VirtualStateMachine stateMachine) where TBehavior : StateMachineBehaviour
     {
-        var behavior = stateMachine.Behaviours.OfType<TBehavior>().FirstOrNull();
+        var behavior = stateMachine.Behaviours.OfType<TBehavior>().FirstOrDefault();
         if (behavior == null)
         {
             behavior = ScriptableObject.CreateInstance<TBehavior>();
@@ -45,7 +45,7 @@ internal static class AnimatorHelper
 
     public static TBehavior EnsureBehavior<TBehavior>(this VirtualState state) where TBehavior : StateMachineBehaviour
     {
-        var behavior = state.Behaviours.OfType<TBehavior>().FirstOrNull();
+        var behavior = state.Behaviours.OfType<TBehavior>().FirstOrDefault();
         if (behavior == null)
         {
             behavior = ScriptableObject.CreateInstance<TBehavior>();

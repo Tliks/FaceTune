@@ -119,7 +119,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         }
 
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        Component.GetBlendShapeAnimations(facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), _context.BodyPath);
+        ExpressionDataUtility.ResolveAnimations(Component, facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), _context.BodyPath);
 
         _facialClipAnimationCount = facialAnimations.Count;
         _nonFacialClipAnimationCount = 0;
@@ -150,12 +150,12 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         if (Component.TryGetComponentInParent<FaceTuneComponent>(true, out var expressionComponent)){
             foreach (var upperData in expressionComponent.GetComponentsInChildren<DataComponent>()) {
                 if (upperData == Component) break;
-                upperData.GetBlendShapes(baseSet, facialStyleAnimations, bodyPath);
+                ExpressionDataUtility.ResolveBlendShapes(upperData, baseSet, facialStyleAnimations, bodyPath);
 
             }
         }
         var componentClipAnimations = new List<BlendShapeWeightAnimation>();
-        Component.GetBlendShapeAnimations(componentClipAnimations, facialStyleAnimations, bodyPath);
+        ExpressionDataUtility.ResolveAnimations(Component, componentClipAnimations, facialStyleAnimations, bodyPath);
         baseSet.AddRange(componentClipAnimations.ToFirstFrameBlendShapes());
 
         var defaultOverride = new BlendShapeWeightSet();
@@ -198,7 +198,7 @@ internal class ExpressionDataClipImporter
     public bool ImportClip(DataComponent component, string bodyPath)
     {
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        component.GetBlendShapeAnimations(facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), bodyPath);
+        ExpressionDataUtility.ResolveAnimations(component, facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), bodyPath);
         if (facialAnimations.Count == 0)
         {
             return false;
@@ -322,7 +322,7 @@ internal class ExpressionDataClipExporter : EditorWindow
                 animations.AddRange(facialStyleAnimations);
             }
         }
-        _component.GetAnimations(animations, context);
+        ExpressionDataUtility.ResolveAnimations(_component, animations, context);
         if (_excludeTrackedShapes)
         {
             animations.RemoveBlendShapes(context.TrackedBlendShapes);

@@ -1,4 +1,3 @@
-using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
@@ -14,7 +13,7 @@ internal interface IMetabasePlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
+    public void InstallExpressionProgram(BuildPassContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
     {
         return;
     }
@@ -23,6 +22,37 @@ internal interface IMetabasePlatformSupport
         return new string[] { };
     }
 
+    public DnfCondition ResolveCondition(Condition condition)
+    {
+        if (condition.Always) return DnfCondition.Always;
+        return condition.Cases.Aggregate(
+            DnfCondition.Never,
+            (current, conditionCase) => current.Or(ResolveConditionCase(conditionCase)));
+    }
+
+    public DnfCondition ResolveConditionCase(ConditionCase conditionCase)
+    {
+        var result = DnfCondition.Always;
+        foreach (var handGestureCondition in conditionCase.HandGestureConditions)
+        {
+            result = result.And(ResolveHandGestureCondition(handGestureCondition));
+        }
+        foreach (var parameterCondition in conditionCase.ParameterConditions)
+        {
+            result = result.And(ResolveParameterCondition(parameterCondition));
+        }
+        return result;
+    }
+
+    public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
+    {
+        throw new NotSupportedException("Hand gesture condition is not supported by this platform");
+    }
+
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    {
+        throw new NotSupportedException("Parameter condition is not supported by this platform");
+    }
 
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
     {

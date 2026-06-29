@@ -1,5 +1,4 @@
 using nadena.dev.ndmf;
-using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
 using Aoyon.FaceTune.Preview;
 
@@ -22,14 +21,11 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
         sequence.Run(ModifyHierarchyPass.Instance);
-        sequence.Run(CollectDataPass.Instance);
+        sequence.Run(CompileExpressionProgramPass.Instance);
         sequence.Run(ProcessTrackedShapesPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
-        sequence.WithRequiredExtension(typeof(VirtualControllerContext), sq1 => 
-        {
-            sq1.Run(InstallPatternDataPass.Instance);
-        });
+        sequence.Run(InstallExpressionProgramPass.Instance);
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
         sequence = InPhase(BuildPhase.PlatformFinish);

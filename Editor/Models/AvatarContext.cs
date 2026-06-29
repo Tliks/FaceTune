@@ -1,0 +1,112 @@
+using Aoyon.FaceTune.Platforms;
+using nadena.dev.ndmf.preview;
+using nadena.dev.ndmf.runtime;
+
+namespace Aoyon.FaceTune;
+
+internal class AvatarContext
+{
+    public readonly GameObject Root;
+    public readonly SkinnedMeshRenderer FaceRenderer;
+    
+    public readonly Mesh FaceMesh;
+    public readonly string BodyPath;
+    public readonly IReadOnlyBlendShapeSet ZeroBlendShapes;
+    public readonly HashSet<string> TrackedBlendShapes;
+    public readonly IReadOnlyBlendShapeSet SafeZeroBlendShapes;
+
+    public AvatarContext(
+        GameObject root,
+        SkinnedMeshRenderer faceRenderer,
+        Mesh faceMesh,
+        string bodyPath,
+        IReadOnlyBlendShapeSet zeroWeightBlendShapes,
+        HashSet<string> trackedBlendShapes,
+        IReadOnlyBlendShapeSet safeBlendShapes
+    )
+    {
+        Root = root;
+        FaceRenderer = faceRenderer;
+        FaceMesh = faceMesh;
+        BodyPath = bodyPath;
+        ZeroBlendShapes = zeroWeightBlendShapes;
+        TrackedBlendShapes = trackedBlendShapes;
+        SafeZeroBlendShapes = safeBlendShapes;
+    }
+}
+
+internal static class AvatarContextBuilder
+{
+    public static bool TryBuild(GameObject target, [NotNullWhen(true)] out AvatarContext? avatarContext, out AvatarContextBuildResult result, ComputeContext? context = null)
+    {
+        avatarContext = null;
+
+        context ??= ComputeContext.NullContext;
+
+        var root = context.GetAvatarRoot(target);
+        if (root == null)
+        {
+            result = AvatarContextBuildResult.NotFoundAvatarRoot;
+            return false;
+        }
+
+        var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(root.transform);
+
+        if (!TryGetFaceRenderer(root, out var faceRenderer, out var bodyPath, platformSupport, context))
+        {
+            result = AvatarContextBuildResult.NotFoundFaceRenderer;
+            return false;
+        }
+
+        var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
+        if (faceMesh == null)
+        {
+            result = AvatarContextBuildResult.NotFoundFaceMesh;
+            return false;
+        }
+
+        var zeroBlendShapes = new BlendShapeWeightSet();
+        faceRenderer.GetBlendShapesAndSetWeightToZero(zeroBlendShapes);
+
+        var trackedBlendShapes = new HashSet<string>(platformSupport.GetTrackedBlendShape());
+
+        var safeZeroBlendShapes = new BlendShapeWeightSet(zeroBlendShapes.Where(shape => !trackedBlendShapes.Contains(shape.Name)));
+
+        avatarContext = new AvatarContext(root.gameObject, faceRenderer, faceMesh, bodyPath, zeroBlendShapes, trackedBlendShapes, safeZeroBlendShapes);
+        result = AvatarContextBuildResult.Success;
+        return true;
+    }
+
+    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, [NotNullWhen(true)] out string? bodyPath, IMetabasePlatformSupport? platformSupport = null, ComputeContext? context = null)
+    {
+        context ??= ComputeContext.NullContext;
+        platformSupport ??= MetabasePlatformSupport.GetSupport(root.transform);
+
+        using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
+        context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
+        if (overrideFaceRenderers.Count > 1)
+        {
+            LocalizedLog.Warning("Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer", null, overrideFaceRenderers);
+        }
+
+        // LastOrDefaultなのはhierarchy上で一番下のものを取りたいから
+        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c.FaceObject)).OfType<GameObject>();
+        faceRenderer = faceObjects.Select(c => c.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null).LastOrDefault(r => r != null) ?? platformSupport.GetFaceRenderer();
+        if (faceRenderer != null)
+        {
+            bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
+            return true;
+        }
+        bodyPath = null;
+        return false;
+    }
+
+    public enum AvatarContextBuildResult
+    {
+        Success,
+        NotFoundAvatarRoot,
+        NotFoundFaceRenderer,
+        NotFoundFaceMesh,
+    }
+}
+

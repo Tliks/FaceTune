@@ -10,15 +10,6 @@ internal class ProjectSettings : ScriptableSingleton<ProjectSettings>
         _ = instance;
     }
 
-    private static void SetValue<T>(ref T field, T value)
-    {
-        if (!Equals(field, value))
-        {
-            field = value;
-            instance.Save(true);
-        }
-    }
-
     [SerializeField]
     private bool enableSelectedExpressionPreview = true;
     public static Action<bool>? EnableSelectedExpressionPreviewChanged;
@@ -31,7 +22,8 @@ internal class ProjectSettings : ScriptableSingleton<ProjectSettings>
         set
         {
             if (instance.enableSelectedExpressionPreview == value) return;
-            SetValue(ref instance.enableSelectedExpressionPreview, value);
+            instance.enableSelectedExpressionPreview = value;
+            instance.Save(true);
             EnableSelectedExpressionPreviewChanged?.Invoke(value);
         }
     }

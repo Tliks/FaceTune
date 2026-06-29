@@ -1,32 +1,16 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(MenuPath)]
-    public class StyleComponent : FaceTuneTagComponent
+    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    internal class StyleComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Style";
-        internal const string MenuPath = BasePath + "/" + ComponentName;
 
-        public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+        public ExpressionData Data = new();
 
         public bool ApplyToRenderer = false;
 
-        internal void GetBlendShapeAnimations(ICollection<BlendShapeWeightAnimation> resultToAdd, IObserveContext? observeContext = null)
-        {
-            observeContext?.Observe(this);
-            foreach (var animation in BlendShapeAnimations)
-            {
-                resultToAdd.Add(animation);
-            }
-        }
-   
-        internal void GetBlendShapes(ICollection<BlendShapeWeight> resultToAdd, IObserveContext? observeContext = null)
-        {
-            observeContext?.Observe(this);
-            foreach (var animation in BlendShapeAnimations)
-            {
-                resultToAdd.Add(animation.ToFirstFrameBlendShape());
-            }
-        }
+        [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+
     }
 }

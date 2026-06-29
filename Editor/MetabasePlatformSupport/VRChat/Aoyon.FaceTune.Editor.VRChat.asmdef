@@ -2,7 +2,6 @@
     "name": "Aoyon.FaceTune.Editor.VRChat",
     "rootNamespace": "",
     "references": [
-        "Aoyon.FaceTune.Common",
         "Aoyon.FaceTune.Editor",
         "Aoyon.FaceTune.Runtime",
         "nadena.dev.ndmf",
