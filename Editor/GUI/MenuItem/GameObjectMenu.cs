@@ -11,7 +11,7 @@ internal static class GameObjectMenu
     private static GameObject IP(string guid, bool unpack = true, bool isFirstSibling = false, bool addInstaller = false)
     {
         var parent = Selection.activeGameObject;
-        return PrefabAssets.InstantiatePrefab(guid, unpack: unpack, parent: parent, isFirstSibling: isFirstSibling, addInstaller: addInstaller);
+        return Utils.InstantiatePrefab(guid, unpack: unpack, parent: parent, isFirstSibling: isFirstSibling, addInstaller: addInstaller);
     }
     
     [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 

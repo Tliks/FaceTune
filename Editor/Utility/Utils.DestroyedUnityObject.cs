@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal static class DestroyedUnityObjectHelpers
+internal static partial class Utils
 {
     public static T? DestroyedAsNull<T>(this T? obj) where T : notnull, UnityEngine.Object
     {

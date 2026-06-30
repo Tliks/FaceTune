@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune;
 
-internal static class MeshHelper
+internal static partial class Utils
 {
     public static Dictionary<string, string> CloneShapes(SkinnedMeshRenderer renderer, HashSet<string> shapesToClone, Action<Mesh, Mesh> onClone, Action<string> onNotFound, string suffix = "_clone")
     {

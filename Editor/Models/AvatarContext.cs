@@ -33,6 +33,34 @@ internal class AvatarContext
         TrackedBlendShapes = trackedBlendShapes;
         SafeZeroBlendShapes = safeBlendShapes;
     }
+
+    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, [NotNullWhen(true)] out string? bodyPath, IMetabasePlatformSupport? platformSupport = null, ComputeContext? context = null)
+    {
+        faceRenderer = null;
+        bodyPath = null;
+
+        context ??= ComputeContext.NullContext;
+
+        using var _settingsComponents = ListPool<SettingsComponent>.Get(out var settingsComponents);
+        context.GetComponents<SettingsComponent>(root.gameObject, settingsComponents);
+        if (settingsComponents.Count > 1)
+        {
+            LocalizedLog.Warning("Log:warning:AvatarContextBuilder:MultipleSettingsComponent", null, settingsComponents);
+        }
+        if (settingsComponents.Count > 0)
+        {
+            var settingsComponent = settingsComponents[0];
+            var faceObject = context.Observe(settingsComponent, c => c.OverrideFaceRenderer ? c.FaceObjectReference.Get(c) : null, (a, b) => a == b).DestroyedAsNull();
+            faceRenderer = faceObject != null ? context.GetComponent<SkinnedMeshRenderer>(faceObject).DestroyedAsNull() : null;
+        }
+
+        faceRenderer ??= (platformSupport ??= MetabasePlatformSupport.GetSupport(root.transform)).GetFaceRenderer();
+
+        if (faceRenderer == null) return false;
+
+        bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
+        return true;
+    }
 }
 
 internal static class AvatarContextBuilder
@@ -77,29 +105,6 @@ internal static class AvatarContextBuilder
         return true;
     }
 
-    public static bool TryGetFaceRenderer(GameObject root, [NotNullWhen(true)] out SkinnedMeshRenderer? faceRenderer, [NotNullWhen(true)] out string? bodyPath, IMetabasePlatformSupport? platformSupport = null, ComputeContext? context = null)
-    {
-        context ??= ComputeContext.NullContext;
-        platformSupport ??= MetabasePlatformSupport.GetSupport(root.transform);
-
-        using var _overrideFaceRenderers = ListPool<OverrideFaceRendererComponent>.Get(out var overrideFaceRenderers);
-        context.GetComponents<OverrideFaceRendererComponent>(root.gameObject, overrideFaceRenderers);
-        if (overrideFaceRenderers.Count > 1)
-        {
-            LocalizedLog.Warning("Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer", null, overrideFaceRenderers);
-        }
-
-        // LastOrDefaultなのはhierarchy上で一番下のものを取りたいから
-        var faceObjects = overrideFaceRenderers.Select(c => context.Observe(c, c => c.FaceObject)).OfType<GameObject>();
-        faceRenderer = faceObjects.Select(c => c.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null).LastOrDefault(r => r != null) ?? platformSupport.GetFaceRenderer();
-        if (faceRenderer != null)
-        {
-            bodyPath = RuntimeUtil.RelativePath(root, faceRenderer.gameObject)!;
-            return true;
-        }
-        bodyPath = null;
-        return false;
-    }
 
     public enum AvatarContextBuildResult
     {

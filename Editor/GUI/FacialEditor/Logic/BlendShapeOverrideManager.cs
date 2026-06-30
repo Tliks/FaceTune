@@ -82,7 +82,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     private void InitializeTargetRenderer(SkinnedMeshRenderer? targetRenderer)
     {
-        var allBlendShapes = targetRenderer == null ? new BlendShapeWeight[0] : targetRenderer.GetBlendShapes(targetRenderer.sharedMesh);
+        var allBlendShapes = targetRenderer == null ? new BlendShapeWeight[0] : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh);
         _allKeysArray = allBlendShapes.Select(x => x.Name).ToArray();
         _shapeNameToIndexMap = _allKeysArray.Select((x, i) => (x, i)).ToDictionary(x => x.x, x => x.i);
         _overrideFlagsProperty.arraySize = _allKeysArray.Length;

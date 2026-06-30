@@ -1,9 +1,8 @@
 using System.Reflection;
-using UnityEditor;
 
 namespace Aoyon.FaceTune;
 
-internal static class UndoUtility
+internal static partial class Utils
 {
     private static readonly BindingFlags UndoReflectionFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
     private static readonly MethodInfo? HasUndoMethod = typeof(Undo).GetMethod("HasUndo", UndoReflectionFlags);

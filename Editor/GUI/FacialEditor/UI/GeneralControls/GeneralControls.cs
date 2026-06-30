@@ -81,7 +81,7 @@ internal class GeneralControls : IDisposable
 
     private static bool CanUndoForThisWindow()
     {
-        if (UndoUtility.TryHasUndo(out var canUndoFromUndo))
+        if (Utils.TryHasUndo(out var canUndoFromUndo))
         {
             if (!canUndoFromUndo) return false;
             return Undo.GetCurrentGroupName() != "Facial Shapes Editor: Window Opened";
@@ -93,7 +93,7 @@ internal class GeneralControls : IDisposable
 
     private static bool CanRedoPolicy()
     {
-        if (UndoUtility.TryHasRedo(out var canRedoFromUndo))
+        if (Utils.TryHasRedo(out var canRedoFromUndo))
         {
             return canRedoFromUndo;
         }

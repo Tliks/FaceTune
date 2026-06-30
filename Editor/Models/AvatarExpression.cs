@@ -35,7 +35,7 @@ internal class AvatarExpression : IEquatable<AvatarExpression> // 可変
     public override int GetHashCode()
     {
         var hash = Name.GetHashCode();
-        hash ^= AnimationSet.GetSequenceHashCode();
+        foreach (var animation in AnimationSet) hash ^= animation.GetHashCode();
         hash ^= FacialSettings.GetHashCode();
         hash ^= ExpressionSettings.GetHashCode();
         return hash;

@@ -212,7 +212,7 @@ internal class BlinkInstaller : InstallerBase
 
         Action<Mesh, Mesh> onClone = (Mesh o, Mesh n) => ObjectRegistry.RegisterReplacedObject(o, n);
         Action<string> onNotFound = (string name) => { LocalizedLog.Error("BuildLog:error:CloneShapes:ShapeNotFound", name); };
-        _clonedShapesMapping = MeshHelper.CloneShapes(_avatarContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
+        _clonedShapesMapping = Utils.CloneShapes(_avatarContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
         foreach (var (settings, index) in _advancedEyeBlinkIndex.ToList())
         {
             var newSettings = settings.GetRenamed(_clonedShapesMapping);

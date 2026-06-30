@@ -17,7 +17,7 @@ internal class AnimatorControllerImporter
         _animatorController = animatorController;
         _platformSupport = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
-        _allFacialBlendshapeCount = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Length;
+        _allFacialBlendshapeCount = context.FaceRenderer.GetBlendShapeWeights(context.FaceMesh).Length;
     }
 
     public void Import(GameObject root)

@@ -56,7 +56,7 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<StyleComponent>
     private void UpdateFromScene()
     {
         if (!CustomEditorUtility.TryGetContext(Component.gameObject, out var context)) return;
-        var blendShapes = context.FaceRenderer.GetBlendShapes(context.FaceMesh).Where(shape => shape.Weight > 0).ToList();
+        var blendShapes = context.FaceRenderer.GetBlendShapeWeights(context.FaceMesh).Where(shape => shape.Weight > 0).ToList();
         serializedObject.Update();
         var property = serializedObject.FindProperty(nameof(StyleComponent.BlendShapeAnimations));
         CustomEditorUtility.ClearAllElements(property);

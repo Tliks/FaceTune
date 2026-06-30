@@ -27,11 +27,11 @@ internal class ProcessTrackedShapesPass : Pass<ProcessTrackedShapesPass>
         {
             var setteledShapes = allExpressions.SelectMany(e => e.AnimationSet.GetBlendShapeNames()).ToHashSet();
 
-            var shapeNames = avatarContext.FaceRenderer.GetBlendShapes(avatarContext.FaceMesh).Select(b => b.Name);
+            var shapeNames = avatarContext.FaceRenderer.GetBlendShapeWeights(avatarContext.FaceMesh).Select(b => b.Name);
             var shapesToClone = trackedShapes.Intersect(shapeNames);
             _ = shapesToClone;
             if (!shapesToClone.Any()) return;
-            var mapping = MeshHelper.CloneShapes(avatarContext.FaceRenderer, shapesToClone.ToHashSet(), (o, n) => ObjectRegistry.RegisterReplacedObject(o, n), _ => {}, "_clone.tracked");
+            var mapping = Utils.CloneShapes(avatarContext.FaceRenderer, shapesToClone.ToHashSet(), (o, n) => ObjectRegistry.RegisterReplacedObject(o, n), _ => {}, "_clone.tracked");
             ModifyData(allExpressions, avatarContext.BodyPath, mapping);
         }
         else

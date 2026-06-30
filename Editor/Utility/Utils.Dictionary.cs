@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-
 namespace Aoyon.FaceTune;
 
-internal static class DictionaryExtensions
+internal static partial class Utils
 {
     public static bool TryAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue addValue)
     {

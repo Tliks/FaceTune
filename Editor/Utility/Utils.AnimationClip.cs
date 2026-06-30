@@ -1,18 +1,8 @@
 namespace Aoyon.FaceTune;
 
-internal static class AnimationUtility
+internal static partial class Utils
 {
-    // AnimationCurve
-    public static AnimationCurve Clone(this AnimationCurve curve)
-    {
-        var duplicated = new AnimationCurve();
-        duplicated.CopyFrom(curve);
-        return duplicated;
-    }
-
     private const string BlendShapePropertyName = FaceTuneConstants.AnimatedBlendShapePrefix;
-
-#if UNITY_EDITOR
 
     private static readonly List<BlendShapeWeightAnimation> _emptyFacialAnimations = new();
 
@@ -81,7 +71,7 @@ internal static class AnimationUtility
     }
 
 
-    private static bool IsFacialBinding(UnityEditor.EditorCurveBinding binding, string? facialPath)
+    private static bool IsFacialBinding(EditorCurveBinding binding, string? facialPath)
     {
         if (binding.type == typeof(SkinnedMeshRenderer) && binding.propertyName.StartsWith(BlendShapePropertyName))
         {
@@ -99,43 +89,42 @@ internal static class AnimationUtility
 
     public static void AddBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)
     {
-        var bindings = new List<UnityEditor.EditorCurveBinding>();
+        var bindings = new List<EditorCurveBinding>();
         var curves = new List<AnimationCurve>();
         foreach (var blendShape in blendShapes)
         {
             var curve = new AnimationCurve();
             curve.AddKey(0, blendShape.Weight);
-            var binding = UnityEditor.EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), BlendShapePropertyName + blendShape.Name);
+            var binding = EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), BlendShapePropertyName + blendShape.Name);
             bindings.Add(binding);
             curves.Add(curve);
         }
-        UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
+        AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
     }
 
     public static void AddBlendShapeAnimations(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeightAnimation> animations)
     {
-        var bindings = new List<UnityEditor.EditorCurveBinding>();
+        var bindings = new List<EditorCurveBinding>();
         var curves = new List<AnimationCurve>();
         foreach (var animation in animations)
         {
-            var binding = UnityEditor.EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), BlendShapePropertyName + animation.Name);
+            var binding = EditorCurveBinding.FloatCurve(relativePath, typeof(SkinnedMeshRenderer), BlendShapePropertyName + animation.Name);
             bindings.Add(binding);
             curves.Add(animation.Curve);
         }
-        UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
+        AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
     }
 
     public static void RemoveAllCurveBindings(this AnimationClip clip)
     {
-        var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
+        var bindings = AnimationUtility.GetCurveBindings(clip);
         var curves = Enumerable.Repeat<AnimationCurve?>(null, bindings.Length).ToArray();
-        UnityEditor.AnimationUtility.SetEditorCurves(clip, bindings, curves);
+        AnimationUtility.SetEditorCurves(clip, bindings, curves);
     }
 
     public static void SaveChanges(this AnimationClip clip)
     {
-        UnityEditor.EditorUtility.SetDirty(clip);
-        UnityEditor.AssetDatabase.SaveAssetIfDirty(clip);
+        EditorUtility.SetDirty(clip);
+        AssetDatabase.SaveAssetIfDirty(clip);
     }
-#endif
 }

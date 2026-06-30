@@ -1,27 +1,8 @@
 namespace Aoyon.FaceTune;
 
-internal static class BlendShapeUtility
+internal static partial class Utils
 {
-    public static void GetBlendShapes(this SkinnedMeshRenderer renderer, ICollection<BlendShapeWeight> resultToAdd)
-    {
-        for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
-        {
-            var name = renderer.sharedMesh.GetBlendShapeName(i);
-            var weight = renderer.GetBlendShapeWeight(i);
-            resultToAdd.Add(new BlendShapeWeight(name, weight));
-        }
-    }
-    
-    public static void GetBlendShapesAndSetWeightToZero(this SkinnedMeshRenderer renderer, ICollection<BlendShapeWeight> resultToAdd)
-    {
-        for (var i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
-        {
-            var name = renderer.sharedMesh.GetBlendShapeName(i);
-            resultToAdd.Add(new BlendShapeWeight(name, 0f));
-        }
-    }
-
-    public static BlendShapeWeight[] GetBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh)
+    public static BlendShapeWeight[] GetBlendShapeWeights(this SkinnedMeshRenderer renderer, Mesh mesh)
     {
         var blendShapes = new BlendShapeWeight[mesh.blendShapeCount];
         for (var i = 0; i < mesh.blendShapeCount; i++)
@@ -33,26 +14,34 @@ internal static class BlendShapeUtility
         return blendShapes;
     }
 
+    public static string[] GetBlendShapeNames(this Mesh mesh)
+    {
+        var blendShapes = new string[mesh.blendShapeCount];
+        for (var i = 0; i < mesh.blendShapeCount; i++)
+        {
+            var name = mesh.GetBlendShapeName(i);
+            blendShapes[i] = name;
+        }
+        return blendShapes;
+    }
+
     /// <summary>
     /// ブレンドシェイプを適用する
     /// defaultValueはblendShapeSetに含まれないブレンドシェイプのハンドリング
     /// -1のとき維持し、それ以外の場合は指定された値で上書き
     /// </summary>
-    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh, BlendShapeWeightSet blendShapeSet, float defaultValue = -1)
+    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh, IReadOnlyBlendShapeSet blendShapeSet, float defaultValue = -1)
     {
         var blendShapeCount = mesh.blendShapeCount;
         for (var i = 0; i < blendShapeCount; i++)
         {
             var name = mesh.GetBlendShapeName(i);
-            var currentWeight = renderer.GetBlendShapeWeight(i);
             if (blendShapeSet.TryGetValue(name, out var blendShape))
             {
-                if (blendShape.Weight == currentWeight) continue; // 余分な変更を避ける
                 renderer.SetBlendShapeWeight(i, blendShape.Weight);
             }
             else if (defaultValue != -1)
             {
-                if (currentWeight == defaultValue) continue;
                 renderer.SetBlendShapeWeight(i, defaultValue);
             }
         }
