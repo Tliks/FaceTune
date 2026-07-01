@@ -1,5 +1,3 @@
-using nadena.dev.modular_avatar.core;
-
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
@@ -8,15 +6,8 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Settings";
 
-        public bool OverrideFaceRenderer = false;
-        public AvatarObjectReference FaceObjectReference = new();
+        public AvatarSettings Settings = AvatarSettings.Default;
 
-        public bool OverrideDurationSeconds = false;
-        public float DurationSeconds = 0.1f;
-
-        public bool OverrideAllowTrackedBlendShapes = false;
-        public bool AllowTrackedBlendShapes = true;
-
-        public void ResolveReferences() => FaceObjectReference?.Get(this);
+        public void ResolveReferences() => Settings.FaceObjectReference.Get(this);
     }
 }

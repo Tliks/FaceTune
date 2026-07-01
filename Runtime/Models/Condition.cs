@@ -155,6 +155,13 @@ internal enum Hand
     Right
 }
 
+[Obsolete]
+internal enum EqualityComparison
+{
+    Equal,
+    NotEqual
+}
+
 internal enum HandGestureMatch
 {
     LeftHand,
@@ -190,10 +197,4 @@ internal enum ComparisonType
     NotEqual,
     GreaterThan,
     LessThan
-}
-
-internal enum EqualityComparison
-{
-    Equal,
-    NotEqual
 }
