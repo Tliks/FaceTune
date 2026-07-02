@@ -23,7 +23,8 @@ internal class Condition
 internal class ConditionCase
 {
     public List<HandGestureCondition> HandGestureConditions = new();
-    public List<MenuConditon> MenuConditons = new();
+    [FormerlySerializedAs("MenuConditons")]
+    public List<MenuCondition> MenuConditions = new();
     public List<ParameterCondition> ParameterConditions = new();
 
     public ConditionCase()
@@ -63,10 +64,27 @@ internal class HandGestureCondition
 }
 
 [Serializable]
-internal class MenuConditon
+internal class MenuCondition
 {
     public MenuComponent? MenuSource = null;
+    public MenuConditionMode Mode = MenuConditionMode.Enabled;
+    public float Threshold = 0.5f;
 
+    public MenuCondition()
+    {
+    }
+
+    public MenuCondition(MenuComponent? menuSource, MenuConditionMode mode, float threshold = 0.5f)
+    {
+        MenuSource = menuSource;
+        Mode = mode;
+        Threshold = threshold;
+    }
+}
+
+[Obsolete("Use MenuCondition")]
+internal class MenuConditon : MenuCondition
+{
     public MenuConditon()
     {
     }

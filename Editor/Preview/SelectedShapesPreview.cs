@@ -72,10 +72,10 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
         _targets.Clear();
         foreach (var root in context.GetAvatarRoots())
         {
-            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var path, null, context)) continue;
+            if (!AvatarContext.TryGet(root, out var avatarContext, out _, context)) continue;
             if (!_hasAnyComponent.Get(context, root)) continue;
-            _targets.Add((root, faceRenderer, path));
-            targetRenderers.Add(faceRenderer);
+            _targets.Add((root, avatarContext.FaceRenderer, avatarContext.BodyPath));
+            targetRenderers.Add(avatarContext.FaceRenderer);
         }
     }
 
@@ -195,7 +195,7 @@ internal class SelectedShapesPreviewSession : IDisposable
             foreach (var dataComponent in dataComponents)
             {
                 context.Observe(dataComponent);
-                ExpressionDataUtility.ResolveAnimations(dataComponent, resultToAdd, facial, bodyPath);
+                ExpressionDataUtility.AddAnimations(dataComponent.Data, resultToAdd, bodyPath, facial);
             }
 
             if (expressionComponent != null)

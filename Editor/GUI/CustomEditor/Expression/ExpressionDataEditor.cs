@@ -119,12 +119,13 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         }
 
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.ResolveAnimations(Component, facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), _context.BodyPath);
+        ExpressionDataUtility.AddAnimations(Component.Data, facialAnimations, _context.BodyPath);
 
         _facialClipAnimationCount = facialAnimations.Count;
         _nonFacialClipAnimationCount = 0;
 
-        var allBlendShapes = _context.ZeroBlendShapes
+        var allBlendShapes = _context.FaceRenderer
+            .GetBlendShapeWeights(_context.FaceMesh)
             .Select(x => x.Name)
             .ToHashSet();
         _missingBlendShapeNames = Component.BlendShapeAnimations.Concat(facialAnimations)
@@ -150,12 +151,12 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         if (Component.TryGetComponentInParent<FaceTuneComponent>(true, out var expressionComponent)){
             foreach (var upperData in expressionComponent.GetComponentsInChildren<DataComponent>()) {
                 if (upperData == Component) break;
-                ExpressionDataUtility.ResolveBlendShapes(upperData, baseSet, facialStyleAnimations, bodyPath);
+                ExpressionDataUtility.AddFirstFrameBlendShapes(upperData.Data, baseSet, bodyPath, facialStyleAnimations);
 
             }
         }
         var componentClipAnimations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.ResolveAnimations(Component, componentClipAnimations, facialStyleAnimations, bodyPath);
+        ExpressionDataUtility.AddAnimations(Component.Data, componentClipAnimations, bodyPath, facialStyleAnimations);
         baseSet.AddRange(componentClipAnimations.ToFirstFrameBlendShapes());
 
         var defaultOverride = new BlendShapeWeightSet();
@@ -198,7 +199,7 @@ internal class ExpressionDataClipImporter
     public bool ImportClip(DataComponent component, string bodyPath)
     {
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.ResolveAnimations(component, facialAnimations, Array.Empty<BlendShapeWeightAnimation>(), bodyPath);
+        ExpressionDataUtility.AddAnimations(component.Data, facialAnimations, bodyPath);
         if (facialAnimations.Count == 0)
         {
             return false;
@@ -305,14 +306,17 @@ internal class ExpressionDataClipExporter : EditorWindow
     private void Export()
     {
         var animations = new BlendShapeWeightAnimationSet();
-        if (!AvatarContextBuilder.TryBuild(_component.gameObject, out var context, out var result))
+        if (!AvatarContext.TryGet(_component.gameObject, out var context, out var result))
         {
-            LocalizedLog.Error("Log:error:AvatarContextBuilder:FailedToBuild", result.ToString());
+            LocalizedLog.Error("Log:error:AvatarContext:FailedToBuild", result.ToString());
             return;
         }
         if (_addZeroWeight)
         {
-            animations.AddRange(context.ZeroBlendShapes.ToBlendShapeAnimations());
+            animations.AddRange(context.FaceRenderer
+                .GetBlendShapeWeights(context.FaceMesh)
+                .Select(shape => shape with { Weight = 0f })
+                .ToBlendShapeAnimations());
         }
         if (_addFacialStyle)
         {
@@ -322,10 +326,11 @@ internal class ExpressionDataClipExporter : EditorWindow
                 animations.AddRange(facialStyleAnimations);
             }
         }
-        ExpressionDataUtility.ResolveAnimations(_component, animations, context);
+        ExpressionDataUtility.AddAnimations(_component.Data, animations, context.BodyPath);
         if (_excludeTrackedShapes)
         {
-            animations.RemoveBlendShapes(context.TrackedBlendShapes);
+            var platformSupport = Aoyon.FaceTune.Platforms.MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
+            animations.RemoveBlendShapes(platformSupport.GetTrackedBlendShape().ToHashSet());
         }
         CustomEditorUtility.SaveAsClip(clip =>
         {

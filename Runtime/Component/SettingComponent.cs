@@ -8,6 +8,6 @@ namespace Aoyon.FaceTune
 
         public AvatarSettings Settings = AvatarSettings.Default;
 
-        public void ResolveReferences() => Settings.FaceObjectReference.Get(this);
+        public void ResolveReferences() => Settings.ResolveReferences(this);
     }
 }

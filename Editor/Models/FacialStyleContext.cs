@@ -20,28 +20,10 @@ internal class FacialStyleContext
         return context.TryGetComponentInParent(target, root, true, out facialStyle);
     }
 
-    public static bool TryGetFirstFacialStyle(
-        GameObject target,
-        [NotNullWhen(true)] out StyleComponent? facialStyle,
-        ComputeContext? context = null)
-    {
-        context ??= ComputeContext.NullContext;
-        using var _ = ListPool<StyleComponent>.Get(out var facialStyles);
-        context.GetComponentsInChildren(target, true, facialStyles);
-        if (facialStyles.Count == 0)
-        {
-            facialStyle = null;
-            return false;
-        }
-
-        facialStyle = facialStyles[0];
-        return true;
-    }
-
     public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd)
     {
         if (!TryGetFacialStyle(target, out var facialStyle)) return false;
-        ExpressionDataUtility.ResolveStyleAnimations(facialStyle, resultToAdd);
+        ExpressionDataUtility.AddAnimations(facialStyle.Data, resultToAdd, string.Empty);
         return true;
     }
 
@@ -54,7 +36,7 @@ internal class FacialStyleContext
         context ??= ComputeContext.NullContext;
         if (!TryGetFacialStyle(target, out var facialStyle, root, context)) return false;
         context.Observe(facialStyle);
-        ExpressionDataUtility.ResolveStyleAnimations(facialStyle, resultToAdd);
+        ExpressionDataUtility.AddAnimations(facialStyle.Data, resultToAdd, string.Empty);
         return true;
     }
 }

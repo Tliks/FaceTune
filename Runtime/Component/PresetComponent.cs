@@ -6,13 +6,8 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Preset";
 
-        internal GameObject GetMenuTarget()
-        {
-            // デフォルトは同階層にPresetのトグルを作る。
-            // Todo: option to override
-            var menuTarget = new GameObject(name);
-            menuTarget.transform.SetParent(transform.parent);
-            return menuTarget;
-        }
+        public MenuIconSettings Icon = new();
+        public MenuInstallSettings InstallSettings = new();
+
     }
 }

@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
     internal class MMDSupportComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} MMD Support";
-        
-        public string ConditionParameterName = string.Empty;
+
+        public MmdSupportSettings Settings = new();
     }
 }

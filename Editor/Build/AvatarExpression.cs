@@ -1,4 +1,4 @@
-namespace Aoyon.FaceTune;
+namespace Aoyon.FaceTune.Build;
 
 internal class AvatarExpression : IEquatable<AvatarExpression> // 可変
 {

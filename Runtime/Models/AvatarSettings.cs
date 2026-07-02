@@ -21,4 +21,9 @@ internal class AvatarSettings
     }
 
     public static AvatarSettings Default => new();
+
+    public void ResolveReferences(Component owner)
+    {
+        FaceObjectReference.Get(owner);
+    }
 }

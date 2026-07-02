@@ -73,7 +73,7 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return faceRenderer;
     }
 
-    public void InstallExpressionProgram(BuildPassContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
+    public void InstallExpressionProgram(FaceTuneContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
     {
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
@@ -88,18 +88,18 @@ internal class VRChatSupport : IMetabasePlatformSupport
         var gesture = condition.HandGesture;
         return condition.Match switch
         {
-            HandGestureMatch.LeftHand => HandRule(Hand.Left, EqualityComparison.Equal, gesture),
-            HandGestureMatch.RightHand => HandRule(Hand.Right, EqualityComparison.Equal, gesture),
-            HandGestureMatch.BothHands => HandRule(Hand.Left, EqualityComparison.Equal, gesture)
-                .And(HandRule(Hand.Right, EqualityComparison.Equal, gesture)),
-            HandGestureMatch.AtLeastOneHand => HandRule(Hand.Left, EqualityComparison.Equal, gesture)
-                .Or(HandRule(Hand.Right, EqualityComparison.Equal, gesture)),
-            HandGestureMatch.ExactlyOneHand => HandRule(Hand.Left, EqualityComparison.Equal, gesture)
-                .And(HandRule(Hand.Right, EqualityComparison.NotEqual, gesture))
-                .Or(HandRule(Hand.Left, EqualityComparison.NotEqual, gesture)
-                    .And(HandRule(Hand.Right, EqualityComparison.Equal, gesture))),
-            HandGestureMatch.NeitherHand => HandRule(Hand.Left, EqualityComparison.NotEqual, gesture)
-                .And(HandRule(Hand.Right, EqualityComparison.NotEqual, gesture)),
+            HandGestureMatch.LeftHand => HandRule(GestureLeftParameter, true, gesture),
+            HandGestureMatch.RightHand => HandRule(GestureRightParameter, true, gesture),
+            HandGestureMatch.BothHands => HandRule(GestureLeftParameter, true, gesture)
+                .And(HandRule(GestureRightParameter, true, gesture)),
+            HandGestureMatch.AtLeastOneHand => HandRule(GestureLeftParameter, true, gesture)
+                .Or(HandRule(GestureRightParameter, true, gesture)),
+            HandGestureMatch.ExactlyOneHand => HandRule(GestureLeftParameter, true, gesture)
+                .And(HandRule(GestureRightParameter, false, gesture))
+                .Or(HandRule(GestureLeftParameter, false, gesture)
+                    .And(HandRule(GestureRightParameter, true, gesture))),
+            HandGestureMatch.NeitherHand => HandRule(GestureLeftParameter, false, gesture)
+                .And(HandRule(GestureRightParameter, false, gesture)),
             _ => throw new NotSupportedException($"Hand gesture match {condition.Match} is not supported by VRChat")
         };
     }
@@ -109,13 +109,13 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition));
     }
 
-    private static DnfCondition HandRule(Hand hand, EqualityComparison equalityComparison, HandGesture handGesture)
+    private static DnfCondition HandRule(string parameterName, bool equal, HandGesture handGesture)
     {
         return DnfCondition.Single(new AnimatorConditionRule(
             new AnimatorCondition
             {
-                parameter = hand == Hand.Left ? GestureLeftParameter : GestureRightParameter,
-                mode = equalityComparison == EqualityComparison.Equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
+                parameter = parameterName,
+                mode = equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
                 threshold = (int)handGesture
             },
             AnimatorControllerParameterType.Int));

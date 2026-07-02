@@ -58,7 +58,8 @@ internal class AnimatorInstaller : InstallerBase
         var animations = new List<BlendShapeWeightAnimation>();
         var mmdAnimations = new List<BlendShapeWeightAnimation>();
 
-        foreach (var shape in _avatarContext.FaceRenderer.GetBlendShapeWeights(_avatarContext.FaceMesh).Where(b => !_avatarContext.TrackedBlendShapes.Contains(b.Name)))
+        var trackedBlendShapes = _platformSupport.GetTrackedBlendShape().ToHashSet();
+        foreach (var shape in _avatarContext.FaceRenderer.GetBlendShapeWeights(_avatarContext.FaceMesh).Where(b => !trackedBlendShapes.Contains(b.Name)))
         {
             if (IsMMDBlendShapeName(shape.Name))
             {

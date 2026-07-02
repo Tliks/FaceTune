@@ -33,7 +33,7 @@ internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
         // 未知のブレンドシェイプを上書きせず、既知のブレンドシェイプのみ0で上書きする
 
         var set = new BlendShapeWeightSet();
-        set.AddRange(avatarContext.ZeroBlendShapes);
+        set.AddRange(avatarContext.FaceRenderer.GetBlendShapeWeights(avatarContext.FaceMesh).Select(shape => shape with { Weight = 0f }));
         target.GetBlendShapes(set);
 
         var renderer = avatarContext.FaceRenderer;

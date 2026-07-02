@@ -6,11 +6,11 @@ internal static class CustomEditorUtility
 {
     public static bool TryGetContext(GameObject obj, [NotNullWhen(true)] out AvatarContext? context)
     {
-        if (AvatarContextBuilder.TryBuild(obj, out context, out var result))
+        if (AvatarContext.TryGet(obj, out context, out var result))
         {
             return true;
         }
-        LocalizedLog.Error("Log:error:AvatarContextBuilder:FailedToBuild", result.ToString());
+        LocalizedLog.Error("Log:error:AvatarContext:FailedToBuild", result.ToString());
         return false;
     }
 

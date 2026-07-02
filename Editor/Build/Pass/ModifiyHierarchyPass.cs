@@ -16,7 +16,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         Excute(buildPassContext);
     }
 
-    internal static void Excute(BuildPassContext buildPassContext)
+    internal static void Excute(FaceTuneContext buildPassContext)
     {
         // Condition
         NegotiateMAMenuItem(buildPassContext);
@@ -27,7 +27,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         NormalizeData(buildPassContext);
     }
 
-    private static void NegotiateMAMenuItem(BuildPassContext buildPassContext)
+    private static void NegotiateMAMenuItem(FaceTuneContext buildPassContext)
     {
         var root = buildPassContext.AvatarContext.Root;
         var platformSupport = buildPassContext.PlatformSupport;
@@ -176,7 +176,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
     }
 
     private const string Preset_Index_Parameter = $"{FaceTuneConstants.ParameterPrefix}/PresetIndex";
-    private static void ProcessPreset(BuildPassContext buildPassContext)
+    private static void ProcessPreset(FaceTuneContext buildPassContext)
     {
         var platformSupport = buildPassContext.PlatformSupport;
         var presetComponents = buildPassContext.AvatarContext.Root.GetComponentsInChildren<PresetComponent>(true);
@@ -201,7 +201,7 @@ internal class ModifyHierarchyPass : Pass<ModifyHierarchyPass>
         }
     }
 
-    private static void NormalizeData(BuildPassContext buildPassContext)
+    private static void NormalizeData(FaceTuneContext buildPassContext)
     {
         // Patternに属しないExpressionをそれぞれ単一のPatternとして扱うことでデータを正規化する
         var root = buildPassContext.AvatarContext.Root;

@@ -13,7 +13,7 @@ internal interface IMetabasePlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void InstallExpressionProgram(BuildPassContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
+    public void InstallExpressionProgram(FaceTuneContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
     {
         return;
     }
@@ -41,6 +41,10 @@ internal interface IMetabasePlatformSupport
         {
             result = result.And(ResolveParameterCondition(parameterCondition));
         }
+        foreach (var menuCondition in conditionCase.MenuConditions)
+        {
+            result = result.And(ResolveMenuCondition(menuCondition));
+        }
         return result;
     }
 
@@ -52,6 +56,11 @@ internal interface IMetabasePlatformSupport
     public DnfCondition ResolveParameterCondition(ParameterCondition condition)
     {
         throw new NotSupportedException("Parameter condition is not supported by this platform");
+    }
+
+    public DnfCondition ResolveMenuCondition(MenuCondition condition)
+    {
+        throw new NotSupportedException("Menu condition is not supported by this platform");
     }
 
     public void SetEyeBlinkTrack(VirtualState state, bool isTracking)

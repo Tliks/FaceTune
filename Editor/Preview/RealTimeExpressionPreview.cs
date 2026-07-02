@@ -12,16 +12,13 @@ internal class RealTimeExpressionPreview : IRenderFilter
         var builder = ImmutableList.CreateBuilder<RenderGroup>();
         foreach (var root in context.GetAvatarRoots())
         {
-            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var facePath, null, context)) continue;
-            
-            var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
-            if (faceMesh == null) continue;
+            if (!AvatarContext.TryGet(root, out var avatarContext, out _, context)) continue;
 
             var component = _targetComponent.Get(context, root);
             if (component == null) continue;
 
-            var data = new PassingData(root, component, facePath);
-            builder.Add(RenderGroup.For(faceRenderer).WithData(data, (a, b) => a.Equals(b)));
+            var data = new PassingData(root, component, avatarContext.BodyPath);
+            builder.Add(RenderGroup.For(avatarContext.FaceRenderer).WithData(data, (a, b) => a.Equals(b)));
         }
         return builder.ToImmutable();
     }
@@ -87,7 +84,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
         foreach (var dataComponent in dataComponents)
         {
             context.Observe(dataComponent);
-            ExpressionDataUtility.ResolveBlendShapes(dataComponent, result, facialStyleAnimations, bodyPath);
+            ExpressionDataUtility.AddFirstFrameBlendShapes(dataComponent.Data, result, bodyPath, facialStyleAnimations);
         }
     }
 }

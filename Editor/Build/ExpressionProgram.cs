@@ -1,4 +1,4 @@
-namespace Aoyon.FaceTune;
+namespace Aoyon.FaceTune.Build;
 
 /// <summary>
 /// Component hierarchy interpreted as FaceTune expressions for build backends.

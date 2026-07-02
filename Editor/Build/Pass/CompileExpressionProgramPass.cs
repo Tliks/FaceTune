@@ -22,7 +22,7 @@ internal class CompileExpressionProgramPass : Pass<CompileExpressionProgramPass>
             .GetComponentsInChildren<FaceTuneComponent>(true)
             .Select(component => new ExpressionItem(
                 component.gameObject,
-                ResolveExpression(component, context),
+                ResolveExpression(component, context, platformSupport),
                 ResolveRawWhen(component, context.Root, platformSupport)))
             .ToList();
 
@@ -30,13 +30,21 @@ internal class CompileExpressionProgramPass : Pass<CompileExpressionProgramPass>
         return new ExpressionProgram(items);
     }
 
-    private static AvatarExpression ResolveExpression(FaceTuneComponent component, AvatarContext avatarContext)
+    private static AvatarExpression ResolveExpression(
+        FaceTuneComponent component,
+        AvatarContext avatarContext,
+        IMetabasePlatformSupport platformSupport)
     {
         var animationSet = new BlendShapeWeightAnimationSet();
 
         if (component.FacialSettings.WriteMode == ExpressionWriteMode.Replace)
         {
-            animationSet.AddRange(avatarContext.SafeZeroBlendShapes.ToBlendShapeAnimations());
+            var trackedBlendShapes = platformSupport.GetTrackedBlendShape().ToHashSet();
+            var safeZeroBlendShapes = avatarContext.FaceRenderer
+                .GetBlendShapeWeights(avatarContext.FaceMesh)
+                .Where(shape => !trackedBlendShapes.Contains(shape.Name))
+                .Select(shape => shape with { Weight = 0f });
+            animationSet.AddRange(safeZeroBlendShapes.ToBlendShapeAnimations());
 
             using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
             if (FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations))
@@ -45,12 +53,12 @@ internal class CompileExpressionProgramPass : Pass<CompileExpressionProgramPass>
             }
         }
 
-        ExpressionDataUtility.ResolveAnimations(component.Data, animationSet, avatarContext);
+        ExpressionDataUtility.AddAnimations(component.Data, animationSet, avatarContext.BodyPath);
 
         var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
         foreach (var dataComponent in dataComponents)
         {
-            ExpressionDataUtility.ResolveAnimations(dataComponent, animationSet, avatarContext);
+            ExpressionDataUtility.AddAnimations(dataComponent.Data, animationSet, avatarContext.BodyPath);
         }
 
         var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
@@ -126,13 +134,13 @@ internal class CompileExpressionProgramPass : Pass<CompileExpressionProgramPass>
         var clone = new ConditionCase(
             source.HandGestureConditions.Select(Clone),
             source.ParameterConditions.Select(Clone));
-        clone.MenuConditons.AddRange(source.MenuConditons.Select(Clone));
+        clone.MenuConditions.AddRange(source.MenuConditions.Select(Clone));
         return clone;
     }
 
-    private static MenuConditon Clone(MenuConditon source)
+    private static MenuCondition Clone(MenuCondition source)
     {
-        return new MenuConditon { MenuSource = source.MenuSource };
+        return new MenuCondition(source.MenuSource, source.Mode, source.Threshold);
     }
 
     private static HandGestureCondition Clone(HandGestureCondition source)
