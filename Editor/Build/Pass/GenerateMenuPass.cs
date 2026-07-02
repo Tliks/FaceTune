@@ -180,7 +180,7 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
                 nameOrPrefix = parameterName,
                 syncType = syncType,
                 saved = true,
-                defaultValue = exclusiveDefaults.GetValueOrDefault(parameterName, 0f),
+                defaultValue = GetDefaultValue(menu, exclusiveDefaults),
                 hasExplicitDefaultValue = true
             });
         }
@@ -188,11 +188,22 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
         parameters.parameters.AddRange(configs.Values);
     }
 
+    private static float GetDefaultValue(MenuComponent menu, IReadOnlyDictionary<string, float> exclusiveDefaults)
+    {
+        if (menu.Kind == MenuItemKind.Toggle && menu.ExclusiveToggleGroup.IsEnabled)
+        {
+            return exclusiveDefaults.GetValueOrDefault(menu.ParameterName, 0f);
+        }
+
+        if (menu.Kind == MenuItemKind.Toggle && menu.DefaultSelected) return 1f;
+        return 0f;
+    }
+
     private static Dictionary<string, float> ResolveExclusiveDefaults(IEnumerable<MenuComponent> menus)
     {
         var result = new Dictionary<string, float>();
         foreach (var group in menus
-            .Where(menu => menu.ExclusiveToggleGroup.IsEnabled && menu.ExclusiveToggleGroup.DefaultSelected)
+            .Where(menu => menu.Kind == MenuItemKind.Toggle && menu.ExclusiveToggleGroup.IsEnabled && menu.DefaultSelected)
             .GroupBy(menu => menu.ParameterName))
         {
             var defaults = group.ToArray();
@@ -248,7 +259,7 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
             _ => throw new InvalidOperationException($"Unknown menu item kind: {source.Kind}")
         };
         menuItem.PortableControl.Parameter = source.ParameterName;
-        menuItem.PortableControl.Value = source.ExclusiveToggleGroup.IsEnabled
+        menuItem.PortableControl.Value = source.Kind == MenuItemKind.Toggle && source.ExclusiveToggleGroup.IsEnabled
             ? source.ExclusiveToggleGroup.Value
             : 1f;
         menuItem.PortableControl.Icon = ResolveIcon(source.Icon);

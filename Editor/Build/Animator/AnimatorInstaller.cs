@@ -12,7 +12,7 @@ internal class AnimatorInstaller : InstallerBase
 
     private readonly float _transitionDurationSeconds;
 
-    private readonly Dictionary<AvatarExpression, VirtualClip> _expressionClipCache = new();
+    private readonly Dictionary<ExpressionClipKey, VirtualClip> _expressionClipCache = new();
 
     private readonly LipSyncInstaller _lipSyncInstaller;
     private readonly BlinkInstaller _blinkInstaller;
@@ -34,8 +34,7 @@ internal class AnimatorInstaller : InstallerBase
         CreateInitializationLayer(InitLayerPriority);
         InstallExpressionProgram(expressionProgram, LayerPriority);
         
-        var expressions = expressionProgram.GetAllExpressions();
-        if (expressions.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow
+        if (expressionProgram.Items.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow
             || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyeBlink))
         {
             _blinkInstaller.AddEyeBlinkLayer();
@@ -100,14 +99,14 @@ internal class AnimatorInstaller : InstallerBase
 
     private void InstallExpressionItem(ExpressionItem item, int priority)
     {
-        var layer = AddLayer(item.Expression.Name, priority);
+        var layer = AddLayer(item.Name, priority);
         var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
         AsPassThrough(defaultState);
 
         AddExpressionStates(
             layer,
             defaultState,
-            item.Expression,
+            item,
             item.ActiveWhen,
             ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0));
     }
@@ -115,7 +114,7 @@ internal class AnimatorInstaller : InstallerBase
     private void AddExpressionStates(
         VirtualLayer layer,
         VirtualState defaultState,
-        AvatarExpression expression,
+        ExpressionItem expression,
         DnfCondition when,
         Vector3 basePosition)
     {
@@ -187,8 +186,26 @@ internal class AnimatorInstaller : InstallerBase
         return animatorConditionRule.Condition;
     }
 
-    private void AddExpressionToState(VirtualState state, AvatarExpression expression)
+    private sealed record class ExpressionClipKey
     {
+        public BlendShapeWeightAnimationSet AnimationSet { get; }
+        public ExpressionSettings ExpressionSettings { get; }
+        public FacialSettings FacialSettings { get; }
+
+        public ExpressionClipKey(
+            BlendShapeWeightAnimationSet animationSet,
+            ExpressionSettings expressionSettings,
+            FacialSettings facialSettings)
+        {
+            AnimationSet = new(animationSet);
+            ExpressionSettings = expressionSettings;
+            FacialSettings = facialSettings;
+        }
+    }
+
+    private void AddExpressionToState(VirtualState state, ExpressionItem expression)
+    {
+        var key = new ExpressionClipKey(expression.AnimationSet, expression.ExpressionSettings, expression.FacialSettings);
         if (state.TryGetClip(out var clip))
         {
             var duplicate = clip.Clone();
@@ -197,7 +214,7 @@ internal class AnimatorInstaller : InstallerBase
         }
         else
         {
-            if (_expressionClipCache.TryGetValue(expression, out var cachedClip))
+            if (_expressionClipCache.TryGetValue(key, out var cachedClip))
             {
                 clip = cachedClip;
                 state.Motion = clip;
@@ -206,7 +223,7 @@ internal class AnimatorInstaller : InstallerBase
             {
                 clip = state.CreateClip(state.Name);
                 Impl(clip);
-                _expressionClipCache[expression] = clip;
+                _expressionClipCache[key] = clip;
             }
         }
 

@@ -1,3 +1,4 @@
+using nadena.dev.modular_avatar.core;
 using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Build;
@@ -24,84 +25,98 @@ internal static class FaceTuneProgramCompiler
         IMetabasePlatformSupport platformSupport,
         BuildSettings settings)
     {
-        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport);
-        var expressionCompiler = new ExpressionCompiler(context, platformSupport, settings, conditionCompiler);
+        var components = context.Root.GetComponentsInChildren<FaceTuneComponent>(true);
+        var autoMenuPlan = AutoMenuPlan.Create(context.Root, components, platformSupport);
+        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport, autoMenuPlan);
+        var expressionCompiler = new ExpressionCompiler(context, settings, conditionCompiler);
 
-        var items = context.Root
-            .GetComponentsInChildren<FaceTuneComponent>(true)
+        var items = components
             .Select(expressionCompiler.Compile)
             .ToList();
 
-        items = AutoMenuConditionRewriter.Rewrite(context.Root, platformSupport, items);
-
-        ResolvePriority(items);
-        return new ExpressionProgram(items);
+        return new ExpressionProgram(ResolvePriority(items));
     }
 
-    private static void ResolvePriority(IReadOnlyList<ExpressionItem> items)
+    private static IReadOnlyList<ExpressionItem> ResolvePriority(IReadOnlyList<ExpressionItem> items)
     {
+        var result = items.ToList();
         var laterReplaceWhen = DnfCondition.Never;
-        for (var i = items.Count - 1; i >= 0; i--)
+        for (var i = result.Count - 1; i >= 0; i--)
         {
-            var item = items[i];
-            if (item.Expression.WriteMode != ExpressionWriteMode.Replace)
-            {
-                item.SetSuppressedBy(DnfCondition.Never);
-                continue;
-            }
+            var item = result[i];
+            result[i] = item.WithSuppressedBy(laterReplaceWhen);
 
-            item.SetSuppressedBy(laterReplaceWhen);
-            laterReplaceWhen = laterReplaceWhen.Or(item.RawWhen);
+            if (item.WriteMode == ExpressionWriteMode.Replace)
+            {
+                laterReplaceWhen = laterReplaceWhen.Or(item.RawWhen);
+            }
         }
+
+        return result;
     }
 }
 
 internal sealed class ExpressionCompiler
 {
     private readonly AvatarContext _avatarContext;
-    private readonly IMetabasePlatformSupport _platformSupport;
     private readonly BuildSettings _settings;
     private readonly ConditionCompiler _conditionCompiler;
+    private readonly IReadOnlyList<BlendShapeWeightAnimation> _safeZeroBlendShapeAnimations;
 
     public ExpressionCompiler(
         AvatarContext avatarContext,
-        IMetabasePlatformSupport platformSupport,
         BuildSettings settings,
         ConditionCompiler conditionCompiler)
     {
         _avatarContext = avatarContext;
-        _platformSupport = platformSupport;
         _settings = settings;
         _conditionCompiler = conditionCompiler;
+        _safeZeroBlendShapeAnimations = avatarContext.FaceRenderer
+            .GetBlendShapeWeights(avatarContext.FaceMesh)
+            .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
+            .Select(shape => shape with { Weight = 0f })
+            .ToBlendShapeAnimations()
+            .ToArray();
     }
 
     public ExpressionItem Compile(FaceTuneComponent component)
     {
         return new ExpressionItem(
-            component.gameObject,
-            ResolveExpression(component),
+            component.transform,
+            component.name,
+            CollectAnimations(component),
+            component.ExpressionSettings,
+            ResolveFacialSettings(component),
             _conditionCompiler.Resolve(component));
     }
 
-    private AvatarExpression ResolveExpression(FaceTuneComponent component)
+    private BlendShapeWeightAnimationSet CollectAnimations(FaceTuneComponent component)
     {
         var animationSet = new BlendShapeWeightAnimationSet();
 
         if (component.FacialSettings.WriteMode == ExpressionWriteMode.Replace)
         {
-            var safeZeroBlendShapes = _avatarContext.FaceRenderer
-                .GetBlendShapeWeights(_avatarContext.FaceMesh)
-                .Where(shape => !_settings.ExcludedBlendShapeNames.Contains(shape.Name))
-                .Select(shape => shape with { Weight = 0f });
-            animationSet.AddRange(safeZeroBlendShapes.ToBlendShapeAnimations());
-
-            using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
-            if (FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations))
-            {
-                animationSet.AddRange(facialAnimations.Where(animation => !_settings.ExcludedBlendShapeNames.Contains(animation.Name)));
-            }
+            AddReplaceDefaults(animationSet, component);
         }
 
+        AddExpressionData(animationSet, component);
+        return animationSet;
+    }
+
+    private void AddReplaceDefaults(BlendShapeWeightAnimationSet animationSet, FaceTuneComponent component)
+    {
+        animationSet.AddRange(_safeZeroBlendShapeAnimations);
+
+        using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
+        if (FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations))
+        {
+            animationSet.AddRange(facialAnimations.Where(animation => !_settings.ExcludedBlendShapeNames.Contains(animation.Name)));
+        }
+    }
+
+
+    private void AddExpressionData(BlendShapeWeightAnimationSet animationSet, FaceTuneComponent component)
+    {
         ExpressionDataUtility.AddAnimations(component, animationSet, _avatarContext.BodyPath);
 
         var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
@@ -109,7 +124,10 @@ internal sealed class ExpressionCompiler
         {
             ExpressionDataUtility.AddAnimations(dataComponent, animationSet, _avatarContext.BodyPath);
         }
+    }
 
+    private static FacialSettings ResolveFacialSettings(FaceTuneComponent component)
+    {
         var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
         var blinkSettings = advancedEyeBlinkComponent == null
             ? AdvancedEyeBlinkSettings.Disabled()
@@ -120,13 +138,11 @@ internal sealed class ExpressionCompiler
             ? AdvancedLipSyncSettings.Disabled()
             : ComponentReferenceUtility.ResolveSettings(advancedLipSyncComponent);
 
-        var facialSettings = component.FacialSettings with
+        return component.FacialSettings with
         {
             AdvancedEyBlinkSettings = blinkSettings,
             AdvancedLipSyncSettings = lipSyncSettings
         };
-
-        return new AvatarExpression(component.name, animationSet, component.ExpressionSettings, facialSettings);
     }
 }
 
@@ -134,17 +150,20 @@ internal sealed class ConditionCompiler
 {
     private readonly GameObject _root;
     private readonly IMetabasePlatformSupport _platformSupport;
+    private readonly AutoMenuPlan _autoMenuPlan;
 
-    public ConditionCompiler(GameObject root, IMetabasePlatformSupport platformSupport)
+    public ConditionCompiler(GameObject root, IMetabasePlatformSupport platformSupport, AutoMenuPlan autoMenuPlan)
     {
         _root = root;
         _platformSupport = platformSupport;
+        _autoMenuPlan = autoMenuPlan;
     }
 
     public DnfCondition Resolve(FaceTuneComponent component)
     {
         var conditions = CollectEffectiveConditions(component).Select(ResolveCondition);
-        return DnfCondition.All(conditions);
+        var condition = DnfCondition.All(conditions);
+        return _autoMenuPlan.Apply(component.transform, condition);
     }
 
     private IEnumerable<Condition> CollectEffectiveConditions(FaceTuneComponent component)
@@ -194,82 +213,95 @@ internal sealed class ConditionCompiler
     }
 }
 
-internal static class AutoMenuConditionRewriter
+internal sealed class AutoMenuPlan
 {
-    public static List<ExpressionItem> Rewrite(
-        GameObject root,
-        IMetabasePlatformSupport platformSupport,
-        IReadOnlyList<ExpressionItem> items)
+    private readonly IReadOnlyDictionary<Transform, AutoMenuEffect> _effects;
+
+    private AutoMenuPlan(IReadOnlyDictionary<Transform, AutoMenuEffect> effects)
     {
-        var result = items.ToList();
-        foreach (var autoMenu in root.GetComponentsInChildren<AutoMenuComponent>(true))
-        {
-            result = Rewrite(autoMenu, platformSupport, result);
-        }
-        return result;
+        _effects = effects;
     }
 
-    private static List<ExpressionItem> Rewrite(
-        AutoMenuComponent autoMenu,
-        IMetabasePlatformSupport platformSupport,
-        IReadOnlyList<ExpressionItem> items)
+    public static AutoMenuPlan Create(
+        GameObject root,
+        IReadOnlyList<FaceTuneComponent> components,
+        IMetabasePlatformSupport platformSupport)
     {
-        var scopedItems = items
-            .Where(item => item.SourceObject.transform.IsChildOf(autoMenu.transform))
-            .ToList();
-        if (scopedItems.Count == 0) return items.ToList();
+        var autoMenus = root.GetComponentsInChildren<AutoMenuComponent>(true);
+        if (autoMenus.Length == 0) return new AutoMenuPlan(new Dictionary<Transform, AutoMenuEffect>());
 
-        var excludedFromMenu = ResolveTargets(autoMenu, autoMenu.ExcludeFromMenuTargets);
-        var allowDuringManualLock = ResolveTargets(autoMenu, autoMenu.AllowDuringManualLockTargets);
-        var menuItems = scopedItems
-            .Where(item => !ContainsAncestorOrSelf(excludedFromMenu, item.SourceObject))
-            .ToList();
+        if (autoMenus.Length > 1)
+        {
+            LocalizedLog.Warning("Log:warning:AutoMenuPlan:MultipleAutoMenu", null, autoMenus);
+        }
+
+        return Create(autoMenus[0], components, platformSupport);
+    }
+
+    private static AutoMenuPlan Create(
+        AutoMenuComponent autoMenu,
+        IReadOnlyList<FaceTuneComponent> components,
+        IMetabasePlatformSupport platformSupport)
+    {
+        var menuExpressions = ResolveMenuExpressions(autoMenu, components);
+        var suppressedExpressions = ResolveSuppressedExpressions(autoMenu, components).ToHashSet();
 
         var selectionParameter = CreateAutoMenuParameterName(autoMenu.gameObject);
-        var none = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.Equal, 0));
-        var manualActive = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.NotEqual, 0));
-        var values = menuItems
-            .Select((item, index) => (item.SourceObject, Value: index + 1))
-            .ToDictionary(x => x.SourceObject, x => x.Value);
+        var manualInactive = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.Equal, 0));
 
-        return items.Select(RewriteItem).ToList();
-
-        ExpressionItem RewriteItem(ExpressionItem item)
-        {
-            if (!scopedItems.Contains(item)) return item;
-
-            var rawWhen = item.RawWhen;
-            if (values.TryGetValue(item.SourceObject, out var selectedValue))
+        var menuEffects = menuExpressions
+            .Select((expression, index) =>
             {
-                var selected = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.Equal, selectedValue));
-                rawWhen = none.And(rawWhen).Or(selected);
-            }
-            else if (!ContainsAncestorOrSelf(allowDuringManualLock, item.SourceObject))
+                var selected = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.Equal, index + 1));
+                return new
+                {
+                    Expression = expression,
+                    Effect = suppressedExpressions.Contains(expression)
+                        ? AutoMenuEffect.SelectedSuppressed(manualInactive, selected)
+                        : AutoMenuEffect.SelectedAllowed(selected)
+                };
+            });
+        var suppressedEffects = suppressedExpressions
+            .Except(menuExpressions)
+            .Select(expression => new
             {
-                rawWhen = manualActive.Not().And(rawWhen);
-            }
+                Expression = expression,
+                Effect = AutoMenuEffect.Suppressed(manualInactive)
+            });
 
-            return new ExpressionItem(item.SourceObject, item.Expression, rawWhen);
-        }
+        return new AutoMenuPlan(menuEffects
+            .Concat(suppressedEffects)
+            .ToDictionary(x => x.Expression, x => x.Effect));
     }
 
-    private static HashSet<GameObject> ResolveTargets(AutoMenuComponent autoMenu, IEnumerable<nadena.dev.modular_avatar.core.AvatarObjectReference> references)
+    private static Transform[] ResolveMenuExpressions(AutoMenuComponent autoMenu, IReadOnlyList<FaceTuneComponent> components)
+    {
+        var excludedExpressions = ResolveReferencedExpressions(autoMenu, autoMenu.ExcludeFromMenuTargets);
+        return components
+            .Select(component => component.transform)
+            .Where(expression => !excludedExpressions.Contains(expression))
+            .ToArray();
+    }
+
+    private static IEnumerable<Transform> ResolveSuppressedExpressions(AutoMenuComponent autoMenu, IReadOnlyList<FaceTuneComponent> components)
+    {
+        var allowedDuringManualLock = ResolveReferencedExpressions(autoMenu, autoMenu.AllowDuringManualLockTargets);
+        return components
+            .Select(component => component.transform)
+            .Where(expression => !allowedDuringManualLock.Contains(expression))
+            .ToArray();
+    }
+
+    private static HashSet<Transform> ResolveReferencedExpressions(
+        AutoMenuComponent autoMenu,
+        IEnumerable<AvatarObjectReference> references)
     {
         return references
             .Select(reference => reference.Get(autoMenu))
             .Where(target => target != null)
+            .SelectMany(target => target.GetComponentsInChildren<FaceTuneComponent>(true))
+            .Select(component => component.transform)
             .ToHashSet();
-    }
-
-    private static bool ContainsAncestorOrSelf(HashSet<GameObject> targets, GameObject source)
-    {
-        var current = source.transform;
-        while (current != null)
-        {
-            if (targets.Contains(current.gameObject)) return true;
-            current = current.parent;
-        }
-        return false;
     }
 
     private static string CreateAutoMenuParameterName(GameObject source)
@@ -277,4 +309,45 @@ internal static class AutoMenuConditionRewriter
         var baseName = source.name.Replace(" ", "_").Replace(".", "_");
         return $"{FaceTuneConstants.ParameterPrefix}/{baseName}/manual";
     }
+
+    public DnfCondition Apply(Transform expression, DnfCondition condition)
+    {
+        return _effects.TryGetValue(expression, out var effect)
+            ? effect.Apply(condition)
+            : condition;
+    }
+
+    private sealed class AutoMenuEffect
+    {
+        private readonly DnfCondition? _originalGate;
+        private readonly DnfCondition? _additionalActivation;
+
+        private AutoMenuEffect(DnfCondition? originalGate, DnfCondition? additionalActivation)
+        {
+            _originalGate = originalGate;
+            _additionalActivation = additionalActivation;
+        }
+
+        public static AutoMenuEffect SelectedSuppressed(DnfCondition manualInactive, DnfCondition selected)
+        {
+            return new AutoMenuEffect(manualInactive, selected);
+        }
+
+        public static AutoMenuEffect SelectedAllowed(DnfCondition selected)
+        {
+            return new AutoMenuEffect(null, selected);
+        }
+
+        public static AutoMenuEffect Suppressed(DnfCondition manualInactive)
+        {
+            return new AutoMenuEffect(manualInactive, null);
+        }
+
+        public DnfCondition Apply(DnfCondition condition)
+        {
+            var original = _originalGate == null ? condition : _originalGate.And(condition);
+            return _additionalActivation == null ? original : original.Or(_additionalActivation);
+        }
+    }
+
 }

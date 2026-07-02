@@ -11,45 +11,54 @@ internal sealed class ExpressionProgram
 
     public bool IsEmpty => Items.Count == 0;
 
-    public ExpressionProgram(IReadOnlyList<ExpressionItem> items)
+    public ExpressionProgram(IEnumerable<ExpressionItem> items)
     {
-        Items = items;
-    }
-
-    public IEnumerable<AvatarExpression> GetAllExpressions()
-    {
-        return Items.Select(item => item.Expression);
+        Items = items.ToArray();
     }
 }
 
-internal sealed class ExpressionItem
+internal sealed record class ExpressionItem
 {
-    public GameObject SourceObject { get; }
-    public AvatarExpression Expression { get; }
+    public Transform SourceTransform { get; init; }
+    public string Name { get; init; }
+    
+    public BlendShapeWeightAnimationSet AnimationSet { get; init; }
+    public ExpressionSettings ExpressionSettings { get; init; }
+    public FacialSettings FacialSettings { get; init; }
 
     /// <summary>
     /// The expression's own activation condition after parent/scope conditions are applied.
     /// This does not include priority suppression by later replace expressions.
     /// </summary>
-    public DnfCondition RawWhen { get; }
+    public DnfCondition RawWhen { get; init; }
 
     /// <summary>
     /// Positive-form condition that suppresses this expression according to FaceTune priority semantics.
     /// Backends that need a flat condition can use ActiveWhen.
     /// </summary>
-    public DnfCondition SuppressedBy { get; private set; } = DnfCondition.Never;
+    public DnfCondition SuppressedBy { get; init; } = DnfCondition.Never;
 
+    public ExpressionWriteMode WriteMode => FacialSettings.WriteMode;
     public DnfCondition ActiveWhen => RawWhen.Except(SuppressedBy);
 
-    public ExpressionItem(GameObject sourceObject, AvatarExpression expression, DnfCondition rawWhen)
+    public ExpressionItem(
+        Transform sourceTransform,
+        string name,
+        BlendShapeWeightAnimationSet animationSet,
+        ExpressionSettings expressionSettings,
+        FacialSettings facialSettings,
+        DnfCondition rawWhen)
     {
-        SourceObject = sourceObject;
-        Expression = expression;
+        SourceTransform = sourceTransform;
+        Name = name;
+        AnimationSet = new(animationSet);
+        ExpressionSettings = expressionSettings;
+        FacialSettings = facialSettings;
         RawWhen = rawWhen;
     }
 
-    public void SetSuppressedBy(DnfCondition suppressedBy)
+    public ExpressionItem WithSuppressedBy(DnfCondition suppressedBy)
     {
-        SuppressedBy = suppressedBy;
+        return this with { SuppressedBy = suppressedBy };
     }
 }

@@ -6,10 +6,11 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Menu";
 
-        public MenuItemKind Kind = MenuItemKind.Toggle;
-        public string ParameterName = string.Empty; // opt-inでの明示用。Exclusiveでは無視。
         public MenuIconSettings Icon = new();
         public MenuInstallSettings InstallSettings = new();
+        public MenuItemKind Kind = MenuItemKind.Toggle;
+        public string ParameterName = string.Empty; // opt-inでの明示用。Exclusiveでは無視。
+        public bool DefaultSelected = false; // Toggleの初期値。Radialでは無視。
         public ExclusiveToggleGroup ExclusiveToggleGroup = new();
 
         public void ResolveReferences()

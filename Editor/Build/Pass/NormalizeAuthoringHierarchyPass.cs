@@ -37,8 +37,8 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             menu.Icon = preset.Icon;
             menu.InstallSettings = preset.InstallSettings;
             menu.ParameterName = PresetParameterName;
+            menu.DefaultSelected = preset == defaultPreset;
             menu.ExclusiveToggleGroup.GroupName = PresetParameterName;
-            menu.ExclusiveToggleGroup.DefaultSelected = preset == defaultPreset;
 
             var condition = preset.gameObject.AddComponent<ConditionComponent>();
             condition.Condition.Always = false;
@@ -64,7 +64,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
         foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
         {
-            if (menu.ExclusiveToggleGroup.IsEnabled)
+            if (menu.Kind == MenuItemKind.Toggle && menu.ExclusiveToggleGroup.IsEnabled)
             {
                 var groupName = menu.ExclusiveToggleGroup.GroupName;
 
