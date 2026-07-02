@@ -1,15 +1,13 @@
-using nadena.dev.ndmf;
-
 namespace Aoyon.FaceTune.Build;
 
-internal class ResolveReferencesPass : Pass<ResolveReferencesPass>
+internal class ResolveReferencesPass : FaceTunePass<ResolveReferencesPass>
 {
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.resolve-references";
     public override string DisplayName => "Resolve References";
 
-    protected override void Execute(BuildContext context)
+    protected override void Execute(FaceTuneContext context)
     {
-        var interfaces = context.AvatarRootObject
+        var interfaces = context.AvatarContext.Root
             .GetInterfacesInChildFaceTuneComponents<IHasObjectReferences>(true);
 
         foreach (var hasObjectReferences in interfaces)

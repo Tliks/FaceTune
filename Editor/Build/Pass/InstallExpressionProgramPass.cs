@@ -5,19 +5,17 @@ namespace Aoyon.FaceTune.Build;
 
 [RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
 [DependsOnContext(typeof(VirtualControllerContext))]
-internal class InstallExpressionProgramPass : Pass<InstallExpressionProgramPass>
+internal class InstallExpressionProgramPass : FaceTunePass<InstallExpressionProgramPass>
 {
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.install-expression-program";
     public override string DisplayName => "Install Expression Program";
 
-    protected override void Execute(BuildContext context)
+    protected override void Execute(FaceTuneContext context)
     {
-        if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
-
-        var expressionProgram = context.GetState<ExpressionProgram>();
+        var expressionProgram = context.BuildContext.GetState<ExpressionProgram>();
 
         Profiler.BeginSample("InstallExpressionProgram");
-        buildPassContext.PlatformSupport.InstallExpressionProgram(buildPassContext, context, expressionProgram);
+        context.PlatformSupport.InstallExpressionProgram(context, context.BuildContext, expressionProgram);
         Profiler.EndSample();
     }
 }

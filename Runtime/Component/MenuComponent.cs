@@ -7,6 +7,7 @@ namespace Aoyon.FaceTune
         internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Menu";
 
         public MenuItemKind Kind = MenuItemKind.Toggle;
+        public string ParameterName = string.Empty;
         public MenuIconSettings Icon = new();
         public MenuInstallSettings InstallSettings = new();
         public ExclusiveToggleGroup ExclusiveToggleGroup = new();

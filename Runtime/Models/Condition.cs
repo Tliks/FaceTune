@@ -11,12 +11,6 @@ internal class Condition
     public Condition()
     {
     }
-
-    public Condition(bool always, IEnumerable<ConditionCase> cases)
-    {
-        Always = always;
-        Cases = cases.ToList();
-    }
 }
 
 [Serializable]
@@ -29,12 +23,6 @@ internal class ConditionCase
 
     public ConditionCase()
     {
-    }
-
-    public ConditionCase(IEnumerable<HandGestureCondition> handGestureConditions, IEnumerable<ParameterCondition> parameterConditions)
-    {
-        HandGestureConditions = handGestureConditions.ToList();
-        ParameterConditions = parameterConditions.ToList();
     }
 }
 
@@ -55,12 +43,16 @@ internal class HandGestureCondition
     public HandGestureCondition()
     {
     }
+}
 
-    public HandGestureCondition(HandGesture handGesture, HandGestureMatch match)
-    {
-        HandGesture = handGesture;
-        Match = match;
-    }
+internal enum MenuConditionMode
+{
+    // Toggle
+    Enabled,
+    Disabled,
+    // Radial
+    GreaterThan,
+    LessThan
 }
 
 [Serializable]
@@ -73,22 +65,8 @@ internal class MenuCondition
     public MenuCondition()
     {
     }
-
-    public MenuCondition(MenuComponent? menuSource, MenuConditionMode mode, float threshold = 0.5f)
-    {
-        MenuSource = menuSource;
-        Mode = mode;
-        Threshold = threshold;
-    }
 }
 
-[Obsolete("Use MenuCondition")]
-internal class MenuConditon : MenuCondition
-{
-    public MenuConditon()
-    {
-    }
-}
 
 [Serializable]
 internal class ParameterCondition
@@ -113,16 +91,6 @@ internal class ParameterCondition
 
     public ParameterCondition()
     {
-    }
-
-    public ParameterCondition(string parameterName, ParameterType parameterType, ComparisonType comparisonType, float floatValue, int intValue, bool boolValue)
-    {
-        ParameterName = parameterName;
-        ParameterType = parameterType;
-        ComparisonType = comparisonType;
-        FloatValue = floatValue;
-        IntValue = intValue;
-        BoolValue = boolValue;
     }
 
     public static ParameterCondition Float(string parameterName, ComparisonType comparisonType, float floatValue)

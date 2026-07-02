@@ -49,6 +49,4 @@ internal static class MenuItems
 
     private const string DebugPath = GameObjectPath + "Debug/";
 
-    public const string DebugModifyHierarchyPassPath = DebugPath + "Modify Hierarchy Pass";
-    public const int DebugModifyHierarchyPassPriority = 300;
 }

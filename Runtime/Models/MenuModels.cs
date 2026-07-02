@@ -8,14 +8,6 @@ internal enum MenuItemKind
     Radial
 }
 
-internal enum MenuConditionMode
-{
-    Enabled,
-    Disabled,
-    GreaterThan,
-    LessThan
-}
-
 internal enum MenuIconMode
 {
     Manual,
@@ -35,6 +27,7 @@ internal class ExclusiveToggleGroup
 {
     public string GroupName = string.Empty;
     public bool DefaultSelected = false;
+    public int Value = 0;
 
     public bool IsEnabled => !string.IsNullOrWhiteSpace(GroupName);
 }

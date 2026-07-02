@@ -1,6 +1,4 @@
 using Aoyon.FaceTune.Importer;
-using Aoyon.FaceTune.Build;
-using nadena.dev.ndmf.runtime;
 using M = UnityEditor.MenuItem;
 using Aoyon.FaceTune.Platforms;
 
@@ -53,16 +51,4 @@ internal static class GameObjectMenu
     [M(MenuItems.MenuBlendingPath, false, MenuItems.MenuBlendingPriority)] 
     static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", addInstaller: true); // Installerが必要
 
-    [M(MenuItems.DebugModifyHierarchyPassPath, false, MenuItems.DebugModifyHierarchyPassPriority)]
-    static void DebugModifyHierarchyPass()
-    {
-        var root = RuntimeUtil.FindAvatarInParents(Selection.activeGameObject?.transform);
-        if (root == null) return;
-
-        root = Object.Instantiate(root);
-        var buildPassState = new BuildPassState(root.gameObject);
-        if (buildPassState.TryGetBuildPassContext(out var buildPassContext) is false) return;
-
-        ModifyHierarchyPass.Excute(buildPassContext);
-    }
 }

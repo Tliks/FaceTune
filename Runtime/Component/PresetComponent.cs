@@ -8,6 +8,7 @@ namespace Aoyon.FaceTune
 
         public MenuIconSettings Icon = new();
         public MenuInstallSettings InstallSettings = new();
+        public bool DefaultSelected = false;
 
     }
 }
