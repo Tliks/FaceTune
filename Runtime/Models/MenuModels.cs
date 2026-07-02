@@ -27,9 +27,8 @@ internal class ExclusiveToggleGroup
 {
     public string GroupName = string.Empty;
     public bool DefaultSelected = false;
-    public int Value = 0;
-
     public bool IsEnabled => !string.IsNullOrWhiteSpace(GroupName);
+    [NonSerialized] public int Value = 0;
 }
 
 [Serializable]

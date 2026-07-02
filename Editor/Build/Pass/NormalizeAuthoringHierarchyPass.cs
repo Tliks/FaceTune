@@ -25,12 +25,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     private static void NormalizePresetComponents(GameObject root)
     {
         var presets = root.GetComponentsInChildren<PresetComponent>(true);
+
         var defaultSelectedPresets = presets.Where(preset => preset.DefaultSelected).ToArray();
         if (defaultSelectedPresets.Length > 1)
         {
             LocalizedLog.Warning("Log:warning:NormalizeAuthoringHierarchyPass:MultipleDefaultSelectedPreset", null, defaultSelectedPresets);
         }
-
         var defaultIndex = defaultSelectedPresets.Length == 1
             ? Array.IndexOf(presets, defaultSelectedPresets[0])
             : 0;
@@ -38,7 +38,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         for (var index = 0; index < presets.Length; index++)
         {
             var preset = presets[index];
-            
+
             var menu = preset.gameObject.EnsureComponent<MenuComponent>();
             menu.Kind = MenuItemKind.Toggle;
             menu.Icon = preset.Icon;
@@ -63,36 +63,51 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
+    // パラメータ名を確定、排他グループはValueも割り振り
     private static void NormalizeMenuComponents(GameObject root)
     {
-        var usedParameterNames = new HashSet<string>();
-        var exclusiveGroupIndices = new Dictionary<string, int>();
         var exclusiveGroupParameterNames = new Dictionary<string, string>();
+        var exclusiveGroupIndices = new Dictionary<string, int>();
 
         foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
         {
             if (menu.ExclusiveToggleGroup.IsEnabled)
             {
-                if (!exclusiveGroupParameterNames.TryGetValue(menu.ExclusiveToggleGroup.GroupName, out var parameterName))
-                {
-                    parameterName = string.IsNullOrWhiteSpace(menu.ParameterName)
-                        ? CreateGroupParameterName(menu.ExclusiveToggleGroup.GroupName)
-                        : menu.ParameterName;
-                    exclusiveGroupParameterNames[menu.ExclusiveToggleGroup.GroupName] = parameterName;
-                }
+                var groupName = menu.ExclusiveToggleGroup.GroupName;
 
-                menu.ParameterName = parameterName;
-                var value = exclusiveGroupIndices.TryGetValue(menu.ExclusiveToggleGroup.GroupName, out var current) ? current + 1 : 1;
-                exclusiveGroupIndices[menu.ExclusiveToggleGroup.GroupName] = value;
-                menu.ExclusiveToggleGroup.Value = value;
+                menu.ParameterName = exclusiveGroupParameterNames.GetOrAdd(groupName, CreateGroupParameterName);
+
+                var index = exclusiveGroupIndices.TryGetValue(groupName, out var current) ? current + 1 : 1;
+                exclusiveGroupIndices[groupName] = index;
+                menu.ExclusiveToggleGroup.Value = index;
             }
             else if (string.IsNullOrWhiteSpace(menu.ParameterName))
             {
-                menu.ParameterName = CreateUniqueParameterName(menu.gameObject, usedParameterNames, menu.Kind == MenuItemKind.Radial ? "radial" : "toggle");
+                menu.ParameterName = CreateUniqueParameterName(menu.name, menu.Kind == MenuItemKind.Radial ? "radial" : "toggle");
             }
         }
     }
 
+    private static string CreateGroupParameterName(string groupName)
+    {
+        if (groupName.StartsWith($"{FaceTuneConstants.ParameterPrefix}/")) return groupName;
+        var safeName = SanitizeName(groupName);
+        return $"{FaceTuneConstants.ParameterPrefix}/{safeName}/exclusive";
+    }
+
+    private static string CreateUniqueParameterName(string baseName, string suffix)
+    {
+        baseName = SanitizeName(baseName);
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        return $"{FaceTuneConstants.ParameterPrefix}/{baseName}_{suffix}_{guid}";
+    }
+
+    private static string SanitizeName(string name)
+    {
+        return name.Replace(" ", "_").Replace(".", "_");
+    }
+
+    // MenuContionをParamterConditionに変換
     private static void NormalizeMenuConditions(GameObject root)
     {
         foreach (var component in root.GetComponentsInChildren<ConditionComponent>(true))
@@ -120,6 +135,49 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
+    private static ParameterCondition ToParameterCondition(MenuCondition condition)
+    {
+        var menu = condition.MenuSource!;
+
+        switch (menu.Kind)
+        {
+            case MenuItemKind.Radial:
+                return condition.Mode switch
+                {
+                    MenuConditionMode.LessThan => ParameterCondition.Float(
+                        menu.ParameterName, ComparisonType.LessThan, condition.Threshold),
+                    MenuConditionMode.GreaterThan => ParameterCondition.Float(
+                        menu.ParameterName, ComparisonType.GreaterThan, condition.Threshold),
+                    _ => throw new InvalidOperationException(
+                        $"Radial menu '{menu.name}' has invalid condition mode '{condition.Mode}'. Use LessThan or GreaterThan.")
+                };
+
+            case MenuItemKind.Toggle when menu.ExclusiveToggleGroup.IsEnabled:
+                return condition.Mode switch
+                {
+                    MenuConditionMode.Enabled => ParameterCondition.Int(
+                        menu.ParameterName, ComparisonType.Equal, menu.ExclusiveToggleGroup.Value),
+                    MenuConditionMode.Disabled => ParameterCondition.Int(
+                        menu.ParameterName, ComparisonType.NotEqual, menu.ExclusiveToggleGroup.Value),
+                    _ => throw new InvalidOperationException(
+                        $"Exclusive toggle '{menu.name}' has invalid condition mode '{condition.Mode}'. Use Enabled or Disabled.")
+                };
+
+            case MenuItemKind.Toggle:
+                return condition.Mode switch
+                {
+                    MenuConditionMode.Enabled => ParameterCondition.Bool(menu.ParameterName, true),
+                    MenuConditionMode.Disabled => ParameterCondition.Bool(menu.ParameterName, false),
+                    _ => throw new InvalidOperationException(
+                        $"Toggle '{menu.name}' has invalid condition mode '{condition.Mode}'. Use Enabled or Disabled.")
+                };
+
+            default:
+                throw new InvalidOperationException($"Unknown menu kind: {menu.Kind}");
+        }
+    }
+
+    // ExpressionDataの参照/Clipを解決&非許容ブレンドシェイプを削除
     private static void NormalizeExpressionData(string bodyPath, GameObject root, FaceTuneBuildSettings settings)
     {
         foreach (var component in root.GetComponentsInChildren<FaceTuneComponent>(true))
@@ -160,51 +218,5 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             .Where(animation => !settings.ExcludedBlendShapeNames.Contains(animation.Name))
             .ToList();
         data.Clip = null;
-    }
-    private static ParameterCondition ToParameterCondition(MenuCondition condition)
-    {
-        var menu = condition.MenuSource!;
-        if (menu.Kind == MenuItemKind.Radial)
-        {
-            return condition.Mode == MenuConditionMode.LessThan
-                ? ParameterCondition.Float(menu.ParameterName, ComparisonType.LessThan, condition.Threshold)
-                : ParameterCondition.Float(menu.ParameterName, ComparisonType.GreaterThan, condition.Threshold);
-        }
-
-        if (menu.ExclusiveToggleGroup.IsEnabled)
-        {
-            return condition.Mode == MenuConditionMode.Disabled
-                ? ParameterCondition.Int(menu.ParameterName, ComparisonType.NotEqual, menu.ExclusiveToggleGroup.Value)
-                : ParameterCondition.Int(menu.ParameterName, ComparisonType.Equal, menu.ExclusiveToggleGroup.Value);
-        }
-
-        return condition.Mode == MenuConditionMode.Disabled
-            ? ParameterCondition.Bool(menu.ParameterName, false)
-            : ParameterCondition.Bool(menu.ParameterName, true);
-    }
-
-    private static string CreateGroupParameterName(string groupName)
-    {
-        if (groupName.StartsWith($"{FaceTuneConstants.ParameterPrefix}/")) return groupName;
-        var safeName = SanitizeName(groupName);
-        return $"{FaceTuneConstants.ParameterPrefix}/{safeName}/exclusive";
-    }
-
-    private static string CreateUniqueParameterName(GameObject source, HashSet<string> usedParameterNames, string suffix)
-    {
-        var baseName = SanitizeName(source.name);
-        var parameterName = $"{FaceTuneConstants.ParameterPrefix}/{baseName}/{suffix}";
-        var index = 1;
-        while (!usedParameterNames.Add(parameterName))
-        {
-            parameterName = $"{FaceTuneConstants.ParameterPrefix}/{baseName}_{index}/{suffix}";
-            index++;
-        }
-        return parameterName;
-    }
-
-    private static string SanitizeName(string name)
-    {
-        return name.Replace(" ", "_").Replace(".", "_");
     }
 }
