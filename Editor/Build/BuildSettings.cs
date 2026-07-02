@@ -1,23 +1,22 @@
+using Aoyon.FaceTune.Platforms;
+
 namespace Aoyon.FaceTune.Build;
 
-internal sealed record FaceTuneBuildSettings(
-    AvatarSettings AvatarSettings,
+internal record struct BuildSettings(
+    AvatarContext AvatarContext,
+    IMetabasePlatformSupport PlatformSupport,
     IReadOnlyCollection<string> ExcludedBlendShapeNames,
+    float DurationSeconds,
+    bool ParmaterCompression,
+    bool SupressTrackingControl,
     MmdPlaybackSettings MmdPlayback,
     string DisableEyeBlinkParameterName,
     string DisableLipSyncParameterName,
     string LockFacialParameterName)
 {
-    public static FaceTuneBuildSettings Default { get; } = new(
-        AvatarSettings.Default,
-        ImmutableHashSet<string>.Empty,
-        MmdPlaybackSettings.Disabled,
-        string.Empty,
-        string.Empty,
-        string.Empty);
 }
 
-internal sealed record MmdPlaybackSettings(
+internal record struct MmdPlaybackSettings(
     bool Enabled,
     string DisableParameterName,
     MmdDisableMode DisableMode)

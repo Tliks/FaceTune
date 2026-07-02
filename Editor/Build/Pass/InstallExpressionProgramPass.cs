@@ -12,7 +12,7 @@ internal class InstallExpressionProgramPass : FaceTunePass<InstallExpressionProg
 
     protected override void Execute(FaceTuneContext context)
     {
-        var expressionProgram = context.BuildContext.GetState<ExpressionProgram>();
+        var expressionProgram = context.RequireExpressionProgram();
 
         Profiler.BeginSample("InstallExpressionProgram");
         context.PlatformSupport.InstallExpressionProgram(context, context.BuildContext, expressionProgram);

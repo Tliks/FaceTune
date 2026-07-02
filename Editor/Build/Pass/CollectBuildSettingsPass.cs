@@ -7,12 +7,13 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
 
     protected override void Execute(FaceTuneContext context)
     {
-        context.BuildContext.GetState(_ => Collect(context));
+        context.SetSettings(Collect(context));
     }
 
-    private static FaceTuneBuildSettings Collect(FaceTuneContext context)
+    private static BuildSettings Collect(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
+        
         var settingsComponents = root.GetComponentsInChildren<SettingsComponent>(true);
         if (settingsComponents.Length > 1)
         {
@@ -61,9 +62,13 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
         }
         var lockFacialParameter = lockFacialComponents.FirstOrDefault()?.ConditionParameterName ?? string.Empty;
 
-        return new FaceTuneBuildSettings(
-            avatarSettings,
+        return new BuildSettings(
+            context.AvatarContext,
+            context.PlatformSupport,
             excludedBlendShapeNames.ToImmutableHashSet(),
+            avatarSettings.DurationSeconds,
+            avatarSettings.ParmaterCompression,
+            avatarSettings.SupressTrackingControl,
             mmdPlayback,
             disableEyeBlinkParameter,
             disableLipSyncParameter,

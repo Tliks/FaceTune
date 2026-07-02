@@ -49,7 +49,7 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<StyleComponent>
     private void OpenEditor()
     {
         var defaultOverride = new BlendShapeWeightSet();
-        ExpressionDataUtility.AddFirstFrameBlendShapes(Component.Data, defaultOverride, string.Empty);
+        ExpressionDataUtility.AddFirstFrameBlendShapes(Component, defaultOverride, string.Empty);
         CustomEditorUtility.OpenEditor(Component.gameObject, new FacialStyleTargeting(){ Target = Component }, defaultOverride, null);
     }
 
@@ -97,7 +97,7 @@ internal class FacialStyleEditor : FaceTuneIMGUIEditorBase<StyleComponent>
         if (component == null) throw new InvalidOperationException("FacialStyleComponent not found");
         if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context)) throw new InvalidOperationException("Context not found");
         var blendShapeSet = new BlendShapeWeightSet();
-        ExpressionDataUtility.AddFirstFrameBlendShapes(component.Data, blendShapeSet, string.Empty);
+        ExpressionDataUtility.AddFirstFrameBlendShapes(component, blendShapeSet, string.Empty);
         var faceRenderer = context.FaceRenderer;
         var faceMesh = context.FaceMesh;
         Undo.RecordObject(faceRenderer, "Apply Blend Shape");

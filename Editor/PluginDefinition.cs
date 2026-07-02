@@ -15,16 +15,17 @@ public sealed class PluginDefinition : Plugin<PluginDefinition>
     protected override void Configure()
     {
         var sequence = InPhase(BuildPhase.Resolving);
-        sequence.Run("Get State", ctx => ctx.GetState(ctx => new BuildPassState(ctx)));
         sequence.Run(ResolveReferencesPass.Instance);
 
         sequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
         sequence.Run(CollectBuildSettingsPass.Instance);
         sequence.Run(NormalizeAuthoringHierarchyPass.Instance);
+        sequence.Run(FilterExcludedBlendShapesPass.Instance);
         sequence.Run(CompileExpressionProgramPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
+        sequence.Run(GenerateMenuPass.Instance);
         sequence.Run(InstallExpressionProgramPass.Instance);
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 

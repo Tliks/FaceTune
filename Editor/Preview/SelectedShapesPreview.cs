@@ -195,7 +195,7 @@ internal class SelectedShapesPreviewSession : IDisposable
             foreach (var dataComponent in dataComponents)
             {
                 context.Observe(dataComponent);
-                ExpressionDataUtility.AddAnimations(dataComponent.Data, resultToAdd, bodyPath, facial);
+                ExpressionDataUtility.AddAnimations(dataComponent, resultToAdd, bodyPath, facial);
             }
 
             if (expressionComponent != null)

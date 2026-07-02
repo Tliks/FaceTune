@@ -8,33 +8,31 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
     protected override void Execute(FaceTuneContext context)
     {
         var avatarContext = context.AvatarContext;
-        var settings = context.BuildContext.GetState(_ => FaceTuneBuildSettings.Default);
+        var settings = context.RequireSettings();
         
         var facialStyleComponents = avatarContext.Root
             .GetComponentsInChildren<StyleComponent>(true)
-            .Where(x => x.ApplyToRenderer);
-
-        var componentCount = facialStyleComponents.Count();
+            .Where(x => x.ApplyToRenderer)
+            .ToArray()
+;
+        var componentCount = facialStyleComponents.Length;
         if (componentCount == 0) return;
-        StyleComponent target;
+
         if (componentCount > 1)
         {
             LocalizedLog.Warning("Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer");
-            target = facialStyleComponents.Last();
-        }
-        else
-        {
-            target = facialStyleComponents.First();
         }
 
-        // 未知のブレンドシェイプを上書きせず、既知のブレンドシェイプのみ0で上書きする
+        var component = facialStyleComponents[0];
+
+        //  除外されたブレンドシェイプを上書きせず、他は0で上書きする
 
         var set = new BlendShapeWeightSet();
         set.AddRange(avatarContext.FaceRenderer
             .GetBlendShapeWeights(avatarContext.FaceMesh)
             .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
             .Select(shape => shape with { Weight = 0f }));
-        ExpressionDataUtility.AddFirstFrameBlendShapes(target.Data, set, avatarContext.BodyPath);
+        ExpressionDataUtility.AddFirstFrameBlendShapes(component, set, avatarContext.BodyPath);
 
         var renderer = avatarContext.FaceRenderer;
         var mesh = avatarContext.FaceMesh;

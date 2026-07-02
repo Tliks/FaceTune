@@ -9,8 +9,8 @@ internal class CompileExpressionProgramPass : FaceTunePass<CompileExpressionProg
 
     protected override void Execute(FaceTuneContext context)
     {
-        var settings = context.BuildContext.GetState(_ => FaceTuneBuildSettings.Default);
-        context.BuildContext.GetState(_ => FaceTuneProgramCompiler.Compile(
+        var settings = context.RequireSettings();
+        context.SetExpressionProgram(FaceTuneProgramCompiler.Compile(
             context.AvatarContext,
             context.PlatformSupport,
             settings));
@@ -22,7 +22,7 @@ internal static class FaceTuneProgramCompiler
     public static ExpressionProgram Compile(
         AvatarContext context,
         IMetabasePlatformSupport platformSupport,
-        FaceTuneBuildSettings settings)
+        BuildSettings settings)
     {
         var conditionCompiler = new ConditionCompiler(context.Root, platformSupport);
         var expressionCompiler = new ExpressionCompiler(context, platformSupport, settings, conditionCompiler);
@@ -60,13 +60,13 @@ internal sealed class ExpressionCompiler
 {
     private readonly AvatarContext _avatarContext;
     private readonly IMetabasePlatformSupport _platformSupport;
-    private readonly FaceTuneBuildSettings _settings;
+    private readonly BuildSettings _settings;
     private readonly ConditionCompiler _conditionCompiler;
 
     public ExpressionCompiler(
         AvatarContext avatarContext,
         IMetabasePlatformSupport platformSupport,
-        FaceTuneBuildSettings settings,
+        BuildSettings settings,
         ConditionCompiler conditionCompiler)
     {
         _avatarContext = avatarContext;
@@ -102,23 +102,23 @@ internal sealed class ExpressionCompiler
             }
         }
 
-        ExpressionDataUtility.AddAnimations(component.Data, animationSet, _avatarContext.BodyPath);
+        ExpressionDataUtility.AddAnimations(component, animationSet, _avatarContext.BodyPath);
 
         var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
         foreach (var dataComponent in dataComponents)
         {
-            ExpressionDataUtility.AddAnimations(dataComponent.Data, animationSet, _avatarContext.BodyPath);
+            ExpressionDataUtility.AddAnimations(dataComponent, animationSet, _avatarContext.BodyPath);
         }
 
         var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
         var blinkSettings = advancedEyeBlinkComponent == null
             ? AdvancedEyeBlinkSettings.Disabled()
-            : advancedEyeBlinkComponent.AdvancedEyeBlinkSettings;
+            : ComponentReferenceUtility.ResolveSettings(advancedEyeBlinkComponent);
 
         var advancedLipSyncComponent = component.gameObject.GetComponentInParent<LipSyncComponent>(true);
         var lipSyncSettings = advancedLipSyncComponent == null
             ? AdvancedLipSyncSettings.Disabled()
-            : advancedLipSyncComponent.AdvancedLipSyncSettings;
+            : ComponentReferenceUtility.ResolveSettings(advancedLipSyncComponent);
 
         var facialSettings = component.FacialSettings with
         {

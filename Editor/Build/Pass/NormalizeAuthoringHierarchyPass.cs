@@ -13,16 +13,13 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     protected override void Execute(FaceTuneContext context)
     {
-        var settings = context.BuildContext.GetState(_ => FaceTuneBuildSettings.Default);
-
-        NormalizePresetComponents(context.AvatarContext.Root);
-        NormalizeMenuComponents(context.AvatarContext.Root);
-        NormalizeMenuConditions(context.AvatarContext.Root);
-        NormalizeExpressionData(context.AvatarContext.BodyPath, context.AvatarContext.Root, settings);
+        ProcessPresetComponents(context.AvatarContext.Root);
+        AssignMenuParameters(context.AvatarContext.Root);
+        ResolveMenuConditions(context.AvatarContext.Root);
     }
 
     // Preset -> Menu + Conditionに変更
-    private static void NormalizePresetComponents(GameObject root)
+    private static void ProcessPresetComponents(GameObject root)
     {
         var presets = root.GetComponentsInChildren<PresetComponent>(true);
 
@@ -31,21 +28,17 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         {
             LocalizedLog.Warning("Log:warning:NormalizeAuthoringHierarchyPass:MultipleDefaultSelectedPreset", null, defaultSelectedPresets);
         }
-        var defaultIndex = defaultSelectedPresets.Length == 1
-            ? Array.IndexOf(presets, defaultSelectedPresets[0])
-            : 0;
+        var defaultPreset = defaultSelectedPresets.FirstOrDefault();
 
-        for (var index = 0; index < presets.Length; index++)
+        foreach (var preset in presets)
         {
-            var preset = presets[index];
-
             var menu = preset.gameObject.EnsureComponent<MenuComponent>();
             menu.Kind = MenuItemKind.Toggle;
             menu.Icon = preset.Icon;
             menu.InstallSettings = preset.InstallSettings;
             menu.ParameterName = PresetParameterName;
             menu.ExclusiveToggleGroup.GroupName = PresetParameterName;
-            menu.ExclusiveToggleGroup.DefaultSelected = index == defaultIndex;
+            menu.ExclusiveToggleGroup.DefaultSelected = preset == defaultPreset;
 
             var condition = preset.gameObject.AddComponent<ConditionComponent>();
             condition.Condition.Always = false;
@@ -64,7 +57,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     }
 
     // パラメータ名を確定、排他グループはValueも割り振り
-    private static void NormalizeMenuComponents(GameObject root)
+    private static void AssignMenuParameters(GameObject root)
     {
         var exclusiveGroupParameterNames = new Dictionary<string, string>();
         var exclusiveGroupIndices = new Dictionary<string, int>();
@@ -108,20 +101,20 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     }
 
     // MenuContionをParamterConditionに変換
-    private static void NormalizeMenuConditions(GameObject root)
+    private static void ResolveMenuConditions(GameObject root)
     {
         foreach (var component in root.GetComponentsInChildren<ConditionComponent>(true))
         {
-            NormalizeMenuConditions(component.Condition);
+            ResolveMenuConditions(component.Condition);
         }
 
         foreach (var component in root.GetComponentsInChildren<FaceTuneComponent>(true))
         {
-            NormalizeMenuConditions(component.Condition);
+            ResolveMenuConditions(component.Condition);
         }
     }
 
-    private static void NormalizeMenuConditions(Condition condition)
+    private static void ResolveMenuConditions(Condition condition)
     {
         foreach (var conditionCase in condition.Cases)
         {
@@ -177,46 +170,4 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    // ExpressionDataの参照/Clipを解決&非許容ブレンドシェイプを削除
-    private static void NormalizeExpressionData(string bodyPath, GameObject root, FaceTuneBuildSettings settings)
-    {
-        foreach (var component in root.GetComponentsInChildren<FaceTuneComponent>(true))
-        {
-            NormalizeData(component.Data, component, bodyPath, settings);
-        }
-
-        foreach (var component in root.GetComponentsInChildren<DataComponent>(true))
-        {
-            NormalizeData(component.Data, component, bodyPath, settings);
-        }
-
-        foreach (var component in root.GetComponentsInChildren<StyleComponent>(true))
-        {
-            NormalizeData(component.Data, component, string.Empty, settings);
-        }
-    }
-
-    private static void NormalizeData(ExpressionData data, Component owner, string bodyPath, FaceTuneBuildSettings settings)
-    {
-        var animations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.AddAnimations(data, animations, bodyPath);
-
-        var removed = animations
-            .Where(animation => settings.ExcludedBlendShapeNames.Contains(animation.Name))
-            .Select(animation => animation.Name)
-            .Distinct()
-            .ToList();
-
-        if (removed.Count != 0)
-        {
-            LocalizedLog.Warning(
-                "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound",
-                $"{owner}:{string.Join(", ", removed)}");
-        }
-
-        data.BlendShapeAnimations = animations
-            .Where(animation => !settings.ExcludedBlendShapeNames.Contains(animation.Name))
-            .ToList();
-        data.Clip = null;
-    }
 }

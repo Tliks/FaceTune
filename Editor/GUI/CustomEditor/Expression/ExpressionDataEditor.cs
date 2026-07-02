@@ -119,7 +119,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         }
 
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.AddAnimations(Component.Data, facialAnimations, _context.BodyPath);
+        ExpressionDataUtility.AddAnimations(Component, facialAnimations, _context.BodyPath);
 
         _facialClipAnimationCount = facialAnimations.Count;
         _nonFacialClipAnimationCount = 0;
@@ -151,12 +151,12 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         if (Component.TryGetComponentInParent<FaceTuneComponent>(true, out var expressionComponent)){
             foreach (var upperData in expressionComponent.GetComponentsInChildren<DataComponent>()) {
                 if (upperData == Component) break;
-                ExpressionDataUtility.AddFirstFrameBlendShapes(upperData.Data, baseSet, bodyPath, facialStyleAnimations);
+                ExpressionDataUtility.AddFirstFrameBlendShapes(upperData, baseSet, bodyPath, facialStyleAnimations);
 
             }
         }
         var componentClipAnimations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.AddAnimations(Component.Data, componentClipAnimations, bodyPath, facialStyleAnimations);
+        ExpressionDataUtility.AddAnimations(Component, componentClipAnimations, bodyPath, facialStyleAnimations);
         baseSet.AddRange(componentClipAnimations.ToFirstFrameBlendShapes());
 
         var defaultOverride = new BlendShapeWeightSet();
@@ -199,7 +199,7 @@ internal class ExpressionDataClipImporter
     public bool ImportClip(DataComponent component, string bodyPath)
     {
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.AddAnimations(component.Data, facialAnimations, bodyPath);
+        ExpressionDataUtility.AddAnimations(component, facialAnimations, bodyPath);
         if (facialAnimations.Count == 0)
         {
             return false;
@@ -326,7 +326,7 @@ internal class ExpressionDataClipExporter : EditorWindow
                 animations.AddRange(facialStyleAnimations);
             }
         }
-        ExpressionDataUtility.AddAnimations(_component.Data, animations, context.BodyPath);
+        ExpressionDataUtility.AddAnimations(_component, animations, context.BodyPath);
         if (_excludeTrackedShapes)
         {
             var platformSupport = Aoyon.FaceTune.Platforms.MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
