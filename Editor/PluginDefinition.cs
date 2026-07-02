@@ -7,7 +7,7 @@ using Aoyon.FaceTune.Preview;
 namespace Aoyon.FaceTune;
 
 [RunsOnAllPlatforms]
-public sealed class PluginDefinition : Plugin<PluginDefinition>
+internal sealed class PluginDefinition : Plugin<PluginDefinition>
 {
     public override string QualifiedName => FaceTuneConstants.QualifiedName; // "aoyon.facetune"
     public override string DisplayName => FaceTuneConstants.Name;

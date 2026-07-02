@@ -22,71 +22,138 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
 
         var folderComponents = root.GetComponentsInChildren<MenuFolderComponent>(true);
         var folderNodes = folderComponents.ToDictionary(folder => folder, folder => new MenuFolderNode(folder));
-        var rootItems = new List<MenuComponent>();
-        var rootFolders = new List<MenuFolderNode>();
+        var rootChildren = new MenuChildren();
+        var externalChildren = new Dictionary<Transform, MenuChildren>();
 
         foreach (var folder in folderComponents)
         {
             var node = folderNodes[folder];
-            var parentFolder = FindParentFolder(folder.transform.parent, root, folderNodes);
-            if (parentFolder != null)
+            if (TryGetInstallContainerOverride(folder.InstallSettings, folder, out var target))
             {
-                folderNodes[parentFolder].Folders.Add(node);
+                if (TryResolveInstallChildren(target, folder, folderNodes, externalChildren, out var children))
+                {
+                    children.Add(node);
+                }
+                continue;
             }
-            else
-            {
-                rootFolders.Add(node);
-            }
+
+            GetParentChildren(folder.transform.parent, root, folderNodes, rootChildren).Add(node);
         }
 
         foreach (var menu in menuComponents)
         {
-            var parentFolder = FindParentFolder(menu.transform.parent, root, folderNodes);
-            if (parentFolder != null)
+            if (TryGetInstallContainerOverride(menu.InstallSettings, menu, out var target))
             {
-                folderNodes[parentFolder].Items.Add(menu);
+                if (TryResolveInstallChildren(target, menu, folderNodes, externalChildren, out var children))
+                {
+                    children.Add(menu);
+                }
+                continue;
             }
-            else
-            {
-                rootItems.Add(menu);
-            }
+
+            GetParentChildren(menu.transform.parent, root, folderNodes, rootChildren).Add(menu);
         }
 
-        rootFolders.RemoveAll(folder => !folder.HasMenuItems);
-        if (rootItems.Count == 0 && rootFolders.Count == 0) return;
+        var hasExternalMenus = externalChildren.Values.Any(children => children.HasMenuItems);
+        if (!rootChildren.HasMenuItems && !hasExternalMenus) return;
 
         var generatedRoot = new GameObject("FaceTune Generated Menu");
         generatedRoot.transform.SetParent(root.transform, false);
-        generatedRoot.AddComponent<ModularAvatarMenuInstaller>();
 
         var parameters = generatedRoot.AddComponent<ModularAvatarParameters>();
         AddParameters(parameters, menuComponents);
 
-        foreach (var folder in rootFolders)
+        if (rootChildren.HasMenuItems)
         {
-            CreateFolderMenuItem(folder, generatedRoot.transform);
+            generatedRoot.AddComponent<ModularAvatarMenuInstaller>();
+            var group = generatedRoot.AddComponent<ModularAvatarMenuGroup>();
+            group.targetObject = generatedRoot;
+
+            CreateMenuChildren(rootChildren, generatedRoot.transform);
         }
 
-        foreach (var item in rootItems)
+        foreach (var (target, children) in externalChildren)
         {
-            CreateMenuItem(item, generatedRoot.transform);
+            if (!children.HasMenuItems) continue;
+            CreateMenuChildren(children, target);
         }
     }
 
-    private static MenuFolderComponent? FindParentFolder(
+    private static bool TryGetInstallContainerOverride(
+        MenuInstallSettings settings,
+        Component owner,
+        [NotNullWhen(true)] out GameObject? target)
+    {
+        target = settings.InstallContainerOverride.Get(owner);
+        return target != null;
+    }
+
+    private static bool TryResolveInstallChildren(
+        GameObject target,
+        Component owner,
+        IReadOnlyDictionary<MenuFolderComponent, MenuFolderNode> folderNodes,
+        Dictionary<Transform, MenuChildren> externalChildren,
+        [NotNullWhen(true)] out MenuChildren? children)
+    {
+        if (target.TryGetComponent<MenuFolderComponent>(out var targetFolder))
+        {
+            if (folderNodes.TryGetValue(targetFolder, out var folderNode))
+            {
+                children = folderNode.Children;
+                return true;
+            }
+
+            children = null;
+            LocalizedLog.Warning("Log:warning:GenerateMenuPass:InvalidInstallContainer", owner.ToString());
+            return false;
+        }
+
+        if (target.TryGetComponent<ModularAvatarMenuGroup>(out var group))
+        {
+            var targetObject = group.targetObject != null ? group.targetObject : group.gameObject;
+            children = GetExternalChildren(externalChildren, targetObject.transform);
+            return true;
+        }
+
+        if (target.TryGetComponent<ModularAvatarMenuItem>(out var menuItem) &&
+            menuItem.PortableControl.Type == PortableControlType.SubMenu &&
+            menuItem.MenuSource == SubmenuSource.Children)
+        {
+            var targetObject = menuItem.menuSource_otherObjectChildren != null
+                ? menuItem.menuSource_otherObjectChildren
+                : menuItem.gameObject;
+            children = GetExternalChildren(externalChildren, targetObject.transform);
+            return true;
+        }
+
+        children = null;
+        LocalizedLog.Warning("Log:warning:GenerateMenuPass:InvalidInstallContainer", owner.ToString());
+        return false;
+    }
+
+    private static MenuChildren GetParentChildren(
         Transform? start,
         GameObject root,
-        IReadOnlyDictionary<MenuFolderComponent, MenuFolderNode> folders)
+        IReadOnlyDictionary<MenuFolderComponent, MenuFolderNode> folderNodes,
+        MenuChildren rootChildren)
     {
         var current = start;
         while (current != null && current.gameObject != root)
         {
             var folder = current.GetComponent<MenuFolderComponent>();
-            if (folder != null && folders.ContainsKey(folder)) return folder;
+            if (folder != null && folderNodes.TryGetValue(folder, out var node)) return node.Children;
             current = current.parent;
         }
 
-        return null;
+        return rootChildren;
+    }
+
+    private static MenuChildren GetExternalChildren(Dictionary<Transform, MenuChildren> installs, Transform target)
+    {
+        if (installs.TryGetValue(target, out var children)) return children;
+        children = new MenuChildren();
+        installs.Add(target, children);
+        return children;
     }
 
     private static void AddParameters(ModularAvatarParameters parameters, IEnumerable<MenuComponent> menus)
@@ -140,6 +207,19 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
         return result;
     }
 
+    private static void CreateMenuChildren(MenuChildren children, Transform parent)
+    {
+        foreach (var folder in children.Folders.Where(folder => folder.HasMenuItems))
+        {
+            CreateFolderMenuItem(folder, parent);
+        }
+
+        foreach (var item in children.Items)
+        {
+            CreateMenuItem(item, parent);
+        }
+    }
+
     private static void CreateFolderMenuItem(MenuFolderNode folder, Transform parent)
     {
         if (!folder.HasMenuItems) return;
@@ -152,15 +232,7 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
         menuItem.PortableControl.Icon = ResolveIcon(folder.Component.Icon);
         menuItem.MenuSource = SubmenuSource.Children;
 
-        foreach (var childFolder in folder.Folders.Where(child => child.HasMenuItems))
-        {
-            CreateFolderMenuItem(childFolder, obj.transform);
-        }
-
-        foreach (var item in folder.Items)
-        {
-            CreateMenuItem(item, obj.transform);
-        }
+        CreateMenuChildren(folder.Children, obj.transform);
     }
 
     private static void CreateMenuItem(MenuComponent source, Transform parent)
@@ -192,12 +264,28 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
         };
     }
 
-    private sealed class MenuFolderNode
+    private sealed class MenuChildren
     {
-        public MenuFolderComponent Component { get; }
         public List<MenuFolderNode> Folders { get; } = new();
         public List<MenuComponent> Items { get; } = new();
         public bool HasMenuItems => Items.Count != 0 || Folders.Any(folder => folder.HasMenuItems);
+
+        public void Add(MenuFolderNode folder)
+        {
+            Folders.Add(folder);
+        }
+
+        public void Add(MenuComponent item)
+        {
+            Items.Add(item);
+        }
+    }
+
+    private sealed class MenuFolderNode
+    {
+        public MenuFolderComponent Component { get; }
+        public MenuChildren Children { get; } = new();
+        public bool HasMenuItems => Children.HasMenuItems;
 
         public MenuFolderNode(MenuFolderComponent component)
         {

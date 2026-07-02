@@ -34,10 +34,10 @@ internal class ExclusiveToggleGroup
 [Serializable]
 internal class MenuInstallSettings
 {
-    public AvatarObjectReference InstallTargetOverride = new();
+    public AvatarObjectReference InstallContainerOverride = new();
 
     public void ResolveReferences(Component owner)
     {
-        InstallTargetOverride.Get(owner);
+        InstallContainerOverride.Get(owner);
     }
 }
