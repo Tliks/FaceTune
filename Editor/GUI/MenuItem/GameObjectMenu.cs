@@ -1,4 +1,4 @@
-using Aoyon.FaceTune.Importer;
+// using Aoyon.FaceTune.Importer;
 using M = UnityEditor.MenuItem;
 using Aoyon.FaceTune.Platforms;
 
@@ -35,8 +35,8 @@ internal static class GameObjectMenu
         var support = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
         var animatorController = support?.GetAnimatorController();
         if (animatorController == null) throw new Exception("Failed to get animator controller");
-        var importer = new AnimatorControllerImporter(context, animatorController);
-        importer.Import(root);
+        // var importer = new AnimatorControllerImporter(context, animatorController);
+        // importer.Import(root);
     }
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 

@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune;
 [Serializable]
 internal class Condition
 {
-    public bool Always = true;
+    public bool Always = false;
     public List<ConditionCase> Cases = new();
 
     public Condition()

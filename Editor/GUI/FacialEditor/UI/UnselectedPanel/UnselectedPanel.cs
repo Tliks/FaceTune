@@ -137,7 +137,7 @@ internal class UnselectedPanel
 
     private void BuildCurrentSource()
     {
-        using var _ = new ProfilingSampleScope("UnselectedPanel.BuildCurrentSource");
+        using var _ = new Utils.ProfilingSampleScope("UnselectedPanel.BuildCurrentSource");
         _currentSource.Clear();
         
         var searchText = _unselectedSearchField.value?.ToLower() ?? "";

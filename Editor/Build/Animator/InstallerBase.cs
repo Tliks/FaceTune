@@ -1,14 +1,12 @@
 using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf.animator;
-using Aoyon.FaceTune.Platforms;
-
 namespace Aoyon.FaceTune.Build.Animator;
 
 internal class InstallerBase
 {
     protected readonly VirtualAnimatorController _controller;
     protected readonly AvatarContext _avatarContext;
-    protected readonly IMetabasePlatformSupport _platformSupport;
+    protected readonly IAnimatorPlatformServices _platformServices;
 
     protected readonly bool _useWriteDefaults;
 
@@ -22,13 +20,15 @@ internal class InstallerBase
 
     protected const string TrueParameterName = $"{FaceTuneConstants.ParameterPrefix}/True";
 
-    public InstallerBase(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults)
+    public InstallerBase(
+        VirtualAnimatorController virtualController,
+        AvatarContext avatarContext,
+        bool useWriteDefaults,
+        IAnimatorPlatformServices platformServices)
     {
         _controller = virtualController;
         _avatarContext = avatarContext;
-        _platformSupport = Platforms.MetabasePlatformSupport.GetSupport(_avatarContext.Root.transform);
-        _useWriteDefaults = useWriteDefaults;
-
+        _platformServices = platformServices;
         _useWriteDefaults = useWriteDefaults;
         _emptyClip = AnimatorHelper.CreateCustomEmpty();
 

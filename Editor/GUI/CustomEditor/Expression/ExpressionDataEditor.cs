@@ -330,7 +330,7 @@ internal class ExpressionDataClipExporter : EditorWindow
         if (_excludeTrackedShapes)
         {
             var platformSupport = Aoyon.FaceTune.Platforms.MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
-            animations.RemoveBlendShapes(platformSupport.GetTrackedBlendShape().ToHashSet());
+            animations.RemoveBlendShapes(platformSupport.GetExternallyControlledBlendShapeNames().ToHashSet());
         }
         CustomEditorUtility.SaveAsClip(clip =>
         {

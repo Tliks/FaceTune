@@ -4,25 +4,12 @@ using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune;
 
-internal class AvatarContext
+internal record AvatarContext(
+    GameObject Root,
+    SkinnedMeshRenderer FaceRenderer,
+    Mesh FaceMesh,
+    string BodyPath)
 {
-    public readonly GameObject Root;
-    public readonly SkinnedMeshRenderer FaceRenderer;
-    public readonly Mesh FaceMesh;
-    public readonly string BodyPath;
-
-    public AvatarContext(
-        GameObject root,
-        SkinnedMeshRenderer faceRenderer,
-        Mesh faceMesh,
-        string bodyPath)
-    {
-        Root = root;
-        FaceRenderer = faceRenderer;
-        FaceMesh = faceMesh;
-        BodyPath = bodyPath;
-    }
-
     public static bool TryGet(
         GameObject target,
         [NotNullWhen(true)] out AvatarContext? avatarContext,

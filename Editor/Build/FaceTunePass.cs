@@ -16,7 +16,7 @@ internal class BuildPassState
     {
         var root = buildContext.AvatarRootObject;
         var canBuild = AvatarContext.TryGet(root, out _, out _);
-        var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Any();
+        var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Length > 0;
         return new BuildPassState(canBuild && anyComponents);
     }
 }

@@ -16,7 +16,9 @@
     "precompiledReferences": [
         "System.Collections.Immutable.dll",
         "VRCSDKBase.dll",
-        "VRCSDKBase-Editor.dll"
+        "VRCSDKBase-Editor.dll",
+        "VRCSDK3A.dll",
+        "VRCSDK3A-Editor.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],
@@ -25,7 +27,7 @@
         {
             "name": "com.vrchat.avatars",
             "expression": "",
-            "define": "FT_VRCSDK3_AVATARS"
+            "define": "FaceTune_VRCSDK3_AVATARS"
         }
     ],
     "noEngineReferences": false

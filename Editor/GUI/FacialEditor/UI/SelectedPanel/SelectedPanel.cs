@@ -264,7 +264,7 @@ internal class SelectedPanel
             }
 
             var current = EditorApplication.timeSinceStartup;
-            using var _ = new ProfilingSampleScope("SelectedPanel.FlashOverrides.Cleanup");
+            using var _ = new Utils.ProfilingSampleScope("SelectedPanel.FlashOverrides.Cleanup");
             var removedAny = false;
             foreach (var pair in _flashExpiryByKeyIndex.ToList())
             {
@@ -328,7 +328,7 @@ internal class SelectedPanel
 
     private void BuildCurrentSource()
     {
-        using var _ = new ProfilingSampleScope("SelectedPanel.BuildCurrentSource");
+        using var _ = new Utils.ProfilingSampleScope("SelectedPanel.BuildCurrentSource");
 
         _currentSource.Clear();
 

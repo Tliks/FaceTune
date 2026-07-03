@@ -81,42 +81,52 @@ internal sealed class ExpressionCompiler
 
     public ExpressionItem Compile(FaceTuneComponent component)
     {
+        var facialAnimationSet = CollectFacialAnimations(component);
+        var expressionAnimationSet = CollectExpressionAnimations(component);
+
         return new ExpressionItem(
             component.transform,
             component.name,
-            CollectAnimations(component),
+            facialAnimationSet,
+            CreateAnimationSet(component, facialAnimationSet, expressionAnimationSet),
             component.ExpressionSettings,
             ResolveFacialSettings(component),
             _conditionCompiler.Resolve(component));
     }
 
-    private BlendShapeWeightAnimationSet CollectAnimations(FaceTuneComponent component)
+    private BlendShapeWeightAnimationSet CreateAnimationSet(
+        FaceTuneComponent component,
+        BlendShapeWeightAnimationSet facialAnimationSet,
+        BlendShapeWeightAnimationSet expressionAnimationSet)
     {
         var animationSet = new BlendShapeWeightAnimationSet();
 
         if (component.FacialSettings.WriteMode == ExpressionWriteMode.Replace)
         {
-            AddReplaceDefaults(animationSet, component);
+            animationSet.AddRange(_safeZeroBlendShapeAnimations);
+            animationSet.AddRange(facialAnimationSet);
         }
 
-        AddExpressionData(animationSet, component);
+        animationSet.AddRange(expressionAnimationSet);
         return animationSet;
     }
 
-    private void AddReplaceDefaults(BlendShapeWeightAnimationSet animationSet, FaceTuneComponent component)
+    private BlendShapeWeightAnimationSet CollectFacialAnimations(FaceTuneComponent component)
     {
-        animationSet.AddRange(_safeZeroBlendShapeAnimations);
+        var animationSet = new BlendShapeWeightAnimationSet();
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
         if (FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations))
         {
             animationSet.AddRange(facialAnimations.Where(animation => !_settings.ExcludedBlendShapeNames.Contains(animation.Name)));
         }
+
+        return animationSet;
     }
 
-
-    private void AddExpressionData(BlendShapeWeightAnimationSet animationSet, FaceTuneComponent component)
+    private BlendShapeWeightAnimationSet CollectExpressionAnimations(FaceTuneComponent component)
     {
+        var animationSet = new BlendShapeWeightAnimationSet();
         ExpressionDataUtility.AddAnimations(component, animationSet, _avatarContext.BodyPath);
 
         var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
@@ -124,6 +134,8 @@ internal sealed class ExpressionCompiler
         {
             ExpressionDataUtility.AddAnimations(dataComponent, animationSet, _avatarContext.BodyPath);
         }
+
+        return animationSet;
     }
 
     private static FacialSettings ResolveFacialSettings(FaceTuneComponent component)

@@ -20,7 +20,11 @@ internal class BlinkInstaller : InstallerBase
     private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
     private const string DelayMultiplier = $"{ParameterPrefix}/DelayMultiplier"; // 同上
 
-    public BlinkInstaller(VirtualAnimatorController virtualController, AvatarContext avatarContext, bool useWriteDefaults) : base(virtualController, avatarContext, useWriteDefaults)
+    public BlinkInstaller(
+        VirtualAnimatorController virtualController,
+        AvatarContext avatarContext,
+        bool useWriteDefaults,
+        IAnimatorPlatformServices platformServices) : base(virtualController, avatarContext, useWriteDefaults, platformServices)
     {
         _controller.EnsureBoolParameterExists(ForceDisableEyeBlinkParameter);
         _controller.EnsureFloatParameterExists(AllowAAP);
@@ -85,8 +89,8 @@ internal class BlinkInstaller : InstallerBase
         
         enabled.Motion = _emptyClip;
         disabled.Motion = _emptyClip;
-        _platformSupport.SetEyeBlinkTrack(enabled, true);
-        _platformSupport.SetEyeBlinkTrack(disabled, false);
+        _platformServices.SetEyeBlinkTracking(enabled, true);
+        _platformServices.SetEyeBlinkTracking(disabled, false);
 
         // Delay -> Enabled
         var delayToEnabled = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
@@ -154,7 +158,7 @@ internal class BlinkInstaller : InstallerBase
 
         disableTracking.Motion = _emptyClip;
         animationGate.Motion = _emptyClip;
-        _platformSupport.SetEyeBlinkTrack(disableTracking, false);
+        _platformServices.SetEyeBlinkTracking(disableTracking, false);
 
         // Disabled -> AnimationGate
         var disabledToAnimationGate = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
@@ -244,7 +248,7 @@ internal class BlinkInstaller : InstallerBase
 
                 var maxMultiplier = 1f;
                 var minMultiplier = settings.RandomIntervalMinSeconds / settings.RandomIntervalMaxSeconds;
-                _platformSupport.StateAsRandrom(stare, DelayMultiplier, minMultiplier, maxMultiplier);
+                _platformServices.AddRandomDriver(stare, DelayMultiplier, minMultiplier, maxMultiplier);
                 stare.SpeedParameter = DelayMultiplier;
             }
 

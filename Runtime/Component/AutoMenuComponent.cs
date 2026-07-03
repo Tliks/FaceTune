@@ -1,29 +1,30 @@
 using nadena.dev.modular_avatar.core;
 
-namespace Aoyon.FaceTune;
-
-[DisallowMultipleComponent]
-[AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
-internal class AutoMenuComponent : FaceTuneTagComponent, IHasObjectReferences
+namespace Aoyon.FaceTune
 {
-    internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Auto Menu";
-
-    public MenuIconSettings Icon = new();
-    public MenuInstallSettings InstallSettings = new();
-
-    public List<AvatarObjectReference> ExcludeFromMenuTargets = new();
-    public List<AvatarObjectReference> AllowDuringManualLockTargets = new();
-
-    public void ResolveReferences()
+    [DisallowMultipleComponent]
+    [AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
+    internal class AutoMenuComponent : FaceTuneTagComponent, IHasObjectReferences
     {
-        InstallSettings.ResolveReferences(this);
-        foreach (var target in ExcludeFromMenuTargets)
+        internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Auto Menu";
+
+        public MenuIconSettings Icon = new();
+        public MenuInstallSettings InstallSettings = new();
+
+        public List<AvatarObjectReference> ExcludeFromMenuTargets = new();
+        public List<AvatarObjectReference> AllowDuringManualLockTargets = new();
+
+        public void ResolveReferences()
         {
-            target.Get(this);
-        }
-        foreach (var target in AllowDuringManualLockTargets)
-        {
-            target.Get(this);
+            InstallSettings.ResolveReferences(this);
+            foreach (var target in ExcludeFromMenuTargets)
+            {
+                target.Get(this);
+            }
+            foreach (var target in AllowDuringManualLockTargets)
+            {
+                target.Get(this);
+            }
         }
     }
 }

@@ -22,6 +22,7 @@ internal sealed record class ExpressionItem
     public Transform SourceTransform { get; init; }
     public string Name { get; init; }
     
+    public BlendShapeWeightAnimationSet FacialAnimationSet { get; init; }
     public BlendShapeWeightAnimationSet AnimationSet { get; init; }
     public ExpressionSettings ExpressionSettings { get; init; }
     public FacialSettings FacialSettings { get; init; }
@@ -44,6 +45,7 @@ internal sealed record class ExpressionItem
     public ExpressionItem(
         Transform sourceTransform,
         string name,
+        BlendShapeWeightAnimationSet facialAnimationSet,
         BlendShapeWeightAnimationSet animationSet,
         ExpressionSettings expressionSettings,
         FacialSettings facialSettings,
@@ -51,6 +53,7 @@ internal sealed record class ExpressionItem
     {
         SourceTransform = sourceTransform;
         Name = name;
+        FacialAnimationSet = new(facialAnimationSet);
         AnimationSet = new(animationSet);
         ExpressionSettings = expressionSettings;
         FacialSettings = facialSettings;

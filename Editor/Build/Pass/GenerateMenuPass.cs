@@ -65,9 +65,11 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
 
         if (rootChildren.HasMenuItems)
         {
+#if FaceTune_VRCSDK3_AVATARS
             generatedRoot.AddComponent<ModularAvatarMenuInstaller>();
             var group = generatedRoot.AddComponent<ModularAvatarMenuGroup>();
             group.targetObject = generatedRoot;
+#endif
 
             CreateMenuChildren(rootChildren, generatedRoot.transform);
         }
