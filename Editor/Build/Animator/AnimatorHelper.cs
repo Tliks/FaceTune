@@ -72,81 +72,6 @@ internal static class AnimatorHelper
         return transition;
     }
 
-    public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)
-    {
-        var motion = state.Motion as VirtualClip;
-        clip = motion;
-        return motion != null;
-    }
-
-    public static VirtualClip CreateClip(this VirtualState state, string name)
-    {
-        var clip = VirtualClip.Create(name);
-        state.Motion = clip;
-        return clip;
-    }
-
-    public static VirtualClip GetOrCreateClip(this VirtualState state, string name)
-    {
-        if (state.TryGetClip(out var clip))
-        {
-            clip.Name = name;
-            return clip;
-        }
-        clip = CreateClip(state, name);
-        return clip;
-    }
-
-    // 適当なGameObjectのactiveを切り替える2フレームアニメーションを作成
-    public static VirtualClip CreateCustomEmpty(string clipName = "Custom Empty Clip")
-    {
-        var clip = VirtualClip.Create(clipName);
-
-        var curve = new AnimationCurve();
-        curve.AddKey(0f, 1f);
-        curve.AddKey(1f / clip.FrameRate, 0f);
-
-        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
-        return clip;
-    }
-
-    public static void AddBlendShapeAnimation(this VirtualClip clip, string bodyPath, BlendShapeWeightAnimation animation)
-    {
-        clip.SetFloatCurve(bodyPath, typeof(SkinnedMeshRenderer), FaceTuneConstants.AnimatedBlendShapePrefix + animation.Name, animation.Curve);
-    }
-
-    public static void AddBlendShapeAnimations(this VirtualClip clip, string bodyPath, IEnumerable<BlendShapeWeightAnimation> animations)
-    {
-        foreach (var animation in animations)
-        {
-            AddBlendShapeAnimation(clip, bodyPath, animation);
-        }
-    }
-
-    public static AnimationCurve CreateDelayCurve(float delay)
-    {
-        var curve = new AnimationCurve();
-        curve.AddKey(0f, 1f);
-        curve.AddKey(delay, 0f);
-        return curve;
-    }
-
-    public static void SetDelay(this VirtualClip clip, float delay)
-    {
-        var curve = CreateDelayCurve(delay);
-        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
-    }
-
-    public static VirtualClip CreateDelayClip(float delay, string clipName = "Delay Clip")
-    {
-        var clip = VirtualClip.Create(clipName);
-
-        var curve = CreateDelayCurve(delay);
-
-        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
-        return clip;
-    }
-
     public static void EnsureBoolParameterExists(this VirtualAnimatorController controller, string parameter, bool defaultValue = false)
     {
         if (!controller.Parameters.ContainsKey(parameter))
@@ -219,4 +144,70 @@ internal static class AnimatorHelper
         }
         return transitions;
     }
+
+    public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)
+    {
+        var motion = state.Motion as VirtualClip;
+        clip = motion;
+        return motion != null;
+    }
+
+    public static VirtualClip SetNewClip(this VirtualState state, string name)
+    {
+        var clip = VirtualClip.Create(name);
+        state.Motion = clip;
+        return clip;
+    }
+
+    public static VirtualClip EnsureClip(this VirtualState state, string name)
+    {
+        if (state.TryGetClip(out var clip))
+        {
+            clip.Name = name;
+            return clip;
+        }
+        clip = SetNewClip(state, name);
+        return clip;
+    }
+
+    // 適当なGameObjectのactiveを切り替える2フレームアニメーションを作成
+    public static VirtualClip CreateCustomEmptyClip(string clipName = "FaceTune Custom Empty Clip")
+    {
+        var clip = VirtualClip.Create(clipName);
+
+        var curve = new AnimationCurve();
+        curve.AddKey(0f, 1f);
+        curve.AddKey(1f / clip.FrameRate, 0f);
+
+        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
+        return clip;
+    }
+
+    public static VirtualClip CreateDelayClip(float delay, string clipName = "Delay Clip")
+    {
+        var clip = VirtualClip.Create(clipName);
+
+        var curve = new AnimationCurve();
+        curve.AddKey(0f, 1f);
+        curve.AddKey(delay, 0f);
+
+        clip.SetFloatCurve("", typeof(GameObject), "m_IsActive", curve);
+        return clip;
+    }
+
+    private const string AnimatedBlendShapePrefix = "blendShape.";
+
+    public static void AddBlendShapeAnimation(this VirtualClip clip, string bodyPath, BlendShapeWeightAnimation animation)
+    {
+        clip.SetFloatCurve(bodyPath, typeof(SkinnedMeshRenderer), AnimatedBlendShapePrefix + animation.Name, animation.Curve);
+    }
+
+    public static void AddBlendShapeAnimations(this VirtualClip clip, string bodyPath, IEnumerable<BlendShapeWeightAnimation> animations)
+    {
+        foreach (var animation in animations)
+        {
+            AddBlendShapeAnimation(clip, bodyPath, animation);
+        }
+    }
+
 }

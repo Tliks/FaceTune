@@ -30,7 +30,7 @@ internal class InstallerBase
         _avatarContext = avatarContext;
         _platformServices = platformServices;
         _useWriteDefaults = useWriteDefaults;
-        _emptyClip = AnimatorHelper.CreateCustomEmpty();
+        _emptyClip = AnimatorHelper.CreateCustomEmptyClip();
 
         _controller.EnsureBoolParameterExists(TrueParameterName, true);
     }
@@ -55,7 +55,7 @@ internal class InstallerBase
 
     protected VirtualClip AddBlendShapeAnimationsToState(VirtualState state, IEnumerable<BlendShapeWeightAnimation> animations)
     {
-        var clip = state.GetOrCreateClip(state.Name);
+        var clip = state.EnsureClip(state.Name);
         clip.AddBlendShapeAnimations(_avatarContext.BodyPath, animations);
         return clip;
     }

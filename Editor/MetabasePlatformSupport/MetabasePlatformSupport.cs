@@ -1,5 +1,3 @@
-using nadena.dev.ndmf.runtime;
-
 namespace Aoyon.FaceTune.Platforms;
 
 internal static class MetabasePlatformSupport
@@ -10,21 +8,6 @@ internal static class MetabasePlatformSupport
     public static void Register(IMetabasePlatformSupport support)
     {
         s_supports.Add(support);
-    }
-
-    public static Transform? FindAvatarInParents(Transform transform)
-    {
-        return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
-    }
-
-    public static IMetabasePlatformSupport GetSupportInParents(Transform transform)
-    {
-        var avatar = FindAvatarInParents(transform);
-        if (avatar == null)
-        {
-            throw new Exception("Avatar not found");
-        }
-        return GetSupport(avatar);
     }
 
     public static IMetabasePlatformSupport GetSupport(Transform root)

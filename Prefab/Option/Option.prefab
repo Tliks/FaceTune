@@ -49,6 +49,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 114db5dba152e97468f319ce138b3584, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MenuName: 
   Icon:
     Mode: 1
     ManualIcon: {fileID: 0}
@@ -67,7 +68,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5491953794111204293, guid: 9fddb11ddc6ebd94c910d3f9cea38690, type: 3}
       propertyPath: m_Name
-      value: Auto Menu
+      value: Auto Menu Generator
       objectReference: {fileID: 0}
     - target: {fileID: 8823365743024927264, guid: 9fddb11ddc6ebd94c910d3f9cea38690, type: 3}
       propertyPath: m_LocalPosition.x

@@ -79,7 +79,9 @@ internal abstract class FaceTunePass<TPass> : Pass<TPass> where TPass : Pass<TPa
     protected sealed override void Execute(BuildContext context)
     {
         if (!context.GetState<BuildPassState>(BuildPassState.Create).Enabled) return;
-        Execute(context.GetState<FaceTuneContext>(FaceTuneContext.Create));
+        var faceTuneContext = context.GetState<FaceTuneContext>(FaceTuneContext.Create);
+        using var _ = new Utils.ProfilingSampleScope(typeof(TPass).Name);
+        Execute(faceTuneContext);
     }
 
     protected abstract void Execute(FaceTuneContext context);

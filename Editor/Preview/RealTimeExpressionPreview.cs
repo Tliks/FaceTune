@@ -80,14 +80,14 @@ internal class RealTimeExpressionPreview : IRenderFilter
         result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
         context.Observe(target);
-        ExpressionDataUtility.AddFirstFrameBlendShapes(target, result, bodyPath, facialStyleAnimations);
+        target.GetFirstFrameBlendShapes(result, bodyPath, facialStyleAnimations);
 
         using var _4 = ListPool<DataComponent>.Get(out var dataComponents);
         context.GetComponentsInChildren<DataComponent>(target.gameObject, true, dataComponents);
         foreach (var dataComponent in dataComponents)
         {
             context.Observe(dataComponent);
-            ExpressionDataUtility.AddFirstFrameBlendShapes(dataComponent, result, bodyPath, facialStyleAnimations);
+            dataComponent.GetFirstFrameBlendShapes(result, bodyPath, facialStyleAnimations);
         }
     }
 }

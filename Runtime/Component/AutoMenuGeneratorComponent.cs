@@ -4,9 +4,9 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
-    internal class AutoMenuComponent : FaceTuneTagComponent, IHasObjectReferences
+    internal class AutoMenuGeneratorComponent : FaceTuneTagComponent, IHasObjectReferences
     {
-        internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Auto Menu";
+        internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Auto Menu Generator";
 
         public MenuIconSettings Icon = new();
         public MenuInstallSettings InstallSettings = new();

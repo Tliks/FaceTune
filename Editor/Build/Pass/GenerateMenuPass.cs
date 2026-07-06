@@ -10,6 +10,8 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.generate-menu";
     public override string DisplayName => "Generate Menu";
 
+    private const string GeneratedMenuRootName = "FaceTune Generated Menu";
+
     protected override void Execute(FaceTuneContext context)
     {
         GenerateMenus(context.AvatarContext.Root);
@@ -57,11 +59,8 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
         var hasExternalMenus = externalChildren.Values.Any(children => children.HasMenuItems);
         if (!rootChildren.HasMenuItems && !hasExternalMenus) return;
 
-        var generatedRoot = new GameObject("FaceTune Generated Menu");
+        var generatedRoot = new GameObject(GeneratedMenuRootName);
         generatedRoot.transform.SetParent(root.transform, false);
-
-        var parameters = generatedRoot.AddComponent<ModularAvatarParameters>();
-        AddParameters(parameters, menuComponents);
 
         if (rootChildren.HasMenuItems)
         {
@@ -110,12 +109,14 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
             return false;
         }
 
+#if FaceTune_VRCSDK3_AVATARS
         if (target.TryGetComponent<ModularAvatarMenuGroup>(out var group))
         {
             var targetObject = group.targetObject != null ? group.targetObject : group.gameObject;
             children = GetExternalChildren(externalChildren, targetObject.transform);
             return true;
         }
+#endif
 
         if (target.TryGetComponent<ModularAvatarMenuItem>(out var menuItem) &&
             menuItem.PortableControl.Type == PortableControlType.SubMenu &&
@@ -158,68 +159,6 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
         return children;
     }
 
-    private static void AddParameters(ModularAvatarParameters parameters, IEnumerable<MenuComponent> menus)
-    {
-        var menuList = menus.ToList();
-        var exclusiveDefaults = ResolveExclusiveDefaults(menuList);
-        var configs = new Dictionary<string, ParameterConfig>();
-        foreach (var menu in menuList)
-        {
-            var parameterName = menu.ParameterName;
-            if (string.IsNullOrWhiteSpace(parameterName)) continue;
-
-            var syncType = menu.Kind switch
-            {
-                MenuItemKind.Radial => ParameterSyncType.Float,
-                MenuItemKind.Toggle when menu.ExclusiveToggleGroup.IsEnabled => ParameterSyncType.Int,
-                MenuItemKind.Toggle => ParameterSyncType.Bool,
-                _ => ParameterSyncType.NotSynced
-            };
-
-            if (configs.ContainsKey(parameterName)) continue;
-            configs.Add(parameterName, new ParameterConfig
-            {
-                nameOrPrefix = parameterName,
-                syncType = syncType,
-                saved = true,
-                defaultValue = GetDefaultValue(menu, exclusiveDefaults),
-                hasExplicitDefaultValue = true
-            });
-        }
-
-        parameters.parameters.AddRange(configs.Values);
-    }
-
-    private static float GetDefaultValue(MenuComponent menu, IReadOnlyDictionary<string, float> exclusiveDefaults)
-    {
-        if (menu.Kind == MenuItemKind.Toggle && menu.ExclusiveToggleGroup.IsEnabled)
-        {
-            return exclusiveDefaults.GetValueOrDefault(menu.ParameterName, 0f);
-        }
-
-        if (menu.Kind == MenuItemKind.Toggle && menu.DefaultSelected) return 1f;
-        return 0f;
-    }
-
-    private static Dictionary<string, float> ResolveExclusiveDefaults(IEnumerable<MenuComponent> menus)
-    {
-        var result = new Dictionary<string, float>();
-        foreach (var group in menus
-            .Where(menu => menu.Kind == MenuItemKind.Toggle && menu.ExclusiveToggleGroup.IsEnabled && menu.DefaultSelected)
-            .GroupBy(menu => menu.ParameterName))
-        {
-            var defaults = group.ToArray();
-            if (defaults.Length > 1)
-            {
-                LocalizedLog.Warning("Log:warning:GenerateMenuPass:MultipleDefaultSelectedMenu", null, defaults);
-            }
-
-            result[group.Key] = defaults[0].ExclusiveToggleGroup.Value;
-        }
-
-        return result;
-    }
-
     private static void CreateMenuChildren(MenuChildren children, Transform parent)
     {
         foreach (var folder in children.Folders.Where(folder => folder.HasMenuItems))
@@ -237,7 +176,7 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
     {
         if (!folder.HasMenuItems) return;
 
-        var obj = new GameObject(folder.Component.name);
+        var obj = new GameObject(ResolveMenuName(folder.Component));
         obj.transform.SetParent(parent, false);
 
         var menuItem = obj.AddComponent<ModularAvatarMenuItem>();
@@ -250,7 +189,7 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
 
     private static void CreateMenuItem(MenuComponent source, Transform parent)
     {
-        var obj = new GameObject(source.name);
+        var obj = new GameObject(ResolveMenuName(source));
         obj.transform.SetParent(parent, false);
 
         var menuItem = obj.AddComponent<ModularAvatarMenuItem>();
@@ -265,6 +204,16 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
             ? source.ExclusiveToggleGroup.Value
             : 1f;
         menuItem.PortableControl.Icon = ResolveIcon(source.Icon);
+    }
+
+    private static string ResolveMenuName(MenuComponent menu)
+    {
+        return string.IsNullOrWhiteSpace(menu.MenuName) ? menu.name : menu.MenuName;
+    }
+
+    private static string ResolveMenuName(MenuFolderComponent folder)
+    {
+        return string.IsNullOrWhiteSpace(folder.MenuName) ? folder.name : folder.MenuName;
     }
 
     private static Texture2D? ResolveIcon(MenuIconSettings settings)

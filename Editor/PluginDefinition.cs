@@ -26,7 +26,8 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
         sequence.Run(GenerateMenuPass.Instance);
-        sequence.Run(InstallExpressionProgramPass.Instance);
+        sequence.Run(GenerateParameterPass.Instance);
+        sequence.Run(InstallBuildPass.Instance);
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
         sequence = InPhase(BuildPhase.PlatformFinish);

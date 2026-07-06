@@ -1,4 +1,3 @@
-using nadena.dev.modular_avatar.core;
 using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Build;
@@ -26,8 +25,8 @@ internal static class FaceTuneProgramCompiler
         BuildSettings settings)
     {
         var components = context.Root.GetComponentsInChildren<FaceTuneComponent>(true);
-        var autoMenuPlan = AutoMenuPlan.Create(context.Root, components, platformSupport);
-        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport, autoMenuPlan);
+        
+        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport);
         var expressionCompiler = new ExpressionCompiler(context, settings, conditionCompiler);
 
         var items = components
@@ -127,12 +126,12 @@ internal sealed class ExpressionCompiler
     private BlendShapeWeightAnimationSet CollectExpressionAnimations(FaceTuneComponent component)
     {
         var animationSet = new BlendShapeWeightAnimationSet();
-        ExpressionDataUtility.AddAnimations(component, animationSet, _avatarContext.BodyPath);
+        component.GetAnimations(animationSet, _avatarContext.BodyPath);
 
         var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
         foreach (var dataComponent in dataComponents)
         {
-            ExpressionDataUtility.AddAnimations(dataComponent, animationSet, _avatarContext.BodyPath);
+            dataComponent.GetAnimations(animationSet, _avatarContext.BodyPath);
         }
 
         return animationSet;
@@ -143,12 +142,12 @@ internal sealed class ExpressionCompiler
         var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
         var blinkSettings = advancedEyeBlinkComponent == null
             ? AdvancedEyeBlinkSettings.Disabled()
-            : ComponentReferenceUtility.ResolveSettings(advancedEyeBlinkComponent);
+            : advancedEyeBlinkComponent.ResolveSettings();
 
         var advancedLipSyncComponent = component.gameObject.GetComponentInParent<LipSyncComponent>(true);
         var lipSyncSettings = advancedLipSyncComponent == null
             ? AdvancedLipSyncSettings.Disabled()
-            : ComponentReferenceUtility.ResolveSettings(advancedLipSyncComponent);
+            : advancedLipSyncComponent.ResolveSettings();
 
         return component.FacialSettings with
         {
@@ -162,20 +161,18 @@ internal sealed class ConditionCompiler
 {
     private readonly GameObject _root;
     private readonly IMetabasePlatformSupport _platformSupport;
-    private readonly AutoMenuPlan _autoMenuPlan;
 
-    public ConditionCompiler(GameObject root, IMetabasePlatformSupport platformSupport, AutoMenuPlan autoMenuPlan)
+    public ConditionCompiler(GameObject root, IMetabasePlatformSupport platformSupport)
     {
         _root = root;
         _platformSupport = platformSupport;
-        _autoMenuPlan = autoMenuPlan;
     }
 
     public DnfCondition Resolve(FaceTuneComponent component)
     {
         var conditions = CollectEffectiveConditions(component).Select(ResolveCondition);
         var condition = DnfCondition.All(conditions);
-        return _autoMenuPlan.Apply(component.transform, condition);
+        return ApplyConditionModifiers(component, condition);
     }
 
     private IEnumerable<Condition> CollectEffectiveConditions(FaceTuneComponent component)
@@ -223,143 +220,14 @@ internal sealed class ConditionCompiler
 
         return result;
     }
-}
 
-internal sealed class AutoMenuPlan
-{
-    private readonly IReadOnlyDictionary<Transform, AutoMenuEffect> _effects;
-
-    private AutoMenuPlan(IReadOnlyDictionary<Transform, AutoMenuEffect> effects)
+    private DnfCondition ApplyConditionModifiers(FaceTuneComponent component, DnfCondition condition)
     {
-        _effects = effects;
+        var modifier = component.GetComponent<ExpressionConditionModifierComponent>();
+        if (modifier == null) return condition;
+
+        return condition
+            .And(ResolveCondition(modifier.OriginalGate))
+            .Or(ResolveCondition(modifier.AdditionalActivation));
     }
-
-    public static AutoMenuPlan Create(
-        GameObject root,
-        IReadOnlyList<FaceTuneComponent> components,
-        IMetabasePlatformSupport platformSupport)
-    {
-        var autoMenus = root.GetComponentsInChildren<AutoMenuComponent>(true);
-        if (autoMenus.Length == 0) return new AutoMenuPlan(new Dictionary<Transform, AutoMenuEffect>());
-
-        if (autoMenus.Length > 1)
-        {
-            LocalizedLog.Warning("Log:warning:AutoMenuPlan:MultipleAutoMenu", null, autoMenus);
-        }
-
-        return Create(autoMenus[0], components, platformSupport);
-    }
-
-    private static AutoMenuPlan Create(
-        AutoMenuComponent autoMenu,
-        IReadOnlyList<FaceTuneComponent> components,
-        IMetabasePlatformSupport platformSupport)
-    {
-        var menuExpressions = ResolveMenuExpressions(autoMenu, components);
-        var suppressedExpressions = ResolveSuppressedExpressions(autoMenu, components).ToHashSet();
-
-        var selectionParameter = CreateAutoMenuParameterName(autoMenu.gameObject);
-        var manualInactive = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.Equal, 0));
-
-        var menuEffects = menuExpressions
-            .Select((expression, index) =>
-            {
-                var selected = platformSupport.ResolveParameterCondition(ParameterCondition.Int(selectionParameter, ComparisonType.Equal, index + 1));
-                return new
-                {
-                    Expression = expression,
-                    Effect = suppressedExpressions.Contains(expression)
-                        ? AutoMenuEffect.SelectedSuppressed(manualInactive, selected)
-                        : AutoMenuEffect.SelectedAllowed(selected)
-                };
-            });
-        var suppressedEffects = suppressedExpressions
-            .Except(menuExpressions)
-            .Select(expression => new
-            {
-                Expression = expression,
-                Effect = AutoMenuEffect.Suppressed(manualInactive)
-            });
-
-        return new AutoMenuPlan(menuEffects
-            .Concat(suppressedEffects)
-            .ToDictionary(x => x.Expression, x => x.Effect));
-    }
-
-    private static Transform[] ResolveMenuExpressions(AutoMenuComponent autoMenu, IReadOnlyList<FaceTuneComponent> components)
-    {
-        var excludedExpressions = ResolveReferencedExpressions(autoMenu, autoMenu.ExcludeFromMenuTargets);
-        return components
-            .Select(component => component.transform)
-            .Where(expression => !excludedExpressions.Contains(expression))
-            .ToArray();
-    }
-
-    private static IEnumerable<Transform> ResolveSuppressedExpressions(AutoMenuComponent autoMenu, IReadOnlyList<FaceTuneComponent> components)
-    {
-        var allowedDuringManualLock = ResolveReferencedExpressions(autoMenu, autoMenu.AllowDuringManualLockTargets);
-        return components
-            .Select(component => component.transform)
-            .Where(expression => !allowedDuringManualLock.Contains(expression))
-            .ToArray();
-    }
-
-    private static HashSet<Transform> ResolveReferencedExpressions(
-        AutoMenuComponent autoMenu,
-        IEnumerable<AvatarObjectReference> references)
-    {
-        return references
-            .Select(reference => reference.Get(autoMenu))
-            .Where(target => target != null)
-            .SelectMany(target => target.GetComponentsInChildren<FaceTuneComponent>(true))
-            .Select(component => component.transform)
-            .ToHashSet();
-    }
-
-    private static string CreateAutoMenuParameterName(GameObject source)
-    {
-        var baseName = source.name.Replace(" ", "_").Replace(".", "_");
-        return $"{FaceTuneConstants.ParameterPrefix}/{baseName}/manual";
-    }
-
-    public DnfCondition Apply(Transform expression, DnfCondition condition)
-    {
-        return _effects.TryGetValue(expression, out var effect)
-            ? effect.Apply(condition)
-            : condition;
-    }
-
-    private sealed class AutoMenuEffect
-    {
-        private readonly DnfCondition? _originalGate;
-        private readonly DnfCondition? _additionalActivation;
-
-        private AutoMenuEffect(DnfCondition? originalGate, DnfCondition? additionalActivation)
-        {
-            _originalGate = originalGate;
-            _additionalActivation = additionalActivation;
-        }
-
-        public static AutoMenuEffect SelectedSuppressed(DnfCondition manualInactive, DnfCondition selected)
-        {
-            return new AutoMenuEffect(manualInactive, selected);
-        }
-
-        public static AutoMenuEffect SelectedAllowed(DnfCondition selected)
-        {
-            return new AutoMenuEffect(null, selected);
-        }
-
-        public static AutoMenuEffect Suppressed(DnfCondition manualInactive)
-        {
-            return new AutoMenuEffect(manualInactive, null);
-        }
-
-        public DnfCondition Apply(DnfCondition condition)
-        {
-            var original = _originalGate == null ? condition : _originalGate.And(condition);
-            return _additionalActivation == null ? original : original.Or(_additionalActivation);
-        }
-    }
-
 }

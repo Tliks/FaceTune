@@ -13,7 +13,8 @@ internal class BlinkInstaller : InstallerBase
     
     private Dictionary<string, string> _clonedShapesMapping = new();
 
-    private const string ForceDisableEyeBlinkParameter = FaceTuneConstants.ForceDisableEyeBlinkParameter;
+    private readonly string _forceDisableEyeBlinkParameter;
+
     private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/Blink";
     private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
     private const string UseAnimationAAP = $"{ParameterPrefix}/UseAnimation"; // 1つ以上有効なAdvancedEyeBlinkSettingsがあるとき
@@ -24,9 +25,14 @@ internal class BlinkInstaller : InstallerBase
         VirtualAnimatorController virtualController,
         AvatarContext avatarContext,
         bool useWriteDefaults,
-        IAnimatorPlatformServices platformServices) : base(virtualController, avatarContext, useWriteDefaults, platformServices)
+        IAnimatorPlatformServices platformServices,
+        string forceDisableEyeBlinkParameter) : base(virtualController, avatarContext, useWriteDefaults, platformServices)
     {
-        _controller.EnsureBoolParameterExists(ForceDisableEyeBlinkParameter);
+        _forceDisableEyeBlinkParameter = forceDisableEyeBlinkParameter;
+        if (!string.IsNullOrWhiteSpace(_forceDisableEyeBlinkParameter))
+        {
+            _controller.EnsureBoolParameterExists(_forceDisableEyeBlinkParameter);
+        }
         _controller.EnsureFloatParameterExists(AllowAAP);
     }
 
@@ -70,6 +76,16 @@ internal class BlinkInstaller : InstallerBase
         return _advancedEyeBlinkIndex.GetOrAdd(advancedSettings, _advancedEyeBlinkIndex.Count);
     }
 
+    private void AddForceDisableCondition(ICollection<AnimatorCondition> conditions, AnimatorConditionMode mode)
+    {
+        if (string.IsNullOrWhiteSpace(_forceDisableEyeBlinkParameter)) return;
+        conditions.Add(new AnimatorCondition
+        {
+            parameter = _forceDisableEyeBlinkParameter,
+            mode = mode
+        });
+    }
+
     public void AddEyeBlinkLayer()
     {
         if (!_shouldAddLayer) return;
@@ -104,36 +120,29 @@ internal class BlinkInstaller : InstallerBase
         {
             new AnimatorCondition()
             {
-                parameter = ForceDisableEyeBlinkParameter,
-                mode = AnimatorConditionMode.If
-            },
-            new AnimatorCondition()
-            {
                 parameter = AllowAAP,
                 mode = AnimatorConditionMode.Less,
                 threshold = 0.99f // 安全側(Stare)に倒す
             }
         };
+        AddForceDisableCondition(disableORConditions, AnimatorConditionMode.If);
         var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabled, disableORConditions);
         enabled.Transitions = enabled.Transitions.AddRange(orTransitions);
 
         // Disabled -> Enabled
         var disabledToEnabled = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
         disabledToEnabled.SetDestination(enabled);
-        disabledToEnabled.Conditions = ImmutableList.CreateRange(new List<AnimatorCondition>()
+        var disabledToEnabledConditions = new List<AnimatorCondition>()
         {
-            new AnimatorCondition()
-            {
-                parameter = ForceDisableEyeBlinkParameter,
-                mode = AnimatorConditionMode.IfNot
-            },
             new AnimatorCondition()
             {
                 parameter = AllowAAP,
                 mode = AnimatorConditionMode.Greater,
                 threshold = 0.99f // 同上
             }
-        });
+        };
+        AddForceDisableCondition(disabledToEnabledConditions, AnimatorConditionMode.IfNot);
+        disabledToEnabled.Conditions = ImmutableList.CreateRange(disabledToEnabledConditions);
         disabled.Transitions = disabled.Transitions.Add(disabledToEnabled);
 
         if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => !k.IsAnimationEnabled())) return;
@@ -283,11 +292,7 @@ internal class BlinkInstaller : InstallerBase
             gateToStare.SetDestination(stare);
             var andConditions = new List<AnimatorCondition>();
             andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
-            andConditions.Add(new AnimatorCondition()
-            {
-                parameter = ForceDisableEyeBlinkParameter,
-                mode = AnimatorConditionMode.IfNot
-            });
+            AddForceDisableCondition(andConditions, AnimatorConditionMode.IfNot);
             andConditions.Add(new AnimatorCondition()
             {
                 parameter = AllowAAP,
@@ -302,11 +307,7 @@ internal class BlinkInstaller : InstallerBase
             stareToGate.SetDestination(animationGate);
             var orConditions = new List<AnimatorCondition>();
             orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
-            orConditions.Add(new AnimatorCondition()
-            {
-                parameter = ForceDisableEyeBlinkParameter,
-                mode = AnimatorConditionMode.If
-            });
+            AddForceDisableCondition(orConditions, AnimatorConditionMode.If);
             orConditions.Add(new AnimatorCondition()
             {
                 parameter = AllowAAP,

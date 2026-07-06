@@ -68,15 +68,14 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return faceRenderer;
     }
 
-    public void InstallExpressionProgram(FaceTuneContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
+    public void InstallBuild(BuildContext buildContext, BuildSettings settings, ExpressionProgram expressionProgram)
     {
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
-        var avatarContext = buildPassContext.AvatarContext;
         var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
         var installer = new AnimatorInstaller(
             fx,
-            avatarContext,
+            settings,
             useWriteDefaults,
             new VRChatAnimatorPlatformServices(),
             GetExternallyControlledBlendShapeNames().ToHashSet());

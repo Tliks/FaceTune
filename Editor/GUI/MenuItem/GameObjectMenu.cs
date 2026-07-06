@@ -32,7 +32,7 @@ internal static class GameObjectMenu
     static void ImportFx() {
         var root = Template();
         if (!CustomEditorUtility.TryGetContext(root, out var context)) throw new Exception("Failed to get context");
-        var support = MetabasePlatformSupport.GetSupportInParents(context.Root.transform);
+        var support = MetabasePlatformSupport.GetSupport(context.Root.transform);
         var animatorController = support?.GetAnimatorController();
         if (animatorController == null) throw new Exception("Failed to get animator controller");
         // var importer = new AnimatorControllerImporter(context, animatorController);

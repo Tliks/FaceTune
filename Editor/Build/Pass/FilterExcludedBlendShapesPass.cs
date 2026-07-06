@@ -17,7 +17,7 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
     {
         foreach (var component in root.GetComponentsInChildren<FaceTuneComponent>(true))
         {
-            foreach (var data in ExpressionDataUtility.ResolveData(component))
+            foreach (var data in component.ResolveData())
             {
                 FilterBlendShapeAnimations(data, component, bodyPath, settings);
             }
@@ -25,7 +25,7 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
 
         foreach (var component in root.GetComponentsInChildren<DataComponent>(true))
         {
-            foreach (var data in ExpressionDataUtility.ResolveData(component))
+            foreach (var data in component.ResolveData())
             {
                 FilterBlendShapeAnimations(data, component, bodyPath, settings);
             }
@@ -33,7 +33,7 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
 
         foreach (var component in root.GetComponentsInChildren<StyleComponent>(true))
         {
-            foreach (var data in ExpressionDataUtility.ResolveData(component))
+            foreach (var data in component.ResolveData())
             {
                 FilterBlendShapeAnimations(data, component, string.Empty, settings);
             }
@@ -53,7 +53,7 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
     private static void FilterBlendShapeAnimations(ExpressionData data, Component owner, string bodyPath, BuildSettings settings)
     {
         var animations = new List<BlendShapeWeightAnimation>();
-        ExpressionDataUtility.AddAnimations(data, animations, bodyPath);
+        data.GetAnimations(animations, bodyPath);
 
         data.BlendShapeAnimations = FilterBlendShapeAnimations(owner, animations, settings);
         data.Clip = null;

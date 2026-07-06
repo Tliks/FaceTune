@@ -17,21 +17,26 @@ internal class AnimatorInstaller : InstallerBase
     private readonly LipSyncInstaller _lipSyncInstaller;
     private readonly BlinkInstaller _blinkInstaller;
     private readonly IReadOnlyCollection<string> _externallyControlledBlendShapeNames;
+    private readonly string _lockFacialParameterName;
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
 
     public AnimatorInstaller(
         VirtualAnimatorController virtualController,
-        AvatarContext avatarContext,
+        BuildSettings settings,
         bool useWriteDefaults,
         IAnimatorPlatformServices platformServices,
-        IReadOnlyCollection<string> externallyControlledBlendShapeNames) : base(virtualController, avatarContext, useWriteDefaults, platformServices)
+        IReadOnlyCollection<string> externallyControlledBlendShapeNames) : base(virtualController, settings.AvatarContext, useWriteDefaults, platformServices)
     {
         _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
         _externallyControlledBlendShapeNames = externallyControlledBlendShapeNames;
-        _lipSyncInstaller = new LipSyncInstaller(virtualController, avatarContext, useWriteDefaults, platformServices);
-        _blinkInstaller = new BlinkInstaller(virtualController, avatarContext, useWriteDefaults, platformServices);
-        _controller.EnsureBoolParameterExists(FaceTuneConstants.LockFacialParameter, false);
+        _lockFacialParameterName = settings.LockFacialParameterName;
+        _lipSyncInstaller = new LipSyncInstaller(virtualController, settings.AvatarContext, useWriteDefaults, platformServices, settings.DisableLipSyncParameterName);
+        _blinkInstaller = new BlinkInstaller(virtualController, settings.AvatarContext, useWriteDefaults, platformServices, settings.DisableEyeBlinkParameterName);
+        if (!string.IsNullOrWhiteSpace(settings.LockFacialParameterName))
+        {
+            _controller.EnsureBoolParameterExists(settings.LockFacialParameterName, false);
+        }
     }
 
     public void Execute(ExpressionProgram expressionProgram)
@@ -55,11 +60,11 @@ internal class AnimatorInstaller : InstallerBase
     {
         var nonMMDLayer = AddLayer("Initial", priority, false);
         var nonMMDState = AddState(nonMMDLayer, "Initial", position: ExclusiveStatePosition);
-        _nonMMDInitializationClip = nonMMDState.CreateClip(nonMMDState.Name);
+        _nonMMDInitializationClip = nonMMDState.SetNewClip(nonMMDState.Name);
 
         var MMDLayer = AddLayer("Initial (MMD)", priority, true);
         var MMDState = AddState(MMDLayer, "Initial (MMD)", position: ExclusiveStatePosition);
-        _MMDInitializationClip = MMDState.CreateClip(MMDState.Name);
+        _MMDInitializationClip = MMDState.SetNewClip(MMDState.Name);
 
         var animations = new List<BlendShapeWeightAnimation>();
         var mmdAnimations = new List<BlendShapeWeightAnimation>();
@@ -127,7 +132,9 @@ internal class AnimatorInstaller : InstallerBase
         var newEntryTransitions = new List<VirtualTransition>();
         var position = basePosition;
 
-        var lockFacialCondition = new AnimatorCondition { parameter = FaceTuneConstants.LockFacialParameter, mode = AnimatorConditionMode.IfNot };
+        var lockFacialCondition = string.IsNullOrWhiteSpace(_lockFacialParameterName)
+            ? new AnimatorCondition { parameter = TrueParameterName, mode = AnimatorConditionMode.If }
+            : new AnimatorCondition { parameter = _lockFacialParameterName, mode = AnimatorConditionMode.IfNot };
 
         foreach (var whenCase in when.Cases)
         {
@@ -213,7 +220,7 @@ internal class AnimatorInstaller : InstallerBase
             }
             else
             {
-                clip = state.CreateClip(state.Name);
+                clip = state.SetNewClip(state.Name);
                 Impl(clip);
                 _expressionClipCache[key] = clip;
             }

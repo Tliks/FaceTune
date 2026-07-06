@@ -32,7 +32,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             .GetBlendShapeWeights(avatarContext.FaceMesh)
             .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
             .Select(shape => shape with { Weight = 0f }));
-        ExpressionDataUtility.AddFirstFrameBlendShapes(component, set, avatarContext.BodyPath);
+        component.GetFirstFrameBlendShapes(set, avatarContext.BodyPath);
 
         var renderer = avatarContext.FaceRenderer;
         var mesh = avatarContext.FaceMesh;

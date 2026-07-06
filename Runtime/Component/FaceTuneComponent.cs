@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
-    internal class FaceTuneComponent : FaceTuneTagComponent, IHasObjectReferences, IExpressionDataSource
+    internal class FaceTuneComponent : FaceTuneTagComponent, IHasObjectReferences, IExpressionDataSource, IHasConditions
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
@@ -22,6 +22,7 @@ namespace Aoyon.FaceTune
         ComponentReferenceMode IExpressionDataSource.DataReferenceMode => DataReferenceMode;
         AvatarObjectReference IExpressionDataSource.DataReference => DataReference;
         ExpressionData IExpressionDataSource.Data => Data;
+        IEnumerable<Condition> IHasConditions.Conditions => new[] { Condition };
 
         public void ResolveReferences() => DataReference.Get(this);
     }

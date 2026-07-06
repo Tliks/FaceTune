@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune;
 
 internal static partial class Utils
 {
-    private const string BlendShapePropertyName = FaceTuneConstants.AnimatedBlendShapePrefix;
+    private const string BlendShapePropertyName = "blendShape.";
 
     private static readonly List<BlendShapeWeightAnimation> _emptyFacialAnimations = new();
 
@@ -20,12 +20,12 @@ internal static partial class Utils
     {
         var facialStyleCurves = facialAnimations.ToDictionary(a => a.Name, a => a.Curve);
         
-        var bindings = UnityEditor.AnimationUtility.GetCurveBindings(clip);
+        var bindings = AnimationUtility.GetCurveBindings(clip);
         foreach (var binding in bindings)
         {
             if (!IsFacialBinding(binding, facialPath)) continue;
 
-            var curve = UnityEditor.AnimationUtility.GetEditorCurve(clip, binding);
+            var curve = AnimationUtility.GetEditorCurve(clip, binding);
             if (curve != null && curve.keys.Length > 0)
             {
                 var add = false;

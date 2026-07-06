@@ -1,9 +1,9 @@
 namespace Aoyon.FaceTune;
 
-internal static class ExpressionDataUtility
+internal static class ExpressionDataExtensions
 {
-    public static void AddFirstFrameBlendShapes<T>(
-        T component,
+    public static void GetFirstFrameBlendShapes<T>(
+        this T component,
         ICollection<BlendShapeWeight> resultToAdd,
         string bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
@@ -11,11 +11,11 @@ internal static class ExpressionDataUtility
     {
         foreach (var data in ResolveData(component))
         {
-            AddFirstFrameBlendShapes(data, resultToAdd, bodyPath, facialAnimations);
+            GetFirstFrameBlendShapes(data, resultToAdd, bodyPath, facialAnimations);
         }
     }
 
-    public static void AddFirstFrameBlendShapes(
+    public static void GetFirstFrameBlendShapes(
         ExpressionData data,
         ICollection<BlendShapeWeight> resultToAdd,
         string bodyPath,
@@ -35,8 +35,8 @@ internal static class ExpressionDataUtility
         }
     }
 
-    public static void AddAnimations<T>(
-        T component,
+    public static void GetAnimations<T>(
+        this T component,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
         string bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
@@ -44,12 +44,12 @@ internal static class ExpressionDataUtility
     {
         foreach (var data in ResolveData(component))
         {
-            AddAnimations(data, resultToAdd, bodyPath, facialAnimations);
+            GetAnimations(data, resultToAdd, bodyPath, facialAnimations);
         }
     }
 
-    public static void AddAnimations(
-        ExpressionData data,
+    public static void GetAnimations(
+        this ExpressionData data,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
         string bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
@@ -68,7 +68,7 @@ internal static class ExpressionDataUtility
         }
     }
 
-    public static IEnumerable<ExpressionData> ResolveData<T>(T source)
+    public static IEnumerable<ExpressionData> ResolveData<T>(this T source)
         where T : Component, IExpressionDataSource
     {
         if (source.DataReferenceMode != ComponentReferenceMode.Reference)

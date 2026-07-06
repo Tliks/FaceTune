@@ -12,7 +12,7 @@ internal interface IMetabasePlatformSupport
         return;
     }
     public SkinnedMeshRenderer? GetFaceRenderer();
-    public void InstallExpressionProgram(FaceTuneContext buildPassContext, BuildContext buildContext, ExpressionProgram expressionProgram)
+    public void InstallBuild(BuildContext buildContext, BuildSettings settings, ExpressionProgram expressionProgram)
     {
         return;
     }

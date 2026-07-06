@@ -1,3 +1,5 @@
+using nadena.dev.modular_avatar.core;
+
 namespace Aoyon.FaceTune.Build;
 
 /// <summary>
@@ -10,10 +12,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     public override string DisplayName => "Normalize Authoring Hierarchy";
 
     private const string PresetParameterName = $"{FaceTuneConstants.ParameterPrefix}/PresetIndex";
+    private const string AutoMenuGroupName = "AutoMenu";
 
     protected override void Execute(FaceTuneContext context)
     {
         ProcessPresetComponents(context.AvatarContext.Root);
+        ProcessAutoMenuComponents(context.AvatarContext.Root);
         AssignMenuParameters(context.AvatarContext.Root);
         ResolveMenuConditions(context.AvatarContext.Root);
     }
@@ -36,7 +40,6 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             menu.Kind = MenuItemKind.Toggle;
             menu.Icon = preset.Icon;
             menu.InstallSettings = preset.InstallSettings;
-            menu.ParameterName = PresetParameterName;
             menu.DefaultSelected = preset == defaultPreset;
             menu.ExclusiveToggleGroup.GroupName = PresetParameterName;
 
@@ -54,6 +57,159 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 }
             });
         }
+    }
+
+    // auto menu => Menu + Internal Condition(Modifier)に変更
+    private static void ProcessAutoMenuComponents(GameObject root)
+    {
+        var autoMenus = root.GetComponentsInChildren<AutoMenuGeneratorComponent>(true);
+        if (autoMenus.Length == 0) return;
+
+        if (autoMenus.Length > 1)
+        {
+            LocalizedLog.Warning("Log:warning:AutoMenuPlan:MultipleAutoMenu", null, autoMenus);
+        }
+        var autoMenu = autoMenus[0];
+
+        var expressions = root.GetComponentsInChildren<FaceTuneComponent>(true);
+        if (expressions.Length == 0) return;
+
+        var excludedFromMenu = ResolveReferencedExpressions(autoMenu, autoMenu.ExcludeFromMenuTargets);
+        var allowedDuringManualLock = ResolveReferencedExpressions(autoMenu, autoMenu.AllowDuringManualLockTargets);
+        var suppressedExpressions = expressions
+            .Where(expression => !allowedDuringManualLock.Contains(expression))
+            .ToHashSet();
+
+        var noneMenu = CreateAutoMenuItem(autoMenu.transform, "None", defaultSelected: true);
+        var expressionMenus = CreateAutoMenuExpressionItems(
+            autoMenu.transform,
+            expressions.Where(expression => !excludedFromMenu.Contains(expression)).ToArray());
+        AddAutoMenuConditionModifiers(expressions, suppressedExpressions, noneMenu, expressionMenus);
+    }
+
+    private static HashSet<FaceTuneComponent> ResolveReferencedExpressions(
+        AutoMenuGeneratorComponent autoMenu,
+        IEnumerable<AvatarObjectReference> references)
+    {
+        return references
+            .Select(reference => reference.Get(autoMenu))
+            .Where(target => target != null)
+            .SelectMany(target => target.GetComponentsInChildren<FaceTuneComponent>(true))
+            .ToHashSet();
+    }
+
+    private static MenuComponent CreateAutoMenuItem(Transform parent, string menuName, bool defaultSelected)
+    {
+        var itemObject = new GameObject(menuName);
+        itemObject.transform.SetParent(parent, false);
+
+        var menu = itemObject.AddComponent<MenuComponent>();
+        menu.MenuName = menuName;
+        menu.Kind = MenuItemKind.Toggle;
+        menu.DefaultSelected = defaultSelected;
+        menu.ExclusiveToggleGroup.GroupName = AutoMenuGroupName;
+        return menu;
+    }
+
+    private static Dictionary<FaceTuneComponent, MenuComponent> CreateAutoMenuExpressionItems(
+        Transform parent,
+        IReadOnlyList<FaceTuneComponent> expressions)
+    {
+        var result = new Dictionary<FaceTuneComponent, MenuComponent>();
+        var commonRoot = FindCommonParent(expressions);
+        var folderCopies = new Dictionary<Transform, Transform>();
+
+        foreach (var expression in expressions)
+        {
+            var menuParent = GetOrCreateFolderCopy(expression.transform.parent, parent, commonRoot, folderCopies);
+            result.Add(expression, CreateAutoMenuItem(menuParent, expression.name, defaultSelected: false));
+        }
+
+        return result;
+    }
+
+    private static Transform? FindCommonParent(IReadOnlyList<FaceTuneComponent> expressions)
+    {
+        var parents = expressions
+            .Select(expression => expression.transform.parent)
+            .Where(parent => parent != null)
+            .ToArray();
+        if (parents.Length == 0) return null;
+
+        var commonAncestors = GetAncestorsAndSelf(parents[0]).ToHashSet();
+        foreach (var parent in parents.Skip(1))
+        {
+            commonAncestors.IntersectWith(GetAncestorsAndSelf(parent));
+        }
+
+        return GetAncestorsAndSelf(parents[0]).First(commonAncestors.Contains);
+
+        static IEnumerable<Transform> GetAncestorsAndSelf(Transform transform)
+        {
+            var current = transform;
+            while (current != null)
+            {
+                yield return current;
+                current = current.parent;
+            }
+        }
+    }
+
+    private static Transform GetOrCreateFolderCopy(
+        Transform? source,
+        Transform generatedRoot,
+        Transform? commonRoot,
+        Dictionary<Transform, Transform> folderCopies)
+    {
+        if (source == null || source == commonRoot) return generatedRoot;
+        if (folderCopies.TryGetValue(source, out var copy)) return copy;
+
+        var parent = GetOrCreateFolderCopy(source.parent, generatedRoot, commonRoot, folderCopies);
+        var obj = new GameObject(source.name);
+        obj.transform.SetParent(parent, false);
+        obj.AddComponent<MenuFolderComponent>().MenuName = source.name;
+
+        folderCopies.Add(source, obj.transform);
+        return obj.transform;
+    }
+
+    private static void AddAutoMenuConditionModifiers(
+        IEnumerable<FaceTuneComponent> expressions,
+        HashSet<FaceTuneComponent> suppressedExpressions,
+        MenuComponent noneMenu,
+        IReadOnlyDictionary<FaceTuneComponent, MenuComponent> expressionMenus)
+    {
+        foreach (var expression in expressions)
+        {
+            var hasOriginalGate = suppressedExpressions.Contains(expression);
+            var hasAdditionalActivation = expressionMenus.TryGetValue(expression, out var additionalActivation);
+            if (!hasOriginalGate && !hasAdditionalActivation) continue;
+
+            var modifier = expression.gameObject.AddComponent<ExpressionConditionModifierComponent>();
+            if (hasOriginalGate) modifier.OriginalGate = MenuEnabledCondition(noneMenu);
+            if (hasAdditionalActivation) modifier.AdditionalActivation = MenuEnabledCondition(additionalActivation);
+        }
+    }
+
+    private static Condition MenuEnabledCondition(MenuComponent menu)
+    {
+        return new Condition
+        {
+            Cases =
+            {
+                new ConditionCase
+                {
+                    MenuConditions =
+                    {
+                        new MenuCondition
+                        {
+                            MenuSource = menu,
+                            Mode = MenuConditionMode.Enabled
+                        }
+                    }
+                }
+            }
+        };
     }
 
     // パラメータ名を確定、排他グループはValueも割り振り
@@ -103,14 +259,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     // MenuContionをParamterConditionに変換
     private static void ResolveMenuConditions(GameObject root)
     {
-        foreach (var component in root.GetComponentsInChildren<ConditionComponent>(true))
+        foreach (var source in root.GetComponentsInChildren<FaceTuneTagComponent>(true).OfType<IHasConditions>())
         {
-            ResolveMenuConditions(component.Condition);
-        }
-
-        foreach (var component in root.GetComponentsInChildren<FaceTuneComponent>(true))
-        {
-            ResolveMenuConditions(component.Condition);
+            foreach (var condition in source.Conditions)
+            {
+                ResolveMenuConditions(condition);
+            }
         }
     }
 
