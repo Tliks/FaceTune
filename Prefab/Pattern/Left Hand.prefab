@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
       propertyPath: m_Name
-      value: Left Hand
+      value: Left Hand Only
       objectReference: {fileID: 0}
     - target: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
       propertyPath: m_IsActive
@@ -64,6 +64,9 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7714018601230265177}
     - targetCorrespondingSourceObject: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2836967046156325946}
@@ -106,9 +109,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -144,9 +161,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -182,9 +213,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -220,9 +265,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -258,9 +317,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -296,9 +369,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -334,9 +421,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
@@ -355,6 +456,32 @@ MonoBehaviour:
     BlendShapeAnimations: []
     AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+--- !u!1 &8285661403366438539 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
+  m_PrefabInstance: {fileID: 3494966757898615691}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7714018601230265177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8285661403366438539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 114db5dba152e97468f319ce138b3584, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MenuName: 
+  Icon:
+    Mode: 1
+    ManualIcon: {fileID: 0}
+    PreviewExpression: {fileID: 0}
+  InstallSettings:
+    InstallContainerOverride:
+      referencePath: 
+      targetObject: {fileID: 0}
 --- !u!1 &8833821061777606985 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -372,9 +499,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 0
   Condition:
     Always: 0
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    GroupName: 
+    SupressMode: 1
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 

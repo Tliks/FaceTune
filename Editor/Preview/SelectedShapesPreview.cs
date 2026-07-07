@@ -184,13 +184,19 @@ internal class SelectedShapesPreviewSession : IDisposable
         isLooping = false;
 
         using var _dataComponents = ListPool<DataComponent>.Get(out var dataComponents);
-        if (TryGetExpressionData(context, target, root, dataComponents, out var expressionComponent))
+        if (TryGetDataSource(context, target, dataComponents, out var expressionComponent, out var sourceRoot))
         { 
             // dataCompononentのデータ取得用および、代入用にに顔つきを取得する
             using var _facial = ListPool<BlendShapeWeightAnimation>.Get(out var facial);
-            FacialStyleContext.TryGetFacialStyleAnimations(dataComponents[0].gameObject, facial, root, context);
+            FacialStyleContext.TryGetFacialStyleAnimations(sourceRoot, facial, root, context);
             
             resultToAdd.AddRange(facial);
+
+            if (expressionComponent != null)
+            {
+                context.Observe(expressionComponent);
+                expressionComponent.GetAnimations(resultToAdd, bodyPath, facial);
+            }
 
             foreach (var dataComponent in dataComponents)
             {
@@ -209,52 +215,30 @@ internal class SelectedShapesPreviewSession : IDisposable
         return false;
     }
 
-    // data > expression > condition の順で対象を決定し早期リターン
-    private static bool TryGetExpressionData(ComputeContext context, GameObject gameObject, GameObject root, List<DataComponent> dataComponents, out FaceTuneComponent? expressionComponent)
+    private static bool TryGetDataSource(ComputeContext context, GameObject gameObject, List<DataComponent> dataComponents, out FaceTuneComponent? expressionComponent, [NotNullWhen(true)]out GameObject? sourceRoot)
     {
         expressionComponent = null;
+        sourceRoot = null;
 
-        var dataComponent = context.GetComponent<DataComponent>(gameObject);
-        if (dataComponent != null)
+        using var _expressionComponents = ListPool<FaceTuneComponent>.Get(out var expressionComponents);
+        context.GetComponentsInChildren<FaceTuneComponent>(gameObject, true, expressionComponents);
+
+        if (expressionComponents.Count > 1) return false;
+
+        if (expressionComponents.Count == 1)
         {
-            var targetGameObject = dataComponent.gameObject;
-            if (!TryGetDataComponentsInChildren(context, targetGameObject, dataComponents)) return false;
-            context.TryGetComponentInParent(targetGameObject, root, true, out expressionComponent);
+            expressionComponent = expressionComponents[0];
+            sourceRoot = expressionComponent.gameObject;
+
+            using var _children = ListPool<DataComponent>.Get(out var children);
+            context.GetComponentsInChildren(sourceRoot, true, children);
+            dataComponents.AddRange(children);
             return true;
         }
 
-        var _expressionComponent = context.GetComponent<FaceTuneComponent>(gameObject);
-        if (_expressionComponent != null)
-        {
-            var targetGameObject = _expressionComponent.gameObject;
-            if (!TryGetDataComponentsInChildren(context, targetGameObject, dataComponents)) return false;
-            expressionComponent = _expressionComponent;
-            return true;
-        }
-
-        var conditionComponent = context.GetComponent<ConditionComponent>(gameObject);
-        if (conditionComponent != null)
-        {
-            using var _ = ListPool<ConditionComponent>.Get(out var childrenConditionComponents);
-            conditionComponent.gameObject.GetComponentsInChildren(true, childrenConditionComponents);
-            // 末端のConditionのみを対象にする。上のConditioを対象にすると、本来別の表情用のDataが混ざる可能性がある。
-            if (childrenConditionComponents.All(x => x.gameObject == conditionComponent.gameObject))
-            {
-                var targetGameObject = conditionComponent.gameObject;
-                if (!TryGetDataComponentsInChildren(context, targetGameObject, dataComponents)) return false;
-                context.TryGetComponentInParent(targetGameObject, root, true, out expressionComponent);
-                return true;
-            }
-        }
-
-        return false;
-
-        static bool TryGetDataComponentsInChildren(ComputeContext context, GameObject gameObject, List<DataComponent> dataComponents)
-        {
-            context.GetComponentsInChildren(gameObject, true, dataComponents);
-            if (dataComponents.Count == 0) return false;
-            return true;
-        }
+        sourceRoot = gameObject;
+        context.GetComponentsInChildren<DataComponent>(gameObject, true, dataComponents);
+        return dataComponents.Count > 0;
     }
 
     sealed class Writer : IDisposable

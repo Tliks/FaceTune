@@ -40,3 +40,27 @@ internal class MenuInstallSettings
         InstallContainerOverride.Get(owner);
     }
 }
+
+[Serializable]
+internal class DirectMenuSettings
+{
+    public string MenuName = string.Empty;
+    public MenuIconSettings Icon = new();
+    public MenuInstallSettings InstallSettings = new();
+
+    public string GroupName = string.Empty; // Auto(Blend) or Group
+    public DirectMenuSuppressionMode SupressMode = DirectMenuSuppressionMode.Auto;
+
+    public void ResolveReferences(Component owner)
+    {
+        InstallSettings.ResolveReferences(owner);
+    }
+}
+
+internal enum DirectMenuSuppressionMode
+{
+    None,
+    Auto,
+    Replace,
+    Group
+}

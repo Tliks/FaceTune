@@ -5,17 +5,8 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal class LipSyncInstaller : InstallerBase
 {
-    private bool _shouldAddLayer = false;
-    private bool _shouldAddCancelerLayer = false;
-
-    private readonly Dictionary<AdvancedLipSyncSettings, int> _indexForAdvancedSettings = new();
     private readonly string _forceDisableLipSyncParameter;
-
-    private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/LipSync";
-    private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
-    private const string UseAdvancedAAP = $"{ParameterPrefix}/UseAdvanced"; // 1つ以上有効なAdvancedLipSyncSettingsがあるとき
-    private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
-    private const string UseCancelerAAP = $"{ParameterPrefix}/UseCanceler"; // 1つ以上有効なCancelerがあるとき
+    private const float CancelerThreshold = 0.01f;
 
     public LipSyncInstaller(
         VirtualAnimatorController virtualController,
@@ -29,195 +20,176 @@ internal class LipSyncInstaller : InstallerBase
         {
             _controller.EnsureBoolParameterExists(_forceDisableLipSyncParameter);
         }
-        _controller.EnsureFloatParameterExists(AllowAAP);
     }
 
-    public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
+    public void AddLipSyncLayer(OutputUnit unit, RuntimeDomain<LipSyncRuntimeMode> domain)
     {
-        if (facialSettings.AllowLipSync != TrackingPermission.Keep)
+        var localEntries = domain.LocalEntries(unit).ToArray();
+        if (localEntries.Length == 0) return;
+
+        var layer = AddLayer($"{unit.Anchor.name} LipSync", LayerPriority);
+        var position = EntryStatePosition;
+
+        var foreign = AddTrackingState(layer, "Foreign/Inert", null, position);
+        position.y += PositionYStep;
+        var baseline = AddTrackingState(layer, "BaselineTracking", true, position);
+        position.y += PositionYStep;
+        var tracking = AddTrackingState(layer, "Tracking", true, position);
+        position.y += PositionYStep;
+        var disabled = AddTrackingState(layer, "Disabled", false, position);
+        position.y += 2 * PositionYStep;
+
+        var targets = new List<(VirtualState state, IEnumerable<AnimatorCondition> conditions)>
         {
-            _shouldAddLayer = true;
-
-            // Allow
-            var curve = new AnimationCurve();
-            var value = facialSettings.AllowLipSync == TrackingPermission.Allow ? 1 : 0;
-            curve.AddKey(0, value);
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), AllowAAP, curve);
-        }
-
-        var advancedSettings = facialSettings.AdvancedLipSyncSettings;
-        if (advancedSettings.IsEnabled())
-        {
-            _shouldAddLayer = true;
-
-            _controller.EnsureFloatParameterExists(UseAdvancedAAP);
-            _controller.EnsureFloatParameterExists(ModeAAP);
-
-            // UseAdvanced
-            var useAdvancedCurve = new AnimationCurve();
-            useAdvancedCurve.AddKey(0, 1);
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), UseAdvancedAAP, useAdvancedCurve);
-
-            // Mode
-            var index = GetIndexForSettings(advancedSettings);
-            var modeCurve = new AnimationCurve();
-            modeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), ModeAAP, modeCurve);
-
-            if (advancedSettings.IsCancelerEnabled())
-            {
-                _shouldAddCancelerLayer = true;
-                
-                _controller.EnsureFloatParameterExists(UseCancelerAAP);
-
-                // UseCanceler
-                var useCancelerCurve = new AnimationCurve();
-                useCancelerCurve.AddKey(0, 1);
-                clip.SetFloatCurve("", typeof(UnityEngine.Animator), UseCancelerAAP, useCancelerCurve);
-            }
-        }
-    }
-
-    private int GetIndexForSettings(AdvancedLipSyncSettings advancedSettings)
-    {
-        return _indexForAdvancedSettings.GetOrAdd(advancedSettings, _indexForAdvancedSettings.Count);
-    }
-
-    private void AddForceDisableCondition(ICollection<AnimatorCondition> conditions, AnimatorConditionMode mode)
-    {
-        if (string.IsNullOrWhiteSpace(_forceDisableLipSyncParameter)) return;
-        conditions.Add(new AnimatorCondition
-        {
-            parameter = _forceDisableLipSyncParameter,
-            mode = mode
-        });
-    }
-
-    public void MayAddLipSyncLayers()
-    {
-        if (!_shouldAddLayer) return;
-
-        var lipSyncLayer = AddLayer("LipSync", LayerPriority);
-        
-        var delayState = AddState(lipSyncLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
-        var delayClip = AnimatorHelper.CreateDelayClip(0.1f);
-        delayState.Motion = delayClip;
-        
-        var enabledPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var enabled = AddState(lipSyncLayer, "Enabled", enabledPosition);
-        var disabled = AddState(lipSyncLayer, "Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
-
-        enabled.Motion = _emptyClip;
-        disabled.Motion = _emptyClip;
-        _platformServices.SetLipSyncTracking(enabled, true);
-        _platformServices.SetLipSyncTracking(disabled, false);
-
-        var delayToEnabledTransition = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
-        delayToEnabledTransition.SetDestination(enabled);
-        delayState.Transitions = ImmutableList.Create(delayToEnabledTransition);
-
-        var enabledToDisabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        enabledToDisabledTransition.SetDestination(disabled);
-        var disableORConditions = new List<AnimatorCondition>
-        {
-            new AnimatorCondition()
-            {
-                parameter = AllowAAP,
-                mode = AnimatorConditionMode.Less,
-                threshold = 0.99f // 安全側(Mute)に倒す
-            }
+            (baseline, VRCAAPHelper.IndexConditions(domain.ParameterName, true, domain.Baseline.Index))
         };
-        AddForceDisableCondition(disableORConditions, AnimatorConditionMode.If);
-        var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabledTransition, disableORConditions);
-        enabled.Transitions = ImmutableList.CreateRange(orTransitions);
+        targets.AddRange(domain.ForeignEntries(unit)
+            .Select(entry => (foreign, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index))));
 
-        var disabledToEnabledTransition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        disabledToEnabledTransition.SetDestination(enabled);
-        var disabledToEnabledConditions = new List<AnimatorCondition>()
+        foreach (var entry in localEntries)
         {
-            new AnimatorCondition()
+            switch (entry.Mode.Kind)
             {
-                parameter = AllowAAP,
-                mode = AnimatorConditionMode.Greater,
-                threshold = 0.99f // 同上
+                case LipSyncRuntimeModeKind.Tracking:
+                    targets.Add((tracking, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index)));
+                    break;
+                case LipSyncRuntimeModeKind.Disabled:
+                    targets.Add((disabled, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index)));
+                    break;
+                case LipSyncRuntimeModeKind.Canceler:
+                    var canceler = AddCancelerStates(layer, domain, entry, entry.Mode.Settings!, position);
+                    targets.Add((canceler, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index)));
+                    position.y += 2 * PositionYStep;
+                    break;
             }
-        };
-        AddForceDisableCondition(disabledToEnabledConditions, AnimatorConditionMode.IfNot);
-        disabledToEnabledTransition.Conditions = ImmutableList.CreateRange(disabledToEnabledConditions);
-        disabled.Transitions = ImmutableList.Create(disabledToEnabledTransition);
+        }
 
-        if (_shouldAddCancelerLayer)
+        ApplyForceDisableGuard(targets, disabled);
+
+        AddEntryTransitions(layer, targets);
+        foreach (var state in new[] { foreign, baseline, tracking, disabled }.Concat(targets.Select(target => target.state)).Distinct())
         {
-            AddCancelerLayer();
+            AddModeTransitions(state, targets.Where(target => target.state != state));
+            AddForceDisableTransition(state, disabled);
         }
     }
 
-    private const float CancelerThreshold = 0.01f;  // 0fだと流石に不安定になる
-    private void AddCancelerLayer()
+    private VirtualState AddTrackingState(VirtualLayer layer, string name, bool? tracking, Vector3 position)
     {
-        var cancelerLayer = AddLayer("LipSync (Canceler)", LayerPriority);
+        var state = AddState(layer, name, position);
+        state.Motion = _emptyClip;
+        if (tracking != null)
+        {
+            _platformServices.SetLipSyncTracking(state, tracking.Value);
+        }
+        return state;
+    }
 
-        // キャンセラーに使うブレンドシェイプは複製されておらず、かつ transition durationを使うのでPassThrough
-        var passThroughPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var passThrough = AddState(cancelerLayer, "PassThrough", passThroughPosition);
-        AsPassThrough(passThrough);
-
-        var voiceParam = "Voice"; // Todo
+    private VirtualState AddCancelerStates(
+        VirtualLayer layer,
+        RuntimeDomain<LipSyncRuntimeMode> domain,
+        ModeEntry<LipSyncRuntimeMode> entry,
+        AdvancedLipSyncSettings settings,
+        Vector3 position)
+    {
+        var voiceParam = "Voice";
         _controller.EnsureFloatParameterExists(voiceParam);
 
-        var position = passThroughPosition + new Vector3(PositionXStep, 0, 0);
-        foreach (var (settings, index) in _indexForAdvancedSettings.OrderBy(kvp => kvp.Value))
+        var inactive = AddTrackingState(layer, $"Canceler {entry.Index} Inactive", true, position);
+        var active = AddTrackingState(layer, $"Canceler {entry.Index} Active", true, position + new Vector3(PositionXStep, 0, 0));
+        var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f));
+        AddBlendShapeAnimationsToState(active, cancelerAnimation);
+
+        var modeConditions = VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index).ToArray();
+        var toActive = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerEntryDurationSeconds);
+        toActive.SetDestination(active);
+        toActive.Conditions = modeConditions.Append(new AnimatorCondition
         {
-            if (!settings.IsCancelerEnabled()) continue;
+            parameter = voiceParam,
+            mode = AnimatorConditionMode.Greater,
+            threshold = CancelerThreshold
+        }).ToImmutableList();
+        inactive.Transitions = inactive.Transitions.Add(toActive);
 
-            var lipsyncing = AddState(cancelerLayer, $"Lipsyncing {index}", position);
-            var cancelerAnimation = settings.CancelerBlendShapeNames.Select(name => BlendShapeWeightAnimation.SingleFrame(name, 0f));
-            AddBlendShapeAnimationsToState(lipsyncing, cancelerAnimation);
-
-            // PassThrough -> lipsyncing
-            var passThroughToLipsyncing = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerEntryDurationSeconds);
-            passThroughToLipsyncing.SetDestination(lipsyncing);
-            var andConditions = new List<AnimatorCondition> {
-                new AnimatorCondition()
-                {
-                    parameter = UseCancelerAAP,
-                    mode = AnimatorConditionMode.Greater,
-                    threshold = 0.01f // 遷移を開始した直後から有効(有効側に寄せる)
-                },
-                new AnimatorCondition()
-                {
-                    parameter = voiceParam,
-                    mode = AnimatorConditionMode.Greater,
-                    threshold = CancelerThreshold
-                }
-            };
-            AddForceDisableCondition(andConditions, AnimatorConditionMode.IfNot);
-            andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
-            passThroughToLipsyncing.Conditions = ImmutableList.CreateRange(andConditions);
-            passThrough.Transitions = passThrough.Transitions.Add(passThroughToLipsyncing);
-
-            // lipsyncing -> PassThrough
-            var lipsyncingToPassThrough = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerExitDurationSeconds);
-            lipsyncingToPassThrough.SetDestination(passThrough);
-            var orConditions = new List<AnimatorCondition>();
-            orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
-            AddForceDisableCondition(orConditions, AnimatorConditionMode.If);
-            orConditions.Add(new AnimatorCondition()
-            {
-                parameter = UseCancelerAAP,
-                mode = AnimatorConditionMode.Less,
-                threshold = 0.01f // 有効化側に寄せる
-            });
-            orConditions.Add(new AnimatorCondition()
+        var toInactive = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.CancelerExitDurationSeconds);
+        toInactive.SetDestination(inactive);
+        var orConditions = new List<AnimatorCondition>
+        {
+            new AnimatorCondition
             {
                 parameter = voiceParam,
                 mode = AnimatorConditionMode.Less,
                 threshold = CancelerThreshold
-            });
-            var orTransitions = AnimatorHelper.SetORConditions(lipsyncingToPassThrough, orConditions);
-            lipsyncing.Transitions = lipsyncing.Transitions.AddRange(orTransitions);
-
-            position.y += PositionYStep;
+            }
+        };
+        if (!string.IsNullOrWhiteSpace(_forceDisableLipSyncParameter))
+        {
+            orConditions.Add(new AnimatorCondition { parameter = _forceDisableLipSyncParameter, mode = AnimatorConditionMode.If });
         }
+        orConditions.AddRange(VRCAAPHelper.IndexConditions(domain.ParameterName, false, entry.Index));
+        active.Transitions = active.Transitions.AddRange(AnimatorHelper.SetORConditions(toInactive, orConditions));
+
+        return inactive;
+    }
+
+    private static void AddEntryTransitions(
+        VirtualLayer layer,
+        IEnumerable<(VirtualState state, IEnumerable<AnimatorCondition> conditions)> targets)
+    {
+        var transitions = targets.Select(target =>
+        {
+            var transition = VirtualTransition.Create();
+            transition.SetDestination(target.state);
+            transition.Conditions = target.conditions.ToImmutableList();
+            return transition;
+        });
+        layer.StateMachine!.EntryTransitions = layer.StateMachine!.EntryTransitions.AddRange(transitions);
+    }
+
+    private static void AddModeTransitions(
+        VirtualState source,
+        IEnumerable<(VirtualState state, IEnumerable<AnimatorCondition> conditions)> targets)
+    {
+        foreach (var target in targets)
+        {
+            var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            transition.SetDestination(target.state);
+            transition.Conditions = target.conditions.ToImmutableList();
+            source.Transitions = source.Transitions.Add(transition);
+        }
+    }
+
+    private void ApplyForceDisableGuard(List<(VirtualState state, IEnumerable<AnimatorCondition> conditions)> targets, VirtualState disabled)
+    {
+        if (string.IsNullOrWhiteSpace(_forceDisableLipSyncParameter)) return;
+
+        for (var index = 0; index < targets.Count; index++)
+        {
+            var target = targets[index];
+            if (target.state == disabled) continue;
+            targets[index] = (target.state, target.conditions.Append(new AnimatorCondition
+            {
+                parameter = _forceDisableLipSyncParameter,
+                mode = AnimatorConditionMode.IfNot
+            }).ToArray());
+        }
+
+        targets.Add((disabled, new[]
+        {
+            new AnimatorCondition { parameter = _forceDisableLipSyncParameter, mode = AnimatorConditionMode.If }
+        }));
+    }
+
+    private void AddForceDisableTransition(VirtualState source, VirtualState disabled)
+    {
+        if (string.IsNullOrWhiteSpace(_forceDisableLipSyncParameter) || source == disabled) return;
+        var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+        transition.SetDestination(disabled);
+        transition.Conditions = ImmutableList.Create(new AnimatorCondition
+        {
+            parameter = _forceDisableLipSyncParameter,
+            mode = AnimatorConditionMode.If
+        });
+        source.Transitions = source.Transitions.Add(transition);
     }
 }

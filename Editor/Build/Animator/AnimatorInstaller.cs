@@ -5,19 +5,22 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal class AnimatorInstaller : InstallerBase
 {
-    private const int InitLayerPriority = -1; // 上書きを意図しない初期化レイヤー。
-    
-    private VirtualClip _nonMMDInitializationClip = null!;
-    private VirtualClip _MMDInitializationClip = null!;
+    private const int InitLayerPriority = -1;
+
+    private VirtualClip _initializationClip = null!;
 
     private readonly float _transitionDurationSeconds;
-
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _expressionClipCache = new();
-
     private readonly LipSyncInstaller _lipSyncInstaller;
     private readonly BlinkInstaller _blinkInstaller;
     private readonly IReadOnlyCollection<string> _externallyControlledBlendShapeNames;
+    private readonly VirtualControllerContext _controllerContext;
+    private readonly BuildSettings _settings;
+    private readonly IReadOnlyCollection<string> _excludedBlendShapeNames;
     private readonly string _lockFacialParameterName;
+
+    private RuntimeDomainRegistry _runtimeRegistry = null!;
+    private OutputUnit _currentUnit = null!;
 
     private static readonly Vector3 ExclusiveStatePosition = new Vector3(300, 0, 0);
 
@@ -26,10 +29,14 @@ internal class AnimatorInstaller : InstallerBase
         BuildSettings settings,
         bool useWriteDefaults,
         IAnimatorPlatformServices platformServices,
-        IReadOnlyCollection<string> externallyControlledBlendShapeNames) : base(virtualController, settings.AvatarContext, useWriteDefaults, platformServices)
+        IReadOnlyCollection<string> externallyControlledBlendShapeNames,
+        VirtualControllerContext controllerContext) : base(virtualController, settings.AvatarContext, useWriteDefaults, platformServices)
     {
-        _transitionDurationSeconds = 0.1f; // 変更可能にすべき？
+        _settings = settings;
+        _transitionDurationSeconds = settings.DurationSeconds;
         _externallyControlledBlendShapeNames = externallyControlledBlendShapeNames;
+        _controllerContext = controllerContext;
+        _excludedBlendShapeNames = settings.ExcludedBlendShapeNames;
         _lockFacialParameterName = settings.LockFacialParameterName;
         _lipSyncInstaller = new LipSyncInstaller(virtualController, settings.AvatarContext, useWriteDefaults, platformServices, settings.DisableLipSyncParameterName);
         _blinkInstaller = new BlinkInstaller(virtualController, settings.AvatarContext, useWriteDefaults, platformServices, settings.DisableEyeBlinkParameterName);
@@ -43,86 +50,88 @@ internal class AnimatorInstaller : InstallerBase
     {
         if (expressionProgram.IsEmpty) return;
 
-        CreateInitializationLayer(InitLayerPriority);
-        InstallExpressionProgram(expressionProgram, LayerPriority);
-        
-        if (expressionProgram.Items.Any(e => e.FacialSettings.AllowEyeBlink == TrackingPermission.Disallow
-            || e.FacialSettings.AdvancedEyBlinkSettings.UseAdvancedEyeBlink))
-        {
-            _blinkInstaller.AddEyeBlinkLayer();
-            AddBlendShapeInitialization(_blinkInstaller.ShapesToInitialize);
-        }
+        var plan = AnimatorBuildPlan.From(expressionProgram, _settings, _platformServices, _controllerContext);
+        _runtimeRegistry = plan.RuntimeRegistry;
+        _runtimeRegistry.EnsureParameters(_controller);
 
-        _lipSyncInstaller.MayAddLipSyncLayers();
+        CreateInitializationLayer(InitLayerPriority);
+        InstallPlan(plan, LayerPriority);
+        AddBlendShapeInitialization(_blinkInstaller.ShapesToInitialize);
     }
 
     private void CreateInitializationLayer(int priority)
     {
-        var nonMMDLayer = AddLayer("Initial", priority, false);
-        var nonMMDState = AddState(nonMMDLayer, "Initial", position: ExclusiveStatePosition);
-        _nonMMDInitializationClip = nonMMDState.SetNewClip(nonMMDState.Name);
+        var layer = AddLayer("Initial", priority, false);
+        var state = AddState(layer, "Initial", position: ExclusiveStatePosition);
+        _initializationClip = state.SetNewClip(state.Name);
 
-        var MMDLayer = AddLayer("Initial (MMD)", priority, true);
-        var MMDState = AddState(MMDLayer, "Initial (MMD)", position: ExclusiveStatePosition);
-        _MMDInitializationClip = MMDState.SetNewClip(MMDState.Name);
-
-        var animations = new List<BlendShapeWeightAnimation>();
-        var mmdAnimations = new List<BlendShapeWeightAnimation>();
-
-        foreach (var shape in _avatarContext.FaceRenderer.GetBlendShapeWeights(_avatarContext.FaceMesh).Where(b => !_externallyControlledBlendShapeNames.Contains(b.Name)))
-        {
-            animations.Add(shape.ToBlendShapeAnimation());
-        }
-
-        _MMDInitializationClip.AddBlendShapeAnimations(_avatarContext.BodyPath, mmdAnimations);
-        _nonMMDInitializationClip.AddBlendShapeAnimations(_avatarContext.BodyPath, animations);
+        var animations = _avatarContext.FaceRenderer
+            .GetBlendShapeWeights(_avatarContext.FaceMesh)
+            .Where(shape => !IsExcludedFromInitialization(shape.Name))
+            .Select(shape => shape.ToBlendShapeAnimation())
+            .ToArray();
+        _initializationClip.AddBlendShapeAnimations(_avatarContext.BodyPath, animations);
     }
 
     private void AddBlendShapeInitialization(IEnumerable<BlendShapeWeight> blendShapes)
     {
-        foreach (var shape in blendShapes)
+        foreach (var shape in blendShapes.Where(shape => !IsExcludedFromInitialization(shape.Name)))
         {
-            _nonMMDInitializationClip.AddBlendShapeAnimation(_avatarContext.BodyPath, shape.ToBlendShapeAnimation());
+            _initializationClip.AddBlendShapeAnimation(_avatarContext.BodyPath, shape.ToBlendShapeAnimation());
         }
     }
 
-    private void InstallExpressionProgram(ExpressionProgram expressionProgram, int priority)
+    private bool IsExcludedFromInitialization(string blendShapeName)
     {
-        foreach (var item in expressionProgram.Items)
+        return _externallyControlledBlendShapeNames.Contains(blendShapeName)
+            || _excludedBlendShapeNames.Contains(blendShapeName);
+    }
+
+    private void InstallPlan(AnimatorBuildPlan plan, int priority)
+    {
+        foreach (var unit in plan.Units)
         {
-            InstallExpressionItem(item, priority);
+            _currentUnit = unit;
+            foreach (var layer in unit.Layers)
+            {
+                InstallPackedLayer(layer, priority);
+            }
+
+            _blinkInstaller.AddEyeBlinkLayer(unit, plan.RuntimeRegistry.EyeBlink);
+            _lipSyncInstaller.AddLipSyncLayer(unit, plan.RuntimeRegistry.LipSync);
         }
     }
 
-    private void InstallExpressionItem(ExpressionItem item, int priority)
+    private void InstallPackedLayer(PackedLayer packedLayer, int priority)
     {
-        var layer = AddLayer(item.Name, priority);
+        var layer = AddLayer(packedLayer.Name, priority);
         var defaultState = AddState(layer, "PassThrough", ExclusiveStatePosition);
         AsPassThrough(defaultState);
 
-        AddExpressionStates(
-            layer,
-            defaultState,
-            item,
-            item.ActiveWhen,
-            ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0));
+        var position = ExclusiveStatePosition + new Vector3(0, 2 * PositionYStep, 0);
+        for (var index = 0; index < packedLayer.Items.Count; index++)
+        {
+            var item = packedLayer.Items[index];
+            var when = packedLayer.StateWhen(index);
+            AddExpressionStates(layer, defaultState, item, when, position);
+            position.y += Math.Max(1, when.Cases.Count) * PositionYStep;
+        }
     }
 
     private void AddExpressionStates(
         VirtualLayer layer,
         VirtualState defaultState,
-        ExpressionItem expression,
+        AnimatorExpressionItem item,
         DnfCondition when,
         Vector3 basePosition)
     {
         if (when.IsNever) return;
 
-        var duration = _transitionDurationSeconds;
-        var states = AddStatesForDnf(layer, defaultState, when, duration, basePosition);
+        var states = AddStatesForDnf(layer, defaultState, when, _transitionDurationSeconds, basePosition);
         foreach (var state in states)
         {
-            state.Name = expression.Name;
-            AddExpressionToState(state, expression);
+            state.Name = item.Expression.Name;
+            AddExpressionToState(state, item);
         }
     }
 
@@ -172,7 +181,7 @@ internal class AnimatorInstaller : InstallerBase
 
         return states.ToArray();
     }
-    
+
     private IEnumerable<AnimatorCondition> ToAnimatorConditions(DnfCase conditionCase)
     {
         return conditionCase.Rules.Select(ToAnimatorCondition);
@@ -189,22 +198,26 @@ internal class AnimatorInstaller : InstallerBase
     {
         public BlendShapeWeightAnimationSet AnimationSet { get; }
         public ExpressionSettings ExpressionSettings { get; }
-        public FacialSettings FacialSettings { get; }
+        public ExpressionRuntimeModes RuntimeModes { get; }
+        public int UnitId { get; }
 
         public ExpressionClipKey(
             BlendShapeWeightAnimationSet animationSet,
             ExpressionSettings expressionSettings,
-            FacialSettings facialSettings)
+            ExpressionRuntimeModes runtimeModes,
+            int unitId)
         {
             AnimationSet = new(animationSet);
             ExpressionSettings = expressionSettings;
-            FacialSettings = facialSettings;
+            RuntimeModes = runtimeModes;
+            UnitId = unitId;
         }
     }
 
-    private void AddExpressionToState(VirtualState state, ExpressionItem expression)
+    private void AddExpressionToState(VirtualState state, AnimatorExpressionItem item)
     {
-        var key = new ExpressionClipKey(expression.AnimationSet, expression.ExpressionSettings, expression.FacialSettings);
+        var expression = item.Expression;
+        var key = new ExpressionClipKey(expression.AnimationSet, expression.ExpressionSettings, item.RuntimeModes, _currentUnit.Id);
         if (state.TryGetClip(out var clip))
         {
             var duplicate = clip.Clone();
@@ -229,8 +242,8 @@ internal class AnimatorInstaller : InstallerBase
         void Impl(VirtualClip clip)
         {
             clip.AddBlendShapeAnimations(_avatarContext.BodyPath, expression.AnimationSet);
+            _runtimeRegistry.AddModeCurves(clip, _currentUnit, item);
             SetExpressionSettings(state, clip, expression.ExpressionSettings);
-            SetFacialSettings(clip, expression.FacialSettings);
         }
     }
 
@@ -247,12 +260,5 @@ internal class AnimatorInstaller : InstallerBase
             _controller.EnsureParameterExists(AnimatorControllerParameterType.Float, expressionSettings.MotionTimeParameterName);
             state.TimeParameter = expressionSettings.MotionTimeParameterName;
         }
-    }
-
-    private void SetFacialSettings(VirtualClip clip, FacialSettings? facialSettings)
-    {
-        if (facialSettings == null) return;
-        _blinkInstaller.SetSettings(clip, facialSettings);
-        _lipSyncInstaller.SetSettings(clip, facialSettings);
     }
 }

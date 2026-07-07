@@ -33,14 +33,7 @@ internal sealed record class ExpressionItem
     /// </summary>
     public DnfCondition RawWhen { get; init; }
 
-    /// <summary>
-    /// Positive-form condition that suppresses this expression according to FaceTune priority semantics.
-    /// Backends that need a flat condition can use ActiveWhen.
-    /// </summary>
-    public DnfCondition SuppressedBy { get; init; } = DnfCondition.Never;
-
     public ExpressionWriteMode WriteMode => FacialSettings.WriteMode;
-    public DnfCondition ActiveWhen => RawWhen.Except(SuppressedBy);
 
     public ExpressionItem(
         Transform sourceTransform,
@@ -60,8 +53,4 @@ internal sealed record class ExpressionItem
         RawWhen = rawWhen;
     }
 
-    public ExpressionItem WithSuppressedBy(DnfCondition suppressedBy)
-    {
-        return this with { SuppressedBy = suppressedBy };
-    }
 }

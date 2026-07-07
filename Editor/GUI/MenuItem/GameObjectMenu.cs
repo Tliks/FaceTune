@@ -1,4 +1,4 @@
-// using Aoyon.FaceTune.Importer;
+using Aoyon.FaceTune.Importer;
 using M = UnityEditor.MenuItem;
 using Aoyon.FaceTune.Platforms;
 
@@ -16,8 +16,6 @@ internal static class GameObjectMenu
     static GameObject Template() {
         var root = IP("e643b160cc0f24a4fa8e33fb4df1fe7e", unpack: false);
 
-        // Unpackするが、直下のOptionのみ除外する。
-        // 後から追加されるオプションを入れたい。
         PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
         foreach (Transform child in root.transform)
         {
@@ -30,13 +28,14 @@ internal static class GameObjectMenu
 
     [M(MenuItems.ImportFxPath, false, MenuItems.ImportFxPriority)] 
     static void ImportFx() {
-        var root = Template();
-        if (!CustomEditorUtility.TryGetContext(root, out var context)) throw new Exception("Failed to get context");
+        var selected = Selection.activeGameObject;
+        if (selected == null) throw new InvalidOperationException("No GameObject selected");
+        if (!CustomEditorUtility.TryGetContext(selected, out var context)) throw new Exception("Failed to get context");
         var support = MetabasePlatformSupport.GetSupport(context.Root.transform);
         var animatorController = support?.GetAnimatorController();
         if (animatorController == null) throw new Exception("Failed to get animator controller");
-        // var importer = new AnimatorControllerImporter(context, animatorController);
-        // importer.Import(root);
+        var importer = new AnimatorControllerImporter(context, animatorController);
+        importer.Import(selected);
     }
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 

@@ -43,6 +43,25 @@ internal sealed record class AnimatorConditionRule(
         };
     }
 
+    public ParameterCondition ToParameterCondition()
+    {
+        return ParameterType switch
+        {
+            AnimatorControllerParameterType.Int => ParameterCondition.Int(
+                ParameterName,
+                ToComparisonType(Condition.mode),
+                (int)Condition.threshold),
+            AnimatorControllerParameterType.Float => ParameterCondition.Float(
+                ParameterName,
+                ToFloatComparisonType(Condition.mode),
+                Condition.threshold),
+            AnimatorControllerParameterType.Bool => ParameterCondition.Bool(
+                ParameterName,
+                Condition.mode == AnimatorConditionMode.If),
+            _ => throw new InvalidOperationException($"Unsupported parameter type: {ParameterType}")
+        };
+    }
+
     public override DnfCondition Not()
     {
         return DnfCondition.Single(this with { Condition = Condition.Negate(ParameterType) });
@@ -69,6 +88,28 @@ internal sealed record class AnimatorConditionRule(
             ComparisonType.Equal => throw new InvalidOperationException("Equal is not supported for float parameters."),
             ComparisonType.NotEqual => throw new InvalidOperationException("NotEqual is not supported for float parameters."),
             _ => throw new InvalidOperationException($"Invalid comparison type: {comparisonType}")
+        };
+    }
+
+    private static ComparisonType ToComparisonType(AnimatorConditionMode mode)
+    {
+        return mode switch
+        {
+            AnimatorConditionMode.Equals => ComparisonType.Equal,
+            AnimatorConditionMode.NotEqual => ComparisonType.NotEqual,
+            AnimatorConditionMode.Greater => ComparisonType.GreaterThan,
+            AnimatorConditionMode.Less => ComparisonType.LessThan,
+            _ => throw new InvalidOperationException($"Unsupported condition mode: {mode}")
+        };
+    }
+
+    private static ComparisonType ToFloatComparisonType(AnimatorConditionMode mode)
+    {
+        return mode switch
+        {
+            AnimatorConditionMode.Greater => ComparisonType.GreaterThan,
+            AnimatorConditionMode.Less => ComparisonType.LessThan,
+            _ => throw new InvalidOperationException($"Unsupported float condition mode: {mode}")
         };
     }
 }

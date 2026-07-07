@@ -1,8 +1,10 @@
 #if FaceTune_VRCSDK3_AVATARS
 
+using UnityEditor;
 using UnityEditor.Animations;
 using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
+using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
@@ -78,7 +80,8 @@ internal class VRChatSupport : IMetabasePlatformSupport
             settings,
             useWriteDefaults,
             new VRChatAnimatorPlatformServices(),
-            GetExternallyControlledBlendShapeNames().ToHashSet());
+            GetExternallyControlledBlendShapeNames().ToHashSet(),
+            controllerContext);
         installer.Execute(expressionProgram);
     }
 
@@ -190,6 +193,51 @@ internal class VRChatSupport : IMetabasePlatformSupport
                 valueMin = min,
                 valueMax = max,
             });
+        }
+
+        public bool IsUnitBoundaryTransform(
+            Transform transform,
+            VirtualControllerContext controllerContext,
+            ISet<string> managedBlendShapeNames)
+        {
+            return managedBlendShapeNames.Count != 0
+                   && transform.TryGetComponent<ModularAvatarMergeAnimator>(out var merge)
+                   && merge.layerType == VRCAvatarDescriptor.AnimLayerType.FX
+                   && controllerContext.Controllers.TryGetValue(merge, out var controller)
+                   && OverlapsManagedBlendShapes(controller, managedBlendShapeNames);
+        }
+
+        private static bool OverlapsManagedBlendShapes(VirtualAnimatorController controller, ISet<string> managedBlendShapeNames)
+        {
+            return CollectBlendShapeNames(controller).Any(managedBlendShapeNames.Contains);
+        }
+
+        private static IEnumerable<string> CollectBlendShapeNames(VirtualAnimatorController controller)
+        {
+            return controller.Layers
+                .Where(layer => layer.StateMachine != null)
+                .SelectMany(layer => layer.StateMachine!.AllStates())
+                .SelectMany(state => CollectBlendShapeNames(state.Motion))
+                .Distinct();
+        }
+
+        private static IEnumerable<string> CollectBlendShapeNames(VirtualMotion? motion)
+        {
+            return motion switch
+            {
+                VirtualClip clip => CollectBlendShapeNames(clip),
+                VirtualBlendTree tree => tree.Children
+                    .Where(child => child.Motion != null)
+                    .SelectMany(child => CollectBlendShapeNames(child.Motion)),
+                _ => Array.Empty<string>()
+            };
+        }
+
+        private static IEnumerable<string> CollectBlendShapeNames(VirtualClip clip)
+        {
+            return clip.GetFloatCurveBindings()
+                .Where(binding => binding.type == typeof(SkinnedMeshRenderer) && binding.propertyName.StartsWith("blendShape."))
+                .Select(binding => binding.propertyName["blendShape.".Length..]);
         }
     }
 

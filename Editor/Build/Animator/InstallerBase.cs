@@ -12,7 +12,7 @@ internal class InstallerBase
 
     protected readonly VirtualClip _emptyClip;
 
-    protected const int LayerPriority = 1; // FaceEmo: 0
+    protected const int LayerPriority = 0;
 
     protected static readonly Vector3 EntryStatePosition = new Vector3(50, 120, 0);
     protected const float PositionXStep = 250;

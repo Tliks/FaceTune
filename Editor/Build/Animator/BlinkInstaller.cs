@@ -1,4 +1,3 @@
-
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
@@ -7,19 +6,10 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal class BlinkInstaller : InstallerBase
 {
-    private bool _shouldAddLayer = false;
-
-    private readonly Dictionary<AdvancedEyeBlinkSettings, int> _advancedEyeBlinkIndex = new();
-    
-    private Dictionary<string, string> _clonedShapesMapping = new();
-
     private readonly string _forceDisableEyeBlinkParameter;
+    private readonly Dictionary<string, string> _clonedShapesMapping = new();
 
-    private const string ParameterPrefix = $"{FaceTuneConstants.ParameterPrefix}/Blink";
-    private const string AllowAAP = $"{ParameterPrefix}/Allow"; // 常に追加
-    private const string UseAnimationAAP = $"{ParameterPrefix}/UseAnimation"; // 1つ以上有効なAdvancedEyeBlinkSettingsがあるとき
-    private const string ModeAAP = $"{ParameterPrefix}/Mode"; // 同上
-    private const string DelayMultiplier = $"{ParameterPrefix}/DelayMultiplier"; // 同上
+    private const string DelayMultiplier = $"{FaceTuneConstants.ParameterPrefix}/Blink/DelayMultiplier";
 
     public BlinkInstaller(
         VirtualAnimatorController virtualController,
@@ -33,328 +23,238 @@ internal class BlinkInstaller : InstallerBase
         {
             _controller.EnsureBoolParameterExists(_forceDisableEyeBlinkParameter);
         }
-        _controller.EnsureFloatParameterExists(AllowAAP);
     }
 
-    public void SetSettings(VirtualClip clip, FacialSettings facialSettings)
+    public void AddEyeBlinkLayer(OutputUnit unit, RuntimeDomain<EyeBlinkRuntimeMode> domain)
     {
-        if (facialSettings.AllowEyeBlink != TrackingPermission.Keep)
+        var localEntries = domain.LocalEntries(unit).ToArray();
+        if (localEntries.Length == 0) return;
+
+        var advancedEntries = PrepareAdvancedSettings(localEntries);
+
+        var layer = AddLayer($"{unit.Anchor.name} EyeBlink", LayerPriority);
+        var position = EntryStatePosition;
+
+        var foreign = AddState(layer, "Foreign/Inert", position);
+        AsPassThrough(foreign);
+        position.y += PositionYStep;
+
+        var baseline = AddTrackingState(layer, "BaselineTracking", true, position);
+        position.y += PositionYStep;
+        var tracking = AddTrackingState(layer, "Tracking", true, position);
+        position.y += PositionYStep;
+        var disabled = AddTrackingState(layer, "Disabled", false, position);
+        position.y += 2 * PositionYStep;
+
+        var targets = new List<(VirtualState state, IEnumerable<AnimatorCondition> conditions)>
         {
-            _shouldAddLayer = true;
-            
-            // Allow
-            var allowBlinkCurve = new AnimationCurve();
-            var value = facialSettings.AllowEyeBlink == TrackingPermission.Allow ? 1 : 0;
-            allowBlinkCurve.AddKey(0, value);
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), AllowAAP, allowBlinkCurve);
+            (baseline, VRCAAPHelper.IndexConditions(domain.ParameterName, true, domain.Baseline.Index))
+        };
+        targets.AddRange(domain.ForeignEntries(unit)
+            .Select(entry => (foreign, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index))));
+
+        foreach (var entry in localEntries)
+        {
+            switch (entry.Mode.Kind)
+            {
+                case EyeBlinkRuntimeModeKind.Tracking:
+                    targets.Add((tracking, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index)));
+                    break;
+                case EyeBlinkRuntimeModeKind.Disabled:
+                    targets.Add((disabled, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index)));
+                    break;
+            }
         }
 
-        var advancedSettings = facialSettings.AdvancedEyBlinkSettings;
-        if (advancedSettings.IsAnimationEnabled())
+        var advancedGates = new List<VirtualState>();
+        foreach (var (entry, settings) in advancedEntries)
         {
-            _shouldAddLayer = true;
+            var gate = AddAdvancedBlinkStates(layer, domain, entry, settings, disabled, position);
+            advancedGates.Add(gate);
+            targets.Add((gate, VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index)));
+            position.y += 4 * PositionYStep;
+        }
 
-            _controller.EnsureFloatParameterExists(UseAnimationAAP);
-            _controller.EnsureFloatParameterExists(ModeAAP);
-            _controller.EnsureFloatParameterExists(DelayMultiplier);
-            
-            // UseAnimation
-            var useAnimationCurve = new AnimationCurve();
-            useAnimationCurve.AddKey(0, 1);
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), UseAnimationAAP, useAnimationCurve);
+        ApplyForceDisableGuard(targets, disabled);
 
-            // AnimationMode
-            var index = GetIndexForSettings(advancedSettings);
-            var animationModeCurve = new AnimationCurve();
-            animationModeCurve.AddKey(0, VRCAAPHelper.IndexToValue(index));
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), ModeAAP, animationModeCurve);
+        AddEntryTransitions(layer, targets);
+        var allStates = new[] { foreign, baseline, tracking, disabled }.Concat(advancedGates).ToArray();
+        foreach (var state in allStates)
+        {
+            AddModeTransitions(state, targets.Where(target => target.state != state));
+            AddForceDisableTransition(state, disabled);
         }
     }
 
-    private int GetIndexForSettings(AdvancedEyeBlinkSettings advancedSettings)
+    private VirtualState AddTrackingState(VirtualLayer layer, string name, bool tracking, Vector3 position)
     {
-        return _advancedEyeBlinkIndex.GetOrAdd(advancedSettings, _advancedEyeBlinkIndex.Count);
+        var state = AddState(layer, name, position);
+        state.Motion = _emptyClip;
+        _platformServices.SetEyeBlinkTracking(state, tracking);
+        return state;
     }
 
-    private void AddForceDisableCondition(ICollection<AnimatorCondition> conditions, AnimatorConditionMode mode)
+    private IReadOnlyList<(ModeEntry<EyeBlinkRuntimeMode> entry, AdvancedEyeBlinkSettings settings)> PrepareAdvancedSettings(
+        IEnumerable<ModeEntry<EyeBlinkRuntimeMode>> localEntries)
+    {
+        var originalSettings = localEntries
+            .Where(entry => entry.Mode.Kind == EyeBlinkRuntimeModeKind.Advanced)
+            .Select(entry => entry.Mode.AdvancedSettings!)
+            .ToArray();
+        if (originalSettings.Length == 0) return Array.Empty<(ModeEntry<EyeBlinkRuntimeMode>, AdvancedEyeBlinkSettings)>();
+
+        var blinkShapeNames = originalSettings.SelectMany(settings => settings.BlinkBlendShapeNames).ToHashSet();
+        Action<Mesh, Mesh> onClone = (original, clone) => ObjectRegistry.RegisterReplacedObject(original, clone);
+        Action<string> onNotFound = name => LocalizedLog.Error("BuildLog:error:CloneShapes:ShapeNotFound", name);
+        var cloned = Utils.CloneShapes(_avatarContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
+        foreach (var (source, clone) in cloned)
+        {
+            _clonedShapesMapping[source] = clone;
+        }
+
+        return localEntries
+            .Where(entry => entry.Mode.Kind == EyeBlinkRuntimeModeKind.Advanced)
+            .Select(entry => (entry, entry.Mode.AdvancedSettings!.GetRenamed(_clonedShapesMapping)))
+            .ToArray();
+    }
+
+    private VirtualState AddAdvancedBlinkStates(
+        VirtualLayer layer,
+        RuntimeDomain<EyeBlinkRuntimeMode> domain,
+        ModeEntry<EyeBlinkRuntimeMode> entry,
+        AdvancedEyeBlinkSettings settings,
+        VirtualState disabled,
+        Vector3 position)
+    {
+        _controller.EnsureFloatParameterExists(DelayMultiplier);
+
+        var stare = AddTrackingState(layer, $"AdvancedBlink {entry.Index} Stare", false, position);
+        var entryPassThrough = AddTrackingState(layer, $"AdvancedBlink {entry.Index} Entry", false, position + new Vector3(PositionXStep, 0, 0));
+        var blink = AddTrackingState(layer, $"AdvancedBlink {entry.Index} Blink", false, position + new Vector3(PositionXStep, PositionYStep, 0));
+        var exitPassThrough = AddTrackingState(layer, $"AdvancedBlink {entry.Index} Exit", false, position + new Vector3(0, PositionYStep, 0));
+
+        if (!settings.UseRandomInterval)
+        {
+            stare.Motion = AnimatorHelper.CreateDelayClip(settings.IntervalSeconds, $"BlinkDelay {entry.Index}");
+        }
+        else
+        {
+            stare.Motion = AnimatorHelper.CreateDelayClip(settings.RandomIntervalMinSeconds, $"BlinkDelay {entry.Index}");
+            var minMultiplier = settings.RandomIntervalMinSeconds / settings.RandomIntervalMaxSeconds;
+            _platformServices.AddRandomDriver(stare, DelayMultiplier, minMultiplier, 1f);
+            stare.SpeedParameter = DelayMultiplier;
+        }
+
+        AsPassThrough(entryPassThrough);
+        AsPassThrough(exitPassThrough);
+        AddBlendShapeAnimationsToState(blink, CreateBlinkAnimations(settings));
+
+        var modeConditions = VRCAAPHelper.IndexConditions(domain.ParameterName, true, entry.Index).ToImmutableList();
+
+        AddTransition(stare, entryPassThrough, AnimatorHelper.CreateTransitionWithExitTime(), modeConditions);
+        AddTransition(entryPassThrough, blink, AnimatorHelper.CreateTransitionWithDurationSeconds(settings.ClosingDurationSeconds), modeConditions);
+        AddTransition(blink, exitPassThrough, AnimatorHelper.CreateTransitionWithExitTime(1f, settings.OpeningDurationSeconds), modeConditions);
+        AddTransition(exitPassThrough, stare, AnimatorHelper.CreateTransitionWithDurationSeconds(0f), modeConditions);
+
+        foreach (var state in new[] { entryPassThrough, blink, exitPassThrough })
+        {
+            AddTransition(state, stare, AnimatorHelper.CreateTransitionWithDurationSeconds(0f), modeConditions);
+            var modeMismatch = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
+            modeMismatch.SetDestination(stare);
+            state.Transitions = state.Transitions.AddRange(AnimatorHelper.SetORConditions(
+                modeMismatch,
+                VRCAAPHelper.IndexConditions(domain.ParameterName, false, entry.Index)));
+            AddForceDisableTransition(state, disabled);
+        }
+
+        return stare;
+    }
+
+    private static IEnumerable<BlendShapeWeightAnimation> CreateBlinkAnimations(AdvancedEyeBlinkSettings settings)
+    {
+        var animations = new List<BlendShapeWeightAnimation>();
+        var holdDuration = Math.Max(settings.HoldDurationSeconds, 0.01f);
+        foreach (var name in settings.BlinkBlendShapeNames)
+        {
+            var curve = new AnimationCurve();
+            curve.AddKey(0f, 100f);
+            curve.AddKey(holdDuration, 100f);
+            animations.Add(new BlendShapeWeightAnimation(name, curve));
+        }
+        foreach (var name in settings.CancelerBlendShapeNames)
+        {
+            var curve = new AnimationCurve();
+            curve.AddKey(0f, 0f);
+            curve.AddKey(holdDuration, 0f);
+            animations.Add(new BlendShapeWeightAnimation(name, curve));
+        }
+        return animations;
+    }
+
+    private static void AddTransition(
+        VirtualState source,
+        VirtualState target,
+        VirtualStateTransition transition,
+        IEnumerable<AnimatorCondition> conditions)
+    {
+        transition.SetDestination(target);
+        transition.Conditions = conditions.ToImmutableList();
+        source.Transitions = source.Transitions.Add(transition);
+    }
+
+    private static void AddEntryTransitions(
+        VirtualLayer layer,
+        IEnumerable<(VirtualState state, IEnumerable<AnimatorCondition> conditions)> targets)
+    {
+        var transitions = targets.Select(target =>
+        {
+            var transition = VirtualTransition.Create();
+            transition.SetDestination(target.state);
+            transition.Conditions = target.conditions.ToImmutableList();
+            return transition;
+        });
+        layer.StateMachine!.EntryTransitions = layer.StateMachine!.EntryTransitions.AddRange(transitions);
+    }
+
+    private static void AddModeTransitions(
+        VirtualState source,
+        IEnumerable<(VirtualState state, IEnumerable<AnimatorCondition> conditions)> targets)
+    {
+        foreach (var target in targets)
+        {
+            AddTransition(source, target.state, AnimatorHelper.CreateTransitionWithDurationSeconds(0f), target.conditions);
+        }
+    }
+
+    private void ApplyForceDisableGuard(List<(VirtualState state, IEnumerable<AnimatorCondition> conditions)> targets, VirtualState disabled)
     {
         if (string.IsNullOrWhiteSpace(_forceDisableEyeBlinkParameter)) return;
-        conditions.Add(new AnimatorCondition
+
+        for (var index = 0; index < targets.Count; index++)
         {
-            parameter = _forceDisableEyeBlinkParameter,
-            mode = mode
-        });
-    }
-
-    public void AddEyeBlinkLayer()
-    {
-        if (!_shouldAddLayer) return;
-
-        var eyeBlinkLayer = AddLayer("EyeBlink", LayerPriority);
-
-        // 最初のフレームでTraking Controlを変更すると巻き戻される。
-        // 2フレームの遅延が必要らしいので多めに0.1s程度遅延させる
-        var delayState = AddState(eyeBlinkLayer, "Delay", EntryStatePosition + new Vector3(-20, 2 * PositionYStep, 0));
-        var delayClip = AnimatorHelper.CreateDelayClip(0.1f);
-        delayState.Motion = delayClip;
-
-        // DefaultのTracking/Animationの入れ替え
-        var enabledPosition = EntryStatePosition + new Vector3(PositionXStep, 0, 0);
-        var enabled = AddState(eyeBlinkLayer, "Default: Enabled", enabledPosition);
-        var disabled = AddState(eyeBlinkLayer, "Default: Disabled", enabledPosition + new Vector3(0, 2 * PositionYStep, 0));
-        
-        enabled.Motion = _emptyClip;
-        disabled.Motion = _emptyClip;
-        _platformServices.SetEyeBlinkTracking(enabled, true);
-        _platformServices.SetEyeBlinkTracking(disabled, false);
-
-        // Delay -> Enabled
-        var delayToEnabled = AnimatorHelper.CreateTransitionWithExitTime(1f, 0f);
-        delayToEnabled.SetDestination(enabled);
-        delayState.Transitions = delayState.Transitions.Add(delayToEnabled);
-
-        // Enabled -> Disabled
-        var enabledToDisabled = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        enabledToDisabled.SetDestination(disabled);
-        var disableORConditions = new List<AnimatorCondition>
-        {
-            new AnimatorCondition()
+            var target = targets[index];
+            if (target.state == disabled) continue;
+            targets[index] = (target.state, target.conditions.Append(new AnimatorCondition
             {
-                parameter = AllowAAP,
-                mode = AnimatorConditionMode.Less,
-                threshold = 0.99f // 安全側(Stare)に倒す
-            }
-        };
-        AddForceDisableCondition(disableORConditions, AnimatorConditionMode.If);
-        var orTransitions = AnimatorHelper.SetORConditions(enabledToDisabled, disableORConditions);
-        enabled.Transitions = enabled.Transitions.AddRange(orTransitions);
-
-        // Disabled -> Enabled
-        var disabledToEnabled = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        disabledToEnabled.SetDestination(enabled);
-        var disabledToEnabledConditions = new List<AnimatorCondition>()
-        {
-            new AnimatorCondition()
-            {
-                parameter = AllowAAP,
-                mode = AnimatorConditionMode.Greater,
-                threshold = 0.99f // 同上
-            }
-        };
-        AddForceDisableCondition(disabledToEnabledConditions, AnimatorConditionMode.IfNot);
-        disabledToEnabled.Conditions = ImmutableList.CreateRange(disabledToEnabledConditions);
-        disabled.Transitions = disabled.Transitions.Add(disabledToEnabled);
-
-        if (_advancedEyeBlinkIndex.Count == 0 || _advancedEyeBlinkIndex.Keys.All(k => !k.IsAnimationEnabled())) return;
-
-        AddAnimationStates(eyeBlinkLayer, enabled, disabled, enabledPosition);
-    }
-
-    private void AddAnimationStates(VirtualLayer layer, VirtualState enabled, VirtualState disabled, Vector3 enabledPosition)
-    {
-        var (animationGate, animationGatePosition) = CreateAnimationGate(layer, enabled, disabled, enabledPosition);
-        CloneShapesForBlinking();
-        AddBlinkingStates(layer, animationGate, animationGatePosition);
-    }
-
-    private (VirtualState, Vector3) CreateAnimationGate(VirtualLayer layer, VirtualState enabled, VirtualState disabled, Vector3 enabledPosition)
-    {
-        // AnimationGate
-        var disableTrackingPosition = enabledPosition + new Vector3(PositionXStep, 0, 0);
-        var disableTracking = AddState(layer, "DisableTracking", disableTrackingPosition);
-        var animationGatePosition = disableTrackingPosition + new Vector3(0, 2 * PositionYStep, 0);
-        var animationGate = AddState(layer, "AnimationGate", animationGatePosition);
-
-        disableTracking.Motion = _emptyClip;
-        animationGate.Motion = _emptyClip;
-        _platformServices.SetEyeBlinkTracking(disableTracking, false);
-
-        // Disabled -> AnimationGate
-        var disabledToAnimationGate = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        disabledToAnimationGate.SetDestination(animationGate);
-        disabledToAnimationGate.Conditions = ImmutableList.Create(new AnimatorCondition()
-        {
-            parameter = UseAnimationAAP,
-            mode = AnimatorConditionMode.Greater,
-            threshold = 0.99f // 完全に遷移してから切り替える
-        });
-        disabled.Transitions = disabled.Transitions.Add(disabledToAnimationGate);
-
-        // AnimationGate -> Disabled
-        var animationGateToDsiabled = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        animationGateToDsiabled.SetDestination(disabled);
-        animationGateToDsiabled.Conditions = ImmutableList.Create(new AnimatorCondition()
-        {
-            parameter = UseAnimationAAP,
-            mode = AnimatorConditionMode.Less,
-            threshold = 0.01f // 同上
-        });
-        animationGate.Transitions = animationGate.Transitions.Add(animationGateToDsiabled);
-
-        // Enabled -> DisableTracking
-        var enabledToDisableTracking = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        enabledToDisableTracking.SetDestination(disableTracking);
-        enabledToDisableTracking.Conditions = ImmutableList.Create(new AnimatorCondition()
-        {
-            parameter = UseAnimationAAP,
-            mode = AnimatorConditionMode.Greater,
-            threshold = 0.99f // 同上
-        });
-        enabled.Transitions = enabled.Transitions.Add(enabledToDisableTracking);
-
-        // DisableTracking -> AnimationGate
-        var disableTrackingToAnimationGate = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-        disableTrackingToAnimationGate.SetDestination(animationGate);
-        disableTrackingToAnimationGate.Conditions = ImmutableList.Create(new AnimatorCondition()
-        {
-            parameter = TrueParameterName,
-            mode = AnimatorConditionMode.If
-        });
-        disableTracking.Transitions = disableTracking.Transitions.Add(disableTrackingToAnimationGate);
-
-        return (animationGate, animationGatePosition);
-    }
-
-    private void CloneShapesForBlinking()
-    {
-        // 瞬き用のブレンドシェイプを複製する
-        // Trackingとの競合を避けるためと、他表情で使用されている場合にそれをリセットせず移動量の追加のみ行うようにするため。
-        // キャンセラーはリセットを意図する(上のレイヤーの影響を受ける)ため複製しない。
-
-        var blinkShapeNames = _advancedEyeBlinkIndex.Keys.SelectMany(s => s.BlinkBlendShapeNames).ToHashSet();
-
-        Action<Mesh, Mesh> onClone = (Mesh o, Mesh n) => ObjectRegistry.RegisterReplacedObject(o, n);
-        Action<string> onNotFound = (string name) => { LocalizedLog.Error("BuildLog:error:CloneShapes:ShapeNotFound", name); };
-        _clonedShapesMapping = Utils.CloneShapes(_avatarContext.FaceRenderer, blinkShapeNames, onClone, onNotFound, "_clone.blink");
-        foreach (var (settings, index) in _advancedEyeBlinkIndex.ToList())
-        {
-            var newSettings = settings.GetRenamed(_clonedShapesMapping);
-            _advancedEyeBlinkIndex.Remove(settings);
-            _advancedEyeBlinkIndex[newSettings] = index;
+                parameter = _forceDisableEyeBlinkParameter,
+                mode = AnimatorConditionMode.IfNot
+            }).ToArray());
         }
-    }
 
-    private void AddBlinkingStates(VirtualLayer layer, VirtualState animationGate, Vector3 animationGatePosition)
-    {
-        var starePosition = animationGatePosition + new Vector3(PositionXStep, 0, 0);
-        foreach (var (settings, index) in _advancedEyeBlinkIndex.OrderBy(kvp => kvp.Value))
+        targets.Add((disabled, new[]
         {
-            var stare = AddState(layer, $"Stare {index}", starePosition);
-            var entryPassThrough = AddState(layer, $"Entry PassThrough {index}", starePosition + new Vector3(PositionXStep, 0, 0));
-            var blink = AddState(layer, $"Blink {index}", starePosition + new Vector3(PositionXStep, 2 * PositionYStep, 0));
-            var exitPassThrough = AddState(layer, $"Exit PassThrough {index}", starePosition + new Vector3(0, 2 * PositionYStep, 0));
-
-            // 瞬きの間隔を設定
-            if (!settings.UseRandomInterval)
-            {
-                var blinkDelayClip = AnimatorHelper.CreateDelayClip(settings.IntervalSeconds, $"BlinkDelay {index}");
-                stare.Motion = blinkDelayClip;
-            }
-            else
-            {
-                var blinkDelayClip = AnimatorHelper.CreateDelayClip(settings.RandomIntervalMinSeconds, $"BlinkDelay {index}");
-                stare.Motion = blinkDelayClip;
-
-                var maxMultiplier = 1f;
-                var minMultiplier = settings.RandomIntervalMinSeconds / settings.RandomIntervalMaxSeconds;
-                _platformServices.AddRandomDriver(stare, DelayMultiplier, minMultiplier, maxMultiplier);
-                stare.SpeedParameter = DelayMultiplier;
-            }
-
-            AsPassThrough(entryPassThrough);
-            AsPassThrough(exitPassThrough);
-
-            // 目を閉じたときの表情を設定 
-            var blinkAnimations = new List<BlendShapeWeightAnimation>();
-            var holdDuration = settings.HoldDurationSeconds;
-            if (holdDuration < 0.01f) holdDuration = 0.01f; // 0fにするとExitTimeで遷移が直ぐに行われない
-            foreach (var name in settings.BlinkBlendShapeNames)
-            {
-                var curve = new AnimationCurve();
-                curve.AddKey(0, 100);
-                curve.AddKey(holdDuration, 100);
-                blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve));
-            }
-            if (settings.IsCancelerEnabled())
-            {
-                foreach (var name in settings.CancelerBlendShapeNames)
-                {
-                    var curve = new AnimationCurve();
-                    curve.AddKey(0, 0);
-                    curve.AddKey(holdDuration, 0);
-                    blinkAnimations.Add(new BlendShapeWeightAnimation(name, curve));
-                }
-            }
-            AddBlendShapeAnimationsToState(blink, blinkAnimations);
-
-            // AnimationGate -> Stare
-            var gateToStare = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-            gateToStare.SetDestination(stare);
-            var andConditions = new List<AnimatorCondition>();
-            andConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, true, index));
-            AddForceDisableCondition(andConditions, AnimatorConditionMode.IfNot);
-            andConditions.Add(new AnimatorCondition()
-            {
-                parameter = AllowAAP,
-                mode = AnimatorConditionMode.Greater,
-                threshold = 0.99f // 安全側(Stare)に倒す
-            });
-            gateToStare.Conditions = ImmutableList.CreateRange(andConditions);
-            animationGate.Transitions = animationGate.Transitions.Add(gateToStare);
-
-            // Stare -> AnimationGate (OR)
-            var stareToGate = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-            stareToGate.SetDestination(animationGate);
-            var orConditions = new List<AnimatorCondition>();
-            orConditions.AddRange(VRCAAPHelper.IndexConditions(ModeAAP, false, index));
-            AddForceDisableCondition(orConditions, AnimatorConditionMode.If);
-            orConditions.Add(new AnimatorCondition()
-            {
-                parameter = AllowAAP,
-                mode = AnimatorConditionMode.Less,
-                threshold = 0.99f // 同上
-            });
-            var orTransitions = AnimatorHelper.SetORConditions(stareToGate, orConditions);
-            stare.Transitions = stare.Transitions.AddRange(orTransitions);
-
-            // stare -> entryPassThrough
-            var stareToEntryPassThrough = AnimatorHelper.CreateTransitionWithExitTime(); // StareのDelayAnimationの再生が終わったタイミングで瞬きを発火
-            stareToEntryPassThrough.SetDestination(entryPassThrough);
-            stare.Transitions = stare.Transitions.Add(stareToEntryPassThrough);
-
-            // entryPassThrough -> blink
-            var entryPassThroughToBlink = AnimatorHelper.CreateTransitionWithDurationSeconds(settings.ClosingDurationSeconds);
-            entryPassThroughToBlink.SetDestination(blink);
-            entryPassThroughToBlink.Conditions = ImmutableList.Create(new AnimatorCondition()
-            {
-                parameter = TrueParameterName,
-                mode = AnimatorConditionMode.If
-            });
-            entryPassThrough.Transitions = entryPassThrough.Transitions.Add(entryPassThroughToBlink);
-
-            // blink -> exitPassThrough
-            var blinkToExitPassThrough = AnimatorHelper.CreateTransitionWithExitTime(1f, settings.OpeningDurationSeconds);
-            blinkToExitPassThrough.SetDestination(exitPassThrough);
-            blinkToExitPassThrough.Conditions = ImmutableList.Create(new AnimatorCondition()
-            {
-                parameter = TrueParameterName,
-                mode = AnimatorConditionMode.If
-            });
-            blink.Transitions = blink.Transitions.Add(blinkToExitPassThrough);
-
-            // exitPassThrough -> stare
-            var exitPassThroughToStare = AnimatorHelper.CreateTransitionWithDurationSeconds(0f);
-            exitPassThroughToStare.SetDestination(stare);
-            exitPassThroughToStare.Conditions = ImmutableList.Create(new AnimatorCondition()
-            {
-                parameter = TrueParameterName,
-                mode = AnimatorConditionMode.If
-            });
-            exitPassThrough.Transitions = exitPassThrough.Transitions.Add(exitPassThroughToStare);
-
-            starePosition.y += 3 * PositionYStep;
-        }
+            new AnimatorCondition { parameter = _forceDisableEyeBlinkParameter, mode = AnimatorConditionMode.If }
+        }));
     }
 
-    public IEnumerable<BlendShapeWeight> ShapesToInitialize => _clonedShapesMapping.Values.Select(b => new BlendShapeWeight(b, 0f));
+    private void AddForceDisableTransition(VirtualState source, VirtualState disabled)
+    {
+        if (string.IsNullOrWhiteSpace(_forceDisableEyeBlinkParameter) || source == disabled) return;
+        AddTransition(source, disabled, AnimatorHelper.CreateTransitionWithDurationSeconds(0f), new[]
+        {
+            new AnimatorCondition { parameter = _forceDisableEyeBlinkParameter, mode = AnimatorConditionMode.If }
+        });
+    }
+
+    public IEnumerable<BlendShapeWeight> ShapesToInitialize => _clonedShapesMapping.Values.Select(name => new BlendShapeWeight(name, 0f));
 }

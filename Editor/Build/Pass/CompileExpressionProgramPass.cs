@@ -33,25 +33,7 @@ internal static class FaceTuneProgramCompiler
             .Select(expressionCompiler.Compile)
             .ToList();
 
-        return new ExpressionProgram(ResolvePriority(items));
-    }
-
-    private static IReadOnlyList<ExpressionItem> ResolvePriority(IReadOnlyList<ExpressionItem> items)
-    {
-        var result = items.ToList();
-        var laterReplaceWhen = DnfCondition.Never;
-        for (var i = result.Count - 1; i >= 0; i--)
-        {
-            var item = result[i];
-            result[i] = item.WithSuppressedBy(laterReplaceWhen);
-
-            if (item.WriteMode == ExpressionWriteMode.Replace)
-            {
-                laterReplaceWhen = laterReplaceWhen.Or(item.RawWhen);
-            }
-        }
-
-        return result;
+        return new ExpressionProgram(items);
     }
 }
 
@@ -189,7 +171,7 @@ internal sealed class ConditionCompiler
             current = current.parent;
         }
 
-        yield return component.Condition;
+        if (component.ConditionEnabled) yield return component.Condition;
     }
 
     private DnfCondition ResolveCondition(Condition condition)

@@ -8,7 +8,11 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
-        public Condition Condition = new();
+        public bool ConditionEnabled = false;
+        public Condition Condition = new(){ Always = false, Cases = new List<ConditionCase>() { new() } };
+
+        public bool DirectMenuEnabled = false;
+        public DirectMenuSettings DirectMenuSettings = new();
 
         public ExpressionSettings ExpressionSettings = new();
         public FacialSettings FacialSettings = new();
@@ -24,6 +28,10 @@ namespace Aoyon.FaceTune
         ExpressionData IExpressionDataSource.Data => Data;
         IEnumerable<Condition> IHasConditions.Conditions => new[] { Condition };
 
-        public void ResolveReferences() => DataReference.Get(this);
+        public void ResolveReferences()
+        {
+            DirectMenuSettings.ResolveReferences(this);
+            DataReference.Get(this);
+        }
     }
 }

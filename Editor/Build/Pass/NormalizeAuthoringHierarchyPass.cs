@@ -1,5 +1,3 @@
-using nadena.dev.modular_avatar.core;
-
 namespace Aoyon.FaceTune.Build;
 
 /// <summary>
@@ -12,12 +10,14 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     public override string DisplayName => "Normalize Authoring Hierarchy";
 
     private const string PresetParameterName = $"{FaceTuneConstants.ParameterPrefix}/PresetIndex";
-    private const string AutoMenuGroupName = "AutoMenu";
+    private const string DirectReplaceGroupName = $"{FaceTuneConstants.ParameterPrefix}/DirectMenu/Replace";
+    private const string DirectMenuObjectName = "DirectMenu";
 
     protected override void Execute(FaceTuneContext context)
     {
         ProcessPresetComponents(context.AvatarContext.Root);
-        ProcessAutoMenuComponents(context.AvatarContext.Root);
+        ProcessDirectMenuSettings(context.AvatarContext.Root);
+        IgnoreEmptyCondition(context.AvatarContext.Root);
         AssignMenuParameters(context.AvatarContext.Root);
         ResolveMenuConditions(context.AvatarContext.Root);
     }
@@ -44,172 +44,99 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             menu.ExclusiveToggleGroup.GroupName = PresetParameterName;
 
             var condition = preset.gameObject.AddComponent<ConditionComponent>();
-            condition.Condition.Always = false;
-            condition.Condition.Cases.Add(new ConditionCase
-            {
-                MenuConditions =
-                {
-                    new MenuCondition
-                    {
-                        MenuSource = menu,
-                        Mode = MenuConditionMode.Enabled
-                    }
-                }
-            });
+            condition.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
         }
     }
 
-    // auto menu => Menu + Internal Condition(Modifier)に変更
-    private static void ProcessAutoMenuComponents(GameObject root)
+    private static void ProcessDirectMenuSettings(GameObject root)
     {
-        var autoMenus = root.GetComponentsInChildren<AutoMenuGeneratorComponent>(true);
-        if (autoMenus.Length == 0) return;
-
-        if (autoMenus.Length > 1)
-        {
-            LocalizedLog.Warning("Log:warning:AutoMenuPlan:MultipleAutoMenu", null, autoMenus);
-        }
-        var autoMenu = autoMenus[0];
-
         var expressions = root.GetComponentsInChildren<FaceTuneComponent>(true);
-        if (expressions.Length == 0) return;
 
-        var excludedFromMenu = ResolveReferencedExpressions(autoMenu, autoMenu.ExcludeFromMenuTargets);
-        var allowedDuringManualLock = ResolveReferencedExpressions(autoMenu, autoMenu.AllowDuringManualLockTargets);
-        var suppressedExpressions = expressions
-            .Where(expression => !allowedDuringManualLock.Contains(expression))
-            .ToHashSet();
+        var directMenuByExpression = new Dictionary<FaceTuneComponent, MenuComponent>();
+        var directMenusByGroup = new Dictionary<string, List<MenuComponent>>();
 
-        var noneMenu = CreateAutoMenuItem(autoMenu.transform, "None", defaultSelected: true);
-        var expressionMenus = CreateAutoMenuExpressionItems(
-            autoMenu.transform,
-            expressions.Where(expression => !excludedFromMenu.Contains(expression)).ToArray());
-        AddAutoMenuConditionModifiers(expressions, suppressedExpressions, noneMenu, expressionMenus);
+        foreach (var expression in expressions)
+        {
+            if (!expression.DirectMenuEnabled) continue;
+
+            var menu = CreateDirectMenu(expression);
+            var groupName = menu.ExclusiveToggleGroup.GroupName;
+
+            directMenuByExpression[expression] = menu;
+
+            if (!string.IsNullOrWhiteSpace(groupName))
+            {
+                directMenusByGroup.GetOrAdd(groupName, new List<MenuComponent>()).Add(menu);
+            }
+        }
+
+        foreach (var (expression, menu) in directMenuByExpression)
+        {
+            var groupName = menu.ExclusiveToggleGroup.GroupName;
+            var gate = !string.IsNullOrWhiteSpace(groupName)
+                       && directMenusByGroup.TryGetValue(groupName, out var groupMenus)
+                ? new Condition(ConditionCase.From(groupMenus.Select(MenuCondition.Disabled).ToArray()))
+                : null;
+
+            var modifier = expression.gameObject.AddComponent<ExpressionConditionModifierComponent>();
+            if (gate != null) modifier.OriginalGate = gate;
+            modifier.AdditionalActivation = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
+        }
     }
 
-    private static HashSet<FaceTuneComponent> ResolveReferencedExpressions(
-        AutoMenuGeneratorComponent autoMenu,
-        IEnumerable<AvatarObjectReference> references)
+    private static MenuComponent CreateDirectMenu(FaceTuneComponent expression)
     {
-        return references
-            .Select(reference => reference.Get(autoMenu))
-            .Where(target => target != null)
-            .SelectMany(target => target.GetComponentsInChildren<FaceTuneComponent>(true))
-            .ToHashSet();
-    }
+        var settings = expression.DirectMenuSettings;
 
-    private static MenuComponent CreateAutoMenuItem(Transform parent, string menuName, bool defaultSelected)
-    {
-        var itemObject = new GameObject(menuName);
-        itemObject.transform.SetParent(parent, false);
+        // 自身に配置するとMultipleComponentエラーになる可能性があるので、生成先は子にする
+        var itemObject = new GameObject(DirectMenuObjectName);
+        itemObject.transform.SetParent(expression.transform, false);
 
         var menu = itemObject.AddComponent<MenuComponent>();
-        menu.MenuName = menuName;
+
+        menu.MenuName = settings.MenuName;
+        menu.Icon = settings.Icon;
+        menu.InstallSettings = settings.InstallSettings;
+
         menu.Kind = MenuItemKind.Toggle;
-        menu.DefaultSelected = defaultSelected;
-        menu.ExclusiveToggleGroup.GroupName = AutoMenuGroupName;
+        menu.DefaultSelected = false;
+        menu.ExclusiveToggleGroup.GroupName = GetDirectMenuSuppressionGroup(expression);
+
         return menu;
     }
 
-    private static Dictionary<FaceTuneComponent, MenuComponent> CreateAutoMenuExpressionItems(
-        Transform parent,
-        IReadOnlyList<FaceTuneComponent> expressions)
+    private static string GetDirectMenuSuppressionGroup(FaceTuneComponent expression)
     {
-        var result = new Dictionary<FaceTuneComponent, MenuComponent>();
-        var commonRoot = FindCommonParent(expressions);
-        var folderCopies = new Dictionary<Transform, Transform>();
-
-        foreach (var expression in expressions)
+        var settings = expression.DirectMenuSettings;
+        return settings.SupressMode switch
         {
-            var menuParent = GetOrCreateFolderCopy(expression.transform.parent, parent, commonRoot, folderCopies);
-            result.Add(expression, CreateAutoMenuItem(menuParent, expression.name, defaultSelected: false));
-        }
-
-        return result;
-    }
-
-    private static Transform? FindCommonParent(IReadOnlyList<FaceTuneComponent> expressions)
-    {
-        var parents = expressions
-            .Select(expression => expression.transform.parent)
-            .Where(parent => parent != null)
-            .ToArray();
-        if (parents.Length == 0) return null;
-
-        var commonAncestors = GetAncestorsAndSelf(parents[0]).ToHashSet();
-        foreach (var parent in parents.Skip(1))
-        {
-            commonAncestors.IntersectWith(GetAncestorsAndSelf(parent));
-        }
-
-        return GetAncestorsAndSelf(parents[0]).First(commonAncestors.Contains);
-
-        static IEnumerable<Transform> GetAncestorsAndSelf(Transform transform)
-        {
-            var current = transform;
-            while (current != null)
-            {
-                yield return current;
-                current = current.parent;
-            }
-        }
-    }
-
-    private static Transform GetOrCreateFolderCopy(
-        Transform? source,
-        Transform generatedRoot,
-        Transform? commonRoot,
-        Dictionary<Transform, Transform> folderCopies)
-    {
-        if (source == null || source == commonRoot) return generatedRoot;
-        if (folderCopies.TryGetValue(source, out var copy)) return copy;
-
-        var parent = GetOrCreateFolderCopy(source.parent, generatedRoot, commonRoot, folderCopies);
-        var obj = new GameObject(source.name);
-        obj.transform.SetParent(parent, false);
-        obj.AddComponent<MenuFolderComponent>().MenuName = source.name;
-
-        folderCopies.Add(source, obj.transform);
-        return obj.transform;
-    }
-
-    private static void AddAutoMenuConditionModifiers(
-        IEnumerable<FaceTuneComponent> expressions,
-        HashSet<FaceTuneComponent> suppressedExpressions,
-        MenuComponent noneMenu,
-        IReadOnlyDictionary<FaceTuneComponent, MenuComponent> expressionMenus)
-    {
-        foreach (var expression in expressions)
-        {
-            var hasOriginalGate = suppressedExpressions.Contains(expression);
-            var hasAdditionalActivation = expressionMenus.TryGetValue(expression, out var additionalActivation);
-            if (!hasOriginalGate && !hasAdditionalActivation) continue;
-
-            var modifier = expression.gameObject.AddComponent<ExpressionConditionModifierComponent>();
-            if (hasOriginalGate) modifier.OriginalGate = MenuEnabledCondition(noneMenu);
-            if (hasAdditionalActivation) modifier.AdditionalActivation = MenuEnabledCondition(additionalActivation);
-        }
-    }
-
-    private static Condition MenuEnabledCondition(MenuComponent menu)
-    {
-        return new Condition
-        {
-            Cases =
-            {
-                new ConditionCase
-                {
-                    MenuConditions =
-                    {
-                        new MenuCondition
-                        {
-                            MenuSource = menu,
-                            Mode = MenuConditionMode.Enabled
-                        }
-                    }
-                }
-            }
+            DirectMenuSuppressionMode.Auto when expression.FacialSettings.WriteMode == ExpressionWriteMode.Replace => DirectReplaceGroupName,
+            DirectMenuSuppressionMode.Auto when expression.FacialSettings.WriteMode == ExpressionWriteMode.Blend => settings.GroupName,
+            DirectMenuSuppressionMode.Replace => DirectReplaceGroupName,
+            DirectMenuSuppressionMode.Group => settings.GroupName,
+            _ => string.Empty
         };
+    }
+
+    private static void IgnoreEmptyCondition(GameObject root)
+    {
+        foreach (var source in root.GetComponentsInChildren<FaceTuneTagComponent>(true)
+            .OfType<IHasConditions>())
+        {
+            foreach (var condition in source.Conditions)
+            {
+                condition.Cases.RemoveAll(conditionCase => conditionCase.IsEmpty);
+            }
+
+            if (source is ConditionComponent cc && cc.Condition.IsEmpty)
+            {
+                Object.DestroyImmediate(cc);
+            }
+            else if (source is FaceTuneComponent ftc && ftc.Condition.IsEmpty)
+            {
+                ftc.ConditionEnabled = false;
+            }
+        }
     }
 
     // パラメータ名を確定、排他グループはValueも割り振り
@@ -224,7 +151,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             {
                 var groupName = menu.ExclusiveToggleGroup.GroupName;
 
-                menu.ParameterName = exclusiveGroupParameterNames.GetOrAdd(groupName, CreateGroupParameterName);
+                menu.ParameterName = exclusiveGroupParameterNames.GetOrAdd(groupName, CreateUniqueParameterName(groupName, "exclusive"));
 
                 var index = exclusiveGroupIndices.TryGetValue(groupName, out var current) ? current + 1 : 1;
                 exclusiveGroupIndices[groupName] = index;
@@ -237,23 +164,11 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    private static string CreateGroupParameterName(string groupName)
-    {
-        if (groupName.StartsWith($"{FaceTuneConstants.ParameterPrefix}/")) return groupName;
-        var safeName = SanitizeName(groupName);
-        return $"{FaceTuneConstants.ParameterPrefix}/{safeName}/exclusive";
-    }
-
     private static string CreateUniqueParameterName(string baseName, string suffix)
     {
-        baseName = SanitizeName(baseName);
+        baseName = baseName.Replace(" ", "_").Replace(".", "_");
         var guid = Guid.NewGuid().ToString("N")[..8];
         return $"{FaceTuneConstants.ParameterPrefix}/{baseName}_{suffix}_{guid}";
-    }
-
-    private static string SanitizeName(string name)
-    {
-        return name.Replace(" ", "_").Replace(".", "_");
     }
 
     // MenuContionをParamterConditionに変換
@@ -323,5 +238,4 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 throw new InvalidOperationException($"Unknown menu kind: {menu.Kind}");
         }
     }
-
 }

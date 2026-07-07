@@ -8,8 +8,16 @@ internal class Condition
     public bool Always = false;
     public List<ConditionCase> Cases = new();
 
+    public bool IsEmpty => !Always && Cases.Count == 0;
+
     public Condition()
     {
+    }
+
+    public Condition(params ConditionCase[] conditionCases)
+    {
+        Always = false;
+        Cases.AddRange(conditionCases);
     }
 }
 
@@ -21,8 +29,34 @@ internal class ConditionCase
     public List<MenuCondition> MenuConditions = new();
     public List<ParameterCondition> ParameterConditions = new();
 
+    public bool IsEmpty => HandGestureConditions.Count == 0 && MenuConditions.Count == 0 && ParameterConditions.Count == 0;
+
     public ConditionCase()
     {
+    }
+
+    public static ConditionCase From(params MenuCondition[] menuConditions)
+    {
+        return new ConditionCase
+        {
+            MenuConditions = menuConditions.ToList()
+        };
+    }
+
+    public static ConditionCase From(params ParameterCondition[] parameterConditions)
+    {
+        return new ConditionCase
+        {
+            ParameterConditions = parameterConditions.ToList()
+        };
+    }
+
+    public static ConditionCase From(params HandGestureCondition[] handGestureConditions)
+    {
+        return new ConditionCase
+        {
+            HandGestureConditions = handGestureConditions.ToList()
+        };
     }
 }
 
@@ -64,6 +98,44 @@ internal class MenuCondition
 
     public MenuCondition()
     {
+    }
+
+    public static MenuCondition Enabled(MenuComponent menu)
+    {
+        return new MenuCondition
+        {
+            MenuSource = menu,
+            Mode = MenuConditionMode.Enabled
+        };
+    }
+
+    public static MenuCondition Disabled(MenuComponent menu)
+    {
+        return new MenuCondition
+        {
+            MenuSource = menu,
+            Mode = MenuConditionMode.Disabled
+        };
+    }
+
+    public static MenuCondition GreaterThan(MenuComponent menu, float threshold)
+    {
+        return new MenuCondition
+        {
+            MenuSource = menu,
+            Mode = MenuConditionMode.GreaterThan,
+            Threshold = threshold
+        };
+    }
+
+    public static MenuCondition LessThan(MenuComponent menu, float threshold)
+    {
+        return new MenuCondition
+        {
+            MenuSource = menu,
+            Mode = MenuConditionMode.LessThan,
+            Threshold = threshold
+        };
     }
 }
 
