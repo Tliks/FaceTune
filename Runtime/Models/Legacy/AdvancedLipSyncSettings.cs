@@ -70,7 +70,8 @@ internal record class AdvancedLipSyncSettings // Immutable
     internal static AdvancedLipSyncSettings Disabled() => new(false);
 
     internal bool IsEnabled() => useAdvancedLipSync;
-    internal bool IsCancelerEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
+    internal bool IsAnimationEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
+    internal bool IsCancelerEnabled() => IsAnimationEnabled();
 
     public virtual bool Equals(AdvancedLipSyncSettings other)
     {

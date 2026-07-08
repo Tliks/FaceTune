@@ -70,21 +70,6 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return faceRenderer;
     }
 
-    public void InstallBuild(BuildContext buildContext, BuildSettings settings, ExpressionProgram expressionProgram)
-    {
-        var controllerContext = buildContext.Extension<VirtualControllerContext>();
-        var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
-        var useWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx) ?? true;
-        var installer = new AnimatorInstaller(
-            fx,
-            settings,
-            useWriteDefaults,
-            new VRChatAnimatorPlatformServices(),
-            GetExternallyControlledBlendShapeNames().ToHashSet(),
-            controllerContext);
-        installer.Execute(expressionProgram);
-    }
-
     public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
     {
         var gesture = condition.HandGesture;
@@ -170,6 +155,66 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return ret;
     }
     
+    public void InstallBuild(BuildContext buildContext, BuildSettings settings, ExpressionProgram expressionProgram)
+    {
+        if (expressionProgram.IsEmpty) return;
+
+        var controllerContext = buildContext.Extension<VirtualControllerContext>();
+        var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
+        var platformServices = new VRChatAnimatorPlatformServices();
+
+        var analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
+        var (layerForceInactiveWhen, controllerDisableWhen) = ResolveMmdAnimatorPolicy(settings, analyzedWriteDefaults);
+        
+        var animatorPlan = AnimatorBuildPlanBuilder.Build(
+            expressionProgram,
+            settings,
+            platformServices,
+            controllerContext,
+            layerForceInactiveWhen);
+
+        var installer = new AnimatorInstaller(
+            fx,
+            settings.AvatarContext,
+            analyzedWriteDefaults ?? true,
+            platformServices,
+            animatorPlan);
+        installer.Execute();
+
+        // controllerDisableWhen is intentionally left for platform-specific controller assignment.
+        // Todo
+    }
+
+    private static (DnfCondition? LayerForceInactiveWhen, DnfCondition? ControllerDisableWhen) ResolveMmdAnimatorPolicy(
+        BuildSettings settings,
+        bool? analyzedWriteDefaults)
+    {
+        var playback = settings.MmdPlayback;
+        if (!playback.Enabled || string.IsNullOrWhiteSpace(playback.DisableParameterName)) return (null, null);
+
+        var disableWhen = DnfCondition.All(new[]
+        {
+            ParameterBool(playback.DisableParameterName, true),
+            ParameterBool("InStation", true),
+            ParameterBool("Seated", false)
+        });
+        var mode = playback.DisableMode == MmdDisableMode.Auto
+            ? analyzedWriteDefaults == true ? MmdDisableMode.DisableLayer : MmdDisableMode.DisableFx
+            : playback.DisableMode;
+
+        return mode switch
+        {
+            MmdDisableMode.DisableLayer => (disableWhen, null),
+            MmdDisableMode.DisableFx => (null, disableWhen),
+            _ => throw new ArgumentOutOfRangeException(nameof(playback.DisableMode), playback.DisableMode, null)
+        };
+    }
+
+    private static DnfCondition ParameterBool(string parameterName, bool value)
+    {
+        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)));
+    }
+
     private sealed class VRChatAnimatorPlatformServices : IAnimatorPlatformServices
     {
         public void SetEyeBlinkTracking(VirtualState state, bool isTracking)
@@ -195,12 +240,7 @@ internal class VRChatSupport : IMetabasePlatformSupport
             });
         }
 
-        public int MaxAapIndex => 255;
-        public float EncodeAapIndex(int index) => VRCAAPHelper.IndexToValue(index);
-        public IEnumerable<AnimatorCondition> AapIndexConditions(string parameterName, bool equal, int index)
-        {
-            return VRCAAPHelper.IndexConditions(parameterName, equal, index);
-        }
+        public DiscreteFloatParameterRange AapFloatRange => new(-1f, 1f, 255);
 
         public bool IsUnitBoundaryTransform(
             Transform transform,

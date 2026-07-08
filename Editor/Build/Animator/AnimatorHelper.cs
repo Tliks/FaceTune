@@ -3,6 +3,8 @@ using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Build.Animator;
 
+internal readonly record struct DiscreteFloatParameterRange(float Min, float Max, int MaxIndex);
+
 internal static class AnimatorHelper
 {
     internal static bool? AnalyzeLayerWriteDefaults(VirtualAnimatorController controller)
@@ -131,6 +133,75 @@ internal static class AnimatorHelper
             default:
                 throw new ArgumentException($"Invalid parameter type: {type}");
         }
+    }
+
+    public static float DiscreteFloatIndexToValue(int index, DiscreteFloatParameterRange range)
+    {
+        if (index < 0 || index > range.MaxIndex)
+        {
+            throw new ArgumentException($"Index must be between 0 and {range.MaxIndex}. {index}");
+        }
+
+        if (range.MaxIndex == 0) return range.Min;
+        return Mathf.Lerp(range.Min, range.Max, index / (float)range.MaxIndex);
+    }
+
+    public static DnfCondition DiscreteFloatIndexCondition(
+        string parameter,
+        bool equal,
+        int index,
+        DiscreteFloatParameterRange range)
+    {
+        if (index < 0 || index > range.MaxIndex)
+        {
+            throw new ArgumentException($"Index must be between 0 and {range.MaxIndex}. {index}");
+        }
+
+        return DnfCondition.All(DiscreteFloatIndexConditionRules(parameter, equal, index, range)
+            .Select(condition => DnfCondition.Single(new AnimatorConditionRule(condition, AnimatorControllerParameterType.Float))));
+    }
+
+    private static IEnumerable<AnimatorCondition> DiscreteFloatIndexConditionRules(
+        string parameter,
+        bool equal,
+        int index,
+        DiscreteFloatParameterRange range)
+    {
+        if (equal)
+        {
+            if (index > 0)
+            {
+                yield return new AnimatorCondition
+                {
+                    parameter = parameter,
+                    mode = AnimatorConditionMode.Greater,
+                    threshold = DiscreteFloatIndexToValue(index - 1, range)
+                };
+            }
+            if (index < range.MaxIndex)
+            {
+                yield return new AnimatorCondition
+                {
+                    parameter = parameter,
+                    mode = AnimatorConditionMode.Less,
+                    threshold = DiscreteFloatIndexToValue(index + 1, range)
+                };
+            }
+            yield break;
+        }
+
+        yield return new AnimatorCondition
+        {
+            parameter = parameter,
+            mode = AnimatorConditionMode.Greater,
+            threshold = DiscreteFloatIndexToValue(index, range)
+        };
+        yield return new AnimatorCondition
+        {
+            parameter = parameter,
+            mode = AnimatorConditionMode.Less,
+            threshold = DiscreteFloatIndexToValue(index, range)
+        };
     }
 
     public static List<VirtualStateTransition> SetORConditions(VirtualStateTransition transition, IEnumerable<AnimatorCondition> conditions)

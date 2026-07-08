@@ -33,6 +33,7 @@ internal readonly record struct AapWrite(string ParameterName, float Value);
 internal sealed record class TrackingControlLayerPlan(
     string Name,
     DnfCondition? ForceInactiveWhen,
+    TrackingControlStatePlan DefaultState,
     IReadOnlyList<TrackingControlStatePlan> States);
 
 internal sealed record class TrackingControlStatePlan(
@@ -44,4 +45,3 @@ internal sealed record class TrackingControlStatePlan(
 internal sealed record class AdvancedEyeBlinkLayerPlan(string Name, DnfCondition? ForceInactiveWhen);
 
 internal sealed record class AdvancedLipSyncLayerPlan(string Name, DnfCondition? ForceInactiveWhen);
-

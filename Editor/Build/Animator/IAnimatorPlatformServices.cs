@@ -1,5 +1,4 @@
 using nadena.dev.ndmf.animator;
-using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Build.Animator;
 
@@ -9,9 +8,7 @@ internal interface IAnimatorPlatformServices
     void SetLipSyncTracking(VirtualState state, bool isTracking);
     void AddRandomDriver(VirtualState state, string parameterName, float min, float max);
 
-    int MaxAapIndex { get; }
-    float EncodeAapIndex(int index);
-    IEnumerable<AnimatorCondition> AapIndexConditions(string parameterName, bool equal, int index);
+    DiscreteFloatParameterRange AapFloatRange { get; }
 
     bool IsUnitBoundaryTransform(
         Transform transform,
