@@ -1,5 +1,10 @@
 namespace Aoyon.FaceTune.Build.Animator;
 
+internal readonly record struct PlanParameter(
+    string Name,
+    AnimatorControllerParameterType Type,
+    float DefaultValue);
+
 internal sealed record class AnimatorBuildPlan(
     InitialLayerPlan InitialLayer,
     IReadOnlyList<OutputUnitPlan> Units,
@@ -13,7 +18,8 @@ internal sealed record class OutputUnitPlan(
     Transform Anchor,
     IReadOnlyList<ExpressionLayerPlan> ExpressionLayers,
     AdvancedEyeBlinkLayerPlan? AdvancedEyeBlink,
-    AdvancedLipSyncLayerPlan? AdvancedLipSync);
+    AdvancedLipSyncLayerPlan? AdvancedLipSync,
+    IReadOnlyList<PlanParameter> Parameters);
 
 internal sealed record class ExpressionLayerPlan(
     string Name,
@@ -37,7 +43,8 @@ internal sealed record class TrackingControlLayerPlan(
     DnfCondition DefaultExitWhen,
     TrackingControlStatePlan DefaultState,
     DnfCondition? ForceInactiveWhen,
-    IReadOnlyList<TrackingControlStatePlan> States);
+    IReadOnlyList<TrackingControlStatePlan> States,
+    IReadOnlyList<PlanParameter> Parameters);
 
 internal sealed record class TrackingControlStatePlan(
     string Name,

@@ -64,6 +64,8 @@ internal sealed class AnimatorInstaller
     private void InstallUnitController(OutputUnitPlan unit)
     {
         var controller = _platformServices.CreateController(_controllerContext, unit.Anchor, $"Unit {unit.Id}", UnitPriority);
+        foreach (var param in unit.Parameters)
+            controller.EnsureParameterExists(param.Type, param.Name, param.DefaultValue);
         foreach (var layer in unit.ExpressionLayers)
         {
             InstallExpressionLayer(controller, layer);
@@ -82,6 +84,8 @@ internal sealed class AnimatorInstaller
     private void InstallTrackingControlController(TrackingControlLayerPlan trackingControl)
     {
         var controller = _platformServices.CreateController(_controllerContext, trackingControl.Anchor, trackingControl.Name, TrackingControlPriority);
+        foreach (var param in trackingControl.Parameters)
+            controller.EnsureParameterExists(param.Type, param.Name, param.DefaultValue);
         InstallTrackingControlLayer(controller, trackingControl);
     }
 
@@ -89,7 +93,7 @@ internal sealed class AnimatorInstaller
     {
         var layer = AddLayer(controller, plan.Name, UnitPriority);
 
-        var defaultState = AddState(layer, "Default", EntryStatePosition);
+        var defaultState = AddState(layer, "PassThrough", EntryStatePosition);
         AsPassThrough(defaultState);
         layer.StateMachine!.DefaultState = defaultState;
         SetExitTransitions(defaultState, plan.DefaultExitWhen, _plan.ExpressionTransitionDurationSeconds);
@@ -104,14 +108,14 @@ internal sealed class AnimatorInstaller
             SetExitTransitions(state, statePlan.ExitWhen, _plan.ExpressionTransitionDurationSeconds);
         }
 
-        AddForceInactiveState(layer, "ForceInactive", plan.ForceInactiveWhen, true);
+        AddForceInactiveState(layer, "Disabled", plan.ForceInactiveWhen, true);
     }
 
     private void InstallEmptyAdvancedLayer(VirtualAnimatorController controller, string name, DnfCondition? forceInactiveWhen)
     {
         var layer = AddLayer(controller, name, UnitPriority);
         
-        AddForceInactiveState(layer, "ForceInactive", forceInactiveWhen, true);
+        AddForceInactiveState(layer, "Disabled", forceInactiveWhen, true);
     }
 
     private void InstallTrackingControlLayer(VirtualAnimatorController controller, TrackingControlLayerPlan trackingControl)
@@ -133,7 +137,7 @@ internal sealed class AnimatorInstaller
             SetExitTransitions(state, statePlan.When.Not(), _plan.ExpressionTransitionDurationSeconds);
         }
 
-        AddForceInactiveState(layer, "ForceInactive", trackingControl.ForceInactiveWhen, false);
+        AddForceInactiveState(layer, "Disabled", trackingControl.ForceInactiveWhen, false);
     }
 
     private void SetExpressionClip(VirtualState state, ExpressionStatePlan plan)

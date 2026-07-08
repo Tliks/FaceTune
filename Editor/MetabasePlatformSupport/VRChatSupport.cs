@@ -289,12 +289,13 @@ internal class VRChatSupport : IMetabasePlatformSupport
         public VirtualAnimatorController CreateController(VirtualControllerContext controllerContext, Transform anchor, string name, int priority)
         {
             var merge = anchor.gameObject.AddComponent<ModularAvatarMergeAnimator>();
-            merge.layerPriority = priority;
-            merge.matchAvatarWriteDefaults = false;
-            merge.deleteAttachedAnimator = false;
-    #if FaceTune_VRCSDK3_AVATARS
+
             merge.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
-    #endif
+            merge.deleteAttachedAnimator = false;
+            merge.pathMode = MergeAnimatorPathMode.Absolute;
+            merge.matchAvatarWriteDefaults = false;
+            merge.layerPriority = priority;
+            merge.mergeAnimatorMode = MergeAnimatorMode.Append;
 
             var controller = VirtualAnimatorController.Create(controllerContext.CloneContext, $"{FaceTuneConstants.Name}: {name}");
             controllerContext.Controllers[merge] = controller;

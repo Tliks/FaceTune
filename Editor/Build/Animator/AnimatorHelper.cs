@@ -135,6 +135,37 @@ internal static class AnimatorHelper
         }
     }
 
+    public static void EnsureParameterExists(this VirtualAnimatorController controller, AnimatorControllerParameterType type, string parameter, float defaultValue)
+    {
+        switch (type)
+        {
+            case AnimatorControllerParameterType.Bool:
+                EnsureBoolParameterExists(controller, parameter, defaultValue != 0f);
+                break;
+            case AnimatorControllerParameterType.Int:
+                EnsureIntParameterExists(controller, parameter, (int)defaultValue);
+                break;
+            case AnimatorControllerParameterType.Float:
+                EnsureFloatParameterExists(controller, parameter, defaultValue);
+                break;
+            default:
+                throw new ArgumentException($"Invalid parameter type: {type}");
+        }
+    }
+
+    public static void CollectConditionParameters(Dictionary<string, PlanParameter> parameters, DnfCondition condition)
+    {
+        foreach (var conditionCase in condition.Cases)
+        {
+            foreach (var rule in conditionCase.Rules)
+            {
+                if (rule is not AnimatorConditionRule acr) continue;
+                parameters.TryAdd(acr.ParameterName, new PlanParameter(
+                    acr.ParameterName, acr.ParameterType, (float)acr.Condition.threshold));
+            }
+        }
+    }
+
     public static float DiscreteFloatIndexToValue(int index, DiscreteFloatParameterRange range)
     {
         if (index < 0 || index > range.MaxIndex)
@@ -202,18 +233,6 @@ internal static class AnimatorHelper
             mode = AnimatorConditionMode.Less,
             threshold = DiscreteFloatIndexToValue(index, range)
         };
-    }
-
-    public static List<VirtualStateTransition> SetORConditions(VirtualStateTransition transition, IEnumerable<AnimatorCondition> conditions)
-    {
-        var transitions = new List<VirtualStateTransition>();
-        foreach (var condition in conditions)
-        {
-            var duplicate = (transition.Clone() as VirtualStateTransition)!;
-            duplicate.Conditions = ImmutableList.Create(condition);
-            transitions.Add(duplicate);
-        }
-        return transitions;
     }
 
     public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)

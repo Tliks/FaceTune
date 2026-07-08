@@ -65,7 +65,6 @@ internal sealed class AnimatorBuildPlanBuilder
             .ToHashSet();
 
         var splitIndices = FindExternalOverlapSplitIndices(managedBlendShapeNames);
-        var expressionLayerBuilder = new ExpressionLayerPlanBuilder(_settings, _layerForceInactiveWhen, _aap);
 
         var units = new List<OutputUnitPlan>();
         var start = 0;
@@ -79,12 +78,15 @@ internal sealed class AnimatorBuildPlanBuilder
             }
 
             var unitId = units.Count;
+            var expressionLayerBuilder = new ExpressionLayerPlanBuilder(_settings, _layerForceInactiveWhen, _aap);
+            var (expressionLayers, parameters) = expressionLayerBuilder.Build(unitId, expressions);
             units.Add(new OutputUnitPlan(
                 unitId,
                 expressions[0].SourceTransform,
-                expressionLayerBuilder.Build(unitId, expressions),
+                expressionLayers,
                 BuildAdvancedEyeBlinkLayer(expressions),
-                BuildAdvancedLipSyncLayer(expressions)));
+                BuildAdvancedLipSyncLayer(expressions),
+                parameters));
             start = splitIndex;
         }
 
@@ -164,7 +166,7 @@ internal sealed class ExpressionLayerPlanBuilder
         _aap = aap;
     }
 
-    public IReadOnlyList<ExpressionLayerPlan> Build(int unitId, IReadOnlyList<ExpressionItem> expressions)
+    public (IReadOnlyList<ExpressionLayerPlan> Layers, IReadOnlyList<PlanParameter> Parameters) Build(int unitId, IReadOnlyList<ExpressionItem> expressions)
     {
         var layers = new List<ExpressionLayerPlan>();
         for (var index = 0; index < expressions.Count;)
@@ -186,8 +188,11 @@ internal sealed class ExpressionLayerPlanBuilder
             layers.Add(BuildBlendLayer(unitId, layers.Count, expression));
             index++;
         }
-
-        return layers;
+        
+        var _parameters = new Dictionary<string, PlanParameter>();
+        CollectParameters(expressions, _parameters);
+        
+        return (layers, _parameters.Values.ToArray());
     }
 
     private ExpressionLayerPlan BuildReplaceLayer(int unitId, int layerIndex, IReadOnlyList<ExpressionItem> expressions)
@@ -230,6 +235,17 @@ internal sealed class ExpressionLayerPlanBuilder
             expression.AnimationSet,
             expression.ExpressionSettings,
             _aap.BuildWrites(unitId, expression.FacialSettings));
+    }
+
+    private void CollectParameters(IReadOnlyList<ExpressionItem> expressions, Dictionary<string, PlanParameter> parameters)
+    {
+        _aap.CollectParameters(parameters);
+        foreach (var expression in expressions)
+            AnimatorHelper.CollectConditionParameters(parameters, expression.RawWhen);
+        if (_lockFacialInactiveWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _lockFacialInactiveWhen);
+        if (_forceInactiveWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _forceInactiveWhen);
     }
 
     private DnfCondition BuildExpressionExitWhen(DnfCondition enterWhen)
@@ -326,13 +342,36 @@ internal sealed class TrackingControlPlanBuilder
             states.Add(new TrackingControlStatePlan("LipSync Animation", lipSync.Animation, null, false));
         }
 
+        var parameters = new Dictionary<string, PlanParameter>();
+        CollectParameters(parameters);
+
         return new TrackingControlLayerPlan(
             "Tracking Control",
             anchor,
             DnfCondition.Any(states.Select(state => state.When)),
             defaultState,
             _forceInactiveWhen,
-            states);
+            states,
+            parameters.Values.ToArray());
+    }
+
+    private void CollectParameters(Dictionary<string, PlanParameter> parameters)
+    {
+        _aap.CollectParameters(parameters);
+
+        if (!string.IsNullOrWhiteSpace(_settings.DisableEyeBlinkParameterName))
+        {
+            var name = _settings.DisableEyeBlinkParameterName;
+            parameters.TryAdd(name, new PlanParameter(name, AnimatorControllerParameterType.Bool, 0f));
+        }
+        if (!string.IsNullOrWhiteSpace(_settings.DisableLipSyncParameterName))
+        {
+            var name = _settings.DisableLipSyncParameterName;
+            parameters.TryAdd(name, new PlanParameter(name, AnimatorControllerParameterType.Bool, 0f));
+        }
+
+        if (_forceInactiveWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _forceInactiveWhen);
     }
 
     private (DnfCondition Tracking, DnfCondition Animation) ConditionsFor(
@@ -452,6 +491,25 @@ internal sealed class AapProtocol
         }
 
         return writes;
+    }
+
+    public void CollectParameters(Dictionary<string, PlanParameter> parameters)
+    {
+        if (WritesEyeBlinkControl)
+            parameters.TryAdd(EyeBlinkControlName, new PlanParameter(
+                EyeBlinkControlName, AnimatorControllerParameterType.Float, Value(ControlTrackingIndex)));
+
+        if (WritesEyeBlinkAdvancedSelector)
+            parameters.TryAdd(EyeBlinkAdvancedSelectorName, new PlanParameter(
+                EyeBlinkAdvancedSelectorName, AnimatorControllerParameterType.Float, Value(AdvancedNoneIndex)));
+
+        if (WritesLipSyncControl)
+            parameters.TryAdd(LipSyncControlName, new PlanParameter(
+                LipSyncControlName, AnimatorControllerParameterType.Float, Value(ControlTrackingIndex)));
+
+        if (WritesLipSyncAdvancedSelector)
+            parameters.TryAdd(LipSyncAdvancedSelectorName, new PlanParameter(
+                LipSyncAdvancedSelectorName, AnimatorControllerParameterType.Float, Value(AdvancedNoneIndex)));
     }
 
     public DnfCondition IndexIs(string parameterName, int index)
