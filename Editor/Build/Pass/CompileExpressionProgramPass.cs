@@ -208,8 +208,12 @@ internal sealed class ConditionCompiler
         var modifier = component.GetComponent<ExpressionConditionModifierComponent>();
         if (modifier == null) return condition;
 
-        return condition
-            .And(ResolveCondition(modifier.OriginalGate))
-            .Or(ResolveCondition(modifier.AdditionalActivation));
+        var originalGate = modifier.OriginalGate;
+        var additionalActivation = modifier.AdditionalActivation;
+
+        condition = originalGate != null ? condition.And(ResolveCondition(originalGate)) : condition;
+        condition = additionalActivation != null ? condition.Or(ResolveCondition(additionalActivation)) : condition;
+
+        return condition;
     }
 }

@@ -24,7 +24,7 @@ internal abstract class FaceTuneIMGUIEditorBase<T> : FaceTuneCustomEditorBase<T>
         Localization.DrawLanguageSwitcher();
         EditorGUILayout.Space();
         serializedObject.Update();
-        OnInnerInspectorGUI();
+        DrawDefaultInspector();
         serializedObject.ApplyModifiedProperties();
     }
 

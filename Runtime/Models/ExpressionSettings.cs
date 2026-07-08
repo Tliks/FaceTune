@@ -24,14 +24,6 @@ internal record class ExpressionSettings // Immutable
         this.motionTimeParameterName = motionTimeParameterName;
     }
 
-    // Todo
-    internal ExpressionSettings Merge(ExpressionSettings other)
-    {
-        var loopTime = this.loopTime || other.loopTime;
-        var motionTimeParameterName = string.IsNullOrEmpty(other.motionTimeParameterName) ? this.motionTimeParameterName : other.motionTimeParameterName;
-        return new ExpressionSettings(loopTime, motionTimeParameterName);
-    }
-
     public virtual bool Equals(ExpressionSettings other)
     {
         if (other is null) return false;

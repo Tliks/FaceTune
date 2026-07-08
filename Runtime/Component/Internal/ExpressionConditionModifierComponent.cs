@@ -3,8 +3,8 @@ namespace Aoyon.FaceTune;
 [DisallowMultipleComponent]
 internal class ExpressionConditionModifierComponent : FaceTuneTagComponent, IHasConditions
 {
-    public Condition OriginalGate = new() { Always = true };
-    public Condition AdditionalActivation = new();
+    [NonSerialized] public Condition? OriginalGate = new() { Always = true };
+    [NonSerialized] public Condition? AdditionalActivation = new();
 
-    IEnumerable<Condition> IHasConditions.Conditions => new[] { OriginalGate, AdditionalActivation };
+    IEnumerable<Condition> IHasConditions.Conditions => new[] { OriginalGate, AdditionalActivation }.OfType<Condition>();
 }

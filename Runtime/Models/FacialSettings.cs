@@ -49,16 +49,6 @@ internal record class FacialSettings // Immutable
 
     internal static FacialSettings Keep = new(TrackingPermission.Keep, TrackingPermission.Keep, ExpressionWriteMode.Blend);
 
-    internal FacialSettings Merge(FacialSettings other)
-    {
-        return new FacialSettings(
-            allowEyeBlink == TrackingPermission.Keep ? other.allowEyeBlink : allowEyeBlink,
-            allowLipSync == TrackingPermission.Keep ? other.allowLipSync : allowLipSync,
-            writeMode == ExpressionWriteMode.Blend ? other.writeMode : writeMode,
-            other.AdvancedEyBlinkSettings,
-            other.AdvancedLipSyncSettings);
-    }
-
     public virtual bool Equals(FacialSettings other)
     {
         if (other is null) return false;
