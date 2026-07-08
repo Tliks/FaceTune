@@ -6,7 +6,7 @@ internal sealed record class AnimatorBuildPlan(
     TrackingControlLayerPlan? TrackingControlLayer,
     float ExpressionTransitionDurationSeconds);
 
-internal sealed record class InitialLayerPlan(IReadOnlyList<BlendShapeWeight> BlendShapes);
+internal sealed record class InitialLayerPlan(string Name, Transform Anchor, IReadOnlyList<BlendShapeWeight> BlendShapes);
 
 internal sealed record class OutputUnitPlan(
     int Id,
@@ -17,6 +17,7 @@ internal sealed record class OutputUnitPlan(
 
 internal sealed record class ExpressionLayerPlan(
     string Name,
+    DnfCondition DefaultExitWhen,
     DnfCondition? ForceInactiveWhen,
     IReadOnlyList<ExpressionStatePlan> States);
 
@@ -32,8 +33,10 @@ internal readonly record struct AapWrite(string ParameterName, float Value);
 
 internal sealed record class TrackingControlLayerPlan(
     string Name,
-    DnfCondition? ForceInactiveWhen,
+    Transform Anchor,
+    DnfCondition DefaultExitWhen,
     TrackingControlStatePlan DefaultState,
+    DnfCondition? ForceInactiveWhen,
     IReadOnlyList<TrackingControlStatePlan> States);
 
 internal sealed record class TrackingControlStatePlan(

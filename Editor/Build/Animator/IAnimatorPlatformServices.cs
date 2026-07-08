@@ -17,4 +17,9 @@ internal interface IAnimatorPlatformServices
     {
         return false;
     }
+
+    VirtualAnimatorController CreateController(VirtualControllerContext controllerContext, Transform anchor, string name, int priority)
+    {
+        throw new NotImplementedException("CreateController is not implemented for this platform");
+    }
 }

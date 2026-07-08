@@ -43,19 +43,19 @@ internal sealed class AnimatorBuildPlanBuilder
     {
         var units = BuildUnits();
         return new AnimatorBuildPlan(
-            BuildInitialLayer(),
+            BuildInitialLayer(units[0].Anchor),
             units,
-            BuildTrackingControlLayer(),
+            BuildTrackingControlLayer(units[^1].Anchor),
             _settings.DurationSeconds);
     }
 
-    private InitialLayerPlan BuildInitialLayer()
+    private InitialLayerPlan BuildInitialLayer(Transform anchor)
     {
         var blendShapes = AvatarContext.FaceRenderer
             .GetBlendShapeWeights(AvatarContext.FaceMesh)
             .Where(shape => !_settings.ExcludedBlendShapeNames.Contains(shape.Name))
             .ToArray();
-        return new InitialLayerPlan(blendShapes);
+        return new InitialLayerPlan("Initial", anchor, blendShapes);
     }
 
     private IReadOnlyList<OutputUnitPlan> BuildUnits()
@@ -105,9 +105,9 @@ internal sealed class AnimatorBuildPlanBuilder
             : null;
     }
 
-    private TrackingControlLayerPlan? BuildTrackingControlLayer()
+    private TrackingControlLayerPlan? BuildTrackingControlLayer(Transform anchor)
     {
-        return new TrackingControlPlanBuilder(_settings, _layerForceInactiveWhen, _aap).Build();
+        return new TrackingControlPlanBuilder(_settings, _layerForceInactiveWhen, _aap).Build(anchor);
     }
 
     private IEnumerable<int> FindExternalOverlapSplitIndices(ISet<string> managedBlendShapeNames)
@@ -145,6 +145,117 @@ internal sealed class AnimatorBuildPlanBuilder
     }
 }
 
+internal sealed class ExpressionLayerPlanBuilder
+{
+    private readonly DnfCondition? _lockFacialInactiveWhen;
+    private readonly DnfCondition? _forceInactiveWhen;
+    private readonly AapProtocol _aap;
+
+    public ExpressionLayerPlanBuilder(
+        BuildSettings settings,
+        DnfCondition? forceInactiveWhen,
+        AapProtocol aap)
+    {
+        _lockFacialInactiveWhen = string.IsNullOrWhiteSpace(settings.LockFacialParameterName)
+            ? null
+            : DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
+                ParameterCondition.Bool(settings.LockFacialParameterName, false)));
+        _forceInactiveWhen = forceInactiveWhen;
+        _aap = aap;
+    }
+
+    public IReadOnlyList<ExpressionLayerPlan> Build(int unitId, IReadOnlyList<ExpressionItem> expressions)
+    {
+        var layers = new List<ExpressionLayerPlan>();
+        for (var index = 0; index < expressions.Count;)
+        {
+            var expression = expressions[index];
+            if (expression.WriteMode == ExpressionWriteMode.Replace)
+            {
+                var run = new List<ExpressionItem>();
+                while (index < expressions.Count && expressions[index].WriteMode == ExpressionWriteMode.Replace)
+                {
+                    run.Add(expressions[index]);
+                    index++;
+                }
+
+                layers.Add(BuildReplaceLayer(unitId, layers.Count, run));
+                continue;
+            }
+
+            layers.Add(BuildBlendLayer(unitId, layers.Count, expression));
+            index++;
+        }
+
+        return layers;
+    }
+
+    private ExpressionLayerPlan BuildReplaceLayer(int unitId, int layerIndex, IReadOnlyList<ExpressionItem> expressions)
+    {
+        return BuildExpressionLayer(
+            ExpressionLayerName(unitId, layerIndex, "Replace"),
+            expressions.Select((expression, index) => (Expression: expression, EnterWhen: ReplaceStateEnterWhen(expressions, index))),
+            unitId);
+    }
+
+    private ExpressionLayerPlan BuildBlendLayer(int unitId, int layerIndex, ExpressionItem expression)
+    {
+        return BuildExpressionLayer(
+            ExpressionLayerName(unitId, layerIndex, "Blend"),
+            new[] { (Expression: expression, EnterWhen: expression.RawWhen) },
+            unitId);
+    }
+
+    private ExpressionLayerPlan BuildExpressionLayer(
+        string name,
+        IEnumerable<(ExpressionItem Expression, DnfCondition EnterWhen)> states,
+        int unitId)
+    {
+        var statePlans = states
+            .Select(state => BuildExpressionState(unitId, state.Expression, state.EnterWhen))
+            .ToArray();
+        return new ExpressionLayerPlan(
+            name,
+            DnfCondition.Any(statePlans.Select(state => state.EnterWhen)),
+            _forceInactiveWhen,
+            statePlans);
+    }
+
+    private ExpressionStatePlan BuildExpressionState(int unitId, ExpressionItem expression, DnfCondition enterWhen)
+    {
+        return new ExpressionStatePlan(
+            expression.Name,
+            enterWhen,
+            BuildExpressionExitWhen(enterWhen),
+            expression.AnimationSet,
+            expression.ExpressionSettings,
+            _aap.BuildWrites(unitId, expression.FacialSettings));
+    }
+
+    private DnfCondition BuildExpressionExitWhen(DnfCondition enterWhen)
+    {
+        var exitWhen = enterWhen.Not();
+        return _lockFacialInactiveWhen == null
+            ? exitWhen
+            : exitWhen.And(_lockFacialInactiveWhen);
+    }
+
+    private static string ExpressionLayerName(int unitId, int layerIndex, string kind)
+    {
+        return $"{unitId}-{layerIndex} {kind}";
+    }
+
+    private static DnfCondition ReplaceStateEnterWhen(IReadOnlyList<ExpressionItem> expressions, int index)
+    {
+        var expression = expressions[index];
+        var higherReplaceWhen = DnfCondition.Any(expressions
+            .Skip(index + 1)
+            .Select(item => item.RawWhen));
+        return expression.RawWhen.Except(higherReplaceWhen);
+    }
+
+}
+
 internal sealed class TrackingControlPlanBuilder
 {
     private readonly BuildSettings _settings;
@@ -161,7 +272,7 @@ internal sealed class TrackingControlPlanBuilder
         _aap = aap;
     }
 
-    public TrackingControlLayerPlan? Build()
+    public TrackingControlLayerPlan? Build(Transform anchor)
     {
         if (_settings.SupressTrackingControl) return null;
 
@@ -215,7 +326,13 @@ internal sealed class TrackingControlPlanBuilder
             states.Add(new TrackingControlStatePlan("LipSync Animation", lipSync.Animation, null, false));
         }
 
-        return new TrackingControlLayerPlan("Tracking Control", _forceInactiveWhen, defaultState, states);
+        return new TrackingControlLayerPlan(
+            "Tracking Control",
+            anchor,
+            DnfCondition.Any(states.Select(state => state.When)),
+            defaultState,
+            _forceInactiveWhen,
+            states);
     }
 
     private (DnfCondition Tracking, DnfCondition Animation) ConditionsFor(
@@ -234,7 +351,8 @@ internal sealed class TrackingControlPlanBuilder
 
         if (!string.IsNullOrWhiteSpace(forceDisableParameterName))
         {
-            var forceDisable = ParameterBool(forceDisableParameterName, true);
+            var forceDisable = DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
+                ParameterCondition.Bool(forceDisableParameterName, true)));
             trackingConditions.Add(forceDisable.Not());
             animationConditions.Add(forceDisable);
         }
@@ -242,120 +360,6 @@ internal sealed class TrackingControlPlanBuilder
         return (DnfCondition.All(trackingConditions), DnfCondition.Any(animationConditions));
     }
 
-    private static DnfCondition ParameterBool(string parameterName, bool value)
-    {
-        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)));
-    }
-}
-
-internal sealed class ExpressionLayerPlanBuilder
-{
-    private readonly DnfCondition? _lockFacialInactiveWhen;
-    private readonly DnfCondition? _forceInactiveWhen;
-    private readonly AapProtocol _aap;
-
-    public ExpressionLayerPlanBuilder(
-        BuildSettings settings,
-        DnfCondition? forceInactiveWhen,
-        AapProtocol aap)
-    {
-        _lockFacialInactiveWhen = string.IsNullOrWhiteSpace(settings.LockFacialParameterName)
-            ? null
-            : ParameterBool(settings.LockFacialParameterName, false);
-        _forceInactiveWhen = forceInactiveWhen;
-        _aap = aap;
-    }
-
-    public IReadOnlyList<ExpressionLayerPlan> Build(int unitId, IReadOnlyList<ExpressionItem> expressions)
-    {
-        var layers = new List<ExpressionLayerPlan>();
-        for (var index = 0; index < expressions.Count;)
-        {
-            var expression = expressions[index];
-            if (expression.WriteMode == ExpressionWriteMode.Replace)
-            {
-                var run = new List<ExpressionItem>();
-                while (index < expressions.Count && expressions[index].WriteMode == ExpressionWriteMode.Replace)
-                {
-                    run.Add(expressions[index]);
-                    index++;
-                }
-
-                layers.Add(BuildReplaceLayer(unitId, layers.Count, run));
-                continue;
-            }
-
-            layers.Add(BuildBlendLayer(unitId, layers.Count, expression));
-            index++;
-        }
-
-        return layers;
-    }
-
-    private ExpressionLayerPlan BuildReplaceLayer(int unitId, int layerIndex, IReadOnlyList<ExpressionItem> expressions)
-    {
-        return BuildExpressionLayer(
-            ExpressionLayerName(unitId, layerIndex, "replace"),
-            expressions.Select((expression, index) => (Expression: expression, EnterWhen: ReplaceStateEnterWhen(expressions, index))),
-            unitId);
-    }
-
-    private ExpressionLayerPlan BuildBlendLayer(int unitId, int layerIndex, ExpressionItem expression)
-    {
-        return BuildExpressionLayer(
-            ExpressionLayerName(unitId, layerIndex, "blend"),
-            new[] { (Expression: expression, EnterWhen: expression.RawWhen) },
-            unitId);
-    }
-
-    private ExpressionLayerPlan BuildExpressionLayer(
-        string name,
-        IEnumerable<(ExpressionItem Expression, DnfCondition EnterWhen)> states,
-        int unitId)
-    {
-        return new ExpressionLayerPlan(
-            name,
-            _forceInactiveWhen,
-            states.Select(state => BuildExpressionState(unitId, state.Expression, state.EnterWhen)).ToArray());
-    }
-
-    private ExpressionStatePlan BuildExpressionState(int unitId, ExpressionItem expression, DnfCondition enterWhen)
-    {
-        return new ExpressionStatePlan(
-            expression.Name,
-            enterWhen,
-            BuildExpressionExitWhen(enterWhen),
-            expression.AnimationSet,
-            expression.ExpressionSettings,
-            _aap.BuildWrites(unitId, expression.FacialSettings));
-    }
-
-    private DnfCondition BuildExpressionExitWhen(DnfCondition enterWhen)
-    {
-        var exitWhen = enterWhen.Not();
-        return _lockFacialInactiveWhen == null
-            ? exitWhen
-            : exitWhen.And(_lockFacialInactiveWhen);
-    }
-
-    private static string ExpressionLayerName(int unitId, int layerIndex, string kind)
-    {
-        return $"#{unitId}-{layerIndex} {kind}";
-    }
-
-    private static DnfCondition ReplaceStateEnterWhen(IReadOnlyList<ExpressionItem> expressions, int index)
-    {
-        var expression = expressions[index];
-        var higherReplaceWhen = DnfCondition.Any(expressions
-            .Skip(index + 1)
-            .Select(item => item.RawWhen));
-        return expression.RawWhen.Except(higherReplaceWhen);
-    }
-
-    private static DnfCondition ParameterBool(string parameterName, bool value)
-    {
-        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)));
-    }
 }
 
 internal sealed class AapProtocol

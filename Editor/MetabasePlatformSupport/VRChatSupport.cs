@@ -1,6 +1,5 @@
 #if FaceTune_VRCSDK3_AVATARS
 
-using UnityEditor;
 using UnityEditor.Animations;
 using VRC.SDKBase;
 using VRC.SDK3.Avatars.Components;
@@ -174,7 +173,7 @@ internal class VRChatSupport : IMetabasePlatformSupport
             layerForceInactiveWhen);
 
         var installer = new AnimatorInstaller(
-            fx,
+            controllerContext,
             settings.AvatarContext,
             analyzedWriteDefaults ?? true,
             platformServices,
@@ -285,6 +284,21 @@ internal class VRChatSupport : IMetabasePlatformSupport
             return clip.GetFloatCurveBindings()
                 .Where(binding => binding.type == typeof(SkinnedMeshRenderer) && binding.propertyName.StartsWith("blendShape."))
                 .Select(binding => binding.propertyName["blendShape.".Length..]);
+        }
+
+        public VirtualAnimatorController CreateController(VirtualControllerContext controllerContext, Transform anchor, string name, int priority)
+        {
+            var merge = anchor.gameObject.AddComponent<ModularAvatarMergeAnimator>();
+            merge.layerPriority = priority;
+            merge.matchAvatarWriteDefaults = false;
+            merge.deleteAttachedAnimator = false;
+    #if FaceTune_VRCSDK3_AVATARS
+            merge.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
+    #endif
+
+            var controller = VirtualAnimatorController.Create(controllerContext.CloneContext, $"{FaceTuneConstants.Name}: {name}");
+            controllerContext.Controllers[merge] = controller;
+            return controller;
         }
     }
 
