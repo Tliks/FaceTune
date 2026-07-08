@@ -11,7 +11,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     private const string PresetParameterName = $"{FaceTuneConstants.ParameterPrefix}/PresetIndex";
     private const string DirectReplaceGroupName = $"{FaceTuneConstants.ParameterPrefix}/DirectMenu/Replace";
-    private const string DirectMenuObjectName = "DirectMenu";
+    private const string DirectMenuObjectName = FaceTuneConstants.Name + " DirectMenu";
 
     protected override void Execute(FaceTuneContext context)
     {
@@ -55,41 +55,32 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     private static void ProcessDirectMenuSettings(GameObject root)
     {
-        var expressions = root.GetComponentsInChildren<FaceTuneComponent>(true);
-
-        var directMenus = expressions
+        var expressions = root.GetComponentsInChildren<FaceTuneComponent>(true)
             .Where(expression => expression.DirectMenuEnabled)
-            .ToDictionary(expression => expression, CreateDirectMenu);
+            .ToArray();
+        
+        if (expressions.Length == 0) return;
 
-        var suppressConditionByGroup = directMenus
-            .Select(pair => (
-                TargetGroup: GetSuppressTargetGroupName(pair.Key),
-                Menu: pair.Value))
-            .Where(item => !string.IsNullOrWhiteSpace(item.TargetGroup))
-            .GroupBy(item => item.TargetGroup)
-            .ToDictionary(
-                group => group.Key,
-                group => DisabledCondition(group.Select(item => item.Menu)));
+        var directMenuRoot = new GameObject(DirectMenuObjectName);
+        directMenuRoot.transform.SetParent(root.transform);
 
-        foreach (var expression in expressions)
+        foreach (var original in expressions)
         {
-            var activationGroup = GetActivationGroupName(expression);
-            suppressConditionByGroup.TryGetValue(activationGroup, out Condition? originalGate);
+            var menu = CreateDirectMenu(original);
 
-            Condition? additionalActivation = null;
-            if (directMenus.TryGetValue(expression, out var directMenu))
-            {
-                additionalActivation = new Condition(ConditionCase.From(MenuCondition.Enabled(directMenu)));
-            }
+            var proxyObject = new GameObject(original.name);
+            proxyObject.transform.SetParent(directMenuRoot.transform);
 
-            if (originalGate == null && additionalActivation == null)
-            {
-                continue;
-            }
+            var proxy = proxyObject.AddComponent<FaceTuneComponent>();
 
-            var modifier = expression.gameObject.AddComponent<ExpressionConditionModifierComponent>();
-            modifier.OriginalGate = originalGate;
-            modifier.AdditionalActivation = additionalActivation;
+            proxy.ConditionEnabled = true;
+            proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
+
+            proxy.ExpressionSettings = original.ExpressionSettings;
+            proxy.FacialSettings = original.FacialSettings;
+
+            proxy.DataReferenceMode = ComponentReferenceMode.Reference;
+            proxy.DataReference = new(original.gameObject);
         }
     }
 
@@ -97,11 +88,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     {
         var settings = expression.DirectMenuSettings;
 
-        // 自身に配置するとMultipleComponentエラーになる可能性があるので、生成先は子にする
-        var menuObject = new GameObject(DirectMenuObjectName);
-        menuObject.transform.SetParent(expression.transform);
-
-        var menu = menuObject.AddComponent<MenuComponent>();
+        var menu = expression.gameObject.AddComponent<MenuComponent>();
 
         menu.MenuName = settings.MenuName;
         menu.Icon = settings.Icon;
@@ -119,40 +106,10 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         return expression.FacialSettings.WriteMode switch
         {
             ExpressionWriteMode.Replace => DirectReplaceGroupName,
-            ExpressionWriteMode.Blend => expression.DirectMenuSettings.DirectMenuGroupName,
+            ExpressionWriteMode.Blend => expression.DirectMenuSettings.BlendExclusiveGroupName,
             _ => string.Empty
         };
     }
-
-    private static string GetActivationGroupName(FaceTuneComponent expression)
-    {
-        return expression.FacialSettings.WriteMode switch
-        {
-            ExpressionWriteMode.Replace => DirectReplaceGroupName,
-            ExpressionWriteMode.Blend => expression.DirectMenuSettings.DirectMenuGroupName,
-            _ => string.Empty
-        };
-    }
-
-    private static string GetSuppressTargetGroupName(FaceTuneComponent expression)
-    {
-        var settings = expression.DirectMenuSettings;
-
-        return settings.SuppressMode switch
-        {
-            DirectMenuSuppressionMode.Auto => GetActivationGroupName(expression),
-            DirectMenuSuppressionMode.Replace => DirectReplaceGroupName,
-            DirectMenuSuppressionMode.Group => settings.DirectMenuGroupName,
-            DirectMenuSuppressionMode.None => string.Empty,
-            _ => string.Empty
-        };
-    }
-
-    private static Condition DisabledCondition(IEnumerable<MenuComponent> menus)
-    {
-        return new Condition(ConditionCase.From(menus.Select(MenuCondition.Disabled).ToArray()));
-    }
-
 
     private static void IgnoreEmptyCondition(GameObject root)
     {

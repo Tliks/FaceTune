@@ -48,26 +48,12 @@ internal class DirectMenuSettings
     public MenuIconSettings Icon = new();
     public MenuInstallSettings InstallSettings = new();
 
-    // Replace:
-    //   メニュー自体は常に built-in replace group に入る。
-    //   GroupName は SuppressMode == Group のときだけ、明示 suppress 対象 group として使う。
-    //
-    // Blend:
-    //   GroupName はメニューの排他 group として使う。空ののときは排他なし。
-    //   また SuppressMode == Auto / Group のときの suppress 対象 group としても使う。
-    public string DirectMenuGroupName = string.Empty;
-    public DirectMenuSuppressionMode SuppressMode = DirectMenuSuppressionMode.Auto;
+    // Blendのときメニューの排他 group として使う。空ののときは排他なし。
+    // Replace のときは built-in replace group に入る。
+    public string BlendExclusiveGroupName = string.Empty;
 
     public void ResolveReferences(Component owner)
     {
         InstallSettings.ResolveReferences(owner);
     }
-}
-
-internal enum DirectMenuSuppressionMode
-{
-    None,
-    Auto,
-    Replace,
-    Group
 }

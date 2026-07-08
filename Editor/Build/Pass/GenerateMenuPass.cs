@@ -10,7 +10,7 @@ internal class GenerateMenuPass : FaceTunePass<GenerateMenuPass>
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.generate-menu";
     public override string DisplayName => "Generate Menu";
 
-    private const string GeneratedMenuRootName = "FaceTune Generated Menu";
+    private const string GeneratedMenuRootName = FaceTuneConstants.Name + " Generated Menu";
 
     protected override void Execute(FaceTuneContext context)
     {

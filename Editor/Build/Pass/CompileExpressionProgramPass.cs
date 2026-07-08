@@ -154,7 +154,7 @@ internal sealed class ConditionCompiler
     {
         var conditions = CollectEffectiveConditions(component).Select(ResolveCondition);
         var condition = DnfCondition.All(conditions);
-        return ApplyConditionModifiers(component, condition);
+        return condition;
     }
 
     private IEnumerable<Condition> CollectEffectiveConditions(FaceTuneComponent component)
@@ -201,19 +201,5 @@ internal sealed class ConditionCompiler
         }
 
         return result;
-    }
-
-    private DnfCondition ApplyConditionModifiers(FaceTuneComponent component, DnfCondition condition)
-    {
-        var modifier = component.GetComponent<ExpressionConditionModifierComponent>();
-        if (modifier == null) return condition;
-
-        var originalGate = modifier.OriginalGate;
-        var additionalActivation = modifier.AdditionalActivation;
-
-        condition = originalGate != null ? condition.And(ResolveCondition(originalGate)) : condition;
-        condition = additionalActivation != null ? condition.Or(ResolveCondition(additionalActivation)) : condition;
-
-        return condition;
     }
 }

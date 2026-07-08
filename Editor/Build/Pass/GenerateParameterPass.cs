@@ -7,7 +7,7 @@ internal class GenerateParameterPass : FaceTunePass<GenerateParameterPass>
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.generate-parameter";
     public override string DisplayName => "Generate Parameter";
 
-    private const string GeneratedParameterRootName = "FaceTune Generated Parameter";
+    private const string GeneratedParameterRootName = FaceTuneConstants.Name + " Generated Parameter";
 
     protected override void Execute(FaceTuneContext context)
     {
