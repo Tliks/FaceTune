@@ -4,7 +4,6 @@ internal sealed record class AnimatorBuildPlan(
     InitialLayerPlan InitialLayer,
     IReadOnlyList<OutputUnitPlan> Units,
     TrackingControlLayerPlan? TrackingControlLayer,
-    FxControlPlan? FxControl,
     float ExpressionTransitionDurationSeconds);
 
 internal sealed record class InitialLayerPlan(IReadOnlyList<BlendShapeWeight> BlendShapes);
@@ -46,4 +45,3 @@ internal sealed record class AdvancedEyeBlinkLayerPlan(string Name, DnfCondition
 
 internal sealed record class AdvancedLipSyncLayerPlan(string Name, DnfCondition? ForceInactiveWhen);
 
-internal sealed record class FxControlPlan(string Name, DnfCondition DisableFxWhen);

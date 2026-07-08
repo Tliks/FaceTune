@@ -195,6 +195,13 @@ internal class VRChatSupport : IMetabasePlatformSupport
             });
         }
 
+        public int MaxAapIndex => 255;
+        public float EncodeAapIndex(int index) => VRCAAPHelper.IndexToValue(index);
+        public IEnumerable<AnimatorCondition> AapIndexConditions(string parameterName, bool equal, int index)
+        {
+            return VRCAAPHelper.IndexConditions(parameterName, equal, index);
+        }
+
         public bool IsUnitBoundaryTransform(
             Transform transform,
             VirtualControllerContext controllerContext,

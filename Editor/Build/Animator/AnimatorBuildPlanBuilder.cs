@@ -5,22 +5,12 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal sealed class AnimatorBuildPlanBuilder
 {
-    private const string EyeBlinkControlAap = $"{FaceTuneConstants.ParameterPrefix}/Blink/Control";
-    private const string LipSyncControlAap = $"{FaceTuneConstants.ParameterPrefix}/LipSync/Control";
-    private const string EyeBlinkAdvancedSelectorAap = $"{FaceTuneConstants.ParameterPrefix}/Blink/Advanced";
-    private const string LipSyncAdvancedSelectorAap = $"{FaceTuneConstants.ParameterPrefix}/LipSync/Advanced";
-
-    private const int ControlTrackingIndex = 0;
-    private const int ControlAnimationIndex = 1;
-    private const int AdvancedNoneIndex = 0;
-
     private readonly ExpressionProgram _program;
     private readonly BuildSettings _settings;
     private readonly IAnimatorPlatformServices _platformServices;
     private readonly VirtualControllerContext _controllerContext;
     private readonly DnfCondition? _layerForceInactiveWhen;
-    private readonly Dictionary<AdvancedEyeBlinkSettings, int> _eyeBlinkAdvancedIndices = new();
-    private readonly Dictionary<AdvancedLipSyncSettings, int> _lipSyncAdvancedIndices = new();
+    private readonly AapProtocol _aap;
 
     private AvatarContext AvatarContext => _settings.AvatarContext;
 
@@ -44,6 +34,7 @@ internal sealed class AnimatorBuildPlanBuilder
         _platformServices = platformServices;
         _controllerContext = controllerContext;
         _layerForceInactiveWhen = CreateLayerForceInactiveWhen();
+        _aap = new AapProtocol(platformServices);
     }
 
     private AnimatorBuildPlan Build()
@@ -53,7 +44,6 @@ internal sealed class AnimatorBuildPlanBuilder
             BuildInitialLayer(),
             units,
             BuildTrackingControlLayer(units),
-            BuildFxControl(),
             _settings.DurationSeconds);
     }
 
@@ -85,10 +75,11 @@ internal sealed class AnimatorBuildPlanBuilder
                 continue;
             }
 
+            var unitId = units.Count;
             units.Add(new OutputUnitPlan(
-                units.Count,
+                unitId,
                 expressions[0].SourceTransform,
-                BuildExpressionLayers(expressions),
+                BuildExpressionLayers(unitId, expressions),
                 BuildAdvancedEyeBlinkLayer(expressions),
                 BuildAdvancedLipSyncLayer(expressions)));
             start = splitIndex;
@@ -97,7 +88,7 @@ internal sealed class AnimatorBuildPlanBuilder
         return units;
     }
 
-    private IReadOnlyList<ExpressionLayerPlan> BuildExpressionLayers(IReadOnlyList<ExpressionItem> expressions)
+    private IReadOnlyList<ExpressionLayerPlan> BuildExpressionLayers(int unitId, IReadOnlyList<ExpressionItem> expressions)
     {
         var layers = new List<ExpressionLayerPlan>();
         for (var index = 0; index < expressions.Count;)
@@ -112,42 +103,45 @@ internal sealed class AnimatorBuildPlanBuilder
                     index++;
                 }
 
-                layers.Add(BuildReplaceLayer(run));
+                layers.Add(BuildReplaceLayer(unitId, run));
                 continue;
             }
 
-            layers.Add(BuildBlendLayer(expression));
+            layers.Add(BuildBlendLayer(unitId, expression));
             index++;
         }
 
         return layers;
     }
 
-    private ExpressionLayerPlan BuildReplaceLayer(IReadOnlyList<ExpressionItem> expressions)
+    private ExpressionLayerPlan BuildReplaceLayer(int unitId, IReadOnlyList<ExpressionItem> expressions)
     {
         return BuildExpressionLayer(
             ReplaceLayerName(expressions),
-            expressions.Select((expression, index) => (Expression: expression, EnterWhen: ReplaceStateEnterWhen(expressions, index))));
+            expressions.Select((expression, index) => (Expression: expression, EnterWhen: ReplaceStateEnterWhen(expressions, index))),
+            unitId);
     }
 
-    private ExpressionLayerPlan BuildBlendLayer(ExpressionItem expression)
+    private ExpressionLayerPlan BuildBlendLayer(int unitId, ExpressionItem expression)
     {
         return BuildExpressionLayer(
             expression.Name,
-            new[] { (Expression: expression, EnterWhen: expression.RawWhen) });
+            new[] { (Expression: expression, EnterWhen: expression.RawWhen) },
+            unitId);
     }
 
     private ExpressionLayerPlan BuildExpressionLayer(
         string name,
-        IEnumerable<(ExpressionItem Expression, DnfCondition EnterWhen)> states)
+        IEnumerable<(ExpressionItem Expression, DnfCondition EnterWhen)> states,
+        int unitId)
     {
         return new ExpressionLayerPlan(
             name,
             _layerForceInactiveWhen,
-            states.Select(state => BuildExpressionState(state.Expression, state.EnterWhen)).ToArray());
+            states.Select(state => BuildExpressionState(unitId, state.Expression, state.EnterWhen)).ToArray());
     }
 
-    private ExpressionStatePlan BuildExpressionState(ExpressionItem expression, DnfCondition enterWhen)
+    private ExpressionStatePlan BuildExpressionState(int unitId, ExpressionItem expression, DnfCondition enterWhen)
     {
         return new ExpressionStatePlan(
             expression.Name,
@@ -155,7 +149,7 @@ internal sealed class AnimatorBuildPlanBuilder
             BuildExpressionExitWhen(enterWhen),
             expression.AnimationSet,
             expression.ExpressionSettings,
-            BuildAapWrites(expression.FacialSettings));
+            _aap.BuildWrites(unitId, expression.FacialSettings));
     }
 
     private static string ReplaceLayerName(IReadOnlyList<ExpressionItem> expressions)
@@ -182,62 +176,6 @@ internal sealed class AnimatorBuildPlanBuilder
         return exitWhen.And(ParameterBool(_settings.LockFacialParameterName, false));
     }
 
-    private IReadOnlyList<AapWrite> BuildAapWrites(FacialSettings settings)
-    {
-        var writes = new List<AapWrite>();
-
-        if (settings.AllowEyeBlink != TrackingPermission.Keep)
-        {
-            writes.Add(new AapWrite(
-                EyeBlinkControlAap,
-                VRCAAPHelper.IndexToValue(settings.AllowEyeBlink == TrackingPermission.Allow
-                    ? ControlTrackingIndex
-                    : ControlAnimationIndex)));
-        }
-
-        if (settings.AdvancedEyBlinkSettings.IsAnimationEnabled())
-        {
-            writes.Add(new AapWrite(
-                EyeBlinkAdvancedSelectorAap,
-                VRCAAPHelper.IndexToValue(AdvancedIndex(_eyeBlinkAdvancedIndices, settings.AdvancedEyBlinkSettings))));
-        }
-        else if (settings.AllowEyeBlink != TrackingPermission.Keep)
-        {
-            writes.Add(new AapWrite(EyeBlinkAdvancedSelectorAap, VRCAAPHelper.IndexToValue(AdvancedNoneIndex)));
-        }
-
-        if (settings.AllowLipSync != TrackingPermission.Keep)
-        {
-            writes.Add(new AapWrite(
-                LipSyncControlAap,
-                VRCAAPHelper.IndexToValue(settings.AllowLipSync == TrackingPermission.Allow
-                    ? ControlTrackingIndex
-                    : ControlAnimationIndex)));
-        }
-
-        if (settings.AdvancedLipSyncSettings.IsCancelerEnabled())
-        {
-            writes.Add(new AapWrite(
-                LipSyncAdvancedSelectorAap,
-                VRCAAPHelper.IndexToValue(AdvancedIndex(_lipSyncAdvancedIndices, settings.AdvancedLipSyncSettings))));
-        }
-        else if (settings.AllowLipSync != TrackingPermission.Keep)
-        {
-            writes.Add(new AapWrite(LipSyncAdvancedSelectorAap, VRCAAPHelper.IndexToValue(AdvancedNoneIndex)));
-        }
-
-        return writes;
-    }
-
-    private static int AdvancedIndex<TSettings>(Dictionary<TSettings, int> indices, TSettings settings)
-        where TSettings : notnull
-    {
-        if (indices.TryGetValue(settings, out var index)) return index;
-        index = indices.Count + 1;
-        indices.Add(settings, index);
-        return index;
-    }
-
     private AdvancedEyeBlinkLayerPlan? BuildAdvancedEyeBlinkLayer(IReadOnlyList<ExpressionItem> expressions)
     {
         return expressions.Any(expression => expression.FacialSettings.AdvancedEyBlinkSettings.IsAnimationEnabled())
@@ -257,19 +195,19 @@ internal sealed class AnimatorBuildPlanBuilder
         if (_settings.SupressTrackingControl) return null;
 
         var controlsEyeBlink = !string.IsNullOrWhiteSpace(_settings.DisableEyeBlinkParameterName)
-            || HasAapWrite(units, EyeBlinkControlAap);
+            || HasAapWrite(units, _aap.EyeBlinkControlName);
         var controlsLipSync = !string.IsNullOrWhiteSpace(_settings.DisableLipSyncParameterName)
-            || HasAapWrite(units, LipSyncControlAap);
+            || HasAapWrite(units, _aap.LipSyncControlName);
 
         if (!controlsEyeBlink && !controlsLipSync) return null;
 
-        var hasEyeBlinkControlAap = HasAapWrite(units, EyeBlinkControlAap);
-        var hasLipSyncControlAap = HasAapWrite(units, LipSyncControlAap);
+        var hasEyeBlinkControlAap = HasAapWrite(units, _aap.EyeBlinkControlName);
+        var hasLipSyncControlAap = HasAapWrite(units, _aap.LipSyncControlName);
 
-        var eyeBlinkTrackingWhen = controlsEyeBlink ? TrackingControlWhen(EyeBlinkControlAap, hasEyeBlinkControlAap, _settings.DisableEyeBlinkParameterName, true) : null;
-        var eyeBlinkAnimationWhen = controlsEyeBlink ? TrackingControlWhen(EyeBlinkControlAap, hasEyeBlinkControlAap, _settings.DisableEyeBlinkParameterName, false) : null;
-        var lipSyncTrackingWhen = controlsLipSync ? TrackingControlWhen(LipSyncControlAap, hasLipSyncControlAap, _settings.DisableLipSyncParameterName, true) : null;
-        var lipSyncAnimationWhen = controlsLipSync ? TrackingControlWhen(LipSyncControlAap, hasLipSyncControlAap, _settings.DisableLipSyncParameterName, false) : null;
+        var eyeBlinkTrackingWhen = controlsEyeBlink ? TrackingControlWhen(_aap.EyeBlinkControlName, hasEyeBlinkControlAap, _settings.DisableEyeBlinkParameterName, true) : null;
+        var eyeBlinkAnimationWhen = controlsEyeBlink ? TrackingControlWhen(_aap.EyeBlinkControlName, hasEyeBlinkControlAap, _settings.DisableEyeBlinkParameterName, false) : null;
+        var lipSyncTrackingWhen = controlsLipSync ? TrackingControlWhen(_aap.LipSyncControlName, hasLipSyncControlAap, _settings.DisableLipSyncParameterName, true) : null;
+        var lipSyncAnimationWhen = controlsLipSync ? TrackingControlWhen(_aap.LipSyncControlName, hasLipSyncControlAap, _settings.DisableLipSyncParameterName, false) : null;
 
         var states = new List<TrackingControlStatePlan>();
         foreach (var eyeBlinkState in TrackingDomainStates(controlsEyeBlink, eyeBlinkTrackingWhen, eyeBlinkAnimationWhen))
@@ -327,7 +265,7 @@ internal sealed class AnimatorBuildPlanBuilder
         return $"{eye} {lip}";
     }
 
-    private static DnfCondition TrackingControlWhen(
+    private DnfCondition TrackingControlWhen(
         string controlAapName,
         bool hasControlAap,
         string forceDisableParameterName,
@@ -338,7 +276,7 @@ internal sealed class AnimatorBuildPlanBuilder
             : ParameterBool(forceDisableParameterName, true);
 
         var aapCondition = hasControlAap
-            ? AapIndexCondition(controlAapName, tracking ? ControlTrackingIndex : ControlAnimationIndex)
+            ? _aap.IndexIs(controlAapName, tracking ? AapProtocol.ControlTrackingIndex : AapProtocol.ControlAnimationIndex)
             : tracking ? DnfCondition.Always : DnfCondition.Never;
 
         if (forceDisable == null) return aapCondition;
@@ -346,13 +284,6 @@ internal sealed class AnimatorBuildPlanBuilder
         return tracking
             ? aapCondition.And(forceDisable.Not())
             : aapCondition.Or(forceDisable);
-    }
-
-    private FxControlPlan? BuildFxControl()
-    {
-        if (!_settings.MmdPlayback.Enabled || _settings.MmdPlayback.DisableMode != MmdDisableMode.DisableFx) return null;
-        if (string.IsNullOrWhiteSpace(_settings.MmdPlayback.DisableParameterName)) return null;
-        return new FxControlPlan("MMD FX Control", ParameterBool(_settings.MmdPlayback.DisableParameterName, true));
     }
 
     private DnfCondition? CreateLayerForceInactiveWhen()
@@ -365,12 +296,6 @@ internal sealed class AnimatorBuildPlanBuilder
     private static DnfCondition ParameterBool(string parameterName, bool value)
     {
         return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)));
-    }
-
-    private static DnfCondition AapIndexCondition(string parameterName, int index)
-    {
-        return DnfCondition.All(VRCAAPHelper.IndexConditions(parameterName, true, index)
-            .Select(condition => DnfCondition.Single(new AnimatorConditionRule(condition, AnimatorControllerParameterType.Float))));
     }
 
     private IEnumerable<int> FindExternalOverlapSplitIndices(ISet<string> managedBlendShapeNames)
@@ -404,6 +329,99 @@ internal sealed class AnimatorBuildPlanBuilder
                 transform,
                 _controllerContext,
                 managedBlendShapeNames);
+        }
+    }
+
+    private sealed class AapProtocol
+    {
+        public const int ControlTrackingIndex = 0;
+        public const int ControlAnimationIndex = 1;
+        private const int AdvancedNoneIndex = 0;
+
+        private readonly IAnimatorPlatformServices _platformServices;
+        private readonly Dictionary<(int UnitId, AdvancedEyeBlinkSettings Settings), int> _eyeBlinkAdvancedIndices = new();
+        private readonly Dictionary<(int UnitId, AdvancedLipSyncSettings Settings), int> _lipSyncAdvancedIndices = new();
+
+        public string EyeBlinkControlName { get; } = $"{FaceTuneConstants.ParameterPrefix}/Blink/Control";
+        public string LipSyncControlName { get; } = $"{FaceTuneConstants.ParameterPrefix}/LipSync/Control";
+        private string EyeBlinkAdvancedSelectorName { get; } = $"{FaceTuneConstants.ParameterPrefix}/Blink/Advanced";
+        private string LipSyncAdvancedSelectorName { get; } = $"{FaceTuneConstants.ParameterPrefix}/LipSync/Advanced";
+
+        public AapProtocol(IAnimatorPlatformServices platformServices)
+        {
+            _platformServices = platformServices;
+        }
+
+        public IReadOnlyList<AapWrite> BuildWrites(int unitId, FacialSettings settings)
+        {
+            var writes = new List<AapWrite>();
+
+            if (settings.AllowEyeBlink != TrackingPermission.Keep)
+            {
+                writes.Add(new AapWrite(
+                    EyeBlinkControlName,
+                    Encode(settings.AllowEyeBlink == TrackingPermission.Allow ? ControlTrackingIndex : ControlAnimationIndex)));
+            }
+
+            if (settings.AdvancedEyBlinkSettings.IsAnimationEnabled())
+            {
+                writes.Add(new AapWrite(
+                    EyeBlinkAdvancedSelectorName,
+                    Encode(AdvancedIndex(_eyeBlinkAdvancedIndices, unitId, settings.AdvancedEyBlinkSettings))));
+            }
+            else if (settings.AllowEyeBlink != TrackingPermission.Keep)
+            {
+                writes.Add(new AapWrite(EyeBlinkAdvancedSelectorName, Encode(AdvancedNoneIndex)));
+            }
+
+            if (settings.AllowLipSync != TrackingPermission.Keep)
+            {
+                writes.Add(new AapWrite(
+                    LipSyncControlName,
+                    Encode(settings.AllowLipSync == TrackingPermission.Allow ? ControlTrackingIndex : ControlAnimationIndex)));
+            }
+
+            if (settings.AdvancedLipSyncSettings.IsCancelerEnabled())
+            {
+                writes.Add(new AapWrite(
+                    LipSyncAdvancedSelectorName,
+                    Encode(AdvancedIndex(_lipSyncAdvancedIndices, unitId, settings.AdvancedLipSyncSettings))));
+            }
+            else if (settings.AllowLipSync != TrackingPermission.Keep)
+            {
+                writes.Add(new AapWrite(LipSyncAdvancedSelectorName, Encode(AdvancedNoneIndex)));
+            }
+
+            return writes;
+        }
+
+        public DnfCondition IndexIs(string parameterName, int index)
+        {
+            return DnfCondition.All(_platformServices.AapIndexConditions(parameterName, true, index)
+                .Select(condition => DnfCondition.Single(new AnimatorConditionRule(condition, AnimatorControllerParameterType.Float))));
+        }
+
+        private float Encode(int index)
+        {
+            if (index < 0 || index > _platformServices.MaxAapIndex)
+            {
+                throw new InvalidOperationException($"Too many FaceTune AAP states. Index {index} exceeds platform max {_platformServices.MaxAapIndex}.");
+            }
+
+            return _platformServices.EncodeAapIndex(index);
+        }
+
+        private static int AdvancedIndex<TSettings>(
+            Dictionary<(int UnitId, TSettings Settings), int> indices,
+            int unitId,
+            TSettings settings)
+            where TSettings : notnull
+        {
+            var key = (unitId, settings);
+            if (indices.TryGetValue(key, out var index)) return index;
+            index = indices.Count + 1;
+            indices.Add(key, index);
+            return index;
         }
     }
 }
