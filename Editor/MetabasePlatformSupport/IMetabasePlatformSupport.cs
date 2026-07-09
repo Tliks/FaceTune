@@ -21,12 +21,17 @@ internal interface IMetabasePlatformSupport
         return Array.Empty<string>();
     }
 
+    public ParameterDomainRegistry CreateBuiltInParameterDomains()
+    {
+        return new ParameterDomainRegistry();
+    }
+
     public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
     {
         throw new NotSupportedException("Hand gesture condition is not supported by this platform");
     }
 
-    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition, ParameterDomainRegistry parameterDomains)
     {
         throw new NotSupportedException("Parameter condition is not supported by this platform");
     }

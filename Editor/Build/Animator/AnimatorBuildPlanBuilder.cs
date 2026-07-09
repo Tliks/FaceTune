@@ -199,7 +199,7 @@ internal sealed class ExpressionLayerPlanBuilder
     {
         return BuildExpressionLayer(
             ExpressionLayerName(unitId, layerIndex, "Replace"),
-            expressions.Select((expression, index) => (Expression: expression, EnterWhen: ReplaceStateEnterWhen(expressions, index))),
+            ReplaceStateSources(expressions),
             unitId);
     }
 
@@ -207,29 +207,29 @@ internal sealed class ExpressionLayerPlanBuilder
     {
         return BuildExpressionLayer(
             ExpressionLayerName(unitId, layerIndex, "Blend"),
-            new[] { (Expression: expression, EnterWhen: expression.RawWhen) },
+            ExpressionStateSources(new[] { expression }),
             unitId);
     }
 
     private ExpressionLayerPlan BuildExpressionLayer(
         string name,
-        IEnumerable<(ExpressionItem Expression, DnfCondition EnterWhen)> states,
+        IEnumerable<ExpressionStateSource> states,
         int unitId)
     {
         var statePlans = states
-            .Select(state => BuildExpressionState(unitId, state.Expression, state.EnterWhen))
+            .Select(state => BuildExpressionState(unitId, state.Expression, state.EnterCase, state.StateName))
             .ToArray();
         return new ExpressionLayerPlan(
             name,
-            DnfCondition.Any(statePlans.Select(state => state.EnterWhen)),
+            DnfCondition.Any(statePlans.Select(state => DnfCondition.Single(state.EnterWhen))),
             _forceInactiveWhen,
             statePlans);
     }
 
-    private ExpressionStatePlan BuildExpressionState(int unitId, ExpressionItem expression, DnfCondition enterWhen)
+    private ExpressionStatePlan BuildExpressionState(int unitId, ExpressionItem expression, DnfCase enterWhen, string stateName)
     {
         return new ExpressionStatePlan(
-            expression.Name,
+            stateName,
             enterWhen,
             BuildExpressionExitWhen(enterWhen),
             expression.AnimationSet,
@@ -248,9 +248,9 @@ internal sealed class ExpressionLayerPlanBuilder
             AnimatorHelper.CollectConditionParameters(parameters, _forceInactiveWhen);
     }
 
-    private DnfCondition BuildExpressionExitWhen(DnfCondition enterWhen)
+    private DnfCondition BuildExpressionExitWhen(DnfCase enterWhen)
     {
-        var exitWhen = enterWhen.Not();
+        var exitWhen = enterWhen.Complement();
         return _lockFacialInactiveWhen == null
             ? exitWhen
             : exitWhen.And(_lockFacialInactiveWhen);
@@ -261,14 +261,50 @@ internal sealed class ExpressionLayerPlanBuilder
         return $"{unitId}-{layerIndex} {kind}";
     }
 
-    private static DnfCondition ReplaceStateEnterWhen(IReadOnlyList<ExpressionItem> expressions, int index)
+    private static IEnumerable<ExpressionStateSource> ReplaceStateSources(IReadOnlyList<ExpressionItem> expressions)
     {
-        var expression = expressions[index];
-        var higherReplaceWhen = DnfCondition.Any(expressions
-            .Skip(index + 1)
-            .Select(item => item.RawWhen));
-        return expression.RawWhen.Except(higherReplaceWhen);
+        for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
+        {
+            var expression = expressions[expressionIndex];
+            var higherPriority = DnfCondition.Any(expressions
+                .Skip(expressionIndex + 1)
+                .Select(item => item.RawWhen));
+            var enterWhen = expression.RawWhen.And(higherPriority.Complement());
+
+            foreach (var state in ExpressionStateSources(expression, expressionIndex, enterWhen))
+            {
+                yield return state;
+            }
+        }
     }
+
+    private static IEnumerable<ExpressionStateSource> ExpressionStateSources(IReadOnlyList<ExpressionItem> expressions)
+    {
+        return expressions.SelectMany((expression, expressionIndex) => ExpressionStateSources(expression, expressionIndex, expression.RawWhen));
+    }
+
+    private static IEnumerable<ExpressionStateSource> ExpressionStateSources(
+        ExpressionItem expression,
+        int expressionIndex,
+        DnfCondition enterWhen)
+    {
+        return enterWhen.Cases.Select((enterCase, caseIndex) =>
+            new ExpressionStateSource(
+                expression,
+                enterCase,
+                ExpressionStateName(expression, expressionIndex, caseIndex, enterWhen.Cases.Count)));
+    }
+
+    private static string ExpressionStateName(ExpressionItem expression, int expressionIndex, int caseIndex, int caseCount)
+    {
+        var name = $"{expressionIndex + 1} {expression.Name}";
+        return caseCount == 1 ? name : $"{name} #{caseIndex + 1}";
+    }
+
+    private sealed record class ExpressionStateSource(
+        ExpressionItem Expression,
+        DnfCase EnterCase,
+        string StateName);
 
 }
 
@@ -390,10 +426,10 @@ internal sealed class TrackingControlPlanBuilder
 
         if (!string.IsNullOrWhiteSpace(forceDisableParameterName))
         {
-            var forceDisable = DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
-                ParameterCondition.Bool(forceDisableParameterName, true)));
-            trackingConditions.Add(forceDisable.Not());
-            animationConditions.Add(forceDisable);
+            trackingConditions.Add(DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
+                ParameterCondition.Bool(forceDisableParameterName, false))));
+            animationConditions.Add(DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
+                ParameterCondition.Bool(forceDisableParameterName, true))));
         }
 
         return (DnfCondition.All(trackingConditions), DnfCondition.Any(animationConditions));

@@ -69,6 +69,7 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
             avatarSettings.DurationSeconds,
             avatarSettings.ParmaterCompression,
             avatarSettings.SupressTrackingControl,
+            context.PlatformSupport.CreateBuiltInParameterDomains(),
             mmdPlayback,
             disableEyeBlinkParameter,
             disableLipSyncParameter,

@@ -7,12 +7,20 @@ namespace Aoyon.FaceTune.Build.Animator;
 /// </summary>
 internal sealed record class AnimatorConditionRule(
     AnimatorCondition Condition,
-    AnimatorControllerParameterType ParameterType) : DnfRule
+    AnimatorControllerParameterType ParameterType,
+    IntParameterDomain? IntDomain = null) : DnfRule
 {
     public string ParameterName => Condition.parameter;
 
-    public static AnimatorConditionRule FromParameterCondition(ParameterCondition condition)
+    public static AnimatorConditionRule FromParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry? parameterDomains = null)
     {
+        var intDomain = parameterDomains != null && condition.ParameterType == FaceTune.ParameterType.Int &&
+            parameterDomains.TryGetIntDomain(condition.ParameterName, out var domain)
+                ? domain
+                : (IntParameterDomain?)null;
+
         return condition.ParameterType switch
         {
             FaceTune.ParameterType.Int => new AnimatorConditionRule(
@@ -22,7 +30,8 @@ internal sealed record class AnimatorConditionRule(
                     mode = ToAnimatorConditionMode(condition.ComparisonType),
                     threshold = condition.IntValue
                 },
-                AnimatorControllerParameterType.Int),
+                AnimatorControllerParameterType.Int,
+                intDomain),
             FaceTune.ParameterType.Float => new AnimatorConditionRule(
                 new AnimatorCondition
                 {
@@ -62,9 +71,209 @@ internal sealed record class AnimatorConditionRule(
         };
     }
 
-    public override DnfCondition Not()
+    public override object SimplificationKey => new ParameterConstraintKey(ParameterName, ParameterType);
+
+    public override DnfRuleConstraint CreateConstraint()
     {
-        return DnfCondition.Single(this with { Condition = Condition.Negate(ParameterType) });
+        return new ParameterConstraint();
+    }
+
+    public override DnfRule Negate()
+    {
+        return this with { Condition = Condition.Negate(ParameterType) };
+    }
+
+    private readonly record struct ParameterConstraintKey(
+        string ParameterName,
+        AnimatorControllerParameterType ParameterType);
+
+    private sealed class ParameterConstraint : DnfRuleConstraint
+    {
+        private AnimatorConditionRule? equal;
+        private readonly Dictionary<float, AnimatorConditionRule> notEquals = new();
+        private AnimatorConditionRule? greater;
+        private AnimatorConditionRule? less;
+        private IntParameterDomain? intDomain;
+
+        public override bool Add(DnfRule rule)
+        {
+            var animatorRule = (AnimatorConditionRule)rule;
+            if (animatorRule.ParameterType == AnimatorControllerParameterType.Int && animatorRule.IntDomain is { } domain)
+            {
+                intDomain = intDomain.HasValue
+                    ? new IntParameterDomain(
+                        Math.Max(intDomain.Value.MinValue, domain.MinValue),
+                        Math.Min(intDomain.Value.MaxValue, domain.MaxValue))
+                    : domain;
+                if (!intDomain.Value.IsValid) return false;
+            }
+
+            return animatorRule.ParameterType switch
+            {
+                AnimatorControllerParameterType.Bool => AddBool(animatorRule),
+                AnimatorControllerParameterType.Int => AddComparable(animatorRule, true),
+                AnimatorControllerParameterType.Float => AddComparable(animatorRule, false),
+                _ => true
+            };
+        }
+
+        public override DnfCondition ToCondition()
+        {
+            if (equal != null) return DnfCondition.Single(equal);
+
+            if (TryResolveFiniteIntDomain(out var domainCondition)) return domainCondition;
+
+            var baseRules = new List<DnfRule>();
+            if (greater != null) baseRules.Add(greater);
+            if (less != null) baseRules.Add(less);
+            baseRules.AddRange(notEquals.Values.OrderBy(rule => rule.Condition.threshold));
+            return DnfCondition.Single(new DnfCase(baseRules));
+        }
+
+        private bool AddBool(AnimatorConditionRule rule)
+        {
+            var mode = rule.Condition.mode;
+            if (mode != AnimatorConditionMode.If && mode != AnimatorConditionMode.IfNot) return true;
+
+            var normalized = rule with
+            {
+                Condition = rule.Condition with
+                {
+                    mode = mode,
+                    threshold = 0
+                }
+            };
+
+            if (equal != null) return equal.Condition.mode == mode;
+            equal = normalized;
+            return true;
+        }
+
+        private bool AddComparable(AnimatorConditionRule rule, bool isInt)
+        {
+            return rule.Condition.mode switch
+            {
+                AnimatorConditionMode.Equals => AddEqual(rule, isInt),
+                AnimatorConditionMode.NotEqual => AddNotEqual(rule, isInt),
+                AnimatorConditionMode.Greater => AddGreater(rule, isInt),
+                AnimatorConditionMode.Less => AddLess(rule, isInt),
+                _ => true
+            };
+        }
+
+        private bool AddEqual(AnimatorConditionRule rule, bool isInt)
+        {
+            var value = NormalizeValue(rule.Condition.threshold, isInt);
+            var normalized = WithThreshold(rule, value);
+
+            if (equal != null) return equal.Condition.threshold == value;
+            if (intDomain.HasValue && isInt && !intDomain.Value.Contains((int)value)) return false;
+            if (notEquals.ContainsKey(value)) return false;
+            if (!SatisfiesBounds(value)) return false;
+
+            equal = normalized;
+            notEquals.Clear();
+            greater = null;
+            less = null;
+            return true;
+        }
+
+        private bool AddNotEqual(AnimatorConditionRule rule, bool isInt)
+        {
+            var value = NormalizeValue(rule.Condition.threshold, isInt);
+            if (equal != null) return equal.Condition.threshold != value;
+            if (intDomain.HasValue && isInt && !intDomain.Value.Contains((int)value)) return true;
+
+            notEquals.TryAdd(value, WithThreshold(rule, value));
+            return true;
+        }
+
+        private bool AddGreater(AnimatorConditionRule rule, bool isInt)
+        {
+            var value = NormalizeValue(rule.Condition.threshold, isInt);
+            if (equal != null) return equal.Condition.threshold > value;
+
+            if (greater == null || value > greater.Condition.threshold)
+            {
+                greater = WithThreshold(rule, value);
+            }
+
+            return BoundsOverlap(isInt);
+        }
+
+        private bool AddLess(AnimatorConditionRule rule, bool isInt)
+        {
+            var value = NormalizeValue(rule.Condition.threshold, isInt);
+            if (equal != null) return equal.Condition.threshold < value;
+
+            if (less == null || value < less.Condition.threshold)
+            {
+                less = WithThreshold(rule, value);
+            }
+
+            return BoundsOverlap(isInt);
+        }
+
+        private bool TryResolveFiniteIntDomain([NotNullWhen(true)] out DnfCondition? condition)
+        {
+            condition = null;
+            if (!intDomain.HasValue) return false;
+
+            var domain = intDomain.Value;
+            var values = new List<int>();
+            for (var value = domain.MinValue; value <= domain.MaxValue; value++)
+            {
+                if (!SatisfiesBounds(value) || notEquals.ContainsKey(value)) continue;
+                values.Add(value);
+            }
+
+            if (values.Count == 0)
+            {
+                condition = DnfCondition.Never;
+                return true;
+            }
+
+            if (values.Count == 1)
+            {
+                var template = greater ?? less ?? notEquals.Values.FirstOrDefault();
+                if (template == null) return false;
+                condition = DnfCondition.Single(template with
+                {
+                    Condition = template.Condition with
+                    {
+                        mode = AnimatorConditionMode.Equals,
+                        threshold = values[0]
+                    }
+                });
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool SatisfiesBounds(float value)
+        {
+            return (greater == null || value > greater.Condition.threshold)
+                && (less == null || value < less.Condition.threshold);
+        }
+
+        private bool BoundsOverlap(bool isInt)
+        {
+            if (greater == null || less == null) return true;
+            return isInt
+                ? greater.Condition.threshold + 1 < less.Condition.threshold
+                : greater.Condition.threshold < less.Condition.threshold;
+        }
+
+        private static float NormalizeValue(float value, bool isInt)
+        {
+            return isInt ? (int)value : value;
+        }
+
+        private static AnimatorConditionRule WithThreshold(AnimatorConditionRule rule, float threshold)
+        {
+            return rule with { Condition = rule.Condition with { threshold = threshold } };
+        }
     }
 
     private static AnimatorConditionMode ToAnimatorConditionMode(ComparisonType comparisonType)

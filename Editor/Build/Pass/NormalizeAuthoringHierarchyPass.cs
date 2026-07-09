@@ -18,7 +18,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         ProcessPresetComponents(context.AvatarContext.Root);
         ProcessDirectMenuSettings(context.AvatarContext.Root);
         IgnoreEmptyCondition(context.AvatarContext.Root);
-        AssignMenuParameters(context.AvatarContext.Root);
+        AssignMenuParameters(context.AvatarContext.Root, context.RequireSettings().ParameterDomains);
         ResolveMenuConditions(context.AvatarContext.Root);
     }
 
@@ -133,7 +133,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     }
 
     // パラメータ名を確定、排他グループはValueも割り振り
-    private static void AssignMenuParameters(GameObject root)
+    private static void AssignMenuParameters(GameObject root, ParameterDomainRegistry parameterDomains)
     {
         var exclusiveGroupParameterNames = new Dictionary<string, string>();
         var exclusiveGroupIndices = new Dictionary<string, int>();
@@ -149,6 +149,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 var index = exclusiveGroupIndices.TryGetValue(groupName, out var current) ? current + 1 : 1;
                 exclusiveGroupIndices[groupName] = index;
                 menu.ExclusiveToggleGroup.Value = index;
+                parameterDomains.SetIntDomainOverride(menu.ParameterName, new IntParameterDomain(0, index));
             }
             else if (string.IsNullOrWhiteSpace(menu.ParameterName))
             {

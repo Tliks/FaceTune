@@ -26,7 +26,7 @@ internal static class FaceTuneProgramCompiler
     {
         var components = context.Root.GetComponentsInChildren<FaceTuneComponent>(true);
         
-        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport);
+        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport, settings.ParameterDomains);
         var expressionCompiler = new ExpressionCompiler(context, settings, conditionCompiler);
 
         var items = components
@@ -143,11 +143,16 @@ internal sealed class ConditionCompiler
 {
     private readonly GameObject _root;
     private readonly IMetabasePlatformSupport _platformSupport;
+    private readonly ParameterDomainRegistry _parameterDomains;
 
-    public ConditionCompiler(GameObject root, IMetabasePlatformSupport platformSupport)
+    public ConditionCompiler(
+        GameObject root,
+        IMetabasePlatformSupport platformSupport,
+        ParameterDomainRegistry parameterDomains)
     {
         _root = root;
         _platformSupport = platformSupport;
+        _parameterDomains = parameterDomains;
     }
 
     public DnfCondition Resolve(FaceTuneComponent component)
@@ -197,7 +202,7 @@ internal sealed class ConditionCompiler
 
         foreach (var parameterCondition in conditionCase.ParameterConditions)
         {
-            result = result.And(_platformSupport.ResolveParameterCondition(parameterCondition));
+            result = result.And(_platformSupport.ResolveParameterCondition(parameterCondition, _parameterDomains));
         }
 
         return result;

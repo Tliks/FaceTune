@@ -18,6 +18,7 @@ internal sealed class AnimatorInstaller
     private readonly AnimatorBuildPlan _plan;
     private readonly bool _useWriteDefaults;
     private readonly VirtualClip _emptyClip;
+    private readonly Dictionary<ExpressionClipKey, VirtualClip> _expressionClips = new();
 
     public AnimatorInstaller(
         VirtualControllerContext controllerContext,
@@ -102,7 +103,7 @@ internal sealed class AnimatorInstaller
         foreach (var statePlan in plan.States)
         {
             var state = AddState(layer, statePlan.Name, position);
-            position.y += Math.Max(1, statePlan.EnterWhen.Cases.Count) * PositionYStep;
+            position.y += PositionYStep;
             SetExpressionClip(state, statePlan);
             AddEntryTransition(layer, state, statePlan.EnterWhen);
             SetExitTransitions(state, statePlan.ExitWhen, _plan.ExpressionTransitionDurationSeconds);
@@ -134,7 +135,7 @@ internal sealed class AnimatorInstaller
             position.y += PositionYStep;
             SetTrackingControlState(state, statePlan);
             AddEntryTransition(layer, state, statePlan.When);
-            SetExitTransitions(state, statePlan.When.Not(), _plan.ExpressionTransitionDurationSeconds);
+            SetExitTransitions(state, statePlan.When.Complement(), _plan.ExpressionTransitionDurationSeconds);
         }
 
         AddForceInactiveState(layer, "Disabled", trackingControl.ForceInactiveWhen, false);
@@ -142,7 +143,25 @@ internal sealed class AnimatorInstaller
 
     private void SetExpressionClip(VirtualState state, ExpressionStatePlan plan)
     {
-        var clip = state.SetNewClip(plan.Name);
+        var key = new ExpressionClipKey(plan.Animations, plan.Settings, plan.AapWrites);
+        if (!_expressionClips.TryGetValue(key, out var clip))
+        {
+            clip = CreateExpressionClip(plan);
+            _expressionClips.Add(key, clip);
+        }
+
+        state.Motion = clip;
+
+        var settings = plan.Settings;
+        if (!settings.LoopTime && !string.IsNullOrEmpty(settings.MotionTimeParameterName))
+        {
+            state.TimeParameter = settings.MotionTimeParameterName;
+        }
+    }
+
+    private VirtualClip CreateExpressionClip(ExpressionStatePlan plan)
+    {
+        var clip = VirtualClip.Create(plan.Name);
 
         clip.AddBlendShapeAnimations(_avatarContext.BodyPath, plan.Animations);
 
@@ -153,17 +172,14 @@ internal sealed class AnimatorInstaller
             clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
         }
 
-        var settings = plan.Settings;
-        if (settings.LoopTime)
+        if (plan.Settings.LoopTime)
         {
             var clipSettings = clip.Settings;
             clipSettings.loopTime = true;
             clip.Settings = clipSettings;
         }
-        else if (!string.IsNullOrEmpty(settings.MotionTimeParameterName))
-        {
-            state.TimeParameter = settings.MotionTimeParameterName;
-        }
+
+        return clip;
     }
 
     private void SetTrackingControlState(VirtualState state, TrackingControlStatePlan plan)
@@ -195,7 +211,7 @@ internal sealed class AnimatorInstaller
         }
 
         SetAnyStateTransition(layer, state, forceInactiveWhen, 0f);
-        SetExitTransitions(state, forceInactiveWhen.Not(), 0f);
+        SetExitTransitions(state, forceInactiveWhen.Complement(), 0f);
     }
 
     private VirtualLayer AddLayer(VirtualAnimatorController controller, string name, int priority)
@@ -230,8 +246,13 @@ internal sealed class AnimatorInstaller
 
     private void SetExitTransitions(VirtualState state, DnfCondition when, float duration)
     {
+        SetExitTransitions(state, when.Cases, duration);
+    }
+
+    private void SetExitTransitions(VirtualState state, IEnumerable<DnfCase> cases, float duration)
+    {
         var transitions = ImmutableList.CreateBuilder<VirtualStateTransition>();
-        foreach (var conditionCase in when.Cases)
+        foreach (var conditionCase in cases)
         {
             var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
             transition.SetExitDestination();
@@ -256,8 +277,18 @@ internal sealed class AnimatorInstaller
 
     private void AddEntryTransition(VirtualLayer layer, VirtualState destination, DnfCondition when)
     {
+        AddEntryTransition(layer, destination, when.Cases);
+    }
+
+    private void AddEntryTransition(VirtualLayer layer, VirtualState destination, DnfCase when)
+    {
+        AddEntryTransition(layer, destination, new[] { when });
+    }
+
+    private void AddEntryTransition(VirtualLayer layer, VirtualState destination, IEnumerable<DnfCase> cases)
+    {
         var transitions = new List<VirtualTransition>();
-        foreach (var conditionCase in when.Cases)
+        foreach (var conditionCase in cases)
         {
             var transition = VirtualTransition.Create();
             transition.SetDestination(destination);
@@ -267,6 +298,48 @@ internal sealed class AnimatorInstaller
         layer.StateMachine!.EntryTransitions = layer.StateMachine!.EntryTransitions.AddRange(transitions);
     }
 
+
+    private sealed class ExpressionClipKey : IEquatable<ExpressionClipKey>
+    {
+        private readonly BlendShapeWeightAnimationSet animations;
+        private readonly ExpressionSettings settings;
+        private readonly IReadOnlyList<AapWrite> aapWrites;
+
+        public ExpressionClipKey(
+            BlendShapeWeightAnimationSet animations,
+            ExpressionSettings settings,
+            IReadOnlyList<AapWrite> aapWrites)
+        {
+            this.animations = animations;
+            this.settings = settings;
+            this.aapWrites = aapWrites;
+        }
+
+        public bool Equals(ExpressionClipKey? other)
+        {
+            return other != null
+                && animations.Equals(other.animations)
+                && settings.Equals(other.settings)
+                && aapWrites.SequenceEqual(other.aapWrites);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is ExpressionClipKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(animations);
+            hash.Add(settings);
+            foreach (var write in aapWrites)
+            {
+                hash.Add(write);
+            }
+            return hash.ToHashCode();
+        }
+    }
 
     private IEnumerable<AnimatorCondition> ToAnimatorConditions(DnfCase conditionCase)
     {

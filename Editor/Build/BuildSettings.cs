@@ -9,6 +9,7 @@ internal record struct BuildSettings(
     float DurationSeconds,
     bool ParmaterCompression,
     bool SupressTrackingControl,
+    ParameterDomainRegistry ParameterDomains,
     MmdPlaybackSettings MmdPlayback,
     string DisableEyeBlinkParameterName,
     string DisableLipSyncParameterName,

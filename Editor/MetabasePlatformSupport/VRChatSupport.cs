@@ -21,6 +21,12 @@ internal class VRChatSupport : IMetabasePlatformSupport
 
     private const string GestureLeftParameter = "GestureLeft";
     private const string GestureRightParameter = "GestureRight";
+    private const string VisemeParameter = "Viseme";
+    private const string PreviewModeParameter = "PreviewMode";
+    private const string TrackingTypeParameter = "TrackingType";
+    private const string VRModeParameter = "VRMode";
+    private const string AvatarVersionParameter = "AvatarVersion";
+    private const string VrcEmoteParameter = "VRCEmote";
 
     private Transform _root = null!;
     private VRCAvatarDescriptor _descriptor = null!;
@@ -69,6 +75,25 @@ internal class VRChatSupport : IMetabasePlatformSupport
         return faceRenderer;
     }
 
+    public ParameterDomainRegistry CreateBuiltInParameterDomains()
+    {
+        var domains = new ParameterDomainRegistry();
+
+        // VRChat custom int expression parameters are unsigned 8-bit values.
+        domains.SetDefaultIntDomain(new IntParameterDomain(0, 255));
+
+        // Built-in / aliased int parameters with narrower documented ranges.
+        domains.SetIntDomainOverride(PreviewModeParameter, new IntParameterDomain(0, 1));
+        domains.SetIntDomainOverride(VisemeParameter, new IntParameterDomain(0, 14));
+        domains.SetIntDomainOverride(GestureLeftParameter, new IntParameterDomain(0, 7));
+        domains.SetIntDomainOverride(GestureRightParameter, new IntParameterDomain(0, 7));
+        domains.SetIntDomainOverride(TrackingTypeParameter, new IntParameterDomain(0, 6));
+        domains.SetIntDomainOverride(VRModeParameter, new IntParameterDomain(0, 1));
+        domains.SetIntDomainOverride(AvatarVersionParameter, new IntParameterDomain(0, 3));
+        domains.SetIntDomainOverride(VrcEmoteParameter, new IntParameterDomain(1, 16));
+        return domains;
+    }
+
     public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
     {
         var gesture = condition.HandGesture;
@@ -99,12 +124,13 @@ internal class VRChatSupport : IMetabasePlatformSupport
                 mode = equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
                 threshold = (int)handGesture
             },
-            AnimatorControllerParameterType.Int));
+            AnimatorControllerParameterType.Int,
+            new IntParameterDomain(0, 7)));
     }
 
-    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition, ParameterDomainRegistry parameterDomains)
     {
-        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition));
+        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition, parameterDomains));
     }
 
     public IEnumerable<string> GetExternallyControlledBlendShapeNames()

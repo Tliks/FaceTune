@@ -9,6 +9,7 @@ internal class AnimatorControllerImporter
     private readonly AvatarContext _context;
     private readonly AnimatorController _animatorController;
     private readonly IMetabasePlatformSupport _platformSupport;
+    private readonly ParameterDomainRegistry _parameterDomains;
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
 
 
@@ -17,6 +18,7 @@ internal class AnimatorControllerImporter
         _context = context;
         _animatorController = animatorController;
         _platformSupport = MetabasePlatformSupport.GetSupport(context.Root.transform);
+        _parameterDomains = _platformSupport.CreateBuiltInParameterDomains();
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
     }
 
@@ -191,7 +193,7 @@ internal class AnimatorControllerImporter
 
             foreach (var (state, dnf) in stateConditions.ToArray())
             {
-                stateConditions[state] = dnf.And(anyStateSuppressor.Not());
+                stateConditions[state] = dnf.And(anyStateSuppressor.Complement());
             }
 
             foreach (var (state, dnf) in convertedAnyState)
@@ -223,7 +225,7 @@ internal class AnimatorControllerImporter
         }
 
         var rule = new AnimatorConditionRule(condition, parameterType);
-        return _platformSupport.ResolveParameterCondition(rule.ToParameterCondition());
+        return _platformSupport.ResolveParameterCondition(rule.ToParameterCondition(), _parameterDomains);
     }
 
 
