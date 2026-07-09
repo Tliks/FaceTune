@@ -158,7 +158,7 @@ internal sealed class ConditionCompiler
     public DnfCondition Resolve(FaceTuneComponent component)
     {
         var conditions = CollectEffectiveConditions(component).Select(ResolveCondition);
-        var condition = DnfCondition.All(conditions);
+        var condition = DnfCondition.All(conditions, _parameterDomains);
         return condition;
     }
 
@@ -197,12 +197,12 @@ internal sealed class ConditionCompiler
 
         foreach (var handGestureCondition in conditionCase.HandGestureConditions)
         {
-            result = result.And(_platformSupport.ResolveHandGestureCondition(handGestureCondition));
+            result = result.And(_platformSupport.ResolveHandGestureCondition(handGestureCondition), _parameterDomains);
         }
 
         foreach (var parameterCondition in conditionCase.ParameterConditions)
         {
-            result = result.And(_platformSupport.ResolveParameterCondition(parameterCondition, _parameterDomains));
+            result = result.And(_platformSupport.ResolveParameterCondition(parameterCondition), _parameterDomains);
         }
 
         return result;

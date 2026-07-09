@@ -193,7 +193,7 @@ internal class AnimatorControllerImporter
 
             foreach (var (state, dnf) in stateConditions.ToArray())
             {
-                stateConditions[state] = dnf.And(anyStateSuppressor.Complement());
+                stateConditions[state] = dnf.And(anyStateSuppressor.Complement(_parameterDomains), _parameterDomains);
             }
 
             foreach (var (state, dnf) in convertedAnyState)
@@ -213,7 +213,7 @@ internal class AnimatorControllerImporter
     private DnfCondition ToDnfCondition(IReadOnlyList<AnimatorCondition> animatorConditions)
     {
         if (animatorConditions.Count == 0) return DnfCondition.Always;
-        return DnfCondition.All(animatorConditions.Select(ToDnfCondition));
+        return DnfCondition.All(animatorConditions.Select(ToDnfCondition), _parameterDomains);
     }
 
     private DnfCondition ToDnfCondition(AnimatorCondition condition)
@@ -225,7 +225,7 @@ internal class AnimatorControllerImporter
         }
 
         var rule = new AnimatorConditionRule(condition, parameterType);
-        return _platformSupport.ResolveParameterCondition(rule.ToParameterCondition(), _parameterDomains);
+        return _platformSupport.ResolveParameterCondition(rule.ToParameterCondition());
     }
 
 

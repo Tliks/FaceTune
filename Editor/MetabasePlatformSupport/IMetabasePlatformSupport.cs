@@ -31,7 +31,7 @@ internal interface IMetabasePlatformSupport
         throw new NotSupportedException("Hand gesture condition is not supported by this platform");
     }
 
-    public DnfCondition ResolveParameterCondition(ParameterCondition condition, ParameterDomainRegistry parameterDomains)
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
     {
         throw new NotSupportedException("Parameter condition is not supported by this platform");
     }

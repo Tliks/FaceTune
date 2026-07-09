@@ -124,13 +124,12 @@ internal class VRChatSupport : IMetabasePlatformSupport
                 mode = equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
                 threshold = (int)handGesture
             },
-            AnimatorControllerParameterType.Int,
-            new IntParameterDomain(0, 7)));
+            AnimatorControllerParameterType.Int));
     }
 
-    public DnfCondition ResolveParameterCondition(ParameterCondition condition, ParameterDomainRegistry parameterDomains)
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
     {
-        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition, parameterDomains));
+        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition));
     }
 
     public IEnumerable<string> GetExternallyControlledBlendShapeNames()

@@ -28,9 +28,11 @@ internal sealed class DnfCondition
         return new DnfCondition(new[] { conditionCase });
     }
 
-    public static DnfCondition All(IEnumerable<DnfCondition> conditions)
+    public static DnfCondition All(
+        IEnumerable<DnfCondition> conditions,
+        ParameterDomainRegistry? parameterDomains = null)
     {
-        return conditions.Aggregate(Always, (current, condition) => current.And(condition));
+        return conditions.Aggregate(Always, (current, condition) => current.And(condition, parameterDomains));
     }
 
     public static DnfCondition Any(IEnumerable<DnfCondition> conditions)
@@ -38,7 +40,7 @@ internal sealed class DnfCondition
         return conditions.Aggregate(Never, (current, condition) => current.Or(condition));
     }
 
-    public DnfCondition And(DnfCondition other)
+    public DnfCondition And(DnfCondition other, ParameterDomainRegistry? parameterDomains = null)
     {
         if (Cases.Count == 0 || other.Cases.Count == 0) return Never;
 
@@ -47,7 +49,7 @@ internal sealed class DnfCondition
         {
             foreach (var right in other.Cases)
             {
-                if (DnfCase.TryAnd(left, right, out var combined))
+                if (DnfCase.TryAnd(left, right, out var combined, parameterDomains))
                 {
                     cases.UnionWith(combined.Cases);
                 }
@@ -67,12 +69,12 @@ internal sealed class DnfCondition
         return new DnfCondition(cases.ToArray());
     }
 
-    public DnfCondition Complement()
+    public DnfCondition Complement(ParameterDomainRegistry? parameterDomains = null)
     {
         var result = Always;
         foreach (var conditionCase in Cases)
         {
-            result = result.And(conditionCase.Complement());
+            result = result.And(conditionCase.Complement(), parameterDomains);
         }
         return result;
     }
@@ -101,7 +103,11 @@ internal sealed class DnfCase : IEquatable<DnfCase>
         return combined.Cases[0];
     }
 
-    public static bool TryAnd(DnfCase left, DnfCase right, [NotNullWhen(true)] out DnfCondition? combined)
+    public static bool TryAnd(
+        DnfCase left,
+        DnfCase right,
+        [NotNullWhen(true)] out DnfCondition? combined,
+        ParameterDomainRegistry? parameterDomains = null)
     {
         if (left.IsAlways)
         {
@@ -114,19 +120,15 @@ internal sealed class DnfCase : IEquatable<DnfCase>
             return true;
         }
 
-        var constraints = new Dictionary<object, DnfRuleConstraint>();
-        var passthroughRules = new HashSet<DnfRule>();
+        var groups = new Dictionary<object, RuleGroup>();
 
-        if (!AddRules(left.Rules) || !AddRules(right.Rules))
-        {
-            combined = null;
-            return false;
-        }
+        AddRules(left.Rules);
+        AddRules(right.Rules);
 
         var cases = new[] { Always };
-        foreach (var constraint in constraints.Values)
+        foreach (var group in groups.Values)
         {
-            cases = CombineWithoutResimplifying(cases, constraint.ToCondition().Cases);
+            cases = AndCasesWithoutSimplification(cases, group.Simplifier.Simplify(group.Rules, parameterDomains).Cases);
             if (cases.Length == 0)
             {
                 combined = DnfCondition.Never;
@@ -134,40 +136,27 @@ internal sealed class DnfCase : IEquatable<DnfCase>
             }
         }
 
-        if (passthroughRules.Count != 0)
-        {
-            var passthroughCase = new DnfCase(passthroughRules.ToArray());
-            cases = CombineWithoutResimplifying(cases, new[] { passthroughCase });
-        }
-
         combined = cases.Length == 0 ? DnfCondition.Never : new DnfCondition(cases.ToHashSet().ToArray());
         return !combined.IsNever;
 
-        bool AddRules(IReadOnlyList<DnfRule> source)
+        void AddRules(IReadOnlyList<DnfRule> source)
         {
             foreach (var rule in source)
             {
-                var key = rule.SimplificationKey;
-                if (key == null)
+                rule.GetSimplifier(out var key, out var simplifier);
+
+                if (!groups.TryGetValue(key, out var group))
                 {
-                    passthroughRules.Add(rule);
-                    continue;
+                    group = new RuleGroup(simplifier);
+                    groups.Add(key, group);
                 }
 
-                if (!constraints.TryGetValue(key, out var constraint))
-                {
-                    constraint = rule.CreateConstraint();
-                    constraints.Add(key, constraint);
-                }
-
-                if (!constraint.Add(rule)) return false;
+                group.Rules.Add(rule);
             }
-
-            return true;
         }
     }
 
-    private static DnfCase[] CombineWithoutResimplifying(IReadOnlyList<DnfCase> left, IReadOnlyList<DnfCase> right)
+    private static DnfCase[] AndCasesWithoutSimplification(IReadOnlyList<DnfCase> left, IReadOnlyList<DnfCase> right)
     {
         if (left.Count == 0 || right.Count == 0) return Array.Empty<DnfCase>();
 
@@ -212,10 +201,38 @@ internal sealed class DnfCase : IEquatable<DnfCase>
     }
 }
 
-internal abstract class DnfRuleConstraint
+internal sealed class RuleGroup
 {
-    public abstract bool Add(DnfRule rule);
-    public abstract DnfCondition ToCondition();
+    public DnfRuleGroupSimplifier Simplifier { get; }
+    public List<DnfRule> Rules { get; } = new();
+
+    public RuleGroup(DnfRuleGroupSimplifier simplifier)
+    {
+        Simplifier = simplifier;
+    }
+}
+
+internal abstract class DnfRuleGroupSimplifier
+{
+    public abstract DnfCondition Simplify(
+        IReadOnlyList<DnfRule> rules,
+        ParameterDomainRegistry? parameterDomains);
+}
+
+internal sealed class PassthroughDnfRuleSimplifier : DnfRuleGroupSimplifier
+{
+    public static PassthroughDnfRuleSimplifier Instance { get; } = new();
+
+    private PassthroughDnfRuleSimplifier()
+    {
+    }
+
+    public override DnfCondition Simplify(
+        IReadOnlyList<DnfRule> rules,
+        ParameterDomainRegistry? parameterDomains)
+    {
+        return DnfCondition.Single(new DnfCase(rules.Distinct().ToArray()));
+    }
 }
 
 /// <summary>
@@ -223,11 +240,10 @@ internal abstract class DnfRuleConstraint
 /// </summary>
 internal abstract record class DnfRule
 {
-    public virtual object? SimplificationKey => null;
-
-    public virtual DnfRuleConstraint CreateConstraint()
+    public virtual void GetSimplifier(out object key, out DnfRuleGroupSimplifier simplifier)
     {
-        throw new NotSupportedException($"{GetType().Name} does not support DNF simplification.");
+        key = this;
+        simplifier = PassthroughDnfRuleSimplifier.Instance;
     }
 
     public abstract DnfRule Negate();

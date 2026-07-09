@@ -151,6 +151,7 @@ internal sealed class ExpressionLayerPlanBuilder
 {
     private readonly DnfCondition? _lockFacialInactiveWhen;
     private readonly DnfCondition? _forceInactiveWhen;
+    private readonly ParameterDomainRegistry _parameterDomains;
     private readonly AapProtocol _aap;
 
     public ExpressionLayerPlanBuilder(
@@ -163,6 +164,7 @@ internal sealed class ExpressionLayerPlanBuilder
             : DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
                 ParameterCondition.Bool(settings.LockFacialParameterName, false)));
         _forceInactiveWhen = forceInactiveWhen;
+        _parameterDomains = settings.ParameterDomains;
         _aap = aap;
     }
 
@@ -199,7 +201,7 @@ internal sealed class ExpressionLayerPlanBuilder
     {
         return BuildExpressionLayer(
             ExpressionLayerName(unitId, layerIndex, "Replace"),
-            ReplaceStateSources(expressions),
+            ReplaceStateSources(expressions, _parameterDomains),
             unitId);
     }
 
@@ -253,7 +255,7 @@ internal sealed class ExpressionLayerPlanBuilder
         var exitWhen = enterWhen.Complement();
         return _lockFacialInactiveWhen == null
             ? exitWhen
-            : exitWhen.And(_lockFacialInactiveWhen);
+            : exitWhen.And(_lockFacialInactiveWhen, _parameterDomains);
     }
 
     private static string ExpressionLayerName(int unitId, int layerIndex, string kind)
@@ -261,7 +263,9 @@ internal sealed class ExpressionLayerPlanBuilder
         return $"{unitId}-{layerIndex} {kind}";
     }
 
-    private static IEnumerable<ExpressionStateSource> ReplaceStateSources(IReadOnlyList<ExpressionItem> expressions)
+    private static IEnumerable<ExpressionStateSource> ReplaceStateSources(
+        IReadOnlyList<ExpressionItem> expressions,
+        ParameterDomainRegistry parameterDomains)
     {
         for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
         {
@@ -269,7 +273,7 @@ internal sealed class ExpressionLayerPlanBuilder
             var higherPriority = DnfCondition.Any(expressions
                 .Skip(expressionIndex + 1)
                 .Select(item => item.RawWhen));
-            var enterWhen = expression.RawWhen.And(higherPriority.Complement());
+            var enterWhen = expression.RawWhen.And(higherPriority.Complement(parameterDomains), parameterDomains);
 
             foreach (var state in ExpressionStateSources(expression, expressionIndex, enterWhen))
             {
@@ -356,10 +360,10 @@ internal sealed class TrackingControlPlanBuilder
                     _aap.WritesLipSyncControl,
                     _settings.DisableLipSyncParameterName);
 
-                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Tracking", eyeBlink.Tracking.And(lipSync.Tracking), true, true));
-                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Animation", eyeBlink.Tracking.And(lipSync.Animation), true, false));
-                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Tracking", eyeBlink.Animation.And(lipSync.Tracking), false, true));
-                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Animation", eyeBlink.Animation.And(lipSync.Animation), false, false));
+                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Tracking", eyeBlink.Tracking.And(lipSync.Tracking, _settings.ParameterDomains), true, true));
+                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Animation", eyeBlink.Tracking.And(lipSync.Animation, _settings.ParameterDomains), true, false));
+                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Tracking", eyeBlink.Animation.And(lipSync.Tracking, _settings.ParameterDomains), false, true));
+                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Animation", eyeBlink.Animation.And(lipSync.Animation, _settings.ParameterDomains), false, false));
             }
             else
             {
@@ -432,7 +436,7 @@ internal sealed class TrackingControlPlanBuilder
                 ParameterCondition.Bool(forceDisableParameterName, true))));
         }
 
-        return (DnfCondition.All(trackingConditions), DnfCondition.Any(animationConditions));
+        return (DnfCondition.All(trackingConditions, _settings.ParameterDomains), DnfCondition.Any(animationConditions));
     }
 
 }
