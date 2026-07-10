@@ -10,14 +10,4 @@ internal interface IAnimatorPlatformServices
     void SetLipSyncTracking(VirtualState state, bool isTracking);
     void AddRandomDriver(VirtualState state, string parameterName, float min, float max);
 
-    bool IsUnitBoundaryTransform(
-        Transform transform,
-        VirtualControllerContext controllerContext,
-        ISet<string> managedBlendShapeNames);
-
-    VirtualAnimatorController CreateController(
-        VirtualControllerContext controllerContext,
-        Transform anchor,
-        string name,
-        int priority);
 }

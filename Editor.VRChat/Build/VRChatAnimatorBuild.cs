@@ -10,6 +10,10 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static class VRChatAnimatorBuilder
 {
+    private const int InitialControllerPriority = -1;
+    private const int UnitControllerPriority = 0;
+    private const int TrackingControlControllerPriority = 0;
+
     public static void Emit(
         BuildContext buildContext,
         BuildSettings settings,
@@ -24,22 +28,73 @@ internal static class VRChatAnimatorBuilder
         var analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         var mmdPolicy = ResolveMmdAnimatorPolicy(settings, analyzedWriteDefaults);
 
+        var unitBoundaryTransforms = FindUnitBoundaryTransforms(settings, controllerContext);
         var animatorPlan = AnimatorBuildPlanBuilder.Build(
             expressionProgram,
             settings,
             platformServices,
-            controllerContext,
+            unitBoundaryTransforms,
             mmdPolicy.LayerForceInactiveWhen);
 
-        new AnimatorInstaller(
-            controllerContext,
+        var installer = new AnimatorInstaller(
             settings.AvatarContext,
             analyzedWriteDefaults ?? true,
             platformServices,
-            animatorPlan).Execute();
+            animatorPlan.ExpressionTransitionDurationSeconds);
+
+        var initialController = CreateMergeAnimatorController(
+            controllerContext,
+            animatorPlan.InitialLayer.Anchor,
+            animatorPlan.InitialLayer.Name,
+            InitialControllerPriority);
+        installer.InstallInitial(initialController, animatorPlan.InitialLayer, InitialControllerPriority);
+
+        foreach (var unit in animatorPlan.Units)
+        {
+            var unitController = CreateMergeAnimatorController(
+                controllerContext,
+                unit.Anchor,
+                $"Unit {unit.Id}",
+                UnitControllerPriority);
+            installer.InstallUnit(unitController, unit, UnitControllerPriority);
+        }
+
+        if (animatorPlan.TrackingControlLayer is { } trackingControl)
+        {
+            var trackingController = CreateMergeAnimatorController(
+                controllerContext,
+                trackingControl.Anchor,
+                trackingControl.Name,
+                TrackingControlControllerPriority);
+            installer.InstallTrackingControl(
+                trackingController,
+                trackingControl,
+                TrackingControlControllerPriority);
+        }
 
         // mmdPolicy.ControllerDisableWhen is intentionally left for
         // platform-specific controller assignment.
+    }
+
+    private static VirtualAnimatorController CreateMergeAnimatorController(
+        VirtualControllerContext controllerContext,
+        Transform anchor,
+        string name,
+        int priority)
+    {
+        var merge = anchor.gameObject.AddComponent<ModularAvatarMergeAnimator>();
+        merge.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
+        merge.deleteAttachedAnimator = false;
+        merge.pathMode = MergeAnimatorPathMode.Absolute;
+        merge.matchAvatarWriteDefaults = false;
+        merge.layerPriority = priority;
+        merge.mergeAnimatorMode = MergeAnimatorMode.Append;
+
+        var controller = VirtualAnimatorController.Create(
+            controllerContext.CloneContext,
+            $"{FaceTuneConstants.Name}: {name}");
+        controllerContext.Controllers[merge] = controller;
+        return controller;
     }
 
     private static (DnfCondition? LayerForceInactiveWhen, DnfCondition? ControllerDisableWhen)
@@ -67,6 +122,67 @@ internal static class VRChatAnimatorBuilder
             MmdDisableMode.DisableFx => (null, disableWhen),
             _ => throw new ArgumentOutOfRangeException(nameof(playback.DisableMode), playback.DisableMode, null)
         };
+    }
+
+    private static ISet<Transform> FindUnitBoundaryTransforms(
+        BuildSettings settings,
+        VirtualControllerContext controllerContext)
+    {
+        var managedBlendShapeNames = settings.AvatarContext.FaceMesh.GetBlendShapeNames()
+            .Where(name => !settings.ExcludedBlendShapeNames.Contains(name))
+            .ToHashSet();
+        if (managedBlendShapeNames.Count == 0) return new HashSet<Transform>();
+
+        return settings.AvatarContext.Root.GetComponentsInChildren<Transform>(true)
+            .Where(transform => IsUnitBoundaryTransform(transform, controllerContext, managedBlendShapeNames))
+            .ToHashSet();
+    }
+
+    private static bool IsUnitBoundaryTransform(
+        Transform transform,
+        VirtualControllerContext controllerContext,
+        ISet<string> managedBlendShapeNames)
+    {
+        return transform.TryGetComponent<ModularAvatarMergeAnimator>(out var merge)
+               && merge.layerType == VRCAvatarDescriptor.AnimLayerType.FX
+               && controllerContext.Controllers.TryGetValue(merge, out var controller)
+               && OverlapsManagedBlendShapes(controller, managedBlendShapeNames);
+    }
+
+    private static bool OverlapsManagedBlendShapes(
+        VirtualAnimatorController controller,
+        ISet<string> managedBlendShapeNames)
+    {
+        return CollectBlendShapeNames(controller).Any(managedBlendShapeNames.Contains);
+    }
+
+    private static IEnumerable<string> CollectBlendShapeNames(VirtualAnimatorController controller)
+    {
+        return controller.Layers
+            .Where(layer => layer.StateMachine != null)
+            .SelectMany(layer => layer.StateMachine!.AllStates())
+            .SelectMany(state => CollectBlendShapeNames(state.Motion))
+            .Distinct();
+    }
+
+    private static IEnumerable<string> CollectBlendShapeNames(VirtualMotion? motion)
+    {
+        return motion switch
+        {
+            VirtualClip clip => CollectBlendShapeNames(clip),
+            VirtualBlendTree tree => tree.Children
+                .Where(child => child.Motion != null)
+                .SelectMany(child => CollectBlendShapeNames(child.Motion)),
+            _ => Array.Empty<string>()
+        };
+    }
+
+    private static IEnumerable<string> CollectBlendShapeNames(VirtualClip clip)
+    {
+        return clip.GetFloatCurveBindings()
+            .Where(binding => binding.type == typeof(SkinnedMeshRenderer)
+                              && binding.propertyName.StartsWith("blendShape."))
+            .Select(binding => binding.propertyName["blendShape.".Length..]);
     }
 
     private static DnfCondition ParameterBool(string parameterName, bool value)
@@ -107,73 +223,5 @@ internal static class VRChatAnimatorBuilder
                 });
         }
 
-        public bool IsUnitBoundaryTransform(
-            Transform transform,
-            VirtualControllerContext controllerContext,
-            ISet<string> managedBlendShapeNames)
-        {
-            return managedBlendShapeNames.Count != 0
-                   && transform.TryGetComponent<ModularAvatarMergeAnimator>(out var merge)
-                   && merge.layerType == VRCAvatarDescriptor.AnimLayerType.FX
-                   && controllerContext.Controllers.TryGetValue(merge, out var controller)
-                   && OverlapsManagedBlendShapes(controller, managedBlendShapeNames);
-        }
-
-        public VirtualAnimatorController CreateController(
-            VirtualControllerContext controllerContext,
-            Transform anchor,
-            string name,
-            int priority)
-        {
-            var merge = anchor.gameObject.AddComponent<ModularAvatarMergeAnimator>();
-            merge.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
-            merge.deleteAttachedAnimator = false;
-            merge.pathMode = MergeAnimatorPathMode.Absolute;
-            merge.matchAvatarWriteDefaults = false;
-            merge.layerPriority = priority;
-            merge.mergeAnimatorMode = MergeAnimatorMode.Append;
-
-            var controller = VirtualAnimatorController.Create(
-                controllerContext.CloneContext,
-                $"{FaceTuneConstants.Name}: {name}");
-            controllerContext.Controllers[merge] = controller;
-            return controller;
-        }
-
-        private static bool OverlapsManagedBlendShapes(
-            VirtualAnimatorController controller,
-            ISet<string> managedBlendShapeNames)
-        {
-            return CollectBlendShapeNames(controller).Any(managedBlendShapeNames.Contains);
-        }
-
-        private static IEnumerable<string> CollectBlendShapeNames(VirtualAnimatorController controller)
-        {
-            return controller.Layers
-                .Where(layer => layer.StateMachine != null)
-                .SelectMany(layer => layer.StateMachine!.AllStates())
-                .SelectMany(state => CollectBlendShapeNames(state.Motion))
-                .Distinct();
-        }
-
-        private static IEnumerable<string> CollectBlendShapeNames(VirtualMotion? motion)
-        {
-            return motion switch
-            {
-                VirtualClip clip => CollectBlendShapeNames(clip),
-                VirtualBlendTree tree => tree.Children
-                    .Where(child => child.Motion != null)
-                    .SelectMany(child => CollectBlendShapeNames(child.Motion)),
-                _ => Array.Empty<string>()
-            };
-        }
-
-        private static IEnumerable<string> CollectBlendShapeNames(VirtualClip clip)
-        {
-            return clip.GetFloatCurveBindings()
-                .Where(binding => binding.type == typeof(SkinnedMeshRenderer)
-                                  && binding.propertyName.StartsWith("blendShape."))
-                .Select(binding => binding.propertyName["blendShape.".Length..]);
-        }
     }
 }

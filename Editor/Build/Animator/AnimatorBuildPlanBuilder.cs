@@ -1,14 +1,10 @@
-using nadena.dev.ndmf.animator;
-using UnityEditor.Animations;
-
 namespace Aoyon.FaceTune.Build.Animator;
 
 internal sealed class AnimatorBuildPlanBuilder
 {
     private readonly ExpressionProgram _program;
     private readonly BuildSettings _settings;
-    private readonly IAnimatorPlatformServices _platformServices;
-    private readonly VirtualControllerContext _controllerContext;
+    private readonly ISet<Transform> _unitBoundaryTransforms;
     private readonly AapProtocol _aap;
     private readonly DnfCondition? _layerForceInactiveWhen;
 
@@ -18,23 +14,27 @@ internal sealed class AnimatorBuildPlanBuilder
         ExpressionProgram program,
         BuildSettings settings,
         IAnimatorPlatformServices platformServices,
-        VirtualControllerContext controllerContext,
+        ISet<Transform> unitBoundaryTransforms,
         DnfCondition? layerForceInactiveWhen)
     {
-        return new AnimatorBuildPlanBuilder(program, settings, platformServices, controllerContext, layerForceInactiveWhen).Build();
+        return new AnimatorBuildPlanBuilder(
+            program,
+            settings,
+            platformServices,
+            unitBoundaryTransforms,
+            layerForceInactiveWhen).Build();
     }
 
     private AnimatorBuildPlanBuilder(
         ExpressionProgram program,
         BuildSettings settings,
         IAnimatorPlatformServices platformServices,
-        VirtualControllerContext controllerContext,
+        ISet<Transform> unitBoundaryTransforms,
         DnfCondition? layerForceInactiveWhen)
     {
         _program = program;
         _settings = settings;
-        _platformServices = platformServices;
-        _controllerContext = controllerContext;
+        _unitBoundaryTransforms = unitBoundaryTransforms;
         _aap = AapProtocol.From(program.Items, platformServices.FloatRange);
         _layerForceInactiveWhen = layerForceInactiveWhen;
     }
@@ -60,11 +60,7 @@ internal sealed class AnimatorBuildPlanBuilder
 
     private IReadOnlyList<OutputUnitPlan> BuildUnits()
     {
-        var managedBlendShapeNames = AvatarContext.FaceMesh.GetBlendShapeNames()
-            .Where(name => !_settings.ExcludedBlendShapeNames.Contains(name))
-            .ToHashSet();
-
-        var splitIndices = FindExternalOverlapSplitIndices(managedBlendShapeNames);
+        var splitIndices = FindExternalOverlapSplitIndices();
 
         var units = new List<OutputUnitPlan>();
         var start = 0;
@@ -112,9 +108,9 @@ internal sealed class AnimatorBuildPlanBuilder
         return new TrackingControlPlanBuilder(_settings, _layerForceInactiveWhen, _aap).Build(anchor);
     }
 
-    private IEnumerable<int> FindExternalOverlapSplitIndices(ISet<string> managedBlendShapeNames)
+    private IEnumerable<int> FindExternalOverlapSplitIndices()
     {
-        if (_program.Items.Count < 2 || managedBlendShapeNames.Count == 0) yield break;
+        if (_program.Items.Count < 2 || _unitBoundaryTransforms.Count == 0) yield break;
 
         var expressionIndexByTransform = _program.Items
             .Select((item, index) => (item.SourceTransform, index))
@@ -139,10 +135,7 @@ internal sealed class AnimatorBuildPlanBuilder
 
             if (!hasExpressionAbove || hasBoundarySinceLastExpression) continue;
 
-            hasBoundarySinceLastExpression = _platformServices.IsUnitBoundaryTransform(
-                transform,
-                _controllerContext,
-                managedBlendShapeNames);
+            hasBoundarySinceLastExpression = _unitBoundaryTransforms.Contains(transform);
         }
     }
 }

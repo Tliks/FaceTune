@@ -5,99 +5,93 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal sealed class AnimatorInstaller
 {
-    private const int InitialPriority = -1;
-    private const int UnitPriority = 0;
-    private const int TrackingControlPriority = 0;
-
     private static readonly Vector3 DefaultStatePosition = new(300, 0, 0);
     private const float PositionYStep = 50;
 
-    private readonly VirtualControllerContext _controllerContext;
     private readonly AvatarContext _avatarContext;
     private readonly IAnimatorPlatformServices _platformServices;
-    private readonly AnimatorBuildPlan _plan;
+    private readonly float _expressionTransitionDurationSeconds;
     private readonly bool _useWriteDefaults;
     private readonly VirtualClip _emptyClip;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _expressionClips = new();
 
     public AnimatorInstaller(
-        VirtualControllerContext controllerContext,
         AvatarContext avatarContext,
         bool useWriteDefaults,
         IAnimatorPlatformServices platformServices,
-        AnimatorBuildPlan plan)
+        float expressionTransitionDurationSeconds)
     {
-        _controllerContext = controllerContext;
         _avatarContext = avatarContext;
         _useWriteDefaults = useWriteDefaults;
         _platformServices = platformServices;
-        _plan = plan;
+        _expressionTransitionDurationSeconds = expressionTransitionDurationSeconds;
         _emptyClip = AnimatorHelper.CreateCustomEmptyClip();
     }
 
-    public void Execute()
+    public void InstallInitial(
+        VirtualAnimatorController controller,
+        InitialLayerPlan initial,
+        int layerPriority)
     {
-        if (_plan.Units.Count == 0) return;
-
-        InstallInitialController();
-        foreach (var unit in _plan.Units)
-        {
-            InstallUnitController(unit);
-        }
-
-        if (_plan.TrackingControlLayer != null)
-        {
-            InstallTrackingControlController(_plan.TrackingControlLayer);
-        }
-    }
-
-    private void InstallInitialController()
-    {
-        var controller = _platformServices.CreateController(_controllerContext, _plan.InitialLayer.Anchor, _plan.InitialLayer.Name, InitialPriority);
-        var layer = AddLayer(controller, _plan.InitialLayer.Name, InitialPriority);
+        var layer = AddLayer(controller, initial.Name, layerPriority);
 
         var state = AddState(layer, "Default", DefaultStatePosition);
         layer.StateMachine!.DefaultState = state;
         var clip = state.SetNewClip("Initial");
-        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, _plan.InitialLayer.BlendShapes.ToBlendShapeAnimations());
+        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, initial.BlendShapes.ToBlendShapeAnimations());
     }
 
-    private void InstallUnitController(OutputUnitPlan unit)
+    public void InstallUnit(
+        VirtualAnimatorController controller,
+        OutputUnitPlan unit,
+        int layerPriority)
     {
-        var controller = _platformServices.CreateController(_controllerContext, unit.Anchor, $"Unit {unit.Id}", UnitPriority);
         foreach (var param in unit.Parameters)
             controller.EnsureParameterExists(param.Type, param.Name, param.DefaultValue);
         foreach (var layer in unit.ExpressionLayers)
         {
-            InstallExpressionLayer(controller, layer);
+            InstallExpressionLayer(controller, layer, layerPriority);
         }
 
         if (unit.AdvancedEyeBlink != null)
         {
-            InstallEmptyAdvancedLayer(controller, unit.AdvancedEyeBlink.Name, unit.AdvancedEyeBlink.ForceInactiveWhen);
+            InstallEmptyAdvancedLayer(
+                controller,
+                unit.AdvancedEyeBlink.Name,
+                unit.AdvancedEyeBlink.ForceInactiveWhen,
+                layerPriority);
         }
         if (unit.AdvancedLipSync != null)
         {
-            InstallEmptyAdvancedLayer(controller, unit.AdvancedLipSync.Name, unit.AdvancedLipSync.ForceInactiveWhen);
+            InstallEmptyAdvancedLayer(
+                controller,
+                unit.AdvancedLipSync.Name,
+                unit.AdvancedLipSync.ForceInactiveWhen,
+                layerPriority);
         }
     }
 
-    private void InstallTrackingControlController(TrackingControlLayerPlan trackingControl)
+    public void InstallTrackingControl(
+        VirtualAnimatorController controller,
+        TrackingControlLayerPlan trackingControl,
+        int layerPriority)
     {
-        var controller = _platformServices.CreateController(_controllerContext, trackingControl.Anchor, trackingControl.Name, TrackingControlPriority);
         foreach (var param in trackingControl.Parameters)
             controller.EnsureParameterExists(param.Type, param.Name, param.DefaultValue);
-        InstallTrackingControlLayer(controller, trackingControl);
+        InstallTrackingControlLayer(controller, trackingControl, layerPriority);
     }
 
-    private void InstallExpressionLayer(VirtualAnimatorController controller, ExpressionLayerPlan plan)
+    private void InstallExpressionLayer(
+        VirtualAnimatorController controller,
+        ExpressionLayerPlan plan,
+        int layerPriority)
     {
-        var layer = AddLayer(controller, plan.Name, UnitPriority);
+        var layer = AddLayer(controller, plan.Name, layerPriority);
 
         var defaultState = AddState(layer, "PassThrough", DefaultStatePosition);
         AsPassThrough(defaultState);
         layer.StateMachine!.DefaultState = defaultState;
-        SetExitTransitions(defaultState, plan.DefaultExitWhen, _plan.ExpressionTransitionDurationSeconds);
+        SetExitTransitions(defaultState, plan.DefaultExitWhen, _expressionTransitionDurationSeconds);
 
         var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
         foreach (var statePlan in plan.States)
@@ -106,27 +100,34 @@ internal sealed class AnimatorInstaller
             position.y += PositionYStep;
             SetExpressionClip(state, statePlan);
             AddEntryTransition(layer, state, statePlan.EnterWhen);
-            SetExitTransitions(state, statePlan.ExitWhen, _plan.ExpressionTransitionDurationSeconds);
+            SetExitTransitions(state, statePlan.ExitWhen, _expressionTransitionDurationSeconds);
         }
 
         AddForceInactiveState(layer, "Disabled", plan.ForceInactiveWhen, true);
     }
 
-    private void InstallEmptyAdvancedLayer(VirtualAnimatorController controller, string name, DnfCondition? forceInactiveWhen)
+    private void InstallEmptyAdvancedLayer(
+        VirtualAnimatorController controller,
+        string name,
+        DnfCondition? forceInactiveWhen,
+        int layerPriority)
     {
-        var layer = AddLayer(controller, name, UnitPriority);
+        var layer = AddLayer(controller, name, layerPriority);
         
         AddForceInactiveState(layer, "Disabled", forceInactiveWhen, true);
     }
 
-    private void InstallTrackingControlLayer(VirtualAnimatorController controller, TrackingControlLayerPlan trackingControl)
+    private void InstallTrackingControlLayer(
+        VirtualAnimatorController controller,
+        TrackingControlLayerPlan trackingControl,
+        int layerPriority)
     {
-        var layer = AddLayer(controller, trackingControl.Name, TrackingControlPriority);
+        var layer = AddLayer(controller, trackingControl.Name, layerPriority);
 
         var defaultState = AddState(layer, trackingControl.DefaultState.Name, DefaultStatePosition);
         SetTrackingControlState(defaultState, trackingControl.DefaultState);
         layer.StateMachine!.DefaultState = defaultState;
-        SetExitTransitions(defaultState, trackingControl.DefaultExitWhen, _plan.ExpressionTransitionDurationSeconds);
+        SetExitTransitions(defaultState, trackingControl.DefaultExitWhen, _expressionTransitionDurationSeconds);
 
         var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
         foreach (var statePlan in trackingControl.States)
@@ -135,7 +136,7 @@ internal sealed class AnimatorInstaller
             position.y += PositionYStep;
             SetTrackingControlState(state, statePlan);
             AddEntryTransition(layer, state, statePlan.When);
-            SetExitTransitions(state, statePlan.When.Complement(), _plan.ExpressionTransitionDurationSeconds);
+            SetExitTransitions(state, statePlan.When.Complement(), _expressionTransitionDurationSeconds);
         }
 
         AddForceInactiveState(layer, "Disabled", trackingControl.ForceInactiveWhen, false);
