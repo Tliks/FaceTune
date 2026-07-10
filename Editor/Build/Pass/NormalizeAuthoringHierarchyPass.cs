@@ -22,7 +22,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         ResolveMenuConditions(context.AvatarContext.Root);
     }
 
-    // Preset -> Menu + Conditionに変更
+    // Preset -> Menu + Conditionに変換
     private static void ProcessPresetComponents(GameObject root)
     {
         var presets = root.GetComponentsInChildren<PresetComponent>(true);
@@ -53,6 +53,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
+    // DirectMenu => Menu + 高優先度のExpression に変換
     private static void ProcessDirectMenuSettings(GameObject root)
     {
         var expressions = root.GetComponentsInChildren<FaceTuneComponent>(true)

@@ -70,6 +70,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 1
   Condition:
     Always: 1
     Cases: []
@@ -216,6 +217,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 1
   Condition:
     Always: 1
     Cases: []
@@ -307,6 +309,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 1
   Condition:
     Always: 1
     Cases: []

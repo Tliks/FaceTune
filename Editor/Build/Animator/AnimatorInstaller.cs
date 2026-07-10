@@ -9,7 +9,7 @@ internal sealed class AnimatorInstaller
     private const int UnitPriority = 0;
     private const int TrackingControlPriority = 0;
 
-    private static readonly Vector3 EntryStatePosition = new(300, 0, 0);
+    private static readonly Vector3 DefaultStatePosition = new(300, 0, 0);
     private const float PositionYStep = 50;
 
     private readonly VirtualControllerContext _controllerContext;
@@ -56,7 +56,7 @@ internal sealed class AnimatorInstaller
         var controller = _platformServices.CreateController(_controllerContext, _plan.InitialLayer.Anchor, _plan.InitialLayer.Name, InitialPriority);
         var layer = AddLayer(controller, _plan.InitialLayer.Name, InitialPriority);
 
-        var state = AddState(layer, "Default", EntryStatePosition);
+        var state = AddState(layer, "Default", DefaultStatePosition);
         layer.StateMachine!.DefaultState = state;
         var clip = state.SetNewClip("Initial");
         clip.AddBlendShapeAnimations(_avatarContext.BodyPath, _plan.InitialLayer.BlendShapes.ToBlendShapeAnimations());
@@ -94,12 +94,12 @@ internal sealed class AnimatorInstaller
     {
         var layer = AddLayer(controller, plan.Name, UnitPriority);
 
-        var defaultState = AddState(layer, "PassThrough", EntryStatePosition);
+        var defaultState = AddState(layer, "PassThrough", DefaultStatePosition);
         AsPassThrough(defaultState);
         layer.StateMachine!.DefaultState = defaultState;
         SetExitTransitions(defaultState, plan.DefaultExitWhen, _plan.ExpressionTransitionDurationSeconds);
 
-        var position = EntryStatePosition + new Vector3(0, PositionYStep * 2, 0);
+        var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
         foreach (var statePlan in plan.States)
         {
             var state = AddState(layer, statePlan.Name, position);
@@ -123,12 +123,12 @@ internal sealed class AnimatorInstaller
     {
         var layer = AddLayer(controller, trackingControl.Name, TrackingControlPriority);
 
-        var defaultState = AddState(layer, trackingControl.DefaultState.Name, EntryStatePosition);
+        var defaultState = AddState(layer, trackingControl.DefaultState.Name, DefaultStatePosition);
         SetTrackingControlState(defaultState, trackingControl.DefaultState);
         layer.StateMachine!.DefaultState = defaultState;
         SetExitTransitions(defaultState, trackingControl.DefaultExitWhen, _plan.ExpressionTransitionDurationSeconds);
 
-        var position = EntryStatePosition + new Vector3(0, PositionYStep * 2, 0);
+        var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
         foreach (var statePlan in trackingControl.States)
         {
             var state = AddState(layer, statePlan.Name, position);
@@ -200,7 +200,7 @@ internal sealed class AnimatorInstaller
     {
         if (forceInactiveWhen == null) return;
 
-        var state = AddState(layer, name, EntryStatePosition + new Vector3(0, PositionYStep, 0));
+        var state = AddState(layer, name, DefaultStatePosition - new Vector3(0, PositionYStep * 2, 0));
         if (passThrough)
         {
             AsPassThrough(state);
@@ -278,11 +278,6 @@ internal sealed class AnimatorInstaller
     private void AddEntryTransition(VirtualLayer layer, VirtualState destination, DnfCondition when)
     {
         AddEntryTransition(layer, destination, when.Cases);
-    }
-
-    private void AddEntryTransition(VirtualLayer layer, VirtualState destination, DnfCase when)
-    {
-        AddEntryTransition(layer, destination, new[] { when });
     }
 
     private void AddEntryTransition(VirtualLayer layer, VirtualState destination, IEnumerable<DnfCase> cases)

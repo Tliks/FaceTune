@@ -25,7 +25,7 @@ internal sealed record class ExpressionLayerPlan(
 
 internal sealed record class ExpressionStatePlan(
     string Name,
-    DnfCase EnterWhen,
+    DnfCondition EnterWhen,
     DnfCondition ExitWhen,
     BlendShapeWeightAnimationSet Animations,
     ExpressionSettings Settings,

@@ -31,6 +31,7 @@ internal static class FaceTuneProgramCompiler
 
         var items = components
             .Select(expressionCompiler.Compile)
+            .Where(item => !item.RawWhen.IsNever)
             .ToList();
 
         return new ExpressionProgram(items);
@@ -157,9 +158,12 @@ internal sealed class ConditionCompiler
 
     public DnfCondition Resolve(FaceTuneComponent component)
     {
-        var conditions = CollectEffectiveConditions(component).Select(ResolveCondition);
-        var condition = DnfCondition.All(conditions, _parameterDomains);
-        return condition;
+        var activationConditions = CollectEffectiveConditions(component)
+            .Select(ResolveCondition)
+            .ToArray();
+        return activationConditions.Length == 0
+            ? DnfCondition.Never
+            : DnfCondition.All(activationConditions, _parameterDomains);
     }
 
     private IEnumerable<Condition> CollectEffectiveConditions(FaceTuneComponent component)

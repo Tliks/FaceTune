@@ -168,78 +168,94 @@ internal sealed class ExpressionLayerPlanBuilder
         _aap = aap;
     }
 
-    public (IReadOnlyList<ExpressionLayerPlan> Layers, IReadOnlyList<PlanParameter> Parameters) Build(int unitId, IReadOnlyList<ExpressionItem> expressions)
+    public (IReadOnlyList<ExpressionLayerPlan> Layers, IReadOnlyList<PlanParameter> Parameters) Build(
+        int unitId,
+        IReadOnlyList<ExpressionItem> expressions)
     {
         var layers = new List<ExpressionLayerPlan>();
         for (var index = 0; index < expressions.Count;)
         {
-            var expression = expressions[index];
-            if (expression.WriteMode == ExpressionWriteMode.Replace)
+            var writeMode = expressions[index].WriteMode;
+            var run = new List<ExpressionItem>();
+            while (index < expressions.Count && expressions[index].WriteMode == writeMode)
             {
-                var run = new List<ExpressionItem>();
-                while (index < expressions.Count && expressions[index].WriteMode == ExpressionWriteMode.Replace)
-                {
-                    run.Add(expressions[index]);
-                    index++;
-                }
-
-                layers.Add(BuildReplaceLayer(unitId, layers.Count, run));
-                continue;
+                run.Add(expressions[index]);
+                index++;
             }
 
-            layers.Add(BuildBlendLayer(unitId, layers.Count, expression));
-            index++;
+            switch (writeMode)
+            {
+                case ExpressionWriteMode.Replace:
+                    layers.Add(BuildReplaceLayer(unitId, layers.Count, run));
+                    break;
+                case ExpressionWriteMode.Blend:
+                    layers.AddRange(BuildBlendLayers(unitId, layers.Count, run));
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported expression write mode: {writeMode}");
+            }
         }
-        
-        var _parameters = new Dictionary<string, PlanParameter>();
-        CollectParameters(expressions, _parameters);
-        
-        return (layers, _parameters.Values.ToArray());
+
+        var parameters = new Dictionary<string, PlanParameter>();
+        CollectParameters(expressions, parameters);
+        return (layers, parameters.Values.ToArray());
     }
 
-    private ExpressionLayerPlan BuildReplaceLayer(int unitId, int layerIndex, IReadOnlyList<ExpressionItem> expressions)
+    private ExpressionLayerPlan BuildReplaceLayer(
+        int unitId,
+        int layerIndex,
+        IReadOnlyList<ExpressionItem> expressions)
     {
+        var statePlans = new List<ExpressionStatePlan>();
+        for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
+        {
+            var expression = expressions[expressionIndex];
+            var higherPriority = DnfCondition.Any(expressions
+                .Skip(expressionIndex + 1)
+                .Select(item => item.RawWhen));
+            var enterWhen = expression.RawWhen.And(
+                higherPriority.Complement(_parameterDomains),
+                _parameterDomains);
+
+            statePlans.AddRange(BuildExpressionStates(unitId, expression, expressionIndex, enterWhen));
+        }
+
         return BuildExpressionLayer(
-            ExpressionLayerName(unitId, layerIndex, "Replace"),
-            ReplaceStateSources(expressions, _parameterDomains),
-            unitId);
+            $"{unitId}-{layerIndex} Replace",
+            statePlans);
     }
 
-    private ExpressionLayerPlan BuildBlendLayer(int unitId, int layerIndex, ExpressionItem expression)
+    private IEnumerable<ExpressionLayerPlan> BuildBlendLayers(
+        int unitId,
+        int firstLayerIndex,
+        IReadOnlyList<ExpressionItem> expressions)
     {
-        return BuildExpressionLayer(
-            ExpressionLayerName(unitId, layerIndex, "Blend"),
-            ExpressionStateSources(new[] { expression }),
-            unitId);
+        var packedLayers = PackBlendRun(expressions);
+        for (var layerIndex = 0; layerIndex < packedLayers.Count; layerIndex++)
+        {
+            var statePlans = packedLayers[layerIndex].SelectMany((expression, expressionIndex) =>
+                BuildExpressionStates(unitId, expression, expressionIndex, expression.RawWhen));
+            yield return BuildExpressionLayer(
+                $"{unitId}-{firstLayerIndex + layerIndex} Blend",
+                statePlans);
+        }
     }
 
     private ExpressionLayerPlan BuildExpressionLayer(
         string name,
-        IEnumerable<ExpressionStateSource> states,
-        int unitId)
+        IEnumerable<ExpressionStatePlan> states)
     {
-        var statePlans = states
-            .Select(state => BuildExpressionState(unitId, state.Expression, state.EnterCase, state.StateName))
-            .ToArray();
+        var statePlans = states.ToArray();
         return new ExpressionLayerPlan(
             name,
-            DnfCondition.Any(statePlans.Select(state => DnfCondition.Single(state.EnterWhen))),
+            DnfCondition.Any(statePlans.Select(state => state.EnterWhen)),
             _forceInactiveWhen,
             statePlans);
     }
 
-    private ExpressionStatePlan BuildExpressionState(int unitId, ExpressionItem expression, DnfCase enterWhen, string stateName)
-    {
-        return new ExpressionStatePlan(
-            stateName,
-            enterWhen,
-            BuildExpressionExitWhen(enterWhen),
-            expression.AnimationSet,
-            expression.ExpressionSettings,
-            _aap.BuildWrites(unitId, expression.FacialSettings));
-    }
-
-    private void CollectParameters(IReadOnlyList<ExpressionItem> expressions, Dictionary<string, PlanParameter> parameters)
+    private void CollectParameters(
+        IReadOnlyList<ExpressionItem> expressions,
+        Dictionary<string, PlanParameter> parameters)
     {
         _aap.CollectParameters(parameters);
         foreach (var expression in expressions)
@@ -250,66 +266,75 @@ internal sealed class ExpressionLayerPlanBuilder
             AnimatorHelper.CollectConditionParameters(parameters, _forceInactiveWhen);
     }
 
-    private DnfCondition BuildExpressionExitWhen(DnfCase enterWhen)
+    private List<List<ExpressionItem>> PackBlendRun(IReadOnlyList<ExpressionItem> expressions)
     {
-        var exitWhen = enterWhen.Complement();
-        return _lockFacialInactiveWhen == null
-            ? exitWhen
-            : exitWhen.And(_lockFacialInactiveWhen, _parameterDomains);
-    }
+        var layers = new List<List<ExpressionItem>>();
+        var layerIndices = new int[expressions.Count];
 
-    private static string ExpressionLayerName(int unitId, int layerIndex, string kind)
-    {
-        return $"{unitId}-{layerIndex} {kind}";
-    }
-
-    private static IEnumerable<ExpressionStateSource> ReplaceStateSources(
-        IReadOnlyList<ExpressionItem> expressions,
-        ParameterDomainRegistry parameterDomains)
-    {
-        for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
+        for (var currentIndex = 0; currentIndex < expressions.Count; currentIndex++)
         {
-            var expression = expressions[expressionIndex];
-            var higherPriority = DnfCondition.Any(expressions
-                .Skip(expressionIndex + 1)
-                .Select(item => item.RawWhen));
-            var enterWhen = expression.RawWhen.And(higherPriority.Complement(parameterDomains), parameterDomains);
-
-            foreach (var state in ExpressionStateSources(expression, expressionIndex, enterWhen))
+            // A later expression must be above every earlier expression that can be active with it.
+            var layerIndex = 0;
+            for (var previousIndex = 0; previousIndex < currentIndex; previousIndex++)
             {
-                yield return state;
+                var conditionsOverlap = !expressions[previousIndex].RawWhen
+                    .And(expressions[currentIndex].RawWhen, _parameterDomains)
+                    .IsNever;
+                if (!conditionsOverlap) continue;
+
+                layerIndex = Math.Max(layerIndex, layerIndices[previousIndex] + 1);
             }
+
+            while (layers.Count <= layerIndex)
+            {
+                layers.Add(new List<ExpressionItem>());
+            }
+
+            layers[layerIndex].Add(expressions[currentIndex]);
+            layerIndices[currentIndex] = layerIndex;
         }
+
+        return layers;
     }
 
-    private static IEnumerable<ExpressionStateSource> ExpressionStateSources(IReadOnlyList<ExpressionItem> expressions)
-    {
-        return expressions.SelectMany((expression, expressionIndex) => ExpressionStateSources(expression, expressionIndex, expression.RawWhen));
-    }
-
-    private static IEnumerable<ExpressionStateSource> ExpressionStateSources(
+    private IEnumerable<ExpressionStatePlan> BuildExpressionStates(
+        int unitId,
         ExpressionItem expression,
         int expressionIndex,
         DnfCondition enterWhen)
     {
-        return enterWhen.Cases.Select((enterCase, caseIndex) =>
-            new ExpressionStateSource(
-                expression,
-                enterCase,
-                ExpressionStateName(expression, expressionIndex, caseIndex, enterWhen.Cases.Count)));
+        if (enterWhen.IsNever) yield break;
+
+        // Splitting DNF cases keeps exit conditions small, but switching cases restarts time-dependent motions.
+        var canSplitWithoutResettingMotion = expression.AnimationSet.All(animation => !animation.IsMultiFrame);
+        var stateConditions = canSplitWithoutResettingMotion && enterWhen.Cases.Count > 1
+            ? enterWhen.Cases.Select(DnfCondition.Single).ToArray()
+            : new[] { enterWhen };
+
+        for (var stateIndex = 0; stateIndex < stateConditions.Length; stateIndex++)
+        {
+            var stateCondition = stateConditions[stateIndex];
+            var exitWhen = stateCondition.Complement(_parameterDomains);
+            if (_lockFacialInactiveWhen != null)
+            {
+                exitWhen = exitWhen.And(_lockFacialInactiveWhen, _parameterDomains);
+            }
+
+            var name = $"{expressionIndex + 1} {expression.Name}";
+            if (stateConditions.Length > 1)
+            {
+                name += $" #{stateIndex + 1}";
+            }
+
+            yield return new ExpressionStatePlan(
+                name,
+                stateCondition,
+                exitWhen,
+                expression.AnimationSet,
+                expression.ExpressionSettings,
+                _aap.BuildWrites(unitId, expression.FacialSettings));
+        }
     }
-
-    private static string ExpressionStateName(ExpressionItem expression, int expressionIndex, int caseIndex, int caseCount)
-    {
-        var name = $"{expressionIndex + 1} {expression.Name}";
-        return caseCount == 1 ? name : $"{name} #{caseIndex + 1}";
-    }
-
-    private sealed record class ExpressionStateSource(
-        ExpressionItem Expression,
-        DnfCase EnterCase,
-        string StateName);
-
 }
 
 internal sealed class TrackingControlPlanBuilder
@@ -451,10 +476,12 @@ internal sealed class AapProtocol
     private readonly Dictionary<(int UnitId, AdvancedEyeBlinkSettings Settings), int> _eyeBlinkAdvancedIndices = new();
     private readonly Dictionary<(int UnitId, AdvancedLipSyncSettings Settings), int> _lipSyncAdvancedIndices = new();
 
-    public const string EyeBlinkControlName = FaceTuneConstants.ParameterPrefix + "/Blink/Control";
-    public const string LipSyncControlName = FaceTuneConstants.ParameterPrefix + "/LipSync/Control";
-    private const string EyeBlinkAdvancedSelectorName = FaceTuneConstants.ParameterPrefix + "/Blink/Advanced";
-    private const string LipSyncAdvancedSelectorName = FaceTuneConstants.ParameterPrefix + "/LipSync/Advanced";
+
+    private const string AAPParameterPrefix = FaceTuneConstants.ParameterPrefix + "/InternalAAP";
+    public const string EyeBlinkControlName = AAPParameterPrefix + "/Blink/Control";
+    public const string LipSyncControlName = AAPParameterPrefix + "/LipSync/Control";
+    private const string EyeBlinkAdvancedSelectorName = AAPParameterPrefix + "/Blink/Advanced";
+    private const string LipSyncAdvancedSelectorName = AAPParameterPrefix + "/LipSync/Advanced";
 
     public bool WritesEyeBlinkControl { get; }
     public bool WritesLipSyncControl { get; }

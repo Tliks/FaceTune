@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MenuName: 
   Icon:
     Mode: 1
     ManualIcon: {fileID: 0}
@@ -54,7 +55,7 @@ MonoBehaviour:
       referencePath: 
       targetObject: {fileID: 0}
   Kind: 0
-  ParameterName: 
+  ParameterName: FaceTune/ForceLockFacial
   DefaultSelected: 0
   ExclusiveToggleGroup:
     GroupName: 
@@ -70,4 +71,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04dba2701ed84eb488b85f87a50864fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionParameterName: 
+  ConditionParameterName: FaceTune/ForceLockFacial

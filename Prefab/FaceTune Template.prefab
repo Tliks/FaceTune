@@ -70,6 +70,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 114db5dba152e97468f319ce138b3584, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MenuName: FaceTune
   Icon:
     Mode: 1
     ManualIcon: {fileID: 0}
@@ -122,9 +123,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ConditionEnabled: 1
   Condition:
     Always: 1
     Cases: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    MenuName: 
+    Icon:
+      Mode: 1
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+    BlendExclusiveGroupName: 
   ExpressionSettings:
     loopTime: 0
     motionTimeParameterName: 
