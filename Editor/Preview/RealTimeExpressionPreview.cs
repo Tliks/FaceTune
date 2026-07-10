@@ -76,7 +76,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
     private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, FaceTuneComponent target, GameObject root, string bodyPath)
     {
         using var _3 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
-        FacialStyleContext.TryGetFacialStyleAnimations(target.gameObject, facialStyleAnimations, root, context);
+        FacialStyleContext.TryGetFacialStyleAnimations(target.gameObject, facialStyleAnimations, root, bodyPath, context);
         result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
 
         context.Observe(target);

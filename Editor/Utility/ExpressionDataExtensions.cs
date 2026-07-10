@@ -5,7 +5,7 @@ internal static class ExpressionDataExtensions
     public static void GetFirstFrameBlendShapes<T>(
         this T component,
         ICollection<BlendShapeWeight> resultToAdd,
-        string bodyPath,
+        string? bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
         where T : Component, IExpressionDataSource
     {
@@ -18,7 +18,7 @@ internal static class ExpressionDataExtensions
     public static void GetFirstFrameBlendShapes(
         ExpressionData data,
         ICollection<BlendShapeWeight> resultToAdd,
-        string bodyPath,
+        string? bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
     {
         facialAnimations ??= Array.Empty<BlendShapeWeightAnimation>();
@@ -38,7 +38,7 @@ internal static class ExpressionDataExtensions
     public static void GetAnimations<T>(
         this T component,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
-        string bodyPath,
+        string? bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
         where T : Component, IExpressionDataSource
     {
@@ -51,7 +51,7 @@ internal static class ExpressionDataExtensions
     public static void GetAnimations(
         this ExpressionData data,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
-        string bodyPath,
+        string? bodyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
     {
         facialAnimations ??= Array.Empty<BlendShapeWeightAnimation>();

@@ -97,7 +97,7 @@ internal sealed class ExpressionCompiler
         var animationSet = new BlendShapeWeightAnimationSet();
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var facialAnimations);
-        if (FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations))
+        if (FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations, _avatarContext.BodyPath))
         {
             animationSet.AddRange(facialAnimations.Where(animation => !_settings.ExcludedBlendShapeNames.Contains(animation.Name)));
         }

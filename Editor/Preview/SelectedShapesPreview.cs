@@ -188,7 +188,7 @@ internal class SelectedShapesPreviewSession : IDisposable
         { 
             // dataCompononentのデータ取得用および、代入用にに顔つきを取得する
             using var _facial = ListPool<BlendShapeWeightAnimation>.Get(out var facial);
-            FacialStyleContext.TryGetFacialStyleAnimations(sourceRoot, facial, root, context);
+            FacialStyleContext.TryGetFacialStyleAnimations(sourceRoot, facial, root, bodyPath, context);
             
             resultToAdd.AddRange(facial);
 

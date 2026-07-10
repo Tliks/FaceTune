@@ -21,7 +21,7 @@ namespace Aoyon.FaceTune
         public AvatarObjectReference DataReference = new();
         public ExpressionData Data = new();
 
-        [Obsolete] public bool EnableRealTimePreview = false;
+        public bool EnableRealTimePreview = false;
 
         ComponentReferenceMode IExpressionDataSource.DataReferenceMode => DataReferenceMode;
         AvatarObjectReference IExpressionDataSource.DataReference => DataReference;

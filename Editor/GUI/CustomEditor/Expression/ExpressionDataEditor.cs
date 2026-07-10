@@ -142,7 +142,7 @@ internal class ExpressionDataEditor : FaceTuneIMGUIEditorBase<DataComponent>
         var bodyPath = context.BodyPath;
 
         var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
-        FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations);
+        FacialStyleContext.TryGetFacialStyleAnimations(Component.gameObject, facialStyleAnimations, bodyPath);
 
         var styleSet = new BlendShapeWeightSet();
         styleSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
@@ -321,7 +321,7 @@ internal class ExpressionDataClipExporter : EditorWindow
         if (_addFacialStyle)
         {
             var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
-            if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, facialStyleAnimations))
+            if (FacialStyleContext.TryGetFacialStyleAnimations(_component.gameObject, facialStyleAnimations, context.BodyPath))
             {
                 animations.AddRange(facialStyleAnimations);
             }
