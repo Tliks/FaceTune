@@ -35,7 +35,7 @@ internal sealed class AnimatorBuildPlanBuilder
         _settings = settings;
         _platformServices = platformServices;
         _controllerContext = controllerContext;
-        _aap = AapProtocol.From(program.Items, platformServices.AapFloatRange);
+        _aap = AapProtocol.From(program.Items, platformServices.FloatRange);
         _layerForceInactiveWhen = layerForceInactiveWhen;
     }
 

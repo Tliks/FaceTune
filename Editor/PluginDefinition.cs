@@ -23,12 +23,17 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(NormalizeAuthoringHierarchyPass.Instance);
         sequence.Run(FilterExcludedBlendShapesPass.Instance);
         sequence.Run(CompileExpressionProgramPass.Instance);
+        sequence.Run(CompileMenuProgramPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
-        sequence.Run(GenerateMenuPass.Instance);
-        sequence.Run(GenerateParameterPass.Instance);
-        sequence.Run(InstallBuildPass.Instance);
+        sequence.Run(EmitPlatformBuildPass.Instance);
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
+
+        sequence = InPhase(BuildPhase.Transforming)
+            .AfterPlugin("nadena.dev.modular-avatar")
+            .AfterPlugin("nadena.dev.modular-avatar.late-transform-stages")
+            .AfterPlugin("net.rs64.tex-trans-tool");
+        sequence.Run(FinalizePlatformBuildPass.Instance);
 
         sequence = InPhase(BuildPhase.PlatformFinish);
         sequence.Run("Empty Pass", _ => { })

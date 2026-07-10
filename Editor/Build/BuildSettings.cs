@@ -1,10 +1,7 @@
-using Aoyon.FaceTune.Platforms;
-
 namespace Aoyon.FaceTune.Build;
 
 internal record struct BuildSettings(
     AvatarContext AvatarContext,
-    IMetabasePlatformSupport PlatformSupport,
     IReadOnlyCollection<string> ExcludedBlendShapeNames,
     float DurationSeconds,
     bool ParmaterCompression,

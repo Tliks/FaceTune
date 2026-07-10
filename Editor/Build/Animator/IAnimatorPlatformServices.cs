@@ -4,22 +4,20 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal interface IAnimatorPlatformServices
 {
+    DiscreteFloatParameterRange FloatRange { get; }
+
     void SetEyeBlinkTracking(VirtualState state, bool isTracking);
     void SetLipSyncTracking(VirtualState state, bool isTracking);
     void AddRandomDriver(VirtualState state, string parameterName, float min, float max);
 
-    DiscreteFloatParameterRange AapFloatRange { get; }
-
     bool IsUnitBoundaryTransform(
         Transform transform,
         VirtualControllerContext controllerContext,
-        ISet<string> managedBlendShapeNames)
-    {
-        return false;
-    }
+        ISet<string> managedBlendShapeNames);
 
-    VirtualAnimatorController CreateController(VirtualControllerContext controllerContext, Transform anchor, string name, int priority)
-    {
-        throw new NotImplementedException("CreateController is not implemented for this platform");
-    }
+    VirtualAnimatorController CreateController(
+        VirtualControllerContext controllerContext,
+        Transform anchor,
+        string name,
+        int priority);
 }

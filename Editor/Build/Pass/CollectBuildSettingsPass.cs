@@ -64,7 +64,6 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
 
         return new BuildSettings(
             context.AvatarContext,
-            context.PlatformSupport,
             excludedBlendShapeNames.ToImmutableHashSet(),
             avatarSettings.DurationSeconds,
             avatarSettings.ParmaterCompression,

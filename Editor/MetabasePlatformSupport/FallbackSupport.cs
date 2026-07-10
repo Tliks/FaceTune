@@ -1,30 +1,23 @@
 namespace Aoyon.FaceTune.Platforms;
 
-internal class FallbackSupport : IMetabasePlatformSupport
-{     
-    public bool IsTarget(Transform root)
-    {
-        return true;
-    }
+internal sealed class FallbackSupport : IMetabasePlatformSupport
+{
+    private readonly Transform _root;
 
-    private Transform _root = null!;
-    public void Initialize(Transform root)
+    public FallbackSupport(Transform root)
     {
         _root = root;
     }
 
     public SkinnedMeshRenderer? GetFaceRenderer()
     {
-        SkinnedMeshRenderer? faceRenderer = null;
-        for (int i = 0; i < _root.childCount; i++)
+        for (var i = 0; i < _root.childCount; i++)
         {
             var child = _root.GetChild(i);
-            if (child.name == "Body")
-            {
-                faceRenderer = child.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null;
-                if (faceRenderer != null) { break; }
-            }
+            if (child.name != "Body") continue;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
         }
-        return faceRenderer;
+
+        return null;
     }
 }

@@ -1,31 +1,37 @@
+using nadena.dev.ndmf;
+
 namespace Aoyon.FaceTune.Platforms;
 
 internal static class MetabasePlatformSupport
 {
-    private static readonly List<IMetabasePlatformSupport> s_supports = new();
-    private static readonly IMetabasePlatformSupport s_fallback = new FallbackSupport();
-    
-    public static void Register(IMetabasePlatformSupport support)
+    internal delegate IMetabasePlatformSupport? Factory(Transform root);
+
+    private static readonly Dictionary<string, Factory> s_factories = new();
+
+    public static void Register(string platformId, Factory factory)
     {
-        s_supports.Add(support);
+        s_factories[platformId] = factory;
+    }
+
+    public static IMetabasePlatformSupport GetSupport(BuildContext context)
+    {
+        if (s_factories.TryGetValue(context.PlatformProvider.QualifiedName, out var factory))
+        {
+            var support = factory(context.AvatarRootTransform);
+            if (support != null) return support;
+        }
+
+        return new FallbackSupport(context.AvatarRootTransform);
     }
 
     public static IMetabasePlatformSupport GetSupport(Transform root)
     {
-        return GetSupports(root).First();
-    }
-
-    public static IEnumerable<IMetabasePlatformSupport> GetSupports(Transform root)
-    {
-        foreach (var support in s_supports)
+        foreach (var factory in s_factories.Values)
         {
-            if (support.IsTarget(root))
-            {
-                support.Initialize(root);
-                yield return support;
-            }
+            var support = factory(root);
+            if (support != null) return support;
         }
-        s_fallback.Initialize(root);
-        yield return s_fallback;
+
+        return new FallbackSupport(root);
     }
 }

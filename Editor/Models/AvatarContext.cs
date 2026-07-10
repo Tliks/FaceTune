@@ -27,6 +27,25 @@ internal record AvatarContext(
         }
 
         var platformSupport = MetabasePlatformSupport.GetSupport(root.transform);
+        return TryGet(target, platformSupport, out avatarContext, out result, context);
+    }
+
+    public static bool TryGet(
+        GameObject target,
+        IMetabasePlatformSupport platformSupport,
+        [NotNullWhen(true)] out AvatarContext? avatarContext,
+        out BuildResult result,
+        ComputeContext? context = null)
+    {
+        avatarContext = null;
+        context ??= ComputeContext.NullContext;
+
+        var root = context.GetAvatarRoot(target);
+        if (root == null)
+        {
+            result = BuildResult.NotFoundAvatarRoot;
+            return false;
+        }
 
         SkinnedMeshRenderer? faceRenderer = null;
         using var _settingsComponents = ListPool<SettingsComponent>.Get(out var settingsComponents);

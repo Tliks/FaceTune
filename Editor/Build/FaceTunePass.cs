@@ -15,7 +15,8 @@ internal class BuildPassState
     public static BuildPassState Create(BuildContext buildContext)
     {
         var root = buildContext.AvatarRootObject;
-        var canBuild = AvatarContext.TryGet(root, out _, out _);
+        var platformSupport = MetabasePlatformSupport.GetSupport(buildContext);
+        var canBuild = AvatarContext.TryGet(root, platformSupport, out _, out _);
         var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Length > 0;
         return new BuildPassState(canBuild && anyComponents);
     }
@@ -29,6 +30,7 @@ internal class FaceTuneContext
 
     private BuildSettings? Settings { get; set; }
     private ExpressionProgram? ExpressionProgram { get; set; }
+    private MenuProgram? MenuProgram { get; set; }
 
     private FaceTuneContext(
         BuildContext buildContext,
@@ -43,12 +45,12 @@ internal class FaceTuneContext
     public static FaceTuneContext Create(BuildContext buildContext)
     {
         var root = buildContext.AvatarRootObject;
-        if (!AvatarContext.TryGet(root, out var avatarContext, out _))
+        var platformSupport = MetabasePlatformSupport.GetSupport(buildContext);
+        if (!AvatarContext.TryGet(root, platformSupport, out var avatarContext, out _))
         {
             throw new InvalidOperationException("FaceTuneContext cannot be created for this avatar.");
         }
 
-        var platformSupport = MetabasePlatformSupport.GetSupport(root.transform);
         return new FaceTuneContext(buildContext, avatarContext, platformSupport);
     }
 
@@ -71,6 +73,16 @@ internal class FaceTuneContext
     public ExpressionProgram RequireExpressionProgram()
     {
         return ExpressionProgram ?? throw new InvalidOperationException("ExpressionProgram has not been compiled.");
+    }
+
+    public void SetMenuProgram(MenuProgram menuProgram)
+    {
+        MenuProgram = menuProgram;
+    }
+
+    public MenuProgram RequireMenuProgram()
+    {
+        return MenuProgram ?? throw new InvalidOperationException("MenuProgram has not been compiled.");
     }
 }
 
