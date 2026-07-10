@@ -329,8 +329,11 @@ internal class ExpressionDataClipExporter : EditorWindow
         _component.GetAnimations(animations, context.BodyPath);
         if (_excludeTrackedShapes)
         {
-            var platformSupport = Platforms.MetabasePlatformSupport.GetSupport(context.Root.transform);
-            animations.RemoveBlendShapes(platformSupport.GetExternallyControlledBlendShapeNames().ToHashSet());
+            var externallyControlledBlendShapes = Platforms.MetabasePlatformSupport
+                .GetForAvatar(context.Root.transform)
+                .SelectMany(support => support.GetExternallyControlledBlendShapeNames())
+                .ToHashSet();
+            animations.RemoveBlendShapes(externallyControlledBlendShapes);
         }
         CustomEditorUtility.SaveAsClip(clip =>
         {

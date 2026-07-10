@@ -1,8 +1,8 @@
+using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 
 namespace Aoyon.FaceTune.Build;
 
-[RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
 [DependsOnContext(typeof(VirtualControllerContext))]
 internal sealed class EmitPlatformBuildPass : FaceTunePass<EmitPlatformBuildPass>
 {

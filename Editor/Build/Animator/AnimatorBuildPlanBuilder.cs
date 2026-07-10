@@ -13,14 +13,12 @@ internal sealed class AnimatorBuildPlanBuilder
     public static AnimatorBuildPlan Build(
         ExpressionProgram program,
         BuildSettings settings,
-        IAnimatorPlatformServices platformServices,
         ISet<Transform> unitBoundaryTransforms,
         DnfCondition? layerForceInactiveWhen)
     {
         return new AnimatorBuildPlanBuilder(
             program,
             settings,
-            platformServices,
             unitBoundaryTransforms,
             layerForceInactiveWhen).Build();
     }
@@ -28,14 +26,13 @@ internal sealed class AnimatorBuildPlanBuilder
     private AnimatorBuildPlanBuilder(
         ExpressionProgram program,
         BuildSettings settings,
-        IAnimatorPlatformServices platformServices,
         ISet<Transform> unitBoundaryTransforms,
         DnfCondition? layerForceInactiveWhen)
     {
         _program = program;
         _settings = settings;
         _unitBoundaryTransforms = unitBoundaryTransforms;
-        _aap = AapProtocol.From(program.Items, platformServices.FloatRange);
+        _aap = AapProtocol.From(program.Items);
         _layerForceInactiveWhen = layerForceInactiveWhen;
     }
 
@@ -465,7 +462,6 @@ internal sealed class AapProtocol
     public const int ControlAnimationIndex = 1;
     private const int AdvancedNoneIndex = 0;
 
-    private readonly DiscreteFloatParameterRange _range;
     private readonly Dictionary<(int UnitId, AdvancedEyeBlinkSettings Settings), int> _eyeBlinkAdvancedIndices = new();
     private readonly Dictionary<(int UnitId, AdvancedLipSyncSettings Settings), int> _lipSyncAdvancedIndices = new();
 
@@ -482,26 +478,23 @@ internal sealed class AapProtocol
     private bool WritesLipSyncAdvancedSelector { get; }
 
     private AapProtocol(
-        DiscreteFloatParameterRange range,
         bool writesEyeBlinkControl,
         bool writesLipSyncControl,
         bool writesEyeBlinkAdvancedSelector,
         bool writesLipSyncAdvancedSelector)
     {
-        _range = range;
         WritesEyeBlinkControl = writesEyeBlinkControl;
         WritesLipSyncControl = writesLipSyncControl;
         WritesEyeBlinkAdvancedSelector = writesEyeBlinkAdvancedSelector;
         WritesLipSyncAdvancedSelector = writesLipSyncAdvancedSelector;
     }
 
-    public static AapProtocol From(IReadOnlyList<ExpressionItem> items, DiscreteFloatParameterRange range)
+    public static AapProtocol From(IReadOnlyList<ExpressionItem> items)
     {
         var settings = items.Select(item => item.FacialSettings).ToArray();
         var writesEyeBlinkAdvancedSelector = settings.Any(setting => setting.AdvancedEyBlinkSettings.IsAnimationEnabled());
         var writesLipSyncAdvancedSelector = settings.Any(setting => setting.AdvancedLipSyncSettings.IsAnimationEnabled());
         return new AapProtocol(
-            range,
             settings.Any(setting => setting.AllowEyeBlink == TrackingPermission.Disallow)
                 || writesEyeBlinkAdvancedSelector,
             settings.Any(setting => setting.AllowLipSync == TrackingPermission.Disallow)
@@ -574,12 +567,12 @@ internal sealed class AapProtocol
 
     public DnfCondition IndexIs(string parameterName, int index)
     {
-        return AnimatorHelper.DiscreteFloatIndexCondition(parameterName, true, index, _range);
+        return AnimatorHelper.DiscreteFloatIndexCondition(parameterName, index);
     }
 
     private float Value(int index)
     {
-        return AnimatorHelper.DiscreteFloatIndexToValue(index, _range);
+        return AnimatorHelper.DiscreteFloatIndexToValue(index);
     }
 
     private static int AdvancedIndex<TSettings>(

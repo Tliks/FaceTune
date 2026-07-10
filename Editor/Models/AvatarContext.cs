@@ -26,13 +26,23 @@ internal record AvatarContext(
             return false;
         }
 
-        var platformSupport = MetabasePlatformSupport.GetSupport(root.transform);
-        return TryGet(target, platformSupport, out avatarContext, out result, context);
+        var platformSupports = MetabasePlatformSupport.GetForAvatar(root.transform);
+        return TryGet(target, platformSupports, out avatarContext, out result, context);
     }
 
     public static bool TryGet(
         GameObject target,
         IMetabasePlatformSupport platformSupport,
+        [NotNullWhen(true)] out AvatarContext? avatarContext,
+        out BuildResult result,
+        ComputeContext? context = null)
+    {
+        return TryGet(target, new[] { platformSupport }, out avatarContext, out result, context);
+    }
+
+    public static bool TryGet(
+        GameObject target,
+        IReadOnlyList<IMetabasePlatformSupport> platformSupports,
         [NotNullWhen(true)] out AvatarContext? avatarContext,
         out BuildResult result,
         ComputeContext? context = null)
@@ -66,7 +76,7 @@ internal record AvatarContext(
                 : null;
         }
 
-        faceRenderer ??= platformSupport.GetFaceRenderer();
+        faceRenderer ??= ResolveFaceRenderer(root.transform, platformSupports);
         if (faceRenderer == null)
         {
             result = BuildResult.NotFoundFaceRenderer;
@@ -84,6 +94,20 @@ internal record AvatarContext(
         avatarContext = new AvatarContext(root.gameObject, faceRenderer, faceMesh, bodyPath);
         result = BuildResult.Success;
         return true;
+    }
+
+    private static SkinnedMeshRenderer? ResolveFaceRenderer(
+        Transform root,
+        IEnumerable<IMetabasePlatformSupport> platformSupports)
+    {
+        var candidates = platformSupports
+            .Select(support => support.GetFaceRenderer())
+            .Where(renderer => renderer != null)
+            .Distinct()
+            .ToArray();
+        if (candidates.Length == 1) return candidates[0];
+
+        return new FallbackSupport(root).GetFaceRenderer();
     }
 
     public enum BuildResult

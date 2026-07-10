@@ -32,7 +32,6 @@ internal static class VRChatAnimatorBuilder
         var animatorPlan = AnimatorBuildPlanBuilder.Build(
             expressionProgram,
             settings,
-            platformServices,
             unitBoundaryTransforms,
             mmdPolicy.LayerForceInactiveWhen);
 
@@ -193,8 +192,6 @@ internal static class VRChatAnimatorBuilder
 
     private sealed class VRChatAnimatorPlatformServices : IAnimatorPlatformServices
     {
-        public DiscreteFloatParameterRange FloatRange => new(-1f, 1f, 255);
-
         public void SetEyeBlinkTracking(VirtualState state, bool isTracking)
         {
             var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();

@@ -15,7 +15,7 @@ internal class BuildPassState
     public static BuildPassState Create(BuildContext buildContext)
     {
         var root = buildContext.AvatarRootObject;
-        var platformSupport = MetabasePlatformSupport.GetSupport(buildContext);
+        var platformSupport = MetabasePlatformSupport.GetForBuild(buildContext);
         var canBuild = AvatarContext.TryGet(root, platformSupport, out _, out _);
         var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Length > 0;
         return new BuildPassState(canBuild && anyComponents);
@@ -45,7 +45,7 @@ internal class FaceTuneContext
     public static FaceTuneContext Create(BuildContext buildContext)
     {
         var root = buildContext.AvatarRootObject;
-        var platformSupport = MetabasePlatformSupport.GetSupport(buildContext);
+        var platformSupport = MetabasePlatformSupport.GetForBuild(buildContext);
         if (!AvatarContext.TryGet(root, platformSupport, out var avatarContext, out _))
         {
             throw new InvalidOperationException("FaceTuneContext cannot be created for this avatar.");

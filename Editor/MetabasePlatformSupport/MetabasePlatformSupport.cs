@@ -13,7 +13,7 @@ internal static class MetabasePlatformSupport
         s_factories[platformId] = factory;
     }
 
-    public static IMetabasePlatformSupport GetSupport(BuildContext context)
+    public static IMetabasePlatformSupport GetForBuild(BuildContext context)
     {
         if (s_factories.TryGetValue(context.PlatformProvider.QualifiedName, out var factory))
         {
@@ -24,14 +24,11 @@ internal static class MetabasePlatformSupport
         return new FallbackSupport(context.AvatarRootTransform);
     }
 
-    public static IMetabasePlatformSupport GetSupport(Transform root)
+    public static IReadOnlyList<IMetabasePlatformSupport> GetForAvatar(Transform root)
     {
-        foreach (var factory in s_factories.Values)
-        {
-            var support = factory(root);
-            if (support != null) return support;
-        }
-
-        return new FallbackSupport(root);
+        return s_factories.Values
+            .Select(factory => factory(root))
+            .OfType<IMetabasePlatformSupport>()
+            .ToArray();
     }
 }

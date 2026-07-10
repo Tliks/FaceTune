@@ -13,11 +13,14 @@ internal class AnimatorControllerImporter
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
 
 
-    public AnimatorControllerImporter(AvatarContext context, AnimatorController animatorController)
+    public AnimatorControllerImporter(
+        AvatarContext context,
+        AnimatorController animatorController,
+        IMetabasePlatformSupport platformSupport)
     {
         _context = context;
         _animatorController = animatorController;
-        _platformSupport = MetabasePlatformSupport.GetSupport(context.Root.transform);
+        _platformSupport = platformSupport;
         _parameterDomains = _platformSupport.CreateBuiltInParameterDomains();
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
     }

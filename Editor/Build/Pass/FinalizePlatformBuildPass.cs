@@ -1,6 +1,5 @@
 namespace Aoyon.FaceTune.Build;
 
-[RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
 internal sealed class FinalizePlatformBuildPass : FaceTunePass<FinalizePlatformBuildPass>
 {
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.finalize-platform-build";

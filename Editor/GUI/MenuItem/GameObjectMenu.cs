@@ -31,10 +31,15 @@ internal static class GameObjectMenu
         var selected = Selection.activeGameObject;
         if (selected == null) throw new InvalidOperationException("No GameObject selected");
         if (!CustomEditorUtility.TryGetContext(selected, out var context)) throw new Exception("Failed to get context");
-        var support = MetabasePlatformSupport.GetSupport(context.Root.transform);
-        var animatorController = support?.GetAnimatorController();
-        if (animatorController == null) throw new Exception("Failed to get animator controller");
-        var importer = new AnimatorControllerImporter(context, animatorController);
+        var candidates = MetabasePlatformSupport.GetForAvatar(context.Root.transform)
+            .Select(support => (Support: support, Controller: support.GetAnimatorController()))
+            .Where(candidate => candidate.Controller != null)
+            .Select(candidate => (candidate.Support, Controller: candidate.Controller!))
+            .ToArray();
+        if (candidates.Length != 1) throw new Exception("Failed to uniquely identify an animator controller");
+
+        var (support, animatorController) = candidates[0];
+        var importer = new AnimatorControllerImporter(context, animatorController, support);
         importer.Import(selected);
     }
 

@@ -3,8 +3,6 @@ using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Build.Animator;
 
-internal readonly record struct DiscreteFloatParameterRange(float Min, float Max, int MaxIndex);
-
 internal static class AnimatorHelper
 {
     internal static bool? AnalyzeLayerWriteDefaults(VirtualAnimatorController controller)
@@ -166,73 +164,38 @@ internal static class AnimatorHelper
         }
     }
 
-    public static float DiscreteFloatIndexToValue(int index, DiscreteFloatParameterRange range)
+    public static float DiscreteFloatIndexToValue(int index)
     {
-        if (index < 0 || index > range.MaxIndex)
-        {
-            throw new ArgumentException($"Index must be between 0 and {range.MaxIndex}. {index}");
-        }
-
-        if (range.MaxIndex == 0) return range.Min;
-        return Mathf.Lerp(range.Min, range.Max, index / (float)range.MaxIndex);
+        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+        return index;
     }
 
-    public static DnfCondition DiscreteFloatIndexCondition(
-        string parameter,
-        bool equal,
-        int index,
-        DiscreteFloatParameterRange range)
+    public static DnfCondition DiscreteFloatIndexCondition(string parameter, int index)
     {
-        if (index < 0 || index > range.MaxIndex)
-        {
-            throw new ArgumentException($"Index must be between 0 and {range.MaxIndex}. {index}");
-        }
+        if (index < 0 || index == int.MaxValue) throw new ArgumentOutOfRangeException(nameof(index));
 
-        return DnfCondition.All(DiscreteFloatIndexConditionRules(parameter, equal, index, range)
-            .Select(condition => DnfCondition.Single(new AnimatorConditionRule(condition, AnimatorControllerParameterType.Float))));
-    }
-
-    private static IEnumerable<AnimatorCondition> DiscreteFloatIndexConditionRules(
-        string parameter,
-        bool equal,
-        int index,
-        DiscreteFloatParameterRange range)
-    {
-        if (equal)
+        var conditions = new List<DnfCondition>();
+        if (index > 0)
         {
-            if (index > 0)
-            {
-                yield return new AnimatorCondition
+            conditions.Add(DnfCondition.Single(new AnimatorConditionRule(
+                new AnimatorCondition
                 {
                     parameter = parameter,
                     mode = AnimatorConditionMode.Greater,
-                    threshold = DiscreteFloatIndexToValue(index - 1, range)
-                };
-            }
-            if (index < range.MaxIndex)
-            {
-                yield return new AnimatorCondition
-                {
-                    parameter = parameter,
-                    mode = AnimatorConditionMode.Less,
-                    threshold = DiscreteFloatIndexToValue(index + 1, range)
-                };
-            }
-            yield break;
+                    threshold = DiscreteFloatIndexToValue(index - 1)
+                },
+                AnimatorControllerParameterType.Float)));
         }
 
-        yield return new AnimatorCondition
-        {
-            parameter = parameter,
-            mode = AnimatorConditionMode.Greater,
-            threshold = DiscreteFloatIndexToValue(index, range)
-        };
-        yield return new AnimatorCondition
-        {
-            parameter = parameter,
-            mode = AnimatorConditionMode.Less,
-            threshold = DiscreteFloatIndexToValue(index, range)
-        };
+        conditions.Add(DnfCondition.Single(new AnimatorConditionRule(
+            new AnimatorCondition
+            {
+                parameter = parameter,
+                mode = AnimatorConditionMode.Less,
+                threshold = DiscreteFloatIndexToValue(index + 1)
+            },
+            AnimatorControllerParameterType.Float)));
+        return DnfCondition.All(conditions);
     }
 
     public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)
