@@ -25,15 +25,29 @@ internal static class VRChatAnimatorBuilder
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var platformServices = new VRChatAnimatorPlatformServices();
 
-        var analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
+        bool? analyzedWriteDefaults;
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.AnalyzeWriteDefaults"))
+        {
+            analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
+        }
+
         var mmdPolicy = ResolveMmdAnimatorPolicy(settings, analyzedWriteDefaults);
 
-        var unitBoundaryTransforms = FindUnitBoundaryTransforms(settings, controllerContext);
-        var animatorPlan = AnimatorBuildPlanBuilder.Build(
-            expressionProgram,
-            settings,
-            unitBoundaryTransforms,
-            mmdPolicy.LayerForceInactiveWhen);
+        ISet<Transform> unitBoundaryTransforms;
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.FindUnitBoundaries"))
+        {
+            unitBoundaryTransforms = FindUnitBoundaryTransforms(settings, controllerContext);
+        }
+
+        AnimatorBuildPlan animatorPlan;
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.BuildPlan"))
+        {
+            animatorPlan = AnimatorBuildPlanBuilder.Build(
+                expressionProgram,
+                settings,
+                unitBoundaryTransforms,
+                mmdPolicy.LayerForceInactiveWhen);
+        }
 
         var installer = new AnimatorInstaller(
             settings.AvatarContext,
@@ -41,34 +55,43 @@ internal static class VRChatAnimatorBuilder
             platformServices,
             animatorPlan.ExpressionTransitionDurationSeconds);
 
-        var initialController = CreateMergeAnimatorController(
-            controllerContext,
-            animatorPlan.InitialLayer.Anchor,
-            animatorPlan.InitialLayer.Name,
-            InitialControllerPriority);
-        installer.InstallInitial(initialController, animatorPlan.InitialLayer, InitialControllerPriority);
-
-        foreach (var unit in animatorPlan.Units)
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallInitial"))
         {
-            var unitController = CreateMergeAnimatorController(
+            var initialController = CreateMergeAnimatorController(
                 controllerContext,
-                unit.Anchor,
-                $"Unit {unit.Id}",
-                UnitControllerPriority);
-            installer.InstallUnit(unitController, unit, UnitControllerPriority);
+                animatorPlan.InitialLayer.Anchor,
+                animatorPlan.InitialLayer.Name,
+                InitialControllerPriority);
+            installer.InstallInitial(initialController, animatorPlan.InitialLayer, InitialControllerPriority);
+        }
+
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallUnits"))
+        {
+            foreach (var unit in animatorPlan.Units)
+            {
+                var unitController = CreateMergeAnimatorController(
+                    controllerContext,
+                    unit.Anchor,
+                    $"Unit {unit.Id}",
+                    UnitControllerPriority);
+                installer.InstallUnit(unitController, unit, UnitControllerPriority);
+            }
         }
 
         if (animatorPlan.TrackingControlLayer is { } trackingControl)
         {
-            var trackingController = CreateMergeAnimatorController(
-                controllerContext,
-                trackingControl.Anchor,
-                trackingControl.Name,
-                TrackingControlControllerPriority);
-            installer.InstallTrackingControl(
-                trackingController,
-                trackingControl,
-                TrackingControlControllerPriority);
+            using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallTrackingControl"))
+            {
+                var trackingController = CreateMergeAnimatorController(
+                    controllerContext,
+                    trackingControl.Anchor,
+                    trackingControl.Name,
+                    TrackingControlControllerPriority);
+                installer.InstallTrackingControl(
+                    trackingController,
+                    trackingControl,
+                    TrackingControlControllerPriority);
+            }
         }
 
         // mmdPolicy.ControllerDisableWhen is intentionally left for

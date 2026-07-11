@@ -11,6 +11,16 @@ internal sealed class CompileMenuProgramPass : FaceTunePass<CompileMenuProgramPa
     }
 }
 
+// Folder配置  
+//  InstallContainerOverrideが有効なら、Hierarchy上の親よりoverride先を優先                                                                                    
+//  override先がFaceTuneのFolderなら、そのFolderの子になる                                                                                                     
+//  それ以外の対象ならexternal installになる                                                                                                                   
+//  override未指定なら、Hierarchy上で最も近いFaceTune Folderの子になる                                                                                         
+//  親Folderがなければroot menuになる
+
+// 空Folder
+//  Controlも有効な子Folderも持たないFolderは出力しない                                                                                                         
+//  空Folderしか含まないFolderも連鎖的に出力しない
 internal static class MenuProgramCompiler
 {
     public static MenuProgram Compile(FaceTuneContext context)
@@ -37,6 +47,7 @@ internal static class MenuProgramCompiler
                     && folderNodes.TryGetValue(targetFolder, out var targetNode))
                 {
                     targetNode.Children.Folders.Add(node);
+                    node.Parent = targetNode;
                 }
                 else
                 {
@@ -45,7 +56,16 @@ internal static class MenuProgramCompiler
                 continue;
             }
 
-            GetParentChildren(folder.transform.parent, root, folderNodes, rootChildren).Folders.Add(node);
+            var parent = GetParentFolder(folder.transform.parent, root, folderNodes);
+            if (parent != null)
+            {
+                parent.Children.Folders.Add(node);
+                node.Parent = parent;
+            }
+            else
+            {
+                rootChildren.Folders.Add(node);
+            }
         }
 
         foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
@@ -80,15 +100,6 @@ internal static class MenuProgramCompiler
             return new MenuIconPlan.ExpressionPreview(expression);
         }
 
-        MenuFolderPlan CompileFolder(MutableFolder folder)
-        {
-            var children = CompileChildren(folder.Children);
-            return new MenuFolderPlan(
-                ResolveName(folder.Source.MenuName, folder.Source.name),
-                CompileIcon(folder.Source.Icon, folder.Source),
-                children);
-        }
-
         MenuControlPlan CompileControl(MutableControl control)
         {
             var source = control.Source;
@@ -106,18 +117,51 @@ internal static class MenuProgramCompiler
         IReadOnlyList<MenuNodePlan> CompileChildren(MutableChildren children)
         {
             return children.Folders
-                .Where(folder => folder.Children.HasItems)
-                .Select(folder => (MenuNodePlan)CompileFolder(folder))
+                .Select(folder => folder.Compiled)
+                .Where(plan => plan != null)
+                .Cast<MenuNodePlan>()
                 .Concat(children.Controls.Select(control => (MenuNodePlan)CompileControl(control)))
                 .ToArray();
         }
 
+        var pending = new Queue<MutableFolder>();
+        foreach (var folder in folderNodes.Values)
+        {
+            folder.RemainingChildren = folder.Children.Folders.Count;
+            if (folder.RemainingChildren == 0) pending.Enqueue(folder);
+        }
+
+        var compiledFolderCount = 0;
+        while (pending.Count != 0)
+        {
+            var folder = pending.Dequeue();
+            var children = CompileChildren(folder.Children);
+            if (children.Count != 0)
+            {
+                folder.Compiled = new MenuFolderPlan(
+                    ResolveName(folder.Source.MenuName, folder.Source.name),
+                    CompileIcon(folder.Source.Icon, folder.Source),
+                    children);
+            }
+
+            compiledFolderCount++;
+            if (folder.Parent == null) continue;
+
+            folder.Parent.RemainingChildren--;
+            if (folder.Parent.RemainingChildren == 0) pending.Enqueue(folder.Parent);
+        }
+
+        if (compiledFolderCount != folderNodes.Count)
+        {
+            throw new InvalidOperationException("Menu folder install overrides contain a cycle.");
+        }
+
         var rootPlans = CompileChildren(rootChildren);
         var externalPlans = externalChildren
-            .Where(pair => pair.Value.HasItems)
             .Select(pair => new ExternalMenuInstallRequest(
                 pair.Key,
                 CompileChildren(pair.Value)))
+            .Where(install => install.Children.Count != 0)
             .ToArray();
 
         return new MenuProgram(
@@ -180,14 +224,22 @@ internal static class MenuProgramCompiler
         IReadOnlyDictionary<MenuFolderComponent, MutableFolder> folders,
         MutableChildren rootChildren)
     {
+        return GetParentFolder(start, root, folders)?.Children ?? rootChildren;
+    }
+
+    private static MutableFolder? GetParentFolder(
+        Transform? start,
+        GameObject root,
+        IReadOnlyDictionary<MenuFolderComponent, MutableFolder> folders)
+    {
         var current = start;
         while (current != null && current.gameObject != root)
         {
             var folder = current.GetComponent<MenuFolderComponent>();
-            if (folder != null && folders.TryGetValue(folder, out var node)) return node.Children;
+            if (folder != null && folders.TryGetValue(folder, out var node)) return node;
             current = current.parent;
         }
-        return rootChildren;
+        return null;
     }
 
     private static MutableChildren GetExternalChildren(
@@ -204,12 +256,14 @@ internal static class MenuProgramCompiler
     {
         public List<MutableFolder> Folders { get; } = new();
         public List<MutableControl> Controls { get; } = new();
-        public bool HasItems => Controls.Count != 0 || Folders.Any(folder => folder.Children.HasItems);
     }
 
     private sealed record MutableFolder(MenuFolderComponent Source)
     {
         public MutableChildren Children { get; } = new();
+        public MutableFolder? Parent { get; set; }
+        public MenuFolderPlan? Compiled { get; set; }
+        public int RemainingChildren { get; set; }
     }
 
     private sealed record MutableControl(MenuComponent Source);

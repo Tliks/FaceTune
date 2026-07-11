@@ -20,4 +20,24 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
 
         return null;
     }
+
+    public ParameterDomainRegistry CreateBuiltInParameterDomains()
+    {
+        return new ParameterDomainRegistry();
+    }
+
+    public IEnumerable<string> GetExternallyControlledBlendShapeNames()
+    {
+        return Array.Empty<string>();;
+    }
+
+    public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
+    {
+        throw new NotImplementedException();
+    }
+
+    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    {
+        throw new NotImplementedException();
+    }
 }

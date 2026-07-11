@@ -49,12 +49,11 @@ internal class BlendShapeWeightAnimationSet : NamedItemSetBase<BlendShapeWeightA
     }
     public override int GetHashCode()
     {
-        var hash = new HashCode();
-        foreach (var (name, anim) in map.OrderBy(x => x.Key))
+        var hash = 0;
+        foreach (var (name, anim) in map)
         {
-            hash.Add(name);
-            hash.Add(anim.GetHashCode());
+            hash ^= HashCode.Combine(name, anim);
         }
-        return hash.ToHashCode();
+        return HashCode.Combine(Count, hash);
     }
 }

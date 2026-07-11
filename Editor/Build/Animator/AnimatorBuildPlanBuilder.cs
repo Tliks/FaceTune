@@ -38,11 +38,28 @@ internal sealed class AnimatorBuildPlanBuilder
 
     private AnimatorBuildPlan Build()
     {
-        var units = BuildUnits();
+        IReadOnlyList<OutputUnitPlan> units;
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.Units"))
+        {
+            units = BuildUnits();
+        }
+
+        InitialLayerPlan initialLayer;
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.InitialLayer"))
+        {
+            initialLayer = BuildInitialLayer(units[0].Anchor);
+        }
+
+        TrackingControlLayerPlan? trackingControlLayer;
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.TrackingControl"))
+        {
+            trackingControlLayer = BuildTrackingControlLayer(units[^1].Anchor);
+        }
+
         return new AnimatorBuildPlan(
-            BuildInitialLayer(units[0].Anchor),
+            initialLayer,
             units,
-            BuildTrackingControlLayer(units[^1].Anchor),
+            trackingControlLayer,
             _settings.DurationSeconds);
     }
 
@@ -57,7 +74,11 @@ internal sealed class AnimatorBuildPlanBuilder
 
     private IReadOnlyList<OutputUnitPlan> BuildUnits()
     {
-        var splitIndices = FindExternalOverlapSplitIndices();
+        int[] splitIndices;
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.FindUnitSplits"))
+        {
+            splitIndices = FindExternalOverlapSplitIndices().ToArray();
+        }
 
         var units = new List<OutputUnitPlan>();
         var start = 0;
@@ -72,7 +93,13 @@ internal sealed class AnimatorBuildPlanBuilder
 
             var unitId = units.Count;
             var expressionLayerBuilder = new ExpressionLayerPlanBuilder(_settings, _layerForceInactiveWhen, _aap);
-            var (expressionLayers, parameters) = expressionLayerBuilder.Build(unitId, expressions);
+            IReadOnlyList<ExpressionLayerPlan> expressionLayers;
+            IReadOnlyList<PlanParameter> parameters;
+            using (new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.ExpressionLayers"))
+            {
+                (expressionLayers, parameters) = expressionLayerBuilder.Build(unitId, expressions);
+            }
+
             units.Add(new OutputUnitPlan(
                 unitId,
                 expressions[0].SourceTransform,
@@ -196,6 +223,7 @@ internal sealed class ExpressionLayerPlanBuilder
         int layerIndex,
         IReadOnlyList<ExpressionItem> expressions)
     {
+        using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.ReplaceLayer");
         var statePlans = new List<ExpressionStatePlan>();
         for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
         {
@@ -258,6 +286,7 @@ internal sealed class ExpressionLayerPlanBuilder
 
     private List<List<ExpressionItem>> PackBlendRun(IReadOnlyList<ExpressionItem> expressions)
     {
+        using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.PackBlendRun");
         var layers = new List<List<ExpressionItem>>();
         var layerIndices = new int[expressions.Count];
 

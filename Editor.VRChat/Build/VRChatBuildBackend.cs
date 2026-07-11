@@ -17,9 +17,20 @@ internal sealed class VRChatBuildBackend : IPlatformBuildBackend
         ExpressionProgram expressions,
         MenuProgram menus)
     {
-        VRChatMenuBuilder.Emit(buildContext, menus);
-        VRChatParameterBuilder.Emit(buildContext, menus);
-        VRChatAnimatorBuilder.Emit(buildContext, settings, expressions);
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.VRChat.Menu"))
+        {
+            VRChatMenuBuilder.Emit(buildContext, menus);
+        }
+
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.VRChat.Parameters"))
+        {
+            VRChatParameterBuilder.Emit(buildContext, menus);
+        }
+
+        using (new Utils.ProfilingSampleScope("FaceTune.Emit.VRChat.Animator"))
+        {
+            VRChatAnimatorBuilder.Emit(buildContext, settings, expressions);
+        }
     }
 
     public void Finalize(FaceTuneContext context)

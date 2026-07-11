@@ -46,28 +46,42 @@ internal sealed class AnimatorInstaller
         OutputUnitPlan unit,
         int layerPriority)
     {
-        foreach (var param in unit.Parameters)
-            controller.EnsureParameterExists(param.Type, param.Name, param.DefaultValue);
-        foreach (var layer in unit.ExpressionLayers)
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.Parameters"))
         {
-            InstallExpressionLayer(controller, layer, layerPriority);
+            foreach (var param in unit.Parameters)
+                controller.EnsureParameterExists(param.Type, param.Name, param.DefaultValue);
         }
 
-        if (unit.AdvancedEyeBlink != null)
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.ExpressionLayers"))
         {
-            InstallEmptyAdvancedLayer(
-                controller,
-                unit.AdvancedEyeBlink.Name,
-                unit.AdvancedEyeBlink.ForceInactiveWhen,
-                layerPriority);
+            foreach (var layer in unit.ExpressionLayers)
+            {
+                InstallExpressionLayer(controller, layer, layerPriority);
+            }
         }
-        if (unit.AdvancedLipSync != null)
+
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.AdvancedEyeBlink"))
         {
-            InstallEmptyAdvancedLayer(
-                controller,
-                unit.AdvancedLipSync.Name,
-                unit.AdvancedLipSync.ForceInactiveWhen,
-                layerPriority);
+            if (unit.AdvancedEyeBlink != null)
+            {
+                InstallEmptyAdvancedLayer(
+                    controller,
+                    unit.AdvancedEyeBlink.Name,
+                    unit.AdvancedEyeBlink.ForceInactiveWhen,
+                    layerPriority);
+            }
+        }
+
+        using (new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.AdvancedLipSync"))
+        {
+            if (unit.AdvancedLipSync != null)
+            {
+                InstallEmptyAdvancedLayer(
+                    controller,
+                    unit.AdvancedLipSync.Name,
+                    unit.AdvancedLipSync.ForceInactiveWhen,
+                    layerPriority);
+            }
         }
     }
 
@@ -86,6 +100,7 @@ internal sealed class AnimatorInstaller
         ExpressionLayerPlan plan,
         int layerPriority)
     {
+        using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.ExpressionLayer");
         var layer = AddLayer(controller, plan.Name, layerPriority);
 
         var defaultState = AddState(layer, "PassThrough", DefaultStatePosition);
@@ -144,6 +159,7 @@ internal sealed class AnimatorInstaller
 
     private void SetExpressionClip(VirtualState state, ExpressionStatePlan plan)
     {
+        using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.ExpressionClip");
         var key = new ExpressionClipKey(plan.Animations, plan.Settings, plan.AapWrites);
         if (!_expressionClips.TryGetValue(key, out var clip))
         {
@@ -162,6 +178,7 @@ internal sealed class AnimatorInstaller
 
     private VirtualClip CreateExpressionClip(ExpressionStatePlan plan)
     {
+        using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.CreateExpressionClip");
         var clip = VirtualClip.Create(plan.Name);
 
         clip.AddBlendShapeAnimations(_avatarContext.BodyPath, plan.Animations);

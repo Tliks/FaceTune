@@ -2,22 +2,174 @@ using UnityEngine.SceneManagement;
 
 namespace Aoyon.FaceTune;
 
+internal readonly record struct ThumbnailFraming(
+    Vector3 Center,
+    Vector3 Forward,
+    Vector3 Up,
+    float OrthographicSize)
+{
+    private const float FaceBias = 0.2f;
+
+    public static ThumbnailFraming FromRenderer(
+        SkinnedMeshRenderer renderer,
+        Transform avatarRoot,
+        Animator animator)
+    {
+        var mesh = renderer.sharedMesh
+            ?? throw new InvalidOperationException("Face renderer has no mesh.");
+        var vertices = mesh.vertices;
+        if (vertices.Length == 0)
+            throw new InvalidOperationException("Face renderer mesh has no vertices.");
+
+        var boneWeights = mesh.boneWeights;
+        var bindPoses = mesh.bindposes;
+        var bones = renderer.bones;
+        var boneCount = Mathf.Min(bones.Length, bindPoses.Length);
+        var validBones = new bool[boneCount];
+        var skinMatrices = new Matrix4x4[boneCount];
+        for (var index = 0; index < boneCount; index++)
+        {
+            var bone = bones[index];
+            if (bone == null) continue;
+
+            validBones[index] = true;
+            skinMatrices[index] = bone.localToWorldMatrix * bindPoses[index];
+        }
+
+        var head = animator.isHuman
+            ? animator.GetBoneTransform(HumanBodyBones.Head)
+            : null;
+        if (head != null && TryCreateFraming(head, out var humanoidFraming))
+        {
+            return humanoidFraming;
+        }
+
+        if (TryCreateFraming(null, out var rendererFraming))
+        {
+            return rendererFraming;
+        }
+
+        throw new InvalidOperationException("Face renderer has no vertices that can be framed.");
+
+        bool TryCreateFraming(Transform? headBone, out ThumbnailFraming framing)
+        {
+            var headBones = new bool[boneCount];
+            if (headBone != null)
+            {
+                for (var index = 0; index < boneCount; index++)
+                {
+                    var bone = bones[index];
+                    headBones[index] = bone == headBone || bone != null && bone.IsChildOf(headBone);
+                }
+            }
+
+            var right = avatarRoot.right;
+            var up = avatarRoot.up;
+            var forward = avatarRoot.forward;
+            var min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+            var max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+
+            for (var index = 0; index < vertices.Length; index++)
+            {
+                var weight = index < boneWeights.Length ? boneWeights[index] : default;
+                var hasSkinning = HasSkinning(weight, validBones);
+                var dominantBoneIndex = GetDominantBoneIndex(weight);
+                if (headBone != null
+                    && (!hasSkinning
+                        || dominantBoneIndex < 0
+                        || dominantBoneIndex >= headBones.Length
+                        || !headBones[dominantBoneIndex])) continue;
+
+                var world = hasSkinning
+                    ? SkinVertex(vertices[index], weight, skinMatrices)
+                    : renderer.transform.localToWorldMatrix.MultiplyPoint3x4(vertices[index]);
+                var relative = world - avatarRoot.position;
+                var projected = new Vector3(
+                    Vector3.Dot(relative, right),
+                    Vector3.Dot(relative, up),
+                    Vector3.Dot(relative, forward));
+                min = Vector3.Min(min, projected);
+                max = Vector3.Max(max, projected);
+            }
+
+            if (float.IsPositiveInfinity(min.x))
+            {
+                framing = default;
+                return false;
+            }
+
+            var halfWidth = (max.x - min.x) * 0.5f;
+            var halfHeight = (max.y - min.y) * 0.5f;
+            var center = avatarRoot.position
+                + right * ((min.x + max.x) * 0.5f)
+                + up * ((min.y + max.y) * 0.5f - halfHeight * FaceBias)
+                + forward * ((min.z + max.z) * 0.5f);
+            var size = Mathf.Max(halfWidth, halfHeight);
+            framing = new ThumbnailFraming(center, forward, up, size);
+            return true;
+        }
+    }
+
+    private static int GetDominantBoneIndex(BoneWeight weight)
+    {
+        var index = weight.boneIndex0;
+        var value = weight.weight0;
+        if (weight.weight1 > value) (index, value) = (weight.boneIndex1, weight.weight1);
+        if (weight.weight2 > value) (index, value) = (weight.boneIndex2, weight.weight2);
+        if (weight.weight3 > value) index = weight.boneIndex3;
+        return index;
+    }
+
+    private static bool HasSkinning(BoneWeight weight, IReadOnlyList<bool> validBones)
+    {
+        return HasWeight(weight.boneIndex0, weight.weight0)
+            || HasWeight(weight.boneIndex1, weight.weight1)
+            || HasWeight(weight.boneIndex2, weight.weight2)
+            || HasWeight(weight.boneIndex3, weight.weight3);
+
+        bool HasWeight(int boneIndex, float boneWeight)
+        {
+            return boneWeight != 0f
+                && boneIndex >= 0
+                && boneIndex < validBones.Count
+                && validBones[boneIndex];
+        }
+    }
+
+    private static Vector3 SkinVertex(
+        Vector3 vertex,
+        BoneWeight weight,
+        IReadOnlyList<Matrix4x4> skinMatrices)
+    {
+        var result = Vector3.zero;
+        Add(weight.boneIndex0, weight.weight0);
+        Add(weight.boneIndex1, weight.weight1);
+        Add(weight.boneIndex2, weight.weight2);
+        Add(weight.boneIndex3, weight.weight3);
+        return result;
+
+        void Add(int boneIndex, float boneWeight)
+        {
+            if (boneWeight == 0f || boneIndex < 0 || boneIndex >= skinMatrices.Count) return;
+            result += skinMatrices[boneIndex].MultiplyPoint3x4(vertex) * boneWeight;
+        }
+    }
+}
+
 internal sealed class BlendShapeThumbnailCapture : IDisposable
 {
     private const int TextureSize = 128;
-    private const float FramingPadding = 1.15f;
 
     private readonly SkinnedMeshRenderer _renderer;
     private readonly Mesh _mesh;
     private readonly BlendShapeWeightSet _initialWeights;
     private readonly IReadOnlyDictionary<GameObject, int> _originalLayers;
-    private readonly Mesh _bakedMesh;
     private readonly GameObject _cameraRoot;
     private readonly Camera _camera;
     private readonly RenderTexture _target;
     private bool _disposed;
 
-    public BlendShapeThumbnailCapture(SkinnedMeshRenderer renderer)
+    public BlendShapeThumbnailCapture(SkinnedMeshRenderer renderer, ThumbnailFraming framing)
     {
         using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Initialize");
         _renderer = renderer;
@@ -28,7 +180,6 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
             .Select(component => component.gameObject)
             .Distinct()
             .ToDictionary(gameObject => gameObject, gameObject => gameObject.layer);
-        _bakedMesh = new Mesh();
 
         _cameraRoot = new GameObject($"{FaceTuneConstants.Name} Thumbnail Camera Root");
         SceneManager.MoveGameObjectToScene(_cameraRoot, renderer.gameObject.scene);
@@ -51,7 +202,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         };
         _target.Create();
 
-        ConfigureCamera(CalculateWorldBounds());
+        ConfigureCamera(framing);
         SetCaptureLayers();
     }
 
@@ -80,7 +231,6 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         _camera.targetTexture = null;
         Object.DestroyImmediate(_target);
         Object.DestroyImmediate(_cameraRoot);
-        Object.DestroyImmediate(_bakedMesh);
     }
 
     private void SetCaptureLayers()
@@ -147,35 +297,17 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         }
     }
 
-    private Bounds CalculateWorldBounds()
-    {
-        _renderer.BakeMesh(_bakedMesh, true);
-        var vertices = _bakedMesh.vertices;
-        if (vertices.Length == 0) throw new InvalidOperationException("Renderer mesh has no vertices.");
-
-        var transform = _renderer.transform;
-        Vector3 ToWorld(Vector3 vertex) => transform.position + transform.rotation * vertex;
-
-        var bounds = new Bounds(ToWorld(vertices[0]), Vector3.zero);
-        for (var index = 1; index < vertices.Length; index++)
-        {
-            bounds.Encapsulate(ToWorld(vertices[index]));
-        }
-        return bounds;
-    }
-
-    private void ConfigureCamera(Bounds bounds)
+    private void ConfigureCamera(ThumbnailFraming framing)
     {
         var transform = _camera.transform;
-        var forward = _renderer.transform.forward;
-        var up = _renderer.transform.up;
-        var halfHeight = Mathf.Max(bounds.extents.y, bounds.extents.x);
-        var distance = Mathf.Max(1f, bounds.extents.z * 2f + 0.1f);
+        var forward = framing.Forward.normalized;
+        var up = framing.Up.normalized;
+        var distance = Mathf.Max(1f, framing.OrthographicSize * 2f);
 
-        transform.position = bounds.center + forward * distance;
-        transform.rotation = Quaternion.LookRotation(bounds.center - transform.position, up);
+        transform.position = framing.Center + forward * distance;
+        transform.rotation = Quaternion.LookRotation(framing.Center - transform.position, up);
         _camera.orthographic = true;
-        _camera.orthographicSize = Mathf.Max(0.01f, halfHeight * FramingPadding);
+        _camera.orthographicSize = Mathf.Max(0.01f, framing.OrthographicSize);
         _camera.cullingMask = 1 << 31;
         _camera.nearClipPlane = 0.01f;
         _camera.farClipPlane = 100f;

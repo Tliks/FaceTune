@@ -9,25 +9,13 @@ internal interface IMetabasePlatformSupport
 
     SkinnedMeshRenderer? GetFaceRenderer();
 
-    IEnumerable<string> GetExternallyControlledBlendShapeNames()
-    {
-        return Array.Empty<string>();
-    }
+    IEnumerable<string> GetExternallyControlledBlendShapeNames();
 
-    ParameterDomainRegistry CreateBuiltInParameterDomains()
-    {
-        return new ParameterDomainRegistry();
-    }
+    ParameterDomainRegistry CreateBuiltInParameterDomains();
 
-    DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
-    {
-        throw new NotSupportedException("Hand gesture condition is not supported by this platform");
-    }
+    DnfCondition ResolveHandGestureCondition(HandGestureCondition condition);
 
-    DnfCondition ResolveParameterCondition(ParameterCondition condition)
-    {
-        throw new NotSupportedException("Parameter condition is not supported by this platform");
-    }
+    DnfCondition ResolveParameterCondition(ParameterCondition condition);
 
     AnimatorController? GetAnimatorController()
     {

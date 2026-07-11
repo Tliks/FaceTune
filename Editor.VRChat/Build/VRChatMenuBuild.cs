@@ -152,7 +152,11 @@ internal static class VRChatMenuBuilder
                 .Select(shape => shape with { Weight = 0f }));
             var generatedTextures = new List<Texture2D>(controls.Count);
             var textureCache = new Dictionary<BlendShapeWeightSet, Texture2D>();
-            using var capture = new BlendShapeThumbnailCapture(avatar.FaceRenderer);
+            var animator = descriptor.GetComponent<Animator>()
+                ?? throw new InvalidOperationException("Avatar animator was not found.");
+            using var capture = new BlendShapeThumbnailCapture(
+                avatar.FaceRenderer,
+                ThumbnailFraming.FromRenderer(avatar.FaceRenderer, avatar.Root.transform, animator));
             foreach (var (control, request) in controls)
             {
                 using var _ = BlendShapeSetPool.Get(out var blendShapes);

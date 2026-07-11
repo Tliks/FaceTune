@@ -37,13 +37,12 @@ internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendSha
 
     public override int GetHashCode()
     {
-        var hash = new HashCode();
-        foreach (var (name, blendShape) in map.OrderBy(x => x.Key))
+        var hash = 0;
+        foreach (var (name, blendShape) in map)
         {
-            hash.Add(name);
-            hash.Add(blendShape.Weight);
+            hash ^= HashCode.Combine(name, blendShape.Weight);
         }
-        return hash.ToHashCode();
+        return HashCode.Combine(Count, hash);
     }
 
     public bool Equals(IReadOnlyBlendShapeSet other)

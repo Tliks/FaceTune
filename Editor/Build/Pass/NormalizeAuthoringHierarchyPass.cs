@@ -67,39 +67,43 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
         foreach (var original in expressions)
         {
-            var menu = CreateDirectMenu(original);
+            var settings = original.DirectMenuSettings;
 
             var proxyObject = new GameObject(original.name);
             proxyObject.transform.SetParent(directMenuRoot.transform);
-
             var proxy = proxyObject.AddComponent<FaceTuneComponent>();
+
+            var menu = original.gameObject.AddComponent<MenuComponent>();
+            menu.MenuName = settings.MenuName;
+            menu.Icon = new MenuIconSettings
+            {
+                Mode = settings.Icon.Mode,
+                ManualIcon = settings.Icon.ManualIcon,
+                PreviewExpression = settings.Icon.PreviewExpression ?? proxy
+            };
+            menu.InstallSettings = settings.InstallSettings;
+            menu.Kind = MenuItemKind.Toggle;
+            menu.DefaultSelected = false;
+            menu.ExclusiveToggleGroup.GroupName = GetDirectMenuExclusiveGroupName(original);
 
             proxy.ConditionEnabled = true;
             proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
-
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
-
             proxy.DataReferenceMode = ComponentReferenceMode.Reference;
-            proxy.DataReference = new(original.gameObject);
+            proxy.DataReference = original.DataReferenceMode == ComponentReferenceMode.Reference
+                ? original.DataReference
+                : new(original.gameObject);
+
+            if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
+            {
+                var proxyStyle = proxyObject.AddComponent<StyleComponent>();
+                proxyStyle.DataReferenceMode = ComponentReferenceMode.Reference;
+                proxyStyle.DataReference = originalStyle.DataReferenceMode == ComponentReferenceMode.Reference
+                    ? originalStyle.DataReference
+                    : new(originalStyle.gameObject);
+            }
         }
-    }
-
-    private static MenuComponent CreateDirectMenu(FaceTuneComponent expression)
-    {
-        var settings = expression.DirectMenuSettings;
-
-        var menu = expression.gameObject.AddComponent<MenuComponent>();
-
-        menu.MenuName = settings.MenuName;
-        menu.Icon = settings.Icon;
-        menu.InstallSettings = settings.InstallSettings;
-
-        menu.Kind = MenuItemKind.Toggle;
-        menu.DefaultSelected = false;
-        menu.ExclusiveToggleGroup.GroupName = GetDirectMenuExclusiveGroupName(expression);
-
-        return menu;
     }
 
     private static string GetDirectMenuExclusiveGroupName(FaceTuneComponent expression)
