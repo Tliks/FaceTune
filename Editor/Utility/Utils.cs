@@ -1,4 +1,3 @@
-using Aoyon.FaceTune.Build;
 using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune;
@@ -23,10 +22,5 @@ internal static partial class Utils
         }
     }
 
-    public static Texture2D? RenderExpressionThumbnail(FaceTuneContext context, ExpressionItem expression)
-    {
-        // TODO: Render an expression thumbnail from the final avatar state.
-        return null;
-    }
 }
 

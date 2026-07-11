@@ -15,27 +15,12 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
 
     private static void FilterBlendShapeOutputs(string bodyPath, GameObject root, BuildSettings settings)
     {
-        foreach (var component in root.GetComponentsInChildren<FaceTuneComponent>(true))
+        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
         {
-            foreach (var data in component.ResolveData())
+            if (component is not IExpressionDataSource source) continue;
+            foreach (var data in source.ResolveData(component))
             {
                 FilterBlendShapeAnimations(data, component, bodyPath, settings);
-            }
-        }
-
-        foreach (var component in root.GetComponentsInChildren<DataComponent>(true))
-        {
-            foreach (var data in component.ResolveData())
-            {
-                FilterBlendShapeAnimations(data, component, bodyPath, settings);
-            }
-        }
-
-        foreach (var component in root.GetComponentsInChildren<StyleComponent>(true))
-        {
-            foreach (var data in component.ResolveData())
-            {
-                FilterBlendShapeAnimations(data, component, string.Empty, settings);
             }
         }
 

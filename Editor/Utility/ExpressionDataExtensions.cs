@@ -71,13 +71,18 @@ internal static class ExpressionDataExtensions
     public static IEnumerable<ExpressionData> ResolveData<T>(this T source)
         where T : Component, IExpressionDataSource
     {
+        return ResolveData(source, source);
+    }
+
+    public static IEnumerable<ExpressionData> ResolveData(this IExpressionDataSource source, Component owner)
+    {
         if (source.DataReferenceMode != ComponentReferenceMode.Reference)
         {
             yield return source.Data;
             yield break;
         }
 
-        var target = source.DataReference.Get(source);
+        var target = source.DataReference.Get(owner);
         if (target == null) yield break;
 
         foreach (var component in target.GetComponents<FaceTuneTagComponent>().OfType<IExpressionDataSource>())

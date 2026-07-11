@@ -83,42 +83,6 @@ internal static class VRChatMenuBuilder
         }
     }
 
-    public static void Finalize(FaceTuneContext context)
-    {
-        var buildContext = context.BuildContext;
-        var thumbnails = buildContext.GetState(_ => new VRChatMenuThumbnailState());
-        if (!thumbnails.HasRequests
-            || !buildContext.AvatarRootTransform.TryGetComponent<VRCAvatarDescriptor>(out var descriptor)
-            || descriptor.expressionsMenu == null) return;
-
-        var visited = new HashSet<VRCExpressionsMenu>();
-        FinalizeMenu(context, descriptor.expressionsMenu, thumbnails, visited);
-    }
-
-    private static void FinalizeMenu(
-        FaceTuneContext context,
-        VRCExpressionsMenu menu,
-        VRChatMenuThumbnailState thumbnails,
-        ISet<VRCExpressionsMenu> visited)
-    {
-        if (!visited.Add(menu)) return;
-
-        foreach (var control in menu.controls)
-        {
-            if (thumbnails.TryGet(control.name, out var request))
-            {
-                var thumbnail = Utils.RenderExpressionThumbnail(context, request.Expression);
-                if (thumbnail != null) control.icon = thumbnail;
-                control.name = request.DisplayName;
-            }
-
-            if (control.subMenu != null)
-            {
-                FinalizeMenu(context, control.subMenu, thumbnails, visited);
-            }
-        }
-    }
-
     private static void CreateFolder(BuildContext context, MenuFolderPlan folder, Transform parent)
     {
         var obj = new GameObject(ResolveEmittedName(context, folder));
@@ -165,6 +129,110 @@ internal static class VRChatMenuBuilder
             _ => null
         };
     }
+
+    public static void Finalize(FaceTuneContext context)
+    {
+        var buildContext = context.BuildContext;
+        var thumbnails = buildContext.GetState(_ => new VRChatMenuThumbnailState());
+        if (!thumbnails.HasRequests
+            || !buildContext.AvatarRootTransform.TryGetComponent<VRCAvatarDescriptor>(out var descriptor)
+            || descriptor.expressionsMenu == null) return;
+
+        var controls = new List<(VRCExpressionsMenu.Control Control, VRChatMenuThumbnailState.Request Request)>();
+        CollectThumbnailControls(descriptor.expressionsMenu, thumbnails, new HashSet<VRCExpressionsMenu>(), controls);
+        if (controls.Count == 0) return;
+
+        try
+        {
+            var avatar = context.AvatarContext;
+            var settings = context.RequireSettings();
+            var managedZeroes = new BlendShapeWeightSet(avatar.FaceRenderer
+                .GetBlendShapeWeights(avatar.FaceMesh)
+                .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
+                .Select(shape => shape with { Weight = 0f }));
+            var generatedTextures = new List<Texture2D>(controls.Count);
+            var textureCache = new Dictionary<BlendShapeWeightSet, Texture2D>();
+            using var capture = new BlendShapeThumbnailCapture(avatar.FaceRenderer);
+            foreach (var (control, request) in controls)
+            {
+                using var _ = BlendShapeSetPool.Get(out var blendShapes);
+                blendShapes.AddRange(managedZeroes);
+                blendShapes.AddRange(request.Expression.FacialAnimationSet.ToFirstFrameBlendShapes());
+                blendShapes.AddRange(request.Expression.AnimationSet.ToFirstFrameBlendShapes());
+
+                // managedZeroes is common to every thumbnail, so only values that differ from
+                // that common zero baseline are needed to identify the rendered expression.
+                var cacheKey = new BlendShapeWeightSet(blendShapes.Where(shape => shape.Weight != 0f));
+                textureCache.TryGetValue(cacheKey, out var texture);
+                if (texture == null)
+                {
+                    texture = capture.Capture(blendShapes);
+                    texture.name = $"{FaceTuneConstants.Name} Thumbnail {generatedTextures.Count + 1}";
+                    textureCache.Add(cacheKey, texture);
+                    generatedTextures.Add(texture);
+                }
+                control.icon = texture;
+            }
+            SaveThumbnails(buildContext.AssetSaver, generatedTextures);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+        }
+        finally
+        {
+            foreach (var (control, request) in controls)
+            {
+                control.name = request.DisplayName;
+            }
+        }
+    }
+
+    // NDMFはテクスチャを必ず別のCOntainerに分けるが、表情の数だけこれが走るとImportがかなり重い
+    // ここで生成するテクスチャは十分小さいので、Containerを1つにまとめる
+    // Todo: 設計として正しいか確認 / NDMF側のAPI追加(containerの追加)を検討
+    private static void SaveThumbnails(IAssetSaver assetSaver, IReadOnlyList<Texture2D> textures)
+    {
+        using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Save");
+        if (textures.Count == 0) return;
+        if (assetSaver.CurrentContainer == null)
+        {
+            assetSaver.SaveAssets(textures);
+            return;
+        }
+
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+            var firstTexture = textures[0];
+            assetSaver.SaveAsset(firstTexture);
+            var containerPath = AssetDatabase.GetAssetPath(firstTexture);
+            for (var index = 1; index < textures.Count; index++)
+            {
+                AssetDatabase.AddObjectToAsset(textures[index], containerPath);
+            }
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+        }
+    }
+
+    private static void CollectThumbnailControls(
+        VRCExpressionsMenu menu,
+        VRChatMenuThumbnailState thumbnails,
+        ISet<VRCExpressionsMenu> visited,
+        ICollection<(VRCExpressionsMenu.Control Control, VRChatMenuThumbnailState.Request Request)> controls)
+    {
+        if (!visited.Add(menu)) return;
+
+        foreach (var control in menu.controls)
+        {
+            if (thumbnails.TryGet(control.name, out var request)) controls.Add((control, request));
+            if (control.subMenu != null) CollectThumbnailControls(control.subMenu, thumbnails, visited, controls);
+        }
+    }
+
 }
 
 internal sealed class VRChatMenuThumbnailState

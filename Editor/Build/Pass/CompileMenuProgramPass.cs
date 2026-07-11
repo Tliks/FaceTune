@@ -69,16 +69,14 @@ internal static class MenuProgramCompiler
             GetParentChildren(menu.transform.parent, root, folderNodes, rootChildren).Controls.Add(node);
         }
 
-        MenuIconPlan CompileIcon(MenuIconSettings settings)
+        MenuIconPlan CompileIcon(MenuIconSettings settings, Component owner)
         {
             if (settings.Mode == MenuIconMode.Manual) return new MenuIconPlan.Manual(settings.ManualIcon);
 
-            ExpressionItem? expression = null;
-            if (settings.PreviewExpression != null)
-            {
-                expressionByTransform.TryGetValue(settings.PreviewExpression.transform, out expression);
-            }
-
+            var transform = settings.PreviewExpression != null
+                ? settings.PreviewExpression.transform
+                : owner.transform;
+            expressionByTransform.TryGetValue(transform, out var expression);
             return new MenuIconPlan.ExpressionPreview(expression);
         }
 
@@ -87,7 +85,7 @@ internal static class MenuProgramCompiler
             var children = CompileChildren(folder.Children);
             return new MenuFolderPlan(
                 ResolveName(folder.Source.MenuName, folder.Source.name),
-                CompileIcon(folder.Source.Icon),
+                CompileIcon(folder.Source.Icon, folder.Source),
                 children);
         }
 
@@ -99,7 +97,7 @@ internal static class MenuProgramCompiler
                 : 1f;
             return new MenuControlPlan(
                 ResolveName(source.MenuName, source.name),
-                CompileIcon(source.Icon),
+                CompileIcon(source.Icon, source),
                 source.Kind,
                 source.ParameterName,
                 value);
