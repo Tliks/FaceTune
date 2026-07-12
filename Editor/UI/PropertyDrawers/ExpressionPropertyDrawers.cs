@@ -42,6 +42,12 @@ internal sealed class FacialSettingsDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(BlendShapeWeightAnimation))]
 internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 {
+    internal static void Initialize(SerializedProperty property)
+    {
+        property.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = string.Empty;
+        property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = new AnimationCurve();
+    }
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
@@ -58,7 +64,10 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(ExpressionData))]
 internal sealed class ExpressionDataDrawer : PropertyDrawer
 {
-    private static readonly ReorderableListOptions AnimationListOptions = new(Foldout: false, MaxVisibleHeight: 180f);
+    private static readonly ReorderableListOptions AnimationListOptions = new(
+        Foldout: false,
+        MaxVisibleHeight: 180f,
+        InitializeElement: BlendShapeWeightAnimationDrawer.Initialize);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {

@@ -311,8 +311,9 @@ internal class AnimatorControllerImporter
 
         return new ConditionCase
         {
-            HandGestureConditions = handGestureConditions,
-            ParameterConditions = parameterConditions
+            Conditions = handGestureConditions.Cast<ConditionBase>()
+                .Concat(parameterConditions)
+                .ToList()
         };
     }
 

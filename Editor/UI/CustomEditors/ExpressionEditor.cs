@@ -7,7 +7,10 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(FaceTuneComponent))]
 internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
 {
-    private static readonly ReorderableListOptions AnimationListOptions = new(Foldout: false, MaxVisibleHeight: 180f);
+    private static readonly ReorderableListOptions AnimationListOptions = new(
+        Foldout: false,
+        MaxVisibleHeight: 180f,
+        InitializeElement: BlendShapeWeightAnimationDrawer.Initialize);
     private static GUIStyle? _contentStyle;
     private static GUIStyle ContentStyle => _contentStyle ??= new GUIStyle(EditorStyles.helpBox)
     {
@@ -17,11 +20,11 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
     private static GUIStyle? _groupLabelStyle;
     private static GUIStyle GroupLabelStyle => _groupLabelStyle ??= new GUIStyle(EditorStyles.boldLabel)
     {
-        fontSize = EditorStyles.boldLabel.fontSize + 1,
         normal = { textColor = Color.white }
     };
 
     private bool _expressionExpanded;
+    private bool _otherExpressionExpanded;
     private bool _behaviorExpanded;
     private bool _conditionExpanded;
     private bool _directMenuExpanded;
@@ -32,6 +35,9 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
     {
         serializedObject.UpdateIfRequiredOrScript();
         _expressionExpanded = true;
+        _otherExpressionExpanded = targets
+            .Cast<FaceTuneComponent>()
+            .Any(component => component.DataReference?.Get(component) != null || component.Data.Clip != null);
         _behaviorExpanded = true;
         _conditionExpanded = serializedObject.FindProperty(nameof(FaceTuneComponent.ConditionEnabled)).boolValue;
         _directMenuExpanded = false;
@@ -65,22 +71,31 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
         if (!_expressionExpanded) return;
 
         using var region = LayoutRegion.Begin(ContentStyle);
-        LocalizedUI.PropertyField(
-            serializedObject.FindProperty(nameof(FaceTuneComponent.DataReference)),
-            "expression.otherComponent.label");
-
         var data = serializedObject.FindProperty(nameof(FaceTuneComponent.Data));
-        var clip = data.FindPropertyRelative("Clip");
-        LocalizedUI.PropertyField(clip, "expression.clip.label");
-        if (clip.objectReferenceValue != null)
+        var otherExpressionFoldoutRect = EditorGUILayout.GetControlRect();
+        _otherExpressionExpanded = FoldoutUI.Draw(
+            otherExpressionFoldoutRect,
+            _otherExpressionExpanded,
+            "expression.otherExpression.label".LG());
+        if (_otherExpressionExpanded)
         {
-            EditorGUI.indentLevel++;
-            EditorGUILayout.BeginHorizontal();
-            DrawEnumLayout(data.FindPropertyRelative("ClipOption"), "expression.clip.importOption.label", nameof(ClipImportOption));
-            using (new EditorGUI.DisabledScope(targets.Length != 1))
-                if (GUILayout.Button("expression.clip.import.button".LG(), GUILayout.ExpandWidth(false))) ImportClip();
-            EditorGUILayout.EndHorizontal();
-            EditorGUI.indentLevel--;
+            using var otherExpressionRegion = LayoutRegion.Begin(ContentStyle);
+            LocalizedUI.PropertyField(
+                serializedObject.FindProperty(nameof(FaceTuneComponent.DataReference)),
+                "expression.otherComponent.label");
+
+            var clip = data.FindPropertyRelative("Clip");
+            LocalizedUI.PropertyField(clip, "expression.clip.label");
+            if (clip.objectReferenceValue != null)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.BeginHorizontal();
+                DrawEnumLayout(data.FindPropertyRelative("ClipOption"), "expression.clip.importOption.label", nameof(ClipImportOption));
+                using (new EditorGUI.DisabledScope(targets.Length != 1))
+                    if (GUILayout.Button("expression.clip.import.button".LG(), GUILayout.ExpandWidth(false))) ImportClip();
+                EditorGUILayout.EndHorizontal();
+                EditorGUI.indentLevel--;
+            }
         }
 
         var animations = data.FindPropertyRelative("BlendShapeAnimations");

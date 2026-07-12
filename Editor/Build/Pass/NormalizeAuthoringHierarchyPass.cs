@@ -182,13 +182,14 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     {
         foreach (var conditionCase in condition.Cases)
         {
-            foreach (var menuCondition in conditionCase.MenuConditions)
+            for (var i = conditionCase.Conditions.Count - 1; i >= 0; i--)
             {
-                if (menuCondition.MenuSource == null) continue;
-                conditionCase.ParameterConditions.Add(ToParameterCondition(menuCondition));
+                if (conditionCase.Conditions[i] is not MenuCondition menuCondition) continue;
+                if (menuCondition.MenuSource == null)
+                    conditionCase.Conditions.RemoveAt(i);
+                else
+                    conditionCase.Conditions[i] = ToParameterCondition(menuCondition);
             }
-
-            conditionCase.MenuConditions.Clear();
         }
     }
 

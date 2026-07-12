@@ -3,14 +3,31 @@ namespace Aoyon.FaceTune.Gui;
 [CustomPropertyDrawer(typeof(Condition))]
 internal sealed class ConditionDrawer : PropertyDrawer
 {
-    private static readonly ReorderableListOptions CasesOptions = new(Foldout: false, MaxVisibleHeight: 260f);
+    private const int SeparatorFontSize = 8;
+    private static readonly GUIStyle SeparatorStyle = new(EditorStyles.miniLabel)
+    {
+        alignment = TextAnchor.MiddleCenter,
+        fontSize = SeparatorFontSize
+    };
+    private static readonly ReorderableListOptions CasesOptions = new(
+        Foldout: false,
+        MaxVisibleHeight: 260f,
+        InitializeElement: element => element.FindPropertyRelative("Conditions").arraySize = 0,
+        DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()));
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         var always = property.FindPropertyRelative("Always");
-        FaceTuneDrawerUtility.Draw(ref position, always, "condition.always.label");
-        position = EditorGUI.IndentedRect(position);
+        position.SetSingleHeight();
+        var mode = always.boolValue ? 1 : 0;
+        var nextMode = GUI.Toolbar(position, mode, new[]
+        {
+            "condition.mode.normal.label".LG(),
+            "condition.mode.always.label".LG()
+        });
+        if (nextMode != mode) always.boolValue = nextMode == 1;
+        position.NewLine();
         var cases = property.FindPropertyRelative("Cases");
         position.height = ReorderableListUI.GetHeight(cases, CasesOptions);
         using (new EditorGUI.DisabledScope(always.boolValue && !always.hasMultipleDifferentValues))
@@ -18,37 +35,68 @@ internal sealed class ConditionDrawer : PropertyDrawer
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => FaceTuneDrawerUtility.Height(property.FindPropertyRelative("Always"))
+        => FaceTuneDrawerUtility.Line
          + ReorderableListUI.GetHeight(property.FindPropertyRelative("Cases"), CasesOptions);
+
+    internal static void DrawSeparator(Rect boundary, GUIContent label)
+    {
+        var position = new Rect(
+            boundary.x,
+            boundary.y - EditorGUIUtility.singleLineHeight * .5f,
+            boundary.width,
+            EditorGUIUtility.singleLineHeight);
+        EditorGUI.LabelField(position, label, SeparatorStyle);
+    }
 }
 
 [CustomPropertyDrawer(typeof(ConditionCase))]
 internal sealed class ConditionCaseDrawer : PropertyDrawer
 {
-    private static readonly ReorderableListOptions ListOptions = new(Foldout: false, MaxVisibleHeight: 120f);
+    private static readonly ReorderableListOptions ConditionsOptions = new(
+        Foldout: false,
+        AddElement: ShowAddMenu);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
-        DrawList(ref position, property, "HandGestureConditions", "conditionCase.handGestureConditions.label");
-        DrawList(ref position, property, "MenuConditions", "conditionCase.menuConditions.label");
-        DrawList(ref position, property, "ParameterConditions", "conditionCase.parameterConditions.label");
-    }
-
-    private static void DrawList(ref Rect position, SerializedProperty property, string name, string key)
-    {
-        var list = property.FindPropertyRelative(name);
-        var height = ReorderableListUI.GetHeight(list, ListOptions);
-        position.height = height;
-        ReorderableListUI.Draw(position, list, key.LG(), ListOptions);
-        position.y += height;
+        var conditions = property.FindPropertyRelative("Conditions");
+        ReorderableListUI.Draw(position, conditions, GetCaseLabel(property), ConditionsOptions);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => Height(property, "HandGestureConditions") + Height(property, "MenuConditions") + Height(property, "ParameterConditions");
+        => ReorderableListUI.GetHeight(property.FindPropertyRelative("Conditions"), ConditionsOptions);
 
-    private static float Height(SerializedProperty property, string name)
-        => ReorderableListUI.GetHeight(property.FindPropertyRelative(name), ListOptions);
+    private static GUIContent GetCaseLabel(SerializedProperty property)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(property.propertyPath, @"Array\.data\[(\d+)\]$");
+        var number = match.Success && int.TryParse(match.Groups[1].Value, out var index) ? index + 1 : 1;
+        return new GUIContent($"{"condition.case.label".LG().text} {number}");
+    }
+
+    private static void ShowAddMenu(SerializedProperty conditions)
+    {
+        var serializedObject = conditions.serializedObject;
+        var propertyPath = conditions.propertyPath;
+        var menu = new GenericMenu();
+        Add<HandGestureCondition>(menu, "condition.kind.hand.label", serializedObject, propertyPath);
+        Add<MenuCondition>(menu, "condition.kind.menu.label", serializedObject, propertyPath);
+        Add<ParameterCondition>(menu, "condition.kind.parameter.label", serializedObject, propertyPath);
+        menu.ShowAsContext();
+    }
+
+    private static void Add<T>(GenericMenu menu, string labelKey, SerializedObject serializedObject, string propertyPath)
+        where T : ConditionBase, new()
+    {
+        menu.AddItem(labelKey.LG(), false, () =>
+        {
+            serializedObject.Update();
+            var conditions = serializedObject.FindProperty(propertyPath);
+            var index = conditions.arraySize;
+            conditions.InsertArrayElementAtIndex(index);
+            conditions.GetArrayElementAtIndex(index).managedReferenceValue = new T();
+            serializedObject.ApplyModifiedProperties();
+        });
+    }
 }
 
 [CustomPropertyDrawer(typeof(HandGestureCondition))]

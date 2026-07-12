@@ -5,19 +5,22 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed record ReorderableListOptions(
     bool Foldout = true,
     float? MaxVisibleHeight = null,
-    Action<SerializedProperty>? InitializeElement = null);
+    Action<SerializedProperty>? InitializeElement = null,
+    Action<SerializedProperty>? AddElement = null,
+    Action<Rect>? DrawElementSeparator = null);
 
 /// <summary>Draws a reorderable array strictly inside a caller-owned rectangle.</summary>
-internal static class ReorderableListUI
+internal static partial class ReorderableListUI
 {
     private const float ButtonWidth = 20f;
+    private const float ElementContentIndent = 8f;
     private static readonly Dictionary<string, State> States = new();
 
     public static void Draw(Rect position, SerializedProperty property, GUIContent label, ReorderableListOptions? options = null)
     {
         options ??= new ReorderableListOptions();
         var state = GetState(property);
-        var list = CreateList(property, state);
+        var list = CreateList(property, state, options);
 
         var header = new Rect(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
         DrawHeader(header, property, label, options, list);
@@ -48,12 +51,12 @@ internal static class ReorderableListUI
         options ??= new ReorderableListOptions();
         if (options.Foldout && !property.isExpanded) return EditorGUIUtility.singleLineHeight;
 
-        var listHeight = CreateList(property, GetState(property)).GetHeight();
+        var listHeight = CreateList(property, GetState(property), options).GetHeight();
         if (options.MaxVisibleHeight.HasValue) listHeight = Mathf.Min(listHeight, options.MaxVisibleHeight.Value);
         return EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing + listHeight;
     }
 
-    private static ReorderableList CreateList(SerializedProperty property, State state)
+    private static ReorderableList CreateList(SerializedProperty property, State state, ReorderableListOptions options)
     {
         var list = new ReorderableList(property.serializedObject, property.Copy(), true, false, false, false)
         {
@@ -66,6 +69,14 @@ internal static class ReorderableListUI
         {
             if (index < 0 || index >= list.serializedProperty.arraySize) return;
             var element = list.serializedProperty.GetArrayElementAtIndex(index);
+            rect.y += EditorGUIUtility.standardVerticalSpacing * .5f;
+            if (index > 0 && options.DrawElementSeparator != null)
+            {
+                var boundary = new Rect(rect.x, rect.y, rect.width, 0f);
+                options.DrawElementSeparator(boundary);
+            }
+            rect.x += ElementContentIndent;
+            rect.width -= ElementContentIndent;
             rect.height = EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
             EditorGUI.PropertyField(rect, element, GUIContent.none, true);
         };
@@ -77,27 +88,50 @@ internal static class ReorderableListUI
 
     private static void DrawHeader(Rect position, SerializedProperty property, GUIContent label, ReorderableListOptions options, ReorderableList list)
     {
+        DrawHeader(
+            position,
+            labelRect =>
+            {
+                if (options.Foldout) FoldoutUI.Draw(labelRect, property, label);
+                else EditorGUI.LabelField(labelRect, label);
+            },
+            () =>
+            {
+                if (options.AddElement != null)
+                {
+                    options.AddElement(property);
+                    return;
+                }
+
+                var index = property.arraySize;
+                property.InsertArrayElementAtIndex(index);
+                options.InitializeElement?.Invoke(property.GetArrayElementAtIndex(index));
+                list.index = index;
+            },
+            property.arraySize > 0,
+            () =>
+            {
+                var index = list.index >= 0 && list.index < property.arraySize ? list.index : property.arraySize - 1;
+                property.DeleteArrayElementAtIndex(index);
+                list.index = Mathf.Min(index, property.arraySize - 1);
+            });
+    }
+
+    private static void DrawHeader(
+        Rect position,
+        Action<Rect> drawLabel,
+        Action add,
+        bool canRemove,
+        Action remove)
+    {
         var (contentRect, removeRect) = position.SplitRight(ButtonWidth);
         var (labelRect, addRect) = contentRect.SplitRight(ButtonWidth);
-        if (options.Foldout) FoldoutUI.Draw(labelRect, property, label);
-        else EditorGUI.LabelField(labelRect, label);
-
-        if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.miniButtonLeft))
-        {
-            var index = property.arraySize;
-            property.InsertArrayElementAtIndex(index);
-            options.InitializeElement?.Invoke(property.GetArrayElementAtIndex(index));
-            list.index = index;
-        }
-
-        using (new EditorGUI.DisabledScope(property.arraySize == 0))
-        {
-            if (!GUI.Button(removeRect, EditorGUIUtility.IconContent("Toolbar Minus"), EditorStyles.miniButtonRight)) return;
-            var index = list.index >= 0 && list.index < property.arraySize ? list.index : property.arraySize - 1;
-            property.DeleteArrayElementAtIndex(index);
-            list.index = Mathf.Min(index, property.arraySize - 1);
-        }
+        drawLabel(labelRect);
+        if (GUI.Button(addRect, EditorGUIUtility.IconContent("Toolbar Plus"), EditorStyles.miniButtonLeft)) add();
+        using var disabled = new EditorGUI.DisabledScope(!canRemove);
+        if (GUI.Button(removeRect, EditorGUIUtility.IconContent("Toolbar Minus"), EditorStyles.miniButtonRight)) remove();
     }
+
 
     private static State GetState(SerializedProperty property)
     {

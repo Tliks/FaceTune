@@ -155,6 +155,21 @@ msgstr "インポート"
 msgid "condition.always.label"
 msgstr "常に有効"
 
+msgid "condition.mode.normal.label"
+msgstr "通常"
+
+msgid "condition.mode.always.label"
+msgstr "常に再生"
+
+msgid "condition.case.label"
+msgstr "ケース"
+
+msgid "condition.or.label"
+msgstr "もしくは"
+
+msgid "condition.and.label"
+msgstr "かつ"
+
 msgid "condition.conditions.label"
 msgstr "条件"
 
@@ -416,11 +431,14 @@ msgstr "取り込む"
 msgid "expression.previewSettings.section.label"
 msgstr "プレビュー設定"
 
+msgid "expression.otherExpression.label"
+msgstr "他の表情を使用"
+
 msgid "expression.otherComponent.label"
 msgstr "他のコンポーネント"
 
 msgid "expression.clip.label"
-msgstr "Animation Clip"
+msgstr "アニメーションクリップ"
 
 msgid "expression.clip.importOption.label"
 msgstr "取り込み設定"
@@ -475,3 +493,21 @@ msgstr "左手"
 
 msgid "hand.option.right"
 msgstr "右手"
+
+msgid "condition.kind.hand.label"
+msgstr "ハンド"
+
+msgid "condition.kind.menu.label"
+msgstr "メニュー"
+
+msgid "condition.kind.parameter.label"
+msgstr "パラメーター"
+
+msgid "common.override.label"
+msgstr "オーバーライド"
+
+msgid "condition.or.label"
+msgstr "または"
+
+msgid "condition.addOrGroup.label"
+msgstr "OR条件グループを追加"

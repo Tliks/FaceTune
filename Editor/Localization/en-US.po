@@ -155,6 +155,21 @@ msgstr "Import"
 msgid "condition.always.label"
 msgstr "Always"
 
+msgid "condition.mode.normal.label"
+msgstr "Normal"
+
+msgid "condition.mode.always.label"
+msgstr "Always Play"
+
+msgid "condition.case.label"
+msgstr "Case"
+
+msgid "condition.or.label"
+msgstr "or"
+
+msgid "condition.and.label"
+msgstr "and"
+
 msgid "condition.conditions.label"
 msgstr "Conditions"
 
@@ -416,6 +431,9 @@ msgstr "Import"
 msgid "expression.previewSettings.section.label"
 msgstr "Preview Settings"
 
+msgid "expression.otherExpression.label"
+msgstr "Use Another Expression"
+
 msgid "expression.otherComponent.label"
 msgstr "Other Component"
 
@@ -475,3 +493,21 @@ msgstr "Left Hand"
 
 msgid "hand.option.right"
 msgstr "Right Hand"
+
+msgid "condition.kind.hand.label"
+msgstr "Hand"
+
+msgid "condition.kind.menu.label"
+msgstr "Menu"
+
+msgid "condition.kind.parameter.label"
+msgstr "Parameter"
+
+msgid "common.override.label"
+msgstr "Override"
+
+msgid "condition.or.label"
+msgstr "OR"
+
+msgid "condition.addOrGroup.label"
+msgstr "Add OR Condition Group"
