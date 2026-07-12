@@ -91,17 +91,13 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
             proxy.DataReferenceMode = ComponentReferenceMode.Reference;
-            proxy.DataReference = original.DataReferenceMode == ComponentReferenceMode.Reference
-                ? original.DataReference
-                : new(original.gameObject);
+            proxy.DataReference = new(original.gameObject);
 
             if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
             {
                 var proxyStyle = proxyObject.AddComponent<StyleComponent>();
                 proxyStyle.DataReferenceMode = ComponentReferenceMode.Reference;
-                proxyStyle.DataReference = originalStyle.DataReferenceMode == ComponentReferenceMode.Reference
-                    ? originalStyle.DataReference
-                    : new(originalStyle.gameObject);
+                proxyStyle.DataReference = new(originalStyle.gameObject);
             }
         }
     }

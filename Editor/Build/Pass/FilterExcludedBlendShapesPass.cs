@@ -98,7 +98,7 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
         if (removed.Count == 0) return;
 
         LocalizedLog.Warning(
-            "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound",
+            "log.processTrackedShapesPass.unAllowedBlendShapesFound.warning",
             $"{owner}:{string.Join(", ", removed)}");
     }
 }

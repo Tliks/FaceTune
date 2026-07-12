@@ -20,7 +20,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
 
         if (componentCount > 1)
         {
-            LocalizedLog.Warning("Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer");
+            LocalizedLog.Warning("log.applyDefaultShapesPass.multipleFacialStyleComponentWithApplyToRenderer.warning");
         }
 
         var component = facialStyleComponents[0];

@@ -11,7 +11,8 @@ internal enum MenuItemKind
 internal enum MenuIconMode
 {
     Manual,
-    ExpressionPreview
+    ExpressionPreview,
+    None
 }
 
 [Serializable]

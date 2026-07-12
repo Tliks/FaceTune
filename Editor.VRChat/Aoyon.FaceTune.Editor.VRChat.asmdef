@@ -22,7 +22,15 @@
         "VRCSDK3A-Editor.dll"
     ],
     "autoReferenced": false,
-    "defineConstraints": [],
-    "versionDefines": [],
+    "defineConstraints": [
+        "FACETUNE_VRCHAT"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.vrchat.avatars",
+            "expression": "",
+            "define": "FACETUNE_VRCHAT"
+        }
+    ],
     "noEngineReferences": false
 }

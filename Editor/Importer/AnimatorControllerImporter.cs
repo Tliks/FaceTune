@@ -27,7 +27,7 @@ internal class AnimatorControllerImporter
 
     public void Import(GameObject parent)
     {
-        LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing", _animatorController.name);
+        LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.importing", _animatorController.name);
         AssetDatabase.StartAssetEditing();
         try
         {
@@ -82,7 +82,7 @@ internal class AnimatorControllerImporter
                     }
                 }
 
-                LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected", layer.name, validExpressionsPerLayer.Count, stateConditions.Count);
+                LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.layerCollected", layer.name, validExpressionsPerLayer.Count, stateConditions.Count);
             }
 
             Undo.RegisterCreatedObjectUndo(parent, "Import FX");
@@ -92,7 +92,7 @@ internal class AnimatorControllerImporter
                 EditorGUIUtility.PingObject(firstLayerObj);
             }
 
-            LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting", _animatorController.name, expressionCount);
+            LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.finishedImporting", _animatorController.name, expressionCount);
         }
         finally
         {
@@ -264,10 +264,18 @@ internal class AnimatorControllerImporter
             }
         }
 
-        expression.ExpressionSettings = new ExpressionSettings()
+        var timeParameter = state.timeParameterActive ? state.timeParameter : string.Empty;
+        expression.ExpressionSettings = timeParameter switch
         {
-            LoopTime = clip.isLooping,
-            MotionTimeParameterName = state.timeParameterActive && !string.IsNullOrEmpty(state.timeParameter) ? state.timeParameter : string.Empty
+            "GestureLeftWeight" => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Trigger, TriggerHand = Hand.Left },
+            "GestureRightWeight" => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Trigger, TriggerHand = Hand.Right },
+            _ when clip.isLooping => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Loop },
+            _ when !string.IsNullOrEmpty(timeParameter) => new ExpressionSettings
+            {
+                MultiFrameMode = MultiFrameMode.Parameter,
+                ParameterName = timeParameter
+            },
+            _ => new ExpressionSettings()
         };
 
         expression.FacialSettings = new FacialSettings()

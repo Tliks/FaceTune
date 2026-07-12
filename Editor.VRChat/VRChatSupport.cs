@@ -12,6 +12,8 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
 {
     private const string GestureLeftParameter = "GestureLeft";
     private const string GestureRightParameter = "GestureRight";
+    private const string GestureLeftWeightParameter = "GestureLeftWeight";
+    private const string GestureRightWeightParameter = "GestureRightWeight";
     private const string VisemeParameter = "Viseme";
     private const string PreviewModeParameter = "PreviewMode";
     private const string TrackingTypeParameter = "TrackingType";
@@ -37,6 +39,9 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     {
         _descriptor = descriptor;
     }
+
+    public string? ResolveGestureWeightParameter(Hand hand)
+        => hand == Hand.Left ? GestureLeftWeightParameter : GestureRightWeightParameter;
 
     public SkinnedMeshRenderer? GetFaceRenderer()
     {

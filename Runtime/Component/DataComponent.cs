@@ -18,8 +18,6 @@ namespace Aoyon.FaceTune
         // Manual
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
-        [Obsolete] public bool AllBlendShapeAnimationAsFacial = false;
-
         ComponentReferenceMode IExpressionDataSource.DataReferenceMode => DataReferenceMode;
         AvatarObjectReference IExpressionDataSource.DataReference => DataReference;
         ExpressionData IExpressionDataSource.Data => Data;

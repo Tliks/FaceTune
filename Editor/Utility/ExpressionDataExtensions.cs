@@ -25,8 +25,7 @@ internal static class ExpressionDataExtensions
 
         if (data.Clip != null)
         {
-            var facialPath = data.AllBlendShapeAnimationAsFacial ? null : bodyPath;
-            data.Clip.GetFirstFrameBlendShapes(data.ClipOption, resultToAdd, facialPath, facialAnimations);
+            data.Clip.GetFirstFrameBlendShapes(data.ClipOption, resultToAdd, bodyPath, facialAnimations);
         }
 
         foreach (var animation in data.BlendShapeAnimations)
@@ -58,8 +57,7 @@ internal static class ExpressionDataExtensions
 
         if (data.Clip != null)
         {
-            var facialPath = data.AllBlendShapeAnimationAsFacial ? null : bodyPath;
-            data.Clip.GetBlendShapeAnimations(data.ClipOption, resultToAdd, facialPath, facialAnimations);
+            data.Clip.GetBlendShapeAnimations(data.ClipOption, resultToAdd, bodyPath, facialAnimations);
         }
 
         foreach (var animation in data.BlendShapeAnimations)
@@ -75,23 +73,27 @@ internal static class ExpressionDataExtensions
     }
 
     public static IEnumerable<ExpressionData> ResolveData(this IExpressionDataSource source, Component owner)
+        => ResolveData(source, owner, new HashSet<IExpressionDataSource>());
+
+    private static IEnumerable<ExpressionData> ResolveData(
+        IExpressionDataSource source,
+        Component owner,
+        HashSet<IExpressionDataSource> resolving)
     {
-        if (source.DataReferenceMode != ComponentReferenceMode.Reference)
-        {
-            yield return source.Data;
-            yield break;
-        }
+        if (!resolving.Add(source)) yield break;
 
         var target = source.DataReference.Get(owner);
-        if (target == null) yield break;
-
-        foreach (var component in target.GetComponents<FaceTuneTagComponent>().OfType<IExpressionDataSource>())
+        if (target != null)
         {
-            // 1段階までの参照解決
-            if (component.DataReferenceMode == ComponentReferenceMode.Direct)
+            foreach (var referenced in target.GetComponents<FaceTuneTagComponent>().OfType<IExpressionDataSource>())
             {
-                yield return component.Data;
+                if (referenced is not Component referencedOwner) continue;
+                foreach (var data in ResolveData(referenced, referencedOwner, resolving))
+                    yield return data;
             }
         }
+
+        yield return source.Data;
+        resolving.Remove(source);
     }
 }

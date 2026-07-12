@@ -40,4 +40,6 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
     {
         throw new NotImplementedException();
     }
+
+    public string? ResolveGestureWeightParameter(Hand hand) => null;
 }

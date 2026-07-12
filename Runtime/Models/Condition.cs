@@ -206,7 +206,6 @@ internal class ParameterCondition
 }
 
 
-[Obsolete]
 internal enum Hand
 {
     Left,

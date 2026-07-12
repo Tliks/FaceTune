@@ -40,7 +40,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
             if (!enabled) continue;
             var isEditorOnly = context.EditorOnlyInHierarchy(component.gameObject);
             if (isEditorOnly) continue;
-            if (target != null) LocalizedLog.Warning("RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview");
+            if (target != null) LocalizedLog.Warning("realTimeExpressionPreview.log.warning.multipleExpressionComponentWithEnableRealTimePreview");
             target = component;
         }
         

@@ -27,7 +27,7 @@ internal static class FaceTuneProgramCompiler
         var components = context.Root.GetComponentsInChildren<FaceTuneComponent>(true);
         
         var conditionCompiler = new ConditionCompiler(context.Root, platformSupport, settings.ParameterDomains);
-        var expressionCompiler = new ExpressionCompiler(context, settings, conditionCompiler);
+        var expressionCompiler = new ExpressionCompiler(context, platformSupport, settings, conditionCompiler);
 
         var items = components
             .Select(expressionCompiler.Compile)
@@ -41,16 +41,19 @@ internal static class FaceTuneProgramCompiler
 internal sealed class ExpressionCompiler
 {
     private readonly AvatarContext _avatarContext;
+    private readonly IMetabasePlatformSupport _platformSupport;
     private readonly BuildSettings _settings;
     private readonly ConditionCompiler _conditionCompiler;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _safeZeroBlendShapeAnimations;
 
     public ExpressionCompiler(
         AvatarContext avatarContext,
+        IMetabasePlatformSupport platformSupport,
         BuildSettings settings,
         ConditionCompiler conditionCompiler)
     {
         _avatarContext = avatarContext;
+        _platformSupport = platformSupport;
         _settings = settings;
         _conditionCompiler = conditionCompiler;
         _safeZeroBlendShapeAnimations = avatarContext.FaceRenderer
@@ -73,9 +76,18 @@ internal sealed class ExpressionCompiler
             component.name,
             new(facialAnimations),
             CreateAnimationSet(component, facialAnimations, expressionAnimationSet),
-            component.ExpressionSettings,
+            ResolveExpressionSettings(component.ExpressionSettings),
             ResolveFacialSettings(component),
             _conditionCompiler.Resolve(component));
+    }
+
+    private ExpressionSettings ResolveExpressionSettings(ExpressionSettings settings)
+    {
+        if (settings.MultiFrameMode != MultiFrameMode.Trigger) return settings;
+        var parameter = _platformSupport.ResolveGestureWeightParameter(settings.TriggerHand);
+        return string.IsNullOrEmpty(parameter)
+            ? settings with { MultiFrameMode = MultiFrameMode.Default }
+            : settings with { MultiFrameMode = MultiFrameMode.Parameter, ParameterName = parameter };
     }
 
     private BlendShapeWeightAnimationSet CreateAnimationSet(

@@ -91,7 +91,8 @@ internal static class MenuProgramCompiler
 
         MenuIconPlan CompileIcon(MenuIconSettings settings, Component owner)
         {
-            if (settings.Mode == MenuIconMode.Manual) return new MenuIconPlan.Manual(settings.ManualIcon);
+            if (settings.Mode is MenuIconMode.Manual or MenuIconMode.None)
+                return new MenuIconPlan.Manual(settings.Mode == MenuIconMode.None ? null : settings.ManualIcon);
 
             var transform = settings.PreviewExpression != null
                 ? settings.PreviewExpression.transform
