@@ -4,6 +4,16 @@ namespace Aoyon.FaceTune.Gui;
 
 internal static class CustomEditorUtility
 {
+    public static void AddClipFirstFrame(
+        ExpressionData data,
+        ICollection<BlendShapeWeight> resultToAdd,
+        string? bodyPath,
+        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
+    {
+        if (data.Clip == null) return;
+        data.Clip.GetFirstFrameBlendShapes(data.ClipOption, resultToAdd, bodyPath, facialAnimations);
+    }
+
     public static bool TryGetContext(GameObject obj, [NotNullWhen(true)] out AvatarContext? context)
     {
         if (AvatarContext.TryGet(obj, out context, out var result))
