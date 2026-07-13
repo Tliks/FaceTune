@@ -227,9 +227,9 @@ internal enum HandGestureMatch
 {
     LeftHand,
     RightHand,
+    ExactlyOneHand,
     BothHands,
     AtLeastOneHand,
-    ExactlyOneHand,
     NeitherHand
 }
 

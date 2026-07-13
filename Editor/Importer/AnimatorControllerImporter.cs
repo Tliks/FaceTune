@@ -175,6 +175,8 @@ internal class AnimatorControllerImporter
         void AddTransitionCondition(AnimatorState state, IReadOnlyList<AnimatorCondition> animatorConditions)
         {
             var dnf = ToDnfCondition(animatorConditions);
+            if (dnf == null) return;
+
             if (stateConditions.TryGetValue(state, out var existing))
             {
                 stateConditions[state] = existing.Or(dnf);
@@ -189,7 +191,9 @@ internal class AnimatorControllerImporter
         void ProcessAnyState(List<(AnimatorState, IReadOnlyList<AnimatorCondition>)> anyStateTransitions)
         {
             var convertedAnyState = anyStateTransitions
-                .Select(p => (p.Item1, ToDnfCondition(p.Item2)))
+                .Select(p => (State: p.Item1, Condition: ToDnfCondition(p.Item2)))
+                .Where(p => p.Condition != null)
+                .Select(p => (p.State, Condition: p.Condition!))
                 .ToList();
 
             var anyStateSuppressor = DnfCondition.Any(convertedAnyState.Select(p => p.Item2));
@@ -213,18 +217,26 @@ internal class AnimatorControllerImporter
         }
     }
 
-    private DnfCondition ToDnfCondition(IReadOnlyList<AnimatorCondition> animatorConditions)
+    private DnfCondition? ToDnfCondition(IReadOnlyList<AnimatorCondition> animatorConditions)
     {
         if (animatorConditions.Count == 0) return DnfCondition.Always;
-        return DnfCondition.All(animatorConditions.Select(ToDnfCondition), _parameterDomains);
+
+        var resolved = animatorConditions
+            .Select(ToDnfCondition)
+            .OfType<DnfCondition>()
+            .ToList();
+
+        return resolved.Count == 0
+            ? null
+            : DnfCondition.All(resolved, _parameterDomains);
     }
 
-    private DnfCondition ToDnfCondition(AnimatorCondition condition)
+    private DnfCondition? ToDnfCondition(AnimatorCondition condition)
     {
         if (!_parameterTypes.TryGetValue(condition.parameter, out var parameterType))
         {
             LocalizedLog.Warning("AnimatorControllerImporter:Log:warning:AnimatorControllerImporter:FailedToFindParameter", condition.parameter);
-            return DnfCondition.Always;
+            return null;
         }
 
         var rule = new AnimatorConditionRule(condition, parameterType);

@@ -4,6 +4,7 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class ConditionDrawer : PropertyDrawer
 {
     private const int SeparatorFontSize = 8;
+    private const float EmptyMessageHeight = 30f;
     private static readonly GUIStyle SeparatorStyle = new(EditorStyles.miniLabel)
     {
         alignment = TextAnchor.MiddleCenter,
@@ -11,6 +12,7 @@ internal sealed class ConditionDrawer : PropertyDrawer
     };
     private static readonly ReorderableListOptions CasesOptions = new(
         Foldout: false,
+        Header: false,
         MaxVisibleHeight: 260f,
         InitializeElement: element => element.FindPropertyRelative("Conditions").arraySize = 0,
         DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()));
@@ -20,31 +22,49 @@ internal sealed class ConditionDrawer : PropertyDrawer
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         var always = property.FindPropertyRelative("Always");
         position.SetSingleHeight();
+        var cases = property.FindPropertyRelative("Cases");
+        var showCases = !always.boolValue || always.hasMultipleDifferentValues;
+        var modeRect = position;
+        var controlsRect = Rect.zero;
+        if (showCases) (modeRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
         var mode = always.boolValue ? 1 : 0;
-        var nextMode = GUI.Toolbar(position, mode, new[]
+        var toolbarRect = EditorGUI.PrefixLabel(modeRect, "common.mode.label".LG());
+        var nextMode = GUI.Toolbar(toolbarRect, mode, new[]
         {
             "condition.mode.normal.label".LG(),
             "condition.mode.always.label".LG()
         });
         if (nextMode != mode) always.boolValue = nextMode == 1;
+        if (showCases) GUIHelper.DrawListControls(controlsRect, cases, CasesOptions);
         position.NewLine();
-        var cases = property.FindPropertyRelative("Cases");
-        position.height = ReorderableListUI.GetHeight(cases, CasesOptions);
-        using (new EditorGUI.DisabledScope(always.boolValue && !always.hasMultipleDifferentValues))
-            ReorderableListUI.Draw(position, cases, "condition.conditions.label".LG(), CasesOptions);
+        if (always.boolValue && !always.hasMultipleDifferentValues) return;
+
+        position.height = GUIHelper.GetListHeight(cases, CasesOptions);
+        GUIHelper.DrawList(position, cases, "condition.conditions.label".LG(), CasesOptions);
+        if (cases.arraySize == 0)
+        {
+            position.height = EmptyMessageHeight;
+            EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => FaceTuneDrawerUtility.Line
-         + ReorderableListUI.GetHeight(property.FindPropertyRelative("Cases"), CasesOptions);
+    {
+        var always = property.FindPropertyRelative("Always");
+        if (always.boolValue && !always.hasMultipleDifferentValues) return GUIHelper.LineHeight;
+        var cases = property.FindPropertyRelative("Cases");
+        return GUIHelper.LineHeight + (cases.arraySize == 0
+            ? EmptyMessageHeight
+            : GUIHelper.GetListHeight(cases, CasesOptions));
+    }
 
     internal static void DrawSeparator(Rect boundary, GUIContent label)
     {
         var position = new Rect(
             boundary.x,
-            boundary.y - EditorGUIUtility.singleLineHeight * .5f,
+            boundary.y - GUIHelper.LineHeight * .5f,
             boundary.width,
-            EditorGUIUtility.singleLineHeight);
+            GUIHelper.LineHeight);
         EditorGUI.LabelField(position, label, SeparatorStyle);
     }
 }
@@ -52,6 +72,7 @@ internal sealed class ConditionDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(ConditionCase))]
 internal sealed class ConditionCaseDrawer : PropertyDrawer
 {
+    private const float EmptyMessageHeight = 30f;
     private static readonly ReorderableListOptions ConditionsOptions = new(
         Foldout: false,
         AddElement: ShowAddMenu);
@@ -60,11 +81,23 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         var conditions = property.FindPropertyRelative("Conditions");
-        ReorderableListUI.Draw(position, conditions, GetCaseLabel(property), ConditionsOptions);
+        GUIHelper.DrawList(position, conditions, GetCaseLabel(property), ConditionsOptions);
+        if (conditions.arraySize == 0)
+        {
+            position.y += GUIHelper.GetListHeight(conditions, ConditionsOptions) + GUIHelper.VerticalSpacing;
+            position.height = EmptyMessageHeight;
+            EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => ReorderableListUI.GetHeight(property.FindPropertyRelative("Conditions"), ConditionsOptions);
+    {
+        var conditions = property.FindPropertyRelative("Conditions");
+        var height = GUIHelper.GetListHeight(conditions, ConditionsOptions);
+        return conditions.arraySize == 0
+            ? height + GUIHelper.VerticalSpacing + EmptyMessageHeight
+            : height;
+    }
 
     private static GUIContent GetCaseLabel(SerializedProperty property)
     {
@@ -115,10 +148,10 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
     {
         var prefix = char.ToLowerInvariant(typeName[0]) + typeName.Substring(1);
         var keys = property.enumNames.Select(name => $"{prefix}.option.{char.ToLowerInvariant(name[0]) + name.Substring(1)}");
-        LocalizedUI.EnumPopup(position, property, string.Empty, keys);
+        GUIHelper.LocalizedEnumPopup(position, property, string.Empty, keys);
     }
 
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => FaceTuneDrawerUtility.Line;
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => GUIHelper.LineHeight;
 }
 
 [CustomPropertyDrawer(typeof(MenuCondition))]
@@ -132,12 +165,12 @@ internal sealed class MenuConditionDrawer : PropertyDrawer
         var (sourceRect, rest) = position.SplitRatio(.5f);
         var (modeRect, thresholdRect) = rest.SplitRatio(mode.enumValueIndex >= 2 ? .55f : 1f);
         EditorGUI.PropertyField(sourceRect, property.FindPropertyRelative("MenuSource"), GUIContent.none);
-        FaceTuneDrawerUtility.Enum(modeRect, mode, string.Empty, nameof(MenuConditionMode));
+        GUIHelper.DrawLocalizedEnum(modeRect, mode, string.Empty, nameof(MenuConditionMode));
         if (mode.enumValueIndex >= 2)
             EditorGUI.PropertyField(thresholdRect, property.FindPropertyRelative("Threshold"), GUIContent.none);
     }
 
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => FaceTuneDrawerUtility.Line;
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => GUIHelper.LineHeight;
 }
 
 [CustomPropertyDrawer(typeof(ParameterCondition))]
@@ -157,7 +190,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
             var (nameRect, remainder) = position.SplitRatio(.55f);
             var (typeRect, boolValueRect) = remainder.SplitRatio(.6f);
             EditorGUI.PropertyField(nameRect, name, GUIContent.none);
-            FaceTuneDrawerUtility.Enum(typeRect, type, string.Empty, nameof(ParameterType));
+            GUIHelper.DrawLocalizedEnum(typeRect, type, string.Empty, nameof(ParameterType));
             var boolOptions = new[] { "common.false.label".LG(), "common.true.label".LG() };
             value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 1 : 0, boolOptions) == 1;
             return;
@@ -165,7 +198,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
 
         var (parameterRect, parameterTypeRect) = position.SplitRatio(.65f);
         EditorGUI.PropertyField(parameterRect, name, GUIContent.none);
-        FaceTuneDrawerUtility.Enum(parameterTypeRect, type, string.Empty, nameof(ParameterType));
+        GUIHelper.DrawLocalizedEnum(parameterTypeRect, type, string.Empty, nameof(ParameterType));
         position.NewLine();
 
         if (type.enumValueIndex == (int)ParameterType.Float
@@ -174,7 +207,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
             comparison.enumValueIndex = (int)ComparisonType.GreaterThan;
 
         var (comparisonRect, valueRect) = position.SplitRatio(.5f);
-        FaceTuneDrawerUtility.Enum(comparisonRect, comparison, string.Empty, nameof(ComparisonType));
+        GUIHelper.DrawLocalizedEnum(comparisonRect, comparison, string.Empty, nameof(ComparisonType));
         EditorGUI.PropertyField(valueRect, value, GUIContent.none);
     }
 
@@ -188,6 +221,6 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         => property.FindPropertyRelative("ParameterType").enumValueIndex == (int)ParameterType.Bool
-            ? FaceTuneDrawerUtility.Line
-            : FaceTuneDrawerUtility.Line * 2f + FaceTuneDrawerUtility.Space;
+            ? GUIHelper.LineHeight
+            : GUIHelper.LineHeight * 2f + GUIHelper.VerticalSpacing;
 }

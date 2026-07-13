@@ -188,27 +188,42 @@ internal sealed class ConditionCompiler
     {
         if (condition.Always) return DnfCondition.Always;
 
-        return DnfCondition.Any(condition.Cases.Select(ResolveConditionCase));
+        var resolvedCases = condition.Cases
+            .Select(ResolveConditionCase)
+            .OfType<DnfCondition>()
+            .ToList();
+
+        return resolvedCases.Count == 0
+            ? DnfCondition.Never
+            : DnfCondition.Any(resolvedCases);
     }
 
-    private DnfCondition ResolveConditionCase(ConditionCase conditionCase)
+    private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)
     {
-        var result = DnfCondition.Always;
+        var resolvedConditions = new List<DnfCondition>();
 
         foreach (var condition in conditionCase.Conditions)
         {
-            result = condition switch
+            var resolved = condition switch
             {
-                HandGestureCondition handGesture => result.And(
-                    _platformSupport.ResolveHandGestureCondition(handGesture), _parameterDomains),
-                ParameterCondition parameter => result.And(
-                    _platformSupport.ResolveParameterCondition(parameter), _parameterDomains),
+                HandGestureCondition handGesture =>
+                    _platformSupport.ResolveHandGestureCondition(handGesture),
+                ParameterCondition parameter =>
+                    _platformSupport.ResolveParameterCondition(parameter),
                 MenuCondition => throw new InvalidOperationException(
                     "Menu conditions must be normalized before compiling expressions."),
-                _ => throw new InvalidOperationException($"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
+                _ => throw new InvalidOperationException(
+                    $"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
             };
+
+            if (resolved != null)
+            {
+                resolvedConditions.Add(resolved);
+            }
         }
 
-        return result;
+        return resolvedConditions.Count == 0
+            ? null
+            : DnfCondition.All(resolvedConditions, _parameterDomains);
     }
 }

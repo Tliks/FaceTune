@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
       propertyPath: m_Name
-      value: Left Hand Only
+      value: Left Hand
       objectReference: {fileID: 0}
     - target: {fileID: 5339180964134662850, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
       propertyPath: m_IsActive
@@ -112,7 +112,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -124,9 +125,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -142,8 +145,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &2602073235108601074 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -164,7 +169,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -176,9 +182,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -194,8 +202,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3449897734882677660 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -216,7 +226,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -228,9 +239,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -246,8 +259,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &3963633064186098529 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 540778276760996074, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -268,7 +283,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -280,9 +296,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -298,8 +316,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4334734657023080462 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -320,7 +340,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -332,9 +353,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -350,8 +373,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5393752001413292721 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -372,7 +397,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -384,9 +410,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -402,8 +430,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &7787607226083875863 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -424,7 +454,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -436,9 +467,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -454,8 +487,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &8285661403366438539 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -502,7 +537,8 @@ MonoBehaviour:
   ConditionEnabled: 0
   Condition:
     Always: 0
-    Cases: []
+    Cases:
+    - Conditions: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -514,9 +550,11 @@ MonoBehaviour:
       InstallContainerOverride:
         referencePath: 
         targetObject: {fileID: 0}
-    GroupName: 
-    SupressMode: 1
+    BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -532,5 +570,7 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 0
+  references:
+    version: 2
+    RefIds: []

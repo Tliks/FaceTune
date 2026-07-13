@@ -57,14 +57,19 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             return _descriptor.customEyeLookSettings.eyelidsSkinnedMesh;
         }
 
+        return FindRenderer("Body", StringComparison.Ordinal)
+               ?? FindRenderer("body", StringComparison.Ordinal)
+               ?? FindRenderer("Face", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
+    {
         var avatarRoot = _descriptor.transform;
         for (var i = 0; i < avatarRoot.childCount; i++)
         {
             var child = avatarRoot.GetChild(i);
-            if (child.name == "Body" && child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
-            {
-                return renderer;
-            }
+            if (!string.Equals(child.name, name, comparison)) continue;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
         }
 
         return null;

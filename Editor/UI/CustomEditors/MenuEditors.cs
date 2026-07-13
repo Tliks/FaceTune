@@ -4,19 +4,37 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(MenuComponent))]
 internal sealed class MenuEditor : FaceTuneEditor<MenuComponent>
 {
-    protected override void DrawInspector()
+    protected override float GetInspectorHeight()
     {
-        DrawProperty(nameof(MenuComponent.MenuName));
-        DrawProperty(nameof(MenuComponent.Icon));
-        DrawProperty(nameof(MenuComponent.InstallSettings));
+        var kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
+        var height = GetPropertyHeight(nameof(MenuComponent.MenuName))
+                   + GetPropertyHeight(nameof(MenuComponent.Icon))
+                   + GetPropertyHeight(nameof(MenuComponent.InstallSettings))
+                   + GetPropertyHeight(nameof(MenuComponent.Kind))
+                   + GetPropertyHeight(nameof(MenuComponent.ExclusiveToggleGroup))
+                   + GetPropertyHeight(nameof(MenuComponent.ParameterName));
+        if (kind.hasMultipleDifferentValues || IsMode(kind, (int)MenuItemKind.Toggle))
+            height += GetPropertyHeight(nameof(MenuComponent.DefaultSelected));
+        return Mathf.Max(0f, height - GUIHelper.VerticalSpacing);
+    }
+
+    protected override void DrawInspector(Rect position)
+    {
+        var menuName = serializedObject.FindProperty(nameof(MenuComponent.MenuName));
+        MenuGUI.DrawMenuName(
+            ref position,
+            menuName,
+            Component,
+            new GUIContent(menuName.displayName));
+        DrawProperty(ref position, nameof(MenuComponent.Icon));
+        DrawProperty(ref position, nameof(MenuComponent.InstallSettings));
+        DrawProperty(ref position, nameof(MenuComponent.Kind));
+        DrawProperty(ref position, nameof(MenuComponent.ExclusiveToggleGroup));
+        DrawProperty(ref position, nameof(MenuComponent.ParameterName));
 
         var kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
-        EditorGUILayout.PropertyField(kind);
-
-        DrawProperty(nameof(MenuComponent.ExclusiveToggleGroup));
-        DrawProperty(nameof(MenuComponent.ParameterName));
         if (kind.hasMultipleDifferentValues || IsMode(kind, (int)MenuItemKind.Toggle))
-            DrawProperty(nameof(MenuComponent.DefaultSelected));
+            DrawProperty(ref position, nameof(MenuComponent.DefaultSelected));
     }
 }
 
@@ -24,4 +42,21 @@ internal sealed class MenuEditor : FaceTuneEditor<MenuComponent>
 [CustomEditor(typeof(MenuFolderComponent))]
 internal sealed class MenuFolderEditor : FaceTuneEditor<MenuFolderComponent>
 {
+    protected override float GetInspectorHeight()
+        => GetPropertyHeight(nameof(MenuFolderComponent.MenuName))
+         + GetPropertyHeight(nameof(MenuFolderComponent.Icon))
+         + GetPropertyHeight(nameof(MenuFolderComponent.InstallSettings))
+         - GUIHelper.VerticalSpacing;
+
+    protected override void DrawInspector(Rect position)
+    {
+        var menuName = serializedObject.FindProperty(nameof(MenuFolderComponent.MenuName));
+        MenuGUI.DrawMenuName(
+            ref position,
+            menuName,
+            Component,
+            new GUIContent(menuName.displayName));
+        DrawProperty(ref position, nameof(MenuFolderComponent.Icon));
+        DrawProperty(ref position, nameof(MenuFolderComponent.InstallSettings));
+    }
 }

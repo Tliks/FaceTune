@@ -170,6 +170,10 @@ msgstr "or"
 msgid "condition.and.label"
 msgstr "and"
 
+msgid "condition.emptyCase.message"
+msgstr "Add at least one condition."
+
+
 msgid "condition.conditions.label"
 msgstr "Conditions"
 
@@ -350,6 +354,12 @@ msgstr "Expression"
 msgid "expression.blendShapeAnimations.label"
 msgstr "Blend Shape Animations"
 
+msgid "blendShapeAnimation.singleFrame.label"
+msgstr "Single Frame"
+
+msgid "blendShapeAnimation.multiFrame.label"
+msgstr "Multi Frame"
+
 msgid "expression.facialSettings.section.label"
 msgstr "Facial Settings"
 
@@ -366,10 +376,22 @@ msgid "menuIcon.automatic.label"
 msgstr "Automatic"
 
 msgid "menuIcon.manualIcon.label"
-msgstr "Icon"
+msgstr "Texture"
 
 msgid "menuIcon.previewExpression.label"
-msgstr "Expression Preview"
+msgstr "Expression Component"
+
+msgid "menuIcon.currentExpression.placeholder"
+msgstr "This Expression"
+
+msgid "menuIcon.manualIcon.empty.message"
+msgstr "Select a texture."
+
+msgid "menuInstallSettings.folder.placeholder"
+msgstr "Folder"
+
+msgid "menuInstallSettings.root.placeholder"
+msgstr "Root"
 
 msgid "directMenu.menuName.label"
 msgstr "Menu Name"
@@ -390,7 +412,7 @@ msgid "menuIcon.icon.label"
 msgstr "Icon"
 
 msgid "expression.openEditor.button"
-msgstr "Open Expression Editor"
+msgstr "Open Editor"
 
 msgid "componentReferenceMode.option.direct"
 msgstr "Direct"
@@ -420,10 +442,10 @@ msgid "expression.application.label"
 msgstr "Lower Expressions"
 
 msgid "expression.application.replace.label"
-msgstr "Replace (Default)"
+msgstr "Replace"
 
 msgid "expression.application.blend.label"
-msgstr "Blend"
+msgstr "Blend (Advanced)"
 
 msgid "expression.clip.import.button"
 msgstr "Import"
@@ -431,11 +453,20 @@ msgstr "Import"
 msgid "expression.previewSettings.section.label"
 msgstr "Preview Settings"
 
+msgid "style.expression.section.label"
+msgstr "Facial Style"
+
+msgid "style.applyToRenderer.label"
+msgstr "Apply This Facial Style to the Renderer at Build Time"
+
+msgid "style.getFromRenderer.button"
+msgstr "Get from Renderer"
+
 msgid "expression.otherExpression.label"
 msgstr "Use Another Expression"
 
-msgid "expression.otherComponent.label"
-msgstr "Other Component"
+msgid "expression.componentReference.label"
+msgstr "Component Reference"
 
 msgid "expression.clip.label"
 msgstr "Animation Clip"
@@ -444,10 +475,10 @@ msgid "expression.clip.importOption.label"
 msgstr "Import Option"
 
 msgid "expression.realTimePreview.label"
-msgstr "Enable Real Time Preview"
+msgstr "Always Preview This Expression"
 
 msgid "expression.selectedExpressionPreview.label"
-msgstr "Preview Selected Expression"
+msgstr "Preview Expression Selected in Hierarchy"
 
 msgid "expression.multiFrame.default.label"
 msgstr "Default"
@@ -460,6 +491,9 @@ msgstr "Trigger"
 
 msgid "expression.multiFrame.parameter.label"
 msgstr "Parameter"
+
+msgid "expression.multiFrame.parameterName.empty.message"
+msgstr "Enter a parameter name."
 
 msgid "expression.group.expression.label"
 msgstr "Expression"

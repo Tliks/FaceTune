@@ -1,99 +1,125 @@
+using nadena.dev.ndmf.preview;
+
 namespace Aoyon.FaceTune;
 
 internal static class ExpressionDataExtensions
 {
-    public static void GetFirstFrameBlendShapes<T>(
-        this T component,
-        ICollection<BlendShapeWeight> resultToAdd,
-        string? bodyPath,
-        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
-        where T : Component, IExpressionDataSource
-    {
-        foreach (var data in ResolveData(component))
-        {
-            GetFirstFrameBlendShapes(data, resultToAdd, bodyPath, facialAnimations);
-        }
-    }
-
-    public static void GetFirstFrameBlendShapes(
-        ExpressionData data,
-        ICollection<BlendShapeWeight> resultToAdd,
-        string? bodyPath,
-        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
-    {
-        facialAnimations ??= Array.Empty<BlendShapeWeightAnimation>();
-
-        if (data.Clip != null)
-        {
-            data.Clip.GetFirstFrameBlendShapes(data.ClipOption, resultToAdd, bodyPath, facialAnimations);
-        }
-
-        foreach (var animation in data.BlendShapeAnimations)
-        {
-            resultToAdd.Add(animation.ToFirstFrameBlendShape());
-        }
-    }
-
     public static void GetAnimations<T>(
         this T component,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
-        string? bodyPath,
-        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
+        string bodyPath,
+        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null,
+        ComputeContext? context = null)
         where T : Component, IExpressionDataSource
     {
-        foreach (var data in ResolveData(component))
-        {
-            GetAnimations(data, resultToAdd, bodyPath, facialAnimations);
-        }
+        GetAnimations(
+            component,
+            component,
+            resultToAdd,
+            bodyPath,
+            facialAnimations,
+            new HashSet<IExpressionDataSource>(),
+            context ?? ComputeContext.NullContext);
     }
 
-    public static void GetAnimations(
-        this ExpressionData data,
-        ICollection<BlendShapeWeightAnimation> resultToAdd,
-        string? bodyPath,
-        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
+    private static void GetAnimations(
+        IExpressionDataSource source,
+        Component owner,
+        ICollection<BlendShapeWeightAnimation> result,
+        string bodyPath,
+        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations,
+        HashSet<IExpressionDataSource> resolving,
+        ComputeContext context)
     {
-        facialAnimations ??= Array.Empty<BlendShapeWeightAnimation>();
+        if (!resolving.Add(source)) return;
 
+        context.Observe(owner);
+
+        var data = source.Data;
         if (data.Clip != null)
         {
-            data.Clip.GetBlendShapeAnimations(data.ClipOption, resultToAdd, bodyPath, facialAnimations);
+            data.Clip.GetBlendShapeAnimations(
+                data.ClipOption,
+                result,
+                bodyPath,
+                facialAnimations);
+        }
+
+        foreach (var (referenced, referencedOwner) in GetReferencedSources(source, owner, context))
+        {
+            GetAnimations(
+                referenced,
+                referencedOwner,
+                result,
+                bodyPath,
+                facialAnimations,
+                resolving,
+                context);
         }
 
         foreach (var animation in data.BlendShapeAnimations)
         {
-            resultToAdd.Add(animation);
+            result.Add(animation);
+        }
+
+        resolving.Remove(source);
+    }
+
+    private static IEnumerable<(IExpressionDataSource Source, Component Owner)> GetReferencedSources(
+        IExpressionDataSource source,
+        Component owner,
+        ComputeContext context)
+    {
+        var target = source.DataReference.Get(owner);
+        if (target == null) yield break;
+
+        var components = context.GetComponents<FaceTuneTagComponent>(target);
+        foreach (var component in components)
+        {
+            if (component is IExpressionDataSource referenced)
+            {
+                yield return (referenced, component);
+            }
         }
     }
 
-    public static IEnumerable<ExpressionData> ResolveData<T>(this T source)
-        where T : Component, IExpressionDataSource
+    public static IEnumerable<ExpressionData> EnumerateDataGraph(this Component owner, ComputeContext? context = null)
     {
-        return ResolveData(source, source);
+        if (owner is not IExpressionDataSource source) yield break;
+
+        foreach (var data in EnumerateDataGraph(
+                     source,
+                     owner,
+                     new HashSet<IExpressionDataSource>(),
+                     context ?? ComputeContext.NullContext))
+            yield return data;
     }
 
-    public static IEnumerable<ExpressionData> ResolveData(this IExpressionDataSource source, Component owner)
-        => ResolveData(source, owner, new HashSet<IExpressionDataSource>());
-
-    private static IEnumerable<ExpressionData> ResolveData(
+    private static IEnumerable<ExpressionData> EnumerateDataGraph(
         IExpressionDataSource source,
         Component owner,
-        HashSet<IExpressionDataSource> resolving)
+        HashSet<IExpressionDataSource> resolving,
+        ComputeContext context)
     {
         if (!resolving.Add(source)) yield break;
+
+        context.Observe(owner);
+        yield return source.Data;
 
         var target = source.DataReference.Get(owner);
         if (target != null)
         {
-            foreach (var referenced in target.GetComponents<FaceTuneTagComponent>().OfType<IExpressionDataSource>())
+            foreach (var referenced in context.GetComponents<FaceTuneTagComponent>(target).OfType<IExpressionDataSource>())
             {
                 if (referenced is not Component referencedOwner) continue;
-                foreach (var data in ResolveData(referenced, referencedOwner, resolving))
+
+                foreach (var data in EnumerateDataGraph(referenced, referencedOwner, resolving, context))
+                {
                     yield return data;
+                }
             }
         }
 
-        yield return source.Data;
         resolving.Remove(source);
     }
 }

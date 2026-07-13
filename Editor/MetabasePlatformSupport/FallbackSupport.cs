@@ -11,10 +11,17 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
 
     public SkinnedMeshRenderer? GetFaceRenderer()
     {
+        return FindRenderer("Face", StringComparison.OrdinalIgnoreCase)
+               ?? FindRenderer("Body", StringComparison.Ordinal)
+               ?? FindRenderer("body", StringComparison.Ordinal);
+    }
+
+    private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
+    {
         for (var i = 0; i < _root.childCount; i++)
         {
             var child = _root.GetChild(i);
-            if (child.name != "Body") continue;
+            if (!string.Equals(child.name, name, comparison)) continue;
             if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
         }
 
@@ -31,14 +38,14 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
         return Array.Empty<string>();;
     }
 
-    public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
+    public DnfCondition? ResolveHandGestureCondition(HandGestureCondition condition)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
-    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    public DnfCondition? ResolveParameterCondition(ParameterCondition condition)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public string? ResolveGestureWeightParameter(Hand hand) => null;

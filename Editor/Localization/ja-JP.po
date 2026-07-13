@@ -170,6 +170,10 @@ msgstr "もしくは"
 msgid "condition.and.label"
 msgstr "かつ"
 
+msgid "condition.emptyCase.message"
+msgstr "条件を追加してください。"
+
+
 msgid "condition.conditions.label"
 msgstr "条件"
 
@@ -318,10 +322,10 @@ msgid "handGestureMatch.option.bothHands"
 msgstr "両手"
 
 msgid "handGestureMatch.option.atLeastOneHand"
-msgstr "少なくとも片手"
+msgstr "片手または両手"
 
 msgid "handGestureMatch.option.exactlyOneHand"
-msgstr "ちょうど片手"
+msgstr "片手"
 
 msgid "handGestureMatch.option.neitherHand"
 msgstr "どちらの手でもない"
@@ -342,13 +346,19 @@ msgid "expression.condition.label"
 msgstr "条件を設定する"
 
 msgid "expression.directMenu.label"
-msgstr "メニューから直接操作する"
+msgstr "メニューから直接再生"
 
 msgid "expression.section.label"
 msgstr "表情"
 
 msgid "expression.blendShapeAnimations.label"
 msgstr "ブレンドシェイプアニメーション"
+
+msgid "blendShapeAnimation.singleFrame.label"
+msgstr "シングルフレーム"
+
+msgid "blendShapeAnimation.multiFrame.label"
+msgstr "マルチフレーム"
 
 msgid "expression.facialSettings.section.label"
 msgstr "表情設定"
@@ -366,10 +376,22 @@ msgid "menuIcon.automatic.label"
 msgstr "自動生成"
 
 msgid "menuIcon.manualIcon.label"
-msgstr "アイコン"
+msgstr "テクスチャ"
 
 msgid "menuIcon.previewExpression.label"
-msgstr "表情プレビュー"
+msgstr "表情コンポーネント"
+
+msgid "menuIcon.currentExpression.placeholder"
+msgstr "この表情"
+
+msgid "menuIcon.manualIcon.empty.message"
+msgstr "テクスチャを設定してください。"
+
+msgid "menuInstallSettings.folder.placeholder"
+msgstr "フォルダ"
+
+msgid "menuInstallSettings.root.placeholder"
+msgstr "ルート"
 
 msgid "directMenu.menuName.label"
 msgstr "メニュー名"
@@ -390,7 +412,7 @@ msgid "menuIcon.icon.label"
 msgstr "アイコン"
 
 msgid "expression.openEditor.button"
-msgstr "表情エディターを開く"
+msgstr "編集画面を開く"
 
 msgid "componentReferenceMode.option.direct"
 msgstr "直接設定"
@@ -420,10 +442,10 @@ msgid "expression.application.label"
 msgstr "下位の表情"
 
 msgid "expression.application.replace.label"
-msgstr "置き換える（デフォルト）"
+msgstr "置き換え"
 
 msgid "expression.application.blend.label"
-msgstr "重ねる"
+msgstr "重ねる（高度）"
 
 msgid "expression.clip.import.button"
 msgstr "取り込む"
@@ -431,11 +453,20 @@ msgstr "取り込む"
 msgid "expression.previewSettings.section.label"
 msgstr "プレビュー設定"
 
+msgid "style.expression.section.label"
+msgstr "顔つき"
+
+msgid "style.applyToRenderer.label"
+msgstr "ビルド時にこの顔つきをレンダラーに適用"
+
+msgid "style.getFromRenderer.button"
+msgstr "レンダラーから取得"
+
 msgid "expression.otherExpression.label"
 msgstr "他の表情を使用"
 
-msgid "expression.otherComponent.label"
-msgstr "他のコンポーネント"
+msgid "expression.componentReference.label"
+msgstr "コンポーネント参照"
 
 msgid "expression.clip.label"
 msgstr "アニメーションクリップ"
@@ -444,10 +475,10 @@ msgid "expression.clip.importOption.label"
 msgstr "取り込み設定"
 
 msgid "expression.realTimePreview.label"
-msgstr "リアルタイムプレビューを有効化"
+msgstr "この表情を常にプレビュー"
 
 msgid "expression.selectedExpressionPreview.label"
-msgstr "選択中の表情をプレビュー"
+msgstr "ヒエラルキーで選択した表情をプレビュー"
 
 msgid "expression.multiFrame.default.label"
 msgstr "デフォルト"
@@ -460,6 +491,9 @@ msgstr "トリガー連動"
 
 msgid "expression.multiFrame.parameter.label"
 msgstr "パラメータ連動"
+
+msgid "expression.multiFrame.parameterName.empty.message"
+msgstr "パラメータ名を入力してください。"
 
 msgid "expression.group.expression.label"
 msgstr "表情"
