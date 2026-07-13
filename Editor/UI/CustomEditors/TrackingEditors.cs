@@ -14,6 +14,14 @@ internal sealed class AdvancedLipSyncEditor : FaceTuneEditor<LipSyncComponent>
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(ConditionComponent))]
-internal sealed class ConditionEditor : FaceTuneEditor<ConditionComponent>
+internal sealed class ConditionEditor : FaceTuneSectionEditor<ConditionComponent>
 {
+    protected override GUIContent SectionLabel => "condition.section.label".LG();
+
+    protected override float GetSectionContentHeight()
+        => GetPropertyHeight(nameof(ConditionComponent.Condition), true)
+         - GUIHelper.VerticalSpacing;
+
+    protected override void DrawSectionContent(Rect position)
+        => DrawProperty(ref position, nameof(ConditionComponent.Condition), true);
 }

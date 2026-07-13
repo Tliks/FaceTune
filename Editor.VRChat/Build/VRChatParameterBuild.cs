@@ -1,5 +1,5 @@
-using Aoyon.FaceTune.Build;
 using nadena.dev.modular_avatar.core;
+using Aoyon.FaceTune.Build;
 using nadena.dev.ndmf;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;

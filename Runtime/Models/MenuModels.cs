@@ -1,4 +1,3 @@
-using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune;
 
@@ -18,7 +17,7 @@ internal enum MenuIconMode
 [Serializable]
 internal class MenuIconSettings
 {
-    public MenuIconMode Mode = MenuIconMode.ExpressionPreview;
+    public MenuIconMode Mode = MenuIconMode.None;
     public Texture2D? ManualIcon = null;
     public FaceTuneComponent? PreviewExpression = null;
 }

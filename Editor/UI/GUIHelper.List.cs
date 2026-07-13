@@ -8,7 +8,8 @@ internal sealed record ReorderableListOptions(
     float? MaxVisibleHeight = null,
     Action<SerializedProperty>? InitializeElement = null,
     Action<SerializedProperty>? AddElement = null,
-    Action<Rect>? DrawElementSeparator = null);
+    Action<Rect>? DrawElementSeparator = null,
+    float ElementContentIndent = 8f);
 
 /// <summary>Draws a reorderable array strictly inside a caller-owned rectangle.</summary>
 internal static partial class GUIHelper
@@ -16,7 +17,6 @@ internal static partial class GUIHelper
     private const float ButtonWidth = 24f;
     private const float ButtonIconSize = HeaderHeight;
     private const float HeaderHeight = 16f;
-    private const float ElementContentIndent = 8f;
     internal const float ListControlsWidth = ButtonWidth * 2f;
     private static GUIStyle? _listButtonStyle;
     private static readonly Dictionary<string, State> States = new();
@@ -94,8 +94,8 @@ internal static partial class GUIHelper
                 var boundary = new Rect(rect.x, rect.y, rect.width, 0f);
                 options.DrawElementSeparator(boundary);
             }
-            rect.x += ElementContentIndent;
-            rect.width -= ElementContentIndent;
+            rect.x += options.ElementContentIndent;
+            rect.width -= options.ElementContentIndent;
             rect.height = EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
             EditorGUI.PropertyField(rect, element, GUIContent.none, true);
         };

@@ -11,9 +11,10 @@ namespace Aoyon.FaceTune
         public MenuIconSettings Icon = new();
         public MenuInstallSettings InstallSettings = new();
         public MenuItemKind Kind = MenuItemKind.Toggle;
-        public string ParameterName = string.Empty; // opt-inでの明示用。Exclusiveでは無視。
-        public bool DefaultSelected = false; // Toggleの初期値。Radialでは無視。
         public ExclusiveToggleGroup ExclusiveToggleGroup = new();
+        public string ParameterName = string.Empty; // opt-inでの明示用。Toggleのとき、排他でないなら有効、Radialなら有効。
+        [Range(0f, 1f)] public float FloatDefaultValue = 0f; // Radialの初期値。Toggleでは無視。
+        public bool DefaultSelected = false; // Toggleの初期値。Radialでは無視。
 
         public void ResolveReferences()
         {

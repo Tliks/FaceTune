@@ -38,6 +38,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         {
             var menu = preset.gameObject.EnsureComponent<MenuComponent>(); // Todo: 上書きしていいの？
             menu.Kind = MenuItemKind.Toggle;
+            menu.MenuName = preset.MenuName;
             menu.Icon = preset.Icon;
             menu.InstallSettings = preset.InstallSettings;
             menu.DefaultSelected = preset == defaultPreset;
@@ -90,13 +91,11 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
-            proxy.DataReferenceMode = ComponentReferenceMode.Reference;
             proxy.DataReference = new(original.gameObject);
 
             if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
             {
                 var proxyStyle = proxyObject.AddComponent<StyleComponent>();
-                proxyStyle.DataReferenceMode = ComponentReferenceMode.Reference;
                 proxyStyle.DataReference = new(originalStyle.gameObject);
             }
         }

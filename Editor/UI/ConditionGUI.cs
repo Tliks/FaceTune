@@ -73,9 +73,12 @@ internal sealed class ConditionDrawer : PropertyDrawer
 internal sealed class ConditionCaseDrawer : PropertyDrawer
 {
     private const float EmptyMessageHeight = 30f;
+    private const float ConditionContentIndent = 24f;
     private static readonly ReorderableListOptions ConditionsOptions = new(
         Foldout: false,
-        AddElement: ShowAddMenu);
+        AddElement: ShowAddMenu,
+        DrawElementSeparator: DrawAndSeparator,
+        ElementContentIndent: ConditionContentIndent);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -97,6 +100,16 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
         return conditions.arraySize == 0
             ? height + GUIHelper.VerticalSpacing + EmptyMessageHeight
             : height;
+    }
+
+    private static void DrawAndSeparator(Rect boundary)
+    {
+        var gutterBoundary = new Rect(
+            boundary.x,
+            boundary.y,
+            ConditionContentIndent,
+            0f);
+        ConditionDrawer.DrawSeparator(gutterBoundary, "condition.and.label".LG());
     }
 
     private static GUIContent GetCaseLabel(SerializedProperty property)

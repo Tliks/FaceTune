@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Condition";
 
-        public Condition Condition = new();
+        public Condition Condition = new(new ConditionCase());
 
         [Obsolete] public List<HandGestureCondition> HandGestureConditions = new();
         [Obsolete] public List<ParameterCondition> ParameterConditions = new();

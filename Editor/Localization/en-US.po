@@ -387,6 +387,9 @@ msgstr "This Expression"
 msgid "menuIcon.manualIcon.empty.message"
 msgstr "Select a texture."
 
+msgid "menuIcon.previewExpression.empty.message"
+msgstr "Select an expression component."
+
 msgid "menuInstallSettings.folder.placeholder"
 msgstr "Folder"
 
@@ -452,6 +455,60 @@ msgstr "Import"
 
 msgid "expression.previewSettings.section.label"
 msgstr "Preview Settings"
+
+msgid "menu.section.label"
+msgstr "Menu"
+
+msgid "menu.name.label"
+msgstr "Menu Name"
+
+msgid "menu.icon.label"
+msgstr "Icon"
+
+msgid "menu.destination.label"
+msgstr "Destination"
+
+msgid "menu.kind.label"
+msgstr "Type"
+
+msgid "menu.mode.label"
+msgstr "Mode"
+
+msgid "menu.options.label"
+msgstr "Options"
+
+msgid "menu.group.label"
+msgstr "Group"
+
+msgid "menu.exclusiveGroup.label"
+msgstr "Exclusive Group"
+
+msgid "menu.parameterName.label"
+msgstr "Parameter Name"
+
+msgid "menu.parameterName.auto.placeholder"
+msgstr "Auto Generate"
+
+msgid "menu.defaultSelected.label"
+msgstr "Selected by Default"
+
+msgid "menu.floatDefaultValue.label"
+msgstr "Default Value"
+
+msgid "menuFolder.section.label"
+msgstr "Menu Folder"
+
+msgid "condition.section.label"
+msgstr "Conditions"
+
+msgid "preset.section.label"
+msgstr "Preset"
+
+msgid "menuSettings.section.label"
+msgstr "Menu Settings"
+
+msgid "data.expression.section.label"
+msgstr "Expression Data"
 
 msgid "style.expression.section.label"
 msgstr "Facial Style"

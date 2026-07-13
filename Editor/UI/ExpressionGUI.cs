@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Gui.ShapesEditor;
-using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune.Gui;
 

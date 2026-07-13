@@ -7,6 +7,8 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(FaceTuneComponent))]
 internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
 {
+    protected override bool ShowLanguageSwitcher => true;
+
     private const float ParameterWarningHeight = 30f;
     private static GUIStyle? _groupLabelStyle;
     private static GUIStyle GroupLabelStyle => _groupLabelStyle ??= new GUIStyle(EditorStyles.boldLabel)
@@ -18,6 +20,8 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
     private bool _otherExpressionExpanded;
     private bool _behaviorExpanded;
     private bool _animationExpanded;
+    private bool _conditionExpanded;
+    private bool _directMenuExpanded;
     private bool _previewExpanded;
     private Rect _cursor;
 
@@ -30,6 +34,10 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
             .Any(component => component.DataReference?.Get(component) != null || component.Data.Clip != null);
         _behaviorExpanded = true;
         _animationExpanded = false;
+        _conditionExpanded = serializedObject
+            .FindProperty(nameof(FaceTuneComponent.ConditionEnabled))
+            .boolValue;
+        _directMenuExpanded = false;
         _previewExpanded = false;
     }
 
@@ -45,8 +53,8 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
 
         height += 10f;
         Add(ref height, GUIHelper.LineHeight);
-        Add(ref height, ToggleSectionHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.ConditionEnabled)), EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.Condition)), GUIContent.none, true)));
-        Add(ref height, ToggleSectionHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuEnabled)), EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings)), GUIContent.none, true)));
+        Add(ref height, SectionHeight(_conditionExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.Condition)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
+        Add(ref height, SectionHeight(_directMenuExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
 
         height += 10f;
         Add(ref height, GUIHelper.LineHeight);
@@ -115,23 +123,26 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
 
     private void DrawConditionSection()
         => DrawToggleSection(
+            ref _conditionExpanded,
             nameof(FaceTuneComponent.ConditionEnabled),
             nameof(FaceTuneComponent.Condition),
             "expression.condition.section.label");
 
     private void DrawDirectMenuSection()
         => DrawToggleSection(
+            ref _directMenuExpanded,
             nameof(FaceTuneComponent.DirectMenuEnabled),
             nameof(FaceTuneComponent.DirectMenuSettings),
             "expression.directMenu.label");
 
-    private void DrawToggleSection(string enabledName, string contentName, string key)
+    private void DrawToggleSection(ref bool expanded, string enabledName, string contentName, string key)
     {
         var enabled = serializedObject.FindProperty(enabledName);
         var content = serializedObject.FindProperty(contentName);
         var propertyHeight = EditorGUI.GetPropertyHeight(content, GUIContent.none, true);
         var contentHeight = propertyHeight + GUIHelper.ContentPadding * 2f;
         if (!DrawToggleSection(
+                ref expanded,
                 enabled,
                 key,
                 contentHeight,
@@ -194,12 +205,12 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
     }
 
     private bool DrawToggleSection(
+        ref bool expanded,
         SerializedProperty enabled,
         string labelKey,
         float contentHeight,
         out Rect content)
     {
-        var expanded = enabled.boolValue || enabled.hasMultipleDifferentValues;
         var totalHeight = GUIHelper.ShurikenHeaderHeight;
         if (expanded)
         {
@@ -212,7 +223,7 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
             position.y,
             position.width,
             GUIHelper.ShurikenHeaderHeight);
-        expanded = GUIHelper.DrawShurikenToggle(header, enabled, labelKey.LG());
+        expanded = GUIHelper.DrawShurikenToggleAndFold(header, expanded, enabled, labelKey.LG());
         content = expanded ? DrawSectionContent(position, contentHeight) : Rect.zero;
         return expanded;
     }
@@ -307,11 +318,6 @@ internal sealed class ExpressionEditor : FaceTuneEditor<FaceTuneComponent>
         => GUIHelper.ShurikenHeaderHeight
          + (expanded ? GUIHelper.ContentSpacing + GUIHelper.ContentBottomSpacing + contentHeight : 0f);
 
-    private static float ToggleSectionHeight(SerializedProperty enabled, float propertyHeight)
-        => SectionHeight(
-            enabled.boolValue || enabled.hasMultipleDifferentValues,
-            propertyHeight + GUIHelper.ContentPadding * 2f);
-
     private static void Add(ref float total, float height)
         => total += height + GUIHelper.HeaderSpacing;
 
@@ -330,6 +336,7 @@ internal sealed class ExpressionDataEditor : FaceTuneEditor<DataComponent>
 {
     private bool _expressionExpanded = true;
     private bool _otherExpressionExpanded;
+    private ExpressionGUIOptions Options => new("data.expression.section.label".LG());
 
     private void OnEnable()
     {
@@ -342,7 +349,8 @@ internal sealed class ExpressionDataEditor : FaceTuneEditor<DataComponent>
         => ExpressionGUI.GetHeight(
             serializedObject.FindProperty(nameof(DataComponent.Data)),
             _expressionExpanded,
-            _otherExpressionExpanded);
+            _otherExpressionExpanded,
+            Options);
 
     protected override void DrawInspector(Rect position)
     {
@@ -352,7 +360,8 @@ internal sealed class ExpressionDataEditor : FaceTuneEditor<DataComponent>
             Component,
             targets.Length,
             ref _expressionExpanded,
-            ref _otherExpressionExpanded);
+            ref _otherExpressionExpanded,
+            Options);
     }
 }
 
@@ -362,7 +371,7 @@ internal sealed class FacialStyleEditor : FaceTuneEditor<StyleComponent>
 {
     private bool _expressionExpanded = true;
     private bool _otherExpressionExpanded;
-    private bool _otherExpanded = true;
+    private bool _otherExpanded;
 
     private ExpressionGUIOptions ExpressionOptions => new(
         "style.expression.section.label".LG(),

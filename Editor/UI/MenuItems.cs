@@ -1,5 +1,4 @@
 using UnityEngine.SceneManagement;
-using nadena.dev.modular_avatar.core;
 using M = UnityEditor.MenuItem;
 using Aoyon.FaceTune.Importer;
 using Aoyon.FaceTune.Platforms;
@@ -60,6 +59,7 @@ internal static class MenuItems
 
 }
 
+#if false // Temporarily disabled: depends on Modular Avatar editor functionality.
 internal static class AssetsMenu
 {
 
@@ -118,6 +118,9 @@ internal static class AssetsMenu
         Undo.RegisterCreatedObjectUndo(menuObject, "Create Exclusive Menu");
     }
 }
+
+
+#endif
 
 internal static class GameObjectMenu
 {

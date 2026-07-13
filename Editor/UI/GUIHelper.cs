@@ -111,6 +111,7 @@ internal static partial class GUIHelper
     // IMGUI does not expose the visual bounds of the Toggle glyph within its control Rect.
     private static readonly Vector2 HeaderToggleVisualOffset = new(-1f, -1f);
     private static GUIStyle? _style;
+    private static GUIStyle? _toggleAndFoldStyle;
     private static GUIStyle? _shurikenLayoutStyle;
     internal static GUIStyle ShurikenLayoutStyle => _shurikenLayoutStyle ??= new GUIStyle
     {
@@ -132,6 +133,68 @@ internal static partial class GUIHelper
         return HandleFoldout(position, expanded);
     }
 
+    public static float GetShurikenSectionHeight(bool expanded, float contentHeight)
+        => ShurikenHeaderHeight
+         + (expanded
+             ? ContentSpacing + ContentBottomSpacing + ContentPadding * 2f + contentHeight
+             : 0f);
+
+    public static bool DrawShurikenSection(
+        Rect position,
+        ref bool expanded,
+        GUIContent label,
+        float contentHeight,
+        out Rect content)
+    {
+        var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
+        expanded = DrawShuriken(header, expanded, label);
+        if (!expanded)
+        {
+            content = Rect.zero;
+            return false;
+        }
+
+        var region = new Rect(
+            position.x,
+            header.yMax + ContentSpacing,
+            position.width,
+            ContentPadding * 2f + contentHeight);
+        if (Event.current.type == EventType.Repaint) DrawRegion(region);
+        content = new Rect(
+            region.x + ContentPadding,
+            region.y + ContentPadding,
+            region.width - ContentPadding * 2f,
+            contentHeight);
+        return true;
+    }
+
+
+    public static bool DrawShurikenToggleAndFold(
+        Rect position,
+        bool expanded,
+        SerializedProperty enabled,
+        GUIContent label)
+    {
+        _toggleAndFoldStyle ??= new GUIStyle(ShurikenStyle)
+        {
+            contentOffset = new Vector2(HeaderContentOffsetX + LineHeight, -2f)
+        };
+        GUI.Box(position, label, _toggleAndFoldStyle);
+
+        var toggleRect = new Rect(
+            position.x + HeaderContentOffsetX + HeaderToggleVisualOffset.x,
+            position.center.y - LineHeight * .5f + HeaderToggleVisualOffset.y,
+            LineHeight,
+            LineHeight);
+        using (new EditorGUI.PropertyScope(position, label, enabled))
+        {
+            var previousMixed = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = enabled.hasMultipleDifferentValues;
+            enabled.boolValue = EditorGUI.Toggle(toggleRect, enabled.boolValue);
+            EditorGUI.showMixedValue = previousMixed;
+        }
+        return HandleFoldout(position, expanded, toggleRect);
+    }
 
     public static bool DrawShurikenToggle(Rect position, SerializedProperty enabled, GUIContent label)
     {
@@ -239,9 +302,10 @@ internal static partial class GUIHelper
         GUIContent placeholder,
         bool isEmpty)
     {
-        EditorGUI.PropertyField(position, property, label, true);
+        var field = EditorGUI.PrefixLabel(position, label, EditorStyles.label);
+        EditorGUI.PropertyField(field, property, GUIContent.none, true);
         if (!isEmpty) return;
-        DrawObjectPlaceholder(EditorGUI.PrefixLabel(position, label), placeholder);
+        DrawObjectPlaceholder(field, placeholder);
     }
 
     private static void DrawObjectPlaceholder(Rect field, GUIContent placeholder)

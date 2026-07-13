@@ -1,4 +1,3 @@
-using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune;
 
@@ -51,12 +50,10 @@ internal static partial class Utils
 
         if (addInstaller)
         {
-#if FT_VRCSDK3_AVATARS
-            if (instance.GetComponentInParent<ModularAvatarMenuInstaller>() == null)
-            {
-                Undo.AddComponent<ModularAvatarMenuInstaller>(instance);
-            }
-#endif
+            var installerType = Type.GetType(
+                "nadena.dev.modular_avatar.core.ModularAvatarMenuInstaller, nadena.dev.modular-avatar.core");
+            if (installerType != null && instance.GetComponentInParent(installerType) == null)
+                Undo.AddComponent(instance, installerType);
         }
 
         Selection.activeObject = instance;

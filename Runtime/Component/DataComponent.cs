@@ -1,4 +1,3 @@
-using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune
 {
@@ -7,7 +6,6 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Data";
 
-        public ComponentReferenceMode DataReferenceMode = ComponentReferenceMode.Direct;
         public AvatarObjectReference DataReference = new();
         public ExpressionData Data = new();
 
@@ -18,7 +16,6 @@ namespace Aoyon.FaceTune
         // Manual
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
-        ComponentReferenceMode IExpressionDataSource.DataReferenceMode => DataReferenceMode;
         AvatarObjectReference IExpressionDataSource.DataReference => DataReference;
         ExpressionData IExpressionDataSource.Data => Data;
 

@@ -387,6 +387,9 @@ msgstr "この表情"
 msgid "menuIcon.manualIcon.empty.message"
 msgstr "テクスチャを設定してください。"
 
+msgid "menuIcon.previewExpression.empty.message"
+msgstr "表情コンポーネントを指定してください。"
+
 msgid "menuInstallSettings.folder.placeholder"
 msgstr "フォルダ"
 
@@ -452,6 +455,60 @@ msgstr "取り込む"
 
 msgid "expression.previewSettings.section.label"
 msgstr "プレビュー設定"
+
+msgid "menu.section.label"
+msgstr "メニュー"
+
+msgid "menu.name.label"
+msgstr "メニュー名"
+
+msgid "menu.icon.label"
+msgstr "アイコン"
+
+msgid "menu.destination.label"
+msgstr "配置先"
+
+msgid "menu.kind.label"
+msgstr "種類"
+
+msgid "menu.mode.label"
+msgstr "モード"
+
+msgid "menu.options.label"
+msgstr "オプション"
+
+msgid "menu.group.label"
+msgstr "グループ"
+
+msgid "menu.exclusiveGroup.label"
+msgstr "排他グループ"
+
+msgid "menu.parameterName.label"
+msgstr "パラメータ名"
+
+msgid "menu.parameterName.auto.placeholder"
+msgstr "自動生成"
+
+msgid "menu.defaultSelected.label"
+msgstr "デフォルトで選択"
+
+msgid "menu.floatDefaultValue.label"
+msgstr "初期値"
+
+msgid "menuFolder.section.label"
+msgstr "メニューフォルダ"
+
+msgid "condition.section.label"
+msgstr "条件"
+
+msgid "preset.section.label"
+msgstr "プリセット"
+
+msgid "menuSettings.section.label"
+msgstr "メニュー設定"
+
+msgid "data.expression.section.label"
+msgstr "表情データ"
 
 msgid "style.expression.section.label"
 msgstr "顔つき"
