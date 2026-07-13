@@ -1,4 +1,3 @@
-using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune;
 
@@ -14,7 +13,6 @@ internal interface IHasConditions
 
 internal interface IExpressionDataSource
 {
-    ComponentReferenceMode DataReferenceMode { get; }
     AvatarObjectReference DataReference { get; }
     ExpressionData Data { get; }
 }

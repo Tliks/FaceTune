@@ -38,6 +38,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         {
             var menu = preset.gameObject.EnsureComponent<MenuComponent>(); // Todo: 上書きしていいの？
             menu.Kind = MenuItemKind.Toggle;
+            menu.MenuName = preset.MenuName;
             menu.Icon = preset.Icon;
             menu.InstallSettings = preset.InstallSettings;
             menu.DefaultSelected = preset == defaultPreset;
@@ -90,18 +91,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
-            proxy.DataReferenceMode = ComponentReferenceMode.Reference;
-            proxy.DataReference = original.DataReferenceMode == ComponentReferenceMode.Reference
-                ? original.DataReference
-                : new(original.gameObject);
+            proxy.DataReference = new(original.gameObject);
 
             if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
             {
                 var proxyStyle = proxyObject.AddComponent<StyleComponent>();
-                proxyStyle.DataReferenceMode = ComponentReferenceMode.Reference;
-                proxyStyle.DataReference = originalStyle.DataReferenceMode == ComponentReferenceMode.Reference
-                    ? originalStyle.DataReference
-                    : new(originalStyle.gameObject);
+                proxyStyle.DataReference = new(originalStyle.gameObject);
             }
         }
     }
@@ -186,13 +181,14 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     {
         foreach (var conditionCase in condition.Cases)
         {
-            foreach (var menuCondition in conditionCase.MenuConditions)
+            for (var i = conditionCase.Conditions.Count - 1; i >= 0; i--)
             {
-                if (menuCondition.MenuSource == null) continue;
-                conditionCase.ParameterConditions.Add(ToParameterCondition(menuCondition));
+                if (conditionCase.Conditions[i] is not MenuCondition menuCondition) continue;
+                if (menuCondition.MenuSource == null)
+                    conditionCase.Conditions.RemoveAt(i);
+                else
+                    conditionCase.Conditions[i] = ToParameterCondition(menuCondition);
             }
-
-            conditionCase.MenuConditions.Clear();
         }
     }
 

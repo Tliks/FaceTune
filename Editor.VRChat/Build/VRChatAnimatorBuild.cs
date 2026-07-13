@@ -1,6 +1,6 @@
+using nadena.dev.modular_avatar.core;
 using Aoyon.FaceTune.Build;
 using Aoyon.FaceTune.Build.Animator;
-using nadena.dev.modular_avatar.core;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;

@@ -10,8 +10,6 @@ internal class ExpressionData
     // Manual
     public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
-    public bool AllBlendShapeAnimationAsFacial = false;
-
     public ExpressionData()
     {
     }

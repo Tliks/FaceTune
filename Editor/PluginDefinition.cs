@@ -6,7 +6,7 @@ using Aoyon.FaceTune.Preview;
 
 namespace Aoyon.FaceTune;
 
-[RunsOnPlatforms(WellKnownPlatforms.VRChatAvatar30)]
+[RunsOnAllPlatforms]
 internal sealed class PluginDefinition : Plugin<PluginDefinition>
 {
     public override string QualifiedName => FaceTuneConstants.QualifiedName; // "aoyon.facetune"

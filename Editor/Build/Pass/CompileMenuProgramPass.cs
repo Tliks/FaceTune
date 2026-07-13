@@ -91,12 +91,16 @@ internal static class MenuProgramCompiler
 
         MenuIconPlan CompileIcon(MenuIconSettings settings, Component owner)
         {
-            if (settings.Mode == MenuIconMode.Manual) return new MenuIconPlan.Manual(settings.ManualIcon);
+            if (settings.Mode is MenuIconMode.Manual or MenuIconMode.None)
+                return new MenuIconPlan.Manual(settings.Mode == MenuIconMode.None ? null : settings.ManualIcon);
 
             var transform = settings.PreviewExpression != null
                 ? settings.PreviewExpression.transform
-                : owner.transform;
-            expressionByTransform.TryGetValue(transform, out var expression);
+                : owner is FaceTuneComponent
+                    ? owner.transform
+                    : null;
+            ExpressionItem? expression = null;
+            if (transform != null) expressionByTransform.TryGetValue(transform, out expression);
             return new MenuIconPlan.ExpressionPreview(expression);
         }
 
@@ -204,9 +208,14 @@ internal static class MenuProgramCompiler
                 MenuItemKind.Toggle => MenuParameterType.Bool,
                 _ => throw new InvalidOperationException($"Unknown menu item kind: {menu.Kind}")
             };
-            var defaultValue = menu.Kind == MenuItemKind.Toggle && menu.ExclusiveToggleGroup.IsEnabled
-                ? exclusiveDefaults.GetValueOrDefault(menu.ParameterName, 0f)
-                : menu.Kind == MenuItemKind.Toggle && menu.DefaultSelected ? 1f : 0f;
+            var defaultValue = menu.Kind switch
+            {
+                MenuItemKind.Radial => menu.FloatDefaultValue,
+                MenuItemKind.Toggle when menu.ExclusiveToggleGroup.IsEnabled
+                    => exclusiveDefaults.GetValueOrDefault(menu.ParameterName, 0f),
+                MenuItemKind.Toggle when menu.DefaultSelected => 1f,
+                _ => 0f
+            };
             result.Add(menu.ParameterName, new MenuParameterPlan(menu.ParameterName, type, defaultValue, true));
         }
 

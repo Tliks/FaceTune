@@ -6,6 +6,7 @@ namespace Aoyon.FaceTune;
 internal class Condition
 {
     public bool Always = false;
+
     public List<ConditionCase> Cases = new();
 
     public bool IsEmpty => !Always && Cases.Count == 0;
@@ -24,12 +25,10 @@ internal class Condition
 [Serializable]
 internal class ConditionCase
 {
-    public List<HandGestureCondition> HandGestureConditions = new();
-    [FormerlySerializedAs("MenuConditons")]
-    public List<MenuCondition> MenuConditions = new();
-    public List<ParameterCondition> ParameterConditions = new();
+    [SerializeReference]
+    public List<ConditionBase> Conditions = new();
 
-    public bool IsEmpty => HandGestureConditions.Count == 0 && MenuConditions.Count == 0 && ParameterConditions.Count == 0;
+    public bool IsEmpty => Conditions.Count == 0;
 
     public ConditionCase()
     {
@@ -39,7 +38,7 @@ internal class ConditionCase
     {
         return new ConditionCase
         {
-            MenuConditions = menuConditions.ToList()
+            Conditions = menuConditions.Cast<ConditionBase>().ToList()
         };
     }
 
@@ -47,7 +46,7 @@ internal class ConditionCase
     {
         return new ConditionCase
         {
-            ParameterConditions = parameterConditions.ToList()
+            Conditions = parameterConditions.Cast<ConditionBase>().ToList()
         };
     }
 
@@ -55,13 +54,18 @@ internal class ConditionCase
     {
         return new ConditionCase
         {
-            HandGestureConditions = handGestureConditions.ToList()
+            Conditions = handGestureConditions.Cast<ConditionBase>().ToList()
         };
     }
 }
 
 [Serializable]
-internal class HandGestureCondition
+internal abstract class ConditionBase
+{
+}
+
+[Serializable]
+internal sealed class HandGestureCondition : ConditionBase
 {
     public HandGestureMatch Match = HandGestureMatch.LeftHand;
 
@@ -90,7 +94,7 @@ internal enum MenuConditionMode
 }
 
 [Serializable]
-internal class MenuCondition
+internal sealed class MenuCondition : ConditionBase
 {
     public MenuComponent? MenuSource = null;
     public MenuConditionMode Mode = MenuConditionMode.Enabled;
@@ -141,7 +145,7 @@ internal class MenuCondition
 
 
 [Serializable]
-internal class ParameterCondition
+internal sealed class ParameterCondition : ConditionBase
 {
     [FormerlySerializedAs("parameterName")]
     public string ParameterName = string.Empty;
@@ -206,7 +210,6 @@ internal class ParameterCondition
 }
 
 
-[Obsolete]
 internal enum Hand
 {
     Left,
@@ -224,9 +227,9 @@ internal enum HandGestureMatch
 {
     LeftHand,
     RightHand,
+    ExactlyOneHand,
     BothHands,
     AtLeastOneHand,
-    ExactlyOneHand,
     NeitherHand
 }
 

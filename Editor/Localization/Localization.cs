@@ -49,17 +49,17 @@ internal static class Localization
         OnLanguageChanged?.Invoke();
     }
 
-    private const string TooltipSuffix = ":tooltip";
     public static string S(string key) => NdmfLocalizer.GetLocalizedString(key);
     public static bool TryGetLocalizedString(string key, out string value) => NdmfLocalizer.TryGetLocalizedString(key, out value);
     public static GUIContent G(string key)
     {
         var localized = NdmfLocalizer.GetLocalizedString(key);
-        if (NdmfLocalizer.TryGetLocalizedString(key + TooltipSuffix, out var tooltip))
-        {
-            return new GUIContent(localized, tooltip);
-        }
-        return new GUIContent(localized);
+        var tooltipKey = key.EndsWith(".label", StringComparison.Ordinal)
+            ? key[..^".label".Length] + ".tooltip"
+            : key + ".tooltip";
+        return NdmfLocalizer.TryGetLocalizedString(tooltipKey, out var tooltip)
+            ? new GUIContent(localized, tooltip)
+            : new GUIContent(localized);
     }
 
     public static void LocalizeUIElements(VisualElement element) => NdmfLocalizer.LocalizeUIElements(element);

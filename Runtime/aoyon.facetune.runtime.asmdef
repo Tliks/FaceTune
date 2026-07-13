@@ -2,8 +2,7 @@
     "name": "Aoyon.FaceTune.Runtime",
     "rootNamespace": "",
     "references": [
-        "nadena.dev.ndmf.runtime",
-        "nadena.dev.modular-avatar.core"
+        "nadena.dev.ndmf.runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

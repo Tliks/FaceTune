@@ -17,8 +17,8 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
     {
         foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
         {
-            if (component is not IExpressionDataSource source) continue;
-            foreach (var data in source.ResolveData(component))
+            if (component is not IExpressionDataSource) continue;
+            foreach (var data in component.EnumerateDataGraph())
             {
                 FilterBlendShapeAnimations(data, component, bodyPath, settings);
             }
@@ -38,7 +38,9 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
     private static void FilterBlendShapeAnimations(ExpressionData data, Component owner, string bodyPath, BuildSettings settings)
     {
         var animations = new List<BlendShapeWeightAnimation>();
-        data.GetAnimations(animations, bodyPath);
+        if (data.Clip != null)
+            data.Clip.GetBlendShapeAnimations(data.ClipOption, animations, bodyPath);
+        animations.AddRange(data.BlendShapeAnimations);
 
         data.BlendShapeAnimations = FilterBlendShapeAnimations(owner, animations, settings);
         data.Clip = null;
@@ -98,7 +100,7 @@ internal class FilterExcludedBlendShapesPass : FaceTunePass<FilterExcludedBlendS
         if (removed.Count == 0) return;
 
         LocalizedLog.Warning(
-            "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound",
+            "log.processTrackedShapesPass.unAllowedBlendShapesFound.warning",
             $"{owner}:{string.Join(", ", removed)}");
     }
 }

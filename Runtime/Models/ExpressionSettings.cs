@@ -1,38 +1,33 @@
 namespace Aoyon.FaceTune;
 
-[Serializable]
-internal record class ExpressionSettings // Immutable
+internal enum MultiFrameMode
 {
-    // Advanced
-    [SerializeField] private bool loopTime;
-    public bool LoopTime { get => loopTime; init => loopTime = value; }
-    public const string LoopTimePropName = nameof(loopTime);
+    Default,
+    Loop,
+    Trigger,
+    Parameter
+}
 
-    [SerializeField] private string motionTimeParameterName;
-    public string MotionTimeParameterName { get => motionTimeParameterName; init => motionTimeParameterName = value; } // LoopTime == false && != empty
-    public const string MotionTimeParameterNamePropName = nameof(motionTimeParameterName);
+[Serializable]
+internal record class ExpressionSettings
+{
+    [SerializeField] private MultiFrameMode multiFrameMode;
+    [SerializeField] private Hand triggerHand = Hand.Left;
+    [SerializeField] private string parameterName = string.Empty;
 
-    public ExpressionSettings()
-    {
-        loopTime = false;
-        motionTimeParameterName = string.Empty;
-    }
+    // Kept only for migration from the former representation.
+    [Obsolete, SerializeField] private bool loopTime;
+    [Obsolete, SerializeField] private string motionTimeParameterName = string.Empty;
 
-    public ExpressionSettings(bool loopTime, string motionTimeParameterName)
-    {
-        this.loopTime = loopTime;
-        this.motionTimeParameterName = motionTimeParameterName;
-    }
+    public MultiFrameMode MultiFrameMode { get => multiFrameMode; init => multiFrameMode = value; }
+    public Hand TriggerHand { get => triggerHand; init => triggerHand = value; }
+    public string ParameterName { get => parameterName; init => parameterName = value; }
 
-    public virtual bool Equals(ExpressionSettings other)
-    {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return LoopTime == other.LoopTime && MotionTimeParameterName == other.MotionTimeParameterName;
-    }
+    public bool LoopTime => multiFrameMode == MultiFrameMode.Loop;
+    public string MotionTimeParameterName => multiFrameMode == MultiFrameMode.Parameter ? parameterName : string.Empty;
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(LoopTime, MotionTimeParameterName);
-    }
+    public const string MultiFrameModePropName = nameof(multiFrameMode);
+    public const string TriggerHandPropName = nameof(triggerHand);
+    public const string ParameterNamePropName = nameof(parameterName);
+
 }

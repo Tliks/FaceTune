@@ -13,9 +13,11 @@ internal interface IMetabasePlatformSupport
 
     ParameterDomainRegistry CreateBuiltInParameterDomains();
 
-    DnfCondition ResolveHandGestureCondition(HandGestureCondition condition);
+    DnfCondition? ResolveHandGestureCondition(HandGestureCondition condition);
 
-    DnfCondition ResolveParameterCondition(ParameterCondition condition);
+    DnfCondition? ResolveParameterCondition(ParameterCondition condition);
+
+    string? ResolveGestureWeightParameter(Hand hand);
 
     AnimatorController? GetAnimatorController()
     {

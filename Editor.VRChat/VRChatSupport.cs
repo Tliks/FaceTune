@@ -12,6 +12,8 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
 {
     private const string GestureLeftParameter = "GestureLeft";
     private const string GestureRightParameter = "GestureRight";
+    private const string GestureLeftWeightParameter = "GestureLeftWeight";
+    private const string GestureRightWeightParameter = "GestureRightWeight";
     private const string VisemeParameter = "Viseme";
     private const string PreviewModeParameter = "PreviewMode";
     private const string TrackingTypeParameter = "TrackingType";
@@ -38,6 +40,9 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         _descriptor = descriptor;
     }
 
+    public string? ResolveGestureWeightParameter(Hand hand)
+        => hand == Hand.Left ? GestureLeftWeightParameter : GestureRightWeightParameter;
+
     public SkinnedMeshRenderer? GetFaceRenderer()
     {
         if (_descriptor.lipSync == VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape
@@ -52,14 +57,19 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             return _descriptor.customEyeLookSettings.eyelidsSkinnedMesh;
         }
 
+        return FindRenderer("Body", StringComparison.Ordinal)
+               ?? FindRenderer("body", StringComparison.Ordinal)
+               ?? FindRenderer("Face", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
+    {
         var avatarRoot = _descriptor.transform;
         for (var i = 0; i < avatarRoot.childCount; i++)
         {
             var child = avatarRoot.GetChild(i);
-            if (child.name == "Body" && child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
-            {
-                return renderer;
-            }
+            if (!string.Equals(child.name, name, comparison)) continue;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
         }
 
         return null;

@@ -27,7 +27,7 @@ internal class AnimatorControllerImporter
 
     public void Import(GameObject parent)
     {
-        LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing", _animatorController.name);
+        LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.importing", _animatorController.name);
         AssetDatabase.StartAssetEditing();
         try
         {
@@ -82,7 +82,7 @@ internal class AnimatorControllerImporter
                     }
                 }
 
-                LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected", layer.name, validExpressionsPerLayer.Count, stateConditions.Count);
+                LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.layerCollected", layer.name, validExpressionsPerLayer.Count, stateConditions.Count);
             }
 
             Undo.RegisterCreatedObjectUndo(parent, "Import FX");
@@ -92,7 +92,7 @@ internal class AnimatorControllerImporter
                 EditorGUIUtility.PingObject(firstLayerObj);
             }
 
-            LocalizedLog.Info("AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting", _animatorController.name, expressionCount);
+            LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.finishedImporting", _animatorController.name, expressionCount);
         }
         finally
         {
@@ -175,6 +175,8 @@ internal class AnimatorControllerImporter
         void AddTransitionCondition(AnimatorState state, IReadOnlyList<AnimatorCondition> animatorConditions)
         {
             var dnf = ToDnfCondition(animatorConditions);
+            if (dnf == null) return;
+
             if (stateConditions.TryGetValue(state, out var existing))
             {
                 stateConditions[state] = existing.Or(dnf);
@@ -189,7 +191,9 @@ internal class AnimatorControllerImporter
         void ProcessAnyState(List<(AnimatorState, IReadOnlyList<AnimatorCondition>)> anyStateTransitions)
         {
             var convertedAnyState = anyStateTransitions
-                .Select(p => (p.Item1, ToDnfCondition(p.Item2)))
+                .Select(p => (State: p.Item1, Condition: ToDnfCondition(p.Item2)))
+                .Where(p => p.Condition != null)
+                .Select(p => (p.State, Condition: p.Condition!))
                 .ToList();
 
             var anyStateSuppressor = DnfCondition.Any(convertedAnyState.Select(p => p.Item2));
@@ -213,18 +217,26 @@ internal class AnimatorControllerImporter
         }
     }
 
-    private DnfCondition ToDnfCondition(IReadOnlyList<AnimatorCondition> animatorConditions)
+    private DnfCondition? ToDnfCondition(IReadOnlyList<AnimatorCondition> animatorConditions)
     {
         if (animatorConditions.Count == 0) return DnfCondition.Always;
-        return DnfCondition.All(animatorConditions.Select(ToDnfCondition), _parameterDomains);
+
+        var resolved = animatorConditions
+            .Select(ToDnfCondition)
+            .OfType<DnfCondition>()
+            .ToList();
+
+        return resolved.Count == 0
+            ? null
+            : DnfCondition.All(resolved, _parameterDomains);
     }
 
-    private DnfCondition ToDnfCondition(AnimatorCondition condition)
+    private DnfCondition? ToDnfCondition(AnimatorCondition condition)
     {
         if (!_parameterTypes.TryGetValue(condition.parameter, out var parameterType))
         {
             LocalizedLog.Warning("AnimatorControllerImporter:Log:warning:AnimatorControllerImporter:FailedToFindParameter", condition.parameter);
-            return DnfCondition.Always;
+            return null;
         }
 
         var rule = new AnimatorConditionRule(condition, parameterType);
@@ -264,10 +276,18 @@ internal class AnimatorControllerImporter
             }
         }
 
-        expression.ExpressionSettings = new ExpressionSettings()
+        var timeParameter = state.timeParameterActive ? state.timeParameter : string.Empty;
+        expression.ExpressionSettings = timeParameter switch
         {
-            LoopTime = clip.isLooping,
-            MotionTimeParameterName = state.timeParameterActive && !string.IsNullOrEmpty(state.timeParameter) ? state.timeParameter : string.Empty
+            "GestureLeftWeight" => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Trigger, TriggerHand = Hand.Left },
+            "GestureRightWeight" => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Trigger, TriggerHand = Hand.Right },
+            _ when clip.isLooping => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Loop },
+            _ when !string.IsNullOrEmpty(timeParameter) => new ExpressionSettings
+            {
+                MultiFrameMode = MultiFrameMode.Parameter,
+                ParameterName = timeParameter
+            },
+            _ => new ExpressionSettings()
         };
 
         expression.FacialSettings = new FacialSettings()
@@ -303,8 +323,9 @@ internal class AnimatorControllerImporter
 
         return new ConditionCase
         {
-            HandGestureConditions = handGestureConditions,
-            ParameterConditions = parameterConditions
+            Conditions = handGestureConditions.Cast<ConditionBase>()
+                .Concat(parameterConditions)
+                .ToList()
         };
     }
 

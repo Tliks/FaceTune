@@ -20,7 +20,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
 
         if (componentCount > 1)
         {
-            LocalizedLog.Warning("Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer");
+            LocalizedLog.Warning("log.applyDefaultShapesPass.multipleFacialStyleComponentWithApplyToRenderer.warning");
         }
 
         var component = facialStyleComponents[0];
@@ -32,7 +32,9 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             .GetBlendShapeWeights(avatarContext.FaceMesh)
             .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
             .Select(shape => shape with { Weight = 0f }));
-        component.GetFirstFrameBlendShapes(set, avatarContext.BodyPath);
+        var animations = new List<BlendShapeWeightAnimation>();
+        component.GetAnimations(animations, avatarContext.BodyPath);
+        set.AddRange(animations.Select(animation => animation.ToFirstFrameBlendShape()));
 
         var renderer = avatarContext.FaceRenderer;
         var mesh = avatarContext.FaceMesh;
