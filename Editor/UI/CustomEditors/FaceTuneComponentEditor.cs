@@ -10,11 +10,6 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
     protected override bool ShowLanguageSwitcher => true;
 
     private const float ParameterWarningHeight = 30f;
-    private static GUIStyle? _groupLabelStyle;
-    private static GUIStyle GroupLabelStyle => _groupLabelStyle ??= new GUIStyle(EditorStyles.boldLabel)
-    {
-        normal = { textColor = Color.white }
-    };
 
     private bool _expressionExpanded;
     private bool _otherExpressionExpanded;
@@ -44,7 +39,6 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
     protected override float GetInspectorHeight()
     {
         var height = 0f;
-        Add(ref height, GUIHelper.LineHeight);
         Add(ref height, ExpressionGUI.GetHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.Data)), _expressionExpanded, _otherExpressionExpanded));
         Add(ref height, SectionHeight(_behaviorExpanded, ContentHeight(3)));
 
@@ -52,12 +46,10 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
         Add(ref height, SectionHeight(_animationExpanded, AnimationContentHeight(settings)));
 
         height += 10f;
-        Add(ref height, GUIHelper.LineHeight);
         Add(ref height, SectionHeight(_conditionExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.Condition)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
         Add(ref height, SectionHeight(_directMenuExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
 
         height += 10f;
-        Add(ref height, GUIHelper.LineHeight);
         Add(ref height, SectionHeight(_previewExpanded, ContentHeight(2)));
         return Mathf.Max(0f, height - GUIHelper.HeaderSpacing);
     }
@@ -65,23 +57,17 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
     protected override void DrawInspector(Rect position)
     {
         _cursor = position;
-        DrawGroupLabel("expression.group.expression.label");
         DrawExpressionSection();
         DrawBehaviorSection();
         DrawAnimationSection();
 
         _cursor.y += 10f;
-        DrawGroupLabel("expression.group.conditions.label");
         DrawConditionSection();
         DrawDirectMenuSection();
 
         _cursor.y += 10f;
-        DrawGroupLabel("expression.group.other.label");
         DrawPreviewSection();
     }
-
-    private void DrawGroupLabel(string key)
-        => EditorGUI.LabelField(Take(GUIHelper.LineHeight), key.LG(), GroupLabelStyle);
 
     private void DrawExpressionSection()
     {
@@ -106,8 +92,6 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
                 height,
                 out var content)) return;
         var facial = serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings));
-        DrawApplication(content, facial.FindPropertyRelative(FacialSettings.WriteModePropName));
-        content.NewLine();
         DrawEnum(
             content,
             facial.FindPropertyRelative(FacialSettings.AllowEyeBlinkPropName),
@@ -119,6 +103,8 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
             facial.FindPropertyRelative(FacialSettings.AllowLipSyncPropName),
             "facialSettings.allowLipSync.label",
             nameof(TrackingPermission));
+        content.NewLine();
+        DrawApplication(content, facial.FindPropertyRelative(FacialSettings.WriteModePropName));
     }
 
     private void DrawConditionSection()

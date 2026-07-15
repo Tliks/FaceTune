@@ -415,7 +415,7 @@ msgid "menuIcon.icon.label"
 msgstr "アイコン"
 
 msgid "expression.openEditor.button"
-msgstr "編集画面を開く"
+msgstr "表情編集画面を開く"
 
 msgid "componentReferenceMode.option.direct"
 msgstr "直接設定"
@@ -451,7 +451,7 @@ msgid "expression.application.blend.label"
 msgstr "重ねる（高度）"
 
 msgid "expression.clip.import.button"
-msgstr "取り込む"
+msgstr "↓"
 
 msgid "expression.previewSettings.section.label"
 msgstr "プレビュー設定"

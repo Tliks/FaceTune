@@ -252,25 +252,25 @@ internal sealed class FacialSettingsDrawer : PropertyDrawer
 internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 {
     private const float MultiFrameDuration = 1f;
-    private static GUIContent[] Modes => new[]
-    {
-        "blendShapeAnimation.singleFrame.label".LG(),
-        "blendShapeAnimation.multiFrame.label".LG()
-    };
+    private const float ModeToggleWidth = 24f;
+    private static GUIContent MultiFrameToggleLabel => new(
+        "M",
+        "blendShapeAnimation.multiFrame.label".LS());
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         position.SetSingleHeight();
-        var (nameRect, valueArea) = position.SplitRatio(.4f);
-        var (modeRect, valueRect) = valueArea.SplitLeft(GUIHelper.PopupWidth(Modes));
+        var (nameRect, valueArea) = position.SplitRatio(.6f);
+        var (modeRect, valueRect) = valueArea.SplitLeft(ModeToggleWidth);
         var name = property.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName);
         var curve = property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName);
         var animationCurve = curve.animationCurveValue;
         var mode = animationCurve.length >= 2 ? 1 : 0;
 
         EditorGUI.PropertyField(nameRect, name, GUIContent.none);
-        var nextMode = EditorGUI.Popup(modeRect, mode, Modes);
+        var multiFrame = GUIHelper.DrawSimpleToggle(modeRect, mode == 1, MultiFrameToggleLabel);
+        var nextMode = multiFrame ? 1 : 0;
         if (nextMode != mode)
         {
             var value = animationCurve.length == 0 ? 0f : animationCurve.Evaluate(0f);

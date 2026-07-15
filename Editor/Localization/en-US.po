@@ -415,7 +415,7 @@ msgid "menuIcon.icon.label"
 msgstr "Icon"
 
 msgid "expression.openEditor.button"
-msgstr "Open Editor"
+msgstr "Open Expression Editor"
 
 msgid "componentReferenceMode.option.direct"
 msgstr "Direct"
@@ -451,7 +451,7 @@ msgid "expression.application.blend.label"
 msgstr "Blend (Advanced)"
 
 msgid "expression.clip.import.button"
-msgstr "Import"
+msgstr "↓"
 
 msgid "expression.previewSettings.section.label"
 msgstr "Preview Settings"

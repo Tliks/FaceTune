@@ -113,6 +113,7 @@ internal static partial class GUIHelper
     private static GUIStyle? _style;
     private static GUIStyle? _toggleAndFoldStyle;
     private static GUIStyle? _shurikenLayoutStyle;
+    private static GUIStyle? _simpleToggleStyle;
     internal static GUIStyle ShurikenLayoutStyle => _shurikenLayoutStyle ??= new GUIStyle
     {
         margin = new RectOffset(0, 0, HeaderVerticalMargin, HeaderVerticalMargin)
@@ -124,13 +125,29 @@ internal static partial class GUIHelper
         margin = new RectOffset(0, 0, HeaderVerticalMargin, HeaderVerticalMargin),
         fixedHeight = ShurikenHeaderHeight,
         contentOffset = new Vector2(HeaderContentOffsetX, -2f),
-        fontSize = 12
+        fontSize = 12,
+        normal = { textColor = new Color(1f, 1f, 1f, 0.9f) }
     };
 
     public static bool DrawShuriken(Rect position, bool expanded, GUIContent label)
     {
         GUI.Box(position, label, ShurikenStyle);
         return HandleFoldout(position, expanded);
+    }
+
+    public static bool DrawSimpleToggle(Rect position, bool value, GUIContent label)
+    {
+        _simpleToggleStyle ??= new GUIStyle(EditorStyles.miniButton)
+        {
+            alignment = TextAnchor.MiddleCenter
+        };
+        var previousContentColor = GUI.contentColor;
+        GUI.contentColor = value
+            ? new Color(0.55f, 0.75f, 0.9f)
+            : new Color(1f, 1f, 1f, 0.7f);
+        var result = GUI.Toggle(position, value, label, _simpleToggleStyle);
+        GUI.contentColor = previousContentColor;
+        return result;
     }
 
     public static float GetShurikenSectionHeight(bool expanded, float contentHeight)
