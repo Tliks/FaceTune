@@ -47,7 +47,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7c78602628c33342a7196db8db756fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -55,7 +54,6 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   ApplyToRenderer: 1
   BlendShapeAnimations: []
 --- !u!114 &4095486903933448626
@@ -70,9 +68,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 114db5dba152e97468f319ce138b3584, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuName: FaceTune
+  MenuName: 
   Icon:
-    Mode: 1
+    Mode: 2
     ManualIcon: {fileID: 0}
     PreviewExpression: {fileID: 0}
   InstallSettings:
@@ -140,6 +138,9 @@ MonoBehaviour:
         targetObject: {fileID: 0}
     BlendExclusiveGroupName: 
   ExpressionSettings:
+    multiFrameMode: 0
+    triggerHand: 0
+    parameterName: 
     loopTime: 0
     motionTimeParameterName: 
   FacialSettings:
@@ -147,7 +148,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -155,8 +155,10 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 1
     BlendShapeAnimations: []
-    AllBlendShapeAnimationAsFacial: 0
   EnableRealTimePreview: 1
+  references:
+    version: 2
+    RefIds: []
 --- !u!1001 &9026705834737667022
 PrefabInstance:
   m_ObjectHideFlags: 0

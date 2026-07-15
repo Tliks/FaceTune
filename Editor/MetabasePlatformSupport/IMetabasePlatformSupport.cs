@@ -17,6 +17,8 @@ internal interface IMetabasePlatformSupport
 
     DnfCondition? ResolveParameterCondition(ParameterCondition condition);
 
+    string? ResolveGestureParameter(Hand hand);
+
     string? ResolveGestureWeightParameter(Hand hand);
 
     AnimatorController? GetAnimatorController()

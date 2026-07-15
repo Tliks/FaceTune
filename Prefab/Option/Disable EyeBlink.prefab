@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MenuName: 
   Icon:
-    Mode: 1
+    Mode: 2
     ManualIcon: {fileID: 0}
     PreviewExpression: {fileID: 0}
   InstallSettings:
@@ -55,10 +55,11 @@ MonoBehaviour:
       referencePath: 
       targetObject: {fileID: 0}
   Kind: 0
-  ParameterName: FaceTune/EyeBlink/ForceDisable
-  DefaultSelected: 0
   ExclusiveToggleGroup:
     GroupName: 
+  ParameterName: 
+  FloatDefaultValue: 0
+  DefaultSelected: 0
 --- !u!114 &7244751548035657847
 MonoBehaviour:
   m_ObjectHideFlags: 0

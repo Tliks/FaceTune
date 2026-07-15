@@ -109,11 +109,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349144
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -137,7 +138,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -148,7 +148,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349144
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 4
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &2602073235108601074 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1485332928902424441, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -166,11 +173,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349145
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -194,7 +202,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -205,7 +212,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349145
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 3
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &3449897734882677660 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2261055545203173399, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -223,11 +237,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349146
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -251,7 +266,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -262,7 +276,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349146
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 2
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &3963633064186098529 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 540778276760996074, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -280,11 +301,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349147
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -308,7 +330,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -319,7 +340,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349147
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 1
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &4334734657023080462 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 912136754007835525, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -337,11 +365,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349148
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -365,7 +394,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -376,7 +404,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349148
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 7
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &5393752001413292721 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8816615827522640186, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -394,11 +429,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349149
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -422,7 +458,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -433,7 +468,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349149
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 5
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &7787607226083875863 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6670884643117918108, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -451,11 +493,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349150
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -479,7 +522,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -490,7 +532,14 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349150
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 6
+        hand: 0
+        equalityComparison: 0
 --- !u!1 &8285661403366438539 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4790713562987908352, guid: 3fed0a63141d68f4991a7a4c2ec7aae6, type: 3}
@@ -510,7 +559,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MenuName: 
   Icon:
-    Mode: 1
+    Mode: 2
     ManualIcon: {fileID: 0}
     PreviewExpression: {fileID: 0}
   InstallSettings:
@@ -534,11 +583,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 0
+  ConditionEnabled: 1
   Condition:
     Always: 0
     Cases:
-    - Conditions: []
+    - Conditions:
+      - rid: 5999160087458349151
   DirectMenuEnabled: 0
   DirectMenuSettings:
     MenuName: 
@@ -562,7 +612,6 @@ MonoBehaviour:
     allowLipSync: 0
     writeMode: 0
     enableBlending: 0
-  DataReferenceMode: 0
   DataReference:
     referencePath: 
     targetObject: {fileID: 0}
@@ -573,4 +622,11 @@ MonoBehaviour:
   EnableRealTimePreview: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 5999160087458349151
+      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        Match: 0
+        HandGesture: 0
+        hand: 0
+        equalityComparison: 0

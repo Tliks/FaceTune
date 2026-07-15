@@ -50,7 +50,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MenuName: 
   Icon:
-    Mode: 1
+    Mode: 2
     ManualIcon: {fileID: 0}
     PreviewExpression: {fileID: 0}
   InstallSettings:

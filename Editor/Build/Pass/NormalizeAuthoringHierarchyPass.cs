@@ -149,12 +149,17 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 var index = exclusiveGroupIndices.TryGetValue(groupName, out var current) ? current + 1 : 1;
                 exclusiveGroupIndices[groupName] = index;
                 menu.ExclusiveToggleGroup.Value = index;
-                parameterDomains.SetIntDomainOverride(menu.ParameterName, new IntParameterDomain(0, index));
             }
             else if (string.IsNullOrWhiteSpace(menu.ParameterName))
             {
                 menu.ParameterName = CreateUniqueParameterName(menu.name, menu.Kind == MenuItemKind.Radial ? "radial" : "toggle");
             }
+        }
+
+        foreach (var (groupName, maxValue) in exclusiveGroupIndices)
+        {
+            var parameterName = exclusiveGroupParameterNames[groupName];
+            parameterDomains.SetIntDomainOverride(parameterName, new IntParameterDomain(0, maxValue));
         }
     }
 

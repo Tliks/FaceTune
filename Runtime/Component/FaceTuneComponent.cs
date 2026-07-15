@@ -7,11 +7,8 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
-        public bool ConditionEnabled = false;
-        public Condition Condition = new(new ConditionCase
-        {
-            Conditions = new List<ConditionBase> { new HandGestureCondition() }
-        });
+        public bool ConditionEnabled = true;
+        public Condition Condition = new(ConditionCase.From(new HandGestureCondition()));
 
         public bool DirectMenuEnabled = false;
         public DirectMenuSettings DirectMenuSettings = new()

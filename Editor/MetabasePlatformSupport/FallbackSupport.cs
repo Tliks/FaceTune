@@ -48,5 +48,7 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
         return null;
     }
 
+    public string? ResolveGestureParameter(Hand hand) => null;
+
     public string? ResolveGestureWeightParameter(Hand hand) => null;
 }

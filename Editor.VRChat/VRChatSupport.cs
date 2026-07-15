@@ -40,7 +40,10 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         _descriptor = descriptor;
     }
 
-    public string? ResolveGestureWeightParameter(Hand hand)
+    public string ResolveGestureParameter(Hand hand)
+        => hand == Hand.Left ? GestureLeftParameter : GestureRightParameter;
+
+    public string ResolveGestureWeightParameter(Hand hand)
         => hand == Hand.Left ? GestureLeftWeightParameter : GestureRightWeightParameter;
 
     public SkinnedMeshRenderer? GetFaceRenderer()

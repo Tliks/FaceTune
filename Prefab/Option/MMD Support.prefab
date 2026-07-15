@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MenuName: 
   Icon:
-    Mode: 1
+    Mode: 2
     ManualIcon: {fileID: 0}
     PreviewExpression: {fileID: 0}
   InstallSettings:
@@ -55,10 +55,11 @@ MonoBehaviour:
       referencePath: 
       targetObject: {fileID: 0}
   Kind: 0
-  ParameterName: FaceTune/EnableMMDMode
-  DefaultSelected: 0
   ExclusiveToggleGroup:
     GroupName: 
+  ParameterName: FaceTune/EnableMMDMode
+  FloatDefaultValue: 0
+  DefaultSelected: 0
 --- !u!114 &841824838411543577
 MonoBehaviour:
   m_ObjectHideFlags: 0
