@@ -32,12 +32,23 @@ internal sealed class DnfCondition
         IEnumerable<DnfCondition> conditions,
         ParameterDomainRegistry? parameterDomains = null)
     {
-        return conditions.Aggregate(Always, (current, condition) => current.And(condition, parameterDomains));
+        var combined = conditions.Aggregate(
+            Always,
+            (current, condition) => current.And(condition, parameterDomains));
+        return parameterDomains == null ? combined : combined.Simplify(parameterDomains);
     }
 
-    public static DnfCondition Any(IEnumerable<DnfCondition> conditions)
+    public static DnfCondition Any(
+        IEnumerable<DnfCondition> conditions,
+        ParameterDomainRegistry? parameterDomains = null)
     {
-        return conditions.Aggregate(Never, (current, condition) => current.Or(condition));
+        var cases = conditions
+            .SelectMany(condition => condition.Cases)
+            .ToHashSet();
+        if (cases.Count == 0) return Never;
+
+        var combined = new DnfCondition(cases.ToArray());
+        return parameterDomains == null ? combined : combined.Simplify(parameterDomains);
     }
 
     public DnfCondition And(DnfCondition other, ParameterDomainRegistry? parameterDomains = null)
@@ -59,14 +70,19 @@ internal sealed class DnfCondition
         return cases.Count == 0 ? Never : new DnfCondition(cases.ToArray());
     }
 
-    public DnfCondition Or(DnfCondition other)
+    public DnfCondition Or(
+        DnfCondition other,
+        ParameterDomainRegistry? parameterDomains = null)
     {
-        if (Cases.Count == 0) return other;
-        if (other.Cases.Count == 0) return this;
+        if (Cases.Count == 0)
+            return parameterDomains == null ? other : other.Simplify(parameterDomains);
+        if (other.Cases.Count == 0)
+            return parameterDomains == null ? this : Simplify(parameterDomains);
 
         var cases = new HashSet<DnfCase>(Cases);
         cases.UnionWith(other.Cases);
-        return new DnfCondition(cases.ToArray());
+        var combined = new DnfCondition(cases.ToArray());
+        return parameterDomains == null ? combined : combined.Simplify(parameterDomains);
     }
 
     public DnfCondition Complement(ParameterDomainRegistry? parameterDomains = null)
@@ -77,6 +93,131 @@ internal sealed class DnfCondition
             result = result.And(conditionCase.Complement(), parameterDomains);
         }
         return result;
+    }
+
+    public DnfCondition Except(DnfCondition other, ParameterDomainRegistry parameterDomains)
+    {
+        var result = this;
+        foreach (var otherCase in other.Cases)
+        {
+            var otherCondition = Single(otherCase);
+            if (result.And(otherCondition, parameterDomains).IsNever) continue;
+
+            result = result
+                .And(otherCase.Complement(), parameterDomains)
+                .Simplify(parameterDomains);
+            if (result.IsNever) break;
+        }
+        return result;
+    }
+
+    private DnfCondition Simplify(ParameterDomainRegistry parameterDomains)
+    {
+        var cases = Cases.ToList();
+        while (true)
+        {
+            RemoveSubsumedCases(cases);
+            if (cases.Any(conditionCase => conditionCase.IsAlways)) return Always;
+
+            var merged = false;
+            var keys = cases
+                .SelectMany(conditionCase => conditionCase.Rules)
+                .Select(rule =>
+                {
+                    rule.GetSimplifier(out var key, out var simplifier);
+                    return (Key: key, Simplifier: simplifier);
+                })
+                .GroupBy(pair => pair.Key)
+                .Select(group => group.First())
+                .ToArray();
+
+            foreach (var (key, simplifier) in keys)
+            {
+                var groups = new List<DisjunctionGroup>();
+                for (var caseIndex = 0; caseIndex < cases.Count; caseIndex++)
+                {
+                    var groupedRules = cases[caseIndex].Rules
+                        .GroupBy(rule =>
+                        {
+                            rule.GetSimplifier(out var ruleKey, out _);
+                            return ruleKey;
+                        })
+                        .ToDictionary(group => group.Key, group => (IReadOnlyList<DnfRule>)group.ToArray());
+                    if (!groupedRules.TryGetValue(key, out var rulesForKey)) continue;
+
+                    var commonRules = groupedRules
+                        .Where(pair => !Equals(pair.Key, key))
+                        .SelectMany(pair => pair.Value)
+                        .ToHashSet();
+                    var group = groups.FirstOrDefault(candidate => candidate.CommonRules.SetEquals(commonRules));
+                    if (group == null)
+                    {
+                        group = new DisjunctionGroup(commonRules);
+                        groups.Add(group);
+                    }
+
+                    group.CaseIndices.Add(caseIndex);
+                    group.Alternatives.Add(rulesForKey);
+                }
+
+                foreach (var group in groups)
+                {
+                    if (group.Alternatives.Count <= 1 ||
+                        !simplifier.TrySimplifyDisjunction(group.Alternatives, parameterDomains, out var simplified))
+                    {
+                        continue;
+                    }
+
+                    for (var index = group.CaseIndices.Count - 1; index >= 0; index--)
+                    {
+                        cases.RemoveAt(group.CaseIndices[index]);
+                    }
+
+                    var commonCondition = Single(new DnfCase(group.CommonRules.ToArray()));
+                    cases.AddRange(commonCondition.And(simplified, parameterDomains).Cases);
+                    merged = true;
+                    break;
+                }
+
+                if (merged) break;
+            }
+
+            if (!merged) return cases.Count == 0 ? Never : new DnfCondition(cases.ToArray());
+        }
+    }
+
+    private static void RemoveSubsumedCases(List<DnfCase> cases)
+    {
+        for (var leftIndex = 0; leftIndex < cases.Count; leftIndex++)
+        {
+            var leftRules = cases[leftIndex].Rules.ToHashSet();
+            for (var rightIndex = cases.Count - 1; rightIndex > leftIndex; rightIndex--)
+            {
+                var rightRules = cases[rightIndex].Rules.ToHashSet();
+                if (leftRules.IsSubsetOf(rightRules))
+                {
+                    cases.RemoveAt(rightIndex);
+                }
+                else if (rightRules.IsSubsetOf(leftRules))
+                {
+                    cases.RemoveAt(leftIndex);
+                    leftIndex--;
+                    break;
+                }
+            }
+        }
+    }
+
+    private sealed class DisjunctionGroup
+    {
+        public HashSet<DnfRule> CommonRules { get; }
+        public List<int> CaseIndices { get; } = new();
+        public List<IReadOnlyList<DnfRule>> Alternatives { get; } = new();
+
+        public DisjunctionGroup(HashSet<DnfRule> commonRules)
+        {
+            CommonRules = commonRules;
+        }
     }
 }
 
@@ -217,6 +358,15 @@ internal abstract class DnfRuleGroupSimplifier
     public abstract DnfCondition Simplify(
         IReadOnlyList<DnfRule> rules,
         ParameterDomainRegistry? parameterDomains);
+
+    public virtual bool TrySimplifyDisjunction(
+        IReadOnlyList<IReadOnlyList<DnfRule>> alternatives,
+        ParameterDomainRegistry? parameterDomains,
+        [NotNullWhen(true)] out DnfCondition? simplified)
+    {
+        simplified = null;
+        return false;
+    }
 }
 
 internal sealed class PassthroughDnfRuleSimplifier : DnfRuleGroupSimplifier

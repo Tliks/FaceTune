@@ -224,23 +224,25 @@ internal sealed class ExpressionLayerPlanBuilder
         IReadOnlyList<ExpressionItem> expressions)
     {
         using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.ReplaceLayer");
-        var statePlans = new List<ExpressionStatePlan>();
-        for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
+        var statePlans = new IReadOnlyList<ExpressionStatePlan>[expressions.Count];
+        var higherPriority = DnfCondition.Never;
+        for (var expressionIndex = expressions.Count - 1; expressionIndex >= 0; expressionIndex--)
         {
             var expression = expressions[expressionIndex];
-            var higherPriority = DnfCondition.Any(expressions
-                .Skip(expressionIndex + 1)
-                .Select(item => item.RawWhen));
-            var enterWhen = expression.RawWhen.And(
-                higherPriority.Complement(_parameterDomains),
-                _parameterDomains);
+            var enterWhen = expression.RawWhen.Except(higherPriority, _parameterDomains);
+            statePlans[expressionIndex] = BuildExpressionStates(
+                    unitId,
+                    expression,
+                    expressionIndex,
+                    enterWhen)
+                .ToArray();
 
-            statePlans.AddRange(BuildExpressionStates(unitId, expression, expressionIndex, enterWhen));
+            higherPriority = higherPriority.Or(expression.RawWhen, _parameterDomains);
         }
 
         return BuildExpressionLayer(
             $"{unitId}-{layerIndex} Replace",
-            statePlans);
+            statePlans.SelectMany(plans => plans));
     }
 
     private IEnumerable<ExpressionLayerPlan> BuildBlendLayers(

@@ -82,6 +82,67 @@ internal sealed class ParameterRuleGroupSimplifier : DnfRuleGroupSimplifier
         return DnfCondition.Single(new DnfCase(simplifiedRules));
     }
 
+    public override bool TrySimplifyDisjunction(
+        IReadOnlyList<IReadOnlyList<DnfRule>> alternatives,
+        ParameterDomainRegistry? parameterDomains,
+        [NotNullWhen(true)] out DnfCondition? simplified)
+    {
+        simplified = null;
+        var rules = alternatives.SelectMany(alternative => alternative).Cast<AnimatorConditionRule>().ToArray();
+        if (rules.Length == 0) return false;
+
+        switch (rules[0].ParameterType)
+        {
+            case AnimatorControllerParameterType.Bool:
+                if (!IsBoolCovered(false) || !IsBoolCovered(true)) return false;
+                break;
+            case AnimatorControllerParameterType.Int:
+                if (parameterDomains == null ||
+                    !parameterDomains.TryGetIntDomain(rules[0].ParameterName, out var domain)) return false;
+                for (var value = domain.MinValue; value <= domain.MaxValue; value++)
+                {
+                    if (!IsCovered(value)) return false;
+                }
+                break;
+            default:
+                return false;
+        }
+
+        simplified = DnfCondition.Always;
+        return true;
+
+        bool IsCovered(int value) => alternatives.Any(alternative => alternative
+            .Cast<AnimatorConditionRule>()
+            .All(rule => Matches(rule.Condition, value)));
+
+        bool IsBoolCovered(bool value) => alternatives.Any(alternative => alternative
+            .Cast<AnimatorConditionRule>()
+            .All(rule => Matches(rule.Condition, value)));
+    }
+
+    private static bool Matches(AnimatorCondition condition, int value)
+    {
+        var threshold = (int)condition.threshold;
+        return condition.mode switch
+        {
+            AnimatorConditionMode.Equals => value == threshold,
+            AnimatorConditionMode.NotEqual => value != threshold,
+            AnimatorConditionMode.Greater => value > threshold,
+            AnimatorConditionMode.Less => value < threshold,
+            _ => false
+        };
+    }
+
+    private static bool Matches(AnimatorCondition condition, bool value)
+    {
+        return condition.mode switch
+        {
+            AnimatorConditionMode.If => value,
+            AnimatorConditionMode.IfNot => !value,
+            _ => false
+        };
+    }
+
     private static bool SimplifyBool(AnimatorConditionRule rule, ref AnimatorConditionRule? equal)
     {
         var mode = rule.Condition.mode;

@@ -21,7 +21,6 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
             .BeforePlugin("nadena.dev.modular-avatar");
         sequence.Run(CollectBuildSettingsPass.Instance);
         sequence.Run(NormalizeAuthoringHierarchyPass.Instance);
-        sequence.Run(FilterExcludedBlendShapesPass.Instance);
         sequence.Run(CompileExpressionProgramPass.Instance);
         sequence.Run(CompileMenuProgramPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
@@ -31,7 +30,6 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
 
         sequence = InPhase(BuildPhase.Transforming)
             .AfterPlugin("nadena.dev.modular-avatar")
-            .AfterPlugin("nadena.dev.modular-avatar.late-transform-stages")
             .AfterPlugin("net.rs64.tex-trans-tool");
         sequence.Run(FinalizePlatformBuildPass.Instance);
 

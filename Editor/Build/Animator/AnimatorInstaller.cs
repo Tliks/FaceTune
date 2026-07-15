@@ -356,12 +356,12 @@ internal sealed class AnimatorInstaller
 
     private IEnumerable<AnimatorCondition> ToAnimatorConditions(DnfCase conditionCase)
     {
-        return conditionCase.Rules.Select(ToAnimatorCondition);
-    }
-
-    private AnimatorCondition ToAnimatorCondition(DnfRule rule)
-    {
-        var animatorConditionRule = (AnimatorConditionRule)rule;
-        return animatorConditionRule.Condition;
+        return conditionCase.Rules
+            .Cast<AnimatorConditionRule>()
+            .OrderBy(rule => rule.ParameterName, StringComparer.Ordinal)
+            .ThenBy(rule => rule.ParameterType)
+            .ThenBy(rule => rule.Condition.mode)
+            .ThenBy(rule => rule.Condition.threshold)
+            .Select(rule => rule.Condition);
     }
 }
