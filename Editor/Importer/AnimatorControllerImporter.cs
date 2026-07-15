@@ -183,7 +183,7 @@ internal class AnimatorControllerImporter
 
         return resolved.Count == 0
             ? null
-            : DnfCondition.All(resolved, _parameterDomains);
+            : DnfCondition.All(resolved);
 
         DnfCondition? ConvertCondition(AnimatorCondition condition)
         {
@@ -194,7 +194,9 @@ internal class AnimatorControllerImporter
             }
 
             var rule = new AnimatorConditionRule(condition, parameterType);
-            return _platformSupport.ResolveParameterCondition(rule.ToParameterCondition());
+            return _platformSupport.ResolveParameterCondition(
+                rule.ToParameterCondition(),
+                _parameterDomains);
         }
     }
 

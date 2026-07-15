@@ -13,9 +13,13 @@ internal interface IMetabasePlatformSupport
 
     ParameterDomainRegistry CreateBuiltInParameterDomains();
 
-    DnfCondition? ResolveHandGestureCondition(HandGestureCondition condition);
+    DnfCondition? ResolveHandGestureCondition(
+        HandGestureCondition condition,
+        ParameterDomainRegistry parameterDomains);
 
-    DnfCondition? ResolveParameterCondition(ParameterCondition condition);
+    DnfCondition? ResolveParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry parameterDomains);
 
     string? ResolveGestureParameter(Hand hand);
 

@@ -10,44 +10,32 @@ internal readonly record struct IntParameterDomain(int MinValue, int MaxValue)
     }
 }
 
-internal sealed class ParameterDomainRegistry
+internal sealed record ParameterDomainRegistry
 {
-    private readonly Dictionary<string, IntParameterDomain> intDomainOverrides = new(StringComparer.Ordinal);
-    private IntParameterDomain? defaultIntDomain;
+    private ImmutableDictionary<string, IntParameterDomain> IntDomainOverrides { get; init; }
+        = ImmutableDictionary.Create<string, IntParameterDomain>(StringComparer.Ordinal);
+    private IntParameterDomain? DefaultIntDomain { get; init; }
 
     public static ParameterDomainRegistry Empty { get; } = new();
 
-    public ParameterDomainRegistry()
+    public ParameterDomainRegistry WithDefaultIntDomain(IntParameterDomain domain)
     {
+        return domain.IsValid ? this with { DefaultIntDomain = domain } : this;
     }
 
-    public ParameterDomainRegistry(ParameterDomainRegistry source)
+    public ParameterDomainRegistry WithIntDomainOverride(string parameterName, IntParameterDomain domain)
     {
-        defaultIntDomain = source.defaultIntDomain;
-        foreach (var (parameterName, domain) in source.intDomainOverrides)
-        {
-            intDomainOverrides.Add(parameterName, domain);
-        }
-    }
-
-    public void SetDefaultIntDomain(IntParameterDomain domain)
-    {
-        if (!domain.IsValid) return;
-        defaultIntDomain = domain;
-    }
-
-    public void SetIntDomainOverride(string parameterName, IntParameterDomain domain)
-    {
-        if (string.IsNullOrWhiteSpace(parameterName) || !domain.IsValid) return;
-        intDomainOverrides[parameterName] = domain;
+        return string.IsNullOrWhiteSpace(parameterName) || !domain.IsValid
+            ? this
+            : this with { IntDomainOverrides = IntDomainOverrides.SetItem(parameterName, domain) };
     }
 
     public bool TryGetIntDomain(string parameterName, out IntParameterDomain domain)
     {
-        if (intDomainOverrides.TryGetValue(parameterName, out domain)) return true;
-        if (defaultIntDomain.HasValue)
+        if (IntDomainOverrides.TryGetValue(parameterName, out domain)) return true;
+        if (DefaultIntDomain is { } defaultDomain)
         {
-            domain = defaultIntDomain.Value;
+            domain = defaultDomain;
             return true;
         }
 

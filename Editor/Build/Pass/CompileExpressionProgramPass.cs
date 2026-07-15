@@ -164,7 +164,7 @@ internal sealed class ConditionCompiler
             .ToArray();
         return activationConditions.Length == 0
             ? DnfCondition.Never
-            : DnfCondition.All(activationConditions, _parameterDomains);
+            : DnfCondition.All(activationConditions);
     }
 
     private IEnumerable<Condition> CollectEffectiveConditions(FaceTuneComponent component)
@@ -207,9 +207,9 @@ internal sealed class ConditionCompiler
             var resolved = condition switch
             {
                 HandGestureCondition handGesture =>
-                    _platformSupport.ResolveHandGestureCondition(handGesture),
+                    _platformSupport.ResolveHandGestureCondition(handGesture, _parameterDomains),
                 ParameterCondition parameter =>
-                    _platformSupport.ResolveParameterCondition(parameter),
+                    _platformSupport.ResolveParameterCondition(parameter, _parameterDomains),
                 MenuCondition => throw new InvalidOperationException(
                     "Menu conditions must be normalized before compiling expressions."),
                 _ => throw new InvalidOperationException(
@@ -224,6 +224,6 @@ internal sealed class ConditionCompiler
 
         return resolvedConditions.Count == 0
             ? null
-            : DnfCondition.All(resolvedConditions, _parameterDomains);
+            : DnfCondition.All(resolvedConditions);
     }
 }

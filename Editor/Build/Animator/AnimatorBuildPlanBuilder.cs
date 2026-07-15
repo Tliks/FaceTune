@@ -168,7 +168,6 @@ internal sealed class ExpressionLayerPlanBuilder
 {
     private readonly DnfCondition? _lockFacialInactiveWhen;
     private readonly DnfCondition? _forceInactiveWhen;
-    private readonly ParameterDomainRegistry _parameterDomains;
     private readonly AapProtocol _aap;
 
     public ExpressionLayerPlanBuilder(
@@ -178,10 +177,11 @@ internal sealed class ExpressionLayerPlanBuilder
     {
         _lockFacialInactiveWhen = string.IsNullOrWhiteSpace(settings.LockFacialParameterName)
             ? null
-            : DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
-                ParameterCondition.Bool(settings.LockFacialParameterName, false)));
+            : DnfCondition.Single(
+                AnimatorConditionRule.FromParameterCondition(
+                    ParameterCondition.Bool(settings.LockFacialParameterName, false)),
+                settings.ParameterDomains);
         _forceInactiveWhen = forceInactiveWhen;
-        _parameterDomains = settings.ParameterDomains;
         _aap = aap;
     }
 
@@ -229,7 +229,7 @@ internal sealed class ExpressionLayerPlanBuilder
         for (var expressionIndex = expressions.Count - 1; expressionIndex >= 0; expressionIndex--)
         {
             var expression = expressions[expressionIndex];
-            var enterWhen = expression.RawWhen.Except(higherPriority, _parameterDomains);
+            var enterWhen = expression.RawWhen.Except(higherPriority);
             statePlans[expressionIndex] = BuildExpressionStates(
                     unitId,
                     expression,
@@ -237,7 +237,7 @@ internal sealed class ExpressionLayerPlanBuilder
                     enterWhen)
                 .ToArray();
 
-            higherPriority = higherPriority.Or(expression.RawWhen, _parameterDomains);
+            higherPriority = higherPriority.Or(expression.RawWhen);
         }
 
         return BuildExpressionLayer(
@@ -299,7 +299,7 @@ internal sealed class ExpressionLayerPlanBuilder
             for (var previousIndex = 0; previousIndex < currentIndex; previousIndex++)
             {
                 var conditionsOverlap = !expressions[previousIndex].RawWhen
-                    .And(expressions[currentIndex].RawWhen, _parameterDomains)
+                    .And(expressions[currentIndex].RawWhen)
                     .IsNever;
                 if (!conditionsOverlap) continue;
 
@@ -329,16 +329,16 @@ internal sealed class ExpressionLayerPlanBuilder
         // Splitting DNF cases keeps exit conditions small, but switching cases restarts time-dependent motions.
         var canSplitWithoutResettingMotion = expression.AnimationSet.All(animation => !animation.IsMultiFrame);
         var stateConditions = canSplitWithoutResettingMotion && enterWhen.Cases.Count > 1
-            ? enterWhen.Cases.Select(DnfCondition.Single).ToArray()
+            ? enterWhen.Cases.Select(DnfCondition.FromCase).ToArray()
             : new[] { enterWhen };
 
         for (var stateIndex = 0; stateIndex < stateConditions.Length; stateIndex++)
         {
             var stateCondition = stateConditions[stateIndex];
-            var exitWhen = stateCondition.Complement(_parameterDomains);
+            var exitWhen = stateCondition.Complement();
             if (_lockFacialInactiveWhen != null)
             {
-                exitWhen = exitWhen.And(_lockFacialInactiveWhen, _parameterDomains);
+                exitWhen = exitWhen.And(_lockFacialInactiveWhen);
             }
 
             var name = $"{expressionIndex + 1} {expression.Name}";
@@ -406,10 +406,10 @@ internal sealed class TrackingControlPlanBuilder
                     _aap.WritesLipSyncControl,
                     _settings.DisableLipSyncParameterName);
 
-                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Tracking", eyeBlink.Tracking.And(lipSync.Tracking, _settings.ParameterDomains), true, true));
-                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Animation", eyeBlink.Tracking.And(lipSync.Animation, _settings.ParameterDomains), true, false));
-                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Tracking", eyeBlink.Animation.And(lipSync.Tracking, _settings.ParameterDomains), false, true));
-                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Animation", eyeBlink.Animation.And(lipSync.Animation, _settings.ParameterDomains), false, false));
+                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Tracking", eyeBlink.Tracking.And(lipSync.Tracking), true, true));
+                states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Animation", eyeBlink.Tracking.And(lipSync.Animation), true, false));
+                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Tracking", eyeBlink.Animation.And(lipSync.Tracking), false, true));
+                states.Add(new TrackingControlStatePlan("EyeBlink Animation / LipSync Animation", eyeBlink.Animation.And(lipSync.Animation), false, false));
             }
             else
             {
@@ -476,13 +476,17 @@ internal sealed class TrackingControlPlanBuilder
 
         if (!string.IsNullOrWhiteSpace(forceDisableParameterName))
         {
-            trackingConditions.Add(DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
-                ParameterCondition.Bool(forceDisableParameterName, false))));
-            animationConditions.Add(DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(
-                ParameterCondition.Bool(forceDisableParameterName, true))));
+            trackingConditions.Add(DnfCondition.Single(
+                AnimatorConditionRule.FromParameterCondition(
+                    ParameterCondition.Bool(forceDisableParameterName, false)),
+                _settings.ParameterDomains));
+            animationConditions.Add(DnfCondition.Single(
+                AnimatorConditionRule.FromParameterCondition(
+                    ParameterCondition.Bool(forceDisableParameterName, true)),
+                _settings.ParameterDomains));
         }
 
-        return (DnfCondition.All(trackingConditions, _settings.ParameterDomains), DnfCondition.Any(animationConditions));
+        return (DnfCondition.All(trackingConditions), DnfCondition.Any(animationConditions));
     }
 
 }

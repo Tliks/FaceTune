@@ -21,10 +21,21 @@ internal sealed record class AnimatorConditionRule(
         return AnimatorParameterConditionConverter.ToParameterCondition(this);
     }
 
-    public override void GetSimplifier(out object key, out DnfRuleGroupSimplifier simplifier)
+    public override object ConstraintKey => new ParameterConstraintKey(ParameterName, ParameterType);
+
+    public override DnfConstraint CreateConstraint(ParameterDomainRegistry parameterDomains)
     {
-        key = new ParameterConstraintKey(ParameterName, ParameterType);
-        simplifier = ParameterRuleGroupSimplifier.Instance;
+        if (ParameterType == AnimatorControllerParameterType.Bool)
+        {
+            return FiniteParameterConstraint.FromBoolRule(this);
+        }
+        if (ParameterType == AnimatorControllerParameterType.Int &&
+            parameterDomains.TryGetIntDomain(ParameterName, out var domain) &&
+            (long)domain.MaxValue - domain.MinValue < 4096)
+        {
+            return FiniteParameterConstraint.FromIntRule(this, domain);
+        }
+        return RangeParameterConstraint.FromRule(this);
     }
 
     public override DnfRule Negate()
@@ -36,296 +47,431 @@ internal sealed record class AnimatorConditionRule(
 
 internal readonly record struct ParameterConstraintKey(
     string ParameterName,
-    AnimatorControllerParameterType ParameterType);
-
-internal sealed class ParameterRuleGroupSimplifier : DnfRuleGroupSimplifier
+    AnimatorControllerParameterType ParameterType) : IComparable<ParameterConstraintKey>, IComparable
 {
-    public static ParameterRuleGroupSimplifier Instance { get; } = new();
-
-    public override DnfCondition Simplify(
-        IReadOnlyList<DnfRule> rules,
-        ParameterDomainRegistry? parameterDomains)
+    public int CompareTo(ParameterConstraintKey other)
     {
-        AnimatorConditionRule? equal = null;
-        var notEquals = new Dictionary<float, AnimatorConditionRule>();
-        AnimatorConditionRule? greater = null;
-        AnimatorConditionRule? less = null;
-
-        var typedRules = rules.Cast<AnimatorConditionRule>().ToArray();
-        var firstRule = typedRules[0];
-        var intDomain = firstRule.ParameterType == AnimatorControllerParameterType.Int &&
-            parameterDomains != null &&
-            parameterDomains.TryGetIntDomain(firstRule.ParameterName, out var domain)
-                ? domain
-                : (IntParameterDomain?)null;
-
-        foreach (var rule in typedRules)
-        {
-            var succeeded = rule.ParameterType switch
-            {
-                AnimatorControllerParameterType.Bool => SimplifyBool(rule, ref equal),
-                AnimatorControllerParameterType.Int => SimplifyComparable(rule, true, intDomain, ref equal, notEquals, ref greater, ref less),
-                AnimatorControllerParameterType.Float => SimplifyComparable(rule, false, intDomain, ref equal, notEquals, ref greater, ref less),
-                _ => true
-            };
-
-            if (!succeeded) return DnfCondition.Never;
-        }
-
-        if (equal != null) return DnfCondition.Single(equal);
-        if (TryResolveFiniteIntDomain(intDomain, notEquals, greater, less, out var domainCondition)) return domainCondition;
-
-        var simplifiedRules = new List<DnfRule>();
-        if (greater != null) simplifiedRules.Add(greater);
-        if (less != null) simplifiedRules.Add(less);
-        simplifiedRules.AddRange(notEquals.Values.OrderBy(rule => rule.Condition.threshold));
-        return DnfCondition.Single(new DnfCase(simplifiedRules));
+        var nameComparison = StringComparer.Ordinal.Compare(ParameterName, other.ParameterName);
+        return nameComparison != 0 ? nameComparison : ParameterType.CompareTo(other.ParameterType);
     }
 
-    public override bool TrySimplifyDisjunction(
-        IReadOnlyList<IReadOnlyList<DnfRule>> alternatives,
-        ParameterDomainRegistry? parameterDomains,
-        [NotNullWhen(true)] out DnfCondition? simplified)
+    public int CompareTo(object? obj)
     {
-        simplified = null;
-        var rules = alternatives.SelectMany(alternative => alternative).Cast<AnimatorConditionRule>().ToArray();
-        if (rules.Length == 0) return false;
+        return obj is ParameterConstraintKey other
+            ? CompareTo(other)
+            : throw new ArgumentException("Object is not a parameter constraint key.", nameof(obj));
+    }
+}
 
-        switch (rules[0].ParameterType)
-        {
-            case AnimatorControllerParameterType.Bool:
-                if (!IsBoolCovered(false) || !IsBoolCovered(true)) return false;
-                break;
-            case AnimatorControllerParameterType.Int:
-                if (parameterDomains == null ||
-                    !parameterDomains.TryGetIntDomain(rules[0].ParameterName, out var domain)) return false;
-                for (var value = domain.MinValue; value <= domain.MaxValue; value++)
-                {
-                    if (!IsCovered(value)) return false;
-                }
-                break;
-            default:
-                return false;
-        }
+internal sealed class RangeParameterConstraint : DnfConstraint
+{
+    private readonly AnimatorConditionRule _template;
+    private readonly bool _isInt;
+    private readonly float? _equal;
+    private readonly float? _greaterThan;
+    private readonly float? _lessThan;
+    private readonly HashSet<float> _excluded;
 
-        simplified = DnfCondition.Always;
-        return true;
+    public override object Key => _template.ConstraintKey;
+    public override bool IsEmpty { get; }
+    public override bool IsUniversal => !IsEmpty && _equal == null && _greaterThan == null &&
+                                        _lessThan == null && _excluded.Count == 0;
 
-        bool IsCovered(int value) => alternatives.Any(alternative => alternative
-            .Cast<AnimatorConditionRule>()
-            .All(rule => Matches(rule.Condition, value)));
-
-        bool IsBoolCovered(bool value) => alternatives.Any(alternative => alternative
-            .Cast<AnimatorConditionRule>()
-            .All(rule => Matches(rule.Condition, value)));
+    private RangeParameterConstraint(
+        AnimatorConditionRule template,
+        float? equal,
+        float? greaterThan,
+        float? lessThan,
+        IEnumerable<float>? excluded = null,
+        bool isEmpty = false)
+    {
+        _template = template;
+        _isInt = template.ParameterType == AnimatorControllerParameterType.Int;
+        _equal = Normalize(equal);
+        _greaterThan = Normalize(greaterThan);
+        _lessThan = Normalize(lessThan);
+        _excluded = excluded?.Select(value => Normalize(value)!.Value).ToHashSet() ?? new HashSet<float>();
+        IsEmpty = isEmpty || IsContradictory();
     }
 
-    private static bool Matches(AnimatorCondition condition, int value)
+    public static RangeParameterConstraint FromRule(AnimatorConditionRule rule)
     {
-        var threshold = (int)condition.threshold;
-        return condition.mode switch
-        {
-            AnimatorConditionMode.Equals => value == threshold,
-            AnimatorConditionMode.NotEqual => value != threshold,
-            AnimatorConditionMode.Greater => value > threshold,
-            AnimatorConditionMode.Less => value < threshold,
-            _ => false
-        };
-    }
-
-    private static bool Matches(AnimatorCondition condition, bool value)
-    {
-        return condition.mode switch
-        {
-            AnimatorConditionMode.If => value,
-            AnimatorConditionMode.IfNot => !value,
-            _ => false
-        };
-    }
-
-    private static bool SimplifyBool(AnimatorConditionRule rule, ref AnimatorConditionRule? equal)
-    {
-        var mode = rule.Condition.mode;
-        if (mode != AnimatorConditionMode.If && mode != AnimatorConditionMode.IfNot) return true;
-
-        var normalized = rule with
-        {
-            Condition = rule.Condition with
-            {
-                mode = mode,
-                threshold = 0
-            }
-        };
-
-        if (equal != null) return equal.Condition.mode == mode;
-        equal = normalized;
-        return true;
-    }
-
-    private static bool SimplifyComparable(
-        AnimatorConditionRule rule,
-        bool isInt,
-        IntParameterDomain? intDomain,
-        ref AnimatorConditionRule? equal,
-        Dictionary<float, AnimatorConditionRule> notEquals,
-        ref AnimatorConditionRule? greater,
-        ref AnimatorConditionRule? less)
-    {
+        var value = rule.Condition.threshold;
         return rule.Condition.mode switch
         {
-            AnimatorConditionMode.Equals => SimplifyEqual(rule, isInt, intDomain, ref equal, notEquals, ref greater, ref less),
-            AnimatorConditionMode.NotEqual => SimplifyNotEqual(rule, isInt, intDomain, equal, notEquals),
-            AnimatorConditionMode.Greater => SimplifyGreater(rule, isInt, equal, ref greater, less),
-            AnimatorConditionMode.Less => SimplifyLess(rule, isInt, equal, greater, ref less),
-            _ => true
+            AnimatorConditionMode.Equals => new RangeParameterConstraint(rule, value, null, null),
+            AnimatorConditionMode.NotEqual => new RangeParameterConstraint(rule, null, null, null, new[] { value }),
+            AnimatorConditionMode.Greater => new RangeParameterConstraint(rule, null, value, null),
+            AnimatorConditionMode.Less => new RangeParameterConstraint(rule, null, null, value),
+            _ => throw new InvalidOperationException($"Invalid comparable condition mode: {rule.Condition.mode}")
         };
     }
 
-    private static bool SimplifyEqual(
-        AnimatorConditionRule rule,
-        bool isInt,
-        IntParameterDomain? intDomain,
-        ref AnimatorConditionRule? equal,
-        Dictionary<float, AnimatorConditionRule> notEquals,
-        ref AnimatorConditionRule? greater,
-        ref AnimatorConditionRule? less)
+    public override DnfConstraint Intersect(DnfConstraint other)
     {
-        var value = NormalizeValue(rule.Condition.threshold, isInt);
-        var normalized = WithThreshold(rule, value);
-
-        if (equal != null) return equal.Condition.threshold == value;
-        if (intDomain.HasValue && isInt && !intDomain.Value.Contains((int)value)) return false;
-        if (notEquals.ContainsKey(value)) return false;
-        if (!SatisfiesBounds(value, greater, less)) return false;
-
-        equal = normalized;
-        notEquals.Clear();
-        greater = null;
-        less = null;
-        return true;
+        var right = Validate(other);
+        var equal = _equal ?? right._equal;
+        var conflictingEquals = _equal != null && right._equal != null && _equal != right._equal;
+        return new RangeParameterConstraint(
+            _template,
+            equal,
+            Max(_greaterThan, right._greaterThan),
+            Min(_lessThan, right._lessThan),
+            _excluded.Concat(right._excluded),
+            IsEmpty || right.IsEmpty || conflictingEquals);
     }
 
-    private static bool SimplifyNotEqual(
-        AnimatorConditionRule rule,
-        bool isInt,
-        IntParameterDomain? intDomain,
-        AnimatorConditionRule? equal,
-        Dictionary<float, AnimatorConditionRule> notEquals)
+    public override bool TryUnion(
+        DnfConstraint other,
+        [NotNullWhen(true)] out DnfConstraint? union)
     {
-        var value = NormalizeValue(rule.Condition.threshold, isInt);
-        if (equal != null) return equal.Condition.threshold != value;
-        if (intDomain.HasValue && isInt && !intDomain.Value.Contains((int)value)) return true;
-
-        notEquals.TryAdd(value, WithThreshold(rule, value));
-        return true;
-    }
-
-    private static bool SimplifyGreater(
-        AnimatorConditionRule rule,
-        bool isInt,
-        AnimatorConditionRule? equal,
-        ref AnimatorConditionRule? greater,
-        AnimatorConditionRule? less)
-    {
-        var value = NormalizeValue(rule.Condition.threshold, isInt);
-        if (equal != null) return equal.Condition.threshold > value;
-
-        if (greater == null || value > greater.Condition.threshold)
+        var right = Validate(other);
+        if (Contains(right))
         {
-            greater = WithThreshold(rule, value);
-        }
-
-        return BoundsOverlap(isInt, greater, less);
-    }
-
-    private static bool SimplifyLess(
-        AnimatorConditionRule rule,
-        bool isInt,
-        AnimatorConditionRule? equal,
-        AnimatorConditionRule? greater,
-        ref AnimatorConditionRule? less)
-    {
-        var value = NormalizeValue(rule.Condition.threshold, isInt);
-        if (equal != null) return equal.Condition.threshold < value;
-
-        if (less == null || value < less.Condition.threshold)
-        {
-            less = WithThreshold(rule, value);
-        }
-
-        return BoundsOverlap(isInt, greater, less);
-    }
-
-    private static bool TryResolveFiniteIntDomain(
-        IntParameterDomain? intDomain,
-        Dictionary<float, AnimatorConditionRule> notEquals,
-        AnimatorConditionRule? greater,
-        AnimatorConditionRule? less,
-        [NotNullWhen(true)] out DnfCondition? condition)
-    {
-        condition = null;
-        if (!intDomain.HasValue) return false;
-
-        var domain = intDomain.Value;
-        var values = new List<int>();
-        for (var value = domain.MinValue; value <= domain.MaxValue; value++)
-        {
-            if (!SatisfiesBounds(value, greater, less) || notEquals.ContainsKey(value)) continue;
-            values.Add(value);
-        }
-
-        if (values.Count == 0)
-        {
-            condition = DnfCondition.Never;
+            union = this;
             return true;
         }
-
-        if (values.Count == 1)
+        if (right.Contains(this))
         {
-            var template = greater ?? less ?? notEquals.Values.FirstOrDefault();
-            if (template == null) return false;
-            condition = DnfCondition.Single(template with
-            {
-                Condition = template.Condition with
-                {
-                    mode = AnimatorConditionMode.Equals,
-                    threshold = values[0]
-                }
-            });
+            union = right;
             return true;
         }
-
+        union = null;
         return false;
     }
 
-    private static bool SatisfiesBounds(
-        float value,
-        AnimatorConditionRule? greater,
-        AnimatorConditionRule? less)
+    public override DnfCondition Complement()
     {
-        return (greater == null || value > greater.Condition.threshold)
-            && (less == null || value < less.Condition.threshold);
+        return IsEmpty
+            ? DnfCondition.Always
+            : DnfCondition.Any(ToRules().Select(rule =>
+                DnfCondition.FromConstraint(FromRule((AnimatorConditionRule)rule.Negate()))));
     }
 
-    private static bool BoundsOverlap(
-        bool isInt,
-        AnimatorConditionRule? greater,
-        AnimatorConditionRule? less)
+    public override bool Contains(DnfConstraint other)
     {
-        if (greater == null || less == null) return true;
-        return isInt
-            ? greater.Condition.threshold + 1 < less.Condition.threshold
-            : greater.Condition.threshold < less.Condition.threshold;
+        var right = Validate(other);
+        return Intersect(right).SetEquals(right);
     }
 
-    private static float NormalizeValue(float value, bool isInt)
+    public override bool SetEquals(DnfConstraint other)
     {
-        return isInt ? (int)value : value;
+        return other is RangeParameterConstraint constraint &&
+               Equals(Key, constraint.Key) &&
+               IsEmpty == constraint.IsEmpty &&
+               _equal == constraint._equal &&
+               _greaterThan == constraint._greaterThan &&
+               _lessThan == constraint._lessThan &&
+               _excluded.SetEquals(constraint._excluded);
     }
 
-    private static AnimatorConditionRule WithThreshold(AnimatorConditionRule rule, float threshold)
+    public override int CompareTo(DnfConstraint other)
     {
-        return rule with { Condition = rule.Condition with { threshold = threshold } };
+        var right = Validate(other);
+        var comparison = Nullable.Compare(_equal, right._equal);
+        if (comparison != 0) return comparison;
+        comparison = Nullable.Compare(_greaterThan, right._greaterThan);
+        if (comparison != 0) return comparison;
+        comparison = Nullable.Compare(_lessThan, right._lessThan);
+        if (comparison != 0) return comparison;
+        return CompareValues(_excluded, right._excluded);
+    }
+
+    public override int GetSemanticHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Key);
+        hash.Add(_equal);
+        hash.Add(_greaterThan);
+        hash.Add(_lessThan);
+        foreach (var excluded in _excluded.OrderBy(value => value)) hash.Add(excluded);
+        return hash.ToHashCode();
+    }
+
+    public override IEnumerable<DnfRule> ToRules()
+    {
+        if (IsEmpty) yield break;
+        if (_equal is { } equal)
+        {
+            yield return WithCondition(AnimatorConditionMode.Equals, equal);
+            yield break;
+        }
+        if (_greaterThan is { } greater) yield return WithCondition(AnimatorConditionMode.Greater, greater);
+        if (_lessThan is { } less) yield return WithCondition(AnimatorConditionMode.Less, less);
+        foreach (var excluded in _excluded.OrderBy(value => value))
+        {
+            if (SatisfiesBounds(excluded))
+                yield return WithCondition(AnimatorConditionMode.NotEqual, excluded);
+        }
+    }
+
+    private bool IsContradictory()
+    {
+        if (_equal is { } equal)
+            return _excluded.Contains(equal) || !SatisfiesBounds(equal);
+        if (_greaterThan is not { } greater || _lessThan is not { } less) return false;
+        return _isInt ? greater + 1 >= less : greater >= less;
+    }
+
+    private bool SatisfiesBounds(float value)
+    {
+        return (_greaterThan == null || value > _greaterThan)
+            && (_lessThan == null || value < _lessThan);
+    }
+
+    private RangeParameterConstraint Validate(DnfConstraint other)
+    {
+        if (other is not RangeParameterConstraint constraint || !Equals(Key, constraint.Key))
+            throw new InvalidOperationException("Cannot combine constraints from different parameters.");
+        return constraint;
+    }
+
+    private float? Normalize(float? value) => value == null ? null : _isInt ? (int)value.Value : value;
+
+    private AnimatorConditionRule WithCondition(AnimatorConditionMode mode, float threshold)
+    {
+        return _template with
+        {
+            Condition = _template.Condition with { mode = mode, threshold = threshold }
+        };
+    }
+
+    private static float? Max(float? left, float? right)
+    {
+        if (left == null) return right;
+        if (right == null) return left;
+        return Math.Max(left.Value, right.Value);
+    }
+
+    private static float? Min(float? left, float? right)
+    {
+        if (left == null) return right;
+        if (right == null) return left;
+        return Math.Min(left.Value, right.Value);
+    }
+
+    private static int CompareValues(IEnumerable<float> left, IEnumerable<float> right)
+    {
+        return string.CompareOrdinal(
+            string.Join(",", left.OrderBy(value => value)),
+            string.Join(",", right.OrderBy(value => value)));
+    }
+}
+
+internal sealed class FiniteParameterConstraint : DnfConstraint
+{
+    private readonly AnimatorConditionRule _template;
+    private readonly int _minValue;
+    private readonly int _valueCount;
+    private readonly ulong[] _allowedValues;
+
+    public override object Key => _template.ConstraintKey;
+    public override bool IsEmpty => _allowedValues.All(word => word == 0);
+    public override bool IsUniversal
+    {
+        get
+        {
+            var fullWords = _valueCount / 64;
+            for (var index = 0; index < fullWords; index++)
+            {
+                if (_allowedValues[index] != ulong.MaxValue) return false;
+            }
+
+            var remainder = _valueCount % 64;
+            return remainder == 0 || _allowedValues[fullWords] == (1UL << remainder) - 1;
+        }
+    }
+
+    private FiniteParameterConstraint(
+        AnimatorConditionRule template,
+        int minValue,
+        int valueCount,
+        ulong[] allowedValues)
+    {
+        _template = template;
+        _minValue = minValue;
+        _valueCount = valueCount;
+        _allowedValues = allowedValues;
+    }
+
+    public static FiniteParameterConstraint FromBoolRule(AnimatorConditionRule rule)
+    {
+        var bits = rule.Condition.mode switch
+        {
+            AnimatorConditionMode.If => 0b10UL,
+            AnimatorConditionMode.IfNot => 0b01UL,
+            _ => throw new InvalidOperationException($"Invalid bool condition mode: {rule.Condition.mode}")
+        };
+        return new FiniteParameterConstraint(rule, 0, 2, new[] { bits });
+    }
+
+    public static FiniteParameterConstraint FromIntRule(AnimatorConditionRule rule, IntParameterDomain domain)
+    {
+        var valueCount = domain.MaxValue - domain.MinValue + 1;
+        var allowedValues = new ulong[(valueCount + 63) / 64];
+        var threshold = (int)rule.Condition.threshold;
+        for (var value = domain.MinValue; value <= domain.MaxValue; value++)
+        {
+            var allowed = rule.Condition.mode switch
+            {
+                AnimatorConditionMode.Equals => value == threshold,
+                AnimatorConditionMode.NotEqual => value != threshold,
+                AnimatorConditionMode.Greater => value > threshold,
+                AnimatorConditionMode.Less => value < threshold,
+                _ => throw new InvalidOperationException($"Invalid int condition mode: {rule.Condition.mode}")
+            };
+            if (allowed) Set(allowedValues, value - domain.MinValue);
+        }
+
+        return new FiniteParameterConstraint(rule, domain.MinValue, valueCount, allowedValues);
+    }
+
+    public override DnfConstraint Intersect(DnfConstraint other)
+    {
+        var right = Validate(other);
+        var values = new ulong[_allowedValues.Length];
+        for (var index = 0; index < values.Length; index++)
+        {
+            values[index] = _allowedValues[index] & right._allowedValues[index];
+        }
+        return new FiniteParameterConstraint(_template, _minValue, _valueCount, values);
+    }
+
+    public override bool TryUnion(
+        DnfConstraint other,
+        [NotNullWhen(true)] out DnfConstraint? union)
+    {
+        var right = Validate(other);
+        var values = new ulong[_allowedValues.Length];
+        for (var index = 0; index < values.Length; index++)
+        {
+            values[index] = _allowedValues[index] | right._allowedValues[index];
+        }
+        union = new FiniteParameterConstraint(_template, _minValue, _valueCount, values);
+        return true;
+    }
+
+    public override DnfCondition Complement()
+    {
+        var values = new ulong[_allowedValues.Length];
+        for (var index = 0; index < values.Length; index++) values[index] = ~_allowedValues[index];
+        MaskUnusedBits(values);
+        return DnfCondition.FromConstraint(new FiniteParameterConstraint(
+            _template,
+            _minValue,
+            _valueCount,
+            values));
+    }
+
+    public override bool Contains(DnfConstraint other)
+    {
+        var right = Validate(other);
+        for (var index = 0; index < _allowedValues.Length; index++)
+        {
+            if ((_allowedValues[index] | right._allowedValues[index]) != _allowedValues[index]) return false;
+        }
+        return true;
+    }
+
+    public override bool SetEquals(DnfConstraint other)
+    {
+        return other is FiniteParameterConstraint constraint &&
+               Equals(Key, constraint.Key) &&
+               _minValue == constraint._minValue &&
+               _valueCount == constraint._valueCount &&
+               _allowedValues.SequenceEqual(constraint._allowedValues);
+    }
+
+    public override int CompareTo(DnfConstraint other)
+    {
+        if (other is not FiniteParameterConstraint constraint) return StringComparer.Ordinal.Compare(GetType().Name, other.GetType().Name);
+        for (var index = 0; index < Math.Min(_allowedValues.Length, constraint._allowedValues.Length); index++)
+        {
+            var comparison = _allowedValues[index].CompareTo(constraint._allowedValues[index]);
+            if (comparison != 0) return comparison;
+        }
+        return _allowedValues.Length.CompareTo(constraint._allowedValues.Length);
+    }
+
+    public override int GetSemanticHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Key);
+        foreach (var value in _allowedValues) hash.Add(value);
+        return hash.ToHashCode();
+    }
+
+    public override IEnumerable<DnfRule> ToRules()
+    {
+        if (IsEmpty || IsUniversal) yield break;
+
+        var allowed = Enumerable.Range(_minValue, _valueCount)
+            .Where(value => IsSet(value - _minValue))
+            .ToArray();
+        if (_template.ParameterType == AnimatorControllerParameterType.Bool)
+        {
+            yield return WithCondition(
+                allowed[0] == 0 ? AnimatorConditionMode.IfNot : AnimatorConditionMode.If,
+                0);
+            yield break;
+        }
+
+        if (allowed.Length == 1)
+        {
+            yield return WithCondition(AnimatorConditionMode.Equals, allowed[0]);
+            yield break;
+        }
+
+        if (allowed[0] > _minValue)
+            yield return WithCondition(AnimatorConditionMode.Greater, allowed[0] - 1);
+        if (allowed[^1] < _minValue + _valueCount - 1)
+            yield return WithCondition(AnimatorConditionMode.Less, allowed[^1] + 1);
+        for (var value = allowed[0] + 1; value < allowed[^1]; value++)
+        {
+            if (!IsSet(value - _minValue))
+                yield return WithCondition(AnimatorConditionMode.NotEqual, value);
+        }
+    }
+
+    private FiniteParameterConstraint Validate(DnfConstraint other)
+    {
+        if (other is not FiniteParameterConstraint constraint ||
+            constraint._template.ParameterName != _template.ParameterName ||
+            constraint._template.ParameterType != _template.ParameterType ||
+            constraint._minValue != _minValue ||
+            constraint._valueCount != _valueCount)
+        {
+            throw new InvalidOperationException("Cannot combine constraints from different parameter domains.");
+        }
+        return constraint;
+    }
+
+    private AnimatorConditionRule WithCondition(AnimatorConditionMode mode, int threshold)
+    {
+        return _template with
+        {
+            Condition = _template.Condition with
+            {
+                mode = mode,
+                threshold = threshold
+            }
+        };
+    }
+
+    private bool IsSet(int index)
+    {
+        return (_allowedValues[index / 64] & (1UL << (index % 64))) != 0;
+    }
+
+    private void MaskUnusedBits(ulong[] values)
+    {
+        var remainder = _valueCount % 64;
+        if (remainder != 0) values[^1] &= (1UL << remainder) - 1;
+    }
+
+    private static void Set(ulong[] values, int index)
+    {
+        values[index / 64] |= 1UL << (index % 64);
     }
 }
 

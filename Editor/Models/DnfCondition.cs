@@ -1,7 +1,7 @@
 namespace Aoyon.FaceTune;
 
 /// <summary>
-/// OR of AND。条件の中身はDnfRuleが持つ。
+/// OR of AND。条件の中身はDnfConstraintが持つ。
 /// </summary>
 internal sealed class DnfCondition
 {
@@ -13,107 +13,83 @@ internal sealed class DnfCondition
     public static DnfCondition Always { get; } = new(new[] { DnfCase.Always });
     public static DnfCondition Never { get; } = new(Array.Empty<DnfCase>());
 
-    public DnfCondition(IReadOnlyList<DnfCase> cases)
+    internal DnfCondition(IReadOnlyList<DnfCase> cases)
     {
         Cases = cases;
     }
 
-    public static DnfCondition Single(DnfRule rule)
+    public static DnfCondition Single(DnfRule rule, ParameterDomainRegistry parameterDomains)
     {
-        return Single(new DnfCase(new[] { rule }));
+        return FromConstraint(rule.CreateConstraint(parameterDomains));
     }
 
-    public static DnfCondition Single(DnfCase conditionCase)
+    internal static DnfCondition FromConstraint(DnfConstraint constraint)
+    {
+        return constraint.IsEmpty
+            ? Never
+            : new DnfCondition(new[] { DnfCase.FromConstraint(constraint) });
+    }
+
+    internal static DnfCondition FromCase(DnfCase conditionCase)
     {
         return new DnfCondition(new[] { conditionCase });
     }
 
-    public static DnfCondition All(
-        IEnumerable<DnfCondition> conditions,
-        ParameterDomainRegistry? parameterDomains = null)
+    public static DnfCondition All(IEnumerable<DnfCondition> conditions)
     {
-        var combined = conditions.Aggregate(
-            Always,
-            (current, condition) => current.And(condition, parameterDomains));
-        return parameterDomains == null ? combined : combined.Simplify(parameterDomains);
+        return conditions.Aggregate(Always, (current, condition) => current.And(condition));
     }
 
-    public static DnfCondition Any(
-        IEnumerable<DnfCondition> conditions,
-        ParameterDomainRegistry? parameterDomains = null)
+    public static DnfCondition Any(IEnumerable<DnfCondition> conditions)
     {
-        var cases = conditions
-            .SelectMany(condition => condition.Cases)
-            .ToHashSet();
-        if (cases.Count == 0) return Never;
-
-        var combined = new DnfCondition(cases.ToArray());
-        return parameterDomains == null ? combined : combined.Simplify(parameterDomains);
+        var cases = conditions.SelectMany(condition => condition.Cases).ToList();
+        return cases.Count == 0 ? Never : new DnfCondition(cases).Simplify();
     }
 
-    public DnfCondition And(DnfCondition other, ParameterDomainRegistry? parameterDomains = null)
+    public DnfCondition And(DnfCondition other)
     {
-        if (Cases.Count == 0 || other.Cases.Count == 0) return Never;
+        if (IsNever || other.IsNever) return Never;
 
-        var cases = new HashSet<DnfCase>();
+        var cases = new List<DnfCase>();
         foreach (var left in Cases)
         {
             foreach (var right in other.Cases)
             {
-                if (DnfCase.TryAnd(left, right, out var combined, parameterDomains))
-                {
-                    cases.UnionWith(combined.Cases);
-                }
+                var combined = left.Intersect(right);
+                if (combined != null) cases.Add(combined);
             }
         }
 
-        return cases.Count == 0 ? Never : new DnfCondition(cases.ToArray());
+        return cases.Count == 0 ? Never : new DnfCondition(cases).Simplify();
     }
 
-    public DnfCondition Or(
-        DnfCondition other,
-        ParameterDomainRegistry? parameterDomains = null)
+    public DnfCondition Or(DnfCondition other)
     {
-        if (Cases.Count == 0)
-            return parameterDomains == null ? other : other.Simplify(parameterDomains);
-        if (other.Cases.Count == 0)
-            return parameterDomains == null ? this : Simplify(parameterDomains);
-
-        var cases = new HashSet<DnfCase>(Cases);
-        cases.UnionWith(other.Cases);
-        var combined = new DnfCondition(cases.ToArray());
-        return parameterDomains == null ? combined : combined.Simplify(parameterDomains);
+        if (IsNever) return other;
+        if (other.IsNever) return this;
+        return new DnfCondition(Cases.Concat(other.Cases).ToArray()).Simplify();
     }
 
-    public DnfCondition Complement(ParameterDomainRegistry? parameterDomains = null)
+    public DnfCondition Complement()
     {
-        var result = Always;
-        foreach (var conditionCase in Cases)
-        {
-            result = result.And(conditionCase.Complement(), parameterDomains);
-        }
-        return result;
+        return Cases.Aggregate(Always, (result, conditionCase) => result.And(conditionCase.Complement()));
     }
 
-    public DnfCondition Except(DnfCondition other, ParameterDomainRegistry parameterDomains)
+    public DnfCondition Except(DnfCondition other)
     {
         var result = this;
         foreach (var otherCase in other.Cases)
         {
-            var otherCondition = Single(otherCase);
-            if (result.And(otherCondition, parameterDomains).IsNever) continue;
-
-            result = result
-                .And(otherCase.Complement(), parameterDomains)
-                .Simplify(parameterDomains);
+            if (!result.Cases.Any(conditionCase => conditionCase.Overlaps(otherCase))) continue;
+            result = result.And(otherCase.Complement());
             if (result.IsNever) break;
         }
         return result;
     }
 
-    private DnfCondition Simplify(ParameterDomainRegistry parameterDomains)
+    private DnfCondition Simplify()
     {
-        var cases = Cases.ToList();
+        var cases = Cases.Distinct(DnfCase.EqualityComparer).ToList();
         while (true)
         {
             RemoveSubsumedCases(cases);
@@ -121,60 +97,52 @@ internal sealed class DnfCondition
 
             var merged = false;
             var keys = cases
-                .SelectMany(conditionCase => conditionCase.Rules)
-                .Select(rule =>
-                {
-                    rule.GetSimplifier(out var key, out var simplifier);
-                    return (Key: key, Simplifier: simplifier);
-                })
-                .GroupBy(pair => pair.Key)
-                .Select(group => group.First())
+                .SelectMany(conditionCase => conditionCase.Constraints)
+                .Select(constraint => constraint.Key)
+                .Distinct()
                 .ToArray();
 
-            foreach (var (key, simplifier) in keys)
+            foreach (var key in keys)
             {
                 var groups = new List<DisjunctionGroup>();
                 for (var caseIndex = 0; caseIndex < cases.Count; caseIndex++)
                 {
-                    var groupedRules = cases[caseIndex].Rules
-                        .GroupBy(rule =>
-                        {
-                            rule.GetSimplifier(out var ruleKey, out _);
-                            return ruleKey;
-                        })
-                        .ToDictionary(group => group.Key, group => (IReadOnlyList<DnfRule>)group.ToArray());
-                    if (!groupedRules.TryGetValue(key, out var rulesForKey)) continue;
-
-                    var commonRules = groupedRules
-                        .Where(pair => !Equals(pair.Key, key))
-                        .SelectMany(pair => pair.Value)
-                        .ToHashSet();
-                    var group = groups.FirstOrDefault(candidate => candidate.CommonRules.SetEquals(commonRules));
+                    if (!cases[caseIndex].TryGetConstraint(key, out var constraint)) continue;
+                    var commonConstraints = cases[caseIndex].Constraints
+                        .Where(candidate => !Equals(candidate.Key, key))
+                        .ToArray();
+                    var group = groups.FirstOrDefault(candidate =>
+                        DnfCase.ConstraintSequencesEqual(candidate.CommonConstraints, commonConstraints));
                     if (group == null)
                     {
-                        group = new DisjunctionGroup(commonRules);
+                        group = new DisjunctionGroup(commonConstraints);
                         groups.Add(group);
                     }
-
                     group.CaseIndices.Add(caseIndex);
-                    group.Alternatives.Add(rulesForKey);
+                    group.Alternatives.Add(constraint);
                 }
 
                 foreach (var group in groups)
                 {
-                    if (group.Alternatives.Count <= 1 ||
-                        !simplifier.TrySimplifyDisjunction(group.Alternatives, parameterDomains, out var simplified))
+                    if (group.Alternatives.Count <= 1) continue;
+                    var union = group.Alternatives[0];
+                    var supported = true;
+                    foreach (var alternative in group.Alternatives.Skip(1))
                     {
-                        continue;
+                        if (!union.TryUnion(alternative, out var mergedUnion))
+                        {
+                            supported = false;
+                            break;
+                        }
+                        union = mergedUnion;
                     }
+                    if (!supported || !union.IsUniversal) continue;
 
                     for (var index = group.CaseIndices.Count - 1; index >= 0; index--)
                     {
                         cases.RemoveAt(group.CaseIndices[index]);
                     }
-
-                    var commonCondition = Single(new DnfCase(group.CommonRules.ToArray()));
-                    cases.AddRange(commonCondition.And(simplified, parameterDomains).Cases);
+                    cases.Add(new DnfCase(group.CommonConstraints));
                     merged = true;
                     break;
                 }
@@ -182,7 +150,7 @@ internal sealed class DnfCondition
                 if (merged) break;
             }
 
-            if (!merged) return cases.Count == 0 ? Never : new DnfCondition(cases.ToArray());
+            if (!merged) return cases.Count == 0 ? Never : new DnfCondition(SortCases(cases));
         }
     }
 
@@ -190,15 +158,13 @@ internal sealed class DnfCondition
     {
         for (var leftIndex = 0; leftIndex < cases.Count; leftIndex++)
         {
-            var leftRules = cases[leftIndex].Rules.ToHashSet();
             for (var rightIndex = cases.Count - 1; rightIndex > leftIndex; rightIndex--)
             {
-                var rightRules = cases[rightIndex].Rules.ToHashSet();
-                if (leftRules.IsSubsetOf(rightRules))
+                if (cases[leftIndex].Contains(cases[rightIndex]))
                 {
                     cases.RemoveAt(rightIndex);
                 }
-                else if (rightRules.IsSubsetOf(leftRules))
+                else if (cases[rightIndex].Contains(cases[leftIndex]))
                 {
                     cases.RemoveAt(leftIndex);
                     leftIndex--;
@@ -208,193 +174,182 @@ internal sealed class DnfCondition
         }
     }
 
+    private static DnfCase[] SortCases(IEnumerable<DnfCase> cases)
+    {
+        return cases.OrderBy(conditionCase => conditionCase, DnfCase.OrderComparer).ToArray();
+    }
+
     private sealed class DisjunctionGroup
     {
-        public HashSet<DnfRule> CommonRules { get; }
+        public DnfConstraint[] CommonConstraints { get; }
         public List<int> CaseIndices { get; } = new();
-        public List<IReadOnlyList<DnfRule>> Alternatives { get; } = new();
+        public List<DnfConstraint> Alternatives { get; } = new();
 
-        public DisjunctionGroup(HashSet<DnfRule> commonRules)
+        public DisjunctionGroup(DnfConstraint[] commonConstraints)
         {
-            CommonRules = commonRules;
+            CommonConstraints = commonConstraints;
         }
     }
 }
 
-internal sealed class DnfCase : IEquatable<DnfCase>
+internal sealed class DnfCase
 {
-    public IReadOnlyList<DnfRule> Rules { get; }
+    private static readonly IComparer<object> KeyComparer = Comparer<object>.Create(CompareKeys);
 
-    public bool IsAlways => Rules.Count == 0;
+    public IReadOnlyList<DnfConstraint> Constraints { get; }
+    public IEnumerable<DnfRule> Rules => Constraints.SelectMany(constraint => constraint.ToRules());
+    public bool IsAlways => Constraints.Count == 0;
 
-    public static DnfCase Always { get; } = new(Array.Empty<DnfRule>());
+    public static DnfCase Always { get; } = new(Array.Empty<DnfConstraint>());
+    public static IEqualityComparer<DnfCase> EqualityComparer { get; } = new CaseEqualityComparer();
+    public static IComparer<DnfCase> OrderComparer { get; } = new CaseOrderComparer();
 
-    public DnfCase(IReadOnlyList<DnfRule> rules)
+    internal DnfCase(IEnumerable<DnfConstraint> constraints)
     {
-        Rules = rules;
+        Constraints = constraints.OrderBy(constraint => constraint.Key, KeyComparer).ToArray();
     }
 
-    public DnfCase And(DnfCase other)
+    internal static DnfCase FromConstraint(DnfConstraint constraint)
     {
-        if (!TryAnd(this, other, out var combined) || combined.Cases.Count != 1)
-        {
-            throw new InvalidOperationException("DNF cases cannot be represented as a single DnfCase.");
-        }
-
-        return combined.Cases[0];
+        return constraint.IsUniversal ? Always : new DnfCase(new[] { constraint });
     }
 
-    public static bool TryAnd(
-        DnfCase left,
-        DnfCase right,
-        [NotNullWhen(true)] out DnfCondition? combined,
-        ParameterDomainRegistry? parameterDomains = null)
+    public DnfCase? Intersect(DnfCase other)
     {
-        if (left.IsAlways)
+        var constraints = new List<DnfConstraint>(Constraints.Count + other.Constraints.Count);
+        var leftIndex = 0;
+        var rightIndex = 0;
+        while (leftIndex < Constraints.Count || rightIndex < other.Constraints.Count)
         {
-            combined = DnfCondition.Single(right);
-            return true;
-        }
-        if (right.IsAlways)
-        {
-            combined = DnfCondition.Single(left);
-            return true;
-        }
-
-        var groups = new Dictionary<object, RuleGroup>();
-
-        AddRules(left.Rules);
-        AddRules(right.Rules);
-
-        var cases = new[] { Always };
-        foreach (var group in groups.Values)
-        {
-            cases = AndCasesWithoutSimplification(cases, group.Simplifier.Simplify(group.Rules, parameterDomains).Cases);
-            if (cases.Length == 0)
+            if (leftIndex >= Constraints.Count)
             {
-                combined = DnfCondition.Never;
+                constraints.Add(other.Constraints[rightIndex++]);
+                continue;
+            }
+            if (rightIndex >= other.Constraints.Count)
+            {
+                constraints.Add(Constraints[leftIndex++]);
+                continue;
+            }
+
+            var left = Constraints[leftIndex];
+            var right = other.Constraints[rightIndex];
+            var comparison = CompareKeys(left.Key, right.Key);
+            if (comparison < 0)
+            {
+                constraints.Add(left);
+                leftIndex++;
+            }
+            else if (comparison > 0)
+            {
+                constraints.Add(right);
+                rightIndex++;
+            }
+            else
+            {
+                var intersection = left.Intersect(right);
+                if (intersection.IsEmpty) return null;
+                if (!intersection.IsUniversal) constraints.Add(intersection);
+                leftIndex++;
+                rightIndex++;
+            }
+        }
+        return new DnfCase(constraints);
+    }
+
+    public bool Overlaps(DnfCase other) => Intersect(other) != null;
+
+    public bool Contains(DnfCase other)
+    {
+        foreach (var constraint in Constraints)
+        {
+            if (!other.TryGetConstraint(constraint.Key, out var otherConstraint) ||
+                !constraint.Contains(otherConstraint))
+            {
                 return false;
             }
         }
-
-        combined = cases.Length == 0 ? DnfCondition.Never : new DnfCondition(cases.ToHashSet().ToArray());
-        return !combined.IsNever;
-
-        void AddRules(IReadOnlyList<DnfRule> source)
-        {
-            foreach (var rule in source)
-            {
-                rule.GetSimplifier(out var key, out var simplifier);
-
-                if (!groups.TryGetValue(key, out var group))
-                {
-                    group = new RuleGroup(simplifier);
-                    groups.Add(key, group);
-                }
-
-                group.Rules.Add(rule);
-            }
-        }
-    }
-
-    private static DnfCase[] AndCasesWithoutSimplification(IReadOnlyList<DnfCase> left, IReadOnlyList<DnfCase> right)
-    {
-        if (left.Count == 0 || right.Count == 0) return Array.Empty<DnfCase>();
-
-        var result = new DnfCase[left.Count * right.Count];
-        var index = 0;
-        foreach (var leftCase in left)
-        {
-            foreach (var rightCase in right)
-            {
-                result[index++] = new DnfCase(leftCase.Rules.Concat(rightCase.Rules).ToArray());
-            }
-        }
-
-        return result;
+        return true;
     }
 
     public DnfCondition Complement()
     {
-        return Rules.Count == 0
+        return IsAlways
             ? DnfCondition.Never
-            : new DnfCondition(Rules.Select(rule => new DnfCase(new[] { rule.Negate() })).ToArray());
+            : DnfCondition.Any(Constraints.Select(constraint => constraint.Complement()));
     }
 
-    public bool Equals(DnfCase? other)
+    public bool TryGetConstraint(object key, [NotNullWhen(true)] out DnfConstraint? constraint)
     {
-        return other != null && Rules.SequenceEqual(other.Rules);
+        constraint = Constraints.FirstOrDefault(candidate => Equals(candidate.Key, key));
+        return constraint != null;
     }
 
-    public override bool Equals(object? obj)
+    internal static bool ConstraintSequencesEqual(
+        IReadOnlyList<DnfConstraint> left,
+        IReadOnlyList<DnfConstraint> right)
     {
-        return obj is DnfCase other && Equals(other);
+        return left.Count == right.Count && left.Zip(right, (a, b) => a.SetEquals(b)).All(equal => equal);
     }
 
-    public override int GetHashCode()
+    private static int CompareKeys(object? left, object? right)
     {
-        var hash = new HashCode();
-        foreach (var rule in Rules)
+        if (ReferenceEquals(left, right)) return 0;
+        if (left is IComparable comparable) return comparable.CompareTo(right);
+        return StringComparer.Ordinal.Compare(left?.ToString(), right?.ToString());
+    }
+
+    private sealed class CaseEqualityComparer : IEqualityComparer<DnfCase>
+    {
+        public bool Equals(DnfCase? left, DnfCase? right)
         {
-            hash.Add(rule);
+            return left != null && right != null && ConstraintSequencesEqual(left.Constraints, right.Constraints);
         }
-        return hash.ToHashCode();
+
+        public int GetHashCode(DnfCase conditionCase)
+        {
+            var hash = new HashCode();
+            foreach (var constraint in conditionCase.Constraints) hash.Add(constraint.GetSemanticHashCode());
+            return hash.ToHashCode();
+        }
+    }
+
+    private sealed class CaseOrderComparer : IComparer<DnfCase>
+    {
+        public int Compare(DnfCase? left, DnfCase? right)
+        {
+            if (left == null || right == null) return left == right ? 0 : left == null ? -1 : 1;
+            for (var index = 0; index < Math.Min(left.Constraints.Count, right.Constraints.Count); index++)
+            {
+                var keyComparison = CompareKeys(left.Constraints[index].Key, right.Constraints[index].Key);
+                if (keyComparison != 0) return keyComparison;
+                var constraintComparison = left.Constraints[index].CompareTo(right.Constraints[index]);
+                if (constraintComparison != 0) return constraintComparison;
+            }
+            return left.Constraints.Count.CompareTo(right.Constraints.Count);
+        }
     }
 }
 
-internal sealed class RuleGroup
+internal abstract class DnfConstraint
 {
-    public DnfRuleGroupSimplifier Simplifier { get; }
-    public List<DnfRule> Rules { get; } = new();
+    public abstract object Key { get; }
+    public abstract bool IsEmpty { get; }
+    public abstract bool IsUniversal { get; }
 
-    public RuleGroup(DnfRuleGroupSimplifier simplifier)
-    {
-        Simplifier = simplifier;
-    }
+    public abstract DnfConstraint Intersect(DnfConstraint other);
+    public abstract bool TryUnion(DnfConstraint other, [NotNullWhen(true)] out DnfConstraint? union);
+    public abstract DnfCondition Complement();
+    public abstract bool Contains(DnfConstraint other);
+    public abstract bool SetEquals(DnfConstraint other);
+    public abstract int CompareTo(DnfConstraint other);
+    public abstract int GetSemanticHashCode();
+    public abstract IEnumerable<DnfRule> ToRules();
 }
 
-internal abstract class DnfRuleGroupSimplifier
-{
-    public abstract DnfCondition Simplify(
-        IReadOnlyList<DnfRule> rules,
-        ParameterDomainRegistry? parameterDomains);
-
-    public virtual bool TrySimplifyDisjunction(
-        IReadOnlyList<IReadOnlyList<DnfRule>> alternatives,
-        ParameterDomainRegistry? parameterDomains,
-        [NotNullWhen(true)] out DnfCondition? simplified)
-    {
-        simplified = null;
-        return false;
-    }
-}
-
-internal sealed class PassthroughDnfRuleSimplifier : DnfRuleGroupSimplifier
-{
-    public static PassthroughDnfRuleSimplifier Instance { get; } = new();
-
-    private PassthroughDnfRuleSimplifier()
-    {
-    }
-
-    public override DnfCondition Simplify(
-        IReadOnlyList<DnfRule> rules,
-        ParameterDomainRegistry? parameterDomains)
-    {
-        return DnfCondition.Single(new DnfCase(rules.Distinct().ToArray()));
-    }
-}
-
-/// <summary>
-/// DNFの1条件。
-/// </summary>
 internal abstract record class DnfRule
 {
-    public virtual void GetSimplifier(out object key, out DnfRuleGroupSimplifier simplifier)
-    {
-        key = this;
-        simplifier = PassthroughDnfRuleSimplifier.Instance;
-    }
-
+    public abstract object ConstraintKey { get; }
+    public abstract DnfConstraint CreateConstraint(ParameterDomainRegistry parameterDomains);
     public abstract DnfRule Negate();
 }

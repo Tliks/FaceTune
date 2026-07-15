@@ -184,7 +184,7 @@ internal static class AnimatorHelper
                     mode = AnimatorConditionMode.Greater,
                     threshold = DiscreteFloatIndexToValue(index - 1)
                 },
-                AnimatorControllerParameterType.Float)));
+                AnimatorControllerParameterType.Float), ParameterDomainRegistry.Empty));
         }
 
         conditions.Add(DnfCondition.Single(new AnimatorConditionRule(
@@ -194,7 +194,7 @@ internal static class AnimatorHelper
                 mode = AnimatorConditionMode.Less,
                 threshold = DiscreteFloatIndexToValue(index + 1)
             },
-            AnimatorControllerParameterType.Float)));
+            AnimatorControllerParameterType.Float), ParameterDomainRegistry.Empty));
         return DnfCondition.All(conditions);
     }
 

@@ -15,12 +15,17 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     protected override void Execute(FaceTuneContext context)
     {
-        ProcessPresetComponents(context.AvatarContext.Root);
-        ProcessDirectMenuSettings(context.AvatarContext.Root);
-        IgnoreEmptyCondition(context.AvatarContext.Root);
-        AssignMenuParameters(context.AvatarContext.Root, context.RequireSettings().ParameterDomains);
-        ResolveMenuConditions(context.AvatarContext.Root);
-        FilterBlendShapeOutputs(context.AvatarContext.BodyPath, context.AvatarContext.Root, context.RequireSettings());
+        var root = context.AvatarContext.Root;
+        ProcessPresetComponents(root);
+        ProcessDirectMenuSettings(root);
+        IgnoreEmptyCondition(root);
+
+        var settings = context.RequireSettings();
+        settings = settings with { ParameterDomains = AssignMenuParameters(root, settings.ParameterDomains) };
+        context.SetSettings(settings);
+
+        ResolveMenuConditions(root);
+        FilterBlendShapeOutputs(context.AvatarContext.BodyPath, root, settings);
     }
 
     // Preset -> Menu + Conditionに変換
@@ -134,7 +139,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     }
 
     // パラメータ名を確定、排他グループはValueも割り振り
-    private static void AssignMenuParameters(GameObject root, ParameterDomainRegistry parameterDomains)
+    private static ParameterDomainRegistry AssignMenuParameters(GameObject root, ParameterDomainRegistry parameterDomains)
     {
         var exclusiveGroupParameterNames = new Dictionary<string, string>();
         var exclusiveGroupIndices = new Dictionary<string, int>();
@@ -160,8 +165,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         foreach (var (groupName, maxValue) in exclusiveGroupIndices)
         {
             var parameterName = exclusiveGroupParameterNames[groupName];
-            parameterDomains.SetIntDomainOverride(parameterName, new IntParameterDomain(0, maxValue));
+            parameterDomains = parameterDomains.WithIntDomainOverride(
+                parameterName,
+                new IntParameterDomain(0, maxValue));
         }
+
+        return parameterDomains;
     }
 
     private static string CreateUniqueParameterName(string baseName, string suffix)

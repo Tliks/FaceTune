@@ -210,7 +210,8 @@ internal static class VRChatAnimatorBuilder
     private static DnfCondition ParameterBool(string parameterName, bool value)
     {
         return DnfCondition.Single(
-            AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)));
+            AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)),
+            ParameterDomainRegistry.Empty);
     }
 
     private sealed class VRChatAnimatorPlatformServices : IAnimatorPlatformServices

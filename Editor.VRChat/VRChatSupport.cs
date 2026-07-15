@@ -80,44 +80,49 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
 
     public ParameterDomainRegistry CreateBuiltInParameterDomains()
     {
-        var domains = new ParameterDomainRegistry();
-        domains.SetDefaultIntDomain(new IntParameterDomain(0, 255));
-        domains.SetIntDomainOverride(PreviewModeParameter, new IntParameterDomain(0, 1));
-        domains.SetIntDomainOverride(VisemeParameter, new IntParameterDomain(0, 14));
-        domains.SetIntDomainOverride(GestureLeftParameter, new IntParameterDomain(0, 7));
-        domains.SetIntDomainOverride(GestureRightParameter, new IntParameterDomain(0, 7));
-        domains.SetIntDomainOverride(TrackingTypeParameter, new IntParameterDomain(0, 6));
-        domains.SetIntDomainOverride(VRModeParameter, new IntParameterDomain(0, 1));
-        domains.SetIntDomainOverride(AvatarVersionParameter, new IntParameterDomain(0, 3));
-        domains.SetIntDomainOverride(VrcEmoteParameter, new IntParameterDomain(1, 16));
-        return domains;
+        return ParameterDomainRegistry.Empty
+            .WithDefaultIntDomain(new IntParameterDomain(0, 255))
+            .WithIntDomainOverride(PreviewModeParameter, new IntParameterDomain(0, 1))
+            .WithIntDomainOverride(VisemeParameter, new IntParameterDomain(0, 14))
+            .WithIntDomainOverride(GestureLeftParameter, new IntParameterDomain(0, 7))
+            .WithIntDomainOverride(GestureRightParameter, new IntParameterDomain(0, 7))
+            .WithIntDomainOverride(TrackingTypeParameter, new IntParameterDomain(0, 6))
+            .WithIntDomainOverride(VRModeParameter, new IntParameterDomain(0, 1))
+            .WithIntDomainOverride(AvatarVersionParameter, new IntParameterDomain(0, 3))
+            .WithIntDomainOverride(VrcEmoteParameter, new IntParameterDomain(1, 16));
     }
 
-    public DnfCondition ResolveHandGestureCondition(HandGestureCondition condition)
+    public DnfCondition ResolveHandGestureCondition(
+        HandGestureCondition condition,
+        ParameterDomainRegistry parameterDomains)
     {
         var gesture = condition.HandGesture;
         return condition.Match switch
         {
-            HandGestureMatch.LeftHand => HandRule(GestureLeftParameter, true, gesture),
-            HandGestureMatch.RightHand => HandRule(GestureRightParameter, true, gesture),
-            HandGestureMatch.BothHands => HandRule(GestureLeftParameter, true, gesture)
-                .And(HandRule(GestureRightParameter, true, gesture)),
-            HandGestureMatch.AtLeastOneHand => HandRule(GestureLeftParameter, true, gesture)
-                .Or(HandRule(GestureRightParameter, true, gesture)),
-            HandGestureMatch.ExactlyOneHand => HandRule(GestureLeftParameter, true, gesture)
-                .And(HandRule(GestureRightParameter, false, gesture))
-                .Or(HandRule(GestureLeftParameter, false, gesture)
-                    .And(HandRule(GestureRightParameter, true, gesture))),
-            HandGestureMatch.NeitherHand => HandRule(GestureLeftParameter, false, gesture)
-                .And(HandRule(GestureRightParameter, false, gesture)),
+            HandGestureMatch.LeftHand => HandRule(GestureLeftParameter, true, gesture, parameterDomains),
+            HandGestureMatch.RightHand => HandRule(GestureRightParameter, true, gesture, parameterDomains),
+            HandGestureMatch.BothHands => HandRule(GestureLeftParameter, true, gesture, parameterDomains)
+                .And(HandRule(GestureRightParameter, true, gesture, parameterDomains)),
+            HandGestureMatch.AtLeastOneHand => HandRule(GestureLeftParameter, true, gesture, parameterDomains)
+                .Or(HandRule(GestureRightParameter, true, gesture, parameterDomains)),
+            HandGestureMatch.ExactlyOneHand => HandRule(GestureLeftParameter, true, gesture, parameterDomains)
+                .And(HandRule(GestureRightParameter, false, gesture, parameterDomains))
+                .Or(HandRule(GestureLeftParameter, false, gesture, parameterDomains)
+                    .And(HandRule(GestureRightParameter, true, gesture, parameterDomains))),
+            HandGestureMatch.NeitherHand => HandRule(GestureLeftParameter, false, gesture, parameterDomains)
+                .And(HandRule(GestureRightParameter, false, gesture, parameterDomains)),
             _ => throw new NotSupportedException(
                 $"Hand gesture match {condition.Match} is not supported by VRChat")
         };
     }
 
-    public DnfCondition ResolveParameterCondition(ParameterCondition condition)
+    public DnfCondition ResolveParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry parameterDomains)
     {
-        return DnfCondition.Single(AnimatorConditionRule.FromParameterCondition(condition));
+        return DnfCondition.Single(
+            AnimatorConditionRule.FromParameterCondition(condition),
+            parameterDomains);
     }
 
     public IEnumerable<string> GetExternallyControlledBlendShapeNames()
@@ -137,7 +142,11 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .FirstOrDefault();
     }
 
-    private static DnfCondition HandRule(string parameterName, bool equal, HandGesture handGesture)
+    private static DnfCondition HandRule(
+        string parameterName,
+        bool equal,
+        HandGesture handGesture,
+        ParameterDomainRegistry parameterDomains)
     {
         return DnfCondition.Single(new AnimatorConditionRule(
             new AnimatorCondition
@@ -146,7 +155,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
                 mode = equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
                 threshold = (int)handGesture
             },
-            AnimatorControllerParameterType.Int));
+            AnimatorControllerParameterType.Int), parameterDomains);
     }
 
     private IEnumerable<string> GetBlinkBlendShapes()

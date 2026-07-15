@@ -30,7 +30,7 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
 
     public ParameterDomainRegistry CreateBuiltInParameterDomains()
     {
-        return new ParameterDomainRegistry();
+        return ParameterDomainRegistry.Empty;
     }
 
     public IEnumerable<string> GetExternallyControlledBlendShapeNames()
@@ -38,12 +38,16 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
         return Array.Empty<string>();;
     }
 
-    public DnfCondition? ResolveHandGestureCondition(HandGestureCondition condition)
+    public DnfCondition? ResolveHandGestureCondition(
+        HandGestureCondition condition,
+        ParameterDomainRegistry parameterDomains)
     {
         return null;
     }
 
-    public DnfCondition? ResolveParameterCondition(ParameterCondition condition)
+    public DnfCondition? ResolveParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry parameterDomains)
     {
         return null;
     }
