@@ -356,6 +356,12 @@ internal sealed class AnimatorInstaller
 
     private IEnumerable<AnimatorCondition> ToAnimatorConditions(DnfCase conditionCase)
     {
+        if (conditionCase.IsAlways)
+        {
+            throw new InvalidOperationException(
+                "Always conditions must be lowered before installing the animator build plan.");
+        }
+
         return conditionCase.Rules
             .Cast<AnimatorConditionRule>()
             .OrderBy(rule => rule.ParameterName, StringComparer.Ordinal)

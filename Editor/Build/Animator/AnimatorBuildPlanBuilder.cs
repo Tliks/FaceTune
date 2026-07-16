@@ -56,6 +56,10 @@ internal sealed class AnimatorBuildPlanBuilder
             trackingControlLayer = BuildTrackingControlLayer(units[^1].Anchor);
         }
 
+        var conditionLowerer = new AnimatorConditionPlanLowerer(_settings.ParameterDomains);
+        units = units.Select(conditionLowerer.Lower).ToArray();
+        trackingControlLayer = conditionLowerer.Lower(trackingControlLayer);
+
         return new AnimatorBuildPlan(
             initialLayer,
             units,
@@ -161,6 +165,109 @@ internal sealed class AnimatorBuildPlanBuilder
 
             hasBoundarySinceLastExpression = _unitBoundaryTransforms.Contains(transform);
         }
+    }
+}
+
+internal sealed class AnimatorConditionPlanLowerer
+{
+    private const string AlwaysParameterName = FaceTuneConstants.ParameterPrefix + "/Internal/Always";
+
+    private readonly DnfCondition _alwaysCondition;
+
+    public AnimatorConditionPlanLowerer(ParameterDomainRegistry parameterDomains)
+    {
+        _alwaysCondition = DnfCondition.Single(
+            AnimatorConditionRule.FromParameterCondition(
+                ParameterCondition.Bool(AlwaysParameterName, true)),
+            parameterDomains);
+    }
+
+    public OutputUnitPlan Lower(OutputUnitPlan unit)
+    {
+        var requiresAlwaysParameter = false;
+        DnfCondition LowerCondition(DnfCondition condition)
+        {
+            if (!condition.IsAlways) return condition;
+            requiresAlwaysParameter = true;
+            return _alwaysCondition;
+        }
+
+        DnfCondition? LowerOptionalCondition(DnfCondition? condition)
+            => condition == null ? null : LowerCondition(condition);
+
+        var layers = unit.ExpressionLayers.Select(layer => layer with
+        {
+            DefaultExitWhen = LowerCondition(layer.DefaultExitWhen),
+            ForceInactiveWhen = LowerOptionalCondition(layer.ForceInactiveWhen),
+            States = layer.States.Select(state => state with
+            {
+                EnterWhen = LowerCondition(state.EnterWhen),
+                ExitWhen = LowerCondition(state.ExitWhen)
+            }).ToArray()
+        }).ToArray();
+
+        var eyeBlink = unit.AdvancedEyeBlink == null
+            ? null
+            : unit.AdvancedEyeBlink with
+            {
+                ForceInactiveWhen = LowerOptionalCondition(unit.AdvancedEyeBlink.ForceInactiveWhen)
+            };
+        var lipSync = unit.AdvancedLipSync == null
+            ? null
+            : unit.AdvancedLipSync with
+            {
+                ForceInactiveWhen = LowerOptionalCondition(unit.AdvancedLipSync.ForceInactiveWhen)
+            };
+
+        return unit with
+        {
+            ExpressionLayers = layers,
+            AdvancedEyeBlink = eyeBlink,
+            AdvancedLipSync = lipSync,
+            Parameters = AddAlwaysParameterIfRequired(unit.Parameters, requiresAlwaysParameter)
+        };
+    }
+
+    public TrackingControlLayerPlan? Lower(TrackingControlLayerPlan? layer)
+    {
+        if (layer == null) return null;
+
+        var requiresAlwaysParameter = false;
+        DnfCondition LowerCondition(DnfCondition condition)
+        {
+            if (!condition.IsAlways) return condition;
+            requiresAlwaysParameter = true;
+            return _alwaysCondition;
+        }
+
+        return layer with
+        {
+            DefaultExitWhen = LowerCondition(layer.DefaultExitWhen),
+            ForceInactiveWhen = layer.ForceInactiveWhen == null
+                ? null
+                : LowerCondition(layer.ForceInactiveWhen),
+            States = layer.States.Select(state => state with
+            {
+                When = LowerCondition(state.When)
+            }).ToArray(),
+            Parameters = AddAlwaysParameterIfRequired(layer.Parameters, requiresAlwaysParameter)
+        };
+    }
+
+    private static IReadOnlyList<PlanParameter> AddAlwaysParameterIfRequired(
+        IReadOnlyList<PlanParameter> parameters,
+        bool required)
+    {
+        if (!required) return parameters;
+        if (parameters.Any(parameter => parameter.Name == AlwaysParameterName))
+        {
+            throw new InvalidOperationException($"Animator parameter name is reserved by FaceTune: {AlwaysParameterName}");
+        }
+
+        return parameters.Append(new PlanParameter(
+            AlwaysParameterName,
+            AnimatorControllerParameterType.Bool,
+            1f)).ToArray();
     }
 }
 

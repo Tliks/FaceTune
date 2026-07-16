@@ -7,7 +7,7 @@ internal sealed class DnfCondition
 {
     public IReadOnlyList<DnfCase> Cases { get; }
 
-    public bool IsAlways => Cases.Count == 1 && Cases[0].IsAlways;
+    public bool IsAlways => Cases.Any(conditionCase => conditionCase.IsAlways);
     public bool IsNever => Cases.Count == 0;
 
     public static DnfCondition Always { get; } = new(new[] { DnfCase.Always });
