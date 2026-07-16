@@ -136,13 +136,15 @@ internal sealed class DnfCondition
                         }
                         union = mergedUnion;
                     }
-                    if (!supported || !union.IsUniversal) continue;
+                    if (!supported) continue;
 
                     for (var index = group.CaseIndices.Count - 1; index >= 0; index--)
                     {
                         cases.RemoveAt(group.CaseIndices[index]);
                     }
-                    cases.Add(new DnfCase(group.CommonConstraints));
+                    cases.Add(union.IsUniversal
+                        ? new DnfCase(group.CommonConstraints)
+                        : new DnfCase(group.CommonConstraints.Append(union)));
                     merged = true;
                     break;
                 }

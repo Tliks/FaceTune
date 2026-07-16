@@ -422,14 +422,28 @@ internal sealed class FiniteParameterConstraint : DnfConstraint
             yield break;
         }
 
+        var boundedRules = new List<DnfRule>();
         if (allowed[0] > _minValue)
-            yield return WithCondition(AnimatorConditionMode.Greater, allowed[0] - 1);
+            boundedRules.Add(WithCondition(AnimatorConditionMode.Greater, allowed[0] - 1));
         if (allowed[^1] < _minValue + _valueCount - 1)
-            yield return WithCondition(AnimatorConditionMode.Less, allowed[^1] + 1);
+            boundedRules.Add(WithCondition(AnimatorConditionMode.Less, allowed[^1] + 1));
         for (var value = allowed[0] + 1; value < allowed[^1]; value++)
         {
             if (!IsSet(value - _minValue))
+                boundedRules.Add(WithCondition(AnimatorConditionMode.NotEqual, value));
+        }
+
+        var excluded = Enumerable.Range(_minValue, _valueCount)
+            .Where(value => !IsSet(value - _minValue))
+            .ToArray();
+        if (excluded.Length <= boundedRules.Count)
+        {
+            foreach (var value in excluded)
                 yield return WithCondition(AnimatorConditionMode.NotEqual, value);
+        }
+        else
+        {
+            foreach (var rule in boundedRules) yield return rule;
         }
     }
 
