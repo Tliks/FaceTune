@@ -1,3 +1,4 @@
+#nullable enable
 using UnityEditor.Animations;
 using Aoyon.FaceTune.Importer;
 using Aoyon.FaceTune.Platforms;
@@ -7,7 +8,7 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(FaceTuneAssistantComponent))]
 internal class FaceTuneAssistantEditor : FaceTuneIMGUIEditorBase<FaceTuneAssistantComponent>
 {
-    private PatternGUI _patternProvider = null!;
+    private PatternGUI? _patternProvider = null;
     // private SuggestionProvider _suggestionProvider = null!;
 
     public override void OnEnable()
@@ -20,12 +21,12 @@ internal class FaceTuneAssistantEditor : FaceTuneIMGUIEditorBase<FaceTuneAssista
     public override void OnDisable()
     {
         base.OnDisable();
-        _patternProvider.Dispose();
+        _patternProvider?.Dispose();
     }
 
     protected override void OnInnerInspectorGUI()
     {
-        _patternProvider.Draw();
+        _patternProvider?.Draw();
         EditorGUILayout.Space();
         EditorGUILayout.HelpBox("FaceTuneAssistant:label:ExpressionDescription".LS(), MessageType.Info);
         // EditorGUILayout.Space();
