@@ -16,7 +16,7 @@ internal sealed class MenuFolderEditor : FaceTuneSectionEditor<MenuFolderCompone
     protected override void DrawSectionContent(Rect position)
     {
         var menuName = serializedObject.FindProperty(nameof(MenuFolderComponent.MenuName));
-        MenuGUI.DrawMenuName(ref position, menuName, Component, "menu.name.label".LG());
+        MenuGUI.DrawMenuName(ref position, menuName, Component, "menuFolder.name.label".LG());
         GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuFolderComponent.Icon)), "menu.icon.label");
         GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuFolderComponent.InstallSettings)), "menu.destination.label");
     }

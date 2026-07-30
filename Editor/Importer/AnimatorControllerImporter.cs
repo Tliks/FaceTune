@@ -27,7 +27,6 @@ internal class AnimatorControllerImporter
 
     public void Import(GameObject parent)
     {
-        LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.importing", _animatorController.name);
         AssetDatabase.StartAssetEditing();
         try
         {
@@ -44,8 +43,6 @@ internal class AnimatorControllerImporter
 
                 expressionCount += expressions.Count;
                 firstLayerObj ??= layerObj;
-
-                LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.layerCollected", layer.name, expressions.Count, stateConditions.Count);
             }
 
             Undo.RegisterCreatedObjectUndo(parent, "Import FX");
@@ -54,8 +51,6 @@ internal class AnimatorControllerImporter
                 Selection.activeObject = firstLayerObj;
                 EditorGUIUtility.PingObject(firstLayerObj);
             }
-
-            LocalizedLog.Info("animatorControllerImporter.log.info.animatorControllerImporter.finishedImporting", _animatorController.name, expressionCount);
         }
         finally
         {
@@ -68,16 +63,21 @@ internal class AnimatorControllerImporter
     {
         var stateConditions = new Dictionary<AnimatorState, DnfCondition>();
         var anyStateConditions = new Dictionary<AnimatorState, DnfCondition>();
+        var orderByState = CollectStatesInDisplayOrder(rootStateMachine)
+            .Select((state, index) => (state, index))
+            .ToDictionary(pair => pair.state, pair => pair.index);
 
         Collect(rootStateMachine);
 
         // AnyState由来のコンポーネントをレイヤーの一番下に配置する。
         var orderedConditions = stateConditions
             .Where(pair => !anyStateConditions.ContainsKey(pair.Key))
+            .OrderBy(pair => orderByState.GetValueOrDefault(pair.Key, int.MaxValue))
             .Select(pair => (pair.Key, pair.Value))
             .ToList();
 
-        foreach (var (state, anyStateCondition) in anyStateConditions)
+        foreach (var (state, anyStateCondition) in anyStateConditions
+                     .OrderBy(pair => orderByState.GetValueOrDefault(pair.Key, int.MaxValue)))
         {
             var condition = stateConditions.GetOrAdd(state, DnfCondition.Never).Or(anyStateCondition);
             orderedConditions.Add((state, condition));
@@ -117,6 +117,16 @@ internal class AnimatorControllerImporter
             {
                 stateConditions.TryAdd(defaultState, DnfCondition.Always);
             }
+        }
+
+        static IEnumerable<AnimatorState> CollectStatesInDisplayOrder(AnimatorStateMachine stateMachine)
+        {
+            foreach (var state in stateMachine.states.OrderBy(child => child.position.y))
+                yield return state.state;
+
+            foreach (var childStateMachine in stateMachine.stateMachines)
+            foreach (var state in CollectStatesInDisplayOrder(childStateMachine.stateMachine))
+                yield return state;
         }
 
         bool TryAddTransition(AnimatorTransitionBase transition, Dictionary<AnimatorState, DnfCondition> conditionsByState)

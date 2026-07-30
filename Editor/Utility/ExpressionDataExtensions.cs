@@ -8,7 +8,6 @@ internal static class ExpressionDataExtensions
         this T component,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
         string bodyPath,
-        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null,
         ComputeContext? context = null)
         where T : Component, IExpressionDataSource
     {
@@ -17,7 +16,6 @@ internal static class ExpressionDataExtensions
             component,
             resultToAdd,
             bodyPath,
-            facialAnimations,
             new HashSet<IExpressionDataSource>(),
             context ?? ComputeContext.NullContext);
     }
@@ -27,7 +25,6 @@ internal static class ExpressionDataExtensions
         Component owner,
         ICollection<BlendShapeWeightAnimation> result,
         string bodyPath,
-        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations,
         HashSet<IExpressionDataSource> resolving,
         ComputeContext context)
     {
@@ -38,11 +35,7 @@ internal static class ExpressionDataExtensions
         var data = source.Data;
         if (data.Clip != null)
         {
-            data.Clip.GetBlendShapeAnimations(
-                data.ClipOption,
-                result,
-                bodyPath,
-                facialAnimations);
+            data.Clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
         }
 
         foreach (var (referenced, referencedOwner) in GetReferencedSources(source, owner, context))
@@ -52,7 +45,6 @@ internal static class ExpressionDataExtensions
                 referencedOwner,
                 result,
                 bodyPath,
-                facialAnimations,
                 resolving,
                 context);
         }

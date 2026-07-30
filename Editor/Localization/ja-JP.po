@@ -107,9 +107,6 @@ msgstr "すべて"
 msgid "clipImportOption.option.nonZero"
 msgstr "0以外"
 
-msgid "clipImportOption.option.facialStyleOverridesOrNonZero"
-msgstr "顔つきの上書きまたは0以外"
-
 msgid "facialEditor.unsavedChanges.title"
 msgstr "未保存の変更"
 
@@ -396,8 +393,14 @@ msgstr "フォルダ"
 msgid "menuInstallSettings.root.placeholder"
 msgstr "ルート"
 
+msgid "menuInstallSettings.destinationType.placeholder"
+msgstr "Menu Folder など"
+
 msgid "directMenu.menuName.label"
 msgstr "メニュー名"
+
+msgid "directMenu.replaceGroup.placeholder"
+msgstr "置き換えグループ"
 
 msgid "directMenu.icon.label"
 msgstr "アイコン"
@@ -439,7 +442,7 @@ msgid "expression.blendShapes.label"
 msgstr "ブレンドシェイプ"
 
 msgid "expression.behavior.section.label"
-msgstr "表情の動作"
+msgstr "表情設定"
 
 msgid "expression.application.label"
 msgstr "下位の表情"
@@ -498,6 +501,9 @@ msgstr "初期値"
 msgid "menuFolder.section.label"
 msgstr "メニューフォルダ"
 
+msgid "menuFolder.name.label"
+msgstr "フォルダ名"
+
 msgid "condition.section.label"
 msgstr "条件"
 
@@ -522,8 +528,11 @@ msgstr "レンダラーから取得"
 msgid "expression.otherExpression.label"
 msgstr "他の表情を使用"
 
-msgid "expression.componentReference.label"
-msgstr "コンポーネント参照"
+msgid "style.otherStyle.label"
+msgstr "他の顔つきを使用"
+
+msgid "expression.component.label"
+msgstr "コンポーネント"
 
 msgid "expression.clip.label"
 msgstr "アニメーションクリップ"
@@ -536,6 +545,9 @@ msgstr "この表情を常にプレビュー"
 
 msgid "expression.selectedExpressionPreview.label"
 msgstr "ヒエラルキーで選択した表情をプレビュー"
+
+msgid "expression.selectedProjectExpressionPreview.label"
+msgstr "プロジェクトで選択した表情をプレビュー"
 
 msgid "expression.multiFrame.default.label"
 msgstr "デフォルト"

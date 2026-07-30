@@ -82,7 +82,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
                     position,
                     preview,
                     "menuIcon.previewExpression.label".LG(),
-                    new GUIContent($"{placeholder} ({nameof(FaceTuneComponent)})"));
+                    new GUIContent($"{placeholder} ({FaceTuneComponent.ComponentName})"));
             }
             else
             {
@@ -128,9 +128,8 @@ internal sealed class MenuInstallSettingsDrawer : PropertyDrawer
             ? owner.transform.parent?.GetComponentInParent<MenuFolderComponent>()
             : null;
         var rootLabel = "menuInstallSettings.root.placeholder".LS();
-        var placeholder = folder != null
-            ? $"{EffectiveMenuName(folder)} (Menu Folder)"
-            : rootLabel;
+        var destination = folder != null ? EffectiveMenuName(folder) : rootLabel;
+        var placeholder = $"{destination} ({"menuInstallSettings.destinationType.placeholder".LS()})";
         GUIHelper.DrawPlaceholderObjectLikeField(
             position,
             reference,
@@ -159,18 +158,29 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
             "directMenu.menuName.label".LG());
         GUIHelper.DrawProperty(ref position, property.FindPropertyRelative("Icon"), "directMenu.icon.label");
         GUIHelper.DrawProperty(ref position, property.FindPropertyRelative("InstallSettings"), "directMenu.destination.label");
-        if (!IsReplaceMode(property.serializedObject))
-            GUIHelper.DrawProperty(ref position, property.FindPropertyRelative("BlendExclusiveGroupName"), "menu.group.label");
+        var group = property.FindPropertyRelative("BlendExclusiveGroupName");
+        var replaceMode = IsReplaceMode(property.serializedObject);
+        using (new EditorGUI.DisabledScope(replaceMode))
+        {
+            position.height = GUIHelper.LineHeight;
+            if (replaceMode)
+                GUIHelper.DrawPlaceholderTextField(
+                    position,
+                    group,
+                    "menu.group.label".LG(),
+                    "directMenu.replaceGroup.placeholder".LG());
+            else
+                EditorGUI.PropertyField(position, group, "menu.group.label".LG());
+            position.NewLine();
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var height = GUIHelper.PropertyHeight(property.FindPropertyRelative("MenuName"))
-                   + GUIHelper.PropertyHeight(property.FindPropertyRelative("Icon"))
-                   + GUIHelper.PropertyHeight(property.FindPropertyRelative("InstallSettings"));
-        if (!IsReplaceMode(property.serializedObject))
-            height += GUIHelper.PropertyHeight(property.FindPropertyRelative("BlendExclusiveGroupName"));
-        return height;
+        return GUIHelper.PropertyHeight(property.FindPropertyRelative("MenuName"))
+             + GUIHelper.PropertyHeight(property.FindPropertyRelative("Icon"))
+             + GUIHelper.PropertyHeight(property.FindPropertyRelative("InstallSettings"))
+             + GUIHelper.PropertyHeight(property.FindPropertyRelative("BlendExclusiveGroupName"));
     }
 
     private static bool IsReplaceMode(SerializedObject serializedObject)

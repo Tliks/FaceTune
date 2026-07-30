@@ -19,7 +19,7 @@ internal sealed record class OutputUnitPlan(
 
 internal sealed record class ExpressionLayerPlan(
     string Name,
-    DnfCondition DefaultExitWhen,
+    DnfCondition? PassThroughExitWhen,
     DnfCondition? ForceInactiveWhen,
     IReadOnlyList<ExpressionStatePlan> States);
 

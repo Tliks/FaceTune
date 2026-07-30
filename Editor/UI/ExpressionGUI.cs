@@ -4,6 +4,7 @@ namespace Aoyon.FaceTune.Gui;
 
 internal sealed record ExpressionGUIOptions(
     GUIContent? HeaderLabel = null,
+    GUIContent? ExternalSourceLabel = null,
     GUIContent? FooterButtonLabel = null,
     Action? FooterButtonAction = null);
 
@@ -88,7 +89,7 @@ internal static class ExpressionGUI
         otherExpressionExpanded = GUIHelper.DrawFoldout(
             cursor,
             otherExpressionExpanded,
-            "expression.otherExpression.label".LG());
+            options?.ExternalSourceLabel ?? "expression.otherExpression.label".LG());
 
         if (otherExpressionExpanded)
         {
@@ -102,7 +103,7 @@ internal static class ExpressionGUI
             EditorGUI.PropertyField(
                 cursor,
                 reference,
-                "expression.componentReference.label".LG());
+                "expression.component.label".LG());
             cursor.Back();
         }
 
@@ -261,7 +262,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         position.SetSingleHeight();
-        var (nameRect, valueArea) = position.SplitRatio(.6f);
+        var (nameRect, valueArea) = position.SplitRatio(.4f);
         var (modeRect, valueRect) = valueArea.SplitLeft(ModeToggleWidth);
         var name = property.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName);
         var curve = property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName);
@@ -285,7 +286,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
         {
             var value = animationCurve.length == 0 ? 0f : animationCurve.Evaluate(0f);
             EditorGUI.BeginChangeCheck();
-            value = EditorGUI.FloatField(valueRect, value);
+            value = EditorGUI.Slider(valueRect, value, 0f, 100f);
             if (EditorGUI.EndChangeCheck()) curve.animationCurveValue = CreateSingleFrameCurve(value);
         }
         else

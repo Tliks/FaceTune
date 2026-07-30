@@ -9,8 +9,8 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.normalize-authoring-hierarchy";
     public override string DisplayName => "Normalize Authoring Hierarchy";
 
-    private const string PresetParameterName = $"{FaceTuneConstants.ParameterPrefix}/PresetIndex";
-    private const string DirectReplaceGroupName = $"{FaceTuneConstants.ParameterPrefix}/DirectMenu/Replace";
+    private const string PresetGroupName = "PresetIndex";
+    private const string DirectReplaceGroupName = "DirectMenuReplace";
     private const string DirectMenuObjectName = FaceTuneConstants.Name + " DirectMenu";
 
     protected override void Execute(FaceTuneContext context)
@@ -48,7 +48,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             menu.Icon = preset.Icon;
             menu.InstallSettings = preset.InstallSettings;
             menu.DefaultSelected = preset == defaultPreset;
-            menu.ExclusiveToggleGroup.GroupName = PresetParameterName;
+            menu.ExclusiveToggleGroup.GroupName = PresetGroupName;
 
             var condition = preset.gameObject.EnsureComponent<ConditionComponent>().Condition;
             if (condition.Always)
@@ -150,7 +150,9 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             {
                 var groupName = menu.ExclusiveToggleGroup.GroupName;
 
-                menu.ParameterName = exclusiveGroupParameterNames.GetOrAdd(groupName, CreateUniqueParameterName(groupName, "exclusive"));
+                menu.ParameterName = exclusiveGroupParameterNames.GetOrAdd(
+                    groupName,
+                    CreateGeneratedParameterName("ExclusiveToggle", groupName));
 
                 var index = exclusiveGroupIndices.TryGetValue(groupName, out var current) ? current + 1 : 1;
                 exclusiveGroupIndices[groupName] = index;
@@ -158,7 +160,10 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             }
             else if (string.IsNullOrWhiteSpace(menu.ParameterName))
             {
-                menu.ParameterName = CreateUniqueParameterName(menu.name, menu.Kind == MenuItemKind.Radial ? "radial" : "toggle");
+                var menuName = string.IsNullOrWhiteSpace(menu.MenuName) ? menu.name : menu.MenuName;
+                menu.ParameterName = CreateGeneratedParameterName(
+                    menu.Kind == MenuItemKind.Radial ? "Radial" : "Toggle",
+                    menuName);
             }
         }
 
@@ -173,11 +178,14 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         return parameterDomains;
     }
 
-    private static string CreateUniqueParameterName(string baseName, string suffix)
+    private static string CreateGeneratedParameterName(string category, string baseName)
     {
-        baseName = baseName.Replace(" ", "_").Replace(".", "_");
+        baseName = baseName
+            .Replace(" ", "_")
+            .Replace(".", "_")
+            .Replace("/", "_");
         var guid = Guid.NewGuid().ToString("N")[..8];
-        return $"{FaceTuneConstants.ParameterPrefix}/{baseName}_{suffix}_{guid}";
+        return $"{FaceTuneConstants.GeneratedParameterPrefix}/{category}/{baseName}_{guid}";
     }
 
     // MenuContionをParamterConditionに変換

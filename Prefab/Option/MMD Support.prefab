@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuName: 
+  MenuName: Enable MMD Mode
   Icon:
     Mode: 2
     ManualIcon: {fileID: 0}

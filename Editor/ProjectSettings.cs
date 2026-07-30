@@ -11,21 +11,38 @@ internal class ProjectSettings : ScriptableSingleton<ProjectSettings>
     }
 
     [SerializeField]
-    private bool enableSelectedExpressionPreview = true;
-    public static Action<bool>? EnableSelectedExpressionPreviewChanged;
-    public static bool EnableSelectedExpressionPreview
+    private bool enableHierarchySelectedExpressionPreview = true;
+    [SerializeField]
+    private bool enableProjectSelectedExpressionPreview = true;
+
+    public static Action? SelectedExpressionPreviewSettingsChanged;
+
+    public static bool EnableHierarchySelectedExpressionPreview
     {
-        get
-        {
-            return instance.enableSelectedExpressionPreview;
-        }
+        get => instance.enableHierarchySelectedExpressionPreview;
         set
         {
-            if (instance.enableSelectedExpressionPreview == value) return;
-            instance.enableSelectedExpressionPreview = value;
-            instance.Save(true);
-            EnableSelectedExpressionPreviewChanged?.Invoke(value);
+            if (instance.enableHierarchySelectedExpressionPreview == value) return;
+            instance.enableHierarchySelectedExpressionPreview = value;
+            SavePreviewSettings();
         }
+    }
+
+    public static bool EnableProjectSelectedExpressionPreview
+    {
+        get => instance.enableProjectSelectedExpressionPreview;
+        set
+        {
+            if (instance.enableProjectSelectedExpressionPreview == value) return;
+            instance.enableProjectSelectedExpressionPreview = value;
+            SavePreviewSettings();
+        }
+    }
+
+    private static void SavePreviewSettings()
+    {
+        instance.Save(true);
+        SelectedExpressionPreviewSettingsChanged?.Invoke();
     }
 }
     

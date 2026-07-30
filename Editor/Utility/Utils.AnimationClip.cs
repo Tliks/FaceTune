@@ -4,22 +4,18 @@ internal static partial class Utils
 {
     private const string BlendShapePropertyName = "blendShape.";
 
-    private static readonly List<BlendShapeWeightAnimation> _emptyFacialAnimations = new();
-
-    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeight> resultToAdd, string? facialPath = null, IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
+    public static void GetFirstFrameBlendShapes(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeight> resultToAdd, string facialPath)
     {
-        ProcessBlendShapeBindings(clip, option, facialAnimations ?? _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))), facialPath);
+        ProcessBlendShapeBindings(clip, option, (name, curve) => resultToAdd.Add(new BlendShapeWeight(name, curve.Evaluate(0))), facialPath);
     }
     
-    public static void GetBlendShapeAnimations(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeightAnimation> resultToAdd, string? facialPath = null, IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null)
+    public static void GetBlendShapeAnimations(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeightAnimation> resultToAdd, string facialPath)
     {
-        ProcessBlendShapeBindings(clip, option, facialAnimations ?? _emptyFacialAnimations, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)), facialPath);
+        ProcessBlendShapeBindings(clip, option, (name, curve) => resultToAdd.Add(new BlendShapeWeightAnimation(name, curve)), facialPath);
     }
 
-    private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations, Action<string, AnimationCurve> addAction, string? facialPath = null)
+    private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, Action<string, AnimationCurve> addAction, string facialPath)
     {
-        var facialStyleCurves = facialAnimations.ToDictionary(a => a.Name, a => a.Curve);
-        
         var bindings = AnimationUtility.GetCurveBindings(clip);
         foreach (var binding in bindings)
         {
@@ -42,23 +38,6 @@ internal static partial class Utils
                             add = true;
                         }
                         break;
-                    case ClipImportOption.FacialStyleOverridesOrNonZero:
-                        if (facialStyleCurves.TryGetValue(name, out var facialCurve))
-                        {
-                            if (!facialCurve.Equals(curve))
-                            {
-                                add = true; // override
-                            }
-                            break;
-                        }
-                        else
-                        {
-                            if (!isZero)
-                            {
-                                add = true;
-                            }
-                            break;
-                        }
                     default:
                         throw new ArgumentOutOfRangeException(nameof(option), option, null);
                 }
@@ -71,20 +50,12 @@ internal static partial class Utils
     }
 
 
-    private static bool IsFacialBinding(EditorCurveBinding binding, string? facialPath)
+    private static bool IsFacialBinding(EditorCurveBinding binding, string facialPath)
     {
-        if (binding.type == typeof(SkinnedMeshRenderer) && binding.propertyName.StartsWith(BlendShapePropertyName))
-        {
-            if (facialPath != null)
-            {
-                return binding.path.ToLower() == facialPath.ToLower();
-            }
-            else
-            {
-                return true;
-            }
-        }
-        return false;
+        if (binding.type != typeof(SkinnedMeshRenderer)
+            || !binding.propertyName.StartsWith(BlendShapePropertyName)) return false;
+        return string.IsNullOrEmpty(facialPath)
+            || string.Equals(binding.path, facialPath, StringComparison.OrdinalIgnoreCase);
     }
 
     public static void AddBlendShapes(this AnimationClip clip, string relativePath, IEnumerable<BlendShapeWeight> blendShapes)

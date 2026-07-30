@@ -221,7 +221,7 @@ internal class GeneralControls : IDisposable
     private void ImportClip(AnimationClip clip)
     {
         var result = new BlendShapeWeightSet();
-        clip.GetFirstFrameBlendShapes(_clipImportOption, result, null, _blendShapeManager.EffectiveBaseSet.ToBlendShapeAnimations().ToList());
+        clip.GetFirstFrameBlendShapes(_clipImportOption, result, string.Empty);
         _blendShapeManager.OverrideShapesAndSetWeight(result.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
     }
 

@@ -18,6 +18,19 @@ internal sealed record ParameterDomainRegistry
 
     public static ParameterDomainRegistry Empty { get; } = new();
 
+    public ParameterDomainRegistry(
+        IntParameterDomain? defaultIntDomain = null,
+        params (string ParameterName, IntParameterDomain Domain)[] intDomainOverrides)
+    {
+        DefaultIntDomain = defaultIntDomain is { IsValid: true } ? defaultIntDomain : null;
+        IntDomainOverrides = intDomainOverrides
+            .Where(item => !string.IsNullOrWhiteSpace(item.ParameterName) && item.Domain.IsValid)
+            .ToImmutableDictionary(
+                item => item.ParameterName,
+                item => item.Domain,
+                StringComparer.Ordinal);
+    }
+
     public ParameterDomainRegistry WithDefaultIntDomain(IntParameterDomain domain)
     {
         return domain.IsValid ? this with { DefaultIntDomain = domain } : this;

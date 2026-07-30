@@ -73,12 +73,12 @@ internal sealed class ConditionDrawer : PropertyDrawer
 internal sealed class ConditionCaseDrawer : PropertyDrawer
 {
     private const float EmptyMessageHeight = 30f;
-    private const float ConditionContentIndent = 24f;
     private static readonly ReorderableListOptions ConditionsOptions = new(
         Foldout: false,
         AddElement: ShowAddMenu,
         DrawElementSeparator: DrawAndSeparator,
-        ElementContentIndent: ConditionContentIndent);
+        DrawElement: DrawCondition,
+        NestContent: false);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -102,12 +102,18 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
             : height;
     }
 
+    private static void DrawCondition(Rect position, SerializedProperty condition)
+    {
+        position.Indent();
+        EditorGUI.PropertyField(position, condition, GUIContent.none, true);
+    }
+
     private static void DrawAndSeparator(Rect boundary)
     {
         var gutterBoundary = new Rect(
             boundary.x,
             boundary.y,
-            ConditionContentIndent,
+            GUIHelper.IndentWidth,
             0f);
         ConditionDrawer.DrawSeparator(gutterBoundary, "condition.and.label".LG());
     }

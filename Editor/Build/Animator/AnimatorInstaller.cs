@@ -103,10 +103,16 @@ internal sealed class AnimatorInstaller
         using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.ExpressionLayer");
         var layer = AddLayer(controller, plan.Name, layerPriority);
 
-        var defaultState = AddState(layer, "PassThrough", DefaultStatePosition);
-        AsPassThrough(defaultState);
-        layer.StateMachine!.DefaultState = defaultState;
-        SetExitTransitions(defaultState, plan.DefaultExitWhen, _expressionTransitionDurationSeconds);
+        if (plan.PassThroughExitWhen != null)
+        {
+            var passThroughState = AddState(layer, "PassThrough", DefaultStatePosition);
+            AsPassThrough(passThroughState);
+            layer.StateMachine!.DefaultState = passThroughState;
+            SetExitTransitions(
+                passThroughState,
+                plan.PassThroughExitWhen,
+                _expressionTransitionDurationSeconds);
+        }
 
         var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
         foreach (var statePlan in plan.States)
@@ -116,6 +122,8 @@ internal sealed class AnimatorInstaller
             SetExpressionClip(state, statePlan);
             AddEntryTransition(layer, state, statePlan.EnterWhen);
             SetExitTransitions(state, statePlan.ExitWhen, _expressionTransitionDurationSeconds);
+            if (plan.PassThroughExitWhen == null && layer.StateMachine!.DefaultState == null)
+                layer.StateMachine.DefaultState = state;
         }
 
         AddForceInactiveState(layer, "Disabled", plan.ForceInactiveWhen, true);

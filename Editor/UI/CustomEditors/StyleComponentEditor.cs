@@ -9,9 +9,10 @@ internal sealed class StyleComponentEditor : FaceTuneEditor<StyleComponent>
     private bool _otherExpanded;
 
     private ExpressionGUIOptions ExpressionOptions => new(
-        "style.expression.section.label".LG(),
-        "style.getFromRenderer.button".LG(),
-        GetFromRenderer);
+        HeaderLabel: "style.expression.section.label".LG(),
+        ExternalSourceLabel: "style.otherStyle.label".LG(),
+        FooterButtonLabel: "style.getFromRenderer.button".LG(),
+        FooterButtonAction: GetFromRenderer);
 
     private void OnEnable()
     {

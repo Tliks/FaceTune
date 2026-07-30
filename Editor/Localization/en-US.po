@@ -107,9 +107,6 @@ msgstr "All"
 msgid "clipImportOption.option.nonZero"
 msgstr "Non-Zero"
 
-msgid "clipImportOption.option.facialStyleOverridesOrNonZero"
-msgstr "Facial Style Overrides or Non-Zero"
-
 msgid "facialEditor.unsavedChanges.title"
 msgstr "Unsaved Changes"
 
@@ -396,8 +393,14 @@ msgstr "Folder"
 msgid "menuInstallSettings.root.placeholder"
 msgstr "Root"
 
+msgid "menuInstallSettings.destinationType.placeholder"
+msgstr "Menu Folder, etc."
+
 msgid "directMenu.menuName.label"
 msgstr "Menu Name"
+
+msgid "directMenu.replaceGroup.placeholder"
+msgstr "Replace Group"
 
 msgid "directMenu.icon.label"
 msgstr "Icon"
@@ -439,7 +442,7 @@ msgid "expression.blendShapes.label"
 msgstr "Blend Shapes"
 
 msgid "expression.behavior.section.label"
-msgstr "Expression Behavior"
+msgstr "Expression Settings"
 
 msgid "expression.application.label"
 msgstr "Lower Expressions"
@@ -498,6 +501,9 @@ msgstr "Default Value"
 msgid "menuFolder.section.label"
 msgstr "Menu Folder"
 
+msgid "menuFolder.name.label"
+msgstr "Folder Name"
+
 msgid "condition.section.label"
 msgstr "Conditions"
 
@@ -522,8 +528,11 @@ msgstr "Get from Renderer"
 msgid "expression.otherExpression.label"
 msgstr "Use Another Expression"
 
-msgid "expression.componentReference.label"
-msgstr "Component Reference"
+msgid "style.otherStyle.label"
+msgstr "Use Another Facial Style"
+
+msgid "expression.component.label"
+msgstr "Component"
 
 msgid "expression.clip.label"
 msgstr "Animation Clip"
@@ -536,6 +545,9 @@ msgstr "Always Preview This Expression"
 
 msgid "expression.selectedExpressionPreview.label"
 msgstr "Preview Expression Selected in Hierarchy"
+
+msgid "expression.selectedProjectExpressionPreview.label"
+msgstr "Preview Expression Selected in Project"
 
 msgid "expression.multiFrame.default.label"
 msgstr "Default"

@@ -9,7 +9,8 @@ internal sealed record ReorderableListOptions(
     Action<SerializedProperty>? InitializeElement = null,
     Action<SerializedProperty>? AddElement = null,
     Action<Rect>? DrawElementSeparator = null,
-    float ElementContentIndent = 8f);
+    Action<Rect, SerializedProperty>? DrawElement = null,
+    bool NestContent = true);
 
 /// <summary>Draws a reorderable array strictly inside a caller-owned rectangle.</summary>
 internal static partial class GUIHelper
@@ -48,6 +49,7 @@ internal static partial class GUIHelper
         var fullHeight = list.GetHeight();
         var visibleHeight = options.MaxVisibleHeight.HasValue ? Mathf.Min(fullHeight, options.MaxVisibleHeight.Value) : fullHeight;
         var body = new Rect(position.x, bodyY, position.width, visibleHeight);
+        if (options.NestContent) body.Indent();
 
         if (visibleHeight < fullHeight)
         {
@@ -94,10 +96,11 @@ internal static partial class GUIHelper
                 var boundary = new Rect(rect.x, rect.y, rect.width, 0f);
                 options.DrawElementSeparator(boundary);
             }
-            rect.x += options.ElementContentIndent;
-            rect.width -= options.ElementContentIndent;
             rect.height = EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
-            EditorGUI.PropertyField(rect, element, GUIContent.none, true);
+            if (options.DrawElement != null)
+                options.DrawElement(rect, element);
+            else
+                EditorGUI.PropertyField(rect, element, GUIContent.none, true);
         };
         list.elementHeightCallback = index => index < 0 || index >= list.serializedProperty.arraySize
             ? GUIHelper.LineHeight

@@ -6,7 +6,7 @@ namespace Aoyon.FaceTune.Preview;
 
 internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPreview>
 {
-    // 一時的に無効化出来るようにするために、必ずしもProjectSettings.EnableSelectedExpressionPreviewとは一致しない
+    // 編集UIなどから一時的にプレビュー全体を無効化するための深さ。
     private static int _disabledDepth = 0; // 0で有効 無効化したい時は足す
     public static bool Enabled => _disabledDepth == 0;
     public static void MayEnable()
@@ -27,9 +27,7 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
     [InitializeOnLoadMethod]
     static void Init()
     {
-        _disabledDepth = ProjectSettings.EnableSelectedExpressionPreview ? 0 : 1;
-        ProjectSettings.EnableSelectedExpressionPreviewChanged += (value) => { if (value) MayEnable(); else Disable(); };
-        
+        ProjectSettings.SelectedExpressionPreviewSettingsChanged += RebuildSessionFromSelection;
         Selection.selectionChanged += RebuildSessionFromSelection;
         RebuildSessionFromSelection();
     }
@@ -51,13 +49,22 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
         if (!Enabled) return;
         if (selection == null) return;
 
-        _session = new SelectedShapesPreviewSession(
-            selection,
-            _targets,
-            SetCurrentNodeDirectly,
-            ClearCurrentNodeDirectly,
-            () => RebuildSession(selection)
-        );
+        var isProjectSelection = selection is AnimationClip || EditorUtility.IsPersistent(selection);
+        var selectionPreviewEnabled = isProjectSelection
+            ? ProjectSettings.EnableProjectSelectedExpressionPreview
+            : ProjectSettings.EnableHierarchySelectedExpressionPreview;
+        if (!selectionPreviewEnabled) return;
+
+        _session = selection switch
+        {
+            AnimationClip clip => SelectedShapesPreviewSession.FromClip(
+                clip, _targets, SetCurrentNodeDirectly, ClearCurrentNodeDirectly,
+                () => RebuildSession(selection)),
+            GameObject obj => SelectedShapesPreviewSession.FromGameObject(
+                obj, _targets, SetCurrentNodeDirectly, ClearCurrentNodeDirectly,
+                () => RebuildSession(selection)),
+            _ => null
+        };
     }
 
     private static void DisposeSession()
@@ -102,8 +109,7 @@ internal class SelectedShapesPreviewSession : IDisposable
     private readonly List<Writer> _writers;
     private bool _disposed;
 
-    public SelectedShapesPreviewSession(
-        Object selection,
+    private SelectedShapesPreviewSession(
         IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
         Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet, float> setPreview,
         Action<SkinnedMeshRenderer> clearPreview,
@@ -114,28 +120,32 @@ internal class SelectedShapesPreviewSession : IDisposable
         _clearPreview = clearPreview;
         _onInvalidate = onInvalidate;
         _context = new($"{nameof(SelectedShapesPreviewSession)}:{nameof(_context)}");
-        _writers = CreateWriters(selection);
+        _writers = new List<Writer>();
         _context.InvokeOnInvalidate(this, s => s.OnInvalidate());
     }
 
-    private List<Writer> CreateWriters(Object selection)
+    public static SelectedShapesPreviewSession FromClip(
+        AnimationClip clip,
+        IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
+        Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet, float> setPreview,
+        Action<SkinnedMeshRenderer> clearPreview,
+        Action onInvalidate)
     {
-        var writers = new List<Writer>();
+        var session = new SelectedShapesPreviewSession(targets, setPreview, clearPreview, onInvalidate);
+        session.AddWriterForClip(clip, session._writers);
+        return session;
+    }
 
-        if (selection is AnimationClip clip)
-        {
-            AddWriterForClip(clip, writers);
-        }
-        else if (selection is GameObject obj)
-        {
-            AddWriterForGameObject(obj, writers);
-        }
-        else
-        {
-            // no-op
-        }
-
-        return writers;
+    public static SelectedShapesPreviewSession FromGameObject(
+        GameObject gameObject,
+        IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
+        Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet, float> setPreview,
+        Action<SkinnedMeshRenderer> clearPreview,
+        Action onInvalidate)
+    {
+        var session = new SelectedShapesPreviewSession(targets, setPreview, clearPreview, onInvalidate);
+        session.AddWriterForGameObject(gameObject, session._writers);
+        return session;
     }
 
     private void OnInvalidate()
@@ -195,13 +205,13 @@ internal class SelectedShapesPreviewSession : IDisposable
             if (expressionComponent != null)
             {
                 context.Observe(expressionComponent);
-                expressionComponent.GetAnimations(resultToAdd, bodyPath, facial);
+                expressionComponent.GetAnimations(resultToAdd, bodyPath);
             }
 
             foreach (var dataComponent in dataComponents)
             {
                 context.Observe(dataComponent);
-                dataComponent.GetAnimations(resultToAdd, bodyPath, facial);
+                dataComponent.GetAnimations(resultToAdd, bodyPath);
             }
 
             if (expressionComponent != null)

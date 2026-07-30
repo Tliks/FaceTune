@@ -139,7 +139,9 @@ internal static partial class GUIHelper
     {
         _simpleToggleStyle ??= new GUIStyle(EditorStyles.miniButton)
         {
-            alignment = TextAnchor.MiddleCenter
+            alignment = TextAnchor.MiddleCenter,
+            contentOffset = Vector2.zero,
+            padding = new RectOffset()
         };
         var previousContentColor = GUI.contentColor;
         GUI.contentColor = value

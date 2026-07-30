@@ -18,6 +18,5 @@ internal class ExpressionData
 internal enum ClipImportOption
 {
     All,
-    NonZero,
-    FacialStyleOverridesOrNonZero
+    NonZero
 }

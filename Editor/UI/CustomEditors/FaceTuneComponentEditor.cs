@@ -50,7 +50,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
         Add(ref height, SectionHeight(_directMenuExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
 
         height += 10f;
-        Add(ref height, SectionHeight(_previewExpanded, ContentHeight(2)));
+        Add(ref height, SectionHeight(_previewExpanded, ContentHeight(3)));
         return Mathf.Max(0f, height - GUIHelper.HeaderSpacing);
     }
 
@@ -154,17 +154,22 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
         if (!DrawSection(
                 ref _previewExpanded,
                 "expression.previewSettings.section.label",
-                ContentHeight(2),
+                ContentHeight(3),
                 out var content)) return;
         GUIHelper.DrawToggleLeft(
             content,
             serializedObject.FindProperty(nameof(FaceTuneComponent.EnableRealTimePreview)),
             "expression.realTimePreview.label".LG());
         content.NewLine();
-        ProjectSettings.EnableSelectedExpressionPreview = GUIHelper.DrawToggleLeft(
+        ProjectSettings.EnableHierarchySelectedExpressionPreview = GUIHelper.DrawToggleLeft(
             content,
-            ProjectSettings.EnableSelectedExpressionPreview,
+            ProjectSettings.EnableHierarchySelectedExpressionPreview,
             "expression.selectedExpressionPreview.label".LG());
+        content.NewLine();
+        ProjectSettings.EnableProjectSelectedExpressionPreview = GUIHelper.DrawToggleLeft(
+            content,
+            ProjectSettings.EnableProjectSelectedExpressionPreview,
+            "expression.selectedProjectExpressionPreview.label".LG());
     }
 
     private bool DrawSection(

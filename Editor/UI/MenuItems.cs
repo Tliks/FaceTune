@@ -186,14 +186,14 @@ internal static class ToolsMenu
     [MenuItem(MenuItems.SelectedExpressionPreviewPath, true)]
     private static bool ValidateSelectedExpressionPreview()
     {
-        Menu.SetChecked(MenuItems.SelectedExpressionPreviewPath, ProjectSettings.EnableSelectedExpressionPreview);
+        Menu.SetChecked(MenuItems.SelectedExpressionPreviewPath, ProjectSettings.EnableHierarchySelectedExpressionPreview);
         return true;
     }
 
     [MenuItem(MenuItems.SelectedExpressionPreviewPath, false, MenuItems.SelectedExpressionPreviewPriority)]
     private static void ToggleSelectedExpressionPreview()
     {
-        ProjectSettings.EnableSelectedExpressionPreview = !ProjectSettings.EnableSelectedExpressionPreview;
+        ProjectSettings.EnableHierarchySelectedExpressionPreview = !ProjectSettings.EnableHierarchySelectedExpressionPreview;
         InternalEditorUtility.RepaintAllViews();
     }
 }

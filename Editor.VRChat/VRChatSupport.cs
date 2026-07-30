@@ -80,16 +80,16 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
 
     public ParameterDomainRegistry CreateBuiltInParameterDomains()
     {
-        return ParameterDomainRegistry.Empty
-            .WithDefaultIntDomain(new IntParameterDomain(0, 255))
-            .WithIntDomainOverride(PreviewModeParameter, new IntParameterDomain(0, 1))
-            .WithIntDomainOverride(VisemeParameter, new IntParameterDomain(0, 14))
-            .WithIntDomainOverride(GestureLeftParameter, new IntParameterDomain(0, 7))
-            .WithIntDomainOverride(GestureRightParameter, new IntParameterDomain(0, 7))
-            .WithIntDomainOverride(TrackingTypeParameter, new IntParameterDomain(0, 6))
-            .WithIntDomainOverride(VRModeParameter, new IntParameterDomain(0, 1))
-            .WithIntDomainOverride(AvatarVersionParameter, new IntParameterDomain(0, 3))
-            .WithIntDomainOverride(VrcEmoteParameter, new IntParameterDomain(1, 16));
+        return new ParameterDomainRegistry(
+            new IntParameterDomain(0, 255),
+            (PreviewModeParameter, new IntParameterDomain(0, 1)),
+            (VisemeParameter, new IntParameterDomain(0, 14)),
+            (GestureLeftParameter, new IntParameterDomain(0, 7)),
+            (GestureRightParameter, new IntParameterDomain(0, 7)),
+            (TrackingTypeParameter, new IntParameterDomain(0, 6)),
+            (VRModeParameter, new IntParameterDomain(0, 1)),
+            (AvatarVersionParameter, new IntParameterDomain(0, 3)),
+            (VrcEmoteParameter, new IntParameterDomain(1, 16)));
     }
 
     public DnfCondition ResolveHandGestureCondition(

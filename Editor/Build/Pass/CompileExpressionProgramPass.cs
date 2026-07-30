@@ -69,7 +69,7 @@ internal sealed class ExpressionCompiler
         var facialAnimations = new List<BlendShapeWeightAnimation>();
         FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations, _avatarContext.BodyPath);
 
-        var expressionAnimationSet = CollectExpressionAnimations(component, facialAnimations);
+        var expressionAnimationSet = CollectExpressionAnimations(component);
 
         return new ExpressionItem(
             component.transform,
@@ -107,15 +107,15 @@ internal sealed class ExpressionCompiler
         return animationSet;
     }
 
-    private BlendShapeWeightAnimationSet CollectExpressionAnimations(FaceTuneComponent component, IReadOnlyList<BlendShapeWeightAnimation> facialAnimations)
+    private BlendShapeWeightAnimationSet CollectExpressionAnimations(FaceTuneComponent component)
     {
         var animationSet = new BlendShapeWeightAnimationSet();
-        component.GetAnimations(animationSet, _avatarContext.BodyPath, facialAnimations);
+        component.GetAnimations(animationSet, _avatarContext.BodyPath);
 
         var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
         foreach (var dataComponent in dataComponents)
         {
-            dataComponent.GetAnimations(animationSet, _avatarContext.BodyPath, facialAnimations);
+            dataComponent.GetAnimations(animationSet, _avatarContext.BodyPath);
         }
 
         return animationSet;

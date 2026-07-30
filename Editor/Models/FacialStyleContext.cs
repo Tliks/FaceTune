@@ -20,10 +20,10 @@ internal class FacialStyleContext
         return context.TryGetComponentInParent(target, root, true, out facialStyle);
     }
 
-    public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd, string? bodyPath)
+    public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd, string bodyPath)
     {
         if (!TryGetFacialStyle(target, out var facialStyle)) return false;
-        facialStyle.GetAnimations(resultToAdd, bodyPath, null);
+        facialStyle.GetAnimations(resultToAdd, bodyPath);
         return true;
     }
 
@@ -31,13 +31,13 @@ internal class FacialStyleContext
         GameObject target,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
         GameObject root,
-        string? bodyPath,
+        string bodyPath,
         ComputeContext? context = null)
     {
         context ??= ComputeContext.NullContext;
         if (!TryGetFacialStyle(target, out var facialStyle, root, context)) return false;
         context.Observe(facialStyle);
-        facialStyle.GetAnimations(resultToAdd, bodyPath, null);
+        facialStyle.GetAnimations(resultToAdd, bodyPath, context);
         return true;
     }
 }
