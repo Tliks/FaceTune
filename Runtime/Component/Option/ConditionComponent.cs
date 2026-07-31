@@ -1,9 +1,9 @@
 namespace Aoyon.FaceTune
 {
-    [AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class ConditionComponent : FaceTuneTagComponent, IHasConditions
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Condition";
+        internal const string ComponentName = ComponentNamePrefix + "Condition";
 
         public Condition Condition = new(new ConditionCase());
 

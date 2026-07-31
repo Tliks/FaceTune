@@ -1,10 +1,10 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class SettingsComponent : FaceTuneTagComponent, IHasObjectReferences
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Settings";
+        internal const string ComponentName = ComponentNamePrefix + "Settings";
 
         public AvatarSettings Settings = AvatarSettings.Default;
 

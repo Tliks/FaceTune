@@ -4,6 +4,8 @@ namespace Aoyon.FaceTune;
 
 internal abstract class FaceTuneTagComponent : MonoBehaviour, INDMFEditorOnly
 {
-    internal const string BaseMenuPath = FaceTuneConstants.Name;
-    internal const string LegacyMenuName = "Legacy";
+    internal const string ComponentNamePrefix = FaceTuneConstants.Name + " ";
+    internal const string MenuPathPrefix = FaceTuneConstants.Name + "/";
+    internal const string LegacyMenuPathPrefix = MenuPathPrefix + "Legacy/";
+    internal const string OptionMenuPathPrefix = MenuPathPrefix + "Option/";
 }

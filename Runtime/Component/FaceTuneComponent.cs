@@ -2,7 +2,7 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    [AddComponentMenu(MenuPathPrefix + ComponentName)]
     internal class FaceTuneComponent : FaceTuneTagComponent, IHasObjectReferences, IExpressionDataSource, IHasConditions
     {
         internal const string ComponentName = FaceTuneConstants.Name;

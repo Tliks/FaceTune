@@ -1,10 +1,10 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class PresetComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Preset";
+        internal const string ComponentName = ComponentNamePrefix + "Preset";
 
         public string MenuName = string.Empty;
         public MenuIconSettings Icon = new();

@@ -2,10 +2,10 @@ namespace Aoyon.FaceTune
 {
     // 厳密なhierarchy構造を要求せず、近くFolderなど入るだけなので、禁止する理由がないかも
     // [DisallowMultipleComponent]
-    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class MenuComponent : FaceTuneTagComponent, IHasObjectReferences
     {
-        internal const string ComponentName = FaceTuneConstants.ComponentPrefix + " Menu";
+        internal const string ComponentName = ComponentNamePrefix + "Menu";
 
         public string MenuName = string.Empty;
         public MenuIconSettings Icon = new();

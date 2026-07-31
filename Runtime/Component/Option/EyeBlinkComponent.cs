@@ -2,10 +2,10 @@
 namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class EyeBlinkComponent : FaceTuneTagComponent, IHasObjectReferences
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} EyeBlink";
+        internal const string ComponentName = ComponentNamePrefix + "EyeBlink";
 
         public ComponentReferenceMode ReferenceMode = ComponentReferenceMode.Direct;
         public AvatarObjectReference Reference = new();

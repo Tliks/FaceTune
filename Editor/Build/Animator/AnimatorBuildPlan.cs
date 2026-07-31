@@ -1,6 +1,5 @@
 namespace Aoyon.FaceTune.Build.Animator;
 
-
 internal sealed record class AnimatorBuildPlan(
     InitialLayerPlan InitialLayer,
     IReadOnlyList<OutputUnitPlan> Units,

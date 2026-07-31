@@ -1,9 +1,9 @@
 namespace Aoyon.FaceTune
 {
-    [AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class DisableEyeBlinkComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Disable EyeBlink";
+        internal const string ComponentName = ComponentNamePrefix + "Disable EyeBlink";
 
         public string DisableParameterName = string.Empty;
     }

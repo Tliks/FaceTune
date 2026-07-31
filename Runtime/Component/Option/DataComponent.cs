@@ -1,17 +1,19 @@
 
 namespace Aoyon.FaceTune
 {
-    [DisallowMultipleComponent]
-    [AddComponentMenu(BaseMenuPath  + "/" + ComponentName)]
-    internal class StyleComponent : FaceTuneTagComponent, IHasObjectReferences, IExpressionDataSource
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
+    internal class DataComponent : FaceTuneTagComponent, IHasObjectReferences, IExpressionDataSource
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Style";
+        internal const string ComponentName = ComponentNamePrefix + "Data";
 
         public AvatarObjectReference DataReference = new();
         public ExpressionData Data = new();
 
-        public bool ApplyToRenderer = false;
+        // AnimationClip
+        [Obsolete] public AnimationClip? Clip = null;
+        [Obsolete] public ClipImportOption ClipOption = ClipImportOption.NonZero;
 
+        // Manual
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
         AvatarObjectReference IExpressionDataSource.DataReference => DataReference;

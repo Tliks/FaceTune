@@ -5,8 +5,8 @@ namespace Aoyon.FaceTune
     [Obsolete]
     internal class PatternComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Pattern";
-        internal const string MenuPath = BaseMenuPath + "/" + LegacyMenuName + "/" + ComponentName;
+        internal const string ComponentName = ComponentNamePrefix + "Pattern";
+        internal const string MenuPath = LegacyMenuPathPrefix + ComponentName;
         
     }
 }

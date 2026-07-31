@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune
     [Obsolete]
     internal class FaceTuneAssistantComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Assistant (EditorOnly)";
-        internal const string MenuPath = BaseMenuPath + "/" + LegacyMenuName + "/" + ComponentName;
+        internal const string ComponentName = ComponentNamePrefix + "Assistant (EditorOnly)";
+        internal const string MenuPath = LegacyMenuPathPrefix + ComponentName;
     }
 }

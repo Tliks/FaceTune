@@ -1,9 +1,9 @@
 namespace Aoyon.FaceTune
 {
-    [AddComponentMenu(BaseMenuPath + "/" + ComponentName)]
+    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class DisableLipSyncComponent : FaceTuneTagComponent
     {
-        internal const string ComponentName = $"{FaceTuneConstants.ComponentPrefix} Disable LipSync";
+        internal const string ComponentName = ComponentNamePrefix + "Disable LipSync";
 
         public string DisableParameterName = string.Empty;
     }

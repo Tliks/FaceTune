@@ -11,7 +11,7 @@ namespace Aoyon.FaceTune.Gui;
 internal static class MenuItems
 {
     // Tools
-    private const string ToolsPath = $"Tools/{FaceTuneConstants.Name}/";
+    private const string ToolsPath = "Tools/" + FaceTuneConstants.Name + "/";
     
     public const string FacialShapesEditorPath = ToolsPath + "Facial Shapes Editor";
     public const int FacialShapesEditorPriority = 1000;
@@ -25,7 +25,7 @@ internal static class MenuItems
     public const int ReloadLocalizationPriority = 1200;
 
     // Assets
-    private const string AssetsPath = $"Assets/{FaceTuneConstants.Name}/";
+    private const string AssetsPath = "Assets/" + FaceTuneConstants.Name + "/";
 
     public const string EditAnimationClipMenuPath = AssetsPath + "Edit Animation Clip";
     public const int EditAnimationClipMenuPriority = 1000;
@@ -35,7 +35,7 @@ internal static class MenuItems
 
 
     // GameObject
-    private const string GameObjectPath = $"GameObject/{FaceTuneConstants.Name}/";
+    private const string GameObjectPath = "GameObject/" + FaceTuneConstants.Name + "/";
 
     public const string TemplatePath = GameObjectPath + "Template";
     public const int TemplatePriority = 100;
@@ -85,7 +85,7 @@ internal static class AssetsMenu
         subMenu.PortableControl.Type = PortableControlType.SubMenu;
         subMenu.MenuSource = SubmenuSource.Children;
 
-        var uniqueParameterId = $"{FaceTuneConstants.ComponentPrefix}/ExclusiveMenu/{Guid.NewGuid()}";
+        var uniqueParameterId = FaceTuneConstants.Name + "/ExclusiveMenu/" + Guid.NewGuid();
         var parameters = menuObject.AddComponent<ModularAvatarParameters>();
         parameters.parameters.Add(new ParameterConfig()
         {
