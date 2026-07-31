@@ -1,7 +1,11 @@
+using nadena.dev.ndmf.runtime;
+
 namespace Aoyon.FaceTune.Gui;
 
 internal static class MenuGUI
 {
+    private static readonly Dictionary<string, bool> NewGroupNameEditingByProperty = new();
+
     public static void DrawMenuName(
         ref Rect position,
         SerializedProperty property,
@@ -15,6 +19,77 @@ internal static class MenuGUI
             label,
             new GUIContent(owner != null ? owner.gameObject.name : string.Empty));
         position.NewLine();
+    }
+
+    public static void DrawGroupSelector(
+        Rect position,
+        SerializedProperty groupName,
+        Component? owner,
+        GUIContent label)
+    {
+        if (groupName.hasMultipleDifferentValues)
+        {
+            EditorGUI.PropertyField(position, groupName, label);
+            return;
+        }
+
+        var stateKey = $"{groupName.serializedObject.targetObject.GetInstanceID()}:{groupName.propertyPath}";
+        if (NewGroupNameEditingByProperty.ContainsKey(stateKey))
+        {
+            EditorGUI.BeginChangeCheck();
+            var value = EditorGUI.DelayedTextField(position, label, groupName.stringValue);
+            if (EditorGUI.EndChangeCheck()) groupName.stringValue = value;
+            if (!string.IsNullOrWhiteSpace(groupName.stringValue))
+                NewGroupNameEditingByProperty.Remove(stateKey);
+            return;
+        }
+
+        var groups = GetDefinedGroupNames(owner);
+        var currentIndex = groups.IndexOf(groupName.stringValue);
+        var options = new GUIContent[groups.Count + 2];
+        options[0] = "menu.group.none.label".LG();
+        for (var i = 0; i < groups.Count; i++) options[i + 1] = new GUIContent(groups[i]);
+        options[^1] = "menu.group.new.label".LG();
+
+        var selectedIndex = currentIndex < 0 ? 0 : currentIndex + 1;
+        var nextIndex = EditorGUI.Popup(position, label, selectedIndex, options);
+        if (nextIndex == selectedIndex) return;
+        if (nextIndex == options.Length - 1)
+        {
+            groupName.stringValue = string.Empty;
+            NewGroupNameEditingByProperty[stateKey] = true;
+            GUI.FocusControl(null);
+            return;
+        }
+
+        groupName.stringValue = nextIndex == 0 ? string.Empty : groups[nextIndex - 1];
+    }
+
+    public static void DrawBuiltInGroup(Rect position, GUIContent label, string groupName)
+    {
+        using var _ = new EditorGUI.DisabledScope(true);
+        EditorGUI.TextField(position, label, groupName);
+    }
+
+    private static List<string> GetDefinedGroupNames(Component? owner)
+    {
+        if (owner == null) return new();
+        var root = RuntimeUtil.FindAvatarInParents(owner.transform);
+        if (root == null) return new();
+
+        var groups = new HashSet<string>();
+        foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
+        {
+            var groupName = menu.ExclusiveToggleGroup.GroupName;
+            if (!string.IsNullOrWhiteSpace(groupName) && groupName != BuiltInMenuGroups.DirectMenuReplace)
+                groups.Add(groupName);
+        }
+        foreach (var expression in root.GetComponentsInChildren<FaceTuneComponent>(true))
+        {
+            var groupName = expression.DirectMenuSettings.BlendExclusiveGroupName;
+            if (!string.IsNullOrWhiteSpace(groupName)) groups.Add(groupName);
+        }
+        return groups.OrderBy(name => name, StringComparer.Ordinal).ToList();
     }
 }
 
@@ -78,16 +153,17 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
             if (ownerIsExpression)
             {
                 var placeholder = "menuIcon.currentExpression.placeholder".LG().text;
-                GUIHelper.DrawPlaceholderObjectField(
+                GUIHelper.DrawPlaceholderObjectLikeField(
                     position,
                     preview,
                     "menuIcon.previewExpression.label".LG(),
-                    new GUIContent($"{placeholder} ({FaceTuneComponent.ComponentName})"));
+                    new GUIContent($"{placeholder} ({FaceTuneComponent.ComponentName})"),
+                    AvatarObjectReference.IsEmpty(preview));
             }
             else
             {
                 EditorGUI.PropertyField(position, preview, "menuIcon.previewExpression.label".LG());
-                if (preview.objectReferenceValue == null)
+                if (AvatarObjectReference.IsEmpty(preview))
                 {
                     position.NewLine();
                     position.height = MissingExpressionWarningHeight;
@@ -111,7 +187,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
             height += GUIHelper.VerticalSpacing + MissingIconWarningHeight;
         if (mode == (int)MenuIconMode.ExpressionPreview
             && property.serializedObject.targetObject is not FaceTuneComponent
-            && property.FindPropertyRelative("PreviewExpression").objectReferenceValue == null)
+            && AvatarObjectReference.IsEmpty(property.FindPropertyRelative("PreviewExpression")))
             height += GUIHelper.VerticalSpacing + MissingExpressionWarningHeight;
         return height;
     }
@@ -124,9 +200,9 @@ internal sealed class MenuInstallSettingsDrawer : PropertyDrawer
     {
         var reference = property.FindPropertyRelative("InstallContainerOverride");
         var owner = property.serializedObject.targetObject as Component;
-        var folder = owner != null
+        var folder = owner is MenuFolderComponent
             ? owner.transform.parent?.GetComponentInParent<MenuFolderComponent>()
-            : null;
+            : owner?.GetComponentInParent<MenuFolderComponent>();
         var rootLabel = "menuInstallSettings.root.placeholder".LS();
         var destination = folder != null ? EffectiveMenuName(folder) : rootLabel;
         var placeholder = $"{destination} ({"menuInstallSettings.destinationType.placeholder".LS()})";
@@ -160,19 +236,12 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
         GUIHelper.DrawProperty(ref position, property.FindPropertyRelative("InstallSettings"), "directMenu.destination.label");
         var group = property.FindPropertyRelative("BlendExclusiveGroupName");
         var replaceMode = IsReplaceMode(property.serializedObject);
-        using (new EditorGUI.DisabledScope(replaceMode))
-        {
-            position.height = GUIHelper.LineHeight;
-            if (replaceMode)
-                GUIHelper.DrawPlaceholderTextField(
-                    position,
-                    group,
-                    "menu.group.label".LG(),
-                    "directMenu.replaceGroup.placeholder".LG());
-            else
-                EditorGUI.PropertyField(position, group, "menu.group.label".LG());
-            position.NewLine();
-        }
+        position.height = GUIHelper.LineHeight;
+        if (replaceMode)
+            MenuGUI.DrawBuiltInGroup(position, "menu.group.label".LG(), BuiltInMenuGroups.DirectMenuReplace);
+        else
+            MenuGUI.DrawGroupSelector(position, group, property.serializedObject.targetObject as Component, "menu.group.label".LG());
+        position.NewLine();
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -197,7 +266,11 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
 internal sealed class ExclusiveToggleGroupDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        => EditorGUI.PropertyField(position, property.FindPropertyRelative("GroupName"), label);
+        => MenuGUI.DrawGroupSelector(
+            position,
+            property.FindPropertyRelative("GroupName"),
+            property.serializedObject.targetObject as Component,
+            label);
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         => EditorGUI.GetPropertyHeight(property.FindPropertyRelative("GroupName"), label);

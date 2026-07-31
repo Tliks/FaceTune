@@ -4,16 +4,21 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(MenuFolderComponent))]
 internal sealed class MenuFolderEditor : FaceTuneSectionEditor<MenuFolderComponent>
 {
-    protected override bool DefaultExpanded => false;
-    protected override GUIContent SectionLabel => "menuFolder.section.label".LG();
+    protected override IReadOnlyList<FaceTuneSection> CreateSections()
+        => new[] { CreateMenuFolderSection() };
 
-    protected override float GetSectionContentHeight()
-        => GetPropertyHeight(nameof(MenuFolderComponent.MenuName))
-         + GetPropertyHeight(nameof(MenuFolderComponent.Icon))
-         + GetPropertyHeight(nameof(MenuFolderComponent.InstallSettings))
-         - GUIHelper.VerticalSpacing;
+    private FaceTuneSection CreateMenuFolderSection()
+        => new(
+            "menuFolder.section.label".LG(),
+            () => GetPropertyHeight(nameof(MenuFolderComponent.MenuName))
+                + GUIHelper.VerticalSpacing
+                + GetPropertyHeight(nameof(MenuFolderComponent.Icon))
+                + GUIHelper.VerticalSpacing
+                + GetPropertyHeight(nameof(MenuFolderComponent.InstallSettings)),
+            DrawSectionContent,
+            false);
 
-    protected override void DrawSectionContent(Rect position)
+    private void DrawSectionContent(Rect position)
     {
         var menuName = serializedObject.FindProperty(nameof(MenuFolderComponent.MenuName));
         MenuGUI.DrawMenuName(ref position, menuName, Component, "menuFolder.name.label".LG());

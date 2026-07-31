@@ -3,7 +3,6 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 namespace Aoyon.FaceTune.Gui;
 
 internal sealed record ExpressionGUIOptions(
-    GUIContent? HeaderLabel = null,
     GUIContent? ExternalSourceLabel = null,
     GUIContent? FooterButtonLabel = null,
     Action? FooterButtonAction = null);
@@ -11,9 +10,10 @@ internal sealed record ExpressionGUIOptions(
 internal static class ExpressionGUI
 {
     private static readonly ReorderableListOptions AnimationListOptions = new(
-        Foldout: false,
+        Header: ReorderableListOptions.HeaderMode.Foldout,
         MaxVisibleHeight: 126f,
-        InitializeElement: InitializeBlendShapeAnimation);
+        InitializeElement: InitializeBlendShapeAnimation,
+        Controls: ReorderableListOptions.ControlsPlacement.Header);
     private static GUIContent[] ClipImportModes => new[]
     {
         "clipImportOption.option.all".LG(),
@@ -26,25 +26,19 @@ internal static class ExpressionGUI
         property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = new AnimationCurve();
     }
 
-    public static float GetHeight(
+    public static float GetContentHeight(
         SerializedProperty data,
-        bool expanded,
-        bool otherExpressionExpanded,
         ExpressionGUIOptions? options = null)
     {
-        if (!expanded) return GUIHelper.ShurikenHeaderHeight;
-
-        var height = GUIHelper.ShurikenHeaderHeight
-                   + GUIHelper.ContentSpacing + GUIHelper.ContentBottomSpacing
-                   + GUIHelper.ContentPadding * 2f;
-        height += GUIHelper.LineHeight;
-        if (otherExpressionExpanded)
+        var height = GUIHelper.LineHeight;
+        var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
+        if (reference.isExpanded)
         {
             height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
             height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
         }
 
-        var animations = data.FindPropertyRelative("BlendShapeAnimations");
+        var animations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
         height += GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(animations, AnimationListOptions);
         height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
         if (options?.FooterButtonLabel != null)
@@ -52,46 +46,23 @@ internal static class ExpressionGUI
         return height;
     }
 
-    public static void Draw(
+    public static void DrawContent(
         Rect position,
         SerializedObject serializedObject,
         Component component,
         int targetCount,
-        ref bool expanded,
-        ref bool otherExpressionExpanded,
         ExpressionGUIOptions? options = null)
     {
-        var header = new Rect(position.x, position.y, position.width, GUIHelper.ShurikenHeaderHeight);
-        expanded = GUIHelper.DrawShuriken(
-            header,
-            expanded,
-            options?.HeaderLabel ?? "expression.section.label".LG());
-        if (!expanded) return;
+        var cursor = new Rect(position.x, position.y, position.width, GUIHelper.LineHeight);
+        var data = serializedObject.FindProperty(nameof(IHasExpressionData.Data));
+        var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
 
-        var content = new Rect(
-            position.x,
-            header.yMax + GUIHelper.ContentSpacing,
-            position.width,
-            position.height
-            - GUIHelper.ShurikenHeaderHeight
-            - GUIHelper.ContentSpacing
-            - GUIHelper.ContentBottomSpacing);
-        if (Event.current.type == EventType.Repaint) GUIHelper.DrawRegion(content);
-
-        var cursor = new Rect(
-            content.x + GUIHelper.ContentPadding,
-            content.y + GUIHelper.ContentPadding,
-            content.width - GUIHelper.ContentPadding * 2f,
-            GUIHelper.LineHeight);
-        var data = serializedObject.FindProperty("Data");
-        var reference = serializedObject.FindProperty("DataReference");
-
-        otherExpressionExpanded = GUIHelper.DrawFoldout(
+        reference.isExpanded = GUIHelper.DrawFoldout(
             cursor,
-            otherExpressionExpanded,
+            reference.isExpanded,
             options?.ExternalSourceLabel ?? "expression.otherExpression.label".LG());
 
-        if (otherExpressionExpanded)
+        if (reference.isExpanded)
         {
             cursor.NewLine();
             cursor = Indent(cursor);
@@ -108,7 +79,7 @@ internal static class ExpressionGUI
         }
 
         cursor.NewLine();
-        var animations = data.FindPropertyRelative("BlendShapeAnimations");
+        var animations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
         cursor.height = GUIHelper.GetListHeight(animations, AnimationListOptions);
         GUIHelper.DrawList(
             cursor,
@@ -130,13 +101,27 @@ internal static class ExpressionGUI
         }
     }
 
-    public static bool HasExternalSource(Component component, ExpressionData data, AvatarObjectReference reference)
-        => reference?.Get(component) != null || data.Clip != null;
+    internal static void InitializeExpansions(SerializedProperty data)
+    {
+        data.FindPropertyRelative(nameof(ExpressionData.DataReference)).isExpanded = HasExternalSource(data);
+        var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        blendShapeAnimations.isExpanded = blendShapeAnimations.arraySize > 0;
+    }
+
+    private static bool HasExternalSource(SerializedProperty data)
+    {
+        foreach (var target in data.serializedObject.targetObjects)
+        {
+            if (target is not Component component || component is not IHasExpressionData source) continue;
+            if (source.Data.DataReference?.Get(component) != null || source.Data.Clip != null) return true;
+        }
+        return false;
+    }
 
     private static void DrawClipRow(Rect position, SerializedProperty data, Component component, int targetCount)
     {
-        var clip = data.FindPropertyRelative("Clip");
-        var option = data.FindPropertyRelative("ClipOption");
+        var clip = data.FindPropertyRelative(nameof(ExpressionData.Clip));
+        var option = data.FindPropertyRelative(nameof(ExpressionData.ClipOption));
         var fields = EditorGUI.PrefixLabel(position, "expression.clip.label".LG());
         var importLabel = "expression.clip.import.button".LG();
         var buttonWidth = GUI.skin.button.CalcSize(importLabel).x;
@@ -160,53 +145,116 @@ internal static class ExpressionGUI
         return position;
     }
 
+    internal static void SetBlendShapeAnimations(
+        SerializedProperty blendShapeAnimations,
+        IReadOnlyList<BlendShapeWeightAnimation> animations)
+    {
+        var animationByName = new Dictionary<string, BlendShapeWeightAnimation>();
+        foreach (var animation in animations)
+            animationByName[animation.Name] = animation;
+
+        var matchedNames = new HashSet<string>();
+        for (var index = 0; index < blendShapeAnimations.arraySize; index++)
+        {
+            var element = blendShapeAnimations.GetArrayElementAtIndex(index);
+            var name = element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue;
+            if (!animationByName.TryGetValue(name, out var animation) || !matchedNames.Add(name)) continue;
+
+            var curve = element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName);
+            if (!animation.Curve.Equals(curve.animationCurveValue))
+                curve.animationCurveValue = animation.Curve;
+        }
+
+        foreach (var animation in animations)
+        {
+            if (!matchedNames.Add(animation.Name)) continue;
+
+            var index = blendShapeAnimations.arraySize;
+            blendShapeAnimations.arraySize++;
+            var element = blendShapeAnimations.GetArrayElementAtIndex(index);
+            element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = animation.Name;
+            element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = animationByName[animation.Name].Curve;
+        }
+
+        for (var index = blendShapeAnimations.arraySize - 1; index >= 0; index--)
+        {
+            var name = blendShapeAnimations
+                .GetArrayElementAtIndex(index)
+                .FindPropertyRelative(BlendShapeWeightAnimation.NamePropName)
+                .stringValue;
+            if (!animationByName.ContainsKey(name))
+                blendShapeAnimations.DeleteArrayElementAtIndex(index);
+        }
+    }
+
+    internal static void MergeBlendShapeAnimations(
+        SerializedProperty blendShapeAnimations,
+        IReadOnlyCollection<BlendShapeWeightAnimation> animations)
+    {
+        var existingAnimations = new Dictionary<string, (SerializedProperty Element, AnimationCurve Curve)>();
+        for (var i = 0; i < blendShapeAnimations.arraySize; i++)
+        {
+            var element = blendShapeAnimations.GetArrayElementAtIndex(i);
+            var name = element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue;
+            if (string.IsNullOrEmpty(name)) continue;
+            existingAnimations[name] = (
+                element,
+                element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue);
+        }
+
+        foreach (var animation in animations)
+        {
+            if (existingAnimations.TryGetValue(animation.Name, out var existing))
+            {
+                if (!animation.Curve.Equals(existing.Curve))
+                    existing.Element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = animation.Curve;
+                continue;
+            }
+
+            var index = blendShapeAnimations.arraySize;
+            blendShapeAnimations.arraySize++;
+            var element = blendShapeAnimations.GetArrayElementAtIndex(index);
+            element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = animation.Name;
+            element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = animation.Curve;
+            existingAnimations[animation.Name] = (element, animation.Curve);
+        }
+    }
 }
 
 internal static class ExpressionEditorActions
 {
     public static void ImportClip(Component component, SerializedProperty data)
     {
-        if (component is not IExpressionDataSource source) return;
-        if (!CustomEditorUtility.TryGetContext(component.gameObject, out var context) || source.Data.Clip == null) return;
+        if (component is not IHasExpressionData source || source.Data.Clip == null) return;
+        if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
 
         var animations = new List<BlendShapeWeightAnimation>();
         source.Data.Clip.GetBlendShapeAnimations(
             source.Data.ClipOption,
             animations,
             context.BodyPath);
-        CustomEditorUtility.AddBlendShapeAnimations(
-            data.FindPropertyRelative("BlendShapeAnimations"),
-            animations);
-        data.FindPropertyRelative("Clip").objectReferenceValue = null;
+        var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        ExpressionGUI.MergeBlendShapeAnimations(blendShapeAnimations, animations);
+        blendShapeAnimations.isExpanded = true;
+        data.FindPropertyRelative(nameof(ExpressionData.Clip)).objectReferenceValue = null;
     }
 
     public static void OpenEditor(Component component)
     {
-        if (component is not IExpressionDataSource source) return;
+        if (component is not IHasExpressionData source) return;
+        if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
 
-        var defaults = new BlendShapeWeightSet(
-            source.Data.BlendShapeAnimations.Select(animation => animation.ToFirstFrameBlendShape()));
-        switch (component)
+        IShapesEditorTargeting? targeting = component switch
         {
-            case FaceTuneComponent faceTune:
-                CustomEditorUtility.OpenEditor(
-                    component.gameObject,
-                    new FaceTuneDataTargeting { Target = faceTune },
-                    defaults);
-                break;
-            case DataComponent data:
-                CustomEditorUtility.OpenEditor(
-                    component.gameObject,
-                    new ExpressionDataTargeting { Target = data },
-                    defaults);
-                break;
-            case StyleComponent style:
-                CustomEditorUtility.OpenEditor(
-                    component.gameObject,
-                    new FacialStyleTargeting { Target = style },
-                    defaults);
-                break;
-        }
+            FaceTuneComponent faceTune => new FaceTuneDataTargeting { Target = faceTune },
+            DataComponent data => new ExpressionDataTargeting { Target = data },
+            StyleComponent style => new FacialStyleTargeting { Target = style },
+            _ => null
+        };
+        if (targeting == null) return;
+
+        var defaults = new BlendShapeWeightSet(source.Data.BlendShapeAnimations.ToFirstFrameBlendShapes());
+        FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaults);
     }
 }
 
@@ -229,7 +277,7 @@ internal sealed class ExpressionSettingsDrawer : PropertyDrawer
         var mode = property.FindPropertyRelative(ExpressionSettings.MultiFrameModePropName);
         var rows = mode.enumValueIndex == (int)MultiFrameMode.Trigger
             || mode.enumValueIndex == (int)MultiFrameMode.Parameter ? 2 : 1;
-        return GUIHelper.LineHeight * rows + GUIHelper.VerticalSpacing * (rows - 1);
+        return GUIHelper.GetLinesHeight(rows);
     }
 }
 

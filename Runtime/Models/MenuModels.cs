@@ -1,6 +1,11 @@
 
 namespace Aoyon.FaceTune;
 
+internal static class BuiltInMenuGroups
+{
+    public const string DirectMenuReplace = "DirectMenuReplace";
+}
+
 internal enum MenuItemKind
 {
     Toggle,
@@ -19,7 +24,12 @@ internal class MenuIconSettings
 {
     public MenuIconMode Mode = MenuIconMode.None;
     public Texture2D? ManualIcon = null;
-    public FaceTuneComponent? PreviewExpression = null;
+    public AvatarObjectReference PreviewExpression = new();
+
+    public void ResolveReferences(Component owner)
+    {
+        PreviewExpression.Get(owner);
+    }
 }
 
 [Serializable]
@@ -54,6 +64,7 @@ internal class DirectMenuSettings
 
     public void ResolveReferences(Component owner)
     {
+        Icon.ResolveReferences(owner);
         InstallSettings.ResolveReferences(owner);
     }
 }

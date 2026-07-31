@@ -9,23 +9,23 @@ internal static class ExpressionDataExtensions
         ICollection<BlendShapeWeightAnimation> resultToAdd,
         string bodyPath,
         ComputeContext? context = null)
-        where T : Component, IExpressionDataSource
+        where T : Component, IHasExpressionData
     {
         GetAnimations(
             component,
             component,
             resultToAdd,
             bodyPath,
-            new HashSet<IExpressionDataSource>(),
+            new HashSet<IHasExpressionData>(),
             context ?? ComputeContext.NullContext);
     }
 
     private static void GetAnimations(
-        IExpressionDataSource source,
+        IHasExpressionData source,
         Component owner,
         ICollection<BlendShapeWeightAnimation> result,
         string bodyPath,
-        HashSet<IExpressionDataSource> resolving,
+        HashSet<IHasExpressionData> resolving,
         ComputeContext context)
     {
         if (!resolving.Add(source)) return;
@@ -57,18 +57,18 @@ internal static class ExpressionDataExtensions
         resolving.Remove(source);
     }
 
-    private static IEnumerable<(IExpressionDataSource Source, Component Owner)> GetReferencedSources(
-        IExpressionDataSource source,
+    private static IEnumerable<(IHasExpressionData Source, Component Owner)> GetReferencedSources(
+        IHasExpressionData source,
         Component owner,
         ComputeContext context)
     {
-        var target = source.DataReference.Get(owner);
+        var target = source.Data.DataReference.Get(owner);
         if (target == null) yield break;
 
         var components = context.GetComponents<FaceTuneTagComponent>(target);
         foreach (var component in components)
         {
-            if (component is IExpressionDataSource referenced)
+            if (component is IHasExpressionData referenced)
             {
                 yield return (referenced, component);
             }
@@ -77,20 +77,20 @@ internal static class ExpressionDataExtensions
 
     public static IEnumerable<ExpressionData> EnumerateDataGraph(this Component owner, ComputeContext? context = null)
     {
-        if (owner is not IExpressionDataSource source) yield break;
+        if (owner is not IHasExpressionData source) yield break;
 
         foreach (var data in EnumerateDataGraph(
                      source,
                      owner,
-                     new HashSet<IExpressionDataSource>(),
+                     new HashSet<IHasExpressionData>(),
                      context ?? ComputeContext.NullContext))
             yield return data;
     }
 
     private static IEnumerable<ExpressionData> EnumerateDataGraph(
-        IExpressionDataSource source,
+        IHasExpressionData source,
         Component owner,
-        HashSet<IExpressionDataSource> resolving,
+        HashSet<IHasExpressionData> resolving,
         ComputeContext context)
     {
         if (!resolving.Add(source)) yield break;
@@ -98,10 +98,10 @@ internal static class ExpressionDataExtensions
         context.Observe(owner);
         yield return source.Data;
 
-        var target = source.DataReference.Get(owner);
+        var target = source.Data.DataReference.Get(owner);
         if (target != null)
         {
-            foreach (var referenced in context.GetComponents<FaceTuneTagComponent>(target).OfType<IExpressionDataSource>())
+            foreach (var referenced in context.GetComponents<FaceTuneTagComponent>(target).OfType<IHasExpressionData>())
             {
                 if (referenced is not Component referencedOwner) continue;
 

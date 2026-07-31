@@ -11,8 +11,7 @@ internal interface IHasConditions
     IEnumerable<Condition> Conditions { get; }
 }
 
-internal interface IExpressionDataSource
+internal interface IHasExpressionData : IHasObjectReferences
 {
-    AvatarObjectReference DataReference { get; }
     ExpressionData Data { get; }
 }

@@ -11,6 +11,22 @@ internal abstract class IShapesEditorTargeting
     public abstract void SetTarget(Object? target);
     public event Action? OnTargetChanged;
     protected void RaiseTargetChanged() => OnTargetChanged?.Invoke();
+
+    protected static void SetStringArray(
+        Component target,
+        Func<SerializedObject, SerializedProperty> getProperty,
+        IReadOnlyCollection<string> values)
+    {
+        var serializedObject = new SerializedObject(target);
+        serializedObject.Update();
+        var property = getProperty(serializedObject);
+        property.arraySize = values.Count;
+        var index = 0;
+        foreach (var value in values)
+            property.GetArrayElementAtIndex(index++).stringValue = value;
+        serializedObject.ApplyModifiedProperties();
+    }
+
     public abstract void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager);
     public abstract VisualElement? DrawOptions();
 }
@@ -100,7 +116,7 @@ internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
     }
 }
 
-internal abstract class ExpressionDataTargetingBase<T> : IShapesEditorTargeting<T> where T : Component, IExpressionDataSource
+internal abstract class ExpressionDataTargetingBase<T> : IShapesEditorTargeting<T> where T : Component, IHasExpressionData
 {
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
@@ -108,9 +124,13 @@ internal abstract class ExpressionDataTargetingBase<T> : IShapesEditorTargeting<
         var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var animations = result.ToBlendShapeAnimations().ToList();
-        var getProperty = (SerializedObject so) => so.FindProperty("Data").FindPropertyRelative("BlendShapeAnimations");
-        CustomEditorUtility.ClearAllElements(Target, getProperty);
-        CustomEditorUtility.AddBlendShapeAnimations(Target, getProperty, animations);
+        var getProperty = (SerializedObject so) => so
+            .FindProperty(nameof(IHasExpressionData.Data))
+            .FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        var serializedObject = new SerializedObject(Target);
+        serializedObject.Update();
+        ExpressionGUI.SetBlendShapeAnimations(getProperty(serializedObject), animations);
+        serializedObject.ApplyModifiedProperties();
     }
 }
 
@@ -139,12 +159,7 @@ internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<EyeBlinkCompon
         var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var getProperty = (SerializedObject so) => so.FindProperty(nameof(EyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
-        CustomEditorUtility.ClearAllElements(Target, getProperty);
-        CustomEditorUtility.AddShapesAsNames(
-            Target, 
-            getProperty, 
-            result.Keys.ToList()
-        );
+        SetStringArray(Target, getProperty, result.Keys);
     }
 
 }
@@ -159,12 +174,7 @@ internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<LipSyncComponen
         var result = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(result);
         var getProperty = (SerializedObject so) => so.FindProperty(nameof(LipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName);
-        CustomEditorUtility.ClearAllElements(Target, getProperty);
-        CustomEditorUtility.AddShapesAsNames(
-            Target, 
-            getProperty, 
-            result.Keys.ToList()
-        );
+        SetStringArray(Target, getProperty, result.Keys);
     }
 
 }

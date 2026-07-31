@@ -28,7 +28,7 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
             ? string.Empty
             : next == avatarRoot
                 ? AvatarObjectReference.AvatarRootPath
-                : RelativePath(avatarRoot, next) ?? string.Empty;
+                : RuntimeUtil.RelativePath(avatarRoot, next) ?? string.Empty;
     }
 
     private static Transform? Resolve(string path, GameObject? target, Transform avatarRoot)
@@ -51,13 +51,5 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
             result = root;
         }
         return result;
-    }
-
-    private static string? RelativePath(Transform root, Transform target)
-    {
-        var names = new Stack<string>();
-        for (var current = target; current != null && current != root; current = current.parent)
-            names.Push(current.name);
-        return names.Count > 0 ? string.Join("/", names) : null;
     }
 }

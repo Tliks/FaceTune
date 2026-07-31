@@ -2,11 +2,10 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class DataComponent : FaceTuneTagComponent, IHasObjectReferences, IExpressionDataSource
+    internal class DataComponent : FaceTuneTagComponent, IHasExpressionData
     {
         internal const string ComponentName = ComponentNamePrefix + "Data";
 
-        public AvatarObjectReference DataReference = new();
         public ExpressionData Data = new();
 
         // AnimationClip
@@ -16,9 +15,8 @@ namespace Aoyon.FaceTune
         // Manual
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
-        AvatarObjectReference IExpressionDataSource.DataReference => DataReference;
-        ExpressionData IExpressionDataSource.Data => Data;
+        ExpressionData IHasExpressionData.Data => Data;
 
-        public void ResolveReferences() => DataReference.Get(this);
+        public void ResolveReferences() => Data.ResolveReferences(this);
     }
 }

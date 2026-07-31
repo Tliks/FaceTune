@@ -6,16 +6,26 @@ internal sealed class MenuComponentEditor : FaceTuneSectionEditor<MenuComponent>
 {
     private bool _parameterSettingsExpanded;
 
-    protected override bool DefaultExpanded => false;
-    protected override GUIContent SectionLabel => "menu.section.label".LG();
+    protected override IReadOnlyList<FaceTuneSection> CreateSections()
+        => new[] { CreateMenuSection() };
 
-    protected override float GetSectionContentHeight()
+    private FaceTuneSection CreateMenuSection()
+        => new(
+            "menu.section.label".LG(),
+            GetSectionContentHeight,
+            DrawSectionContent,
+            false);
+
+    private float GetSectionContentHeight()
     {
         var height = GetPropertyHeight(nameof(MenuComponent.MenuName))
+                   + GUIHelper.VerticalSpacing
                    + GetPropertyHeight(nameof(MenuComponent.Icon))
+                   + GUIHelper.VerticalSpacing
                    + GetPropertyHeight(nameof(MenuComponent.InstallSettings))
                    + 10f
                    + GetPropertyHeight(nameof(MenuComponent.Kind))
+                   + GUIHelper.VerticalSpacing
                    + GUIHelper.LineHeight;
         if (!_parameterSettingsExpanded) return height;
 
@@ -29,15 +39,35 @@ internal sealed class MenuComponentEditor : FaceTuneSectionEditor<MenuComponent>
                             || group.hasMultipleDifferentValues
                             || string.IsNullOrWhiteSpace(group.stringValue);
 
-        height += GUIHelper.VerticalSpacing;
-        if (isToggle) height += GetPropertyHeight(nameof(MenuComponent.ExclusiveToggleGroup));
-        if (parameterVisible) height += GetPropertyHeight(nameof(MenuComponent.ParameterName));
-        if (isFloat) height += GetPropertyHeight(nameof(MenuComponent.FloatDefaultValue));
-        if (isToggle) height += GetPropertyHeight(nameof(MenuComponent.DefaultSelected));
-        return height - GUIHelper.VerticalSpacing;
+        var childHeight = 0f;
+        var childCount = 0;
+        if (isToggle)
+        {
+            childHeight += GetPropertyHeight(nameof(MenuComponent.ExclusiveToggleGroup));
+            childCount++;
+        }
+        if (parameterVisible)
+        {
+            childHeight += GUIHelper.LineHeight;
+            childCount++;
+        }
+        if (isFloat)
+        {
+            childHeight += GetPropertyHeight(nameof(MenuComponent.FloatDefaultValue));
+            childCount++;
+        }
+        if (isToggle)
+        {
+            childHeight += GetPropertyHeight(nameof(MenuComponent.DefaultSelected));
+            childCount++;
+        }
+        return height
+             + GUIHelper.VerticalSpacing
+             + childHeight
+             + GUIHelper.VerticalSpacing * Mathf.Max(0, childCount - 1);
     }
 
-    protected override void DrawSectionContent(Rect position)
+    private void DrawSectionContent(Rect position)
     {
         var menuName = serializedObject.FindProperty(nameof(MenuComponent.MenuName));
         MenuGUI.DrawMenuName(ref position, menuName, Component, "menu.name.label".LG());

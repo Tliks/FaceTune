@@ -18,6 +18,7 @@ namespace Aoyon.FaceTune
 
         public void ResolveReferences()
         {
+            Icon.ResolveReferences(this);
             InstallSettings.ResolveReferences(this);
         }
     }

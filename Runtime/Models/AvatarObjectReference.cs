@@ -68,21 +68,12 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
 
         referencePath = target.transform == avatarRoot
             ? AvatarRootPath
-            : RelativePath(avatarRoot, target.transform) ?? string.Empty;
+            : RuntimeUtil.RelativePath(avatarRoot, target.transform) ?? string.Empty;
     }
 
     private static bool IsValidTarget(GameObject? target, Transform avatarRoot)
         => target != null
         && (target.transform == avatarRoot || target.transform.IsChildOf(avatarRoot));
-
-    private static string? RelativePath(Transform root, Transform target)
-    {
-        if (target == root) return string.Empty;
-        var names = new Stack<string>();
-        for (var current = target; current != null && current != root; current = current.parent)
-            names.Push(current.name);
-        return names.Count > 0 ? string.Join("/", names) : null;
-    }
 
     public bool Equals(AvatarObjectReference? other)
         => other != null && targetObject == other.targetObject && referencePath == other.referencePath;

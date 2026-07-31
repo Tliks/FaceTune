@@ -3,15 +3,20 @@ namespace Aoyon.FaceTune;
 [Serializable]
 internal class ExpressionData
 {
-    // AnimationClip
     public AnimationClip? Clip = null;
     public ClipImportOption ClipOption = ClipImportOption.NonZero;
 
-    // Manual
+    public AvatarObjectReference DataReference = new();
+
     public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
     public ExpressionData()
     {
+    }
+
+    public void ResolveReferences(Component owner)
+    {
+        DataReference.Get(owner);
     }
 }
 

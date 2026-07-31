@@ -614,3 +614,9 @@ msgstr "OR"
 
 msgid "condition.addOrGroup.label"
 msgstr "Add OR Condition Group"
+
+msgid "menu.group.none.label"
+msgstr "None"
+
+msgid "menu.group.new.label"
+msgstr "New…"

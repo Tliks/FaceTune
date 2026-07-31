@@ -10,7 +10,6 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     public override string DisplayName => "Normalize Authoring Hierarchy";
 
     private const string PresetGroupName = "PresetIndex";
-    private const string DirectReplaceGroupName = "DirectMenuReplace";
     private const string DirectMenuObjectName = FaceTuneConstants.Name + " DirectMenu";
 
     protected override void Execute(FaceTuneContext context)
@@ -86,7 +85,8 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             {
                 Mode = settings.Icon.Mode,
                 ManualIcon = settings.Icon.ManualIcon,
-                PreviewExpression = settings.Icon.PreviewExpression ?? proxy
+                PreviewExpression = new AvatarObjectReference(
+                    settings.Icon.PreviewExpression.Get(original) ?? proxy.gameObject)
             };
             menu.InstallSettings = settings.InstallSettings;
             menu.Kind = MenuItemKind.Toggle;
@@ -97,12 +97,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
-            proxy.DataReference = new(original.gameObject);
+            proxy.Data.DataReference = new(original.gameObject);
 
             if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
             {
                 var proxyStyle = proxyObject.AddComponent<StyleComponent>();
-                proxyStyle.DataReference = new(originalStyle.gameObject);
+                proxyStyle.Data.DataReference = new(originalStyle.gameObject);
             }
         }
     }
@@ -111,7 +111,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     {
         return expression.FacialSettings.WriteMode switch
         {
-            ExpressionWriteMode.Replace => DirectReplaceGroupName,
+            ExpressionWriteMode.Replace => BuiltInMenuGroups.DirectMenuReplace,
             ExpressionWriteMode.Blend => expression.DirectMenuSettings.BlendExclusiveGroupName,
             _ => string.Empty
         };
@@ -261,7 +261,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     {
         foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
         {
-            if (component is not IExpressionDataSource) continue;
+            if (component is not IHasExpressionData) continue;
             foreach (var data in component.EnumerateDataGraph())
             {
                 FilterBlendShapeAnimations(data, component, bodyPath, settings);

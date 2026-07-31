@@ -11,11 +11,13 @@ internal sealed class ConditionDrawer : PropertyDrawer
         fontSize = SeparatorFontSize
     };
     private static readonly ReorderableListOptions CasesOptions = new(
-        Foldout: false,
-        Header: false,
+        Header: ReorderableListOptions.HeaderMode.None,
         MaxVisibleHeight: 260f,
+        EmptyContentHeight: EmptyMessageHeight,
+        DrawEmptyOverride: DrawEmptyMessage,
         InitializeElement: element => element.FindPropertyRelative("Conditions").arraySize = 0,
-        DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()));
+        DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()),
+        Controls: ReorderableListOptions.ControlsPlacement.Manual);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -41,11 +43,6 @@ internal sealed class ConditionDrawer : PropertyDrawer
 
         position.height = GUIHelper.GetListHeight(cases, CasesOptions);
         GUIHelper.DrawList(position, cases, "condition.conditions.label".LG(), CasesOptions);
-        if (cases.arraySize == 0)
-        {
-            position.height = EmptyMessageHeight;
-            EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
-        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -53,20 +50,27 @@ internal sealed class ConditionDrawer : PropertyDrawer
         var always = property.FindPropertyRelative("Always");
         if (always.boolValue && !always.hasMultipleDifferentValues) return GUIHelper.LineHeight;
         var cases = property.FindPropertyRelative("Cases");
-        return GUIHelper.LineHeight + (cases.arraySize == 0
-            ? EmptyMessageHeight
-            : GUIHelper.GetListHeight(cases, CasesOptions));
+        return GUIHelper.LineHeight + GUIHelper.GetListHeight(cases, CasesOptions);
     }
 
     internal static void DrawSeparator(Rect boundary, GUIContent label)
+        => DrawSeparator(boundary.x, boundary.y, boundary.width, label);
+
+    internal static void DrawSeparatorAt(float x, float y, GUIContent label)
+        => DrawSeparator(x, y, SeparatorStyle.CalcSize(label).x, label);
+
+    private static void DrawSeparator(float x, float y, float width, GUIContent label)
     {
         var position = new Rect(
-            boundary.x,
-            boundary.y - GUIHelper.LineHeight * .5f,
-            boundary.width,
+            x,
+            y - GUIHelper.LineHeight * .5f,
+            width,
             GUIHelper.LineHeight);
         EditorGUI.LabelField(position, label, SeparatorStyle);
     }
+
+    internal static void DrawEmptyMessage(Rect position, SerializedProperty _)
+        => EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
 }
 
 [CustomPropertyDrawer(typeof(ConditionCase))]
@@ -74,32 +78,26 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
 {
     private const float EmptyMessageHeight = 30f;
     private static readonly ReorderableListOptions ConditionsOptions = new(
-        Foldout: false,
-        AddElement: ShowAddMenu,
+        Header: ReorderableListOptions.HeaderMode.Label,
+        AddElementOverride: ShowAddMenu,
         DrawElementSeparator: DrawAndSeparator,
-        DrawElement: DrawCondition,
-        NestContent: false);
+        DrawElementOverride: DrawCondition,
+        EmptyContentHeight: EmptyMessageHeight,
+        DrawEmptyOverride: ConditionDrawer.DrawEmptyMessage,
+        NestContent: false,
+        Controls: ReorderableListOptions.ControlsPlacement.Header);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         var conditions = property.FindPropertyRelative("Conditions");
         GUIHelper.DrawList(position, conditions, GetCaseLabel(property), ConditionsOptions);
-        if (conditions.arraySize == 0)
-        {
-            position.y += GUIHelper.GetListHeight(conditions, ConditionsOptions) + GUIHelper.VerticalSpacing;
-            position.height = EmptyMessageHeight;
-            EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
-        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
         var conditions = property.FindPropertyRelative("Conditions");
-        var height = GUIHelper.GetListHeight(conditions, ConditionsOptions);
-        return conditions.arraySize == 0
-            ? height + GUIHelper.VerticalSpacing + EmptyMessageHeight
-            : height;
+        return GUIHelper.GetListHeight(conditions, ConditionsOptions);
     }
 
     private static void DrawCondition(Rect position, SerializedProperty condition)
@@ -109,14 +107,7 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
     }
 
     private static void DrawAndSeparator(Rect boundary)
-    {
-        var gutterBoundary = new Rect(
-            boundary.x,
-            boundary.y,
-            GUIHelper.IndentWidth,
-            0f);
-        ConditionDrawer.DrawSeparator(gutterBoundary, "condition.and.label".LG());
-    }
+        => ConditionDrawer.DrawSeparatorAt(boundary.x, boundary.y, "condition.and.label".LG());
 
     private static GUIContent GetCaseLabel(SerializedProperty property)
     {

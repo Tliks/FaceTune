@@ -8,6 +8,9 @@ internal static partial class GUIHelper
     public static float LineHeight => EditorGUIUtility.singleLineHeight;
     public static float VerticalSpacing => EditorGUIUtility.standardVerticalSpacing;
 
+    public static float GetLinesHeight(int count)
+        => count <= 0 ? 0f : LineHeight * count + VerticalSpacing * (count - 1);
+
     private const float DefaultSpace = 6f;
 
     public static Rect SetSingleHeight(this ref Rect rect)
@@ -167,6 +170,29 @@ internal static partial class GUIHelper
     {
         var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
         expanded = DrawShuriken(header, expanded, label);
+        return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
+    }
+
+    internal static bool DrawShurikenToggleSection(
+        Rect position,
+        ref bool expanded,
+        SerializedProperty enabled,
+        GUIContent label,
+        float contentHeight,
+        out Rect content)
+    {
+        var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
+        expanded = DrawShurikenToggleAndFold(header, expanded, enabled, label);
+        return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
+    }
+
+    private static bool DrawShurikenSectionContent(
+        Rect position,
+        Rect header,
+        bool expanded,
+        float contentHeight,
+        out Rect content)
+    {
         if (!expanded)
         {
             content = Rect.zero;

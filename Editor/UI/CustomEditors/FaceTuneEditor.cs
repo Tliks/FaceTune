@@ -53,7 +53,7 @@ internal abstract class FaceTuneEditor<T> : Editor where T : FaceTuneTagComponen
     protected float GetPropertyHeight(string propertyName, bool includeChildren = true)
     {
         var property = serializedObject.FindProperty(propertyName);
-        return property == null ? 0f : GUIHelper.PropertyHeight(property, includeChildren);
+        return property == null ? 0f : EditorGUI.GetPropertyHeight(property, GUIContent.none, includeChildren);
     }
 
     protected void DrawProperty(ref Rect position, string propertyName, bool includeChildren = true)

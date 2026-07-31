@@ -148,7 +148,7 @@ internal static class GameObjectMenu
     static void ImportFx() {
         var selected = Selection.activeGameObject;
         if (selected == null) throw new InvalidOperationException("No GameObject selected");
-        if (!CustomEditorUtility.TryGetContext(selected, out var context)) throw new Exception("Failed to get context");
+        if (!AvatarContext.TryGet(selected, out var context, out _)) throw new Exception("Failed to get context");
         var candidates = MetabasePlatformSupport.GetForAvatar(context.Root.transform)
             .Select(support => (Support: support, Controller: support.GetAnimatorController()))
             .Where(candidate => candidate.Controller != null)

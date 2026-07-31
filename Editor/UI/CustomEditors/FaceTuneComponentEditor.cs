@@ -1,237 +1,138 @@
-using Aoyon.FaceTune.Gui.ShapesEditor;
 using Aoyon.FaceTune.Settings;
 
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(FaceTuneComponent))]
-internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent>
+internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditor<FaceTuneComponent>
 {
     protected override bool ShowLanguageSwitcher => true;
 
     private const float ParameterWarningHeight = 30f;
 
-    private bool _expressionExpanded;
-    private bool _otherExpressionExpanded;
-    private bool _behaviorExpanded;
-    private bool _animationExpanded;
-    private bool _conditionExpanded;
-    private bool _directMenuExpanded;
-    private bool _previewExpanded;
-    private Rect _cursor;
+    protected override float GetAdditionalSectionSpacingBefore(int sectionIndex)
+        => sectionIndex is 3 or 5 ? 10f : 0f;
 
-    private void OnEnable()
-    {
-        serializedObject.UpdateIfRequiredOrScript();
-        _expressionExpanded = true;
-        _otherExpressionExpanded = targets
-            .Cast<FaceTuneComponent>()
-            .Any(component => component.DataReference?.Get(component) != null || component.Data.Clip != null);
-        _behaviorExpanded = true;
-        _animationExpanded = false;
-        _conditionExpanded = serializedObject
-            .FindProperty(nameof(FaceTuneComponent.ConditionEnabled))
-            .boolValue;
-        _directMenuExpanded = false;
-        _previewExpanded = false;
-    }
+    protected override IReadOnlyList<FaceTuneSection> CreateSections()
+        => new[]
+        {
+            CreateExpressionSection(),
+            CreateBehaviorSection(),
+            CreateAnimationSection(),
+            CreateConditionSection(),
+            CreateDirectMenuSection(),
+            CreatePreviewSection()
+        };
 
-    protected override float GetInspectorHeight()
-    {
-        var height = 0f;
-        Add(ref height, ExpressionGUI.GetHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.Data)), _expressionExpanded, _otherExpressionExpanded));
-        Add(ref height, SectionHeight(_behaviorExpanded, ContentHeight(3)));
-
-        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings));
-        Add(ref height, SectionHeight(_animationExpanded, AnimationContentHeight(settings)));
-
-        height += 10f;
-        Add(ref height, SectionHeight(_conditionExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.Condition)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
-        Add(ref height, SectionHeight(_directMenuExpanded, EditorGUI.GetPropertyHeight(serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings)), GUIContent.none, true) + GUIHelper.ContentPadding * 2f));
-
-        height += 10f;
-        Add(ref height, SectionHeight(_previewExpanded, ContentHeight(3)));
-        return Mathf.Max(0f, height - GUIHelper.HeaderSpacing);
-    }
-
-    protected override void DrawInspector(Rect position)
-    {
-        _cursor = position;
-        DrawExpressionSection();
-        DrawBehaviorSection();
-        DrawAnimationSection();
-
-        _cursor.y += 10f;
-        DrawConditionSection();
-        DrawDirectMenuSection();
-
-        _cursor.y += 10f;
-        DrawPreviewSection();
-    }
-
-    private void DrawExpressionSection()
+    private FaceTuneSection CreateExpressionSection()
     {
         var data = serializedObject.FindProperty(nameof(FaceTuneComponent.Data));
-        var height = ExpressionGUI.GetHeight(data, _expressionExpanded, _otherExpressionExpanded);
-        var position = Take(height);
-        ExpressionGUI.Draw(
-            position,
-            serializedObject,
-            Component,
-            targets.Length,
-            ref _expressionExpanded,
-            ref _otherExpressionExpanded);
+        ExpressionGUI.InitializeExpansions(data);
+        return new(
+            "expression.section.label".LG(),
+            () => ExpressionGUI.GetContentHeight(data),
+            content => ExpressionGUI.DrawContent(
+                content,
+                serializedObject,
+                Component,
+                targets.Length),
+            true);
     }
 
-    private void DrawBehaviorSection()
+    private FaceTuneSection CreateBehaviorSection()
+        => new(
+            "expression.behavior.section.label".LG(),
+            () => GUIHelper.GetLinesHeight(3),
+            DrawBehaviorContent,
+            true);
+
+    private FaceTuneSection CreateAnimationSection()
     {
-        var height = ContentHeight(3);
-        if (!DrawSection(
-                ref _behaviorExpanded,
-                "expression.behavior.section.label",
-                height,
-                out var content)) return;
+        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings));
+        return new(
+            "expression.animationSettings.section.label".LG(),
+            () => AnimationContentHeight(settings),
+            content => DrawMultiFrameSettings(content, settings),
+            false);
+    }
+
+    private FaceTuneSection CreateConditionSection()
+    {
+        var enabled = serializedObject.FindProperty(nameof(FaceTuneComponent.ConditionEnabled));
+        var condition = serializedObject.FindProperty(nameof(FaceTuneComponent.Condition));
+        return new(
+            "expression.condition.section.label".LG(),
+            () => EditorGUI.GetPropertyHeight(condition, GUIContent.none, true),
+            content =>
+            {
+                content.height = EditorGUI.GetPropertyHeight(condition, GUIContent.none, true);
+                using var disabled = new EditorGUI.DisabledScope(
+                    !enabled.boolValue || enabled.hasMultipleDifferentValues);
+                EditorGUI.PropertyField(content, condition, GUIContent.none, true);
+            },
+            enabled.boolValue,
+            EnabledProperty: enabled);
+    }
+
+    private FaceTuneSection CreateDirectMenuSection()
+    {
+        var enabled = serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuEnabled));
+        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings));
+        return new(
+            "expression.directMenu.label".LG(),
+            () => EditorGUI.GetPropertyHeight(settings, GUIContent.none, true),
+            content =>
+            {
+                content.height = EditorGUI.GetPropertyHeight(settings, GUIContent.none, true);
+                using var disabled = new EditorGUI.DisabledScope(
+                    !enabled.boolValue || enabled.hasMultipleDifferentValues);
+                EditorGUI.PropertyField(content, settings, GUIContent.none, true);
+            },
+            false,
+            EnabledProperty: enabled);
+    }
+
+    private FaceTuneSection CreatePreviewSection()
+        => new(
+            "expression.previewSettings.section.label".LG(),
+            () => GUIHelper.GetLinesHeight(3),
+            DrawPreviewContent,
+            false);
+
+    private void DrawBehaviorContent(Rect position)
+    {
         var facial = serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings));
         DrawEnum(
-            content,
+            position,
             facial.FindPropertyRelative(FacialSettings.AllowEyeBlinkPropName),
             "facialSettings.allowEyeBlink.label",
             nameof(TrackingPermission));
-        content.NewLine();
+        position.NewLine();
         DrawEnum(
-            content,
+            position,
             facial.FindPropertyRelative(FacialSettings.AllowLipSyncPropName),
             "facialSettings.allowLipSync.label",
             nameof(TrackingPermission));
-        content.NewLine();
-        DrawApplication(content, facial.FindPropertyRelative(FacialSettings.WriteModePropName));
+        position.NewLine();
+        DrawApplication(position, facial.FindPropertyRelative(FacialSettings.WriteModePropName));
     }
 
-    private void DrawConditionSection()
-        => DrawToggleSection(
-            ref _conditionExpanded,
-            nameof(FaceTuneComponent.ConditionEnabled),
-            nameof(FaceTuneComponent.Condition),
-            "expression.condition.section.label");
-
-    private void DrawDirectMenuSection()
-        => DrawToggleSection(
-            ref _directMenuExpanded,
-            nameof(FaceTuneComponent.DirectMenuEnabled),
-            nameof(FaceTuneComponent.DirectMenuSettings),
-            "expression.directMenu.label");
-
-    private void DrawToggleSection(ref bool expanded, string enabledName, string contentName, string key)
+    private void DrawPreviewContent(Rect position)
     {
-        var enabled = serializedObject.FindProperty(enabledName);
-        var content = serializedObject.FindProperty(contentName);
-        var propertyHeight = EditorGUI.GetPropertyHeight(content, GUIContent.none, true);
-        var contentHeight = propertyHeight + GUIHelper.ContentPadding * 2f;
-        if (!DrawToggleSection(
-                ref expanded,
-                enabled,
-                key,
-                contentHeight,
-                out var contentRect)) return;
-        contentRect.height = propertyHeight;
-        using var disabled = new EditorGUI.DisabledScope(!enabled.boolValue || enabled.hasMultipleDifferentValues);
-        EditorGUI.PropertyField(contentRect, content, GUIContent.none, true);
-    }
-
-    private void DrawAnimationSection()
-    {
-        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings));
-        if (!DrawSection(
-                ref _animationExpanded,
-                "expression.animationSettings.section.label",
-                AnimationContentHeight(settings),
-                out var content)) return;
-        DrawMultiFrameSettings(content, settings);
-    }
-
-    private void DrawPreviewSection()
-    {
-        if (!DrawSection(
-                ref _previewExpanded,
-                "expression.previewSettings.section.label",
-                ContentHeight(3),
-                out var content)) return;
         GUIHelper.DrawToggleLeft(
-            content,
+            position,
             serializedObject.FindProperty(nameof(FaceTuneComponent.EnableRealTimePreview)),
             "expression.realTimePreview.label".LG());
-        content.NewLine();
+        position.NewLine();
         ProjectSettings.EnableHierarchySelectedExpressionPreview = GUIHelper.DrawToggleLeft(
-            content,
+            position,
             ProjectSettings.EnableHierarchySelectedExpressionPreview,
             "expression.selectedExpressionPreview.label".LG());
-        content.NewLine();
+        position.NewLine();
         ProjectSettings.EnableProjectSelectedExpressionPreview = GUIHelper.DrawToggleLeft(
-            content,
+            position,
             ProjectSettings.EnableProjectSelectedExpressionPreview,
             "expression.selectedProjectExpressionPreview.label".LG());
-    }
-
-    private bool DrawSection(
-        ref bool expanded,
-        string labelKey,
-        float contentHeight,
-        out Rect content)
-    {
-        var totalHeight = GUIHelper.ShurikenHeaderHeight;
-        if (expanded)
-        {
-            totalHeight += GUIHelper.ContentSpacing + GUIHelper.ContentBottomSpacing + contentHeight;
-        }
-
-        var position = Take(totalHeight);
-        var header = new Rect(
-            position.x,
-            position.y,
-            position.width,
-            GUIHelper.ShurikenHeaderHeight);
-        expanded = GUIHelper.DrawShuriken(header, expanded, labelKey.LG());
-        content = expanded ? DrawSectionContent(position, contentHeight) : Rect.zero;
-        return expanded;
-    }
-
-    private bool DrawToggleSection(
-        ref bool expanded,
-        SerializedProperty enabled,
-        string labelKey,
-        float contentHeight,
-        out Rect content)
-    {
-        var totalHeight = GUIHelper.ShurikenHeaderHeight;
-        if (expanded)
-        {
-            totalHeight += GUIHelper.ContentSpacing + GUIHelper.ContentBottomSpacing + contentHeight;
-        }
-
-        var position = Take(totalHeight);
-        var header = new Rect(
-            position.x,
-            position.y,
-            position.width,
-            GUIHelper.ShurikenHeaderHeight);
-        expanded = GUIHelper.DrawShurikenToggleAndFold(header, expanded, enabled, labelKey.LG());
-        content = expanded ? DrawSectionContent(position, contentHeight) : Rect.zero;
-        return expanded;
-    }
-
-    private static Rect DrawSectionContent(Rect section, float contentHeight)
-    {
-        var region = new Rect(
-            section.x,
-            section.y + GUIHelper.ShurikenHeaderHeight + GUIHelper.ContentSpacing,
-            section.width,
-            contentHeight);
-        if (Event.current.type == EventType.Repaint) GUIHelper.DrawRegion(region);
-        return new Rect(
-            region.x + GUIHelper.ContentPadding,
-            region.y + GUIHelper.ContentPadding,
-            region.width - GUIHelper.ContentPadding * 2f,
-            GUIHelper.LineHeight);
     }
 
     private static void DrawApplication(Rect position, SerializedProperty mode)
@@ -290,7 +191,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
     private static float AnimationContentHeight(SerializedProperty settings)
     {
         var mode = settings.FindPropertyRelative(ExpressionSettings.MultiFrameModePropName);
-        var height = ContentHeight(mode.enumValueIndex is 2 or 3 ? 2 : 1);
+        var height = GUIHelper.GetLinesHeight(mode.enumValueIndex is 2 or 3 ? 2 : 1);
         if (mode.enumValueIndex == 3)
         {
             var parameter = settings.FindPropertyRelative(ExpressionSettings.ParameterNamePropName);
@@ -300,22 +201,4 @@ internal sealed class FaceTuneComponentEditor : FaceTuneEditor<FaceTuneComponent
         return height;
     }
 
-    private static float ContentHeight(int rows)
-        => GUIHelper.ContentPadding * 2f
-         + GUIHelper.LineHeight * rows
-         + GUIHelper.VerticalSpacing * (rows - 1);
-
-    private static float SectionHeight(bool expanded, float contentHeight)
-        => GUIHelper.ShurikenHeaderHeight
-         + (expanded ? GUIHelper.ContentSpacing + GUIHelper.ContentBottomSpacing + contentHeight : 0f);
-
-    private static void Add(ref float total, float height)
-        => total += height + GUIHelper.HeaderSpacing;
-
-    private Rect Take(float height)
-    {
-        var result = new Rect(_cursor.x, _cursor.y, _cursor.width, height);
-        _cursor.y = result.yMax + GUIHelper.HeaderSpacing;
-        return result;
-    }
 }

@@ -550,7 +550,7 @@ msgid "expression.selectedProjectExpressionPreview.label"
 msgstr "プロジェクトで選択した表情をプレビュー"
 
 msgid "expression.multiFrame.default.label"
-msgstr "デフォルト"
+msgstr "通常"
 
 msgid "expression.multiFrame.loop.label"
 msgstr "ループ"
@@ -614,3 +614,9 @@ msgstr "または"
 
 msgid "condition.addOrGroup.label"
 msgstr "OR条件グループを追加"
+
+msgid "menu.group.none.label"
+msgstr "なし"
+
+msgid "menu.group.new.label"
+msgstr "新規…"

@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class PresetComponent : FaceTuneTagComponent
+    internal class PresetComponent : FaceTuneTagComponent, IHasObjectReferences
     {
         internal const string ComponentName = ComponentNamePrefix + "Preset";
 
@@ -11,5 +11,10 @@ namespace Aoyon.FaceTune
         public MenuInstallSettings InstallSettings = new();
         public bool DefaultSelected = false;
 
+        public void ResolveReferences()
+        {
+            Icon.ResolveReferences(this);
+            InstallSettings.ResolveReferences(this);
+        }
     }
 }

@@ -3,14 +3,31 @@ using UnityEditorInternal;
 namespace Aoyon.FaceTune.Gui;
 
 internal sealed record ReorderableListOptions(
-    bool Foldout = true,
-    bool Header = true,
+    ReorderableListOptions.HeaderMode Header = ReorderableListOptions.HeaderMode.Foldout,
+    ReorderableListOptions.ControlsPlacement Controls = ReorderableListOptions.ControlsPlacement.Header,
     float? MaxVisibleHeight = null,
-    Action<SerializedProperty>? InitializeElement = null,
-    Action<SerializedProperty>? AddElement = null,
+    bool NestContent = true,
+    float EmptyContentHeight = 0f,
+    Action<Rect, SerializedProperty>? DrawEmptyOverride = null,
+    Action<Rect, SerializedProperty>? DrawElementOverride = null,
     Action<Rect>? DrawElementSeparator = null,
-    Action<Rect, SerializedProperty>? DrawElement = null,
-    bool NestContent = true);
+    Action<SerializedProperty>? InitializeElement = null,
+    Action<SerializedProperty>? AddElementOverride = null)
+{
+    internal enum HeaderMode
+    {
+        None,
+        Label,
+        Foldout
+    }
+
+    internal enum ControlsPlacement
+    {
+        Manual,
+        Header,
+        Footer
+    }
+}
 
 /// <summary>Draws a reorderable array strictly inside a caller-owned rectangle.</summary>
 internal static partial class GUIHelper
@@ -39,13 +56,38 @@ internal static partial class GUIHelper
         var list = CreateList(property, state, options);
 
         var bodyY = position.y;
-        if (options.Header)
+        var hasHeader = options.Header != ReorderableListOptions.HeaderMode.None;
+        if (hasHeader)
         {
             var header = new Rect(position.x, position.y, position.width, HeaderHeight);
             DrawHeader(header, property, label, options, list);
             bodyY = header.yMax + GUIHelper.VerticalSpacing;
         }
-        if ((options.Foldout && !property.isExpanded) || property.arraySize == 0) return;
+        else if (options.Controls == ReorderableListOptions.ControlsPlacement.Header)
+        {
+            var controls = new Rect(position.x, bodyY, position.width, HeaderHeight);
+            DrawControls(controls, _ => { }, property, list, options);
+            bodyY = controls.yMax + GUIHelper.VerticalSpacing;
+        }
+        if (options.Header == ReorderableListOptions.HeaderMode.Foldout && !property.isExpanded) return;
+        if (property.arraySize == 0)
+        {
+            var emptyHeight = GetEmptyContentHeight(list, options);
+            if (emptyHeight > 0f)
+            {
+                var empty = new Rect(position.x, bodyY, position.width, emptyHeight);
+                if (options.DrawEmptyOverride != null)
+                    options.DrawEmptyOverride(empty, property);
+                else
+                {
+                    if (options.NestContent) empty.Indent();
+                    list.DoList(empty);
+                }
+                bodyY = empty.yMax + GUIHelper.VerticalSpacing;
+            }
+            DrawFooterControls(position.xMax, bodyY, property, list, options);
+            return;
+        }
         var fullHeight = list.GetHeight();
         var visibleHeight = options.MaxVisibleHeight.HasValue ? Mathf.Min(fullHeight, options.MaxVisibleHeight.Value) : fullHeight;
         var body = new Rect(position.x, bodyY, position.width, visibleHeight);
@@ -64,17 +106,69 @@ internal static partial class GUIHelper
         }
 
         state.Index = list.index;
+        bodyY += visibleHeight + GUIHelper.VerticalSpacing;
+        DrawFooterControls(position.xMax, bodyY, property, list, options);
+    }
+
+    private static void DrawFooterControls(
+        float right,
+        float y,
+        SerializedProperty property,
+        ReorderableList list,
+        ReorderableListOptions options)
+    {
+        if (options.Controls != ReorderableListOptions.ControlsPlacement.Footer) return;
+        var footer = new Rect(right - ListControlsWidth, y, ListControlsWidth, HeaderHeight);
+        DrawControls(footer, _ => { }, property, list, options);
+    }
+
+    private static float GetEmptyContentHeight(ReorderableList list, ReorderableListOptions options)
+    {
+        var height = options.DrawEmptyOverride == null
+            ? list.GetHeight()
+            : Mathf.Max(0f, options.EmptyContentHeight);
+        return options.MaxVisibleHeight.HasValue
+            ? Mathf.Min(height, options.MaxVisibleHeight.Value)
+            : height;
     }
 
     public static float GetListHeight(SerializedProperty property, ReorderableListOptions? options = null)
     {
         options ??= new ReorderableListOptions();
-        var headerHeight = options.Header ? HeaderHeight : 0f;
-        if ((options.Foldout && !property.isExpanded) || property.arraySize == 0) return headerHeight;
+        var hasHeader = options.Header != ReorderableListOptions.HeaderMode.None;
+        var headerHeight = hasHeader ? HeaderHeight : 0f;
+        if (options.Header == ReorderableListOptions.HeaderMode.Foldout && !property.isExpanded)
+            return headerHeight;
 
-        var listHeight = CreateList(property, GetState(property), options).GetHeight();
+        var list = CreateList(property, GetState(property), options);
+        var listHeight = property.arraySize == 0 ? 0f : list.GetHeight();
         if (options.MaxVisibleHeight.HasValue) listHeight = Mathf.Min(listHeight, options.MaxVisibleHeight.Value);
-        return headerHeight + (options.Header ? GUIHelper.VerticalSpacing : 0f) + listHeight;
+        var emptyHeight = property.arraySize == 0
+            ? GetEmptyContentHeight(list, options)
+            : 0f;
+        var hasBody = listHeight > 0f || emptyHeight > 0f;
+        var controlsBeforeList = !hasHeader
+            && options.Controls == ReorderableListOptions.ControlsPlacement.Header;
+        var height = 0f;
+        if (controlsBeforeList)
+        {
+            height += HeaderHeight;
+            if (hasBody) height += GUIHelper.VerticalSpacing;
+        }
+        else if (hasHeader)
+        {
+            height += headerHeight;
+            if (hasBody || options.Controls == ReorderableListOptions.ControlsPlacement.Footer)
+                height += GUIHelper.VerticalSpacing;
+        }
+
+        height += listHeight + emptyHeight;
+        if (options.Controls == ReorderableListOptions.ControlsPlacement.Footer)
+        {
+            if (hasBody) height += GUIHelper.VerticalSpacing;
+            height += HeaderHeight;
+        }
+        return height;
     }
 
     private static ReorderableList CreateList(SerializedProperty property, State state, ReorderableListOptions options)
@@ -97,8 +191,8 @@ internal static partial class GUIHelper
                 options.DrawElementSeparator(boundary);
             }
             rect.height = EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
-            if (options.DrawElement != null)
-                options.DrawElement(rect, element);
+            if (options.DrawElementOverride != null)
+                options.DrawElementOverride(rect, element);
             else
                 EditorGUI.PropertyField(rect, element, GUIContent.none, true);
         };
@@ -112,26 +206,37 @@ internal static partial class GUIHelper
     {
         options ??= new ReorderableListOptions();
         var list = CreateList(property, GetState(property), options);
-        DrawHeader(position, _ => { }, property, options, list);
+        DrawControls(position, _ => { }, property, list, options);
     }
 
     private static void DrawHeader(Rect position, SerializedProperty property, GUIContent label, ReorderableListOptions options, ReorderableList list)
-        => DrawHeader(position, rect =>
-        {
-            if (options.Foldout) GUIHelper.DrawFoldout(rect, property, label);
-            else EditorGUI.LabelField(rect, label);
-        }, property, options, list);
+    {
+        Action<Rect> drawLabel = options.Header == ReorderableListOptions.HeaderMode.Foldout
+            ? rect => GUIHelper.DrawFoldout(rect, property, label)
+            : rect => EditorGUI.LabelField(rect, label);
+        var showHeaderControls = options.Controls == ReorderableListOptions.ControlsPlacement.Header
+            && (options.Header != ReorderableListOptions.HeaderMode.Foldout || property.isExpanded);
+        if (showHeaderControls)
+            DrawControls(position, drawLabel, property, list, options);
+        else
+            drawLabel(position);
+    }
 
-    private static void DrawHeader(Rect position, Action<Rect> drawLabel, SerializedProperty property, ReorderableListOptions options, ReorderableList list)
+    private static void DrawControls(
+        Rect position,
+        Action<Rect> drawLabel,
+        SerializedProperty property,
+        ReorderableList list,
+        ReorderableListOptions options)
     {
         DrawHeader(
             position,
             drawLabel,
             () =>
             {
-                if (options.AddElement != null)
+                if (options.AddElementOverride != null)
                 {
-                    options.AddElement(property);
+                    options.AddElementOverride(property);
                     return;
                 }
 
