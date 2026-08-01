@@ -10,7 +10,6 @@ internal sealed class AnimatorInstaller
 
     private readonly AvatarContext _avatarContext;
     private readonly IAnimatorPlatformServices _platformServices;
-    private readonly float _expressionTransitionDurationSeconds;
     private readonly bool _useWriteDefaults;
     private readonly VirtualClip _emptyClip;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _expressionClips = new();
@@ -18,13 +17,11 @@ internal sealed class AnimatorInstaller
     public AnimatorInstaller(
         AvatarContext avatarContext,
         bool useWriteDefaults,
-        IAnimatorPlatformServices platformServices,
-        float expressionTransitionDurationSeconds)
+        IAnimatorPlatformServices platformServices)
     {
         _avatarContext = avatarContext;
         _useWriteDefaults = useWriteDefaults;
         _platformServices = platformServices;
-        _expressionTransitionDurationSeconds = expressionTransitionDurationSeconds;
         _emptyClip = AnimatorHelper.CreateCustomEmptyClip();
     }
 
@@ -33,12 +30,30 @@ internal sealed class AnimatorInstaller
         InitialLayerPlan initial,
         int layerPriority)
     {
-        var layer = AddLayer(controller, initial.Name, layerPriority);
+        foreach (var parameter in initial.Parameters)
+            controller.EnsureParameterExists(parameter.Type, parameter.Name, parameter.DefaultValue);
 
-        var state = AddState(layer, "Default", DefaultStatePosition);
-        layer.StateMachine!.DefaultState = state;
-        var clip = state.SetNewClip("Initial");
-        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, initial.BlendShapes.ToBlendShapeAnimations());
+        var layer = AddLayer(controller, initial.Name, layerPriority);
+        var defaultState = AddState(layer, initial.DefaultState.Name, DefaultStatePosition);
+        layer.StateMachine!.DefaultState = defaultState;
+        SetInitialStateClip(defaultState, initial.DefaultState);
+        SetExitTransitions(defaultState, initial.DefaultState.When, 0f);
+
+        var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
+        foreach (var statePlan in initial.States)
+        {
+            var state = AddState(layer, statePlan.Name, position);
+            position.y += PositionYStep;
+            SetInitialStateClip(state, statePlan);
+            AddEntryTransition(layer, state, statePlan.When);
+            SetExitTransitions(state, statePlan.When.Complement(), 0f);
+        }
+    }
+
+    private void SetInitialStateClip(VirtualState state, InitialStatePlan plan)
+    {
+        var clip = state.SetNewClip(plan.Name);
+        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, plan.BlendShapes.ToBlendShapeAnimations());
     }
 
     public void InstallUnit(
@@ -111,7 +126,7 @@ internal sealed class AnimatorInstaller
             SetExitTransitions(
                 passThroughState,
                 plan.PassThroughExitWhen,
-                _expressionTransitionDurationSeconds);
+                plan.TransitionDurationSeconds);
         }
 
         var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
@@ -121,7 +136,7 @@ internal sealed class AnimatorInstaller
             position.y += PositionYStep;
             SetExpressionClip(state, statePlan);
             AddEntryTransition(layer, state, statePlan.EnterWhen);
-            SetExitTransitions(state, statePlan.ExitWhen, _expressionTransitionDurationSeconds);
+            SetExitTransitions(state, statePlan.ExitWhen, plan.TransitionDurationSeconds);
             if (plan.PassThroughExitWhen == null && layer.StateMachine!.DefaultState == null)
                 layer.StateMachine.DefaultState = state;
         }
@@ -150,7 +165,7 @@ internal sealed class AnimatorInstaller
         var defaultState = AddState(layer, trackingControl.DefaultState.Name, DefaultStatePosition);
         SetTrackingControlState(defaultState, trackingControl.DefaultState);
         layer.StateMachine!.DefaultState = defaultState;
-        SetExitTransitions(defaultState, trackingControl.DefaultExitWhen, _expressionTransitionDurationSeconds);
+        SetExitTransitions(defaultState, trackingControl.DefaultExitWhen, 0f);
 
         var position = DefaultStatePosition + new Vector3(0, PositionYStep * 2, 0);
         foreach (var statePlan in trackingControl.States)
@@ -159,7 +174,7 @@ internal sealed class AnimatorInstaller
             position.y += PositionYStep;
             SetTrackingControlState(state, statePlan);
             AddEntryTransition(layer, state, statePlan.When);
-            SetExitTransitions(state, statePlan.When.Complement(), _expressionTransitionDurationSeconds);
+            SetExitTransitions(state, statePlan.When.Complement(), 0f);
         }
 
         AddForceInactiveState(layer, "Disabled", trackingControl.ForceInactiveWhen, false);

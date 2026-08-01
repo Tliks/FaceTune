@@ -78,6 +78,7 @@ internal sealed class ExpressionCompiler
             CreateAnimationSet(component, facialAnimations, expressionAnimationSet),
             ResolveExpressionSettings(component.ExpressionSettings),
             ResolveFacialSettings(component),
+            ResolveTransitionDurationSeconds(component),
             _conditionCompiler.Resolve(component));
     }
 
@@ -119,6 +120,13 @@ internal sealed class ExpressionCompiler
         }
 
         return animationSet;
+    }
+
+    private float ResolveTransitionDurationSeconds(FaceTuneComponent component)
+    {
+        return component.GetComponentInParent<TransitionComponent>(true)
+            .DestroyedAsNull()?.DurationSeconds
+            ?? TransitionComponent.DefaultDurationSeconds;
     }
 
     private static FacialSettings ResolveFacialSettings(FaceTuneComponent component)

@@ -17,6 +17,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         var root = context.AvatarContext.Root;
         ProcessPresetComponents(root);
         ProcessDirectMenuSettings(root);
+        NormalizeMenuInstallContainers(context, root);
         IgnoreEmptyCondition(root);
 
         var settings = context.RequireSettings();
@@ -104,6 +105,23 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 var proxyStyle = proxyObject.AddComponent<StyleComponent>();
                 proxyStyle.Data.DataReference = new(originalStyle.gameObject);
             }
+        }
+    }
+
+    private static void NormalizeMenuInstallContainers(FaceTuneContext context, GameObject root)
+    {
+        var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
+            .OfType<IHasMenuInstallSettings>()
+            .ToArray();
+        foreach (var source in sources)
+        {
+            var installSettings = source.InstallSettings;
+            if (installSettings == null) continue;
+
+            var component = (Component)source;
+            var target = installSettings.InstallContainerOverride.Get(component);
+            if (target == null || target.transform.IsChildOf(component.transform)) continue;
+            component.transform.SetParent(target.transform, true);
         }
     }
 

@@ -3,7 +3,7 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(MenuPathPrefix + ComponentName)]
-    internal class FaceTuneComponent : FaceTuneTagComponent, IHasObjectReferences, IHasExpressionData, IHasConditions
+    internal class FaceTuneComponent : FaceTuneTagComponent, IHasObjectReferences, IHasExpressionData, IHasConditions, IHasMenuInstallSettings
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
@@ -25,6 +25,8 @@ namespace Aoyon.FaceTune
 
         ExpressionData IHasExpressionData.Data => Data;
         IEnumerable<Condition> IHasConditions.Conditions => new[] { Condition };
+        MenuInstallSettings? IHasMenuInstallSettings.InstallSettings
+            => DirectMenuEnabled ? DirectMenuSettings.InstallSettings : null;
 
         public void ResolveReferences()
         {

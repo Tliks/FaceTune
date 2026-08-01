@@ -6,6 +6,7 @@ internal sealed class AnimatorBuildPlanBuilder
     private readonly BuildSettings _settings;
     private readonly ISet<Transform> _unitBoundaryTransforms;
     private readonly AapProtocol _aap;
+    private readonly IAnimatorPlatformServices _platformServices;
     private readonly DnfCondition? _layerForceInactiveWhen;
 
     private AvatarContext AvatarContext => _settings.AvatarContext;
@@ -14,26 +15,27 @@ internal sealed class AnimatorBuildPlanBuilder
         ExpressionProgram program,
         BuildSettings settings,
         ISet<Transform> unitBoundaryTransforms,
-        DnfCondition? layerForceInactiveWhen)
+        IAnimatorPlatformServices platformServices)
     {
         return new AnimatorBuildPlanBuilder(
             program,
             settings,
             unitBoundaryTransforms,
-            layerForceInactiveWhen).Build();
+            platformServices).Build();
     }
 
     private AnimatorBuildPlanBuilder(
         ExpressionProgram program,
         BuildSettings settings,
         ISet<Transform> unitBoundaryTransforms,
-        DnfCondition? layerForceInactiveWhen)
+        IAnimatorPlatformServices platformServices)
     {
         _program = program;
         _settings = settings;
         _unitBoundaryTransforms = unitBoundaryTransforms;
         _aap = AapProtocol.From(program.Items);
-        _layerForceInactiveWhen = layerForceInactiveWhen;
+        _platformServices = platformServices;
+        _layerForceInactiveWhen = platformServices.GetLayerForceInactiveWhen(settings);
     }
 
     private AnimatorBuildPlan Build()
@@ -57,14 +59,14 @@ internal sealed class AnimatorBuildPlanBuilder
         }
 
         var conditionLowerer = new AnimatorConditionPlanLowerer(_settings.ParameterDomains);
+        initialLayer = conditionLowerer.Lower(initialLayer);
         units = units.Select(conditionLowerer.Lower).ToArray();
         trackingControlLayer = conditionLowerer.Lower(trackingControlLayer);
 
         return new AnimatorBuildPlan(
             initialLayer,
             units,
-            trackingControlLayer,
-            _settings.DurationSeconds);
+            trackingControlLayer);
     }
 
     private InitialLayerPlan BuildInitialLayer(Transform anchor)
@@ -73,7 +75,13 @@ internal sealed class AnimatorBuildPlanBuilder
             .GetBlendShapeWeights(AvatarContext.FaceMesh)
             .Where(shape => !_settings.ExcludedBlendShapeNames.Contains(shape.Name))
             .ToArray();
-        return new InitialLayerPlan("Initial", anchor, blendShapes);
+        var initial = new InitialLayerPlan(
+            "Initial",
+            anchor,
+            new InitialStatePlan("Default", DnfCondition.Never, blendShapes),
+            Array.Empty<InitialStatePlan>(),
+            Array.Empty<PlanParameter>());
+        return _platformServices.TransformInitialLayer(initial, _settings);
     }
 
     private IReadOnlyList<OutputUnitPlan> BuildUnits()
@@ -180,6 +188,24 @@ internal sealed class AnimatorConditionPlanLowerer
             AnimatorConditionRule.FromParameterCondition(
                 ParameterCondition.Bool(AlwaysParameterName, true)),
             parameterDomains);
+    }
+
+    public InitialLayerPlan Lower(InitialLayerPlan layer)
+    {
+        var requiresAlwaysParameter = false;
+        DnfCondition LowerCondition(DnfCondition condition)
+        {
+            if (!condition.IsAlways) return condition;
+            requiresAlwaysParameter = true;
+            return _alwaysCondition;
+        }
+
+        return layer with
+        {
+            DefaultState = layer.DefaultState with { When = LowerCondition(layer.DefaultState.When) },
+            States = layer.States.Select(state => state with { When = LowerCondition(state.When) }).ToArray(),
+            Parameters = AddAlwaysParameterIfRequired(layer.Parameters, requiresAlwaysParameter)
+        };
     }
 
     public OutputUnitPlan Lower(OutputUnitPlan unit)
@@ -301,7 +327,10 @@ internal sealed class ExpressionLayerPlanBuilder
         {
             var writeMode = expressions[index].WriteMode;
             var run = new List<ExpressionItem>();
-            while (index < expressions.Count && expressions[index].WriteMode == writeMode)
+            var transitionDurationSeconds = expressions[index].TransitionDurationSeconds;
+            while (index < expressions.Count
+                   && expressions[index].WriteMode == writeMode
+                   && expressions[index].TransitionDurationSeconds == transitionDurationSeconds)
             {
                 run.Add(expressions[index]);
                 index++;
@@ -349,6 +378,7 @@ internal sealed class ExpressionLayerPlanBuilder
 
         return BuildExpressionLayer(
             $"{unitId}-{layerIndex} Replace",
+            expressions[0].TransitionDurationSeconds,
             statePlans.SelectMany(plans => plans));
     }
 
@@ -364,18 +394,21 @@ internal sealed class ExpressionLayerPlanBuilder
                 BuildExpressionStates(unitId, expression, expressionIndex, expression.RawWhen));
             yield return BuildExpressionLayer(
                 $"{unitId}-{firstLayerIndex + layerIndex} Blend",
+                packedLayers[layerIndex][0].TransitionDurationSeconds,
                 statePlans);
         }
     }
 
     private ExpressionLayerPlan BuildExpressionLayer(
         string name,
+        float transitionDurationSeconds,
         IEnumerable<ExpressionStatePlan> states)
     {
         var statePlans = states.ToArray();
         var passThroughExitWhen = DnfCondition.Any(statePlans.Select(state => state.EnterWhen));
         return new ExpressionLayerPlan(
             name,
+            transitionDurationSeconds,
             passThroughExitWhen.IsAlways ? null : passThroughExitWhen,
             _forceInactiveWhen,
             statePlans);
@@ -406,10 +439,12 @@ internal sealed class ExpressionLayerPlanBuilder
             var layerIndex = 0;
             for (var previousIndex = 0; previousIndex < currentIndex; previousIndex++)
             {
-                var conditionsOverlap = !expressions[previousIndex].RawWhen
-                    .And(expressions[currentIndex].RawWhen)
-                    .IsNever;
-                if (!conditionsOverlap) continue;
+                var canShareLayer = expressions[previousIndex].TransitionDurationSeconds
+                                    == expressions[currentIndex].TransitionDurationSeconds
+                                    && expressions[previousIndex].RawWhen
+                                        .And(expressions[currentIndex].RawWhen)
+                                        .IsNever;
+                if (canShareLayer) continue;
 
                 layerIndex = Math.Max(layerIndex, layerIndices[previousIndex] + 1);
             }

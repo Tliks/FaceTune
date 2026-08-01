@@ -3,10 +3,20 @@ namespace Aoyon.FaceTune.Build.Animator;
 internal sealed record class AnimatorBuildPlan(
     InitialLayerPlan InitialLayer,
     IReadOnlyList<OutputUnitPlan> Units,
-    TrackingControlLayerPlan? TrackingControlLayer,
-    float ExpressionTransitionDurationSeconds);
+    TrackingControlLayerPlan? TrackingControlLayer);
 
-internal sealed record class InitialLayerPlan(string Name, Transform Anchor, IReadOnlyList<BlendShapeWeight> BlendShapes);
+internal sealed record class InitialLayerPlan(
+    string Name,
+    Transform Anchor,
+    InitialStatePlan DefaultState,
+    IReadOnlyList<InitialStatePlan> States,
+    IReadOnlyList<PlanParameter> Parameters);
+
+// DefaultState.When is its exit condition; States[].When is each state's entry condition.
+internal sealed record class InitialStatePlan(
+    string Name,
+    DnfCondition When,
+    IReadOnlyList<BlendShapeWeight> BlendShapes);
 
 internal sealed record class OutputUnitPlan(
     int Id,
@@ -18,6 +28,7 @@ internal sealed record class OutputUnitPlan(
 
 internal sealed record class ExpressionLayerPlan(
     string Name,
+    float TransitionDurationSeconds,
     DnfCondition? PassThroughExitWhen,
     DnfCondition? ForceInactiveWhen,
     IReadOnlyList<ExpressionStatePlan> States);

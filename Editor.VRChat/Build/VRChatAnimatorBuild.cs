@@ -23,7 +23,6 @@ internal static class VRChatAnimatorBuilder
 
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
-        var platformServices = new VRChatAnimatorPlatformServices();
 
         bool? analyzedWriteDefaults;
         using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.AnalyzeWriteDefaults"))
@@ -31,7 +30,7 @@ internal static class VRChatAnimatorBuilder
             analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         }
 
-        var mmdPolicy = ResolveMmdAnimatorPolicy(settings, analyzedWriteDefaults);
+        var platformServices = new VRChatAnimatorPlatformServices(analyzedWriteDefaults);
 
         ISet<Transform> unitBoundaryTransforms;
         using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.FindUnitBoundaries"))
@@ -46,14 +45,13 @@ internal static class VRChatAnimatorBuilder
                 expressionProgram,
                 settings,
                 unitBoundaryTransforms,
-                mmdPolicy.LayerForceInactiveWhen);
+                platformServices);
         }
 
         var installer = new AnimatorInstaller(
             settings.AvatarContext,
             analyzedWriteDefaults ?? true,
-            platformServices,
-            animatorPlan.ExpressionTransitionDurationSeconds);
+            platformServices);
 
         using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallInitial"))
         {
@@ -94,8 +92,7 @@ internal static class VRChatAnimatorBuilder
             }
         }
 
-        // mmdPolicy.ControllerDisableWhen is intentionally left for
-        // platform-specific controller assignment.
+        // Controller disable remains a VRChat-specific controller-assignment concern.
     }
 
     private static VirtualAnimatorController CreateMergeAnimatorController(
@@ -117,33 +114,6 @@ internal static class VRChatAnimatorBuilder
             $"{FaceTuneConstants.Name}: {name}");
         controllerContext.Controllers[merge] = controller;
         return controller;
-    }
-
-    private static (DnfCondition? LayerForceInactiveWhen, DnfCondition? ControllerDisableWhen)
-        ResolveMmdAnimatorPolicy(BuildSettings settings, bool? analyzedWriteDefaults)
-    {
-        var playback = settings.MmdPlayback;
-        if (!playback.Enabled || string.IsNullOrWhiteSpace(playback.DisableParameterName))
-        {
-            return (null, null);
-        }
-
-        var disableWhen = DnfCondition.All(new[]
-        {
-            ParameterBool(playback.DisableParameterName, true),
-            ParameterBool("InStation", true),
-            ParameterBool("Seated", false)
-        });
-        var mode = playback.DisableMode == MmdDisableMode.Auto
-            ? analyzedWriteDefaults == true ? MmdDisableMode.DisableLayer : MmdDisableMode.DisableFx
-            : playback.DisableMode;
-
-        return mode switch
-        {
-            MmdDisableMode.DisableLayer => (disableWhen, null),
-            MmdDisableMode.DisableFx => (null, disableWhen),
-            _ => throw new ArgumentOutOfRangeException(nameof(playback.DisableMode), playback.DisableMode, null)
-        };
     }
 
     private static ISet<Transform> FindUnitBoundaryTransforms(
@@ -216,6 +186,13 @@ internal static class VRChatAnimatorBuilder
 
     private sealed class VRChatAnimatorPlatformServices : IAnimatorPlatformServices
     {
+        private readonly bool? _analyzedWriteDefaults;
+
+        public VRChatAnimatorPlatformServices(bool? analyzedWriteDefaults)
+        {
+            _analyzedWriteDefaults = analyzedWriteDefaults;
+        }
+
         public void SetEyeBlinkTracking(VirtualState state, bool isTracking)
         {
             var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
@@ -244,5 +221,60 @@ internal static class VRChatAnimatorBuilder
                 });
         }
 
+        public DnfCondition? GetLayerForceInactiveWhen(BuildSettings settings)
+            => ResolveMmdAnimatorPolicy(settings, _analyzedWriteDefaults).LayerForceInactiveWhen;
+
+        public InitialLayerPlan TransformInitialLayer(InitialLayerPlan initial, BuildSettings settings)
+        {
+            var policy = ResolveMmdAnimatorPolicy(settings, _analyzedWriteDefaults);
+            if (policy.BlendShapePassthroughWhen == null || settings.MmdPlayback.BlendShapeNames.Count == 0)
+                return initial;
+
+            var mmdPlaybackState = new InitialStatePlan(
+                "MMD Playback",
+                policy.BlendShapePassthroughWhen,
+                initial.DefaultState.BlendShapes
+                    .Where(shape => !settings.MmdPlayback.BlendShapeNames.Contains(shape.Name))
+                    .ToArray());
+            return initial with
+            {
+                DefaultState = initial.DefaultState with { When = policy.BlendShapePassthroughWhen },
+                States = initial.States.Append(mmdPlaybackState).ToArray()
+            };
+        }
+
+        private readonly record struct MmdAnimatorPolicy(
+            DnfCondition? BlendShapePassthroughWhen,
+            DnfCondition? LayerForceInactiveWhen,
+            DnfCondition? ControllerDisableWhen);
+
+        private static MmdAnimatorPolicy ResolveMmdAnimatorPolicy(BuildSettings settings, bool? analyzedWriteDefaults)
+        {
+            var playback = settings.MmdPlayback;
+            if (!playback.Enabled)
+                return new(null, null, null);
+
+            var passthroughWhen = string.IsNullOrWhiteSpace(playback.DisableParameterName)
+                ? DnfCondition.Always
+                : DnfCondition.All(new[]
+                {
+                    ParameterBool(playback.DisableParameterName, true),
+                    ParameterBool("InStation", true),
+                    ParameterBool("Seated", false)
+                });
+            if (string.IsNullOrWhiteSpace(playback.DisableParameterName))
+                return new(passthroughWhen, null, null);
+
+            var mode = playback.DisableMode == MmdDisableMode.Auto
+                ? analyzedWriteDefaults == true ? MmdDisableMode.DisableLayer : MmdDisableMode.DisableFx
+                : playback.DisableMode;
+
+            return mode switch
+            {
+                MmdDisableMode.DisableLayer => new(passthroughWhen, passthroughWhen, null),
+                MmdDisableMode.DisableFx => new(null, null, passthroughWhen),
+                _ => throw new ArgumentOutOfRangeException(nameof(playback.DisableMode), playback.DisableMode, null)
+            };
+        }
     }
 }

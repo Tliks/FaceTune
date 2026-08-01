@@ -37,23 +37,20 @@ internal sealed record MenuControlPlan(
     float Value)
     : MenuNodePlan(DisplayName, Icon);
 
-internal sealed record ExternalMenuInstallRequest(
-    GameObject Target,
-    IReadOnlyList<MenuNodePlan> Children);
+internal sealed record MenuInstallationPlan(
+    Transform Anchor,
+    IReadOnlyList<MenuNodePlan> Nodes);
 
 internal sealed class MenuProgram
 {
-    public IReadOnlyList<MenuNodePlan> RootNodes { get; }
-    public IReadOnlyList<ExternalMenuInstallRequest> ExternalInstalls { get; }
+    public IReadOnlyList<MenuInstallationPlan> Installations { get; }
     public IReadOnlyList<MenuParameterPlan> Parameters { get; }
 
     public MenuProgram(
-        IReadOnlyList<MenuNodePlan> rootNodes,
-        IReadOnlyList<ExternalMenuInstallRequest> externalInstalls,
+        IReadOnlyList<MenuInstallationPlan> installations,
         IReadOnlyList<MenuParameterPlan> parameters)
     {
-        RootNodes = rootNodes;
-        ExternalInstalls = externalInstalls;
+        Installations = installations;
         Parameters = parameters;
     }
 }

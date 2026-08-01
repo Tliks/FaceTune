@@ -11,6 +11,20 @@ internal interface IMetabasePlatformSupport
 
     IEnumerable<string> GetExternallyControlledBlendShapeNames();
 
+    MmdPlaybackSettings ResolveMmdPlaybackSettings()
+    {
+        return MmdPlaybackSettings.Disabled;
+    }
+
+    void PostProcessDefaultBlendShapes(BuildSettings settings, BlendShapeWeightSet blendShapes)
+    {
+    }
+
+    IEnumerable<GameObject> GetMenuFolderObjects()
+    {
+        return Array.Empty<GameObject>();
+    }
+
     ParameterDomainRegistry CreateBuiltInParameterDomains();
 
     DnfCondition? ResolveHandGestureCondition(

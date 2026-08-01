@@ -6,7 +6,6 @@ internal class AvatarSettings
 {
     public AvatarObjectReference FaceObjectReference;
     public List<string> ExcludedBlendShapeNames;
-    public float DurationSeconds;
     public bool ParmaterCompression;
     public bool SupressTrackingControl;
 
@@ -14,7 +13,6 @@ internal class AvatarSettings
     {
         FaceObjectReference = new();
         ExcludedBlendShapeNames = new();
-        DurationSeconds = 0.1f;
         ParmaterCompression = false;
         SupressTrackingControl = false;
     }

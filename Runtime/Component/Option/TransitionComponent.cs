@@ -5,6 +5,8 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Transition";
 
-        public float DurationSeconds = 0.1f;
+        public const float DefaultDurationSeconds = 0.1f;
+
+        public float DurationSeconds = DefaultDurationSeconds;
     }
 }

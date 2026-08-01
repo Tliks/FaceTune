@@ -9,35 +9,31 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
     {
         var avatarContext = context.AvatarContext;
         var settings = context.RequireSettings();
-        
         var facialStyleComponents = avatarContext.Root
             .GetComponentsInChildren<StyleComponent>(true)
             .Where(x => x.ApplyToRenderer)
-            .ToArray()
-;
-        var componentCount = facialStyleComponents.Length;
-        if (componentCount == 0) return;
-
-        if (componentCount > 1)
+            .ToArray();
+        if (facialStyleComponents.Length > 1)
         {
             LocalizedLog.Warning("log.applyDefaultShapesPass.multipleFacialStyleComponentWithApplyToRenderer.warning");
         }
 
-        var component = facialStyleComponents[0];
-
-        //  除外されたブレンドシェイプを上書きせず、他は0で上書きする
-
         var set = new BlendShapeWeightSet();
-        set.AddRange(avatarContext.FaceRenderer
-            .GetBlendShapeWeights(avatarContext.FaceMesh)
-            .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
-            .Select(shape => shape with { Weight = 0f }));
-        var animations = new List<BlendShapeWeightAnimation>();
-        component.GetAnimations(animations, avatarContext.BodyPath);
-        set.AddRange(animations.Select(animation => animation.ToFirstFrameBlendShape()));
+        var component = facialStyleComponents.FirstOrDefault();
+        if (component != null)
+        {
+            set.AddRange(avatarContext.FaceRenderer
+                .GetBlendShapeWeights(avatarContext.FaceMesh)
+                .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
+                .Select(shape => shape with { Weight = 0f }));
 
-        var renderer = avatarContext.FaceRenderer;
-        var mesh = avatarContext.FaceMesh;
-        renderer.ApplyBlendShapes(mesh, set, -1); 
+            var animations = new List<BlendShapeWeightAnimation>();
+            component.GetAnimations(animations, avatarContext.BodyPath);
+            set.AddRange(animations.ToFirstFrameBlendShapes());
+        }
+
+        context.PlatformSupport.PostProcessDefaultBlendShapes(settings, set);
+        if (set.Count == 0) return;
+        avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);
     }
 }

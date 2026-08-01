@@ -26,6 +26,7 @@ internal sealed record class ExpressionItem
     public BlendShapeWeightAnimationSet AnimationSet { get; init; }
     public ExpressionSettings ExpressionSettings { get; init; }
     public FacialSettings FacialSettings { get; init; }
+    public float TransitionDurationSeconds { get; init; }
 
     /// <summary>
     /// The expression's own activation condition after parent/scope conditions are applied.
@@ -42,6 +43,7 @@ internal sealed record class ExpressionItem
         BlendShapeWeightAnimationSet animationSet,
         ExpressionSettings expressionSettings,
         FacialSettings facialSettings,
+        float transitionDurationSeconds,
         DnfCondition rawWhen)
     {
         SourceTransform = sourceTransform;
@@ -50,6 +52,7 @@ internal sealed record class ExpressionItem
         AnimationSet = new(animationSet);
         ExpressionSettings = expressionSettings;
         FacialSettings = facialSettings;
+        TransitionDurationSeconds = transitionDurationSeconds;
         RawWhen = rawWhen;
     }
 

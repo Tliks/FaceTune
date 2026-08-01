@@ -3,7 +3,6 @@ namespace Aoyon.FaceTune.Build;
 internal record struct BuildSettings(
     AvatarContext AvatarContext,
     IReadOnlyCollection<string> ExcludedBlendShapeNames,
-    float DurationSeconds,
     bool ParmaterCompression,
     bool SupressTrackingControl,
     ParameterDomainRegistry ParameterDomains,
@@ -16,8 +15,9 @@ internal record struct BuildSettings(
 
 internal record struct MmdPlaybackSettings(
     bool Enabled,
+    IReadOnlyCollection<string> BlendShapeNames,
     string DisableParameterName,
     MmdDisableMode DisableMode)
 {
-    public static MmdPlaybackSettings Disabled { get; } = new(false, string.Empty, MmdDisableMode.Auto);
+    public static MmdPlaybackSettings Disabled { get; } = new(false, Array.Empty<string>(), string.Empty, MmdDisableMode.Auto);
 }

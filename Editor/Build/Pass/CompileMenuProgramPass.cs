@@ -34,28 +34,14 @@ internal static class MenuProgramCompiler
         var folderNodes = folders.ToDictionary(
             folder => folder,
             folder => new MutableFolder(folder));
-        var rootChildren = new MutableChildren();
-        var externalChildren = new Dictionary<GameObject, MutableChildren>();
+        var menuContainerTransforms = context.PlatformSupport.GetMenuFolderObjects()
+            .Select(folder => folder.transform)
+            .ToHashSet();
+        var installationChildren = new Dictionary<Transform, MutableChildren>();
 
         foreach (var folder in folders)
         {
             var node = folderNodes[folder];
-            var target = folder.InstallSettings.InstallContainerOverride.Get(folder);
-            if (target != null)
-            {
-                if (target.TryGetComponent<MenuFolderComponent>(out var targetFolder)
-                    && folderNodes.TryGetValue(targetFolder, out var targetNode))
-                {
-                    targetNode.Children.Folders.Add(node);
-                    node.Parent = targetNode;
-                }
-                else
-                {
-                    GetExternalChildren(externalChildren, target).Folders.Add(node);
-                }
-                continue;
-            }
-
             var parent = GetParentFolder(folder.transform.parent, root, folderNodes);
             if (parent != null)
             {
@@ -64,29 +50,23 @@ internal static class MenuProgramCompiler
             }
             else
             {
-                rootChildren.Folders.Add(node);
+                GetInstallationChildren(
+                    folder.transform.parent,
+                    root.transform,
+                    menuContainerTransforms,
+                    installationChildren).Folders.Add(node);
             }
         }
 
         foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
         {
             var node = new MutableControl(menu);
-            var target = menu.InstallSettings.InstallContainerOverride.Get(menu);
-            if (target != null)
-            {
-                if (target.TryGetComponent<MenuFolderComponent>(out var targetFolder)
-                    && folderNodes.TryGetValue(targetFolder, out var targetNode))
-                {
-                    targetNode.Children.Controls.Add(node);
-                }
-                else
-                {
-                    GetExternalChildren(externalChildren, target).Controls.Add(node);
-                }
-                continue;
-            }
-
-            GetParentChildren(menu.transform.parent, root, folderNodes, rootChildren).Controls.Add(node);
+            var parent = GetParentFolder(menu.transform.parent, root, folderNodes);
+            (parent?.Children ?? GetInstallationChildren(
+                menu.transform.parent,
+                root.transform,
+                menuContainerTransforms,
+                installationChildren)).Controls.Add(node);
         }
 
         MenuIconPlan CompileIcon(MenuIconSettings settings, Component owner)
@@ -157,17 +137,13 @@ internal static class MenuProgramCompiler
             throw new InvalidOperationException("Menu folder install overrides contain a cycle.");
         }
 
-        var rootPlans = CompileChildren(rootChildren);
-        var externalPlans = externalChildren
-            .Select(pair => new ExternalMenuInstallRequest(
-                pair.Key,
-                CompileChildren(pair.Value)))
-            .Where(install => install.Children.Count != 0)
+        var installations = installationChildren
+            .Select(pair => new MenuInstallationPlan(pair.Key, CompileChildren(pair.Value)))
+            .Where(install => install.Nodes.Count != 0)
             .ToArray();
 
         return new MenuProgram(
-            rootPlans,
-            externalPlans,
+            installations,
             CompileParameters(root.GetComponentsInChildren<MenuComponent>(true)));
     }
 
@@ -224,15 +200,6 @@ internal static class MenuProgramCompiler
         return string.IsNullOrWhiteSpace(configuredName) ? objectName : configuredName;
     }
 
-    private static MutableChildren GetParentChildren(
-        Transform? start,
-        GameObject root,
-        IReadOnlyDictionary<MenuFolderComponent, MutableFolder> folders,
-        MutableChildren rootChildren)
-    {
-        return GetParentFolder(start, root, folders)?.Children ?? rootChildren;
-    }
-
     private static MutableFolder? GetParentFolder(
         Transform? start,
         GameObject root,
@@ -248,13 +215,23 @@ internal static class MenuProgramCompiler
         return null;
     }
 
-    private static MutableChildren GetExternalChildren(
-        IDictionary<GameObject, MutableChildren> installs,
-        GameObject target)
+    private static MutableChildren GetInstallationChildren(
+        Transform? start,
+        Transform avatarRoot,
+        ISet<Transform> menuContainerTransforms,
+        IDictionary<Transform, MutableChildren> installations)
     {
-        if (installs.TryGetValue(target, out var children)) return children;
+        var anchor = avatarRoot;
+        for (var current = start; current != null && current != avatarRoot; current = current.parent)
+        {
+            if (!menuContainerTransforms.Contains(current)) continue;
+            anchor = current;
+            break;
+        }
+
+        if (installations.TryGetValue(anchor, out var children)) return children;
         children = new MutableChildren();
-        installs.Add(target, children);
+        installations.Add(anchor, children);
         return children;
     }
 

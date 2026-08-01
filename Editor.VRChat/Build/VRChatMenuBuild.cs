@@ -12,54 +12,22 @@ internal static class VRChatMenuBuilder
 
     public static void Emit(BuildContext context, MenuProgram program)
     {
-        if (program.RootNodes.Count == 0 && program.ExternalInstalls.Count == 0) return;
-
-        if (program.RootNodes.Count != 0)
+        foreach (var installation in program.Installations)
         {
-            var generatedRoot = new GameObject(GeneratedMenuRootName);
-            generatedRoot.transform.SetParent(context.AvatarRootTransform, false);
-            generatedRoot.AddComponent<ModularAvatarMenuInstaller>();
-            var group = generatedRoot.AddComponent<ModularAvatarMenuGroup>();
-            group.targetObject = generatedRoot;
-            CreateChildren(context, program.RootNodes, generatedRoot.transform);
-        }
-
-        foreach (var install in program.ExternalInstalls)
-        {
-            if (!TryResolveExternalTarget(install.Target, out var parent))
+            var parent = installation.Anchor;
+            if (parent == context.AvatarRootTransform)
             {
-                LocalizedLog.Warning(
-                    "Log:warning:GenerateMenuPass:InvalidInstallContainer",
-                    install.Target.ToString());
-                continue;
+                var generatedRoot = new GameObject(GeneratedMenuRootName);
+                generatedRoot.transform.SetParent(context.AvatarRootTransform, false);
+                generatedRoot.AddComponent<ModularAvatarMenuInstaller>();
+                var rootMenu = generatedRoot.AddComponent<ModularAvatarMenuItem>();
+                rootMenu.PortableControl.Type = PortableControlType.SubMenu;
+                rootMenu.MenuSource = SubmenuSource.Children;
+                parent = generatedRoot.transform;
             }
 
-            CreateChildren(context, install.Children, parent);
+            CreateChildren(context, installation.Nodes, parent);
         }
-    }
-
-    private static bool TryResolveExternalTarget(GameObject target, [NotNullWhen(true)] out Transform? parent)
-    {
-        if (target.TryGetComponent<ModularAvatarMenuGroup>(out var group))
-        {
-            var targetObject = group.targetObject != null ? group.targetObject : group.gameObject;
-            parent = targetObject.transform;
-            return true;
-        }
-
-        if (target.TryGetComponent<ModularAvatarMenuItem>(out var menuItem)
-            && menuItem.PortableControl.Type == PortableControlType.SubMenu
-            && menuItem.MenuSource == SubmenuSource.Children)
-        {
-            var targetObject = menuItem.menuSource_otherObjectChildren != null
-                ? menuItem.menuSource_otherObjectChildren
-                : menuItem.gameObject;
-            parent = targetObject.transform;
-            return true;
-        }
-
-        parent = null;
-        return false;
     }
 
     private static void CreateChildren(

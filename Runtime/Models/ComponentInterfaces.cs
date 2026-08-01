@@ -1,4 +1,3 @@
-
 namespace Aoyon.FaceTune;
 
 internal interface IHasObjectReferences
@@ -14,4 +13,9 @@ internal interface IHasConditions
 internal interface IHasExpressionData : IHasObjectReferences
 {
     ExpressionData Data { get; }
+}
+
+internal interface IHasMenuInstallSettings
+{
+    MenuInstallSettings? InstallSettings { get; }
 }
