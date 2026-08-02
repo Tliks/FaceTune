@@ -21,6 +21,7 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
             .BeforePlugin("nadena.dev.modular-avatar");
         sequence.Run(CollectBuildSettingsPass.Instance);
         sequence.Run(NormalizeAuthoringHierarchyPass.Instance);
+        sequence.Run(ResolveBuildSettingsPass.Instance);
         sequence.Run(CompileExpressionProgramPass.Instance);
         sequence.Run(CompileMenuProgramPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)

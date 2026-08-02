@@ -597,6 +597,9 @@ msgstr "左手"
 msgid "hand.option.right"
 msgstr "右手"
 
+msgid "condition.kind.none.label"
+msgstr "なし"
+
 msgid "condition.kind.hand.label"
 msgstr "ハンド"
 

@@ -15,6 +15,6 @@ namespace Aoyon.FaceTune
 
         ExpressionData IHasExpressionData.Data => Data;
 
-        public void ResolveReferences() => Data.ResolveReferences(this);
+        void IHasObjectReferences.ResolveReferences() => Data.ResolveReferences(this);
     }
 }

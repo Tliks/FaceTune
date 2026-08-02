@@ -11,7 +11,7 @@ internal interface IMetabasePlatformSupport
 
     IEnumerable<string> GetExternallyControlledBlendShapeNames();
 
-    MmdPlaybackSettings ResolveMmdPlaybackSettings()
+    MmdPlaybackSettings ResolveMmdPlaybackSettings(DnfCondition? disableWhen)
     {
         return MmdPlaybackSettings.Disabled;
     }

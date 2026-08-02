@@ -65,6 +65,14 @@ internal abstract class ConditionBase
 }
 
 [Serializable]
+internal class SingleConditionBase
+{
+    [SerializeReference] public ConditionBase? Condition;
+
+    public static SingleConditionBase Menu() => new() { Condition = new MenuCondition() };
+}
+
+[Serializable]
 internal sealed class HandGestureCondition : ConditionBase
 {
     public HandGestureMatch Match = HandGestureMatch.LeftHand;

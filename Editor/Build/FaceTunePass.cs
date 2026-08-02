@@ -28,6 +28,7 @@ internal class FaceTuneContext
     public AvatarContext AvatarContext { get; }
     public IMetabasePlatformSupport PlatformSupport { get; }
 
+    private AuthoringBuildSettings? AuthoringSettings { get; set; }
     private BuildSettings? Settings { get; set; }
     private ExpressionProgram? ExpressionProgram { get; set; }
     private MenuProgram? MenuProgram { get; set; }
@@ -52,6 +53,17 @@ internal class FaceTuneContext
         }
 
         return new FaceTuneContext(buildContext, avatarContext, platformSupport);
+    }
+
+    public void SetAuthoringSettings(AuthoringBuildSettings settings)
+    {
+        AuthoringSettings = settings;
+    }
+
+    public AuthoringBuildSettings RequireAuthoringSettings()
+    {
+        if (AuthoringSettings is { } settings) return settings;
+        throw new InvalidOperationException("AuthoringBuildSettings has not been collected.");
     }
 
     public void SetSettings(BuildSettings settings)

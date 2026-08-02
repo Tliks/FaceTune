@@ -3,6 +3,40 @@ namespace Aoyon.FaceTune.Gui;
 [CustomPropertyDrawer(typeof(Condition))]
 internal sealed class ConditionDrawer : PropertyDrawer
 {
+    internal static float GetConditionBaseHeight(SerializedProperty condition)
+        => Mathf.Max(
+            GUIHelper.LineHeight,
+            EditorGUI.GetPropertyHeight(condition, GUIContent.none, true));
+
+    internal static void DrawConditionBase(Rect position, SerializedProperty condition)
+    {
+        var types = new[] { typeof(HandGestureCondition), typeof(MenuCondition), typeof(ParameterCondition) };
+        var labels = new[]
+        {
+            "condition.kind.none.label".LG(),
+            "condition.kind.hand.label".LG(),
+            "condition.kind.menu.label".LG(),
+            "condition.kind.parameter.label".LG()
+        };
+        var currentType = condition.managedReferenceValue?.GetType();
+        var currentIndex = Array.IndexOf(types, currentType) + 1;
+
+        position.SetSingleHeight();
+        var (typeRect, conditionRect) = position.SplitRatio(.3f);
+        var nextIndex = EditorGUI.Popup(typeRect, currentIndex, labels);
+        if (nextIndex != currentIndex)
+        {
+            condition.managedReferenceValue = nextIndex == 0
+                ? null
+                : Activator.CreateInstance(types[nextIndex - 1]);
+            return;
+        }
+        if (currentIndex == 0) return;
+
+        conditionRect.height = GetConditionBaseHeight(condition);
+        EditorGUI.PropertyField(conditionRect, condition, GUIContent.none, true);
+    }
+
     private const int SeparatorFontSize = 8;
     private const float EmptyMessageHeight = 30f;
     private static readonly GUIStyle SeparatorStyle = new(EditorStyles.miniLabel)
@@ -71,6 +105,20 @@ internal sealed class ConditionDrawer : PropertyDrawer
 
     internal static void DrawEmptyMessage(Rect position, SerializedProperty _)
         => EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
+}
+
+[CustomPropertyDrawer(typeof(SingleConditionBase))]
+internal sealed class SingleConditionBaseDrawer : PropertyDrawer
+{
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        ConditionDrawer.DrawConditionBase(position, property.FindPropertyRelative(nameof(SingleConditionBase.Condition)));
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        => ConditionDrawer.GetConditionBaseHeight(
+            property.FindPropertyRelative(nameof(SingleConditionBase.Condition)));
 }
 
 [CustomPropertyDrawer(typeof(ConditionCase))]

@@ -37,6 +37,7 @@ internal static class MenuProgramCompiler
         var menuContainerTransforms = context.PlatformSupport.GetMenuFolderObjects()
             .Select(folder => folder.transform)
             .ToHashSet();
+        var rootChildren = new MutableChildren();
         var installationChildren = new Dictionary<Transform, MutableChildren>();
 
         foreach (var folder in folders)
@@ -54,6 +55,7 @@ internal static class MenuProgramCompiler
                     folder.transform.parent,
                     root.transform,
                     menuContainerTransforms,
+                    rootChildren,
                     installationChildren).Folders.Add(node);
             }
         }
@@ -66,6 +68,7 @@ internal static class MenuProgramCompiler
                 menu.transform.parent,
                 root.transform,
                 menuContainerTransforms,
+                rootChildren,
                 installationChildren)).Controls.Add(node);
         }
 
@@ -139,6 +142,7 @@ internal static class MenuProgramCompiler
 
         var installations = installationChildren
             .Select(pair => new MenuInstallationPlan(pair.Key, CompileChildren(pair.Value)))
+            .Append(new MenuInstallationPlan(null, CompileChildren(rootChildren)))
             .Where(install => install.Nodes.Count != 0)
             .ToArray();
 
@@ -219,9 +223,10 @@ internal static class MenuProgramCompiler
         Transform? start,
         Transform avatarRoot,
         ISet<Transform> menuContainerTransforms,
+        MutableChildren rootChildren,
         IDictionary<Transform, MutableChildren> installations)
     {
-        var anchor = avatarRoot;
+        Transform? anchor = null;
         for (var current = start; current != null && current != avatarRoot; current = current.parent)
         {
             if (!menuContainerTransforms.Contains(current)) continue;
@@ -229,6 +234,7 @@ internal static class MenuProgramCompiler
             break;
         }
 
+        if (anchor == null) return rootChildren;
         if (installations.TryGetValue(anchor, out var children)) return children;
         children = new MutableChildren();
         installations.Add(anchor, children);

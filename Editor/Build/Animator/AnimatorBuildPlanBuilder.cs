@@ -308,12 +308,7 @@ internal sealed class ExpressionLayerPlanBuilder
         DnfCondition? forceInactiveWhen,
         AapProtocol aap)
     {
-        _lockFacialInactiveWhen = string.IsNullOrWhiteSpace(settings.LockFacialParameterName)
-            ? null
-            : DnfCondition.Single(
-                AnimatorConditionRule.FromParameterCondition(
-                    ParameterCondition.Bool(settings.LockFacialParameterName, false)),
-                settings.ParameterDomains);
+        _lockFacialInactiveWhen = settings.LockFacialWhen?.Complement();
         _forceInactiveWhen = forceInactiveWhen;
         _aap = aap;
     }
@@ -521,9 +516,9 @@ internal sealed class TrackingControlPlanBuilder
     {
         if (_settings.SupressTrackingControl) return null;
 
-        var controlsEyeBlink = !string.IsNullOrWhiteSpace(_settings.DisableEyeBlinkParameterName)
+        var controlsEyeBlink = _settings.DisableEyeBlinkWhen != null
             || _aap.WritesEyeBlinkAnimation;
-        var controlsLipSync = !string.IsNullOrWhiteSpace(_settings.DisableLipSyncParameterName)
+        var controlsLipSync = _settings.DisableLipSyncWhen != null
             || _aap.WritesLipSyncAnimation;
 
         if (!controlsEyeBlink && !controlsLipSync) return null;
@@ -540,14 +535,14 @@ internal sealed class TrackingControlPlanBuilder
             var eyeBlink = ConditionsFor(
                 AapProtocol.EyeBlinkAnimationName,
                 _aap.WritesEyeBlinkAnimation,
-                _settings.DisableEyeBlinkParameterName);
+                _settings.DisableEyeBlinkWhen);
 
             if (controlsLipSync)
             {
                 var lipSync = ConditionsFor(
                     AapProtocol.LipSyncAnimationName,
                     _aap.WritesLipSyncAnimation,
-                    _settings.DisableLipSyncParameterName);
+                    _settings.DisableLipSyncWhen);
 
                 states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Tracking", eyeBlink.Tracking.And(lipSync.Tracking), true, true));
                 states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Animation", eyeBlink.Tracking.And(lipSync.Animation), true, false));
@@ -565,7 +560,7 @@ internal sealed class TrackingControlPlanBuilder
             var lipSync = ConditionsFor(
                 AapProtocol.LipSyncAnimationName,
                 _aap.WritesLipSyncAnimation,
-                _settings.DisableLipSyncParameterName);
+                _settings.DisableLipSyncWhen);
 
             states.Add(new TrackingControlStatePlan("LipSync Tracking", lipSync.Tracking, null, true));
             states.Add(new TrackingControlStatePlan("LipSync Animation", lipSync.Animation, null, false));
@@ -588,17 +583,10 @@ internal sealed class TrackingControlPlanBuilder
     {
         _aap.CollectParameters(parameters);
 
-        if (!string.IsNullOrWhiteSpace(_settings.DisableEyeBlinkParameterName))
-        {
-            var name = _settings.DisableEyeBlinkParameterName;
-            parameters.TryAdd(name, new PlanParameter(name, AnimatorControllerParameterType.Bool, 0f));
-        }
-        if (!string.IsNullOrWhiteSpace(_settings.DisableLipSyncParameterName))
-        {
-            var name = _settings.DisableLipSyncParameterName;
-            parameters.TryAdd(name, new PlanParameter(name, AnimatorControllerParameterType.Bool, 0f));
-        }
-
+        if (_settings.DisableEyeBlinkWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _settings.DisableEyeBlinkWhen);
+        if (_settings.DisableLipSyncWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _settings.DisableLipSyncWhen);
         if (_forceInactiveWhen != null)
             AnimatorHelper.CollectConditionParameters(parameters, _forceInactiveWhen);
     }
@@ -606,7 +594,7 @@ internal sealed class TrackingControlPlanBuilder
     private (DnfCondition Tracking, DnfCondition Animation) ConditionsFor(
         string animationAapName,
         bool hasAnimationAap,
-        string forceDisableParameterName)
+        DnfCondition? disableWhen)
     {
         var trackingConditions = new List<DnfCondition>();
         var animationConditions = new List<DnfCondition>();
@@ -617,16 +605,10 @@ internal sealed class TrackingControlPlanBuilder
             animationConditions.Add(_aap.IndexIs(animationAapName, AapProtocol.AnimationEnabledIndex));
         }
 
-        if (!string.IsNullOrWhiteSpace(forceDisableParameterName))
+        if (disableWhen != null)
         {
-            trackingConditions.Add(DnfCondition.Single(
-                AnimatorConditionRule.FromParameterCondition(
-                    ParameterCondition.Bool(forceDisableParameterName, false)),
-                _settings.ParameterDomains));
-            animationConditions.Add(DnfCondition.Single(
-                AnimatorConditionRule.FromParameterCondition(
-                    ParameterCondition.Bool(forceDisableParameterName, true)),
-                _settings.ParameterDomains));
+            trackingConditions.Add(disableWhen.Complement());
+            animationConditions.Add(disableWhen);
         }
 
         return (DnfCondition.All(trackingConditions), DnfCondition.Any(animationConditions));

@@ -49,7 +49,9 @@ MonoBehaviour:
   Icon:
     Mode: 2
     ManualIcon: {fileID: 0}
-    PreviewExpression: {fileID: 0}
+    PreviewExpression:
+      referencePath: 
+      targetObject: {fileID: 0}
   InstallSettings:
     InstallContainerOverride:
       referencePath: 
@@ -57,7 +59,7 @@ MonoBehaviour:
   Kind: 0
   ExclusiveToggleGroup:
     GroupName: 
-  ParameterName: FaceTune/EnableMMDMode
+  ParameterName: 
   FloatDefaultValue: 0
   DefaultSelected: 0
 --- !u!114 &841824838411543577
@@ -74,5 +76,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Settings:
     ExplicitMmdBlendShapeNames: []
-    DisableParameterName: FaceTune/EnableMMDMode
+    DisableWhen:
+      Condition:
+        rid: 5534185782725312589
     DisableMode: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 5534185782725312589
+      type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        MenuSource: {fileID: 1190269975176233602}
+        Mode: 0
+        Threshold: 0.5

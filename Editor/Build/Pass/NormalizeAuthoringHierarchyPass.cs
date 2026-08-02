@@ -17,12 +17,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         var root = context.AvatarContext.Root;
         ProcessPresetComponents(root);
         ProcessDirectMenuSettings(root);
-        NormalizeMenuInstallContainers(context, root);
+        NormalizeMenuInstallContainers(root);
         IgnoreEmptyCondition(root);
 
-        var settings = context.RequireSettings();
+        var settings = context.RequireAuthoringSettings();
         settings = settings with { ParameterDomains = AssignMenuParameters(root, settings.ParameterDomains) };
-        context.SetSettings(settings);
+        context.SetAuthoringSettings(settings);
 
         ResolveMenuConditions(root);
         FilterBlendShapeOutputs(context.AvatarContext.BodyPath, root, settings);
@@ -108,7 +108,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    private static void NormalizeMenuInstallContainers(FaceTuneContext context, GameObject root)
+    private static void NormalizeMenuInstallContainers(GameObject root)
     {
         var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
             .OfType<IHasMenuInstallSettings>()
@@ -209,11 +209,21 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     // MenuContionをParamterConditionに変換
     private static void ResolveMenuConditions(GameObject root)
     {
-        foreach (var source in root.GetComponentsInChildren<FaceTuneTagComponent>(true).OfType<IHasConditions>())
+        var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true);
+        foreach (var source in sources.OfType<IHasConditions>())
         {
             foreach (var condition in source.Conditions)
-            {
                 ResolveMenuConditions(condition);
+        }
+
+        foreach (var source in sources.OfType<IHasSingleConditions>())
+        {
+            foreach (var condition in source.SingleConditions)
+            {
+                if (condition.Condition is not MenuCondition menuCondition) continue;
+                condition.Condition = menuCondition.MenuSource == null
+                    ? null
+                    : ToParameterCondition(menuCondition);
             }
         }
     }
@@ -275,7 +285,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    private static void FilterBlendShapeOutputs(string bodyPath, GameObject root, BuildSettings settings)
+    private static void FilterBlendShapeOutputs(string bodyPath, GameObject root, AuthoringBuildSettings settings)
     {
         foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
         {
@@ -297,7 +307,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    private static void FilterBlendShapeAnimations(ExpressionData data, Component owner, string bodyPath, BuildSettings settings)
+    private static void FilterBlendShapeAnimations(ExpressionData data, Component owner, string bodyPath, AuthoringBuildSettings settings)
     {
         var animations = new List<BlendShapeWeightAnimation>();
         if (data.Clip != null)
@@ -308,7 +318,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         data.Clip = null;
     }
 
-    private static void FilterAdvancedEyeBlinkSettings(EyeBlinkComponent component, BuildSettings settings)
+    private static void FilterAdvancedEyeBlinkSettings(EyeBlinkComponent component, AuthoringBuildSettings settings)
     {
         if (component.ReferenceMode != ComponentReferenceMode.Direct) return;
 
@@ -320,7 +330,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         };
     }
 
-    private static void FilterAdvancedLipSyncSettings(LipSyncComponent component, BuildSettings settings)
+    private static void FilterAdvancedLipSyncSettings(LipSyncComponent component, AuthoringBuildSettings settings)
     {
         if (component.ReferenceMode != ComponentReferenceMode.Direct) return;
 
@@ -334,7 +344,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     private static List<BlendShapeWeightAnimation> FilterBlendShapeAnimations(
         Component owner,
         IEnumerable<BlendShapeWeightAnimation> animations,
-        BuildSettings settings)
+        AuthoringBuildSettings settings)
     {
         var list = animations.ToList();
         WarnExcludedBlendShapes(owner, list.Select(animation => animation.Name), settings.ExcludedBlendShapeNames);
@@ -343,7 +353,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             .ToList();
     }
 
-    private static List<string> FilterBlendShapeNames(Component owner, IEnumerable<string> names, BuildSettings settings)
+    private static List<string> FilterBlendShapeNames(Component owner, IEnumerable<string> names, AuthoringBuildSettings settings)
     {
         var list = names.ToList();
         WarnExcludedBlendShapes(owner, list, settings.ExcludedBlendShapeNames);

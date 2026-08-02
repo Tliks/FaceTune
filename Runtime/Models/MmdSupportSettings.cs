@@ -12,6 +12,6 @@ internal class MmdSupportSettings
 {
     public List<string> ExplicitMmdBlendShapeNames = new();
 
-    public string DisableParameterName = string.Empty;
+    public SingleConditionBase DisableWhen = SingleConditionBase.Menu();
     public MmdDisableMode DisableMode = MmdDisableMode.Auto;
 }

@@ -49,7 +49,9 @@ MonoBehaviour:
   Icon:
     Mode: 2
     ManualIcon: {fileID: 0}
-    PreviewExpression: {fileID: 0}
+    PreviewExpression:
+      referencePath: 
+      targetObject: {fileID: 0}
   InstallSettings:
     InstallContainerOverride:
       referencePath: 
@@ -72,4 +74,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04dba2701ed84eb488b85f87a50864fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionParameterName: FaceTune/ForceLockFacial
+  LockWhen:
+    Condition:
+      rid: 5534185782725312570
+  references:
+    version: 2
+    RefIds:
+    - rid: 5534185782725312570
+      type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        MenuSource: {fileID: 1631262464330061376}
+        Mode: 0
+        Threshold: 0.5

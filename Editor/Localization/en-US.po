@@ -597,6 +597,9 @@ msgstr "Left Hand"
 msgid "hand.option.right"
 msgstr "Right Hand"
 
+msgid "condition.kind.none.label"
+msgstr "None"
+
 msgid "condition.kind.hand.label"
 msgstr "Hand"
 

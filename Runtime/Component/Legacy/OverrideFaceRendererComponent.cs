@@ -21,6 +21,6 @@ namespace Aoyon.FaceTune
             set => m_faceObjectReference.Set(value);
         }
 
-        public void ResolveReferences() => m_faceObjectReference?.Get(this);
+        void IHasObjectReferences.ResolveReferences() => m_faceObjectReference?.Get(this);
     }
 }

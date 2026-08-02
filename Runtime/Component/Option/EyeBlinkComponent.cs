@@ -11,6 +11,6 @@ namespace Aoyon.FaceTune
         public AvatarObjectReference Reference = new();
         public AdvancedEyeBlinkSettings AdvancedEyeBlinkSettings = new();
 
-        public void ResolveReferences() => Reference.Get(this);
+        void IHasObjectReferences.ResolveReferences() => Reference.Get(this);
     }
 }

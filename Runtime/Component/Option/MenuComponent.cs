@@ -18,7 +18,7 @@ namespace Aoyon.FaceTune
 
         MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => InstallSettings;
 
-        public void ResolveReferences()
+        void IHasObjectReferences.ResolveReferences()
         {
             Icon.ResolveReferences(this);
             InstallSettings.ResolveReferences(this);

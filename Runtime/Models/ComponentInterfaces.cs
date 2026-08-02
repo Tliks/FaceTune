@@ -10,6 +10,11 @@ internal interface IHasConditions
     IEnumerable<Condition> Conditions { get; }
 }
 
+internal interface IHasSingleConditions
+{
+    IEnumerable<SingleConditionBase> SingleConditions { get; }
+}
+
 internal interface IHasExpressionData : IHasObjectReferences
 {
     ExpressionData Data { get; }

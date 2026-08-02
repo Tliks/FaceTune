@@ -8,42 +8,33 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static class VRChatMenuBuilder
 {
-    private const string GeneratedMenuRootName = FaceTuneConstants.Name + " Generated Menu";
-
     public static void Emit(BuildContext context, MenuProgram program)
     {
         foreach (var installation in program.Installations)
         {
-            var parent = installation.Anchor;
-            if (parent == context.AvatarRootTransform)
-            {
-                var generatedRoot = new GameObject(GeneratedMenuRootName);
-                generatedRoot.transform.SetParent(context.AvatarRootTransform, false);
-                generatedRoot.AddComponent<ModularAvatarMenuInstaller>();
-                var rootMenu = generatedRoot.AddComponent<ModularAvatarMenuItem>();
-                rootMenu.PortableControl.Type = PortableControlType.SubMenu;
-                rootMenu.MenuSource = SubmenuSource.Children;
-                parent = generatedRoot.transform;
-            }
-
-            CreateChildren(context, installation.Nodes, parent);
+            CreateChildren(
+                context,
+                installation.Nodes,
+                installation.Anchor ?? context.AvatarRootTransform,
+                installation.Anchor == null);
         }
     }
 
     private static void CreateChildren(
         BuildContext context,
         IEnumerable<MenuNodePlan> nodes,
-        Transform parent)
+        Transform parent,
+        bool installRoots = false)
     {
         foreach (var node in nodes)
         {
             switch (node)
             {
                 case MenuFolderPlan folder:
-                    CreateFolder(context, folder, parent);
+                    CreateFolder(context, folder, parent, installRoots);
                     break;
                 case MenuControlPlan control:
-                    CreateControl(context, control, parent);
+                    CreateControl(context, control, parent, installRoots);
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown menu node type: {node.GetType()}");
@@ -51,10 +42,16 @@ internal static class VRChatMenuBuilder
         }
     }
 
-    private static void CreateFolder(BuildContext context, MenuFolderPlan folder, Transform parent)
+    private static void CreateFolder(
+        BuildContext context,
+        MenuFolderPlan folder,
+        Transform parent,
+        bool installRoot)
     {
         var obj = new GameObject(ResolveEmittedName(context, folder));
         obj.transform.SetParent(parent, false);
+
+        if (installRoot) obj.AddComponent<ModularAvatarMenuInstaller>();
 
         var menuItem = obj.AddComponent<ModularAvatarMenuItem>();
         menuItem.PortableControl.Type = PortableControlType.SubMenu;
@@ -64,10 +61,16 @@ internal static class VRChatMenuBuilder
         CreateChildren(context, folder.Children, obj.transform);
     }
 
-    private static void CreateControl(BuildContext context, MenuControlPlan control, Transform parent)
+    private static void CreateControl(
+        BuildContext context,
+        MenuControlPlan control,
+        Transform parent,
+        bool installRoot)
     {
         var obj = new GameObject(ResolveEmittedName(context, control));
         obj.transform.SetParent(parent, false);
+
+        if (installRoot) obj.AddComponent<ModularAvatarMenuInstaller>();
 
         var menuItem = obj.AddComponent<ModularAvatarMenuItem>();
         menuItem.PortableControl.Type = control.Kind switch

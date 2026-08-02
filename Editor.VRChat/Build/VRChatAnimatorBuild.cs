@@ -254,15 +254,15 @@ internal static class VRChatAnimatorBuilder
             if (!playback.Enabled)
                 return new(null, null, null);
 
-            var passthroughWhen = string.IsNullOrWhiteSpace(playback.DisableParameterName)
+            var passthroughWhen = playback.DisableWhen == null
                 ? DnfCondition.Always
                 : DnfCondition.All(new[]
                 {
-                    ParameterBool(playback.DisableParameterName, true),
+                    playback.DisableWhen,
                     ParameterBool("InStation", true),
                     ParameterBool("Seated", false)
                 });
-            if (string.IsNullOrWhiteSpace(playback.DisableParameterName))
+            if (playback.DisableWhen == null)
                 return new(passthroughWhen, null, null);
 
             var mode = playback.DisableMode == MmdDisableMode.Auto

@@ -1,5 +1,12 @@
 namespace Aoyon.FaceTune.Build;
 
+internal record struct AuthoringBuildSettings(
+    AvatarContext AvatarContext,
+    IReadOnlyCollection<string> ExcludedBlendShapeNames,
+    bool ParmaterCompression,
+    bool SupressTrackingControl,
+    ParameterDomainRegistry ParameterDomains);
+
 internal record struct BuildSettings(
     AvatarContext AvatarContext,
     IReadOnlyCollection<string> ExcludedBlendShapeNames,
@@ -7,17 +14,17 @@ internal record struct BuildSettings(
     bool SupressTrackingControl,
     ParameterDomainRegistry ParameterDomains,
     MmdPlaybackSettings MmdPlayback,
-    string DisableEyeBlinkParameterName,
-    string DisableLipSyncParameterName,
-    string LockFacialParameterName)
+    DnfCondition? DisableEyeBlinkWhen,
+    DnfCondition? DisableLipSyncWhen,
+    DnfCondition? LockFacialWhen)
 {
 }
 
 internal record struct MmdPlaybackSettings(
     bool Enabled,
     IReadOnlyCollection<string> BlendShapeNames,
-    string DisableParameterName,
+    DnfCondition? DisableWhen,
     MmdDisableMode DisableMode)
 {
-    public static MmdPlaybackSettings Disabled { get; } = new(false, Array.Empty<string>(), string.Empty, MmdDisableMode.Auto);
+    public static MmdPlaybackSettings Disabled { get; } = new(false, Array.Empty<string>(), null, MmdDisableMode.Auto);
 }

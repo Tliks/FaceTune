@@ -49,7 +49,9 @@ MonoBehaviour:
   Icon:
     Mode: 2
     ManualIcon: {fileID: 0}
-    PreviewExpression: {fileID: 0}
+    PreviewExpression:
+      referencePath: 
+      targetObject: {fileID: 0}
   InstallSettings:
     InstallContainerOverride:
       referencePath: 
@@ -57,7 +59,7 @@ MonoBehaviour:
   Kind: 0
   ExclusiveToggleGroup:
     GroupName: 
-  ParameterName: FaceTune/LipSync/ForceDisable
+  ParameterName: 
   FloatDefaultValue: 0
   DefaultSelected: 0
 --- !u!114 &5059756437078116905
@@ -72,4 +74,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b633e635d267b1547aade6eeb65f4c9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DisableParameterName: FaceTune/LipSync/ForceDisable
+  DisableWhen:
+    Condition:
+      rid: 5534185782725312583
+  references:
+    version: 2
+    RefIds:
+    - rid: 5534185782725312583
+      type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
+      data:
+        MenuSource: {fileID: 6060547375402247894}
+        Mode: 0
+        Threshold: 0.5

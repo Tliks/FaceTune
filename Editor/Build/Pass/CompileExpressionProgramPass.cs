@@ -206,13 +206,11 @@ internal sealed class ConditionCompiler
             : DnfCondition.Any(resolvedCases);
     }
 
-    private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)
+    public DnfCondition? Resolve(ConditionBase? condition)
     {
-        var resolvedConditions = new List<DnfCondition>();
+        if (condition == null) return null;
 
-        foreach (var condition in conditionCase.Conditions)
-        {
-            var resolved = condition switch
+        return condition switch
             {
                 HandGestureCondition handGesture =>
                     _platformSupport.ResolveHandGestureCondition(handGesture, _parameterDomains),
@@ -222,15 +220,16 @@ internal sealed class ConditionCompiler
                     "Menu conditions must be normalized before compiling expressions."),
                 _ => throw new InvalidOperationException(
                     $"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
-            };
+        };
+    }
 
-            if (resolved != null)
-            {
-                resolvedConditions.Add(resolved);
-            }
-        }
-
-        return resolvedConditions.Count == 0
+    private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)
+    {
+        var resolvedConditions = conditionCase.Conditions
+            .Select(Resolve)
+            .OfType<DnfCondition>()
+            .ToArray();
+        return resolvedConditions.Length == 0
             ? null
             : DnfCondition.All(resolvedConditions);
     }

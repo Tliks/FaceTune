@@ -28,7 +28,7 @@ namespace Aoyon.FaceTune
         MenuInstallSettings? IHasMenuInstallSettings.InstallSettings
             => DirectMenuEnabled ? DirectMenuSettings.InstallSettings : null;
 
-        public void ResolveReferences()
+        void IHasObjectReferences.ResolveReferences()
         {
             DirectMenuSettings.ResolveReferences(this);
             Data.ResolveReferences(this);

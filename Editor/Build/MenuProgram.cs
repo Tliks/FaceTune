@@ -38,7 +38,7 @@ internal sealed record MenuControlPlan(
     : MenuNodePlan(DisplayName, Icon);
 
 internal sealed record MenuInstallationPlan(
-    Transform Anchor,
+    Transform? Anchor,
     IReadOnlyList<MenuNodePlan> Nodes);
 
 internal sealed class MenuProgram

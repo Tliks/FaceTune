@@ -206,7 +206,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .Select(name => new BlendShapeWeight(name, 0f)));
     }
 
-    public MmdPlaybackSettings ResolveMmdPlaybackSettings()
+    public MmdPlaybackSettings ResolveMmdPlaybackSettings(DnfCondition? disableWhen)
     {
         var components = _descriptor.GetComponentsInChildren<MMDSupportComponent>(true);
         if (components.Length > 1)
@@ -220,7 +220,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             : new MmdPlaybackSettings(
                 true,
                 ResolveMmdBlendShapeNames(settings).ToHashSet(),
-                settings.DisableParameterName,
+                disableWhen,
                 settings.DisableMode);
     }
 
