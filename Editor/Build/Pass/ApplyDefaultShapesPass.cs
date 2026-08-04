@@ -9,6 +9,9 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
     {
         var avatarContext = context.AvatarContext;
         var settings = context.RequireSettings();
+
+        var set = new BlendShapeWeightSet();
+
         var facialStyleComponents = avatarContext.Root
             .GetComponentsInChildren<StyleComponent>(true)
             .Where(x => x.ApplyToRenderer)
@@ -18,7 +21,6 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             LocalizedLog.Warning("log.applyDefaultShapesPass.multipleFacialStyleComponentWithApplyToRenderer.warning");
         }
 
-        var set = new BlendShapeWeightSet();
         var component = facialStyleComponents.FirstOrDefault();
         if (component != null)
         {
@@ -28,12 +30,13 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
                 .Select(shape => shape with { Weight = 0f }));
 
             var animations = new List<BlendShapeWeightAnimation>();
-            component.GetAnimations(animations, avatarContext.BodyPath);
+            component.GetAnimations(animations, avatarContext.BodyPath, includeStyleSources: true);
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
 
         context.PlatformSupport.PostProcessDefaultBlendShapes(settings, set);
         if (set.Count == 0) return;
+        
         avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);
     }
 }

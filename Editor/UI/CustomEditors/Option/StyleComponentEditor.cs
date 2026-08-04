@@ -47,6 +47,7 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditor<StyleComponen
         if (targets.Length != 1 || !AvatarContext.TryGet(Component.gameObject, out var context, out _)) return;
         var animations = context.FaceRenderer
             .GetBlendShapeWeights(context.FaceMesh)
+            .Where(shape => shape.Weight != 0f)
             .ToBlendShapeAnimations()
             .ToArray();
         var property = serializedObject
@@ -62,7 +63,7 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditor<StyleComponen
         if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
 
         var animations = new List<BlendShapeWeightAnimation>();
-        component.GetAnimations(animations, context.BodyPath);
+        component.GetAnimations(animations, context.BodyPath, includeStyleSources: true);
         var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         Undo.RecordObject(context.FaceRenderer, "Apply Blend Shape");
         context.FaceRenderer.ApplyBlendShapes(context.FaceMesh, set, 0f);

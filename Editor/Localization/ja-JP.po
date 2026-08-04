@@ -244,7 +244,19 @@ msgid "facialEditor.excludeTrackedShapes.option"
 msgstr "追跡対象のシェイプを除外"
 
 msgid "facialEditor.title"
-msgstr "表情シェイプエディター"
+msgstr "表情編集画面"
+
+msgid "facialEditor.save.button"
+msgstr "保存"
+
+msgid "facialEditor.style.option"
+msgstr "顔つき"
+
+msgid "facialEditor.base.option"
+msgstr "ベース"
+
+msgid "facialEditor.search.placeholder"
+msgstr "検索"
 
 msgid "customEditorUtility.saveAsClip.title"
 msgstr "クリップとして保存"
@@ -623,3 +635,27 @@ msgstr "なし"
 
 msgid "menu.group.new.label"
 msgstr "新規…"
+
+msgid "disableEyeBlink.section.label"
+msgstr "まばたき無効化"
+
+msgid "disableLipSync.section.label"
+msgstr "リップシンク無効化"
+
+msgid "lipSync.section.label"
+msgstr "リップシンク設定"
+
+msgid "eyeBlink.section.label"
+msgstr "瞬き設定"
+
+msgid "lockFacial.section.label"
+msgstr "表情固定"
+
+msgid "mmdSupport.section.label"
+msgstr "MMDダンスワールド対応"
+
+msgid "settings.section.label"
+msgstr "アバター設定"
+
+msgid "transition.section.label"
+msgstr "遷移設定"

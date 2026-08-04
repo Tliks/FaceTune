@@ -89,6 +89,8 @@ internal class SelectedPanel
     {
         _searchField = _element.Q<TextField>("search-field");
         _searchField.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
+        if (_searchField is PlaceholderTextField placeholderSearchField)
+            placeholderSearchField.Placeholder = "facialEditor.search.placeholder".LS();
 
         _control = _element.Q("selected-shapes-controls");
 
@@ -134,6 +136,7 @@ internal class SelectedPanel
     {
         _selectedListView = _element.Q<ListView>("selected-list-view");
         _selectedListView.focusable = true;
+        _selectedListView.fixedItemHeight = FacialShapeUI.ListItemHeight;
         _selectedListView.selectionType = SelectionType.None;
         _selectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 

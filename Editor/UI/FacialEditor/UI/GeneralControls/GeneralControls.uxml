@@ -1,46 +1,34 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
-    <ui:VisualElement name="general-controls-container">
+    <components:SpacedVerticalElement name="general-controls-container">
+        <components:SpacedHorizontalElement name="top-actions-container">
+            <ui:Button name="undo-button" class="compact-control top-action-button icon-action-button" />
+            <ui:Button name="redo-button" class="compact-control top-action-button icon-action-button" />
+            <ui:Button name="restore-initial-overrides-button" class="compact-control top-action-button" />
+            <ui:Button name="restore-edited-overrides-button" class="compact-control top-action-button" />
+            <ui:Button name="save-button" class="ndmf-tr compact-control top-action-button" text="facialEditor.save.button" />
+        </components:SpacedHorizontalElement>
 
-        <!-- Target display -->
-        <ui:VisualElement name="targeting-content">
-            <components:HorizontalElement name="targeting-container">
-                <uie:ObjectField name="target-renderer-field" />
-                <uie:ObjectField name="targeting-object-field"/>
-            </components:HorizontalElement>
+        <components:SpacedVerticalElement name="targeting-content">
+            <components:SpacedHorizontalElement name="targeting-container">
+                <uie:ObjectField name="target-renderer-field" class="compact-field" />
+                <uie:ObjectField name="targeting-object-field" class="compact-field" />
+            </components:SpacedHorizontalElement>
             <ui:VisualElement name="targeting-options-container" />
-        </ui:VisualElement>
+        </components:SpacedVerticalElement>
 
-        <ui:VisualElement class="divider-line"/>
+        <components:SpacedVerticalElement name="filter-content">
+            <components:SpacedHorizontalElement name="filter-header">
+                <ui:Button name="all-button" class="compact-control filter-control" />
+                <ui:Button name="none-button" class="compact-control filter-control" />
+                <ui:Toggle name="left-toggle" class="compact-control filter-control" />
+                <ui:Toggle name="right-toggle" class="compact-control filter-control" />
+            </components:SpacedHorizontalElement>
+            <components:HorizontalElement name="group-toggles-container" />
+        </components:SpacedVerticalElement>
 
-        <components:HorizontalElement name="top-actions-container">
-            <ui:Button name="undo-button" class="top-action-button" />
-            <ui:Button name="redo-button" class="top-action-button" />
-            <ui:Button name="restore-initial-overrides-button" class="top-action-button" />
-            <ui:Button name="restore-edited-overrides-button" class="top-action-button" />
-            <ui:Button name="save-button" class="ndmf-tr top-action-button" text="FacialEditor:button:Save" />
-        </components:HorizontalElement>
-
-        <ui:VisualElement class="divider-line"/>
-
-        <components:HorizontalElement name="clip-import-container">
-            <ui:Label name="clip-import-label" class="ndmf-tr" text="FacialEditor:button:Import" />
+        <components:SpacedHorizontalElement name="clip-import-container">
             <ui:VisualElement name="clip-field-container" />
             <ui:VisualElement name="import-option-field-container" />
-        </components:HorizontalElement>
-
-        <ui:VisualElement class="divider-line"/>
-
-        <ui:VisualElement name="content-container">
-            <ui:VisualElement name="filter-content">
-                <components:HorizontalElement name="filter-header">
-                    <ui:Button name="all-button" class="filter-control"/>
-                    <ui:Button name="none-button" class="filter-control"/>
-                    <ui:Toggle name="left-toggle" class="filter-control" />
-                    <ui:Toggle name="right-toggle" class="filter-control" />
-                </components:HorizontalElement>
-                <components:HorizontalElement name="group-toggles-container" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-
-    </ui:VisualElement>
+        </components:SpacedHorizontalElement>
+    </components:SpacedVerticalElement>
 </ui:UXML>

@@ -10,7 +10,7 @@ internal class FacialShapesEditor : EditorWindow
     private FacialShapesEditorContext? _context;
 
     private const int MIN_WINDOW_WIDTH = 500;
-    private const int MIN_WINDOW_HEIGHT = 500;
+    private const int MIN_WINDOW_HEIGHT = 700;
 
     private int _initialUndoGroup = -1;
 
@@ -41,9 +41,9 @@ internal class FacialShapesEditor : EditorWindow
     public static FacialShapesEditor? TryOpenEditor(
         SkinnedMeshRenderer? renderer = null,
         IShapesEditorTargeting? targeting = null,
-        IReadOnlyBlendShapeSet? defaultOverrides = null,
         IReadOnlyBlendShapeSet? styleSet = null,
-        IReadOnlyBlendShapeSet? baseSet = null)
+        IReadOnlyBlendShapeSet? baseSet = null,
+        IReadOnlyBlendShapeSet? defaultOverrides = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
         window.StartContext(renderer, targeting, styleSet, baseSet, defaultOverrides);

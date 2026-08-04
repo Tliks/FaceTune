@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune.Gui.Components;
 #if UNITY_6000_0_OR_NEWER
 [UxmlElement]
 #endif
-internal partial class SliderFloatField : VisualElement
+internal partial class SliderFloatField : SpacedHorizontalElement
 {
 
 #if !UNITY_6000_0_OR_NEWER
@@ -65,7 +65,6 @@ internal partial class SliderFloatField : VisualElement
 
     public SliderFloatField()
     {
-        style.flexDirection = FlexDirection.Row;
         style.alignItems = Align.Center;
 
         _slider = new Slider()
@@ -76,11 +75,23 @@ internal partial class SliderFloatField : VisualElement
         _slider.style.flexGrow = 1;
         _slider.style.flexShrink = 1;
         _slider.style.flexBasis = new StyleLength(StyleKeyword.Auto);
+        _slider.style.alignSelf = Align.Stretch;
+        _slider.style.marginLeft = 0;
+        _slider.style.marginRight = 0;
+        _slider.style.marginTop = 0;
+        _slider.style.marginBottom = 0;
+        _slider.style.minHeight = 0;
 
         _floatField = new FloatField();
         _floatField.style.flexGrow = 0;
         _floatField.style.flexShrink = 0;
         _floatField.style.flexBasis = new StyleLength(40);
+        _floatField.style.alignSelf = Align.Stretch;
+        _floatField.style.marginLeft = 0;
+        _floatField.style.marginRight = 0;
+        _floatField.style.marginTop = 0;
+        _floatField.style.marginBottom = 0;
+        _floatField.style.minHeight = 0;
 
         Add(_slider);
         Add(_floatField);

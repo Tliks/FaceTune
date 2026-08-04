@@ -4,9 +4,9 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class ConditionDrawer : PropertyDrawer
 {
     internal static float GetConditionBaseHeight(SerializedProperty condition)
-        => Mathf.Max(
-            GUIHelper.LineHeight,
-            EditorGUI.GetPropertyHeight(condition, GUIContent.none, true));
+        => GUIHelper.LineHeight
+            + GUIHelper.VerticalSpacing
+            + Mathf.Max(GUIHelper.LineHeight, EditorGUI.GetPropertyHeight(condition, GUIContent.none, true));
 
     internal static void DrawConditionBase(Rect position, SerializedProperty condition)
     {
@@ -22,8 +22,8 @@ internal sealed class ConditionDrawer : PropertyDrawer
         var currentIndex = Array.IndexOf(types, currentType) + 1;
 
         position.SetSingleHeight();
-        var (typeRect, conditionRect) = position.SplitRatio(.3f);
-        var nextIndex = EditorGUI.Popup(typeRect, currentIndex, labels);
+        var modeRect = EditorGUI.PrefixLabel(position, "common.mode.label".LG());
+        var nextIndex = EditorGUI.Popup(modeRect, currentIndex, labels);
         if (nextIndex != currentIndex)
         {
             condition.managedReferenceValue = nextIndex == 0
@@ -31,9 +31,10 @@ internal sealed class ConditionDrawer : PropertyDrawer
                 : Activator.CreateInstance(types[nextIndex - 1]);
             return;
         }
-        if (currentIndex == 0) return;
 
-        conditionRect.height = GetConditionBaseHeight(condition);
+        position.NewLine();
+        position.height = GetConditionBaseHeight(condition) - GUIHelper.LineHeight - GUIHelper.VerticalSpacing;
+        var conditionRect = EditorGUI.PrefixLabel(position, "condition.section.label".LG());
         EditorGUI.PropertyField(conditionRect, condition, GUIContent.none, true);
     }
 

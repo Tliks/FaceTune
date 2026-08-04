@@ -18,6 +18,20 @@ internal abstract class FaceTuneSectionEditor<T> : FaceTuneEditor<T> where T : F
 
     protected virtual float GetAdditionalSectionSpacingBefore(int sectionIndex) => 0f;
 
+    protected FaceTuneSection CreatePropertySection(GUIContent label, params string[] propertyNames)
+        => new(
+            label,
+            () => propertyNames.Sum(propertyName => GetPropertyHeight(propertyName))
+                + GUIHelper.VerticalSpacing * (propertyNames.Length - 1),
+            position =>
+            {
+                foreach (var propertyName in propertyNames)
+                {
+                    DrawProperty(ref position, propertyName);
+                }
+            },
+            true);
+
     protected sealed override float GetInspectorHeight()
     {
         var sections = Sections;

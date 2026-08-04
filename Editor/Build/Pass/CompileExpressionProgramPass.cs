@@ -211,15 +211,15 @@ internal sealed class ConditionCompiler
         if (condition == null) return null;
 
         return condition switch
-            {
-                HandGestureCondition handGesture =>
-                    _platformSupport.ResolveHandGestureCondition(handGesture, _parameterDomains),
-                ParameterCondition parameter =>
-                    _platformSupport.ResolveParameterCondition(parameter, _parameterDomains),
-                MenuCondition => throw new InvalidOperationException(
-                    "Menu conditions must be normalized before compiling expressions."),
-                _ => throw new InvalidOperationException(
-                    $"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
+        {
+            HandGestureCondition handGesture =>
+                _platformSupport.ResolveHandGestureCondition(handGesture, _parameterDomains),
+            ParameterCondition parameter =>
+                _platformSupport.ResolveParameterCondition(parameter, _parameterDomains),
+            MenuCondition => throw new InvalidOperationException(
+                "Menu conditions must be normalized before compiling expressions."),
+            _ => throw new InvalidOperationException(
+                $"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
         };
     }
 

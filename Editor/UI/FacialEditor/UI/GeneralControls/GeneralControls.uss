@@ -1,59 +1,37 @@
-#general-controls-container {
-}
-
-#targeting-container {
-}
-
-#target-renderer-field {
-    flex: 1 1 50%;
-}
-
+#target-renderer-field,
 #targeting-object-field {
     flex: 1 1 50%;
 }
 
 .top-action-button {
     flex: 1;
-    height: 20px;
-    padding: 0px;
 }
 
-/* .top-action-button Image {
-    width: 20px;
-    height: 20px;
-} */
 
+.icon-action-button {
+    align-items: center;
+    justify-content: center;
+}
+
+.step-action-icon {
+    width: 14px;
+    height: 14px;
+}
 
 #save-button {
     flex: 3;
 }
 
-
 #clip-field-container {
     flex: 1 1 auto;
 }
 
+.clip-import-field .unity-object-field-display__label {
+    font-size: 11px;
+}
+
 #import-option-field-container {
-    flex: 0 0 100px;
-}
-
-
-#filter-header {
-    /* align-items: center; */
-    /* padding: 0px; */
-}
-
-.filter-control {
-    /* align-items: center; */
-}
-
-#all-button, #none-button {
-    padding: 0px;
-}
-
-#left-toggle, #right-toggle {
-    /* height: 50px;
-    width: 50px; */
+    flex: 0 0 auto;
 }
 
 #group-toggles-container {
@@ -61,5 +39,6 @@
 }
 
 .group-toggle {
-    padding: 0px;
+    margin: 0px var(--space) var(--space) 0px;
+    font-size: 11px;
 }

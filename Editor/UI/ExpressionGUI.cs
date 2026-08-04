@@ -103,9 +103,15 @@ internal static class ExpressionGUI
 
     internal static void InitializeExpansions(SerializedProperty data)
     {
-        data.FindPropertyRelative(nameof(ExpressionData.DataReference)).isExpanded = HasExternalSource(data);
+        var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
+        reference.isExpanded = HasExternalSource(data);
+
         var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
         blendShapeAnimations.isExpanded = blendShapeAnimations.arraySize > 0;
+        if (!reference.isExpanded && !blendShapeAnimations.isExpanded)
+        {
+            blendShapeAnimations.isExpanded = true;
+        }
     }
 
     private static bool HasExternalSource(SerializedProperty data)
@@ -253,8 +259,38 @@ internal static class ExpressionEditorActions
         };
         if (targeting == null) return;
 
+        // 顔つき (Style): アバターのStyleComponent由来の形状
+        var styleSet = new BlendShapeWeightSet();
+        var facialStyleAnimations = new List<BlendShapeWeightAnimation>();
+        FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialStyleAnimations, context.BodyPath);
+        styleSet.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
+
+        // ベース (Base): 祖先Dataをrootから合成し、自身のClipと参照先で上書きする
+        var baseAnimations = new List<BlendShapeWeightAnimation>();
+        foreach (var (ancestorSource, ancestorOwner) in EnumerateBaseSources(component))
+        {
+            ancestorSource.GetAnimations(ancestorOwner, baseAnimations, context.BodyPath);
+        }
+        source.GetBaseAnimations(component, baseAnimations, context.BodyPath);
+        var baseSet = new BlendShapeWeightSet(baseAnimations.ToFirstFrameBlendShapes());
+
         var defaults = new BlendShapeWeightSet(source.Data.BlendShapeAnimations.ToFirstFrameBlendShapes());
-        FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, defaults);
+        FacialShapesEditor.TryOpenEditor(context.FaceRenderer, targeting, styleSet, baseSet, defaults);
+    }
+
+    private static IEnumerable<(IHasExpressionData Source, Component Owner)> EnumerateBaseSources(Component component)
+    {
+        var parentFaceTune = component.GetComponentInParent<FaceTuneComponent>(true);
+        var sources = parentFaceTune != null
+            ? parentFaceTune.GetComponentsInChildren<FaceTuneTagComponent>(true).TakeWhile(source => source != component)
+            : component
+                .GetComponentsInParent<FaceTuneTagComponent>(true)
+                .Where(source => source.gameObject != component.gameObject)
+                .Reverse()
+                .Concat(component.GetComponents<FaceTuneTagComponent>().TakeWhile(source => source != component));
+        return sources
+            .Where(source => source is IHasExpressionData && source is not StyleComponent)
+            .Select(source => ((IHasExpressionData)source, (Component)source));
     }
 }
 

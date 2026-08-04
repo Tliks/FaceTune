@@ -23,7 +23,7 @@ internal class FacialStyleContext
     public static bool TryGetFacialStyleAnimations(GameObject target, ICollection<BlendShapeWeightAnimation> resultToAdd, string bodyPath)
     {
         if (!TryGetFacialStyle(target, out var facialStyle)) return false;
-        facialStyle.GetAnimations(resultToAdd, bodyPath);
+        facialStyle.GetAnimations(resultToAdd, bodyPath, includeStyleSources: true);
         return true;
     }
 
@@ -37,7 +37,7 @@ internal class FacialStyleContext
         context ??= ComputeContext.NullContext;
         if (!TryGetFacialStyle(target, out var facialStyle, root, context)) return false;
         context.Observe(facialStyle);
-        facialStyle.GetAnimations(resultToAdd, bodyPath, context);
+        facialStyle.GetAnimations(resultToAdd, bodyPath, context, includeStyleSources: true);
         return true;
     }
 }

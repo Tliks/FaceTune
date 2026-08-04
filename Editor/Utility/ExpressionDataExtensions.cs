@@ -8,25 +8,53 @@ internal static class ExpressionDataExtensions
         this T component,
         ICollection<BlendShapeWeightAnimation> resultToAdd,
         string bodyPath,
-        ComputeContext? context = null)
+        ComputeContext? context = null,
+        bool includeStyleSources = false)
         where T : Component, IHasExpressionData
-    {
-        GetAnimations(
-            component,
-            component,
+        => ((IHasExpressionData)component).GetAnimations(component, resultToAdd, bodyPath, context, includeStyleSources);
+
+    public static void GetAnimations(
+        this IHasExpressionData source,
+        Component owner,
+        ICollection<BlendShapeWeightAnimation> resultToAdd,
+        string bodyPath,
+        ComputeContext? context = null,
+        bool includeStyleSources = false)
+        => CollectAnimations(
+            source,
+            owner,
             resultToAdd,
             bodyPath,
             new HashSet<IHasExpressionData>(),
-            context ?? ComputeContext.NullContext);
-    }
+            context ?? ComputeContext.NullContext,
+            includeSourceManualAnimations: true,
+            includeStyleSources);
 
-    private static void GetAnimations(
+    public static void GetBaseAnimations(
+        this IHasExpressionData source,
+        Component owner,
+        ICollection<BlendShapeWeightAnimation> resultToAdd,
+        string bodyPath,
+        ComputeContext? context = null)
+        => CollectAnimations(
+            source,
+            owner,
+            resultToAdd,
+            bodyPath,
+            new HashSet<IHasExpressionData>(),
+            context ?? ComputeContext.NullContext,
+            includeSourceManualAnimations: false,
+            includeStyleSources: false);
+
+    private static void CollectAnimations(
         IHasExpressionData source,
         Component owner,
         ICollection<BlendShapeWeightAnimation> result,
         string bodyPath,
         HashSet<IHasExpressionData> resolving,
-        ComputeContext context)
+        ComputeContext context,
+        bool includeSourceManualAnimations,
+        bool includeStyleSources)
     {
         if (!resolving.Add(source)) return;
 
@@ -40,18 +68,25 @@ internal static class ExpressionDataExtensions
 
         foreach (var (referenced, referencedOwner) in GetReferencedSources(source, owner, context))
         {
-            GetAnimations(
+            if (!includeStyleSources && referenced is StyleComponent) continue;
+
+            CollectAnimations(
                 referenced,
                 referencedOwner,
                 result,
                 bodyPath,
                 resolving,
-                context);
+                context,
+                includeSourceManualAnimations: true,
+                includeStyleSources);
         }
 
-        foreach (var animation in data.BlendShapeAnimations)
+        if (includeSourceManualAnimations)
         {
-            result.Add(animation);
+            foreach (var animation in data.BlendShapeAnimations)
+            {
+                result.Add(animation);
+            }
         }
 
         resolving.Remove(source);

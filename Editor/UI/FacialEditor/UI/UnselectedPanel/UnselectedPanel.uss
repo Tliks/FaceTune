@@ -1,19 +1,18 @@
 #search-row {
-    flex: 0 0 var(--element-height);
+    flex: 0 0 var(--row-height);
     align-items: center;
-    margin-bottom: var(--main-gap);
 }
 
 #unselected-search-field {
     flex: 1 1 auto;
-    margin: 0px;
-    margin-right: var(--main-gap);
 }
 
 #select-all-button {
     flex: 0 0 auto;
-    margin: 0px;
-    padding: 0px;
+}
+
+#name {
+    flex: 1 0 auto;
 }
 
 #unselected-list-view {

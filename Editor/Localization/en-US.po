@@ -246,6 +246,18 @@ msgstr "Exclude Tracked Shapes"
 msgid "facialEditor.title"
 msgstr "Facial Shapes Editor"
 
+msgid "facialEditor.save.button"
+msgstr "Save"
+
+msgid "facialEditor.style.option"
+msgstr "Style"
+
+msgid "facialEditor.base.option"
+msgstr "Base"
+
+msgid "facialEditor.search.placeholder"
+msgstr "Search"
+
 msgid "customEditorUtility.saveAsClip.title"
 msgstr "Save as a Clip"
 
@@ -623,3 +635,27 @@ msgstr "None"
 
 msgid "menu.group.new.label"
 msgstr "New…"
+
+msgid "disableEyeBlink.section.label"
+msgstr "Disable Eye Blink"
+
+msgid "disableLipSync.section.label"
+msgstr "Disable Lip Sync"
+
+msgid "lipSync.section.label"
+msgstr "Lip Sync Settings"
+
+msgid "eyeBlink.section.label"
+msgstr "Eye Blink Settings"
+
+msgid "lockFacial.section.label"
+msgstr "Lock Facial"
+
+msgid "mmdSupport.section.label"
+msgstr "MMD Dance World Support"
+
+msgid "settings.section.label"
+msgstr "Avatar Settings"
+
+msgid "transition.section.label"
+msgstr "Transition Settings"
