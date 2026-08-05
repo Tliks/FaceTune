@@ -31,13 +31,19 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
     private FaceTuneSection CreateBehaviorSection()
         => CreateSection(
             "expression.behavior.section.label",
-            new PropertiesSectionDrawer(serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings))),
+            new PropertiesSectionDrawer(
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings)),
+                    new FacialSettings())),
             defaultExpanded: true);
 
     private FaceTuneSection CreateAnimationSection()
         => CreateSection(
             "expression.animationSettings.section.label",
-            new PropertiesSectionDrawer(serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings))),
+            new PropertiesSectionDrawer(
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings)),
+                    new ExpressionSettings())),
             defaultExpanded: false);
 
     private FaceTuneSection CreateConditionSection()
@@ -90,6 +96,12 @@ internal sealed class ConditionSectionDrawer : ISectionDrawer
         using var disabled = new EditorGUI.DisabledScope(!_enabled.boolValue || _enabled.hasMultipleDifferentValues);
         EditorGUI.PropertyField(position, _condition, GUIContent.none, true);
     }
+
+    public void Reset()
+    {
+        _enabled.CopyFrom(false);
+        _condition.CopyFrom(new Condition(ConditionCase.From(new HandGestureCondition())));
+    }
 }
 
 internal sealed class DirectMenuSectionDrawer : ISectionDrawer
@@ -110,6 +122,18 @@ internal sealed class DirectMenuSectionDrawer : ISectionDrawer
         position.height = GetHeight();
         using var disabled = new EditorGUI.DisabledScope(!_enabled.boolValue || _enabled.hasMultipleDifferentValues);
         EditorGUI.PropertyField(position, _settings, GUIContent.none, true);
+    }
+
+    public void Reset()
+    {
+        _enabled.boolValue = false;
+        _settings.CopyFrom(new DirectMenuSettings
+        {
+            Menu = new MenuSettings
+            {
+                Icon = new MenuIconSettings { Mode = MenuIconMode.ExpressionPreview }
+            }
+        });
     }
 }
 
@@ -135,5 +159,12 @@ internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
             position,
             ProjectSettings.EnableProjectSelectedExpressionPreview,
             "expression.selectedProjectExpressionPreview.label".LG());
+    }
+
+    public void Reset()
+    {
+        _enableRealTimePreview.CopyFrom(false);
+        ProjectSettings.EnableHierarchySelectedExpressionPreview = true;
+        ProjectSettings.EnableProjectSelectedExpressionPreview = true;
     }
 }

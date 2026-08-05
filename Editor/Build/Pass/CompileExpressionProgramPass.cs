@@ -133,7 +133,7 @@ internal sealed class ExpressionCompiler
     {
         var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
         var blinkSettings = advancedEyeBlinkComponent == null
-            ? AdvancedEyeBlinkSettings.Disabled()
+            ? new EyeBlinkSettings()
             : advancedEyeBlinkComponent.ResolveSettings();
 
         var advancedLipSyncComponent = component.gameObject.GetComponentInParent<LipSyncComponent>(true);
@@ -143,7 +143,7 @@ internal sealed class ExpressionCompiler
 
         return component.FacialSettings with
         {
-            AdvancedEyBlinkSettings = blinkSettings,
+            EyeBlinkSettings = blinkSettings,
             AdvancedLipSyncSettings = lipSyncSettings
         };
     }

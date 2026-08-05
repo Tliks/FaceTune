@@ -86,8 +86,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 {
                     Mode = settings.Menu.Icon.Mode,
                     ManualIcon = settings.Menu.Icon.ManualIcon,
-                    PreviewExpression = new AvatarObjectReference(
-                        settings.Menu.Icon.PreviewExpression.Get(original) ?? proxy.gameObject)
+                    PreviewExpression = settings.Menu.Icon.PreviewExpression ?? proxy.transform
                 },
                 InstallSettings = settings.Menu.InstallSettings
             };
@@ -99,12 +98,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
-            proxy.Data.DataReference = new(original.gameObject);
+            proxy.Data.DataReference = original.transform;
 
             if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
             {
                 var proxyStyle = proxyObject.AddComponent<StyleComponent>();
-                proxyStyle.Data.DataReference = new(originalStyle.gameObject);
+                proxyStyle.Data.DataReference = originalStyle.transform;
             }
         }
     }
@@ -120,9 +119,9 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             if (installSettings == null) continue;
 
             var component = (Component)source;
-            var target = installSettings.InstallContainerOverride.Get(component);
-            if (target == null || target.transform.IsChildOf(component.transform)) continue;
-            component.transform.SetParent(target.transform, true);
+            var target = installSettings.InstallContainerOverride;
+            if (target == null || target.IsChildOf(component.transform)) continue;
+            component.transform.SetParent(target, true);
         }
     }
 
@@ -289,7 +288,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
         foreach (var component in root.GetComponentsInChildren<EyeBlinkComponent>(true))
         {
-            FilterAdvancedEyeBlinkSettings(component, settings);
+            FilterEyeBlinkSettings(component, settings);
         }
 
         foreach (var component in root.GetComponentsInChildren<LipSyncComponent>(true))
@@ -309,15 +308,16 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         data.Clip = null;
     }
 
-    private static void FilterAdvancedEyeBlinkSettings(EyeBlinkComponent component, AuthoringBuildSettings settings)
+    private static void FilterEyeBlinkSettings(EyeBlinkComponent component, AuthoringBuildSettings settings)
     {
         if (component.ReferenceMode != ComponentReferenceMode.Direct) return;
 
-        var advancedSettings = component.AdvancedEyeBlinkSettings;
-        component.AdvancedEyeBlinkSettings = advancedSettings with
+        component.Settings = component.Settings with
         {
-            BlinkBlendShapeNames = FilterBlendShapeNames(component, advancedSettings.BlinkBlendShapeNames, settings),
-            CancelerBlendShapeNames = FilterBlendShapeNames(component, advancedSettings.CancelerBlendShapeNames, settings)
+            Automatic = component.Settings.Automatic with
+            {
+                Animations = FilterBlendShapeAnimations(component, component.Settings.Automatic.Animations, settings)
+            }
         };
     }
 

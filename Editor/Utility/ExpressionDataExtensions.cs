@@ -97,10 +97,10 @@ internal static class ExpressionDataExtensions
         Component owner,
         ComputeContext context)
     {
-        var target = source.Data.DataReference.Get(owner);
+        var target = source.Data.DataReference;
         if (target == null) yield break;
 
-        var components = context.GetComponents<FaceTuneTagComponent>(target);
+        var components = context.GetComponents<FaceTuneTagComponent>(target.gameObject);
         foreach (var component in components)
         {
             if (component is IHasExpressionData referenced)
@@ -133,10 +133,10 @@ internal static class ExpressionDataExtensions
         context.Observe(owner);
         yield return source.Data;
 
-        var target = source.Data.DataReference.Get(owner);
+        var target = source.Data.DataReference;
         if (target != null)
         {
-            foreach (var referenced in context.GetComponents<FaceTuneTagComponent>(target).OfType<IHasExpressionData>())
+            foreach (var referenced in context.GetComponents<FaceTuneTagComponent>(target.gameObject).OfType<IHasExpressionData>())
             {
                 if (referenced is not Component referencedOwner) continue;
 

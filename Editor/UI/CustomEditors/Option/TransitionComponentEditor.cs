@@ -11,7 +11,9 @@ internal sealed class TransitionComponentEditor : FaceTuneSectionEditorBase<Tran
         => CreateSection(
             "transition.section.label",
             new PropertiesSectionDrawer(
-                serializedObject.FindProperty(nameof(TransitionComponent.DurationSeconds)),
-                "transition.duration.label"),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(TransitionComponent.DurationSeconds)),
+                    TransitionComponent.DefaultDurationSeconds,
+                    "transition.duration.label")),
             defaultExpanded: false);
 }

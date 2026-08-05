@@ -150,21 +150,6 @@ internal sealed class FacialStyleTargeting : ExpressionDataTargetingBase<StyleCo
     public override StyleComponent? Target { get; set; }
 }
 
-internal class AdvancedEyeBlinkTargeting : IShapesEditorTargeting<EyeBlinkComponent>
-{
-    public override EyeBlinkComponent? Target { get; set; } = null;
-
-    public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
-    {
-        if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeWeightSet();
-        dataManager.GetCurrentOverrides(result);
-        var getProperty = (SerializedObject so) => so.FindProperty(nameof(EyeBlinkComponent.AdvancedEyeBlinkSettings)).FindPropertyRelative(AdvancedEyeBlinkSettings.CancelerBlendShapeNamesPropName);
-        SetStringArray(Target, getProperty, result.Keys);
-    }
-
-}
-
 internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<LipSyncComponent>
 {
     public override LipSyncComponent? Target { get; set; } = null;

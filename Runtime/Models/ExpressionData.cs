@@ -6,7 +6,7 @@ internal class ExpressionData
     public AnimationClip? Clip = null;
     public ClipImportOption ClipOption = ClipImportOption.NonZero;
 
-    public AvatarObjectReference DataReference = new();
+    public Transform? DataReference = null;
 
     public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
@@ -14,10 +14,6 @@ internal class ExpressionData
     {
     }
 
-    public void ResolveReferences(Component owner)
-    {
-        DataReference.Get(owner);
-    }
 }
 
 internal enum ClipImportOption

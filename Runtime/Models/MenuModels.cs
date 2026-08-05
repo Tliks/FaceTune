@@ -24,12 +24,7 @@ internal class MenuIconSettings
 {
     public MenuIconMode Mode = MenuIconMode.None;
     public Texture2D? ManualIcon = null;
-    public AvatarObjectReference PreviewExpression = new();
-
-    public void ResolveReferences(Component owner)
-    {
-        PreviewExpression.Get(owner);
-    }
+    public Transform? PreviewExpression = null;
 }
 
 [Serializable]
@@ -43,12 +38,7 @@ internal class ExclusiveToggleGroup
 [Serializable]
 internal class MenuInstallSettings
 {
-    public AvatarObjectReference InstallContainerOverride = new();
-
-    public void ResolveReferences(Component owner)
-    {
-        InstallContainerOverride.Get(owner);
-    }
+    public Transform? InstallContainerOverride = null;
 }
 
 [Serializable]
@@ -58,11 +48,6 @@ internal class MenuSettings
     public MenuIconSettings Icon = new();
     public MenuInstallSettings InstallSettings = new();
 
-    public void ResolveReferences(Component owner)
-    {
-        Icon.ResolveReferences(owner);
-        InstallSettings.ResolveReferences(owner);
-    }
 }
 
 [Serializable]
@@ -74,5 +59,4 @@ internal class DirectMenuSettings
     // Replace のときは built-in replace group に入る。
     public string BlendExclusiveGroupName = string.Empty;
 
-    public void ResolveReferences(Component owner) => Menu.ResolveReferences(owner);
 }

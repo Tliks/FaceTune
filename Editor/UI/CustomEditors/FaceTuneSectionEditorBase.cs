@@ -4,11 +4,12 @@ internal interface ISectionDrawer
 {
     float GetHeight();
     void Draw(Rect position);
+    void Reset();
 }
 
 internal sealed class PropertiesSectionDrawer : ISectionDrawer
 {
-    internal readonly record struct Entry(SerializedProperty Property, string? LabelKey = null);
+    internal readonly record struct Entry(SerializedProperty Property, object? ResetSource, string? LabelKey = null);
 
     private readonly Entry[] _entries;
 
@@ -17,15 +18,6 @@ internal sealed class PropertiesSectionDrawer : ISectionDrawer
     {
     }
 
-    public PropertiesSectionDrawer(params SerializedProperty[] properties)
-        : this(properties.Select(property => new Entry(property)).ToArray())
-    {
-    }
-
-    public PropertiesSectionDrawer(SerializedProperty property, string labelKey)
-        : this(new Entry(property, labelKey))
-    {
-    }
 
     public PropertiesSectionDrawer(params Entry[] entries)
     {
@@ -47,6 +39,12 @@ internal sealed class PropertiesSectionDrawer : ISectionDrawer
                 EditorGUI.PropertyField(position, entry.Property, entry.LabelKey.LG(), true);
             position.NewLine();
         }
+    }
+
+    public void Reset()
+    {
+        foreach (var entry in _entries)
+            entry.Property.CopyFrom(entry.ResetSource);
     }
 }
 
@@ -74,8 +72,14 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         ISectionDrawer drawer,
         bool defaultExpanded,
         SerializedProperty? enabledProperty = null,
-        Func<GenericMenu>? createHeaderMenu = null)
-        => new(() => labelKey.LG(), drawer.GetHeight, drawer.Draw, defaultExpanded, enabledProperty, createHeaderMenu);
+        Action<GenericMenu>? populateHeaderMenu = null)
+        => new(
+            () => labelKey.LG(),
+            drawer.GetHeight,
+            drawer.Draw,
+            defaultExpanded,
+            enabledProperty,
+            () => CreateHeaderMenu(drawer, populateHeaderMenu));
 
     protected sealed override float GetInspectorHeight()
     {
@@ -137,6 +141,23 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
             section.Expanded = expanded;
             position.y = sectionPosition.yMax;
         }
+    }
+
+    private GenericMenu CreateHeaderMenu(ISectionDrawer drawer, Action<GenericMenu>? populateHeaderMenu)
+    {
+        var menu = new GenericMenu();
+        menu.AddItem("section.menu.reset".LG(), false, () =>
+        {
+            serializedObject.UpdateIfRequiredOrScript();
+            drawer.Reset();
+            serializedObject.ApplyModifiedProperties();
+        });
+        if (populateHeaderMenu != null)
+        {
+            menu.AddSeparator(string.Empty);
+            populateHeaderMenu(menu);
+        }
+        return menu;
     }
 
     private IReadOnlyList<FaceTuneSection> Sections

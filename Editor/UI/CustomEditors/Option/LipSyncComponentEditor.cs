@@ -11,8 +11,14 @@ internal sealed class LipSyncComponentEditor : FaceTuneSectionEditorBase<LipSync
         => CreateSection(
             "lipSync.section.label",
             new PropertiesSectionDrawer(
-                serializedObject.FindProperty(nameof(LipSyncComponent.ReferenceMode)),
-                serializedObject.FindProperty(nameof(LipSyncComponent.Reference)),
-                serializedObject.FindProperty(nameof(LipSyncComponent.AdvancedLipSyncSettings))),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(LipSyncComponent.ReferenceMode)),
+                    ComponentReferenceMode.Direct),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(LipSyncComponent.Reference)),
+                    null),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(LipSyncComponent.AdvancedLipSyncSettings)),
+                    new AdvancedLipSyncSettings())),
             defaultExpanded: false);
 }

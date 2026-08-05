@@ -1,5 +1,6 @@
 namespace Aoyon.FaceTune;
 
+[Obsolete("Use EyeBlinkSettings instead.")]
 [Serializable]
 internal record class AdvancedEyeBlinkSettings // Immutable
 {

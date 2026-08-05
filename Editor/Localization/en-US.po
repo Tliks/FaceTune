@@ -438,6 +438,9 @@ msgstr "Expression Editor"
 msgid "common.open.button"
 msgstr "Open"
 
+msgid "section.menu.reset"
+msgstr "Reset"
+
 msgid "componentReferenceMode.option.direct"
 msgstr "Direct"
 

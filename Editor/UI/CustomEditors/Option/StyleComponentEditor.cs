@@ -12,25 +12,25 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComp
             "style.expression.section.label",
             new ExpressionSectionDrawer(serializedObject, Component, targets.Length, CreateExpressionOptions),
             defaultExpanded: true,
-            createHeaderMenu: CreateExpressionHeaderMenu);
+            populateHeaderMenu: PopulateExpressionHeaderMenu);
 
     private FaceTuneSection CreateOtherSection()
         => CreateSection(
             "expression.group.other.label",
             new PropertiesSectionDrawer(
-                serializedObject.FindProperty(nameof(StyleComponent.ApplyToRenderer)),
-                "style.applyToRenderer.label"),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(StyleComponent.ApplyToRenderer)),
+                    false,
+                    "style.applyToRenderer.label")),
             defaultExpanded: false);
 
     private ExpressionGUIOptions CreateExpressionOptions()
         => new(ExternalSourceLabel: "style.otherStyle.label".LG());
 
-    private GenericMenu CreateExpressionHeaderMenu()
+    private void PopulateExpressionHeaderMenu(GenericMenu menu)
     {
-        var menu = new GenericMenu();
         menu.AddItem("style.getFromRenderer.button".LG(), false, () => GetFromRenderer());
         menu.AddItem("style.applyToRenderer.menu".LG(), false, () => ApplyToSkinnedMeshRenderer());
-        return menu;
     }
 
     private void GetFromRenderer()

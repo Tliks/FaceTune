@@ -206,13 +206,13 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
                     preview,
                     "menuIcon.previewExpression.label".LG(),
                     new GUIContent($"{placeholder} ({FaceTuneComponent.ComponentName})"),
-                    AvatarObjectReference.IsEmpty(preview),
+                    preview.objectReferenceValue == null,
                     indentLabel: true);
             }
             else
             {
                 GUIHelper.DrawPropertyWithIndentedLabel(ref position, preview, "menuIcon.previewExpression.label");
-                if (AvatarObjectReference.IsEmpty(preview))
+                if (preview.objectReferenceValue == null)
                 {
                     position.height = MissingExpressionWarningHeight;
                     EditorGUI.HelpBox(
@@ -235,7 +235,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
             height += GUIHelper.VerticalSpacing + MissingIconWarningHeight;
         if (mode == (int)MenuIconMode.ExpressionPreview
             && property.serializedObject.targetObject is not FaceTuneComponent
-            && AvatarObjectReference.IsEmpty(property.FindPropertyRelative("PreviewExpression")))
+            && property.FindPropertyRelative("PreviewExpression").objectReferenceValue == null)
             height += GUIHelper.VerticalSpacing + MissingExpressionWarningHeight;
         return height;
     }
@@ -259,7 +259,7 @@ internal sealed class MenuInstallSettingsDrawer : PropertyDrawer
             reference,
             label,
             new GUIContent(placeholder),
-            AvatarObjectReference.IsEmpty(reference));
+            reference.objectReferenceValue == null);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

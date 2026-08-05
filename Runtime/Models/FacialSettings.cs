@@ -22,29 +22,23 @@ internal record class FacialSettings // Immutable
     [Obsolete("Only kept for migration. Use WriteModePropName.")]
     public const string EnableBlendingPropName = nameof(enableBlending);
 
-    internal AdvancedEyeBlinkSettings AdvancedEyBlinkSettings { get; init; }
-    internal AdvancedLipSyncSettings AdvancedLipSyncSettings { get; init; }
+    internal EyeBlinkSettings EyeBlinkSettings { get; init; } = new();
+    internal AdvancedLipSyncSettings AdvancedLipSyncSettings { get; init; } = AdvancedLipSyncSettings.Disabled();
     
     public FacialSettings() : this(TrackingPermission.Disallow, TrackingPermission.Allow, ExpressionWriteMode.Replace)
     {
     }
 
-    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, ExpressionWriteMode writeMode) : this(allowEyeBlink, allowLipSync, writeMode, AdvancedEyeBlinkSettings.Disabled(), AdvancedLipSyncSettings.Disabled())
+    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, ExpressionWriteMode writeMode)
     {
+        this.allowEyeBlink = allowEyeBlink;
+        this.allowLipSync = allowLipSync;
+        this.writeMode = writeMode;
     }
 
     [Obsolete("Only kept for migration. Use the ExpressionWriteMode overload.")]
     public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, bool enableBlending) : this(allowEyeBlink, allowLipSync, enableBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace)
     {
-    }
-
-    public FacialSettings(TrackingPermission allowEyeBlink, TrackingPermission allowLipSync, ExpressionWriteMode writeMode, AdvancedEyeBlinkSettings advancedEyBlinkSettings, AdvancedLipSyncSettings advancedLipSyncSettings)
-    {
-        this.allowEyeBlink = allowEyeBlink;
-        this.allowLipSync = allowLipSync;
-        this.writeMode = writeMode;
-        this.AdvancedEyBlinkSettings = advancedEyBlinkSettings;
-        this.AdvancedLipSyncSettings = advancedLipSyncSettings;
     }
 
     internal static FacialSettings Keep = new(TrackingPermission.Keep, TrackingPermission.Keep, ExpressionWriteMode.Blend);
@@ -56,7 +50,7 @@ internal record class FacialSettings // Immutable
         return allowEyeBlink == other.allowEyeBlink
          && allowLipSync == other.allowLipSync
          && writeMode == other.writeMode
-         && AdvancedEyBlinkSettings == other.AdvancedEyBlinkSettings
+         && EyeBlinkSettings == other.EyeBlinkSettings
          && AdvancedLipSyncSettings == other.AdvancedLipSyncSettings;
     }
     public override int GetHashCode()
@@ -64,7 +58,7 @@ internal record class FacialSettings // Immutable
         return allowEyeBlink.GetHashCode() 
         ^ allowLipSync.GetHashCode() 
         ^ writeMode.GetHashCode() 
-        ^ AdvancedEyBlinkSettings.GetHashCode()
+        ^ EyeBlinkSettings.GetHashCode()
         ^ AdvancedLipSyncSettings.GetHashCode();
     }
 }

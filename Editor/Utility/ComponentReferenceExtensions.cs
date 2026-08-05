@@ -2,20 +2,19 @@ namespace Aoyon.FaceTune;
 
 internal static class ComponentReferenceExtensions
 {
-    public static AdvancedEyeBlinkSettings ResolveSettings(this EyeBlinkComponent component)
+    public static EyeBlinkSettings ResolveSettings(this EyeBlinkComponent component)
     {
-        if (component.ReferenceMode != ComponentReferenceMode.Reference) return component.AdvancedEyeBlinkSettings;
+        if (component.ReferenceMode != ComponentReferenceMode.Reference) return component.Settings;
 
-        var target = component.Reference.Get(component)?.GetComponent<EyeBlinkComponent>();
-        if (target is { ReferenceMode: ComponentReferenceMode.Direct }) return target.AdvancedEyeBlinkSettings;
-        return AdvancedEyeBlinkSettings.Disabled();
+        var target = component.Reference?.GetComponent<EyeBlinkComponent>();
+        return target is { ReferenceMode: ComponentReferenceMode.Direct } ? target.Settings : new EyeBlinkSettings();
     }
 
     public static AdvancedLipSyncSettings ResolveSettings(this LipSyncComponent component)
     {
         if (component.ReferenceMode != ComponentReferenceMode.Reference) return component.AdvancedLipSyncSettings;
 
-        var target = component.Reference.Get(component)?.GetComponent<LipSyncComponent>();
+        var target = component.Reference?.GetComponent<LipSyncComponent>();
         if (target is { ReferenceMode: ComponentReferenceMode.Direct }) return target.AdvancedLipSyncSettings;
         return AdvancedLipSyncSettings.Disabled();
     }

@@ -11,7 +11,7 @@ internal interface IHasConditions
 }
 
 
-internal interface IHasExpressionData : IHasObjectReferences
+internal interface IHasExpressionData
 {
     ExpressionData Data { get; }
 }

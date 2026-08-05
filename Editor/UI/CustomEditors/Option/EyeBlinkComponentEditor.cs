@@ -11,8 +11,14 @@ internal sealed class EyeBlinkComponentEditor : FaceTuneSectionEditorBase<EyeBli
         => CreateSection(
             "eyeBlink.section.label",
             new PropertiesSectionDrawer(
-                serializedObject.FindProperty(nameof(EyeBlinkComponent.ReferenceMode)),
-                serializedObject.FindProperty(nameof(EyeBlinkComponent.Reference)),
-                serializedObject.FindProperty(nameof(EyeBlinkComponent.AdvancedEyeBlinkSettings))),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(EyeBlinkComponent.ReferenceMode)),
+                    ComponentReferenceMode.Direct),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(EyeBlinkComponent.Reference)),
+                    null),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(EyeBlinkComponent.Settings)),
+                    new EyeBlinkSettings())),
             defaultExpanded: false);
 }

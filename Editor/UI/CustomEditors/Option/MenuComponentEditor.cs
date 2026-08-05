@@ -29,7 +29,9 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
     public MenuSectionDrawer(SerializedObject serializedObject)
     {
         _menuSettings = new PropertiesSectionDrawer(
-            serializedObject.FindProperty(nameof(MenuComponent.Menu)));
+            new PropertiesSectionDrawer.Entry(
+                serializedObject.FindProperty(nameof(MenuComponent.Menu)),
+                new MenuSettings()));
         _kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
         _group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
         _parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
@@ -81,6 +83,17 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
         }
         if (isFloat) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _floatDefaultValue, "menu.floatDefaultValue.label");
         if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _defaultSelected, "menu.defaultSelected.label");
+    }
+
+    public void Reset()
+    {
+        _menuSettings.Reset();
+        _kind.CopyFrom(MenuItemKind.Toggle);
+        _group.CopyFrom(new ExclusiveToggleGroup());
+        _parameter.CopyFrom(string.Empty);
+        _floatDefaultValue.CopyFrom(0f);
+        _defaultSelected.CopyFrom(false);
+        _parameterSettingsExpanded = false;
     }
 
     private bool IsMode(int value) => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == value;

@@ -11,6 +11,8 @@ internal sealed class MenuFolderEditor : FaceTuneSectionEditorBase<MenuFolderCom
         => CreateSection(
             "menuFolder.section.label",
             new PropertiesSectionDrawer(
-                serializedObject.FindProperty(nameof(MenuFolderComponent.Menu))),
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(MenuFolderComponent.Menu)),
+                    new MenuSettings())),
             defaultExpanded: false);
 }

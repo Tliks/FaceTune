@@ -10,6 +10,9 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
     private FaceTuneSection CreateSettingsSection()
         => CreateSection(
             "settings.section.label",
-            new PropertiesSectionDrawer(serializedObject.FindProperty(nameof(SettingsComponent.Settings))),
+            new PropertiesSectionDrawer(
+                new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(SettingsComponent.Settings)),
+                    AvatarSettings.Default)),
             defaultExpanded: false);
 }

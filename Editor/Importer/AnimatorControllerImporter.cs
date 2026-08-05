@@ -264,8 +264,7 @@ internal class AnimatorControllerImporter
         {
             AllowEyeBlink = TrackingPermission.Disallow,
             AllowLipSync = TrackingPermission.Allow,
-            WriteMode = isBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace,
-            AdvancedEyBlinkSettings = AdvancedEyeBlinkSettings.Disabled()
+            WriteMode = isBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace
         };
 
         return obj;

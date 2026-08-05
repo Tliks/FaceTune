@@ -35,6 +35,8 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
             _component,
             _targetCount,
             _optionsFactory?.Invoke());
+
+    public void Reset() => _data.CopyFrom(new ExpressionData());
 }
 
 internal static class ExpressionGUI
@@ -129,7 +131,7 @@ internal static class ExpressionGUI
         foreach (var target in data.serializedObject.targetObjects)
         {
             if (target is not Component component || component is not IHasExpressionData source) continue;
-            if (source.Data.DataReference?.Get(component) != null || source.Data.Clip != null) return true;
+            if (source.Data.DataReference != null || source.Data.Clip != null) return true;
         }
         return false;
     }

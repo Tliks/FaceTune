@@ -127,7 +127,7 @@ internal sealed class AnimatorBuildPlanBuilder
 
     private AdvancedEyeBlinkLayerPlan? BuildAdvancedEyeBlinkLayer(IReadOnlyList<ExpressionItem> expressions)
     {
-        return expressions.Any(expression => expression.FacialSettings.AdvancedEyBlinkSettings.IsAnimationEnabled())
+        return expressions.Any(expression => expression.FacialSettings.EyeBlinkSettings.IsAutomatic())
             ? new AdvancedEyeBlinkLayerPlan("Advanced EyeBlink", _layerForceInactiveWhen)
             : null;
     }
@@ -622,7 +622,7 @@ internal sealed class AapProtocol
     public const int AnimationEnabledIndex = 1;
     private const int AdvancedNoneIndex = 0;
 
-    private readonly Dictionary<(int UnitId, AdvancedEyeBlinkSettings Settings), int> _eyeBlinkAdvancedIndices = new();
+    private readonly Dictionary<(int UnitId, EyeBlinkSettings Settings), int> _eyeBlinkAdvancedIndices = new();
     private readonly Dictionary<(int UnitId, AdvancedLipSyncSettings Settings), int> _lipSyncAdvancedIndices = new();
 
 
@@ -652,7 +652,7 @@ internal sealed class AapProtocol
     public static AapProtocol From(IReadOnlyList<ExpressionItem> items)
     {
         var settings = items.Select(item => item.FacialSettings).ToArray();
-        var writesEyeBlinkAdvancedSelector = settings.Any(setting => setting.AdvancedEyBlinkSettings.IsAnimationEnabled());
+        var writesEyeBlinkAdvancedSelector = settings.Any(setting => setting.EyeBlinkSettings.IsAutomatic());
         var writesLipSyncAdvancedSelector = settings.Any(setting => setting.AdvancedLipSyncSettings.IsAnimationEnabled());
         return new AapProtocol(
             settings.Any(setting => setting.AllowEyeBlink == TrackingPermission.Disallow)
@@ -671,7 +671,7 @@ internal sealed class AapProtocol
         {
             writes.Add(new AapWrite(
                 EyeBlinkAnimationName,
-                Value(settings.AllowEyeBlink == TrackingPermission.Disallow || settings.AdvancedEyBlinkSettings.IsAnimationEnabled()
+                Value(settings.AllowEyeBlink == TrackingPermission.Disallow || settings.EyeBlinkSettings.IsAutomatic()
                     ? AnimationEnabledIndex
                     : AnimationDisabledIndex)));
         }
@@ -680,8 +680,8 @@ internal sealed class AapProtocol
         {
             writes.Add(new AapWrite(
                 EyeBlinkAdvancedSelectorName,
-                Value(settings.AdvancedEyBlinkSettings.IsAnimationEnabled()
-                    ? AdvancedIndex(_eyeBlinkAdvancedIndices, unitId, settings.AdvancedEyBlinkSettings)
+                Value(settings.EyeBlinkSettings.IsAutomatic()
+                    ? AdvancedIndex(_eyeBlinkAdvancedIndices, unitId, settings.EyeBlinkSettings)
                     : AdvancedNoneIndex)));
         }
 

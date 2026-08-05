@@ -438,6 +438,9 @@ msgstr "表情編集画面"
 msgid "common.open.button"
 msgstr "開く"
 
+msgid "section.menu.reset"
+msgstr "リセット"
+
 msgid "componentReferenceMode.option.direct"
 msgstr "直接設定"
 
