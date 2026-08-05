@@ -52,19 +52,27 @@ internal class MenuInstallSettings
 }
 
 [Serializable]
-internal class DirectMenuSettings
+internal class MenuSettings
 {
     public string MenuName = string.Empty;
     public MenuIconSettings Icon = new();
     public MenuInstallSettings InstallSettings = new();
-
-    // Blendのときメニューの排他 group として使う。空ののときは排他なし。
-    // Replace のときは built-in replace group に入る。
-    public string BlendExclusiveGroupName = string.Empty;
 
     public void ResolveReferences(Component owner)
     {
         Icon.ResolveReferences(owner);
         InstallSettings.ResolveReferences(owner);
     }
+}
+
+[Serializable]
+internal class DirectMenuSettings
+{
+    public MenuSettings Menu = new();
+
+    // Blendのときメニューの排他 group として使う。空ののときは排他なし。
+    // Replace のときは built-in replace group に入る。
+    public string BlendExclusiveGroupName = string.Empty;
+
+    public void ResolveReferences(Component owner) => Menu.ResolveReferences(owner);
 }

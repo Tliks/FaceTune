@@ -1,12 +1,12 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class DisableLipSyncComponent : FaceTuneTagComponent, IHasSingleConditions
+    internal class DisableLipSyncComponent : FaceTuneTagComponent, IHasConditions
     {
         internal const string ComponentName = ComponentNamePrefix + "Disable LipSync";
 
-        public SingleConditionBase DisableWhen = SingleConditionBase.Menu();
+        public Condition DisableWhen = new(ConditionCase.From(new MenuCondition()));
 
-        IEnumerable<SingleConditionBase> IHasSingleConditions.SingleConditions => new[] { DisableWhen };
+        IEnumerable<Condition> IHasConditions.Conditions => new[] { DisableWhen };
     }
 }

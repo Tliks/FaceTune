@@ -9,13 +9,13 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.normalize-authoring-hierarchy";
     public override string DisplayName => "Normalize Authoring Hierarchy";
 
-    private const string PresetGroupName = "PresetIndex";
+    private const string SetGroupName = "SetIndex";
     private const string DirectMenuObjectName = FaceTuneConstants.Name + " DirectMenu";
 
     protected override void Execute(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
-        ProcessPresetComponents(root);
+        ProcessSetComponents(root);
         ProcessDirectMenuSettings(root);
         NormalizeMenuInstallContainers(root);
         IgnoreEmptyCondition(root);
@@ -28,29 +28,27 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         FilterBlendShapeOutputs(context.AvatarContext.BodyPath, root, settings);
     }
 
-    // Preset -> Menu + Conditionに変換
-    private static void ProcessPresetComponents(GameObject root)
+    // Set -> Menu + Conditionに変換
+    private static void ProcessSetComponents(GameObject root)
     {
-        var presets = root.GetComponentsInChildren<PresetComponent>(true);
+        var sets = root.GetComponentsInChildren<SetComponent>(true);
 
-        var defaultSelectedPresets = presets.Where(preset => preset.DefaultSelected).ToArray();
-        if (defaultSelectedPresets.Length > 1)
+        var defaultSelectedSets = sets.Where(set => set.DefaultSelected).ToArray();
+        if (defaultSelectedSets.Length > 1)
         {
-            LocalizedLog.Warning("Log:warning:NormalizeAuthoringHierarchyPass:MultipleDefaultSelectedPreset", null, defaultSelectedPresets);
+            LocalizedLog.Warning("Log:warning:NormalizeAuthoringHierarchyPass:MultipleDefaultSelectedSet", null, defaultSelectedSets);
         }
-        var defaultPreset = defaultSelectedPresets.FirstOrDefault();
+        var defaultSet = defaultSelectedSets.FirstOrDefault();
 
-        foreach (var preset in presets)
+        foreach (var set in sets)
         {
-            var menu = preset.gameObject.EnsureComponent<MenuComponent>(); // Todo: 上書きしていいの？
+            var menu = set.gameObject.EnsureComponent<MenuComponent>(); // Todo: 上書きしていいの？
             menu.Kind = MenuItemKind.Toggle;
-            menu.MenuName = preset.MenuName;
-            menu.Icon = preset.Icon;
-            menu.InstallSettings = preset.InstallSettings;
-            menu.DefaultSelected = preset == defaultPreset;
-            menu.ExclusiveToggleGroup.GroupName = PresetGroupName;
+            menu.Menu = set.Menu;
+            menu.DefaultSelected = set == defaultSet;
+            menu.ExclusiveToggleGroup.GroupName = SetGroupName;
 
-            var condition = preset.gameObject.EnsureComponent<ConditionComponent>().Condition;
+            var condition = set.gameObject.EnsureComponent<ConditionComponent>().Condition;
             if (condition.Always)
             {
                 condition.Always = false;
@@ -81,15 +79,18 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             var proxy = proxyObject.AddComponent<FaceTuneComponent>();
 
             var menu = original.gameObject.AddComponent<MenuComponent>();
-            menu.MenuName = settings.MenuName;
-            menu.Icon = new MenuIconSettings
+            menu.Menu = new MenuSettings
             {
-                Mode = settings.Icon.Mode,
-                ManualIcon = settings.Icon.ManualIcon,
-                PreviewExpression = new AvatarObjectReference(
-                    settings.Icon.PreviewExpression.Get(original) ?? proxy.gameObject)
+                MenuName = settings.Menu.MenuName,
+                Icon = new MenuIconSettings
+                {
+                    Mode = settings.Menu.Icon.Mode,
+                    ManualIcon = settings.Menu.Icon.ManualIcon,
+                    PreviewExpression = new AvatarObjectReference(
+                        settings.Menu.Icon.PreviewExpression.Get(original) ?? proxy.gameObject)
+                },
+                InstallSettings = settings.Menu.InstallSettings
             };
-            menu.InstallSettings = settings.InstallSettings;
             menu.Kind = MenuItemKind.Toggle;
             menu.DefaultSelected = false;
             menu.ExclusiveToggleGroup.GroupName = GetDirectMenuExclusiveGroupName(original);
@@ -178,7 +179,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             }
             else if (string.IsNullOrWhiteSpace(menu.ParameterName))
             {
-                var menuName = string.IsNullOrWhiteSpace(menu.MenuName) ? menu.name : menu.MenuName;
+                var menuName = string.IsNullOrWhiteSpace(menu.Menu.MenuName) ? menu.name : menu.Menu.MenuName;
                 menu.ParameterName = CreateGeneratedParameterName(
                     menu.Kind == MenuItemKind.Radial ? "Radial" : "Toggle",
                     menuName);
@@ -216,16 +217,6 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 ResolveMenuConditions(condition);
         }
 
-        foreach (var source in sources.OfType<IHasSingleConditions>())
-        {
-            foreach (var condition in source.SingleConditions)
-            {
-                if (condition.Condition is not MenuCondition menuCondition) continue;
-                condition.Condition = menuCondition.MenuSource == null
-                    ? null
-                    : ToParameterCondition(menuCondition);
-            }
-        }
     }
 
     private static void ResolveMenuConditions(Condition condition)

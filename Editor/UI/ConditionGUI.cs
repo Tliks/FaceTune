@@ -65,12 +65,12 @@ internal sealed class ConditionDrawer : PropertyDrawer
         var controlsRect = Rect.zero;
         if (showCases) (modeRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
         var mode = always.boolValue ? 1 : 0;
-        var toolbarRect = EditorGUI.PrefixLabel(modeRect, "common.mode.label".LG());
-        var nextMode = GUI.Toolbar(toolbarRect, mode, new[]
-        {
-            "condition.mode.normal.label".LG(),
-            "condition.mode.always.label".LG()
-        });
+        var popupRect = EditorGUI.PrefixLabel(modeRect, "condition.mode.label".LG());
+        var nextMode = GUIHelper.LocalizedPopup(
+            popupRect,
+            mode,
+            null,
+            new[] { "condition.mode.normal.label", "condition.mode.always.label" });
         if (nextMode != mode) always.boolValue = nextMode == 1;
         if (showCases) GUIHelper.DrawListControls(controlsRect, cases, CasesOptions);
         position.NewLine();
@@ -106,20 +106,6 @@ internal sealed class ConditionDrawer : PropertyDrawer
 
     internal static void DrawEmptyMessage(Rect position, SerializedProperty _)
         => EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
-}
-
-[CustomPropertyDrawer(typeof(SingleConditionBase))]
-internal sealed class SingleConditionBaseDrawer : PropertyDrawer
-{
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
-        ConditionDrawer.DrawConditionBase(position, property.FindPropertyRelative(nameof(SingleConditionBase.Condition)));
-    }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => ConditionDrawer.GetConditionBaseHeight(
-            property.FindPropertyRelative(nameof(SingleConditionBase.Condition)));
 }
 
 [CustomPropertyDrawer(typeof(ConditionCase))]

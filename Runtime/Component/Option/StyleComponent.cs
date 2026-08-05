@@ -9,6 +9,7 @@ namespace Aoyon.FaceTune
 
         public ExpressionData Data = new();
 
+        [ToggleLeft]
         public bool ApplyToRenderer = false;
 
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();

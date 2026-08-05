@@ -113,6 +113,7 @@ internal static partial class GUIHelper
     // Heuristic optical correction for the standard Toggle drawn inside a Shuriken header.
     // IMGUI does not expose the visual bounds of the Toggle glyph within its control Rect.
     private static readonly Vector2 HeaderToggleVisualOffset = new(-1f, -1f);
+    private const float HeaderMenuIconVisualOffsetY = -1f;
     private static GUIStyle? _style;
     private static GUIStyle? _toggleAndFoldStyle;
     private static GUIStyle? _shurikenLayoutStyle;
@@ -166,10 +167,13 @@ internal static partial class GUIHelper
         ref bool expanded,
         GUIContent label,
         float contentHeight,
-        out Rect content)
+        out Rect content,
+        Func<GenericMenu>? createHeaderMenu = null)
     {
         var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
-        expanded = DrawShuriken(header, expanded, label);
+        GUI.Box(header, label, ShurikenStyle);
+        var menuButton = DrawHeaderMenu(header, createHeaderMenu);
+        expanded = HandleFoldout(header, expanded, menuButton);
         return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
     }
 
@@ -179,10 +183,11 @@ internal static partial class GUIHelper
         SerializedProperty enabled,
         GUIContent label,
         float contentHeight,
-        out Rect content)
+        out Rect content,
+        Func<GenericMenu>? createHeaderMenu = null)
     {
         var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
-        expanded = DrawShurikenToggleAndFold(header, expanded, enabled, label);
+        expanded = DrawShurikenToggleAndFold(header, expanded, enabled, label, createHeaderMenu);
         return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
     }
 
@@ -218,13 +223,15 @@ internal static partial class GUIHelper
         Rect position,
         bool expanded,
         SerializedProperty enabled,
-        GUIContent label)
+        GUIContent label,
+        Func<GenericMenu>? createHeaderMenu = null)
     {
         _toggleAndFoldStyle ??= new GUIStyle(ShurikenStyle)
         {
             contentOffset = new Vector2(HeaderContentOffsetX + LineHeight, -2f)
         };
         GUI.Box(position, label, _toggleAndFoldStyle);
+        var menuButton = DrawHeaderMenu(position, createHeaderMenu);
 
         var toggleRect = new Rect(
             position.x + HeaderContentOffsetX + HeaderToggleVisualOffset.x,
@@ -238,7 +245,7 @@ internal static partial class GUIHelper
             enabled.boolValue = EditorGUI.Toggle(toggleRect, enabled.boolValue);
             EditorGUI.showMixedValue = previousMixed;
         }
-        return HandleFoldout(position, expanded, toggleRect);
+        return HandleFoldout(position, expanded, toggleRect, menuButton);
     }
 
     public static bool DrawShurikenToggle(Rect position, SerializedProperty enabled, GUIContent label)
@@ -275,7 +282,24 @@ internal static partial class GUIHelper
     }
 
 
-    private static bool HandleFoldout(Rect position, bool expanded, Rect? excluded = null)
+    private static Rect DrawHeaderMenu(Rect header, Func<GenericMenu>? createHeaderMenu)
+    {
+        if (createHeaderMenu == null) return Rect.zero;
+        var button = new Rect(header.xMax - ShurikenHeaderHeight, header.y, ShurikenHeaderHeight, header.height);
+        var content = EditorGUIUtility.IconContent("_Menu");
+        content.tooltip = "Menu";
+        var image = content.image;
+        var icon = new Rect(
+            button.center.x - image.width * .5f,
+            button.center.y - image.height * .5f + HeaderMenuIconVisualOffsetY,
+            image.width,
+            image.height);
+        if (GUI.Button(button, GUIContent.none, GUIStyle.none)) createHeaderMenu().DropDown(button);
+        GUI.DrawTexture(icon, image);
+        return button;
+    }
+
+    private static bool HandleFoldout(Rect position, bool expanded, params Rect[] excluded)
     {
         var arrow = new Rect(position.x + 4f, position.y + 2f, 13f, 13f);
         if (Event.current.type == EventType.Repaint)
@@ -284,7 +308,7 @@ internal static partial class GUIHelper
         var current = Event.current;
         if (current.type == EventType.MouseDown && current.button == 0
             && position.Contains(current.mousePosition)
-            && excluded?.Contains(current.mousePosition) != true)
+            && !excluded.Any(rect => rect.Contains(current.mousePosition)))
         {
             expanded = !expanded;
             current.Use();
@@ -318,10 +342,13 @@ internal static partial class GUIHelper
         Rect position,
         SerializedProperty property,
         GUIContent label,
-        GUIContent placeholder)
+        GUIContent placeholder,
+        bool indentLabel = false)
     {
         using var scope = new EditorGUI.PropertyScope(position, label, property);
-        var field = EditorGUI.PrefixLabel(position, scope.content);
+        var (labelPosition, valuePosition) = SplitIndentedLabel(position);
+        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, scope.content);
+        if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
         EditorGUI.PropertyField(field, property, GUIContent.none);
         if (!string.IsNullOrEmpty(property.stringValue)) return;
         GUI.Label(field, placeholder, PlaceholderTextStyle);
@@ -345,9 +372,12 @@ internal static partial class GUIHelper
         SerializedProperty property,
         GUIContent label,
         GUIContent placeholder,
-        bool isEmpty)
+        bool isEmpty,
+        bool indentLabel = false)
     {
-        var field = EditorGUI.PrefixLabel(position, label, EditorStyles.label);
+        var (labelPosition, valuePosition) = SplitIndentedLabel(position);
+        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, label, EditorStyles.label);
+        if (indentLabel) EditorGUI.LabelField(labelPosition, label);
         EditorGUI.PropertyField(field, property, GUIContent.none, true);
         if (!isEmpty) return;
         DrawObjectPlaceholder(field, placeholder);
@@ -440,6 +470,7 @@ internal static partial class GUIHelper
 internal static partial class GUIHelper
 {
     private const float PopupHorizontalMargin = 6f;
+    private static readonly GUIContent IndentedLabelPlaceholder = new(" ");
 
     public static float PopupWidth(IEnumerable<GUIContent> labels)
         => labels.Max(label => EditorStyles.popup.CalcSize(label).x) + PopupHorizontalMargin;
@@ -492,6 +523,28 @@ internal static partial class GUIHelper
         var optionKeys = property.enumNames.Select(name =>
             $"{optionPrefix}.option.{char.ToLowerInvariant(name[0]) + name[1..]}");
         LocalizedEnumPopup(position, property, labelKey, optionKeys);
+    }
+
+    public static (Rect Label, Rect Value) SplitIndentedLabel(Rect position)
+    {
+        var value = EditorGUI.PrefixLabel(position, IndentedLabelPlaceholder);
+        var labelX = position.x + IndentWidth;
+        return (
+            new Rect(labelX, position.y, Mathf.Max(0f, value.x - labelX), position.height),
+            value);
+    }
+
+    public static void DrawPropertyWithIndentedLabel(
+        ref Rect position,
+        SerializedProperty property,
+        string labelKey,
+        bool includeChildren = true)
+    {
+        position.height = EditorGUI.GetPropertyHeight(property, GUIContent.none, includeChildren);
+        var (label, value) = SplitIndentedLabel(position);
+        EditorGUI.LabelField(label, labelKey.LG());
+        EditorGUI.PropertyField(value, property, GUIContent.none, includeChildren);
+        position.NewLine();
     }
 
     public static void LocalizedEnumPopup(

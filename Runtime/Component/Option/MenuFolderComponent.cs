@@ -6,16 +6,9 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Menu Folder";
 
-        public string MenuName = string.Empty;
-        public MenuIconSettings Icon = new();
-        public MenuInstallSettings InstallSettings = new();
+        public MenuSettings Menu = new();
 
-        MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => InstallSettings;
-
-        void IHasObjectReferences.ResolveReferences()
-        {
-            Icon.ResolveReferences(this);
-            InstallSettings.ResolveReferences(this);
-        }
+        MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => Menu.InstallSettings;
+        void IHasObjectReferences.ResolveReferences() => Menu.ResolveReferences(this);
     }
 }

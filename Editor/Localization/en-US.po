@@ -152,11 +152,14 @@ msgstr "Import"
 msgid "condition.always.label"
 msgstr "Always"
 
+msgid "condition.mode.label"
+msgstr "Condition"
+
 msgid "condition.mode.normal.label"
-msgstr "Normal"
+msgstr "Conditional"
 
 msgid "condition.mode.always.label"
-msgstr "Always Play"
+msgstr "Always True"
 
 msgid "condition.case.label"
 msgstr "Case"
@@ -429,8 +432,11 @@ msgstr "Type"
 msgid "menuIcon.icon.label"
 msgstr "Icon"
 
-msgid "expression.openEditor.button"
-msgstr "Open Expression Editor"
+msgid "expression.editor.label"
+msgstr "Expression Editor"
+
+msgid "common.open.button"
+msgstr "Open"
 
 msgid "componentReferenceMode.option.direct"
 msgstr "Direct"
@@ -519,20 +525,20 @@ msgstr "Folder Name"
 msgid "condition.section.label"
 msgstr "Conditions"
 
-msgid "preset.section.label"
-msgstr "Preset"
+msgid "set.section.label"
+msgstr "Expression Set"
 
 msgid "menuSettings.section.label"
 msgstr "Menu Settings"
-
-msgid "data.expression.section.label"
-msgstr "Expression Data"
 
 msgid "style.expression.section.label"
 msgstr "Facial Style"
 
 msgid "style.applyToRenderer.label"
 msgstr "Apply This Facial Style to the Renderer at Build Time"
+
+msgid "style.applyToRenderer.menu"
+msgstr "Apply to Renderer"
 
 msgid "style.getFromRenderer.button"
 msgstr "Get from Renderer"
@@ -636,6 +642,9 @@ msgstr "None"
 msgid "menu.group.new.label"
 msgstr "New…"
 
+msgid "menu.group.directMenuReplace.label"
+msgstr "Replace Expressions"
+
 msgid "disableEyeBlink.section.label"
 msgstr "Disable Eye Blink"
 
@@ -652,10 +661,49 @@ msgid "lockFacial.section.label"
 msgstr "Lock Facial"
 
 msgid "mmdSupport.section.label"
-msgstr "MMD Dance World Support"
+msgstr "MMD World Support"
 
 msgid "settings.section.label"
 msgstr "Avatar Settings"
 
 msgid "transition.section.label"
 msgstr "Transition Settings"
+
+msgid "transition.duration.label"
+msgstr "Duration Seconds"
+
+msgid "avatarSettings.faceObject.label"
+msgstr "Face Object"
+
+msgid "avatarSettings.excludedBlendShapes.label"
+msgstr "Excluded Blend Shapes"
+
+msgid "avatarSettings.parameterCompression.label"
+msgstr "Parameter Compression"
+
+msgid "avatarSettings.suppressTrackingControl.label"
+msgstr "Suppress Tracking Control"
+
+msgid "mmdSupport.blendShapes.label"
+msgstr "MMD Blend Shapes"
+
+msgid "mmdSupport.blendShapes.option.auto"
+msgstr "Auto"
+
+msgid "mmdSupport.blendShapes.option.specified"
+msgstr "Specified"
+
+msgid "mmdSupport.disableWhen.label"
+msgstr "Disable When"
+
+msgid "mmdSupport.disableMode.label"
+msgstr "Support Method"
+
+msgid "mmdDisableMode.option.auto"
+msgstr "Auto"
+
+msgid "mmdDisableMode.option.disableFx"
+msgstr "Disable Entire FX Layer"
+
+msgid "mmdDisableMode.option.disableLayer"
+msgstr "Disable Individual Layers"

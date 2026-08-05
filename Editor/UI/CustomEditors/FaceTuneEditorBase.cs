@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune.Gui;
 
-internal abstract class FaceTuneEditor<T> : Editor where T : FaceTuneTagComponent
+internal abstract class FaceTuneEditorBase<T> : Editor where T : FaceTuneTagComponent
 {
     protected T Component => (T)target;
     protected virtual bool ShowLanguageSwitcher => false;
@@ -50,22 +50,4 @@ internal abstract class FaceTuneEditor<T> : Editor where T : FaceTuneTagComponen
         }
     }
 
-    protected float GetPropertyHeight(string propertyName, bool includeChildren = true)
-    {
-        var property = serializedObject.FindProperty(propertyName);
-        return property == null ? 0f : EditorGUI.GetPropertyHeight(property, GUIContent.none, includeChildren);
-    }
-
-    protected void DrawProperty(ref Rect position, string propertyName, bool includeChildren = true)
-    {
-        var property = serializedObject.FindProperty(propertyName);
-        if (property == null) return;
-
-        position.height = EditorGUI.GetPropertyHeight(property, includeChildren);
-        EditorGUI.PropertyField(position, property, includeChildren);
-        position.NewLine();
-    }
-
-    protected static bool IsMode(SerializedProperty mode, int value)
-        => !mode.hasMultipleDifferentValues && mode.enumValueIndex == value;
 }

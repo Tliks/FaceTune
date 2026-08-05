@@ -152,11 +152,14 @@ msgstr "インポート"
 msgid "condition.always.label"
 msgstr "常に有効"
 
+msgid "condition.mode.label"
+msgstr "適用条件"
+
 msgid "condition.mode.normal.label"
-msgstr "通常"
+msgstr "条件付き"
 
 msgid "condition.mode.always.label"
-msgstr "常に再生"
+msgstr "常に成立"
 
 msgid "condition.case.label"
 msgstr "ケース"
@@ -429,8 +432,11 @@ msgstr "種類"
 msgid "menuIcon.icon.label"
 msgstr "アイコン"
 
-msgid "expression.openEditor.button"
-msgstr "表情編集画面を開く"
+msgid "expression.editor.label"
+msgstr "表情編集画面"
+
+msgid "common.open.button"
+msgstr "開く"
 
 msgid "componentReferenceMode.option.direct"
 msgstr "直接設定"
@@ -519,20 +525,20 @@ msgstr "フォルダ名"
 msgid "condition.section.label"
 msgstr "条件"
 
-msgid "preset.section.label"
-msgstr "プリセット"
+msgid "set.section.label"
+msgstr "表情セット"
 
 msgid "menuSettings.section.label"
 msgstr "メニュー設定"
-
-msgid "data.expression.section.label"
-msgstr "表情データ"
 
 msgid "style.expression.section.label"
 msgstr "顔つき"
 
 msgid "style.applyToRenderer.label"
 msgstr "ビルド時にこの顔つきをレンダラーに適用"
+
+msgid "style.applyToRenderer.menu"
+msgstr "レンダラーへ適用"
 
 msgid "style.getFromRenderer.button"
 msgstr "レンダラーから取得"
@@ -636,6 +642,9 @@ msgstr "なし"
 msgid "menu.group.new.label"
 msgstr "新規…"
 
+msgid "menu.group.directMenuReplace.label"
+msgstr "置き換え表情"
+
 msgid "disableEyeBlink.section.label"
 msgstr "まばたき無効化"
 
@@ -652,10 +661,49 @@ msgid "lockFacial.section.label"
 msgstr "表情固定"
 
 msgid "mmdSupport.section.label"
-msgstr "MMDダンスワールド対応"
+msgstr "MMDワールド対応"
 
 msgid "settings.section.label"
 msgstr "アバター設定"
 
 msgid "transition.section.label"
 msgstr "遷移設定"
+
+msgid "transition.duration.label"
+msgstr "遷移時間（秒）"
+
+msgid "avatarSettings.faceObject.label"
+msgstr "顔を指定"
+
+msgid "avatarSettings.excludedBlendShapes.label"
+msgstr "ブレンドシェイプを除外"
+
+msgid "avatarSettings.parameterCompression.label"
+msgstr "パラメータ圧縮"
+
+msgid "avatarSettings.suppressTrackingControl.label"
+msgstr "トラッキング制御を抑制"
+
+msgid "mmdSupport.blendShapes.label"
+msgstr "MMDブレンドシェイプ"
+
+msgid "mmdSupport.blendShapes.option.auto"
+msgstr "自動"
+
+msgid "mmdSupport.blendShapes.option.specified"
+msgstr "指定"
+
+msgid "mmdSupport.disableWhen.label"
+msgstr "無効化条件"
+
+msgid "mmdSupport.disableMode.label"
+msgstr "対応方法"
+
+msgid "mmdDisableMode.option.auto"
+msgstr "自動"
+
+msgid "mmdDisableMode.option.disableFx"
+msgstr "FXレイヤー全体を無効化"
+
+msgid "mmdDisableMode.option.disableLayer"
+msgstr "各レイヤーを無効化"

@@ -206,6 +206,9 @@ internal sealed class ConditionCompiler
             : DnfCondition.Any(resolvedCases);
     }
 
+    public DnfCondition? Resolve(Condition? condition)
+        => condition == null ? null : ResolveCondition(condition);
+
     public DnfCondition? Resolve(ConditionBase? condition)
     {
         if (condition == null) return null;

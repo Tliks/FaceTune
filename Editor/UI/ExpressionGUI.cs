@@ -2,18 +2,45 @@ using Aoyon.FaceTune.Gui.ShapesEditor;
 
 namespace Aoyon.FaceTune.Gui;
 
-internal sealed record ExpressionGUIOptions(
-    GUIContent? ExternalSourceLabel = null,
-    GUIContent? FooterButtonLabel = null,
-    Action? FooterButtonAction = null);
+internal sealed record ExpressionGUIOptions(GUIContent? ExternalSourceLabel = null);
+
+internal sealed class ExpressionSectionDrawer : ISectionDrawer
+{
+    private readonly SerializedProperty _data;
+    private readonly SerializedObject _serializedObject;
+    private readonly Component _component;
+    private readonly int _targetCount;
+    private readonly Func<ExpressionGUIOptions?>? _optionsFactory;
+
+    public ExpressionSectionDrawer(
+        SerializedObject serializedObject,
+        Component component,
+        int targetCount,
+        Func<ExpressionGUIOptions?>? optionsFactory = null)
+    {
+        _data = serializedObject.FindProperty(nameof(IHasExpressionData.Data));
+        _serializedObject = serializedObject;
+        _component = component;
+        _targetCount = targetCount;
+        _optionsFactory = optionsFactory;
+        ExpressionGUI.InitializeExpansions(_data);
+    }
+
+    public float GetHeight() => ExpressionGUI.GetContentHeight(_data);
+
+    public void Draw(Rect position)
+        => ExpressionGUI.DrawContent(
+            position,
+            _serializedObject,
+            _component,
+            _targetCount,
+            _optionsFactory?.Invoke());
+}
 
 internal static class ExpressionGUI
 {
     private static readonly ReorderableListOptions AnimationListOptions = new(
-        Header: ReorderableListOptions.HeaderMode.Foldout,
-        MaxVisibleHeight: 126f,
-        InitializeElement: InitializeBlendShapeAnimation,
-        Controls: ReorderableListOptions.ControlsPlacement.Header);
+        InitializeElement: InitializeBlendShapeAnimation);
     private static GUIContent[] ClipImportModes => new[]
     {
         "clipImportOption.option.all".LG(),
@@ -26,9 +53,7 @@ internal static class ExpressionGUI
         property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = new AnimationCurve();
     }
 
-    public static float GetContentHeight(
-        SerializedProperty data,
-        ExpressionGUIOptions? options = null)
+    public static float GetContentHeight(SerializedProperty data)
     {
         var height = GUIHelper.LineHeight;
         var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
@@ -41,8 +66,6 @@ internal static class ExpressionGUI
         var animations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
         height += GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(animations, AnimationListOptions);
         height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
-        if (options?.FooterButtonLabel != null)
-            height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
         return height;
     }
 
@@ -65,17 +88,12 @@ internal static class ExpressionGUI
         if (reference.isExpanded)
         {
             cursor.NewLine();
-            cursor = Indent(cursor);
             DrawClipRow(cursor, data, component, targetCount);
-            cursor.Back();
 
             cursor.NewLine();
-            cursor = Indent(cursor);
-            EditorGUI.PropertyField(
-                cursor,
-                reference,
-                "expression.component.label".LG());
-            cursor.Back();
+            var (labelPosition, valuePosition) = GUIHelper.SplitIndentedLabel(cursor);
+            EditorGUI.LabelField(labelPosition, "expression.component.label".LG());
+            EditorGUI.PropertyField(valuePosition, reference, GUIContent.none, true);
         }
 
         cursor.NewLine();
@@ -89,16 +107,12 @@ internal static class ExpressionGUI
 
         cursor.NewLine();
         cursor.height = GUIHelper.LineHeight;
+        var openButton = EditorGUI.PrefixLabel(cursor, "expression.editor.label".LG());
         using (new EditorGUI.DisabledScope(targetCount != 1))
         {
-            if (GUI.Button(cursor, "expression.openEditor.button".LG())) ExpressionEditorActions.OpenEditor(component);
+            if (GUI.Button(openButton, "common.open.button".LG())) ExpressionEditorActions.OpenEditor(component);
         }
 
-        if (options?.FooterButtonLabel != null)
-        {
-            cursor.NewLine();
-            if (GUI.Button(cursor, options.FooterButtonLabel)) options.FooterButtonAction?.Invoke();
-        }
     }
 
     internal static void InitializeExpansions(SerializedProperty data)
@@ -107,11 +121,7 @@ internal static class ExpressionGUI
         reference.isExpanded = HasExternalSource(data);
 
         var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
-        blendShapeAnimations.isExpanded = blendShapeAnimations.arraySize > 0;
-        if (!reference.isExpanded && !blendShapeAnimations.isExpanded)
-        {
-            blendShapeAnimations.isExpanded = true;
-        }
+        blendShapeAnimations.isExpanded = true;
     }
 
     private static bool HasExternalSource(SerializedProperty data)
@@ -124,11 +134,17 @@ internal static class ExpressionGUI
         return false;
     }
 
-    private static void DrawClipRow(Rect position, SerializedProperty data, Component component, int targetCount)
+    private static void DrawClipRow(
+        Rect position,
+        SerializedProperty data,
+        Component component,
+        int targetCount)
     {
         var clip = data.FindPropertyRelative(nameof(ExpressionData.Clip));
         var option = data.FindPropertyRelative(nameof(ExpressionData.ClipOption));
-        var fields = EditorGUI.PrefixLabel(position, "expression.clip.label".LG());
+        var (labelPosition, valuePosition) = GUIHelper.SplitIndentedLabel(position);
+        EditorGUI.LabelField(labelPosition, "expression.clip.label".LG());
+        var fields = valuePosition;
         var importLabel = "expression.clip.import.button".LG();
         var buttonWidth = GUI.skin.button.CalcSize(importLabel).x;
         var popupWidth = GUIHelper.PopupWidth(ClipImportModes);
@@ -144,12 +160,6 @@ internal static class ExpressionGUI
         }
     }
 
-    private static Rect Indent(Rect position)
-    {
-        position.x += GUIHelper.IndentWidth;
-        position.width = Mathf.Max(0f, position.width - GUIHelper.IndentWidth);
-        return position;
-    }
 
     internal static void SetBlendShapeAnimations(
         SerializedProperty blendShapeAnimations,
@@ -195,7 +205,8 @@ internal static class ExpressionGUI
 
     internal static void MergeBlendShapeAnimations(
         SerializedProperty blendShapeAnimations,
-        IReadOnlyCollection<BlendShapeWeightAnimation> animations)
+        IReadOnlyCollection<BlendShapeWeightAnimation> animations,
+        bool overwriteExisting)
     {
         var existingAnimations = new Dictionary<string, (SerializedProperty Element, AnimationCurve Curve)>();
         for (var i = 0; i < blendShapeAnimations.arraySize; i++)
@@ -212,7 +223,7 @@ internal static class ExpressionGUI
         {
             if (existingAnimations.TryGetValue(animation.Name, out var existing))
             {
-                if (!animation.Curve.Equals(existing.Curve))
+                if (overwriteExisting && !animation.Curve.Equals(existing.Curve))
                     existing.Element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = animation.Curve;
                 continue;
             }
@@ -225,6 +236,7 @@ internal static class ExpressionGUI
             existingAnimations[animation.Name] = (element, animation.Curve);
         }
     }
+
 }
 
 internal static class ExpressionEditorActions
@@ -240,7 +252,10 @@ internal static class ExpressionEditorActions
             animations,
             context.BodyPath);
         var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
-        ExpressionGUI.MergeBlendShapeAnimations(blendShapeAnimations, animations);
+        ExpressionGUI.MergeBlendShapeAnimations(
+            blendShapeAnimations,
+            animations,
+            overwriteExisting: false);
         blendShapeAnimations.isExpanded = true;
         data.FindPropertyRelative(nameof(ExpressionData.Clip)).objectReferenceValue = null;
     }
@@ -297,15 +312,37 @@ internal static class ExpressionEditorActions
 [CustomPropertyDrawer(typeof(ExpressionSettings))]
 internal sealed class ExpressionSettingsDrawer : PropertyDrawer
 {
+    private const float ParameterWarningHeight = 30f;
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         var mode = property.FindPropertyRelative(ExpressionSettings.MultiFrameModePropName);
         GUIHelper.DrawLocalizedEnum(ref position, mode, "expression.multiFrame.mode.label", nameof(MultiFrameMode));
+        if (mode.enumValueIndex != (int)MultiFrameMode.Trigger
+            && mode.enumValueIndex != (int)MultiFrameMode.Parameter) return;
+
+        var (labelPosition, valuePosition) = GUIHelper.SplitIndentedLabel(position);
         if (mode.enumValueIndex == (int)MultiFrameMode.Trigger)
-            GUIHelper.DrawLocalizedEnum(ref position, property.FindPropertyRelative(ExpressionSettings.TriggerHandPropName), "expression.multiFrame.linkedHand.label", nameof(Hand));
-        else if (mode.enumValueIndex == (int)MultiFrameMode.Parameter)
-            GUIHelper.DrawProperty(ref position, property.FindPropertyRelative(ExpressionSettings.ParameterNamePropName), "expression.multiFrame.parameterName.label");
+        {
+            var hand = property.FindPropertyRelative(ExpressionSettings.TriggerHandPropName);
+            var optionKeys = hand.enumNames.Select(name => $"hand.option.{char.ToLowerInvariant(name[0]) + name[1..]}");
+            EditorGUI.LabelField(labelPosition, "expression.multiFrame.linkedHand.label".LG());
+            GUIHelper.LocalizedEnumPopup(valuePosition, hand, string.Empty, optionKeys);
+            return;
+        }
+
+        var parameter = property.FindPropertyRelative(ExpressionSettings.ParameterNamePropName);
+        position.height = EditorGUI.GetPropertyHeight(parameter, GUIContent.none, true);
+        EditorGUI.LabelField(labelPosition, "expression.multiFrame.parameterName.label".LG());
+        EditorGUI.PropertyField(valuePosition, parameter, GUIContent.none, true);
+        position.NewLine();
+        if (!string.IsNullOrWhiteSpace(parameter.stringValue)) return;
+
+        position.height = ParameterWarningHeight;
+        position.x += GUIHelper.IndentWidth;
+        position.width = Mathf.Max(0f, position.width - GUIHelper.IndentWidth);
+        EditorGUI.HelpBox(position, "expression.multiFrame.parameterName.empty.message".LS(), MessageType.Warning);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -313,7 +350,11 @@ internal sealed class ExpressionSettingsDrawer : PropertyDrawer
         var mode = property.FindPropertyRelative(ExpressionSettings.MultiFrameModePropName);
         var rows = mode.enumValueIndex == (int)MultiFrameMode.Trigger
             || mode.enumValueIndex == (int)MultiFrameMode.Parameter ? 2 : 1;
-        return GUIHelper.GetLinesHeight(rows);
+        var height = GUIHelper.GetLinesHeight(rows);
+        var parameter = property.FindPropertyRelative(ExpressionSettings.ParameterNamePropName);
+        return mode.enumValueIndex == (int)MultiFrameMode.Parameter && string.IsNullOrWhiteSpace(parameter.stringValue)
+            ? height + GUIHelper.VerticalSpacing + ParameterWarningHeight
+            : height;
     }
 }
 
@@ -325,12 +366,22 @@ internal sealed class FacialSettingsDrawer : PropertyDrawer
         EditorGUI.BeginProperty(position, label, property);
         GUIHelper.DrawLocalizedEnum(ref position, property.FindPropertyRelative(FacialSettings.AllowEyeBlinkPropName), "facialSettings.allowEyeBlink.label", nameof(TrackingPermission));
         GUIHelper.DrawLocalizedEnum(ref position, property.FindPropertyRelative(FacialSettings.AllowLipSyncPropName), "facialSettings.allowLipSync.label", nameof(TrackingPermission));
-        GUIHelper.DrawLocalizedEnum(ref position, property.FindPropertyRelative(FacialSettings.WriteModePropName), "facialSettings.writeMode.label", nameof(ExpressionWriteMode));
+
+        var writeMode = property.FindPropertyRelative(FacialSettings.WriteModePropName);
+        GUIHelper.LocalizedEnumPopup(
+            position,
+            writeMode,
+            "expression.application.label",
+            new[]
+            {
+                "expression.application.replace.label",
+                "expression.application.blend.label"
+            });
         EditorGUI.EndProperty();
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => (GUIHelper.LineHeight + GUIHelper.VerticalSpacing) * 3f;
+        => GUIHelper.GetLinesHeight(3);
 }
 
 [CustomPropertyDrawer(typeof(BlendShapeWeightAnimation))]

@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5203428282089499939}
-  - component: {fileID: 1190269975176233602}
   - component: {fileID: 841824838411543577}
+  - component: {fileID: 1190269975176233602}
   m_Layer: 0
   m_Name: MMD Support
   m_TagString: Untagged
@@ -33,35 +33,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1190269975176233602
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1577578587252356234}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MenuName: Enable MMD Mode
-  Icon:
-    Mode: 2
-    ManualIcon: {fileID: 0}
-    PreviewExpression:
-      referencePath: 
-      targetObject: {fileID: 0}
-  InstallSettings:
-    InstallContainerOverride:
-      referencePath: 
-      targetObject: {fileID: 0}
-  Kind: 0
-  ExclusiveToggleGroup:
-    GroupName: 
-  ParameterName: 
-  FloatDefaultValue: 0
-  DefaultSelected: 0
 --- !u!114 &841824838411543577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,16 +47,48 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Settings:
     ExplicitMmdBlendShapeNames: []
-    DisableWhen:
-      Condition:
-        rid: 5534185782725312589
     DisableMode: 0
+  DisableWhen:
+    Always: 0
+    Cases:
+    - Conditions:
+      - rid: 6831403248156147793
   references:
     version: 2
     RefIds:
-    - rid: 5534185782725312589
+    - rid: 6831403248156147793
       type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
       data:
         MenuSource: {fileID: 1190269975176233602}
         Mode: 0
         Threshold: 0.5
+--- !u!114 &1190269975176233602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1577578587252356234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Menu:
+    MenuName: 
+    Icon:
+      Mode: 2
+      ManualIcon: {fileID: 0}
+      PreviewExpression:
+        referencePath: 
+        targetObject: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+  Kind: 0
+  ExclusiveToggleGroup:
+    GroupName: 
+  ParameterName: 
+  FloatDefaultValue: 0
+  DefaultSelected: 0

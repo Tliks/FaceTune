@@ -4,11 +4,9 @@ namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(FaceTuneComponent))]
-internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditor<FaceTuneComponent>
+internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTuneComponent>
 {
     protected override bool ShowLanguageSwitcher => true;
-
-    private const float ParameterWarningHeight = 30f;
 
     protected override float GetAdditionalSectionSpacingBefore(int sectionIndex)
         => sectionIndex is 3 or 5 ? 10f : 0f;
@@ -25,104 +23,108 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditor<FaceTuneCo
         };
 
     private FaceTuneSection CreateExpressionSection()
-    {
-        var data = serializedObject.FindProperty(nameof(FaceTuneComponent.Data));
-        ExpressionGUI.InitializeExpansions(data);
-        return new(
-            "expression.section.label".LG(),
-            () => ExpressionGUI.GetContentHeight(data),
-            content => ExpressionGUI.DrawContent(
-                content,
-                serializedObject,
-                Component,
-                targets.Length),
-            true);
-    }
+        => CreateSection(
+            "expression.section.label",
+            new ExpressionSectionDrawer(serializedObject, Component, targets.Length),
+            defaultExpanded: true);
 
     private FaceTuneSection CreateBehaviorSection()
-        => new(
-            "expression.behavior.section.label".LG(),
-            () => GUIHelper.GetLinesHeight(3),
-            DrawBehaviorContent,
-            true);
+        => CreateSection(
+            "expression.behavior.section.label",
+            new PropertiesSectionDrawer(serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings))),
+            defaultExpanded: true);
 
     private FaceTuneSection CreateAnimationSection()
-    {
-        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings));
-        return new(
-            "expression.animationSettings.section.label".LG(),
-            () => AnimationContentHeight(settings),
-            content => DrawMultiFrameSettings(content, settings),
-            false);
-    }
+        => CreateSection(
+            "expression.animationSettings.section.label",
+            new PropertiesSectionDrawer(serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings))),
+            defaultExpanded: false);
 
     private FaceTuneSection CreateConditionSection()
     {
         var enabled = serializedObject.FindProperty(nameof(FaceTuneComponent.ConditionEnabled));
-        var condition = serializedObject.FindProperty(nameof(FaceTuneComponent.Condition));
-        return new(
-            "expression.condition.section.label".LG(),
-            () => EditorGUI.GetPropertyHeight(condition, GUIContent.none, true),
-            content =>
-            {
-                content.height = EditorGUI.GetPropertyHeight(condition, GUIContent.none, true);
-                using var disabled = new EditorGUI.DisabledScope(
-                    !enabled.boolValue || enabled.hasMultipleDifferentValues);
-                EditorGUI.PropertyField(content, condition, GUIContent.none, true);
-            },
-            enabled.boolValue,
-            EnabledProperty: enabled);
+        return CreateSection(
+            "expression.condition.section.label",
+            new ConditionSectionDrawer(
+                enabled,
+                serializedObject.FindProperty(nameof(FaceTuneComponent.Condition))),
+            defaultExpanded: enabled.boolValue,
+            enabledProperty: enabled);
     }
 
     private FaceTuneSection CreateDirectMenuSection()
     {
         var enabled = serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuEnabled));
-        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings));
-        return new(
-            "expression.directMenu.label".LG(),
-            () => EditorGUI.GetPropertyHeight(settings, GUIContent.none, true),
-            content =>
-            {
-                content.height = EditorGUI.GetPropertyHeight(settings, GUIContent.none, true);
-                using var disabled = new EditorGUI.DisabledScope(
-                    !enabled.boolValue || enabled.hasMultipleDifferentValues);
-                EditorGUI.PropertyField(content, settings, GUIContent.none, true);
-            },
-            false,
-            EnabledProperty: enabled);
+        return CreateSection(
+            "expression.directMenu.label",
+            new DirectMenuSectionDrawer(
+                enabled,
+                serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings))),
+            defaultExpanded: false,
+            enabledProperty: enabled);
     }
 
     private FaceTuneSection CreatePreviewSection()
-        => new(
-            "expression.previewSettings.section.label".LG(),
-            () => GUIHelper.GetLinesHeight(3),
-            DrawPreviewContent,
-            false);
+        => CreateSection(
+            "expression.previewSettings.section.label",
+            new PreviewSettingsSectionDrawer(serializedObject),
+            defaultExpanded: false);
+}
 
-    private void DrawBehaviorContent(Rect position)
+internal sealed class ConditionSectionDrawer : ISectionDrawer
+{
+    private readonly SerializedProperty _enabled;
+    private readonly SerializedProperty _condition;
+
+    public ConditionSectionDrawer(SerializedProperty enabled, SerializedProperty condition)
     {
-        var facial = serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings));
-        DrawEnum(
-            position,
-            facial.FindPropertyRelative(FacialSettings.AllowEyeBlinkPropName),
-            "facialSettings.allowEyeBlink.label",
-            nameof(TrackingPermission));
-        position.NewLine();
-        DrawEnum(
-            position,
-            facial.FindPropertyRelative(FacialSettings.AllowLipSyncPropName),
-            "facialSettings.allowLipSync.label",
-            nameof(TrackingPermission));
-        position.NewLine();
-        DrawApplication(position, facial.FindPropertyRelative(FacialSettings.WriteModePropName));
+        _enabled = enabled;
+        _condition = condition;
     }
 
-    private void DrawPreviewContent(Rect position)
+    public float GetHeight() => EditorGUI.GetPropertyHeight(_condition, GUIContent.none, true);
+
+    public void Draw(Rect position)
     {
-        GUIHelper.DrawToggleLeft(
-            position,
-            serializedObject.FindProperty(nameof(FaceTuneComponent.EnableRealTimePreview)),
-            "expression.realTimePreview.label".LG());
+        position.height = GetHeight();
+        using var disabled = new EditorGUI.DisabledScope(!_enabled.boolValue || _enabled.hasMultipleDifferentValues);
+        EditorGUI.PropertyField(position, _condition, GUIContent.none, true);
+    }
+}
+
+internal sealed class DirectMenuSectionDrawer : ISectionDrawer
+{
+    private readonly SerializedProperty _enabled;
+    private readonly SerializedProperty _settings;
+
+    public DirectMenuSectionDrawer(SerializedProperty enabled, SerializedProperty settings)
+    {
+        _enabled = enabled;
+        _settings = settings;
+    }
+
+    public float GetHeight() => EditorGUI.GetPropertyHeight(_settings, GUIContent.none, true);
+
+    public void Draw(Rect position)
+    {
+        position.height = GetHeight();
+        using var disabled = new EditorGUI.DisabledScope(!_enabled.boolValue || _enabled.hasMultipleDifferentValues);
+        EditorGUI.PropertyField(position, _settings, GUIContent.none, true);
+    }
+}
+
+internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
+{
+    private readonly SerializedProperty _enableRealTimePreview;
+
+    public PreviewSettingsSectionDrawer(SerializedObject serializedObject)
+        => _enableRealTimePreview = serializedObject.FindProperty(nameof(FaceTuneComponent.EnableRealTimePreview));
+
+    public float GetHeight() => GUIHelper.GetLinesHeight(3);
+
+    public void Draw(Rect position)
+    {
+        GUIHelper.LocalizedPropertyField(position, _enableRealTimePreview, "expression.realTimePreview.label");
         position.NewLine();
         ProjectSettings.EnableHierarchySelectedExpressionPreview = GUIHelper.DrawToggleLeft(
             position,
@@ -134,71 +136,4 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditor<FaceTuneCo
             ProjectSettings.EnableProjectSelectedExpressionPreview,
             "expression.selectedProjectExpressionPreview.label".LG());
     }
-
-    private static void DrawApplication(Rect position, SerializedProperty mode)
-    {
-        var contents = new[]
-        {
-            "expression.application.replace.label".LG(),
-            "expression.application.blend.label".LG()
-        };
-        var toolbarRect = EditorGUI.PrefixLabel(position, "expression.application.label".LG());
-        var next = GUI.Toolbar(toolbarRect, mode.enumValueIndex, contents);
-        if (next != mode.enumValueIndex) mode.enumValueIndex = next;
-    }
-
-    private static void DrawMultiFrameSettings(Rect position, SerializedProperty settings)
-    {
-        var mode = settings.FindPropertyRelative(ExpressionSettings.MultiFrameModePropName);
-        var triggerHand = settings.FindPropertyRelative(ExpressionSettings.TriggerHandPropName);
-        var parameter = settings.FindPropertyRelative(ExpressionSettings.ParameterNamePropName);
-        var labels = new[]
-        {
-            "expression.multiFrame.default.label".LG(),
-            "expression.multiFrame.loop.label".LG(),
-            "expression.multiFrame.trigger.label".LG(),
-            "expression.multiFrame.parameter.label".LG()
-        };
-        var next = GUI.Toolbar(position, mode.enumValueIndex, labels);
-        if (next != mode.enumValueIndex) mode.enumValueIndex = next;
-        if (next != 2 && next != 3) return;
-
-        position.NewLine();
-        position.Indent();
-        if (next == 2)
-            DrawEnum(position, triggerHand, "expression.multiFrame.linkedHand.label", nameof(Hand));
-        else
-        {
-            GUIHelper.LocalizedPropertyField(
-                position,
-                parameter,
-                "expression.multiFrame.parameterName.label");
-            if (string.IsNullOrWhiteSpace(parameter.stringValue))
-            {
-                position.NewLine();
-                position.height = ParameterWarningHeight;
-                EditorGUI.HelpBox(
-                    position,
-                    "expression.multiFrame.parameterName.empty.message".LS(),
-                    MessageType.Warning);
-            }
-        }
-    }
-
-    private static void DrawEnum(Rect position, SerializedProperty property, string labelKey, string typeName)
-        => GUIHelper.DrawLocalizedEnum(position, property, labelKey, typeName);
-
-    private static float AnimationContentHeight(SerializedProperty settings)
-    {
-        var mode = settings.FindPropertyRelative(ExpressionSettings.MultiFrameModePropName);
-        var height = GUIHelper.GetLinesHeight(mode.enumValueIndex is 2 or 3 ? 2 : 1);
-        if (mode.enumValueIndex == 3)
-        {
-            var parameter = settings.FindPropertyRelative(ExpressionSettings.ParameterNamePropName);
-            if (string.IsNullOrWhiteSpace(parameter.stringValue))
-                height += GUIHelper.VerticalSpacing + ParameterWarningHeight;
-        }
-        return height;
-    }
-
 }

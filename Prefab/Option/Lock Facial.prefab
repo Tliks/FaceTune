@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4488161448352998885}
-  - component: {fileID: 1631262464330061376}
   - component: {fileID: 9139036348386456273}
+  - component: {fileID: 1631262464330061376}
   m_Layer: 0
   m_Name: Lock Facial
   m_TagString: Untagged
@@ -33,35 +33,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1631262464330061376
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6166144609798351575}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MenuName: 
-  Icon:
-    Mode: 2
-    ManualIcon: {fileID: 0}
-    PreviewExpression:
-      referencePath: 
-      targetObject: {fileID: 0}
-  InstallSettings:
-    InstallContainerOverride:
-      referencePath: 
-      targetObject: {fileID: 0}
-  Kind: 0
-  ExclusiveToggleGroup:
-    GroupName: 
-  ParameterName: 
-  FloatDefaultValue: 0
-  DefaultSelected: 0
 --- !u!114 &9139036348386456273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,14 +46,46 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LockWhen:
-    Condition:
-      rid: 5534185782725312570
+    Always: 0
+    Cases:
+    - Conditions:
+      - rid: 6831403248156147775
   references:
     version: 2
     RefIds:
-    - rid: 5534185782725312570
+    - rid: 6831403248156147775
       type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
       data:
         MenuSource: {fileID: 1631262464330061376}
         Mode: 0
         Threshold: 0.5
+--- !u!114 &1631262464330061376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6166144609798351575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Menu:
+    MenuName: 
+    Icon:
+      Mode: 2
+      ManualIcon: {fileID: 0}
+      PreviewExpression:
+        referencePath: 
+        targetObject: {fileID: 0}
+    InstallSettings:
+      InstallContainerOverride:
+        referencePath: 
+        targetObject: {fileID: 0}
+  Kind: 0
+  ExclusiveToggleGroup:
+    GroupName: 
+  ParameterName: 
+  FloatDefaultValue: 0
+  DefaultSelected: 0

@@ -2,110 +2,86 @@ namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(MenuComponent))]
-internal sealed class MenuComponentEditor : FaceTuneSectionEditor<MenuComponent>
+internal sealed class MenuComponentEditor : FaceTuneSectionEditorBase<MenuComponent>
 {
-    private bool _parameterSettingsExpanded;
-
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
         => new[] { CreateMenuSection() };
 
     private FaceTuneSection CreateMenuSection()
-        => new(
-            "menu.section.label".LG(),
-            GetSectionContentHeight,
-            DrawSectionContent,
-            false);
+        => CreateSection(
+            "menu.section.label",
+            new MenuSectionDrawer(serializedObject),
+            defaultExpanded: false);
+}
 
-    private float GetSectionContentHeight()
+internal sealed class MenuSectionDrawer : ISectionDrawer
+{
+    private const float ModeSpacing = 10f;
+
+    private readonly PropertiesSectionDrawer _menuSettings;
+    private readonly SerializedProperty _kind;
+    private readonly SerializedProperty _group;
+    private readonly SerializedProperty _parameter;
+    private readonly SerializedProperty _floatDefaultValue;
+    private readonly SerializedProperty _defaultSelected;
+    private bool _parameterSettingsExpanded;
+
+    public MenuSectionDrawer(SerializedObject serializedObject)
     {
-        var height = GetPropertyHeight(nameof(MenuComponent.MenuName))
-                   + GUIHelper.VerticalSpacing
-                   + GetPropertyHeight(nameof(MenuComponent.Icon))
-                   + GUIHelper.VerticalSpacing
-                   + GetPropertyHeight(nameof(MenuComponent.InstallSettings))
-                   + 10f
-                   + GetPropertyHeight(nameof(MenuComponent.Kind))
-                   + GUIHelper.VerticalSpacing
-                   + GUIHelper.LineHeight;
-        if (!_parameterSettingsExpanded) return height;
-
-        var kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
-        var group = serializedObject
-            .FindProperty(nameof(MenuComponent.ExclusiveToggleGroup))
-            .FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
-        var isToggle = kind.hasMultipleDifferentValues || IsMode(kind, (int)MenuItemKind.Toggle);
-        var isFloat = kind.hasMultipleDifferentValues || IsMode(kind, (int)MenuItemKind.Radial);
-        var parameterVisible = !IsMode(kind, (int)MenuItemKind.Toggle)
-                            || group.hasMultipleDifferentValues
-                            || string.IsNullOrWhiteSpace(group.stringValue);
-
-        var childHeight = 0f;
-        var childCount = 0;
-        if (isToggle)
-        {
-            childHeight += GetPropertyHeight(nameof(MenuComponent.ExclusiveToggleGroup));
-            childCount++;
-        }
-        if (parameterVisible)
-        {
-            childHeight += GUIHelper.LineHeight;
-            childCount++;
-        }
-        if (isFloat)
-        {
-            childHeight += GetPropertyHeight(nameof(MenuComponent.FloatDefaultValue));
-            childCount++;
-        }
-        if (isToggle)
-        {
-            childHeight += GetPropertyHeight(nameof(MenuComponent.DefaultSelected));
-            childCount++;
-        }
-        return height
-             + GUIHelper.VerticalSpacing
-             + childHeight
-             + GUIHelper.VerticalSpacing * Mathf.Max(0, childCount - 1);
+        _menuSettings = new PropertiesSectionDrawer(
+            serializedObject.FindProperty(nameof(MenuComponent.Menu)));
+        _kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
+        _group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
+        _parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
+        _floatDefaultValue = serializedObject.FindProperty(nameof(MenuComponent.FloatDefaultValue));
+        _defaultSelected = serializedObject.FindProperty(nameof(MenuComponent.DefaultSelected));
     }
 
-    private void DrawSectionContent(Rect position)
+    public float GetHeight()
     {
-        var menuName = serializedObject.FindProperty(nameof(MenuComponent.MenuName));
-        MenuGUI.DrawMenuName(ref position, menuName, Component, "menu.name.label".LG());
-        GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuComponent.Icon)), "menu.icon.label");
-        GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuComponent.InstallSettings)), "menu.destination.label");
+        var height = _menuSettings.GetHeight() + ModeSpacing + GUIHelper.PropertyHeight(_kind) + GUIHelper.LineHeight;
+        if (!_parameterSettingsExpanded) return height;
 
-        position.y += 10f;
-        GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuComponent.Kind)), "menu.mode.label");
+        var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
+        var isToggle = IsMode((int)MenuItemKind.Toggle);
+        var isFloat = IsMode((int)MenuItemKind.Radial);
+        var parameterVisible = !IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue);
+        var childHeight = 0f;
+        var childCount = 0;
+        if (isToggle) { childHeight += EditorGUI.GetPropertyHeight(_group, true); childCount++; }
+        if (parameterVisible) { childHeight += GUIHelper.LineHeight; childCount++; }
+        if (isFloat) { childHeight += EditorGUI.GetPropertyHeight(_floatDefaultValue, true); childCount++; }
+        if (isToggle) { childHeight += EditorGUI.GetPropertyHeight(_defaultSelected, true); childCount++; }
+        return height + GUIHelper.VerticalSpacing + childHeight + GUIHelper.VerticalSpacing * Mathf.Max(0, childCount - 1);
+    }
+
+    public void Draw(Rect position)
+    {
+        _menuSettings.Draw(position);
+        position.y += _menuSettings.GetHeight() + ModeSpacing;
+        GUIHelper.DrawProperty(ref position, _kind, "menu.mode.label");
         position.height = GUIHelper.LineHeight;
-        _parameterSettingsExpanded = GUIHelper.DrawFoldout(
-            position,
-            _parameterSettingsExpanded,
-            "menu.options.label".LG());
+        _parameterSettingsExpanded = GUIHelper.DrawFoldout(position, _parameterSettingsExpanded, "menu.options.label".LG());
         if (!_parameterSettingsExpanded) return;
 
         position.NewLine();
-        position.Indent();
-        var kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
-        var group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
-        var groupName = group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
-        var isToggle = kind.hasMultipleDifferentValues || IsMode(kind, (int)MenuItemKind.Toggle);
-        var isFloat = kind.hasMultipleDifferentValues || IsMode(kind, (int)MenuItemKind.Radial);
-        if (isToggle) GUIHelper.DrawProperty(ref position, group, "menu.group.label");
-        if (!IsMode(kind, (int)MenuItemKind.Toggle)
-            || groupName.hasMultipleDifferentValues
-            || string.IsNullOrWhiteSpace(groupName.stringValue))
+        var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
+        var isToggle = IsMode((int)MenuItemKind.Toggle);
+        var isFloat = IsMode((int)MenuItemKind.Radial);
+        if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _group, "menu.group.label");
+        if (!IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue))
         {
-            var parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
             GUIHelper.DrawPlaceholderTextField(
                 position,
-                parameter,
+                _parameter,
                 "menu.parameterName.label".LG(),
-                "menu.parameterName.auto.placeholder".LG());
+                "menu.parameterName.auto.placeholder".LG(),
+                indentLabel: true);
             position.NewLine();
         }
-        if (isFloat)
-            GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuComponent.FloatDefaultValue)), "menu.floatDefaultValue.label");
-        if (isToggle)
-            GUIHelper.DrawProperty(ref position, serializedObject.FindProperty(nameof(MenuComponent.DefaultSelected)), "menu.defaultSelected.label");
+        if (isFloat) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _floatDefaultValue, "menu.floatDefaultValue.label");
+        if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _defaultSelected, "menu.defaultSelected.label");
     }
+
+    private bool IsMode(int value) => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == value;
 }

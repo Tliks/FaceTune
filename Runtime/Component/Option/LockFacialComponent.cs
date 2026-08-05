@@ -1,12 +1,12 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class LockFacialComponent : FaceTuneTagComponent, IHasSingleConditions
+    internal class LockFacialComponent : FaceTuneTagComponent, IHasConditions
     {
         internal const string ComponentName = ComponentNamePrefix + "Lock Facial";
         
-        public SingleConditionBase LockWhen = SingleConditionBase.Menu();
+        public Condition LockWhen = new(ConditionCase.From(new MenuCondition()));
 
-        IEnumerable<SingleConditionBase> IHasSingleConditions.SingleConditions => new[] { LockWhen };
+        IEnumerable<Condition> IHasConditions.Conditions => new[] { LockWhen };
     }
 }

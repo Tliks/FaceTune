@@ -91,8 +91,8 @@ internal static class MenuProgramCompiler
                 ? source.ExclusiveToggleGroup.Value
                 : 1f;
             return new MenuControlPlan(
-                ResolveName(source.MenuName, source.name),
-                CompileIcon(source.Icon, source),
+                ResolveName(source.Menu.MenuName, source.name),
+                CompileIcon(source.Menu.Icon, source),
                 source.Kind,
                 source.ParameterName,
                 value);
@@ -123,8 +123,8 @@ internal static class MenuProgramCompiler
             if (children.Count != 0)
             {
                 folder.Compiled = new MenuFolderPlan(
-                    ResolveName(folder.Source.MenuName, folder.Source.name),
-                    CompileIcon(folder.Source.Icon, folder.Source),
+                    ResolveName(folder.Source.Menu.MenuName, folder.Source.name),
+                    CompileIcon(folder.Source.Menu.Icon, folder.Source),
                     children);
             }
 

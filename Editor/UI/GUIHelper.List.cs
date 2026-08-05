@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed record ReorderableListOptions(
     ReorderableListOptions.HeaderMode Header = ReorderableListOptions.HeaderMode.Foldout,
     ReorderableListOptions.ControlsPlacement Controls = ReorderableListOptions.ControlsPlacement.Header,
-    float? MaxVisibleHeight = null,
+    float? MaxVisibleHeight = 126f,
     bool NestContent = true,
     float EmptyContentHeight = 0f,
     Action<Rect, SerializedProperty>? DrawEmptyOverride = null,

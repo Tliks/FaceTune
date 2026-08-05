@@ -13,7 +13,10 @@ namespace Aoyon.FaceTune
         public bool DirectMenuEnabled = false;
         public DirectMenuSettings DirectMenuSettings = new()
         {
-            Icon = new MenuIconSettings { Mode = MenuIconMode.ExpressionPreview }
+            Menu = new MenuSettings
+            {
+                Icon = new MenuIconSettings { Mode = MenuIconMode.ExpressionPreview }
+            }
         };
 
         public ExpressionSettings ExpressionSettings = new();
@@ -21,12 +24,13 @@ namespace Aoyon.FaceTune
         
         public ExpressionData Data = new();
 
+        [ToggleLeft]
         public bool EnableRealTimePreview = false;
 
         ExpressionData IHasExpressionData.Data => Data;
         IEnumerable<Condition> IHasConditions.Conditions => new[] { Condition };
         MenuInstallSettings? IHasMenuInstallSettings.InstallSettings
-            => DirectMenuEnabled ? DirectMenuSettings.InstallSettings : null;
+            => DirectMenuEnabled ? DirectMenuSettings.Menu.InstallSettings : null;
 
         void IHasObjectReferences.ResolveReferences()
         {

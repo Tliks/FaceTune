@@ -2,45 +2,36 @@ namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(StyleComponent))]
-internal sealed class StyleComponentEditor : FaceTuneSectionEditor<StyleComponent>
+internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComponent>
 {
-    private ExpressionGUIOptions ExpressionOptions => new(
-        ExternalSourceLabel: "style.otherStyle.label".LG(),
-        FooterButtonLabel: "style.getFromRenderer.button".LG(),
-        FooterButtonAction: GetFromRenderer);
-
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
-        => new[]
-        {
-            CreateExpressionSection(),
-            CreateOtherSection()
-        };
+        => new[] { CreateExpressionSection(), CreateOtherSection() };
 
     private FaceTuneSection CreateExpressionSection()
-    {
-        var data = serializedObject.FindProperty(nameof(StyleComponent.Data));
-        ExpressionGUI.InitializeExpansions(data);
-        return new(
-            "style.expression.section.label".LG(),
-            () => ExpressionGUI.GetContentHeight(data, ExpressionOptions),
-            content => ExpressionGUI.DrawContent(
-                content,
-                serializedObject,
-                Component,
-                targets.Length,
-                ExpressionOptions),
-            true);
-    }
+        => CreateSection(
+            "style.expression.section.label",
+            new ExpressionSectionDrawer(serializedObject, Component, targets.Length, CreateExpressionOptions),
+            defaultExpanded: true,
+            createHeaderMenu: CreateExpressionHeaderMenu);
 
     private FaceTuneSection CreateOtherSection()
-        => new(
-            "expression.group.other.label".LG(),
-            () => GUIHelper.GetLinesHeight(1),
-            content => GUIHelper.DrawToggleLeft(
-                content,
+        => CreateSection(
+            "expression.group.other.label",
+            new PropertiesSectionDrawer(
                 serializedObject.FindProperty(nameof(StyleComponent.ApplyToRenderer)),
-                "style.applyToRenderer.label".LG()),
-            false);
+                "style.applyToRenderer.label"),
+            defaultExpanded: false);
+
+    private ExpressionGUIOptions CreateExpressionOptions()
+        => new(ExternalSourceLabel: "style.otherStyle.label".LG());
+
+    private GenericMenu CreateExpressionHeaderMenu()
+    {
+        var menu = new GenericMenu();
+        menu.AddItem("style.getFromRenderer.button".LG(), false, () => GetFromRenderer());
+        menu.AddItem("style.applyToRenderer.menu".LG(), false, () => ApplyToSkinnedMeshRenderer());
+        return menu;
+    }
 
     private void GetFromRenderer()
     {
@@ -50,20 +41,20 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditor<StyleComponen
             .Where(shape => shape.Weight != 0f)
             .ToBlendShapeAnimations()
             .ToArray();
+        serializedObject.UpdateIfRequiredOrScript();
         var property = serializedObject
             .FindProperty(nameof(StyleComponent.Data))
             .FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
         ExpressionGUI.SetBlendShapeAnimations(property, animations);
+        serializedObject.ApplyModifiedProperties();
     }
 
-    [MenuItem($"CONTEXT/{nameof(StyleComponent)}/Apply to SkinnedMeshRenderer")]
-    private static void ApplyToSkinnedMeshRenderer(MenuCommand command)
+    private void ApplyToSkinnedMeshRenderer()
     {
-        if (command.context is not StyleComponent component) return;
-        if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
+        if (!AvatarContext.TryGet(Component.gameObject, out var context, out _)) return;
 
         var animations = new List<BlendShapeWeightAnimation>();
-        component.GetAnimations(animations, context.BodyPath, includeStyleSources: true);
+        Component.GetAnimations(animations, context.BodyPath, includeStyleSources: true);
         var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         Undo.RecordObject(context.FaceRenderer, "Apply Blend Shape");
         context.FaceRenderer.ApplyBlendShapes(context.FaceMesh, set, 0f);

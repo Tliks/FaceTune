@@ -22,10 +22,10 @@ internal class ResolveBuildSettingsPass : FaceTunePass<ResolveBuildSettingsPass>
             authoring.ParmaterCompression,
             authoring.SupressTrackingControl,
             authoring.ParameterDomains,
-            context.PlatformSupport.ResolveMmdPlaybackSettings(compiler.Resolve(mmdSupport?.Settings.DisableWhen.Condition)),
-            compiler.Resolve(eyeBlink?.DisableWhen.Condition),
-            compiler.Resolve(lipSync?.DisableWhen.Condition),
-            compiler.Resolve(lockFacial?.LockWhen.Condition)));
+            context.PlatformSupport.ResolveMmdPlaybackSettings(compiler.Resolve(mmdSupport?.DisableWhen)),
+            compiler.Resolve(eyeBlink?.DisableWhen),
+            compiler.Resolve(lipSync?.DisableWhen),
+            compiler.Resolve(lockFacial?.LockWhen)));
     }
 
     private static T? FindSingle<T>(GameObject root, string warningKey) where T : Component
