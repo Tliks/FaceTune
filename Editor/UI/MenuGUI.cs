@@ -148,11 +148,11 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
 {
     private const float MissingIconWarningHeight = 30f;
     private const float MissingExpressionWarningHeight = 30f;
-    private static GUIContent[] Modes => new[]
+    private static readonly string[] ModeKeys =
     {
-        "menuIcon.none.label".LG(),
-        "menuIcon.manual.label".LG(),
-        "menuIcon.automatic.label".LG()
+        "menuIcon.manual.label",
+        "menuIcon.automatic.label",
+        "menuIcon.none.label"
     };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -161,29 +161,20 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         var mode = property.FindPropertyRelative("Mode");
         var manual = property.FindPropertyRelative("ManualIcon");
         var preview = property.FindPropertyRelative("PreviewExpression");
-        var selected = mode.enumValueIndex switch
-        {
-            (int)MenuIconMode.None => 0,
-            (int)MenuIconMode.ExpressionPreview => 2,
-            _ => 1
-        };
-
         position.SetSingleHeight();
-        var toolbarRect = EditorGUI.PrefixLabel(position, "menuIcon.icon.label".LG());
-        var next = GUI.Toolbar(toolbarRect, selected, Modes);
-        if (next != selected)
+        var next = GUIHelper.LocalizedPopup(
+            position,
+            mode.enumValueIndex,
+            "menuIcon.icon.label",
+            ModeKeys);
+        if (next != mode.enumValueIndex)
         {
-            mode.enumValueIndex = next switch
-            {
-                0 => (int)MenuIconMode.None,
-                2 => (int)MenuIconMode.ExpressionPreview,
-                _ => (int)MenuIconMode.Manual
-            };
-            if (next == 0) manual.objectReferenceValue = null;
+            mode.enumValueIndex = next;
+            if (next == (int)MenuIconMode.None) manual.objectReferenceValue = null;
         }
         position.NewLine();
 
-        if (next == 1)
+        if (next == (int)MenuIconMode.Manual)
         {
             GUIHelper.DrawPropertyWithIndentedLabel(ref position, manual, "menuIcon.manualIcon.label");
             if (manual.objectReferenceValue == null)
@@ -195,7 +186,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
                     MessageType.Warning);
             }
         }
-        else if (next == 2)
+        else if (next == (int)MenuIconMode.ExpressionPreview)
         {
             var ownerIsExpression = property.serializedObject.targetObject is FaceTuneComponent;
             if (ownerIsExpression)

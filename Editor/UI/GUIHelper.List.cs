@@ -8,6 +8,8 @@ internal sealed record ReorderableListOptions(
     float? MaxVisibleHeight = 126f,
     bool NestContent = true,
     float EmptyContentHeight = 0f,
+    float HeaderContentHeight = 0f,
+    Action<Rect, SerializedProperty>? DrawHeaderContent = null,
     Action<Rect, SerializedProperty>? DrawEmptyOverride = null,
     Action<Rect, SerializedProperty>? DrawElementOverride = null,
     Action<Rect>? DrawElementSeparator = null,
@@ -70,6 +72,13 @@ internal static partial class GUIHelper
             bodyY = controls.yMax + GUIHelper.VerticalSpacing;
         }
         if (options.Header == ReorderableListOptions.HeaderMode.Foldout && !property.isExpanded) return;
+        if (options.DrawHeaderContent != null && options.HeaderContentHeight > 0f)
+        {
+            var headerContent = new Rect(position.x, bodyY, position.width, options.HeaderContentHeight);
+            if (options.NestContent) headerContent.Indent();
+            options.DrawHeaderContent(headerContent, property);
+            bodyY = headerContent.yMax + GUIHelper.VerticalSpacing;
+        }
         if (property.arraySize == 0)
         {
             var emptyHeight = GetEmptyContentHeight(list, options);
@@ -146,6 +155,7 @@ internal static partial class GUIHelper
         var emptyHeight = property.arraySize == 0
             ? GetEmptyContentHeight(list, options)
             : 0f;
+        var hasHeaderContent = options.DrawHeaderContent != null && options.HeaderContentHeight > 0f;
         var hasBody = listHeight > 0f || emptyHeight > 0f;
         var controlsBeforeList = !hasHeader
             && options.Controls == ReorderableListOptions.ControlsPlacement.Header;
@@ -153,11 +163,18 @@ internal static partial class GUIHelper
         if (controlsBeforeList)
         {
             height += HeaderHeight;
-            if (hasBody) height += GUIHelper.VerticalSpacing;
+            if (hasBody || hasHeaderContent) height += GUIHelper.VerticalSpacing;
         }
         else if (hasHeader)
         {
             height += headerHeight;
+            if (hasBody || hasHeaderContent || options.Controls == ReorderableListOptions.ControlsPlacement.Footer)
+                height += GUIHelper.VerticalSpacing;
+        }
+
+        if (hasHeaderContent)
+        {
+            height += options.HeaderContentHeight;
             if (hasBody || options.Controls == ReorderableListOptions.ControlsPlacement.Footer)
                 height += GUIHelper.VerticalSpacing;
         }

@@ -10,6 +10,10 @@ internal sealed class DataComponentEditor : FaceTuneSectionEditorBase<DataCompon
     private FaceTuneSection CreateExpressionSection()
         => CreateSection(
             "expression.section.label",
-            new ExpressionSectionDrawer(serializedObject, Component, targets.Length),
+            new ExpressionSectionDrawer(
+                serializedObject,
+                Component,
+                targets.Length,
+                createDefaultData: DataComponent.CreateDefaultData),
             defaultExpanded: true);
 }

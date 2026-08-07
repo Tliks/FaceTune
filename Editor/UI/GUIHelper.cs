@@ -151,9 +151,9 @@ internal static partial class GUIHelper
         GUI.contentColor = value
             ? new Color(0.55f, 0.75f, 0.9f)
             : new Color(1f, 1f, 1f, 0.7f);
-        var result = GUI.Toggle(position, value, label, _simpleToggleStyle);
+        if (GUI.Button(position, label, _simpleToggleStyle)) value = !value;
         GUI.contentColor = previousContentColor;
-        return result;
+        return value;
     }
 
     public static float GetShurikenSectionHeight(bool expanded, float contentHeight)
@@ -474,6 +474,16 @@ internal static partial class GUIHelper
 
     public static float PopupWidth(IEnumerable<GUIContent> labels)
         => labels.Max(label => EditorStyles.popup.CalcSize(label).x) + PopupHorizontalMargin;
+
+    public static float LocalizedPopupWidth(IEnumerable<string> optionKeys)
+        => PopupWidth(optionKeys.Select(key => key.LG()));
+
+    public static float LocalizedEnumPopupWidth(SerializedProperty property, string typeName)
+    {
+        var optionPrefix = char.ToLowerInvariant(typeName[0]) + typeName[1..];
+        return LocalizedPopupWidth(property.enumNames.Select(name =>
+            $"{optionPrefix}.option.{char.ToLowerInvariant(name[0]) + name[1..]}"));
+    }
 
     public static void LocalizedPropertyField(Rect position, SerializedProperty property, string key, bool includeChildren = true)
         => EditorGUI.PropertyField(position, property, key.LG(), includeChildren);

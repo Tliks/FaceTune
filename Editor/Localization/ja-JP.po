@@ -441,11 +441,14 @@ msgstr "開く"
 msgid "section.menu.reset"
 msgstr "リセット"
 
+msgid "section.empty.message"
+msgstr "現在、設定項目はありません"
+
 msgid "componentReferenceMode.option.direct"
-msgstr "直接設定"
+msgstr "通常"
 
 msgid "componentReferenceMode.option.reference"
-msgstr "参照"
+msgstr "他の設定を使用"
 
 msgid "expression.condition.section.label"
 msgstr "条件"
@@ -660,11 +663,32 @@ msgstr "リップシンク設定"
 msgid "eyeBlink.section.label"
 msgstr "瞬き設定"
 
+msgid "eyeBlink.configuration.label"
+msgstr "設定方法"
+
+msgid "eyeBlink.component.label"
+msgstr "コンポーネント"
+
+msgid "eyeBlink.mode.label"
+msgstr "瞬き方法"
+
+msgid "eyeBlinkMode.option.builtIn"
+msgstr "アバター設定を使用"
+
+msgid "eyeBlinkMode.option.automatic"
+msgstr "アニメーションを使用"
+
+msgid "eyeBlink.animations.label"
+msgstr "アニメーション"
+
+msgid "eyeBlink.intervalSeconds.label"
+msgstr "瞬き間隔 (秒)"
+
 msgid "lockFacial.section.label"
 msgstr "表情固定"
 
 msgid "mmdSupport.section.label"
-msgstr "MMDワールド対応"
+msgstr "MMDワールドモード"
 
 msgid "settings.section.label"
 msgstr "アバター設定"
@@ -675,17 +699,32 @@ msgstr "遷移設定"
 msgid "transition.duration.label"
 msgstr "遷移時間（秒）"
 
-msgid "avatarSettings.faceObject.label"
-msgstr "顔を指定"
+msgid "avatarSettings.faceSelection.label"
+msgstr "顔メッシュの指定方法"
+
+msgid "avatarSettings.faceSelection.option.auto"
+msgstr "自動推定"
+
+msgid "avatarSettings.faceSelection.option.manual"
+msgstr "手動指定"
+
+msgid "avatarSettings.faceMesh.label"
+msgstr "顔メッシュ"
+
+msgid "avatarSettings.faceMesh.empty.message"
+msgstr "顔メッシュを指定してください。"
 
 msgid "avatarSettings.excludedBlendShapes.label"
 msgstr "ブレンドシェイプを除外"
 
-msgid "avatarSettings.parameterCompression.label"
-msgstr "パラメータ圧縮"
+msgid "avatarSettings.advancedSettings.label"
+msgstr "高度な設定"
 
-msgid "avatarSettings.suppressTrackingControl.label"
-msgstr "トラッキング制御を抑制"
+msgid "avatarSettings.avoidEyeBlinkConflicts.label"
+msgstr "まばたきの競合を回避（推奨）"
+
+msgid "avatarSettings.avoidLipSyncConflicts.label"
+msgstr "リップシンクの競合を回避（推奨）"
 
 msgid "mmdSupport.blendShapes.label"
 msgstr "MMDブレンドシェイプ"

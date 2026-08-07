@@ -3,15 +3,15 @@ namespace Aoyon.FaceTune.Build;
 internal record struct AuthoringBuildSettings(
     AvatarContext AvatarContext,
     IReadOnlyCollection<string> ExcludedBlendShapeNames,
-    bool ParmaterCompression,
-    bool SupressTrackingControl,
+    bool AvoidEyeBlinkConflicts,
+    bool AvoidLipSyncConflicts,
     ParameterDomainRegistry ParameterDomains);
 
 internal record struct BuildSettings(
     AvatarContext AvatarContext,
     IReadOnlyCollection<string> ExcludedBlendShapeNames,
-    bool ParmaterCompression,
-    bool SupressTrackingControl,
+    bool AvoidEyeBlinkConflicts,
+    bool AvoidLipSyncConflicts,
     ParameterDomainRegistry ParameterDomains,
     MmdPlaybackSettings MmdPlayback,
     DnfCondition? DisableEyeBlinkWhen,

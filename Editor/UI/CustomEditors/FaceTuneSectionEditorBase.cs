@@ -25,11 +25,19 @@ internal sealed class PropertiesSectionDrawer : ISectionDrawer
     }
 
     public float GetHeight()
-        => _entries.Sum(entry => EditorGUI.GetPropertyHeight(entry.Property, GUIContent.none, true))
-            + GUIHelper.VerticalSpacing * Mathf.Max(0, _entries.Length - 1);
+        => _entries.Length == 0
+            ? GUIHelper.LineHeight
+            : _entries.Sum(entry => EditorGUI.GetPropertyHeight(entry.Property, GUIContent.none, true))
+                + GUIHelper.VerticalSpacing * (_entries.Length - 1);
 
     public void Draw(Rect position)
     {
+        if (_entries.Length == 0)
+        {
+            EditorGUI.LabelField(position, "section.empty.message".LG());
+            return;
+        }
+
         foreach (var entry in _entries)
         {
             position.height = EditorGUI.GetPropertyHeight(entry.Property, GUIContent.none, true);

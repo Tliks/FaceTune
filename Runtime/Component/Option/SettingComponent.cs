@@ -6,7 +6,9 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
 
-        public AvatarSettings Settings = AvatarSettings.Default;
+        public AvatarSettings Settings = CreateDefaultSettings();
+
+        internal static AvatarSettings CreateDefaultSettings() => AvatarSettings.Default;
 
         void IHasObjectReferences.ResolveReferences() => Settings.ResolveReferences(this);
     }

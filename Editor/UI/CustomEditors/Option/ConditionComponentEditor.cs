@@ -13,6 +13,6 @@ internal sealed class ConditionComponentEditor : FaceTuneSectionEditorBase<Condi
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(ConditionComponent.Condition)),
-                    new Condition(new ConditionCase()))),
+                    ConditionComponent.CreateDefaultCondition())),
             defaultExpanded: true);
 }

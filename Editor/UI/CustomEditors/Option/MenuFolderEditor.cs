@@ -13,6 +13,6 @@ internal sealed class MenuFolderEditor : FaceTuneSectionEditorBase<MenuFolderCom
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(MenuFolderComponent.Menu)),
-                    new MenuSettings())),
+                    MenuFolderComponent.CreateDefaultMenu())),
             defaultExpanded: false);
 }

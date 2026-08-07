@@ -31,7 +31,7 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
         _menuSettings = new PropertiesSectionDrawer(
             new PropertiesSectionDrawer.Entry(
                 serializedObject.FindProperty(nameof(MenuComponent.Menu)),
-                new MenuSettings()));
+                MenuComponent.CreateDefaultMenu()));
         _kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
         _group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
         _parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
@@ -88,11 +88,11 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
     public void Reset()
     {
         _menuSettings.Reset();
-        _kind.CopyFrom(MenuItemKind.Toggle);
-        _group.CopyFrom(new ExclusiveToggleGroup());
-        _parameter.CopyFrom(string.Empty);
-        _floatDefaultValue.CopyFrom(0f);
-        _defaultSelected.CopyFrom(false);
+        _kind.CopyFrom(MenuComponent.DefaultKind);
+        _group.CopyFrom(MenuComponent.CreateDefaultExclusiveToggleGroup());
+        _parameter.CopyFrom(MenuComponent.DefaultParameterName);
+        _floatDefaultValue.CopyFrom(MenuComponent.DefaultFloatValue);
+        _defaultSelected.CopyFrom(MenuComponent.DefaultSelectedValue);
         _parameterSettingsExpanded = false;
     }
 

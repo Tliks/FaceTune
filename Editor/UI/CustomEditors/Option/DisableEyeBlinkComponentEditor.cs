@@ -19,6 +19,6 @@ internal sealed class DisableEyeBlinkComponentEditor : FaceTuneSectionEditorBase
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(DisableEyeBlinkComponent.DisableWhen)),
-                    new Condition(ConditionCase.From(new MenuCondition())))),
+                    DisableEyeBlinkComponent.CreateDefaultDisableWhen())),
             defaultExpanded: false);
 }

@@ -5,10 +5,12 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Condition";
 
-        public Condition Condition = new(new ConditionCase());
+        public Condition Condition = CreateDefaultCondition();
 
         [Obsolete] public List<HandGestureCondition> HandGestureConditions = new();
         [Obsolete] public List<ParameterCondition> ParameterConditions = new();
+
+        internal static Condition CreateDefaultCondition() => new(new ConditionCase());
 
         IEnumerable<Condition> IHasConditions.Conditions => new[] { Condition };
     }

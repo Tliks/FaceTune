@@ -7,25 +7,35 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
-        public bool ConditionEnabled = false;
-        public Condition Condition = new(ConditionCase.From(new HandGestureCondition()));
+        public bool ConditionEnabled = DefaultConditionEnabled;
+        public Condition Condition = CreateDefaultCondition();
 
-        public bool DirectMenuEnabled = false;
-        public DirectMenuSettings DirectMenuSettings = new()
+        public bool DirectMenuEnabled = DefaultDirectMenuEnabled;
+        public DirectMenuSettings DirectMenuSettings = CreateDefaultDirectMenuSettings();
+
+        public ExpressionSettings ExpressionSettings = CreateDefaultExpressionSettings();
+        public FacialSettings FacialSettings = CreateDefaultFacialSettings();
+
+        public ExpressionData Data = CreateDefaultData();
+
+        [ToggleLeft]
+        public bool EnableRealTimePreview = DefaultEnableRealTimePreview;
+
+        public const bool DefaultConditionEnabled = false;
+        public const bool DefaultDirectMenuEnabled = false;
+        public const bool DefaultEnableRealTimePreview = false;
+
+        internal static Condition CreateDefaultCondition() => new(ConditionCase.From(new HandGestureCondition()));
+        internal static DirectMenuSettings CreateDefaultDirectMenuSettings() => new()
         {
             Menu = new MenuSettings
             {
                 Icon = new MenuIconSettings { Mode = MenuIconMode.ExpressionPreview }
             }
         };
-
-        public ExpressionSettings ExpressionSettings = new();
-        public FacialSettings FacialSettings = new();
-        
-        public ExpressionData Data = new();
-
-        [ToggleLeft]
-        public bool EnableRealTimePreview = false;
+        internal static ExpressionSettings CreateDefaultExpressionSettings() => new();
+        internal static FacialSettings CreateDefaultFacialSettings() => new();
+        internal static ExpressionData CreateDefaultData() => new();
 
         ExpressionData IHasExpressionData.Data => Data;
         IEnumerable<Condition> IHasConditions.Conditions => new[] { Condition };

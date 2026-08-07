@@ -6,7 +6,7 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Data";
 
-        public ExpressionData Data = new();
+        public ExpressionData Data = CreateDefaultData();
 
         // AnimationClip
         [Obsolete] public AnimationClip? Clip = null;
@@ -14,6 +14,8 @@ namespace Aoyon.FaceTune
 
         // Manual
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+
+        internal static ExpressionData CreateDefaultData() => new();
 
         ExpressionData IHasExpressionData.Data => Data;
 

@@ -10,7 +10,12 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComp
     private FaceTuneSection CreateExpressionSection()
         => CreateSection(
             "style.expression.section.label",
-            new ExpressionSectionDrawer(serializedObject, Component, targets.Length, CreateExpressionOptions),
+            new ExpressionSectionDrawer(
+                serializedObject,
+                Component,
+                targets.Length,
+                CreateExpressionOptions,
+                StyleComponent.CreateDefaultData),
             defaultExpanded: true,
             populateHeaderMenu: PopulateExpressionHeaderMenu);
 
@@ -20,7 +25,7 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComp
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(StyleComponent.ApplyToRenderer)),
-                    false,
+                    StyleComponent.DefaultApplyToRenderer,
                     "style.applyToRenderer.label")),
             defaultExpanded: false);
 

@@ -441,11 +441,14 @@ msgstr "Open"
 msgid "section.menu.reset"
 msgstr "Reset"
 
+msgid "section.empty.message"
+msgstr "There are currently no settings."
+
 msgid "componentReferenceMode.option.direct"
-msgstr "Direct"
+msgstr "Normal"
 
 msgid "componentReferenceMode.option.reference"
-msgstr "Reference"
+msgstr "Use Other Settings"
 
 msgid "expression.condition.section.label"
 msgstr "Conditions"
@@ -660,11 +663,32 @@ msgstr "Lip Sync Settings"
 msgid "eyeBlink.section.label"
 msgstr "Eye Blink Settings"
 
+msgid "eyeBlink.configuration.label"
+msgstr "Configuration"
+
+msgid "eyeBlink.component.label"
+msgstr "Component"
+
+msgid "eyeBlink.mode.label"
+msgstr "Blink Mode"
+
+msgid "eyeBlinkMode.option.builtIn"
+msgstr "Use Avatar Settings"
+
+msgid "eyeBlinkMode.option.automatic"
+msgstr "Use Animation"
+
+msgid "eyeBlink.animations.label"
+msgstr "Animations"
+
+msgid "eyeBlink.intervalSeconds.label"
+msgstr "Blink Interval (Seconds)"
+
 msgid "lockFacial.section.label"
 msgstr "Lock Facial"
 
 msgid "mmdSupport.section.label"
-msgstr "MMD World Support"
+msgstr "MMD World Mode"
 
 msgid "settings.section.label"
 msgstr "Avatar Settings"
@@ -675,17 +699,32 @@ msgstr "Transition Settings"
 msgid "transition.duration.label"
 msgstr "Duration Seconds"
 
-msgid "avatarSettings.faceObject.label"
-msgstr "Face Object"
+msgid "avatarSettings.faceSelection.label"
+msgstr "Face Mesh Selection"
+
+msgid "avatarSettings.faceSelection.option.auto"
+msgstr "Automatic"
+
+msgid "avatarSettings.faceSelection.option.manual"
+msgstr "Manual"
+
+msgid "avatarSettings.faceMesh.label"
+msgstr "Face Mesh"
+
+msgid "avatarSettings.faceMesh.empty.message"
+msgstr "Manual selection requires a face mesh."
 
 msgid "avatarSettings.excludedBlendShapes.label"
 msgstr "Excluded Blend Shapes"
 
-msgid "avatarSettings.parameterCompression.label"
-msgstr "Parameter Compression"
+msgid "avatarSettings.advancedSettings.label"
+msgstr "Advanced Settings"
 
-msgid "avatarSettings.suppressTrackingControl.label"
-msgstr "Suppress Tracking Control"
+msgid "avatarSettings.avoidEyeBlinkConflicts.label"
+msgstr "Avoid Blink Conflicts (Recommended)"
+
+msgid "avatarSettings.avoidLipSyncConflicts.label"
+msgstr "Avoid Lip Sync Conflicts (Recommended)"
 
 msgid "mmdSupport.blendShapes.label"
 msgstr "MMD Blend Shapes"

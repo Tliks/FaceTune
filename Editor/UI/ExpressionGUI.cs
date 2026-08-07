@@ -11,18 +11,21 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
     private readonly Component _component;
     private readonly int _targetCount;
     private readonly Func<ExpressionGUIOptions?>? _optionsFactory;
+    private readonly Func<ExpressionData> _createDefaultData;
 
     public ExpressionSectionDrawer(
         SerializedObject serializedObject,
         Component component,
         int targetCount,
-        Func<ExpressionGUIOptions?>? optionsFactory = null)
+        Func<ExpressionGUIOptions?>? optionsFactory = null,
+        Func<ExpressionData>? createDefaultData = null)
     {
         _data = serializedObject.FindProperty(nameof(IHasExpressionData.Data));
         _serializedObject = serializedObject;
         _component = component;
         _targetCount = targetCount;
         _optionsFactory = optionsFactory;
+        _createDefaultData = createDefaultData ?? (() => new ExpressionData());
         ExpressionGUI.InitializeExpansions(_data);
     }
 
@@ -36,7 +39,7 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
             _targetCount,
             _optionsFactory?.Invoke());
 
-    public void Reset() => _data.CopyFrom(new ExpressionData());
+    public void Reset() => _data.CopyFrom(_createDefaultData());
 }
 
 internal static class ExpressionGUI

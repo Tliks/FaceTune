@@ -91,8 +91,11 @@ internal sealed class ConditionDrawer : PropertyDrawer
     internal static void DrawSeparator(Rect boundary, GUIContent label)
         => DrawSeparator(boundary.x, boundary.y, boundary.width, label);
 
+    internal static float GetSeparatorWidth(GUIContent label)
+        => SeparatorStyle.CalcSize(label).x;
+
     internal static void DrawSeparatorAt(float x, float y, GUIContent label)
-        => DrawSeparator(x, y, SeparatorStyle.CalcSize(label).x, label);
+        => DrawSeparator(x, y, GetSeparatorWidth(label), label);
 
     private static void DrawSeparator(float x, float y, float width, GUIContent label)
     {
@@ -137,7 +140,9 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
 
     private static void DrawCondition(Rect position, SerializedProperty condition)
     {
-        position.Indent();
+        var separatorWidth = ConditionDrawer.GetSeparatorWidth("condition.and.label".LG());
+        position.x += Mathf.Max(GUIHelper.IndentWidth, separatorWidth);
+        position.width = Mathf.Max(0f, position.width - Mathf.Max(GUIHelper.IndentWidth, separatorWidth));
         EditorGUI.PropertyField(position, condition, GUIContent.none, true);
     }
 
@@ -184,9 +189,12 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         position.SetSingleHeight();
-        var (matchRect, gestureRect) = position.SplitRatio(.5f);
-        DrawEnum(matchRect, property.FindPropertyRelative("Match"), nameof(HandGestureMatch));
-        DrawEnum(gestureRect, property.FindPropertyRelative("HandGesture"), nameof(HandGesture));
+        var match = property.FindPropertyRelative("Match");
+        var gesture = property.FindPropertyRelative("HandGesture");
+        var gestureWidth = GUIHelper.LocalizedEnumPopupWidth(gesture, nameof(HandGesture));
+        var (matchRect, gestureRect) = position.SplitRight(gestureWidth);
+        DrawEnum(matchRect, match, nameof(HandGestureMatch));
+        DrawEnum(gestureRect, gesture, nameof(HandGesture));
     }
 
     private static void DrawEnum(Rect position, SerializedProperty property, string typeName)
@@ -207,8 +215,12 @@ internal sealed class MenuConditionDrawer : PropertyDrawer
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         position.SetSingleHeight();
         var mode = property.FindPropertyRelative("Mode");
-        var (sourceRect, rest) = position.SplitRatio(.5f);
-        var (modeRect, thresholdRect) = rest.SplitRatio(mode.enumValueIndex >= 2 ? .55f : 1f);
+        var modeWidth = GUIHelper.LocalizedEnumPopupWidth(mode, nameof(MenuConditionMode));
+        var (beforeMode, modeRect) = position.SplitRight(modeWidth);
+        var sourceRect = beforeMode;
+        var thresholdRect = Rect.zero;
+        if (mode.enumValueIndex >= 2)
+            (sourceRect, thresholdRect) = beforeMode.SplitRight(GUIHelper.PopupWidth(new[] { new GUIContent("0.00") }));
         EditorGUI.PropertyField(sourceRect, property.FindPropertyRelative("MenuSource"), GUIContent.none);
         GUIHelper.DrawLocalizedEnum(modeRect, mode, string.Empty, nameof(MenuConditionMode));
         if (mode.enumValueIndex >= 2)
@@ -232,16 +244,18 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
         position.SetSingleHeight();
         if (type.enumValueIndex == (int)ParameterType.Bool)
         {
-            var (nameRect, remainder) = position.SplitRatio(.55f);
-            var (typeRect, boolValueRect) = remainder.SplitRatio(.6f);
+            var boolOptions = new[] { "common.false.label".LG(), "common.true.label".LG() };
+            var (beforeBoolValue, boolValueRect) = position.SplitRight(GUIHelper.PopupWidth(boolOptions));
+            var (nameRect, typeRect) = beforeBoolValue.SplitRight(
+                GUIHelper.LocalizedEnumPopupWidth(type, nameof(ParameterType)));
             EditorGUI.PropertyField(nameRect, name, GUIContent.none);
             GUIHelper.DrawLocalizedEnum(typeRect, type, string.Empty, nameof(ParameterType));
-            var boolOptions = new[] { "common.false.label".LG(), "common.true.label".LG() };
             value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 1 : 0, boolOptions) == 1;
             return;
         }
 
-        var (parameterRect, parameterTypeRect) = position.SplitRatio(.65f);
+        var (parameterRect, parameterTypeRect) = position.SplitRight(
+            GUIHelper.LocalizedEnumPopupWidth(type, nameof(ParameterType)));
         EditorGUI.PropertyField(parameterRect, name, GUIContent.none);
         GUIHelper.DrawLocalizedEnum(parameterTypeRect, type, string.Empty, nameof(ParameterType));
         position.NewLine();
@@ -251,7 +265,8 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
             && comparison.enumValueIndex != (int)ComparisonType.LessThan)
             comparison.enumValueIndex = (int)ComparisonType.GreaterThan;
 
-        var (comparisonRect, valueRect) = position.SplitRatio(.5f);
+        var (valueRect, comparisonRect) = position.SplitRight(
+            GUIHelper.LocalizedEnumPopupWidth(comparison, nameof(ComparisonType)));
         GUIHelper.DrawLocalizedEnum(comparisonRect, comparison, string.Empty, nameof(ComparisonType));
         EditorGUI.PropertyField(valueRect, value, GUIContent.none);
     }

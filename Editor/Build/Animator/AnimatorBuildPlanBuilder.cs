@@ -514,12 +514,10 @@ internal sealed class TrackingControlPlanBuilder
 
     public TrackingControlLayerPlan? Build(Transform anchor)
     {
-        if (_settings.SupressTrackingControl) return null;
-
-        var controlsEyeBlink = _settings.DisableEyeBlinkWhen != null
-            || _aap.WritesEyeBlinkAnimation;
-        var controlsLipSync = _settings.DisableLipSyncWhen != null
-            || _aap.WritesLipSyncAnimation;
+        var controlsEyeBlink = _settings.AvoidEyeBlinkConflicts
+            && (_settings.DisableEyeBlinkWhen != null || _aap.WritesEyeBlinkAnimation);
+        var controlsLipSync = _settings.AvoidLipSyncConflicts
+            && (_settings.DisableLipSyncWhen != null || _aap.WritesLipSyncAnimation);
 
         if (!controlsEyeBlink && !controlsLipSync) return null;
 

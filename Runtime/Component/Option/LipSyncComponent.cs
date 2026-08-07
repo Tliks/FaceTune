@@ -7,9 +7,12 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "LipSync";
 
-        public ComponentReferenceMode ReferenceMode = ComponentReferenceMode.Direct;
-        public Transform? Reference = null;
-        public AdvancedLipSyncSettings AdvancedLipSyncSettings = new();
+        public ComponentReferenceMode ReferenceMode = DefaultReferenceMode;
+        public LipSyncComponent? Reference = null;
+        public AdvancedLipSyncSettings AdvancedLipSyncSettings = CreateDefaultSettings();
+
+        internal const ComponentReferenceMode DefaultReferenceMode = ComponentReferenceMode.Direct;
+        internal static AdvancedLipSyncSettings CreateDefaultSettings() => new();
 
     }  
 }

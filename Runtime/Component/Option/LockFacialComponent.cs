@@ -5,7 +5,9 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Lock Facial";
         
-        public Condition LockWhen = new(ConditionCase.From(new MenuCondition()));
+        public Condition LockWhen = CreateDefaultLockWhen();
+
+        internal static Condition CreateDefaultLockWhen() => new(ConditionCase.From(new MenuCondition()));
 
         IEnumerable<Condition> IHasConditions.Conditions => new[] { LockWhen };
     }

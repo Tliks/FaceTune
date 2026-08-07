@@ -1,28 +1,5 @@
 namespace Aoyon.FaceTune.Gui;
 
-[CustomPropertyDrawer(typeof(AvatarSettings))]
-internal sealed class AvatarSettingsDrawer : PropertyDrawer
-{
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    {
-        GUIHelper.DrawProperty(ref position, property.FindPropertyRelative(nameof(AvatarSettings.FaceObjectReference)), "avatarSettings.faceObject.label");
-        var blendShapes = property.FindPropertyRelative(nameof(AvatarSettings.ExcludedBlendShapeNames));
-        position.height = GUIHelper.GetListHeight(blendShapes);
-        GUIHelper.DrawList(position, blendShapes, "avatarSettings.excludedBlendShapes.label".LG());
-        position.NewLine();
-        GUIHelper.DrawProperty(ref position, property.FindPropertyRelative(nameof(AvatarSettings.ParmaterCompression)), "avatarSettings.parameterCompression.label");
-        GUIHelper.DrawProperty(ref position, property.FindPropertyRelative(nameof(AvatarSettings.SupressTrackingControl)), "avatarSettings.suppressTrackingControl.label");
-    }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => GUIHelper.PropertyHeight(property.FindPropertyRelative(nameof(AvatarSettings.FaceObjectReference)))
-         + GUIHelper.GetListHeight(property.FindPropertyRelative(nameof(AvatarSettings.ExcludedBlendShapeNames)))
-         + GUIHelper.VerticalSpacing
-         + GUIHelper.PropertyHeight(property.FindPropertyRelative(nameof(AvatarSettings.ParmaterCompression)))
-         + GUIHelper.PropertyHeight(property.FindPropertyRelative(nameof(AvatarSettings.SupressTrackingControl)));
-
-}
-
 [CustomPropertyDrawer(typeof(MmdSupportSettings))]
 internal sealed class MmdSupportSettingsDrawer : PropertyDrawer
 {

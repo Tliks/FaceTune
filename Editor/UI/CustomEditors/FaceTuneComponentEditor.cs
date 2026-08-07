@@ -25,7 +25,11 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
     private FaceTuneSection CreateExpressionSection()
         => CreateSection(
             "expression.section.label",
-            new ExpressionSectionDrawer(serializedObject, Component, targets.Length),
+            new ExpressionSectionDrawer(
+                serializedObject,
+                Component,
+                targets.Length,
+                createDefaultData: FaceTuneComponent.CreateDefaultData),
             defaultExpanded: true);
 
     private FaceTuneSection CreateBehaviorSection()
@@ -34,7 +38,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings)),
-                    new FacialSettings())),
+                    FaceTuneComponent.CreateDefaultFacialSettings())),
             defaultExpanded: true);
 
     private FaceTuneSection CreateAnimationSection()
@@ -43,7 +47,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings)),
-                    new ExpressionSettings())),
+                    FaceTuneComponent.CreateDefaultExpressionSettings())),
             defaultExpanded: false);
 
     private FaceTuneSection CreateConditionSection()
@@ -99,8 +103,8 @@ internal sealed class ConditionSectionDrawer : ISectionDrawer
 
     public void Reset()
     {
-        _enabled.CopyFrom(false);
-        _condition.CopyFrom(new Condition(ConditionCase.From(new HandGestureCondition())));
+        _enabled.CopyFrom(FaceTuneComponent.DefaultConditionEnabled);
+        _condition.CopyFrom(FaceTuneComponent.CreateDefaultCondition());
     }
 }
 
@@ -126,14 +130,8 @@ internal sealed class DirectMenuSectionDrawer : ISectionDrawer
 
     public void Reset()
     {
-        _enabled.boolValue = false;
-        _settings.CopyFrom(new DirectMenuSettings
-        {
-            Menu = new MenuSettings
-            {
-                Icon = new MenuIconSettings { Mode = MenuIconMode.ExpressionPreview }
-            }
-        });
+        _enabled.CopyFrom(FaceTuneComponent.DefaultDirectMenuEnabled);
+        _settings.CopyFrom(FaceTuneComponent.CreateDefaultDirectMenuSettings());
     }
 }
 
@@ -163,7 +161,7 @@ internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
 
     public void Reset()
     {
-        _enableRealTimePreview.CopyFrom(false);
+        _enableRealTimePreview.CopyFrom(FaceTuneComponent.DefaultEnableRealTimePreview);
         ProjectSettings.EnableHierarchySelectedExpressionPreview = true;
         ProjectSettings.EnableProjectSelectedExpressionPreview = true;
     }

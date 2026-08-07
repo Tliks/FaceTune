@@ -13,7 +13,7 @@ internal sealed class SetEditor : FaceTuneSectionEditorBase<SetComponent>
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(SetComponent.DefaultSelected)),
-                    false,
+                    SetComponent.DefaultSelectedValue,
                     "menu.defaultSelected.label")),
             defaultExpanded: true);
 
@@ -23,6 +23,6 @@ internal sealed class SetEditor : FaceTuneSectionEditorBase<SetComponent>
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(SetComponent.Menu)),
-                    new MenuSettings())),
+                    SetComponent.CreateDefaultMenu())),
             defaultExpanded: false);
 }

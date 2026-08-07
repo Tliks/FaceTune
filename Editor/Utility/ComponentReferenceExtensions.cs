@@ -6,7 +6,7 @@ internal static class ComponentReferenceExtensions
     {
         if (component.ReferenceMode != ComponentReferenceMode.Reference) return component.Settings;
 
-        var target = component.Reference?.GetComponent<EyeBlinkComponent>();
+        var target = component.Reference;
         return target is { ReferenceMode: ComponentReferenceMode.Direct } ? target.Settings : new EyeBlinkSettings();
     }
 
@@ -14,7 +14,7 @@ internal static class ComponentReferenceExtensions
     {
         if (component.ReferenceMode != ComponentReferenceMode.Reference) return component.AdvancedLipSyncSettings;
 
-        var target = component.Reference?.GetComponent<LipSyncComponent>();
+        var target = component.Reference;
         if (target is { ReferenceMode: ComponentReferenceMode.Direct }) return target.AdvancedLipSyncSettings;
         return AdvancedLipSyncSettings.Disabled();
     }

@@ -19,8 +19,8 @@ internal class ResolveBuildSettingsPass : FaceTunePass<ResolveBuildSettingsPass>
         context.SetSettings(new BuildSettings(
             authoring.AvatarContext,
             authoring.ExcludedBlendShapeNames,
-            authoring.ParmaterCompression,
-            authoring.SupressTrackingControl,
+            authoring.AvoidEyeBlinkConflicts,
+            authoring.AvoidLipSyncConflicts,
             authoring.ParameterDomains,
             context.PlatformSupport.ResolveMmdPlaybackSettings(compiler.Resolve(mmdSupport?.DisableWhen)),
             compiler.Resolve(eyeBlink?.DisableWhen),

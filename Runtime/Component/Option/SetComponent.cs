@@ -6,8 +6,11 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Set";
 
-        public MenuSettings Menu = new();
-        public bool DefaultSelected = false;
+        public MenuSettings Menu = CreateDefaultMenu();
+        public bool DefaultSelected = DefaultSelectedValue;
+
+        public const bool DefaultSelectedValue = false;
+        internal static MenuSettings CreateDefaultMenu() => new();
 
         MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => Menu.InstallSettings;
     }

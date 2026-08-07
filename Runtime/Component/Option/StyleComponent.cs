@@ -7,12 +7,15 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Style";
 
-        public ExpressionData Data = new();
+        public ExpressionData Data = CreateDefaultData();
 
         [ToggleLeft]
-        public bool ApplyToRenderer = false;
+        public bool ApplyToRenderer = DefaultApplyToRenderer;
 
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+
+        public const bool DefaultApplyToRenderer = false;
+        internal static ExpressionData CreateDefaultData() => new();
 
         ExpressionData IHasExpressionData.Data => Data;
 

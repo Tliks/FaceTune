@@ -19,8 +19,8 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
         context.SetAuthoringSettings(new AuthoringBuildSettings(
             context.AvatarContext,
             excludedBlendShapeNames.ToImmutableHashSet(),
-            avatarSettings.ParmaterCompression,
-            avatarSettings.SupressTrackingControl,
+            avatarSettings.AvoidEyeBlinkConflicts,
+            avatarSettings.AvoidLipSyncConflicts,
             context.PlatformSupport.CreateBuiltInParameterDomains()));
     }
 }
