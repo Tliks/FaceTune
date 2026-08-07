@@ -4,12 +4,11 @@ internal interface ISectionDrawer
 {
     float GetHeight();
     void Draw(Rect position);
-    void Reset();
 }
 
 internal sealed class PropertiesSectionDrawer : ISectionDrawer
 {
-    internal readonly record struct Entry(SerializedProperty Property, object? ResetSource, string? LabelKey = null);
+    internal readonly record struct Entry(SerializedProperty Property, string? LabelKey = null);
 
     private readonly Entry[] _entries;
 
@@ -49,11 +48,6 @@ internal sealed class PropertiesSectionDrawer : ISectionDrawer
         }
     }
 
-    public void Reset()
-    {
-        foreach (var entry in _entries)
-            entry.Property.CopyFrom(entry.ResetSource);
-    }
 }
 
 internal sealed record FaceTuneSection(
@@ -87,7 +81,7 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
             drawer.Draw,
             defaultExpanded,
             enabledProperty,
-            () => CreateHeaderMenu(drawer, populateHeaderMenu));
+            populateHeaderMenu == null ? null : () => CreateHeaderMenu(populateHeaderMenu));
 
     protected sealed override float GetInspectorHeight()
     {
@@ -151,20 +145,10 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         }
     }
 
-    private GenericMenu CreateHeaderMenu(ISectionDrawer drawer, Action<GenericMenu>? populateHeaderMenu)
+    private static GenericMenu CreateHeaderMenu(Action<GenericMenu> populateHeaderMenu)
     {
         var menu = new GenericMenu();
-        menu.AddItem("section.menu.reset".LG(), false, () =>
-        {
-            serializedObject.UpdateIfRequiredOrScript();
-            drawer.Reset();
-            serializedObject.ApplyModifiedProperties();
-        });
-        if (populateHeaderMenu != null)
-        {
-            menu.AddSeparator(string.Empty);
-            populateHeaderMenu(menu);
-        }
+        populateHeaderMenu(menu);
         return menu;
     }
 

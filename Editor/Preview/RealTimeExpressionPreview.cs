@@ -24,16 +24,16 @@ internal class RealTimeExpressionPreview : IRenderFilter
     }
 
     // ExpressionComponent増減時の再計算の範囲を縮小するためのPropCache
-    private static readonly PropCache<GameObject, FaceTuneComponent?> _targetComponent = new(
+    private static readonly PropCache<GameObject, ExpressionComponent?> _targetComponent = new(
         $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent, (a, b) => a == b
     );
     
-    private static FaceTuneComponent? GetTargetComponent(ComputeContext context, GameObject root)
+    private static ExpressionComponent? GetTargetComponent(ComputeContext context, GameObject root)
     {
-        using var _ = ListPool<FaceTuneComponent>.Get(out var components);
-        context.GetComponentsInChildren<FaceTuneComponent>(root, true, components);
+        using var _ = ListPool<ExpressionComponent>.Get(out var components);
+        context.GetComponentsInChildren<ExpressionComponent>(root, true, components);
 
-        FaceTuneComponent? target = null;
+        ExpressionComponent? target = null;
         foreach (var component in components)
         {
             var enabled = context.Observe(component, c => c.EnableRealTimePreview, (a, b) => a == b);
@@ -47,7 +47,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
         return target;
     }
 
-    record PassingData(GameObject Root, FaceTuneComponent Component, string FacePath);
+    record PassingData(GameObject Root, ExpressionComponent Component, string FacePath);
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
@@ -73,7 +73,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
         }
     }
 
-    private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, FaceTuneComponent target, GameObject root, string bodyPath)
+    private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, ExpressionComponent target, GameObject root, string bodyPath)
     {
         using var _3 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
         FacialStyleContext.TryGetFacialStyleAnimations(target.gameObject, facialStyleAnimations, root, bodyPath, context);
@@ -84,8 +84,8 @@ internal class RealTimeExpressionPreview : IRenderFilter
         result.AddRange(animations.ToFirstFrameBlendShapes());
 
         animations.Clear();
-        using var _5 = ListPool<DataComponent>.Get(out var dataComponents);
-        context.GetComponentsInChildren<DataComponent>(target.gameObject, true, dataComponents);
+        using var _5 = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
+        context.GetComponentsInChildren<ExpressionDataComponent>(target.gameObject, true, dataComponents);
         foreach (var dataComponent in dataComponents)
         {
             dataComponent.GetAnimations(animations, bodyPath, context);

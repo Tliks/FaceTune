@@ -224,7 +224,7 @@ internal class AnimatorControllerImporter
     {
         var obj = new GameObject(state.name);
 
-        var expression = obj.AddComponent<FaceTuneComponent>();
+        var expression = obj.AddComponent<ExpressionComponent>();
 
         expression.Data.Clip = clip;
         expression.Data.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;

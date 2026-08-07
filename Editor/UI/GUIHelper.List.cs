@@ -85,13 +85,11 @@ internal static partial class GUIHelper
             if (emptyHeight > 0f)
             {
                 var empty = new Rect(position.x, bodyY, position.width, emptyHeight);
+                if (options.NestContent) empty.Indent();
                 if (options.DrawEmptyOverride != null)
                     options.DrawEmptyOverride(empty, property);
                 else
-                {
-                    if (options.NestContent) empty.Indent();
                     list.DoList(empty);
-                }
                 bodyY = empty.yMax + GUIHelper.VerticalSpacing;
             }
             DrawFooterControls(position.xMax, bodyY, property, list, options);

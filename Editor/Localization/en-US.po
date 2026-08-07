@@ -699,20 +699,26 @@ msgstr "Transition Settings"
 msgid "transition.duration.label"
 msgstr "Duration Seconds"
 
-msgid "avatarSettings.faceSelection.label"
-msgstr "Face Mesh Selection"
-
-msgid "avatarSettings.faceSelection.option.auto"
-msgstr "Automatic"
-
-msgid "avatarSettings.faceSelection.option.manual"
-msgstr "Manual"
-
 msgid "avatarSettings.faceMesh.label"
 msgstr "Face Mesh"
 
-msgid "avatarSettings.faceMesh.empty.message"
-msgstr "Manual selection requires a face mesh."
+msgid "avatarSettings.faceMesh.option.auto"
+msgstr "Automatic"
+
+msgid "avatarSettings.faceMesh.option.manual"
+msgstr "Manual"
+
+msgid "avatarSettings.meshObject.label"
+msgstr "Mesh Object"
+
+msgid "avatarSettings.blendShapes.label"
+msgstr "Blend Shapes"
+
+msgid "avatarSettings.blendShapes.option.all"
+msgstr "All"
+
+msgid "avatarSettings.blendShapes.option.excludeSome"
+msgstr "Exclude Some"
 
 msgid "avatarSettings.excludedBlendShapes.label"
 msgstr "Excluded Blend Shapes"

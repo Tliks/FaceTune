@@ -18,7 +18,6 @@ internal sealed class DisableLipSyncComponentEditor : FaceTuneSectionEditorBase<
             "condition.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(DisableLipSyncComponent.DisableWhen)),
-                    DisableLipSyncComponent.CreateDefaultDisableWhen())),
+                    serializedObject.FindProperty(nameof(DisableLipSyncComponent.DisableWhen)))),
             defaultExpanded: false);
 }

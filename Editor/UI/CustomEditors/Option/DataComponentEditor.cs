@@ -1,8 +1,8 @@
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(DataComponent))]
-internal sealed class DataComponentEditor : FaceTuneSectionEditorBase<DataComponent>
+[CustomEditor(typeof(ExpressionDataComponent))]
+internal sealed class DataComponentEditor : FaceTuneSectionEditorBase<ExpressionDataComponent>
 {
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
         => new[] { CreateExpressionSection() };
@@ -13,7 +13,6 @@ internal sealed class DataComponentEditor : FaceTuneSectionEditorBase<DataCompon
             new ExpressionSectionDrawer(
                 serializedObject,
                 Component,
-                targets.Length,
-                createDefaultData: DataComponent.CreateDefaultData),
+                targets.Length),
             defaultExpanded: true);
 }

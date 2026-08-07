@@ -12,9 +12,7 @@ internal sealed class SetEditor : FaceTuneSectionEditorBase<SetComponent>
             "set.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(SetComponent.DefaultSelected)),
-                    SetComponent.DefaultSelectedValue,
-                    "menu.defaultSelected.label")),
+                    serializedObject.FindProperty(nameof(SetComponent.DefaultSelected)))),
             defaultExpanded: true);
 
     private FaceTuneSection CreateMenuSettingsSection()
@@ -22,7 +20,6 @@ internal sealed class SetEditor : FaceTuneSectionEditorBase<SetComponent>
             "menuSettings.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(SetComponent.Menu)),
-                    SetComponent.CreateDefaultMenu())),
+                    serializedObject.FindProperty(nameof(SetComponent.Menu)))),
             defaultExpanded: false);
 }

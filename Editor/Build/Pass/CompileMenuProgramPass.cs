@@ -78,7 +78,7 @@ internal static class MenuProgramCompiler
                 return new MenuIconPlan.Manual(settings.Mode == MenuIconMode.None ? null : settings.ManualIcon);
 
             var transform = settings.PreviewExpression
-                ?? (owner is FaceTuneComponent ? owner.transform : null);
+                ?? (owner is ExpressionComponent ? owner.transform : null);
             ExpressionItem? expression = null;
             if (transform != null) expressionByTransform.TryGetValue(transform, out expression);
             return new MenuIconPlan.ExpressionPreview(expression);

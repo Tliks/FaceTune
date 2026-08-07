@@ -8,10 +8,10 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
     protected override void Execute(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
-        var settingsComponents = root.GetComponentsInChildren<SettingsComponent>(true);
+        var settingsComponents = root.GetComponentsInChildren<AvatarSettingsComponent>(true);
         if (settingsComponents.Length > 1)
             LocalizedLog.Warning("Log:warning:AvatarContext:MultipleSettingsComponent", null, settingsComponents);
-        var avatarSettings = settingsComponents.FirstOrDefault()?.Settings ?? AvatarSettings.Default;
+        var avatarSettings = settingsComponents.FirstOrDefault()?.Settings ?? new AvatarSettings();
 
         var excludedBlendShapeNames = context.PlatformSupport.GetExternallyControlledBlendShapeNames().ToHashSet();
         excludedBlendShapeNames.UnionWith(avatarSettings.ExcludedBlendShapeNames.Where(x => !string.IsNullOrWhiteSpace(x)));

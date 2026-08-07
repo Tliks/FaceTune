@@ -24,7 +24,7 @@ internal static class FaceTuneProgramCompiler
         IMetabasePlatformSupport platformSupport,
         BuildSettings settings)
     {
-        var components = context.Root.GetComponentsInChildren<FaceTuneComponent>(true);
+        var components = context.Root.GetComponentsInChildren<ExpressionComponent>(true);
         
         var conditionCompiler = new ConditionCompiler(context.Root, platformSupport, settings.ParameterDomains);
         var expressionCompiler = new ExpressionCompiler(context, platformSupport, settings, conditionCompiler);
@@ -64,7 +64,7 @@ internal sealed class ExpressionCompiler
             .ToArray();
     }
 
-    public ExpressionItem Compile(FaceTuneComponent component)
+    public ExpressionItem Compile(ExpressionComponent component)
     {
         var facialAnimations = new List<BlendShapeWeightAnimation>();
         FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations, _avatarContext.BodyPath);
@@ -92,7 +92,7 @@ internal sealed class ExpressionCompiler
     }
 
     private BlendShapeWeightAnimationSet CreateAnimationSet(
-        FaceTuneComponent component,
+        ExpressionComponent component,
         List<BlendShapeWeightAnimation> facialAnimations,
         BlendShapeWeightAnimationSet expressionAnimationSet)
     {
@@ -108,12 +108,12 @@ internal sealed class ExpressionCompiler
         return animationSet;
     }
 
-    private BlendShapeWeightAnimationSet CollectExpressionAnimations(FaceTuneComponent component)
+    private BlendShapeWeightAnimationSet CollectExpressionAnimations(ExpressionComponent component)
     {
         var animationSet = new BlendShapeWeightAnimationSet();
         component.GetAnimations(animationSet, _avatarContext.BodyPath);
 
-        var dataComponents = component.gameObject.GetComponentsInChildren<DataComponent>(true);
+        var dataComponents = component.gameObject.GetComponentsInChildren<ExpressionDataComponent>(true);
         foreach (var dataComponent in dataComponents)
         {
             dataComponent.GetAnimations(animationSet, _avatarContext.BodyPath);
@@ -122,14 +122,14 @@ internal sealed class ExpressionCompiler
         return animationSet;
     }
 
-    private float ResolveTransitionDurationSeconds(FaceTuneComponent component)
+    private float ResolveTransitionDurationSeconds(ExpressionComponent component)
     {
         return component.GetComponentInParent<TransitionComponent>(true)
             .DestroyedAsNull()?.DurationSeconds
-            ?? TransitionComponent.DefaultDurationSeconds;
+            ?? 0.1f;
     }
 
-    private static FacialSettings ResolveFacialSettings(FaceTuneComponent component)
+    private static FacialSettings ResolveFacialSettings(ExpressionComponent component)
     {
         var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
         var blinkSettings = advancedEyeBlinkComponent == null
@@ -165,7 +165,7 @@ internal sealed class ConditionCompiler
         _parameterDomains = parameterDomains;
     }
 
-    public DnfCondition Resolve(FaceTuneComponent component)
+    public DnfCondition Resolve(ExpressionComponent component)
     {
         var activationConditions = CollectEffectiveConditions(component)
             .Select(ResolveCondition)
@@ -175,7 +175,7 @@ internal sealed class ConditionCompiler
             : DnfCondition.All(activationConditions);
     }
 
-    private IEnumerable<Condition> CollectEffectiveConditions(FaceTuneComponent component)
+    private IEnumerable<Condition> CollectEffectiveConditions(ExpressionComponent component)
     {
         var current = component.transform;
         while (current != null)

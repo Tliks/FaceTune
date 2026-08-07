@@ -53,6 +53,11 @@ internal sealed class ConditionDrawer : PropertyDrawer
         InitializeElement: element => element.FindPropertyRelative("Conditions").arraySize = 0,
         DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()),
         Controls: ReorderableListOptions.ControlsPlacement.Manual);
+    private static readonly ReorderableListOptions DisabledCasesOptions = CasesOptions with
+    {
+        DrawEmptyOverride = null,
+        EmptyContentHeight = 0f
+    };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -60,10 +65,7 @@ internal sealed class ConditionDrawer : PropertyDrawer
         var always = property.FindPropertyRelative("Always");
         position.SetSingleHeight();
         var cases = property.FindPropertyRelative("Cases");
-        var showCases = !always.boolValue || always.hasMultipleDifferentValues;
-        var modeRect = position;
-        var controlsRect = Rect.zero;
-        if (showCases) (modeRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
+        var (modeRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
         var mode = always.boolValue ? 1 : 0;
         var popupRect = EditorGUI.PrefixLabel(modeRect, "condition.mode.label".LG());
         var nextMode = GUIHelper.LocalizedPopup(
@@ -71,21 +73,29 @@ internal sealed class ConditionDrawer : PropertyDrawer
             mode,
             null,
             new[] { "condition.mode.normal.label", "condition.mode.always.label" });
-        if (nextMode != mode) always.boolValue = nextMode == 1;
-        if (showCases) GUIHelper.DrawListControls(controlsRect, cases, CasesOptions);
-        position.NewLine();
-        if (always.boolValue && !always.hasMultipleDifferentValues) return;
+        if (nextMode != mode)
+        {
+            always.boolValue = nextMode == 1;
+            if (nextMode == 1) cases.arraySize = 0;
+        }
 
-        position.height = GUIHelper.GetListHeight(cases, CasesOptions);
-        GUIHelper.DrawList(position, cases, "condition.conditions.label".LG(), CasesOptions);
+        var disableCases = always.boolValue && !always.hasMultipleDifferentValues;
+        var casesOptions = disableCases ? DisabledCasesOptions : CasesOptions;
+        using (new EditorGUI.DisabledScope(disableCases))
+        {
+            GUIHelper.DrawListControls(controlsRect, cases, casesOptions);
+            position.NewLine();
+            position.height = GUIHelper.GetListHeight(cases, casesOptions);
+            GUIHelper.DrawList(position, cases, "condition.conditions.label".LG(), casesOptions);
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var always = property.FindPropertyRelative("Always");
-        if (always.boolValue && !always.hasMultipleDifferentValues) return GUIHelper.LineHeight;
         var cases = property.FindPropertyRelative("Cases");
-        return GUIHelper.LineHeight + GUIHelper.GetListHeight(cases, CasesOptions);
+        var always = property.FindPropertyRelative("Always");
+        var options = always.boolValue && !always.hasMultipleDifferentValues ? DisabledCasesOptions : CasesOptions;
+        return GUIHelper.LineHeight + GUIHelper.GetListHeight(cases, options);
     }
 
     internal static void DrawSeparator(Rect boundary, GUIContent label)

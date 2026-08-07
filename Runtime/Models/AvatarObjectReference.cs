@@ -46,8 +46,9 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
         return avatarRoot.Find(path)?.gameObject;
     }
 
-    internal static bool IsEmpty(UnityEditor.SerializedProperty property)
-        => string.IsNullOrEmpty(property.FindPropertyRelative(nameof(referencePath)).stringValue);
+
+    internal static bool IsNull(UnityEditor.SerializedProperty property)
+        => Get(property) == null;
 #endif
 
     public void Set(GameObject? target)

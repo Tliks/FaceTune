@@ -11,7 +11,6 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
     private readonly Component _component;
     private readonly int _targetCount;
     private readonly Func<ExpressionGUIOptions?>? _optionsFactory;
-    private readonly Func<ExpressionData> _createDefaultData;
 
     public ExpressionSectionDrawer(
         SerializedObject serializedObject,
@@ -25,7 +24,6 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
         _component = component;
         _targetCount = targetCount;
         _optionsFactory = optionsFactory;
-        _createDefaultData = createDefaultData ?? (() => new ExpressionData());
         ExpressionGUI.InitializeExpansions(_data);
     }
 
@@ -39,7 +37,6 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
             _targetCount,
             _optionsFactory?.Invoke());
 
-    public void Reset() => _data.CopyFrom(_createDefaultData());
 }
 
 internal static class ExpressionGUI
@@ -272,8 +269,8 @@ internal static class ExpressionEditorActions
 
         IShapesEditorTargeting? targeting = component switch
         {
-            FaceTuneComponent faceTune => new FaceTuneDataTargeting { Target = faceTune },
-            DataComponent data => new ExpressionDataTargeting { Target = data },
+            ExpressionComponent faceTune => new FaceTuneDataTargeting { Target = faceTune },
+            ExpressionDataComponent data => new ExpressionDataTargeting { Target = data },
             StyleComponent style => new FacialStyleTargeting { Target = style },
             _ => null
         };
@@ -300,7 +297,7 @@ internal static class ExpressionEditorActions
 
     private static IEnumerable<(IHasExpressionData Source, Component Owner)> EnumerateBaseSources(Component component)
     {
-        var parentFaceTune = component.GetComponentInParent<FaceTuneComponent>(true);
+        var parentFaceTune = component.GetComponentInParent<ExpressionComponent>(true);
         var sources = parentFaceTune != null
             ? parentFaceTune.GetComponentsInChildren<FaceTuneTagComponent>(true).TakeWhile(source => source != component)
             : component

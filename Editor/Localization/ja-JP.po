@@ -699,23 +699,29 @@ msgstr "遷移設定"
 msgid "transition.duration.label"
 msgstr "遷移時間（秒）"
 
-msgid "avatarSettings.faceSelection.label"
-msgstr "顔メッシュの指定方法"
-
-msgid "avatarSettings.faceSelection.option.auto"
-msgstr "自動推定"
-
-msgid "avatarSettings.faceSelection.option.manual"
-msgstr "手動指定"
-
 msgid "avatarSettings.faceMesh.label"
 msgstr "顔メッシュ"
 
-msgid "avatarSettings.faceMesh.empty.message"
-msgstr "顔メッシュを指定してください。"
+msgid "avatarSettings.faceMesh.option.auto"
+msgstr "自動推定"
+
+msgid "avatarSettings.faceMesh.option.manual"
+msgstr "手動指定"
+
+msgid "avatarSettings.meshObject.label"
+msgstr "メッシュオブジェクト"
+
+msgid "avatarSettings.blendShapes.label"
+msgstr "ブレンドシェイプ"
+
+msgid "avatarSettings.blendShapes.option.all"
+msgstr "すべて"
+
+msgid "avatarSettings.blendShapes.option.excludeSome"
+msgstr "一部除外"
 
 msgid "avatarSettings.excludedBlendShapes.label"
-msgstr "ブレンドシェイプを除外"
+msgstr "除外するブレンドシェイプ"
 
 msgid "avatarSettings.advancedSettings.label"
 msgstr "高度な設定"

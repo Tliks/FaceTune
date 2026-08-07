@@ -37,7 +37,7 @@ internal sealed class MenuSettingsDrawer : PropertyDrawer
     private static string GetMenuNameLabelKey(SerializedProperty property)
         => property.serializedObject.targetObject is MenuFolderComponent
             ? "menuFolder.name.label"
-            : property.propertyPath.StartsWith(nameof(FaceTuneComponent.DirectMenuSettings))
+            : property.propertyPath.StartsWith(nameof(ExpressionComponent.DirectMenuSettings))
                 ? "directMenu.menuName.label"
                 : "menu.name.label";
 }
@@ -134,7 +134,7 @@ internal static class MenuGUI
             if (!string.IsNullOrWhiteSpace(groupName) && groupName != BuiltInMenuGroups.DirectMenuReplace)
                 groups.Add(groupName);
         }
-        foreach (var expression in root.GetComponentsInChildren<FaceTuneComponent>(true))
+        foreach (var expression in root.GetComponentsInChildren<ExpressionComponent>(true))
         {
             var groupName = expression.DirectMenuSettings.BlendExclusiveGroupName;
             if (!string.IsNullOrWhiteSpace(groupName)) groups.Add(groupName);
@@ -188,7 +188,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         }
         else if (next == (int)MenuIconMode.ExpressionPreview)
         {
-            var ownerIsExpression = property.serializedObject.targetObject is FaceTuneComponent;
+            var ownerIsExpression = property.serializedObject.targetObject is ExpressionComponent;
             if (ownerIsExpression)
             {
                 var placeholder = "menuIcon.currentExpression.placeholder".LG().text;
@@ -196,7 +196,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
                     position,
                     preview,
                     "menuIcon.previewExpression.label".LG(),
-                    new GUIContent($"{placeholder} ({FaceTuneComponent.ComponentName})"),
+                    new GUIContent($"{placeholder} ({ExpressionComponent.ComponentName})"),
                     preview.objectReferenceValue == null,
                     indentLabel: true);
             }
@@ -225,7 +225,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
             && property.FindPropertyRelative("ManualIcon").objectReferenceValue == null)
             height += GUIHelper.VerticalSpacing + MissingIconWarningHeight;
         if (mode == (int)MenuIconMode.ExpressionPreview
-            && property.serializedObject.targetObject is not FaceTuneComponent
+            && property.serializedObject.targetObject is not ExpressionComponent
             && property.FindPropertyRelative("PreviewExpression").objectReferenceValue == null)
             height += GUIHelper.VerticalSpacing + MissingExpressionWarningHeight;
         return height;
@@ -293,7 +293,7 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
 
     private static bool IsReplaceMode(SerializedObject serializedObject)
     {
-        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings));
+        var settings = serializedObject.FindProperty(nameof(ExpressionComponent.FacialSettings));
         var mode = settings?.FindPropertyRelative(FacialSettings.WriteModePropName);
         return mode != null
             && !mode.hasMultipleDifferentValues

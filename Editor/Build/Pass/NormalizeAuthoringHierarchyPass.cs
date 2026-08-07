@@ -61,7 +61,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     // DirectMenu => Menu + 高優先度のExpression に変換
     private static void ProcessDirectMenuSettings(GameObject root)
     {
-        var expressions = root.GetComponentsInChildren<FaceTuneComponent>(true)
+        var expressions = root.GetComponentsInChildren<ExpressionComponent>(true)
             .Where(expression => expression.DirectMenuEnabled)
             .ToArray();
         
@@ -76,7 +76,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
             var proxyObject = new GameObject(original.name + " (Direct Menu)");
             proxyObject.transform.SetParent(directMenuRoot.transform);
-            var proxy = proxyObject.AddComponent<FaceTuneComponent>();
+            var proxy = proxyObject.AddComponent<ExpressionComponent>();
 
             var menu = original.gameObject.AddComponent<MenuComponent>();
             menu.Menu = new MenuSettings
@@ -125,7 +125,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    private static string GetDirectMenuExclusiveGroupName(FaceTuneComponent expression)
+    private static string GetDirectMenuExclusiveGroupName(ExpressionComponent expression)
     {
         return expression.FacialSettings.WriteMode switch
         {
@@ -149,9 +149,9 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             {
                 Object.DestroyImmediate(cc);
             }
-            else if (source is FaceTuneComponent ftc && ftc.Condition.IsEmpty)
+            else if (source is ExpressionComponent ec && ec.Condition.IsEmpty)
             {
-                ftc.ConditionEnabled = false;
+                ec.ConditionEnabled = false;
             }
         }
     }
@@ -310,7 +310,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     private static void FilterEyeBlinkSettings(EyeBlinkComponent component, AuthoringBuildSettings settings)
     {
-        if (component.ReferenceMode != ComponentReferenceMode.Direct) return;
+        if (component.ReferenceMode != SettingSourceMode.Direct) return;
 
         component.Settings = component.Settings with
         {
@@ -323,7 +323,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     private static void FilterAdvancedLipSyncSettings(LipSyncComponent component, AuthoringBuildSettings settings)
     {
-        if (component.ReferenceMode != ComponentReferenceMode.Direct) return;
+        if (component.ReferenceMode != SettingSourceMode.Direct) return;
 
         var advancedSettings = component.AdvancedLipSyncSettings;
         component.AdvancedLipSyncSettings = advancedSettings with

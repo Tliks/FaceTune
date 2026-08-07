@@ -14,8 +14,7 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComp
                 serializedObject,
                 Component,
                 targets.Length,
-                CreateExpressionOptions,
-                StyleComponent.CreateDefaultData),
+                CreateExpressionOptions),
             defaultExpanded: true,
             populateHeaderMenu: PopulateExpressionHeaderMenu);
 
@@ -25,7 +24,6 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComp
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
                     serializedObject.FindProperty(nameof(StyleComponent.ApplyToRenderer)),
-                    StyleComponent.DefaultApplyToRenderer,
                     "style.applyToRenderer.label")),
             defaultExpanded: false);
 

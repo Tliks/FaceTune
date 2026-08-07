@@ -18,7 +18,6 @@ internal sealed class LockFacialComponentEditor : FaceTuneSectionEditorBase<Lock
             "condition.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(LockFacialComponent.LockWhen)),
-                    LockFacialComponent.CreateDefaultLockWhen())),
+                    serializedObject.FindProperty(nameof(LockFacialComponent.LockWhen)))),
             defaultExpanded: false);
 }

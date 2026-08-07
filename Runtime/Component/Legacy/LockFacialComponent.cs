@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune
 {
-    [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
+    [AddComponentMenu(LegacyMenuPathPrefix + ComponentName)]
     internal class LockFacialComponent : FaceTuneTagComponent, IHasConditions
     {
         internal const string ComponentName = ComponentNamePrefix + "Lock Facial";

@@ -12,7 +12,6 @@ internal sealed class ConditionComponentEditor : FaceTuneSectionEditorBase<Condi
             "condition.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(ConditionComponent.Condition)),
-                    ConditionComponent.CreateDefaultCondition())),
+                    serializedObject.FindProperty(nameof(ConditionComponent.Condition)))),
             defaultExpanded: true);
 }

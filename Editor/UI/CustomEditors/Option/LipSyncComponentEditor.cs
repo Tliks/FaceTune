@@ -12,13 +12,10 @@ internal sealed class LipSyncComponentEditor : FaceTuneSectionEditorBase<LipSync
             "lipSync.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(LipSyncComponent.ReferenceMode)),
-                    LipSyncComponent.DefaultReferenceMode),
+                    serializedObject.FindProperty(nameof(LipSyncComponent.ReferenceMode))),
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(LipSyncComponent.Reference)),
-                    null),
+                    serializedObject.FindProperty(nameof(LipSyncComponent.Reference))),
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(LipSyncComponent.AdvancedLipSyncSettings)),
-                    LipSyncComponent.CreateDefaultSettings())),
+                    serializedObject.FindProperty(nameof(LipSyncComponent.AdvancedLipSyncSettings)))),
             defaultExpanded: false);
 }

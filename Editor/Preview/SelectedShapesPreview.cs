@@ -193,7 +193,7 @@ internal class SelectedShapesPreviewSession : IDisposable
     {
         isLooping = false;
 
-        using var _dataComponents = ListPool<DataComponent>.Get(out var dataComponents);
+        using var _dataComponents = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
         if (TryGetDataSource(context, target, dataComponents, out var expressionComponent, out var sourceRoot))
         { 
             // dataCompononentのデータ取得用および、代入用にに顔つきを取得する
@@ -225,13 +225,13 @@ internal class SelectedShapesPreviewSession : IDisposable
         return false;
     }
 
-    private static bool TryGetDataSource(ComputeContext context, GameObject gameObject, List<DataComponent> dataComponents, out FaceTuneComponent? expressionComponent, [NotNullWhen(true)]out GameObject? sourceRoot)
+    private static bool TryGetDataSource(ComputeContext context, GameObject gameObject, List<ExpressionDataComponent> dataComponents, out ExpressionComponent? expressionComponent, [NotNullWhen(true)]out GameObject? sourceRoot)
     {
         expressionComponent = null;
         sourceRoot = null;
 
-        using var _expressionComponents = ListPool<FaceTuneComponent>.Get(out var expressionComponents);
-        context.GetComponentsInChildren<FaceTuneComponent>(gameObject, true, expressionComponents);
+        using var _expressionComponents = ListPool<ExpressionComponent>.Get(out var expressionComponents);
+        context.GetComponentsInChildren<ExpressionComponent>(gameObject, true, expressionComponents);
 
         if (expressionComponents.Count > 1) return false;
 
@@ -240,14 +240,14 @@ internal class SelectedShapesPreviewSession : IDisposable
             expressionComponent = expressionComponents[0];
             sourceRoot = expressionComponent.gameObject;
 
-            using var _children = ListPool<DataComponent>.Get(out var children);
+            using var _children = ListPool<ExpressionDataComponent>.Get(out var children);
             context.GetComponentsInChildren(sourceRoot, true, children);
             dataComponents.AddRange(children);
             return true;
         }
 
         sourceRoot = gameObject;
-        context.GetComponentsInChildren<DataComponent>(gameObject, true, dataComponents);
+        context.GetComponentsInChildren<ExpressionDataComponent>(gameObject, true, dataComponents);
         return dataComponents.Count > 0;
     }
 

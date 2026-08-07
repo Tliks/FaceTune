@@ -135,14 +135,14 @@ internal abstract class ExpressionDataTargetingBase<T> : IShapesEditorTargeting<
     }
 }
 
-internal sealed class ExpressionDataTargeting : ExpressionDataTargetingBase<DataComponent>
+internal sealed class ExpressionDataTargeting : ExpressionDataTargetingBase<ExpressionDataComponent>
 {
-    public override DataComponent? Target { get; set; }
+    public override ExpressionDataComponent? Target { get; set; }
 }
 
-internal sealed class FaceTuneDataTargeting : ExpressionDataTargetingBase<FaceTuneComponent>
+internal sealed class FaceTuneDataTargeting : ExpressionDataTargetingBase<ExpressionComponent>
 {
-    public override FaceTuneComponent? Target { get; set; }
+    public override ExpressionComponent? Target { get; set; }
 }
 
 internal sealed class FacialStyleTargeting : ExpressionDataTargetingBase<StyleComponent>

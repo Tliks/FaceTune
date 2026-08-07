@@ -3,8 +3,8 @@ using Aoyon.FaceTune.Settings;
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(FaceTuneComponent))]
-internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTuneComponent>
+[CustomEditor(typeof(ExpressionComponent))]
+internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<ExpressionComponent>
 {
     protected override bool ShowLanguageSwitcher => true;
 
@@ -28,8 +28,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
             new ExpressionSectionDrawer(
                 serializedObject,
                 Component,
-                targets.Length,
-                createDefaultData: FaceTuneComponent.CreateDefaultData),
+                targets.Length),
             defaultExpanded: true);
 
     private FaceTuneSection CreateBehaviorSection()
@@ -37,8 +36,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
             "expression.behavior.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings)),
-                    FaceTuneComponent.CreateDefaultFacialSettings())),
+                    serializedObject.FindProperty(nameof(ExpressionComponent.FacialSettings)))),
             defaultExpanded: true);
 
     private FaceTuneSection CreateAnimationSection()
@@ -46,30 +44,29 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<FaceTu
             "expression.animationSettings.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(FaceTuneComponent.ExpressionSettings)),
-                    FaceTuneComponent.CreateDefaultExpressionSettings())),
+                    serializedObject.FindProperty(nameof(ExpressionComponent.ExpressionSettings)))),
             defaultExpanded: false);
 
     private FaceTuneSection CreateConditionSection()
     {
-        var enabled = serializedObject.FindProperty(nameof(FaceTuneComponent.ConditionEnabled));
+        var enabled = serializedObject.FindProperty(nameof(ExpressionComponent.ConditionEnabled));
         return CreateSection(
             "expression.condition.section.label",
             new ConditionSectionDrawer(
                 enabled,
-                serializedObject.FindProperty(nameof(FaceTuneComponent.Condition))),
+                serializedObject.FindProperty(nameof(ExpressionComponent.Condition))),
             defaultExpanded: enabled.boolValue,
             enabledProperty: enabled);
     }
 
     private FaceTuneSection CreateDirectMenuSection()
     {
-        var enabled = serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuEnabled));
+        var enabled = serializedObject.FindProperty(nameof(ExpressionComponent.DirectMenuEnabled));
         return CreateSection(
             "expression.directMenu.label",
             new DirectMenuSectionDrawer(
                 enabled,
-                serializedObject.FindProperty(nameof(FaceTuneComponent.DirectMenuSettings))),
+                serializedObject.FindProperty(nameof(ExpressionComponent.DirectMenuSettings))),
             defaultExpanded: false,
             enabledProperty: enabled);
     }
@@ -101,11 +98,6 @@ internal sealed class ConditionSectionDrawer : ISectionDrawer
         EditorGUI.PropertyField(position, _condition, GUIContent.none, true);
     }
 
-    public void Reset()
-    {
-        _enabled.CopyFrom(FaceTuneComponent.DefaultConditionEnabled);
-        _condition.CopyFrom(FaceTuneComponent.CreateDefaultCondition());
-    }
 }
 
 internal sealed class DirectMenuSectionDrawer : ISectionDrawer
@@ -128,11 +120,6 @@ internal sealed class DirectMenuSectionDrawer : ISectionDrawer
         EditorGUI.PropertyField(position, _settings, GUIContent.none, true);
     }
 
-    public void Reset()
-    {
-        _enabled.CopyFrom(FaceTuneComponent.DefaultDirectMenuEnabled);
-        _settings.CopyFrom(FaceTuneComponent.CreateDefaultDirectMenuSettings());
-    }
 }
 
 internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
@@ -140,7 +127,7 @@ internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
     private readonly SerializedProperty _enableRealTimePreview;
 
     public PreviewSettingsSectionDrawer(SerializedObject serializedObject)
-        => _enableRealTimePreview = serializedObject.FindProperty(nameof(FaceTuneComponent.EnableRealTimePreview));
+        => _enableRealTimePreview = serializedObject.FindProperty(nameof(ExpressionComponent.EnableRealTimePreview));
 
     public float GetHeight() => GUIHelper.GetLinesHeight(3);
 
@@ -159,10 +146,4 @@ internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
             "expression.selectedProjectExpressionPreview.label".LG());
     }
 
-    public void Reset()
-    {
-        _enableRealTimePreview.CopyFrom(FaceTuneComponent.DefaultEnableRealTimePreview);
-        ProjectSettings.EnableHierarchySelectedExpressionPreview = true;
-        ProjectSettings.EnableProjectSelectedExpressionPreview = true;
-    }
 }

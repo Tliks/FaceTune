@@ -8,16 +8,12 @@ internal sealed class MenuComponentEditor : FaceTuneSectionEditorBase<MenuCompon
         => new[] { CreateMenuSection() };
 
     private FaceTuneSection CreateMenuSection()
-        => CreateSection(
-            "menu.section.label",
-            new MenuSectionDrawer(serializedObject),
-            defaultExpanded: false);
+        => CreateSection("menu.section.label", new MenuSectionDrawer(serializedObject), defaultExpanded: false);
 }
 
 internal sealed class MenuSectionDrawer : ISectionDrawer
 {
     private const float ModeSpacing = 10f;
-
     private readonly PropertiesSectionDrawer _menuSettings;
     private readonly SerializedProperty _kind;
     private readonly SerializedProperty _group;
@@ -28,10 +24,8 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
 
     public MenuSectionDrawer(SerializedObject serializedObject)
     {
-        _menuSettings = new PropertiesSectionDrawer(
-            new PropertiesSectionDrawer.Entry(
-                serializedObject.FindProperty(nameof(MenuComponent.Menu)),
-                MenuComponent.CreateDefaultMenu()));
+        _menuSettings = new PropertiesSectionDrawer(new PropertiesSectionDrawer.Entry(
+            serializedObject.FindProperty(nameof(MenuComponent.Menu))));
         _kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
         _group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
         _parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
@@ -43,7 +37,6 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
     {
         var height = _menuSettings.GetHeight() + ModeSpacing + GUIHelper.PropertyHeight(_kind) + GUIHelper.LineHeight;
         if (!_parameterSettingsExpanded) return height;
-
         var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
         var isToggle = IsMode((int)MenuItemKind.Toggle);
         var isFloat = IsMode((int)MenuItemKind.Radial);
@@ -65,7 +58,6 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
         position.height = GUIHelper.LineHeight;
         _parameterSettingsExpanded = GUIHelper.DrawFoldout(position, _parameterSettingsExpanded, "menu.options.label".LG());
         if (!_parameterSettingsExpanded) return;
-
         position.NewLine();
         var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
         var isToggle = IsMode((int)MenuItemKind.Toggle);
@@ -73,27 +65,11 @@ internal sealed class MenuSectionDrawer : ISectionDrawer
         if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _group, "menu.group.label");
         if (!IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue))
         {
-            GUIHelper.DrawPlaceholderTextField(
-                position,
-                _parameter,
-                "menu.parameterName.label".LG(),
-                "menu.parameterName.auto.placeholder".LG(),
-                indentLabel: true);
+            GUIHelper.DrawPlaceholderTextField(position, _parameter, "menu.parameterName.label".LG(), "menu.parameterName.auto.placeholder".LG(), indentLabel: true);
             position.NewLine();
         }
         if (isFloat) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _floatDefaultValue, "menu.floatDefaultValue.label");
         if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _defaultSelected, "menu.defaultSelected.label");
-    }
-
-    public void Reset()
-    {
-        _menuSettings.Reset();
-        _kind.CopyFrom(MenuComponent.DefaultKind);
-        _group.CopyFrom(MenuComponent.CreateDefaultExclusiveToggleGroup());
-        _parameter.CopyFrom(MenuComponent.DefaultParameterName);
-        _floatDefaultValue.CopyFrom(MenuComponent.DefaultFloatValue);
-        _defaultSelected.CopyFrom(MenuComponent.DefaultSelectedValue);
-        _parameterSettingsExpanded = false;
     }
 
     private bool IsMode(int value) => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == value;

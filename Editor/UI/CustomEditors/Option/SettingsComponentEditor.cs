@@ -1,97 +1,104 @@
+using nadena.dev.ndmf.runtime;
+
 namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
-[CustomEditor(typeof(SettingsComponent))]
-internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<SettingsComponent>
+[CustomEditor(typeof(AvatarSettingsComponent))]
+internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<AvatarSettingsComponent>
 {
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
         => new[]
         {
-            CreateSection(
-                "settings.section.label",
-                new SettingsSectionDrawer(serializedObject),
-                defaultExpanded: false),
-            CreateSection(
-                "avatarSettings.advancedSettings.label",
-                new AdvancedSettingsSectionDrawer(serializedObject),
-                defaultExpanded: false)
+            CreateSection("settings.section.label", new SettingsSectionDrawer(serializedObject), defaultExpanded: false),
+            CreateSection("avatarSettings.advancedSettings.label", new AdvancedSettingsSectionDrawer(serializedObject), defaultExpanded: false)
         };
 }
 
 internal sealed class SettingsSectionDrawer : ISectionDrawer
 {
-    private const float MissingFaceMeshWarningHeight = 30f;
-
     private static readonly ReorderableListOptions ExcludedBlendShapeListOptions = new(
-        Header: ReorderableListOptions.HeaderMode.Label);
+        Header: ReorderableListOptions.HeaderMode.Label,
+        NestContent: false);
 
-    private readonly SerializedProperty _faceMeshSelection;
+    private readonly SerializedObject _serializedObject;
     private readonly SerializedProperty _faceObject;
     private readonly SerializedProperty _excludedBlendShapes;
 
     public SettingsSectionDrawer(SerializedObject serializedObject)
     {
-        var settings = serializedObject.FindProperty(nameof(SettingsComponent.Settings));
-        _faceMeshSelection = settings.FindPropertyRelative(nameof(AvatarSettings.FaceMeshSelection));
+        _serializedObject = serializedObject;
+        var settings = serializedObject.FindProperty(nameof(AvatarSettingsComponent.Settings));
         _faceObject = settings.FindPropertyRelative(nameof(AvatarSettings.FaceObjectReference));
         _excludedBlendShapes = settings.FindPropertyRelative(nameof(AvatarSettings.ExcludedBlendShapeNames));
     }
 
     public float GetHeight()
-        => GUIHelper.LineHeight
-         + GUIHelper.VerticalSpacing
-         + (IsManualFaceMeshSelection ? GUIHelper.PropertyHeight(_faceObject) : 0f)
-         + (HasMissingManualFaceMesh ? MissingFaceMeshWarningHeight + GUIHelper.VerticalSpacing : 0f)
-         + GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapeListOptions);
+    {
+        var height = GUIHelper.LineHeight;
+        if (HasMeshObject)
+            height += GUIHelper.VerticalSpacing + GUIHelper.PropertyHeight(_faceObject);
+        height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
+        if (_excludedBlendShapes.arraySize > 0)
+            height += GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapeListOptions);
+        return height;
+    }
 
     public void Draw(Rect position)
     {
-        position.height = GUIHelper.LineHeight;
-        var faceSelection = GUIHelper.LocalizedPopup(
+        var isAutomatic = !HasMeshObject;
+        var faceMode = GUIHelper.LocalizedPopup(
             position,
-            _faceMeshSelection.enumValueIndex,
-            "avatarSettings.faceSelection.label",
-            new[] { "avatarSettings.faceSelection.option.auto", "avatarSettings.faceSelection.option.manual" });
-        if (faceSelection != _faceMeshSelection.enumValueIndex)
+            isAutomatic ? 0 : 1,
+            "avatarSettings.faceMesh.label",
+            new[] { "avatarSettings.faceMesh.option.auto", "avatarSettings.faceMesh.option.manual" });
+        if (faceMode != (isAutomatic ? 0 : 1))
         {
-            _faceMeshSelection.enumValueIndex = faceSelection;
-            if (faceSelection == (int)FaceMeshSelectionMode.Automatic)
-                _faceObject.CopyFrom(AvatarSettings.CreateDefaultFaceObjectReference());
+            if (faceMode == 0)
+                _faceObject.CopyFrom(new AvatarObjectReference());
+            else
+                AssignDetectedFaceObject();
         }
-        position.NewLine();
-
-        if (IsManualFaceMeshSelection)
-            GUIHelper.DrawPropertyWithIndentedLabel(ref position, _faceObject, "avatarSettings.faceMesh.label");
-        if (HasMissingManualFaceMesh)
+        var hasMeshObject = HasMeshObject;
+        if (hasMeshObject)
         {
-            position.height = MissingFaceMeshWarningHeight;
-            var warningPosition = position;
-            warningPosition.Indent();
-            EditorGUI.HelpBox(warningPosition, "avatarSettings.faceMesh.empty.message".LS(), MessageType.Warning);
+            position.NewLine();
+            GUIHelper.DrawPropertyWithIndentedLabel(ref position, _faceObject, "avatarSettings.meshObject.label");
+        }
+        else
+        {
             position.NewLine();
         }
 
-        position.height = GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapeListOptions);
-        GUIHelper.DrawList(
+        var excludeSome = _excludedBlendShapes.arraySize > 0;
+        var blendShapeMode = GUIHelper.LocalizedPopup(
             position,
-            _excludedBlendShapes,
-            "avatarSettings.excludedBlendShapes.label".LG(),
-            ExcludedBlendShapeListOptions);
+            excludeSome ? 1 : 0,
+            "avatarSettings.blendShapes.label",
+            new[] { "avatarSettings.blendShapes.option.all", "avatarSettings.blendShapes.option.excludeSome" });
+        if (blendShapeMode != (excludeSome ? 1 : 0))
+            _excludedBlendShapes.arraySize = blendShapeMode == 0 ? 0 : 1;
+
+        if (_excludedBlendShapes.arraySize == 0) return;
+        position.NewLine();
+        position.height = GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapeListOptions);
+        position.Indent();
+        GUIHelper.DrawList(position, _excludedBlendShapes, "avatarSettings.excludedBlendShapes.label".LG(), ExcludedBlendShapeListOptions);
     }
 
-    public void Reset()
+    private bool HasMeshObject => !AvatarObjectReference.IsNull(_faceObject);
+
+    private void AssignDetectedFaceObject()
     {
-        _faceMeshSelection.CopyFrom(AvatarSettings.DefaultFaceMeshSelection);
-        _faceObject.CopyFrom(AvatarSettings.CreateDefaultFaceObjectReference());
-        _excludedBlendShapes.CopyFrom(AvatarSettings.CreateDefaultExcludedBlendShapeNames());
+        if (_serializedObject.targetObject is not Component component) return;
+
+        var renderer = AvatarContext.TryGet(component.gameObject, out var context, out _ )
+            ? context.FaceRenderer
+            : RuntimeUtil.FindAvatarInParents(component.transform)
+                ?.GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                .FirstOrDefault();
+        if (renderer != null)
+            _faceObject.CopyFrom(new AvatarObjectReference(renderer.gameObject));
     }
-
-    private bool IsManualFaceMeshSelection
-        => _faceMeshSelection.hasMultipleDifferentValues
-            || _faceMeshSelection.enumValueIndex == (int)FaceMeshSelectionMode.Manual;
-
-    private bool HasMissingManualFaceMesh
-        => IsManualFaceMeshSelection && AvatarObjectReference.IsEmpty(_faceObject);
 }
 
 internal sealed class AdvancedSettingsSectionDrawer : ISectionDrawer
@@ -101,23 +108,16 @@ internal sealed class AdvancedSettingsSectionDrawer : ISectionDrawer
 
     public AdvancedSettingsSectionDrawer(SerializedObject serializedObject)
     {
-        var settings = serializedObject.FindProperty(nameof(SettingsComponent.Settings));
+        var settings = serializedObject.FindProperty(nameof(AvatarSettingsComponent.Settings));
         _avoidEyeBlinkConflicts = settings.FindPropertyRelative(nameof(AvatarSettings.AvoidEyeBlinkConflicts));
         _avoidLipSyncConflicts = settings.FindPropertyRelative(nameof(AvatarSettings.AvoidLipSyncConflicts));
     }
 
     public float GetHeight() => GUIHelper.GetLinesHeight(2);
-
     public void Draw(Rect position)
     {
         GUIHelper.DrawToggleLeft(position, _avoidEyeBlinkConflicts, "avatarSettings.avoidEyeBlinkConflicts.label".LG());
         position.NewLine();
         GUIHelper.DrawToggleLeft(position, _avoidLipSyncConflicts, "avatarSettings.avoidLipSyncConflicts.label".LG());
-    }
-
-    public void Reset()
-    {
-        _avoidEyeBlinkConflicts.CopyFrom(AvatarSettings.DefaultAvoidEyeBlinkConflicts);
-        _avoidLipSyncConflicts.CopyFrom(AvatarSettings.DefaultAvoidLipSyncConflicts);
     }
 }

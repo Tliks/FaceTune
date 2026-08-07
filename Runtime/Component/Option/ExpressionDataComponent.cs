@@ -2,11 +2,11 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class DataComponent : FaceTuneTagComponent, IHasExpressionData
+    internal class ExpressionDataComponent : FaceTuneTagComponent, IHasExpressionData
     {
-        internal const string ComponentName = ComponentNamePrefix + "Data";
+        internal const string ComponentName = ComponentNamePrefix + "Expression Data";
 
-        public ExpressionData Data = CreateDefaultData();
+        public ExpressionData Data = new();
 
         // AnimationClip
         [Obsolete] public AnimationClip? Clip = null;
@@ -15,7 +15,6 @@ namespace Aoyon.FaceTune
         // Manual
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
-        internal static ExpressionData CreateDefaultData() => new();
 
         ExpressionData IHasExpressionData.Data => Data;
 

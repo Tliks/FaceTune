@@ -12,8 +12,7 @@ internal sealed class MMDSupportComponentEditor : FaceTuneSectionEditorBase<MMDS
             "mmdSupport.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(MMDSupportComponent.Settings)),
-                    MMDSupportComponent.CreateDefaultSettings())),
+                    serializedObject.FindProperty(nameof(MMDSupportComponent.Settings)))),
             defaultExpanded: false);
 
     private FaceTuneSection CreateConditionSection()
@@ -21,7 +20,6 @@ internal sealed class MMDSupportComponentEditor : FaceTuneSectionEditorBase<MMDS
             "condition.section.label",
             new PropertiesSectionDrawer(
                 new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(MMDSupportComponent.DisableWhen)),
-                    MMDSupportComponent.CreateDefaultDisableWhen())),
+                    serializedObject.FindProperty(nameof(MMDSupportComponent.DisableWhen)))),
             defaultExpanded: false);
 }
