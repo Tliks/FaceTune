@@ -226,8 +226,8 @@ internal class AnimatorControllerImporter
 
         var expression = obj.AddComponent<ExpressionComponent>();
 
-        expression.Data.Clip = clip;
-        expression.Data.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
+        expression.FacialBlendShapes.Clip = clip;
+        expression.FacialBlendShapes.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
 
         if (!dnf.IsAlways && !dnf.IsNever)
         {
@@ -237,7 +237,7 @@ internal class AnimatorControllerImporter
                 .ToArray();
             if (conditionCases.Length > 0)
             {
-                expression.ConditionEnabled = true;
+                expression.HasCondition = true;
                 expression.Condition = new Condition(conditionCases);
             }
         }

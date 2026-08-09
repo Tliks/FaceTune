@@ -47,7 +47,7 @@ internal sealed class StyleComponentEditor : FaceTuneSectionEditorBase<StyleComp
         serializedObject.UpdateIfRequiredOrScript();
         var property = serializedObject
             .FindProperty(nameof(StyleComponent.Data))
-            .FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+            .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         ExpressionGUI.SetBlendShapeAnimations(property, animations);
         serializedObject.ApplyModifiedProperties();
     }

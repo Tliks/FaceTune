@@ -227,7 +227,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     private static IEnumerable<string> ResolveMmdBlendShapeNames(
         MmdSupportSettings settings)
     {
-        var explicitNames = settings.ExplicitMmdBlendShapeNames
+        var explicitNames = settings.ExplicitBlendShapeNames
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToArray();
         if (explicitNames.Length > 0) return explicitNames;

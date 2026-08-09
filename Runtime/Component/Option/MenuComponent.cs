@@ -2,17 +2,31 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class MenuComponent : FaceTuneTagComponent, IHasMenuInstallSettings
+    internal class MenuComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = ComponentNamePrefix + "Menu";
 
-        public MenuSettings Menu = new();
-        public MenuItemKind Kind;
-        public ExclusiveToggleGroup ExclusiveToggleGroup = new();
-        public string ParameterName = string.Empty;
-        [Range(0f, 1f)] public float FloatDefaultValue;
-        public bool DefaultSelected;
+        public enum Kind
+        {
+            Toggle,
+            Radial,
+            Folder
+        }
 
-        MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => Menu.InstallSettings;
+        public Kind MenuKind = Kind.Toggle;
+
+        // Toggle, Radial, Folderの表示とinstall先。
+        public MenuSettings Menu = new();
+
+        // Toggle
+        [ExclusiveToggleMenuGroup]
+        public string ExclusiveToggleGroup = string.Empty;
+        public bool DefaultSelected = false;
+
+        // Radial
+        [Range(0f, 1f)]
+        public float FloatDefaultValue = 0f;
+
+        public string ParameterName = string.Empty;
     }
 }

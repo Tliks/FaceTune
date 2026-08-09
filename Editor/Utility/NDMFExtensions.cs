@@ -25,10 +25,7 @@ internal static class NDMFExtensions
     {
         if (obj == null) { component = null; return false; }
         using var _ = ListPool<T>.Get(out var components);
-        obj.GetComponentsInParent<T>(includeInactive, components);
-        // GetComponentsInParentを監視できないのでその代わり
-        using var _2 = ListPool<T>.Get(out var tmp);
-        ctx.GetComponentsInChildren<T>(root, includeInactive, tmp);
+        ctx.GetComponentsInParent(obj, root, includeInactive, components);
 
         if (components.Count == 0)
         {
@@ -44,9 +41,23 @@ internal static class NDMFExtensions
     public static void GetComponentsInParent<T>(this ComputeContext ctx, GameObject obj, GameObject root, bool includeInactive, List<T> results)
     where T : Component
     {
-        obj.GetComponentsInParent<T>(includeInactive, results);
-        // GetComponentsInParentを監視できないのでその代わり
-        ctx.GetComponentsInChildren<T>(root, includeInactive, results);
+        if (obj == null
+            || obj.transform != root.transform && !obj.transform.IsChildOf(root.transform))
+            return;
+
+        // 親子関係の変更も再計算対象にする。
+        foreach (var _ in ctx.ObservePath(obj.transform))
+        {
+        }
+
+        for (var current = obj.transform; current != null; current = current.parent)
+        {
+            if (includeInactive || current.gameObject.activeInHierarchy)
+                results.AddRange(ctx.GetComponents<T>(current.gameObject));
+
+            if (current.gameObject == root)
+                break;
+        }
     }
     public static bool EditorOnlyInHierarchy(this ComputeContext ctx, GameObject obj)
     {

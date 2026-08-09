@@ -18,7 +18,7 @@ internal sealed class MmdSupportSettingsDrawer : PropertyDrawer
         var disableMode = property.FindPropertyRelative(nameof(MmdSupportSettings.DisableMode));
         GUIHelper.DrawLocalizedEnum(ref position, disableMode, "mmdSupport.disableMode.label", nameof(MmdDisableMode));
 
-        var blendShapes = property.FindPropertyRelative(nameof(MmdSupportSettings.ExplicitMmdBlendShapeNames));
+        var blendShapes = property.FindPropertyRelative(nameof(MmdSupportSettings.ExplicitBlendShapeNames));
         var selectedMode = blendShapes.arraySize == 0 ? 0 : 1;
         position.height = GUIHelper.LineHeight;
         var nextMode = GUIHelper.LocalizedPopup(
@@ -46,7 +46,7 @@ internal sealed class MmdSupportSettingsDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var blendShapes = property.FindPropertyRelative(nameof(MmdSupportSettings.ExplicitMmdBlendShapeNames));
+        var blendShapes = property.FindPropertyRelative(nameof(MmdSupportSettings.ExplicitBlendShapeNames));
         return (GUIHelper.LineHeight + GUIHelper.VerticalSpacing) * 2f
              + (blendShapes.arraySize == 0 ? 0f : GUIHelper.GetListHeight(blendShapes, BlendShapeListOptions));
     }

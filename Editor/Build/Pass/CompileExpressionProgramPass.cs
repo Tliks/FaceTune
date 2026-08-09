@@ -189,7 +189,7 @@ internal sealed class ConditionCompiler
             current = current.parent;
         }
 
-        if (component.ConditionEnabled) yield return component.Condition;
+        if (component.HasCondition) yield return component.Condition;
     }
 
     private DnfCondition ResolveCondition(Condition condition)

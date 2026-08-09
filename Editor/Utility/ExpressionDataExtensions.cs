@@ -110,7 +110,7 @@ internal static class ExpressionDataExtensions
         }
     }
 
-    public static IEnumerable<ExpressionData> EnumerateDataGraph(this Component owner, ComputeContext? context = null)
+    public static IEnumerable<FacialBlendShapeData> EnumerateDataGraph(this Component owner, ComputeContext? context = null)
     {
         if (owner is not IHasExpressionData source) yield break;
 
@@ -122,7 +122,7 @@ internal static class ExpressionDataExtensions
             yield return data;
     }
 
-    private static IEnumerable<ExpressionData> EnumerateDataGraph(
+    private static IEnumerable<FacialBlendShapeData> EnumerateDataGraph(
         IHasExpressionData source,
         Component owner,
         HashSet<IHasExpressionData> resolving,

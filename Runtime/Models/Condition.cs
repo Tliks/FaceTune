@@ -2,14 +2,27 @@ using UnityEngine.Serialization;
 
 namespace Aoyon.FaceTune;
 
+/// <summary>親の条件だけを使うAlways、またはこのComponent自身のCondition。</summary>
+[Serializable]
+internal class ConditionSelection
+{
+    public enum Kind
+    {
+        Always,
+        Conditional
+    }
+
+    public Kind Mode = Kind.Conditional;
+    public Condition Condition = new();
+}
+
+/// <summary>Casesのいずれかが成立すれば成立する条件。</summary>
 [Serializable]
 internal class Condition
 {
-    public bool Always = false;
-
     public List<ConditionCase> Cases = new();
 
-    public bool IsEmpty => !Always && Cases.Count == 0;
+    public bool IsEmpty => Cases.Count == 0;
 
     public Condition()
     {
@@ -17,11 +30,11 @@ internal class Condition
 
     public Condition(params ConditionCase[] conditionCases)
     {
-        Always = false;
         Cases.AddRange(conditionCases);
     }
 }
 
+/// <summary>ConditionsをANDする一つのcase。</summary>
 [Serializable]
 internal class ConditionCase
 {
@@ -94,6 +107,7 @@ internal enum MenuConditionMode
     LessThan
 }
 
+/// <summary>Menu parameterの割当後にParameterConditionへ解決するalias。</summary>
 [Serializable]
 internal sealed class MenuCondition : ConditionBase
 {

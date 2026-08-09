@@ -62,7 +62,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     private static void ProcessDirectMenuSettings(GameObject root)
     {
         var expressions = root.GetComponentsInChildren<ExpressionComponent>(true)
-            .Where(expression => expression.DirectMenuEnabled)
+            .Where(expression => expression.EnableDirectMenu)
             .ToArray();
         
         if (expressions.Length == 0) return;
@@ -94,11 +94,11 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             menu.DefaultSelected = false;
             menu.ExclusiveToggleGroup.GroupName = GetDirectMenuExclusiveGroupName(original);
 
-            proxy.ConditionEnabled = true;
+            proxy.HasCondition = true;
             proxy.Condition = new Condition(ConditionCase.From(MenuCondition.Enabled(menu)));
             proxy.ExpressionSettings = original.ExpressionSettings;
             proxy.FacialSettings = original.FacialSettings;
-            proxy.Data.DataReference = original.transform;
+            proxy.FacialBlendShapes.DataReference = original.transform;
 
             if (FacialStyleContext.TryGetFacialStyle(original.gameObject, out var originalStyle))
             {
@@ -111,7 +111,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     private static void NormalizeMenuInstallContainers(GameObject root)
     {
         var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
-            .OfType<IHasMenuInstallSettings>()
+            .OfType<IHasMenuInstallContainer>()
             .ToArray();
         foreach (var source in sources)
         {
@@ -151,7 +151,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             }
             else if (source is ExpressionComponent ec && ec.Condition.IsEmpty)
             {
-                ec.ConditionEnabled = false;
+                ec.HasCondition = false;
             }
         }
     }
@@ -297,7 +297,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         }
     }
 
-    private static void FilterBlendShapeAnimations(ExpressionData data, Component owner, string bodyPath, AuthoringBuildSettings settings)
+    private static void FilterBlendShapeAnimations(FacialBlendShapeData data, Component owner, string bodyPath, AuthoringBuildSettings settings)
     {
         var animations = new List<BlendShapeWeightAnimation>();
         if (data.Clip != null)
@@ -310,7 +310,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     private static void FilterEyeBlinkSettings(EyeBlinkComponent component, AuthoringBuildSettings settings)
     {
-        if (component.ReferenceMode != SettingSourceMode.Direct) return;
+        if (component.ReferenceMode != SettingsSourceMode.Direct) return;
 
         component.Settings = component.Settings with
         {
@@ -323,7 +323,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
     private static void FilterAdvancedLipSyncSettings(LipSyncComponent component, AuthoringBuildSettings settings)
     {
-        if (component.ReferenceMode != SettingSourceMode.Direct) return;
+        if (component.ReferenceMode != SettingsSourceMode.Direct) return;
 
         var advancedSettings = component.AdvancedLipSyncSettings;
         component.AdvancedLipSyncSettings = advancedSettings with

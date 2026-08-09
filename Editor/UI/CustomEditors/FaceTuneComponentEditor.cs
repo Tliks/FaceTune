@@ -49,7 +49,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<Expres
 
     private FaceTuneSection CreateConditionSection()
     {
-        var enabled = serializedObject.FindProperty(nameof(ExpressionComponent.ConditionEnabled));
+        var enabled = serializedObject.FindProperty(nameof(ExpressionComponent.HasCondition));
         return CreateSection(
             "expression.condition.section.label",
             new ConditionSectionDrawer(
@@ -61,7 +61,7 @@ internal sealed class FaceTuneComponentEditor : FaceTuneSectionEditorBase<Expres
 
     private FaceTuneSection CreateDirectMenuSection()
     {
-        var enabled = serializedObject.FindProperty(nameof(ExpressionComponent.DirectMenuEnabled));
+        var enabled = serializedObject.FindProperty(nameof(ExpressionComponent.EnableDirectMenu));
         return CreateSection(
             "expression.directMenu.label",
             new DirectMenuSectionDrawer(

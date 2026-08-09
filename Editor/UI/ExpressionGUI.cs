@@ -17,7 +17,7 @@ internal sealed class ExpressionSectionDrawer : ISectionDrawer
         Component component,
         int targetCount,
         Func<ExpressionGUIOptions?>? optionsFactory = null,
-        Func<ExpressionData>? createDefaultData = null)
+        Func<FacialBlendShapeData>? createDefaultData = null)
     {
         _data = serializedObject.FindProperty(nameof(IHasExpressionData.Data));
         _serializedObject = serializedObject;
@@ -58,14 +58,14 @@ internal static class ExpressionGUI
     public static float GetContentHeight(SerializedProperty data)
     {
         var height = GUIHelper.LineHeight;
-        var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
+        var reference = data.FindPropertyRelative(nameof(FacialBlendShapeData.DataReference));
         if (reference.isExpanded)
         {
             height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
             height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
         }
 
-        var animations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        var animations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         height += GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(animations, AnimationListOptions);
         height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
         return height;
@@ -80,7 +80,7 @@ internal static class ExpressionGUI
     {
         var cursor = new Rect(position.x, position.y, position.width, GUIHelper.LineHeight);
         var data = serializedObject.FindProperty(nameof(IHasExpressionData.Data));
-        var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
+        var reference = data.FindPropertyRelative(nameof(FacialBlendShapeData.DataReference));
 
         reference.isExpanded = GUIHelper.DrawFoldout(
             cursor,
@@ -99,7 +99,7 @@ internal static class ExpressionGUI
         }
 
         cursor.NewLine();
-        var animations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        var animations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         cursor.height = GUIHelper.GetListHeight(animations, AnimationListOptions);
         GUIHelper.DrawList(
             cursor,
@@ -119,10 +119,10 @@ internal static class ExpressionGUI
 
     internal static void InitializeExpansions(SerializedProperty data)
     {
-        var reference = data.FindPropertyRelative(nameof(ExpressionData.DataReference));
+        var reference = data.FindPropertyRelative(nameof(FacialBlendShapeData.DataReference));
         reference.isExpanded = HasExternalSource(data);
 
-        var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        var blendShapeAnimations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         blendShapeAnimations.isExpanded = true;
     }
 
@@ -142,8 +142,8 @@ internal static class ExpressionGUI
         Component component,
         int targetCount)
     {
-        var clip = data.FindPropertyRelative(nameof(ExpressionData.Clip));
-        var option = data.FindPropertyRelative(nameof(ExpressionData.ClipOption));
+        var clip = data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip));
+        var option = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption));
         var (labelPosition, valuePosition) = GUIHelper.SplitIndentedLabel(position);
         EditorGUI.LabelField(labelPosition, "expression.clip.label".LG());
         var fields = valuePosition;
@@ -253,13 +253,13 @@ internal static class ExpressionEditorActions
             source.Data.ClipOption,
             animations,
             context.BodyPath);
-        var blendShapeAnimations = data.FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+        var blendShapeAnimations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         ExpressionGUI.MergeBlendShapeAnimations(
             blendShapeAnimations,
             animations,
             overwriteExisting: false);
         blendShapeAnimations.isExpanded = true;
-        data.FindPropertyRelative(nameof(ExpressionData.Clip)).objectReferenceValue = null;
+        data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
     }
 
     public static void OpenEditor(Component component)

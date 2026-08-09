@@ -69,7 +69,7 @@ internal record AvatarContext(
             var settingsComponent = settingsComponents[0];
             var faceObject = context.Observe(
                 settingsComponent,
-                c => c.Settings.FaceObjectReference.Get(c),
+                c => c.FaceObjectReference.Get(c),
                 (a, b) => a == b).DestroyedAsNull();
             faceRenderer = faceObject != null
                 ? context.GetComponent<SkinnedMeshRenderer>(faceObject).DestroyedAsNull()

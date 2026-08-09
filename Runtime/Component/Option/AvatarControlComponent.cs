@@ -5,16 +5,25 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Avatar Control";
 
-        // Each list is an independent 0..1 slot. Different controls may coexist.
-        public List<MmdSupportControl> MmdSupport = new();
-        public List<DisableEyeBlinkControl> DisableEyeBlink = new();
-        public List<DisableLipSyncControl> DisableLipSync = new();
-        public List<LockFacialControl> LockFacial = new();
+        public enum Kind
+        {
+            LockFacial,
+            DisableEyeBlink,
+            DisableLipSync,
+            SupportMMD
+        }
+
+        public Kind ControlKind = Kind.LockFacial;
+
+        // SupportMMD
+        public MMDSupportSettings MMD = new();
+
+        // for All kind
+        public ConditionSelection Condition = new();
 
         IEnumerable<Condition> IHasConditions.Conditions
-            => MmdSupport.Select(control => control.DisableWhen)
-                .Concat(DisableEyeBlink.Select(control => control.DisableWhen))
-                .Concat(DisableLipSync.Select(control => control.DisableWhen))
-                .Concat(LockFacial.Select(control => control.LockWhen));
+            => Condition.Mode == ConditionSelection.Kind.Conditional
+                ? new[] { Condition.Condition }
+                : Array.Empty<Condition>();
     }
 }

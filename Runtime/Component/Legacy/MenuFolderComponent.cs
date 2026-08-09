@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune
 {
     [DisallowMultipleComponent]
     [AddComponentMenu(LegacyMenuPathPrefix + ComponentName)]
-    internal class MenuFolderComponent : FaceTuneTagComponent, IHasMenuInstallSettings
+    internal class MenuFolderComponent : FaceTuneTagComponent, IHasMenuInstallContainer
     {
         internal const string ComponentName = ComponentNamePrefix + "Menu Folder";
 
@@ -10,6 +10,6 @@ namespace Aoyon.FaceTune
 
         internal static MenuSettings CreateDefaultMenu() => new();
 
-        MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => Menu.InstallSettings;
+        MenuInstallSettings? IHasMenuInstallContainer.InstallSettings => Menu.InstallSettings;
     }
 }

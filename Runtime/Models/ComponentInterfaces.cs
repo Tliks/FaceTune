@@ -5,18 +5,24 @@ internal interface IHasObjectReferences
     void ResolveReferences();
 }
 
+/// <summary>このComponentで有効になっている条件。</summary>
 internal interface IHasConditions
 {
     IEnumerable<Condition> Conditions { get; }
 }
 
-
-internal interface IHasExpressionData
+/// <summary>値を直接持つか、指定Transform上の同種設定を参照する設定。</summary>
+internal interface ISettingsSource<out TValue>
+    where TValue : class
 {
-    ExpressionData Data { get; }
+    SettingsSourceMode SourceMode { get; }
+    Transform? Source { get; }
+    TValue Direct { get; }
 }
 
-internal interface IHasMenuInstallSettings
+/// <summary>Transformから参照できる同種のExpression設定。</summary>
+internal interface IReferenceableExpressionSettings<TSource>
+    where TSource : class
 {
-    MenuInstallSettings? InstallSettings { get; }
+    TSource? SettingsSource { get; }
 }

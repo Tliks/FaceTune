@@ -126,7 +126,7 @@ internal abstract class ExpressionDataTargetingBase<T> : IShapesEditorTargeting<
         var animations = result.ToBlendShapeAnimations().ToList();
         var getProperty = (SerializedObject so) => so
             .FindProperty(nameof(IHasExpressionData.Data))
-            .FindPropertyRelative(nameof(ExpressionData.BlendShapeAnimations));
+            .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         var serializedObject = new SerializedObject(Target);
         serializedObject.Update();
         var blendShapeAnimations = getProperty(serializedObject);

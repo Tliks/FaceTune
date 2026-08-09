@@ -48,7 +48,7 @@ internal sealed class EyeBlinkSectionDrawer : ISectionDrawer
     public float GetHeight()
     {
         var height = GUIHelper.LineHeight;
-        if (_referenceMode.hasMultipleDifferentValues || _referenceMode.enumValueIndex == (int)SettingSourceMode.Reference)
+        if (_referenceMode.hasMultipleDifferentValues || _referenceMode.enumValueIndex == (int)SettingsSourceMode.Reference)
             return height + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
 
         height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
@@ -62,8 +62,8 @@ internal sealed class EyeBlinkSectionDrawer : ISectionDrawer
 
     public void Draw(Rect position)
     {
-        GUIHelper.DrawLocalizedEnum(ref position, _referenceMode, "eyeBlink.configuration.label", nameof(SettingSourceMode));
-        if (_referenceMode.hasMultipleDifferentValues || _referenceMode.enumValueIndex == (int)SettingSourceMode.Reference)
+        GUIHelper.DrawLocalizedEnum(ref position, _referenceMode, "eyeBlink.configuration.label", nameof(SettingsSourceMode));
+        if (_referenceMode.hasMultipleDifferentValues || _referenceMode.enumValueIndex == (int)SettingsSourceMode.Reference)
         {
             GUIHelper.DrawProperty(ref position, _reference, "eyeBlink.component.label");
             return;

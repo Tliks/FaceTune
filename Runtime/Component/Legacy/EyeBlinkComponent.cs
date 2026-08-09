@@ -7,14 +7,14 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "EyeBlink";
 
-        public SettingSourceMode ReferenceMode = DefaultReferenceMode;
+        public SettingsSourceMode ReferenceMode = DefaultReferenceMode;
         public EyeBlinkComponent? Reference = null;
         public EyeBlinkSettings Settings = CreateDefaultSettings();
 
         [Obsolete("Use Settings instead.")]
         public AdvancedEyeBlinkSettings AdvancedEyeBlinkSettings = new();
 
-        internal const SettingSourceMode DefaultReferenceMode = SettingSourceMode.Direct;
+        internal const SettingsSourceMode DefaultReferenceMode = SettingsSourceMode.Direct;
         internal static EyeBlinkSettings CreateDefaultSettings() => new();
 
     }
