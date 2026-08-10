@@ -21,8 +21,8 @@ internal interface ISettingsSource<out TValue>
 }
 
 /// <summary>Transformから参照できる同種のExpression設定。</summary>
-internal interface IReferenceableExpressionSettings<TSource>
-    where TSource : class
+internal interface IReferenceableExpressionSettings<TValue>
+    where TValue : class
 {
-    TSource? SettingsSource { get; }
+    ISettingsSource<TValue>? SettingsSource { get; }
 }

@@ -4,10 +4,10 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPathPrefix + ComponentName)]
     internal class ExpressionComponent : FaceTuneTagComponent,
         IHasConditions,
-        IReferenceableExpressionSettings<FacialBlendShapeDataSource>,
-        IReferenceableExpressionSettings<EyeBlinkSettingsSource>,
-        IReferenceableExpressionSettings<LipSyncSettingsSource>,
-        IReferenceableExpressionSettings<ParameterDriverSettingsSource>
+        IReferenceableExpressionSettings<FacialBlendShapeData>,
+        IReferenceableExpressionSettings<EyeBlinkSettings>,
+        IReferenceableExpressionSettings<LipSyncSettings>,
+        IReferenceableExpressionSettings<ParameterDriverSettings>
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
@@ -58,16 +58,16 @@ namespace Aoyon.FaceTune
                 ? new[] { Condition.Condition }
                 : Array.Empty<Condition>();
 
-        FacialBlendShapeDataSource? IReferenceableExpressionSettings<FacialBlendShapeDataSource>.SettingsSource
+        ISettingsSource<FacialBlendShapeData>? IReferenceableExpressionSettings<FacialBlendShapeData>.SettingsSource
             => FacialBlendShapes;
 
-        EyeBlinkSettingsSource? IReferenceableExpressionSettings<EyeBlinkSettingsSource>.SettingsSource
+        ISettingsSource<EyeBlinkSettings>? IReferenceableExpressionSettings<EyeBlinkSettings>.SettingsSource
             => HasEyeBlink ? EyeBlink : null;
 
-        LipSyncSettingsSource? IReferenceableExpressionSettings<LipSyncSettingsSource>.SettingsSource
+        ISettingsSource<LipSyncSettings>? IReferenceableExpressionSettings<LipSyncSettings>.SettingsSource
             => HasLipSync ? LipSync : null;
 
-        ParameterDriverSettingsSource? IReferenceableExpressionSettings<ParameterDriverSettingsSource>.SettingsSource
+        ISettingsSource<ParameterDriverSettings>? IReferenceableExpressionSettings<ParameterDriverSettings>.SettingsSource
             => HasParameterDriver ? ParameterDriver : null;
     }
 }

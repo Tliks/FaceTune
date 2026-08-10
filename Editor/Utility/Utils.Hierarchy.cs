@@ -26,9 +26,13 @@ internal static partial class Utils
         return result != null;
     }
 
-    public static bool TryGetComponentInParent<T>(this Component component, bool includeInactive, [NotNullWhen(true)] out T? result) where T : Component
+    /// <summary>自身のGameObjectを除く親からComponentを取得する。</summary>
+    public static T[] GetComponentsInParentExcludingSelf<T>(this Component component, bool includeInactive)
+        where T : Component
     {
-        return TryGetComponentInParent<T>(component.gameObject, includeInactive, out result);
+        return component.transform.parent is { } parent
+            ? parent.GetComponentsInParent<T>(includeInactive)
+            : Array.Empty<T>();
     }
 
     public static TComponent EnsureComponent<TComponent>(this GameObject gameObject) where TComponent : Component

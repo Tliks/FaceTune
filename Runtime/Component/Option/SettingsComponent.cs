@@ -4,23 +4,23 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal sealed class SettingsComponent : FaceTuneTagComponent,
         IHasConditions,
-        IReferenceableExpressionSettings<FacialBlendShapeDataSource>,
-        IReferenceableExpressionSettings<EyeBlinkSettingsSource>,
-        IReferenceableExpressionSettings<LipSyncSettingsSource>,
-        IReferenceableExpressionSettings<ParameterDriverSettingsSource>
+        IReferenceableExpressionSettings<FacialBlendShapeData>,
+        IReferenceableExpressionSettings<EyeBlinkSettings>,
+        IReferenceableExpressionSettings<LipSyncSettings>,
+        IReferenceableExpressionSettings<ParameterDriverSettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
 
-        // このGameObject自身と配下のExpressionへ、親側から順に重ねる。
+        // このGameObjectより下のExpressionへ、親側から順に重ねる。
         public bool HasFacialBlendShapes = false;
         public FacialBlendShapeDataSource FacialBlendShapes = new();
         public bool ApplyToRenderer = false;
 
-        // Menuと、選択中だけこのGameObject自身と配下を有効にする条件の組。
+        // Menuと、選択中だけこのGameObjectより下を有効にする条件の組。
         public bool ExpressionSetEnabled = false;
         public ExpressionSetSettings ExpressionSet = new();
 
-        // このGameObject自身と配下にあるExpressionの通常条件へANDする。
+        // このGameObjectより下にあるExpressionの通常条件へANDする。
         public bool HasCondition = false;
         public Condition Condition = new();
 
@@ -47,16 +47,16 @@ namespace Aoyon.FaceTune
                 ? new[] { Condition }
                 : Array.Empty<Condition>();
 
-        FacialBlendShapeDataSource? IReferenceableExpressionSettings<FacialBlendShapeDataSource>.SettingsSource
+        ISettingsSource<FacialBlendShapeData>? IReferenceableExpressionSettings<FacialBlendShapeData>.SettingsSource
             => HasFacialBlendShapes ? FacialBlendShapes : null;
 
-        EyeBlinkSettingsSource? IReferenceableExpressionSettings<EyeBlinkSettingsSource>.SettingsSource
+        ISettingsSource<EyeBlinkSettings>? IReferenceableExpressionSettings<EyeBlinkSettings>.SettingsSource
             => HasEyeBlink ? EyeBlink : null;
 
-        LipSyncSettingsSource? IReferenceableExpressionSettings<LipSyncSettingsSource>.SettingsSource
+        ISettingsSource<LipSyncSettings>? IReferenceableExpressionSettings<LipSyncSettings>.SettingsSource
             => HasLipSync ? LipSync : null;
 
-        ParameterDriverSettingsSource? IReferenceableExpressionSettings<ParameterDriverSettingsSource>.SettingsSource
+        ISettingsSource<ParameterDriverSettings>? IReferenceableExpressionSettings<ParameterDriverSettings>.SettingsSource
             => HasParameterDriver ? ParameterDriver : null;
     }
 }

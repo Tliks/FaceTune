@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune
     [DisallowMultipleComponent]
     [AddComponentMenu(LegacyMenuPathPrefix + ComponentName)]
     internal class StyleComponent : FaceTuneTagComponent,
-        IReferenceableExpressionSettings<FacialBlendShapeDataSource>
+        IReferenceableExpressionSettings<FacialBlendShapeData>
     {
         internal const string ComponentName = ComponentNamePrefix + "Style";
 
@@ -15,7 +15,7 @@ namespace Aoyon.FaceTune
 
         [Obsolete] public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
-        FacialBlendShapeDataSource? IReferenceableExpressionSettings<FacialBlendShapeDataSource>.SettingsSource
+        ISettingsSource<FacialBlendShapeData>? IReferenceableExpressionSettings<FacialBlendShapeData>.SettingsSource
             => Data;
 
     }
