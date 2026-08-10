@@ -5,72 +5,57 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class MenuComponentEditor : FaceTuneSectionEditorBase<MenuComponent>
 {
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
-        => new[] { CreateMenuSection() };
-
-    private FaceTuneSection CreateMenuSection()
-        => CreateSection("menu.section.label", new MenuSectionDrawer(serializedObject), defaultExpanded: false);
+        => new[] { CreateSection("menu.section.label", new MenuSectionDrawer(serializedObject), defaultExpanded: false) };
 }
 
 internal sealed class MenuSectionDrawer : ISectionDrawer
 {
-    private const float ModeSpacing = 10f;
     private readonly PropertiesSectionDrawer _menuSettings;
     private readonly SerializedProperty _kind;
-    private readonly SerializedProperty _group;
-    private readonly SerializedProperty _parameter;
-    private readonly SerializedProperty _floatDefaultValue;
-    private readonly SerializedProperty _defaultSelected;
-    private bool _parameterSettingsExpanded;
+    private readonly SerializedProperty _binding;
+    private readonly SerializedProperty _name;
+    private readonly SerializedProperty _initialValue;
+    private readonly SerializedProperty _selectedValue;
 
     public MenuSectionDrawer(SerializedObject serializedObject)
     {
         _menuSettings = new PropertiesSectionDrawer(new PropertiesSectionDrawer.Entry(
             serializedObject.FindProperty(nameof(MenuComponent.Menu))));
-        _kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
-        _group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
-        _parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
-        _floatDefaultValue = serializedObject.FindProperty(nameof(MenuComponent.FloatDefaultValue));
-        _defaultSelected = serializedObject.FindProperty(nameof(MenuComponent.DefaultSelected));
+        _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
+        _binding = serializedObject.FindProperty(nameof(MenuComponent.Binding));
+        _name = serializedObject.FindProperty(nameof(MenuComponent.Name));
+        _initialValue = serializedObject.FindProperty(nameof(MenuComponent.InitialValue));
+        _selectedValue = serializedObject.FindProperty(nameof(MenuComponent.SelectedValue));
     }
 
     public float GetHeight()
     {
-        var height = _menuSettings.GetHeight() + ModeSpacing + GUIHelper.PropertyHeight(_kind) + GUIHelper.LineHeight;
-        if (!_parameterSettingsExpanded) return height;
-        var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
-        var isToggle = IsMode((int)MenuItemKind.Toggle);
-        var isFloat = IsMode((int)MenuItemKind.Radial);
-        var parameterVisible = !IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue);
-        var childHeight = 0f;
-        var childCount = 0;
-        if (isToggle) { childHeight += EditorGUI.GetPropertyHeight(_group, true); childCount++; }
-        if (parameterVisible) { childHeight += GUIHelper.LineHeight; childCount++; }
-        if (isFloat) { childHeight += EditorGUI.GetPropertyHeight(_floatDefaultValue, true); childCount++; }
-        if (isToggle) { childHeight += EditorGUI.GetPropertyHeight(_defaultSelected, true); childCount++; }
-        return height + GUIHelper.VerticalSpacing + childHeight + GUIHelper.VerticalSpacing * Mathf.Max(0, childCount - 1);
+        var height = _menuSettings.GetHeight() + GUIHelper.PropertyHeight(_kind);
+        if (IsFolder()) return height;
+        height += GUIHelper.PropertyHeight(_binding);
+        height += GUIHelper.PropertyHeight(_name);
+        if (!IsExisting()) height += GUIHelper.PropertyHeight(_initialValue);
+        if (IsToggle() && !IsGroup()) height += GUIHelper.PropertyHeight(_selectedValue);
+        return height;
     }
 
     public void Draw(Rect position)
     {
         _menuSettings.Draw(position);
-        position.y += _menuSettings.GetHeight() + ModeSpacing;
+        position.y += _menuSettings.GetHeight();
         GUIHelper.DrawProperty(ref position, _kind, "menu.mode.label");
-        position.height = GUIHelper.LineHeight;
-        _parameterSettingsExpanded = GUIHelper.DrawFoldout(position, _parameterSettingsExpanded, "menu.options.label".LG());
-        if (!_parameterSettingsExpanded) return;
+        if (IsFolder()) return;
+
+        GUIHelper.DrawProperty(ref position, _binding, "menu.binding.label");
+        var nameLabel = IsGroup() ? "Group Name" : "Parameter Name";
+        EditorGUI.PropertyField(position, _name, new GUIContent(nameLabel));
         position.NewLine();
-        var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
-        var isToggle = IsMode((int)MenuItemKind.Toggle);
-        var isFloat = IsMode((int)MenuItemKind.Radial);
-        if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _group, "menu.group.label");
-        if (!IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue))
-        {
-            GUIHelper.DrawPlaceholderTextField(position, _parameter, "menu.parameterName.label".LG(), "menu.parameterName.auto.placeholder".LG(), indentLabel: true);
-            position.NewLine();
-        }
-        if (isFloat) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _floatDefaultValue, "menu.floatDefaultValue.label");
-        if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _defaultSelected, "menu.defaultSelected.label");
+        if (!IsExisting()) GUIHelper.DrawProperty(ref position, _initialValue, "Initial Value");
+        if (IsToggle() && !IsGroup()) GUIHelper.DrawProperty(ref position, _selectedValue, "Selected Value");
     }
 
-    private bool IsMode(int value) => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == value;
+    private bool IsFolder() => !_kind.hasMultipleDifferentValues && _kind.enumValueIndex == (int)MenuComponent.Kind.Folder;
+    private bool IsToggle() => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == (int)MenuComponent.Kind.Toggle;
+    private bool IsGroup() => !_binding.hasMultipleDifferentValues && _binding.enumValueIndex == (int)MenuComponent.ParameterBinding.GenerateGroup;
+    private bool IsExisting() => !_binding.hasMultipleDifferentValues && _binding.enumValueIndex == (int)MenuComponent.ParameterBinding.Existing;
 }

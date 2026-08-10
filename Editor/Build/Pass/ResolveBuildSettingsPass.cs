@@ -9,7 +9,7 @@ internal class ResolveBuildSettingsPass : FaceTunePass<ResolveBuildSettingsPass>
     {
         var authoring = context.RequireAuthoringSettings();
         var root = context.AvatarContext.Root;
-        var compiler = new ConditionCompiler(root, context.PlatformSupport, authoring.ParameterDomains);
+        var compiler = new ConditionCompiler(context.PlatformSupport, authoring.ParameterDomains);
 
         var mmdSupport = FindSingle<MMDSupportComponent>(root, "Log:warning:CollectBuildSettingsPass:MultipleMMDSupportComponent").DestroyedAsNull();
         var eyeBlink = FindSingle<DisableEyeBlinkComponent>(root, "Log:warning:CollectBuildSettingsPass:MultipleDisableEyeBlinkComponent").DestroyedAsNull();

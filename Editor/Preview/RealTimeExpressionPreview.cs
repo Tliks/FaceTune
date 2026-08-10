@@ -36,7 +36,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
         ExpressionComponent? target = null;
         foreach (var component in components)
         {
-            var enabled = context.Observe(component, c => c.EnableRealTimePreview, (a, b) => a == b);
+            var enabled = context.Observe(component, c => c.AlwaysOnPreviewEnabled, (a, b) => a == b);
             if (!enabled) continue;
             var isEditorOnly = context.EditorOnlyInHierarchy(component.gameObject);
             if (isEditorOnly) continue;
@@ -75,22 +75,8 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
     private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, ExpressionComponent target, GameObject root, string bodyPath)
     {
-        using var _3 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
-        FacialStyleContext.TryGetFacialStyleAnimations(target.gameObject, facialStyleAnimations, root, bodyPath, context);
-        result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
-
-        using var _4 = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
-        target.GetAnimations(animations, bodyPath, context);
+        using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
+        new FaceTuneResolver(root, context).FacialData.Add(target, animations, bodyPath);
         result.AddRange(animations.ToFirstFrameBlendShapes());
-
-        animations.Clear();
-        using var _5 = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
-        context.GetComponentsInChildren<ExpressionDataComponent>(target.gameObject, true, dataComponents);
-        foreach (var dataComponent in dataComponents)
-        {
-            dataComponent.GetAnimations(animations, bodyPath, context);
-            result.AddRange(animations.ToFirstFrameBlendShapes());
-            animations.Clear();
-        }
     }
 }

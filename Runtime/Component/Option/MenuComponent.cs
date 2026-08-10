@@ -13,20 +13,29 @@ namespace Aoyon.FaceTune
             Folder
         }
 
-        public Kind MenuKind = Kind.Toggle;
+        public enum ParameterBinding
+        {
+            Generate,
+            GenerateGroup,
+            Existing
+        }
 
-        // Toggle, Radial, Folderの表示とinstall先。
+        public Kind MenuKind = Kind.Toggle;
         public MenuSettings Menu = new();
 
-        // Toggle
-        [ExclusiveToggleMenuGroup]
-        public string ExclusiveToggleGroup = string.Empty;
-        public bool DefaultSelected = false;
+        // Folder以外で使用する。
+        public ParameterBinding Binding = ParameterBinding.Generate;
 
-        // Radial
+        // Generate: 空なら自動命名、非空なら生成parameter名。
+        // GenerateGroup: group名。
+        // Existing: 既存parameter名。
+        public string Name = string.Empty;
+
         [Range(0f, 1f)]
-        public float FloatDefaultValue = 0f;
+        public float InitialValue;
 
-        public string ParameterName = string.Empty;
+        // Toggleの選択状態を表すparameter値。
+        // GenerateGroupではNormalizeで割り当てる。
+        public float SelectedValue = 1f;
     }
 }

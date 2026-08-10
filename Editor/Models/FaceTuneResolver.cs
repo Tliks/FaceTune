@@ -8,11 +8,11 @@ internal sealed class FaceTuneResolver
     private readonly ComputeContext? _context;
     private FaceTuneConditionResolver? _conditions;
     private FaceTuneFacialDataResolver? _facialData;
-    private FaceTuneEyeBlinkResolver? _eyeBlink;
-    private FaceTuneLipSyncResolver? _lipSync;
-    private FaceTuneTransitionResolver? _transition;
-    private FaceTunePriorityResolver? _priority;
-    private FaceTuneParameterDriverResolver? _parameterDrivers;
+    private FaceTuneScopedResolver<EyeBlinkSettings>? _eyeBlink;
+    private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
+    private FaceTuneScopedResolver<TransitionSettings>? _transition;
+    private FaceTuneScopedResolver<PrioritySettings>? _priority;
+    private FaceTuneScopedResolver<ParameterDriverSettings>? _parameterDrivers;
     private FaceTuneSettingsSourceResolver? _settingsSources;
     private FaceTuneMenuResolver? _menus;
 
@@ -25,19 +25,42 @@ internal sealed class FaceTuneResolver
     public FaceTuneSettingsSourceResolver SettingsSources
         => _settingsSources ??= new FaceTuneSettingsSourceResolver();
 
-    public FaceTuneEyeBlinkResolver EyeBlink => _eyeBlink ??= new FaceTuneEyeBlinkResolver(SettingsSources);
+    public FaceTuneScopedResolver<EyeBlinkSettings> EyeBlink => _eyeBlink ??= new(
+        setting => setting.HasEyeBlink && SettingsSources.TryResolve(setting.EyeBlink, setting, out var value) ? value : null,
+        expression => expression.HasEyeBlink && SettingsSources.TryResolve(expression.EyeBlink, expression, out var value) ? value : null,
+        static () => new EyeBlinkSettings(),
+        static (_, next) => next);
 
-    public FaceTuneLipSyncResolver LipSync => _lipSync ??= new FaceTuneLipSyncResolver(SettingsSources);
+    public FaceTuneScopedResolver<LipSyncSettings> LipSync => _lipSync ??= new(
+        setting => setting.HasLipSync && SettingsSources.TryResolve(setting.LipSync, setting, out var value) ? value : null,
+        expression => expression.HasLipSync && SettingsSources.TryResolve(expression.LipSync, expression, out var value) ? value : null,
+        static () => new LipSyncSettings(),
+        static (_, next) => next);
 
-    public FaceTuneTransitionResolver Transition => _transition ??= new FaceTuneTransitionResolver();
+    public FaceTuneScopedResolver<TransitionSettings> Transition => _transition ??= new(
+        setting => setting.HasTransition ? setting.Transition : null,
+        expression => expression.HasTransition ? expression.Transition : null,
+        static () => new TransitionSettings(),
+        static (_, next) => next);
 
-    public FaceTunePriorityResolver Priority => _priority ??= new FaceTunePriorityResolver();
+    public FaceTuneScopedResolver<PrioritySettings> Priority => _priority ??= new(
+        setting => setting.HasPriority ? setting.Priority : null,
+        expression => expression.HasPriority ? expression.Priority : null,
+        static () => new PrioritySettings(),
+        static (_, next) => next);
 
-    public FaceTuneParameterDriverResolver ParameterDrivers
-        => _parameterDrivers ??= new FaceTuneParameterDriverResolver(SettingsSources);
+    public FaceTuneScopedResolver<ParameterDriverSettings> ParameterDrivers => _parameterDrivers ??= new(
+        setting => setting.HasParameterDriver && SettingsSources.TryResolve(setting.ParameterDriver, setting, out var value) ? value : null,
+        expression => expression.HasParameterDriver && SettingsSources.TryResolve(expression.ParameterDriver, expression, out var value) ? value : null,
+        static () => new ParameterDriverSettings(),
+        static (current, next) =>
+        {
+            current.Entries.AddRange(next.Entries);
+            return current;
+        });
 
     public FaceTuneMenuResolver Menus
-        => _menus ??= new FaceTuneMenuResolver();
+        => _menus ??= new FaceTuneMenuResolver(_root);
 
     public FaceTuneResolver(GameObject root, ComputeContext? context = null)
     {
@@ -48,10 +71,9 @@ internal sealed class FaceTuneResolver
 
 internal sealed class FaceTuneConditionResolver
 {
-    public IEnumerable<(SettingsComponent Source, Condition Value)> Enumerate(Transform target)
+    public IEnumerable<(SettingsComponent Owner, Condition Value)> EnumerateIncoming(Component target)
     {
         var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-
         for (var i = settings.Length - 1; i >= 0; i--)
         {
             if (settings[i].HasCondition)
@@ -59,11 +81,24 @@ internal sealed class FaceTuneConditionResolver
         }
     }
 
-    public IEnumerable<(SettingsComponent Source, ExpressionSetSettings Value)> EnumerateExpressionSets(
-        Transform target)
+    public IEnumerable<(Component Owner, Condition Value)> Enumerate(ExpressionComponent expression)
+    {
+        foreach (var (owner, value) in EnumerateIncoming(expression))
+            yield return (owner, value);
+        if (expression.HasCondition && expression.Condition.Mode == ConditionSelection.Kind.Conditional)
+            yield return (expression, expression.Condition.Condition);
+    }
+
+    public DnfCondition Resolve(ExpressionComponent expression, Func<Condition, DnfCondition> resolve)
+    {
+        if (!expression.HasCondition)
+            return DnfCondition.Never;
+        return DnfCondition.All(Enumerate(expression).Select(item => resolve(item.Value)));
+    }
+
+    public IEnumerable<(SettingsComponent Owner, ExpressionSetSettings Value)> EnumerateIncomingExpressionSets(Component target)
     {
         var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-
         for (var i = settings.Length - 1; i >= 0; i--)
         {
             if (settings[i].ExpressionSetEnabled)
@@ -116,28 +151,24 @@ internal sealed class FaceTuneFacialDataResolver
         }
     }
 
-    public BlendShapeWeightAnimationSet Get(ExpressionComponent expression, string bodyPath)
+    public void Add(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
     {
-        var result = new BlendShapeWeightAnimationSet();
         foreach (var (_, value) in Enumerate(expression))
-            AppendAnimations(value, result, bodyPath);
-        return result;
+            AddAnimations(value, result, bodyPath);
     }
 
-    public BlendShapeWeightAnimationSet GetRenderer(string bodyPath)
+    public void AddRenderer(ICollection<BlendShapeWeightAnimation> result, string bodyPath)
     {
-        var result = new BlendShapeWeightAnimationSet();
         foreach (var settings in _context.GetComponentsInChildren<SettingsComponent>(_root, true))
         {
             var owner = _context.Observe(settings);
             if (owner.HasFacialBlendShapes && owner.ApplyToRenderer
                 && _sources.TryResolve(owner.FacialBlendShapes, owner, out var value, component => _context.Observe(component)))
-                AppendAnimations(value, result, bodyPath);
+                AddAnimations(value, result, bodyPath);
         }
-        return result;
     }
 
-    private static void AppendAnimations(FacialBlendShapeData data, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+    private static void AddAnimations(FacialBlendShapeData data, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
     {
         if (data.Clip is { } clip)
             clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
@@ -147,239 +178,73 @@ internal sealed class FaceTuneFacialDataResolver
     }
 }
 
-internal sealed class FaceTuneEyeBlinkResolver
+internal sealed class FaceTuneScopedResolver<TValue> where TValue : class
 {
-    private readonly FaceTuneSettingsSourceResolver _sources;
+    private readonly Func<SettingsComponent, TValue?> _getSettings;
+    private readonly Func<ExpressionComponent, TValue?> _getExpression;
+    private readonly Func<TValue> _getDefault;
+    private readonly Func<TValue, TValue, TValue> _merge;
 
-    internal FaceTuneEyeBlinkResolver(FaceTuneSettingsSourceResolver sources) => _sources = sources;
+    internal FaceTuneScopedResolver(
+        Func<SettingsComponent, TValue?> getSettings,
+        Func<ExpressionComponent, TValue?> getExpression,
+        Func<TValue> getDefault,
+        Func<TValue, TValue, TValue> merge)
+    {
+        _getSettings = getSettings;
+        _getExpression = getExpression;
+        _getDefault = getDefault;
+        _merge = merge;
+    }
 
-    public IEnumerable<(SettingsComponent Owner, EyeBlinkSettings Value)> EnumerateIncoming(Component target)
+    public IEnumerable<(SettingsComponent Owner, TValue Value)> EnumerateIncoming(Component target)
     {
         var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
         for (var i = settings.Length - 1; i >= 0; i--)
         {
             var owner = settings[i];
-            if (owner.HasEyeBlink && _sources.TryResolve(owner.EyeBlink, owner, out var value))
+            if (_getSettings(owner) is { } value)
                 yield return (owner, value);
         }
     }
 
-    public IEnumerable<(Component Owner, EyeBlinkSettings Value)> Enumerate(ExpressionComponent expression)
+    public IEnumerable<(Component Owner, TValue Value)> Enumerate(ExpressionComponent expression)
     {
         foreach (var (owner, incomingValue) in EnumerateIncoming(expression))
             yield return (owner, incomingValue);
-        if (expression.HasEyeBlink && _sources.TryResolve(expression.EyeBlink, expression, out var value))
+        if (_getExpression(expression) is { } value)
             yield return (expression, value);
     }
 
-    public EyeBlinkSettings GetIncoming(Component target, out SettingsComponent? owner)
+    public TValue GetIncoming(Component target) => GetIncoming(target, out _);
+
+    public TValue GetIncoming(Component target, out SettingsComponent? lastOwner)
     {
-        var value = new EyeBlinkSettings();
-        owner = null;
-        foreach (var (source, resolved) in EnumerateIncoming(target))
+        var value = _getDefault();
+        lastOwner = null;
+        foreach (var (owner, resolved) in EnumerateIncoming(target))
         {
-            owner = source;
-            value = resolved;
+            lastOwner = owner;
+            value = _merge(value, resolved);
         }
         return value;
     }
 
-    public EyeBlinkSettings Get(ExpressionComponent expression, out Component? owner)
+    public TValue Get(ExpressionComponent expression) => Get(expression, out _);
+
+    public TValue Get(ExpressionComponent expression, out Component? lastOwner)
     {
-        var value = new EyeBlinkSettings();
-        owner = null;
-        foreach (var (source, resolved) in Enumerate(expression))
+        var value = _getDefault();
+        lastOwner = null;
+        foreach (var (owner, resolved) in Enumerate(expression))
         {
-            owner = source;
-            value = resolved;
-        }
-        return value;
-    }
-}
-
-internal sealed class FaceTuneLipSyncResolver
-{
-    private readonly FaceTuneSettingsSourceResolver _sources;
-
-    internal FaceTuneLipSyncResolver(FaceTuneSettingsSourceResolver sources) => _sources = sources;
-
-    public IEnumerable<(SettingsComponent Owner, LipSyncSettings Value)> EnumerateIncoming(Component target)
-    {
-        var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-        for (var i = settings.Length - 1; i >= 0; i--)
-        {
-            var owner = settings[i];
-            if (owner.HasLipSync && _sources.TryResolve(owner.LipSync, owner, out var value))
-                yield return (owner, value);
-        }
-    }
-
-    public IEnumerable<(Component Owner, LipSyncSettings Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var (owner, incomingValue) in EnumerateIncoming(expression))
-            yield return (owner, incomingValue);
-        if (expression.HasLipSync && _sources.TryResolve(expression.LipSync, expression, out var value))
-            yield return (expression, value);
-    }
-
-    public LipSyncSettings GetIncoming(Component target, out SettingsComponent? owner)
-    {
-        var value = new LipSyncSettings();
-        owner = null;
-        foreach (var (source, resolved) in EnumerateIncoming(target))
-        {
-            owner = source;
-            value = resolved;
-        }
-        return value;
-    }
-
-    public LipSyncSettings Get(ExpressionComponent expression, out Component? owner)
-    {
-        var value = new LipSyncSettings();
-        owner = null;
-        foreach (var (source, resolved) in Enumerate(expression))
-        {
-            owner = source;
-            value = resolved;
+            lastOwner = owner;
+            value = _merge(value, resolved);
         }
         return value;
     }
 }
 
-internal sealed class FaceTuneTransitionResolver
-{
-    public IEnumerable<(SettingsComponent Owner, TransitionSettings Value)> EnumerateIncoming(Component target)
-    {
-        var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-        for (var i = settings.Length - 1; i >= 0; i--)
-        {
-            var owner = settings[i];
-            if (owner.HasTransition)
-                yield return (owner, owner.Transition);
-        }
-    }
-
-    public IEnumerable<(Component Owner, TransitionSettings Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var (owner, incomingValue) in EnumerateIncoming(expression))
-            yield return (owner, incomingValue);
-        if (expression.HasTransition)
-            yield return (expression, expression.Transition);
-    }
-
-    public TransitionSettings GetIncoming(Component target, out SettingsComponent? owner)
-    {
-        var value = new TransitionSettings();
-        owner = null;
-        foreach (var (source, resolved) in EnumerateIncoming(target))
-        {
-            owner = source;
-            value = resolved;
-        }
-        return value;
-    }
-
-    public TransitionSettings Get(ExpressionComponent expression, out Component? owner)
-    {
-        var value = new TransitionSettings();
-        owner = null;
-        foreach (var (source, resolved) in Enumerate(expression))
-        {
-            owner = source;
-            value = resolved;
-        }
-        return value;
-    }
-}
-
-internal sealed class FaceTunePriorityResolver
-{
-    public IEnumerable<(SettingsComponent Owner, PrioritySettings Value)> EnumerateIncoming(Component target)
-    {
-        var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-        for (var i = settings.Length - 1; i >= 0; i--)
-        {
-            var owner = settings[i];
-            if (owner.HasPriority)
-                yield return (owner, owner.Priority);
-        }
-    }
-
-    public IEnumerable<(Component Owner, PrioritySettings Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var (owner, incomingValue) in EnumerateIncoming(expression))
-            yield return (owner, incomingValue);
-        if (expression.HasPriority)
-            yield return (expression, expression.Priority);
-    }
-
-    public PrioritySettings GetIncoming(Component target, out SettingsComponent? owner)
-    {
-        var value = new PrioritySettings();
-        owner = null;
-        foreach (var (source, resolved) in EnumerateIncoming(target))
-        {
-            owner = source;
-            value = resolved;
-        }
-        return value;
-    }
-
-    public PrioritySettings Get(ExpressionComponent expression, out Component? owner)
-    {
-        var value = new PrioritySettings();
-        owner = null;
-        foreach (var (source, resolved) in Enumerate(expression))
-        {
-            owner = source;
-            value = resolved;
-        }
-        return value;
-    }
-}
-
-internal sealed class FaceTuneParameterDriverResolver
-{
-    private readonly FaceTuneSettingsSourceResolver _sources;
-
-    internal FaceTuneParameterDriverResolver(FaceTuneSettingsSourceResolver sources) => _sources = sources;
-
-    public IEnumerable<(SettingsComponent Owner, ParameterDriverSettings Value)> EnumerateIncoming(Component target)
-    {
-        var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-        for (var i = settings.Length - 1; i >= 0; i--)
-        {
-            var owner = settings[i];
-            if (owner.HasParameterDriver && _sources.TryResolve(owner.ParameterDriver, owner, out var value))
-                yield return (owner, value);
-        }
-    }
-
-    public IEnumerable<(Component Owner, ParameterDriverSettings Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var (owner, incomingValue) in EnumerateIncoming(expression))
-            yield return (owner, incomingValue);
-        if (expression.HasParameterDriver && _sources.TryResolve(expression.ParameterDriver, expression, out var value))
-            yield return (expression, value);
-    }
-
-    public ParameterDriverSettings GetIncoming(Component target)
-    {
-        var value = new ParameterDriverSettings();
-        foreach (var (_, resolved) in EnumerateIncoming(target))
-            value.Entries.AddRange(resolved.Entries);
-        return value;
-    }
-
-    public ParameterDriverSettings Get(ExpressionComponent expression)
-    {
-        var value = new ParameterDriverSettings();
-        foreach (var (_, resolved) in Enumerate(expression))
-            value.Entries.AddRange(resolved.Entries);
-        return value;
-    }
-}
 
 internal sealed class FaceTuneSettingsSourceResolver
 {
@@ -439,20 +304,32 @@ internal sealed class FaceTuneSettingsSourceResolver
 
 internal sealed class FaceTuneMenuResolver
 {
+    private readonly Transform _root;
+
+    internal FaceTuneMenuResolver(GameObject root) => _root = root.transform;
+
     public IEnumerable<MenuComponent> EnumerateFolders(Component target)
     {
+        if (target.transform != _root && !target.transform.IsChildOf(_root))
+            yield break;
+
         var menus = target.GetComponentsInParentExcludingSelf<MenuComponent>(true);
         for (var i = menus.Length - 1; i >= 0; i--)
         {
-            if (menus[i].MenuKind == MenuComponent.Kind.Folder)
-                yield return menus[i];
+            var menu = menus[i];
+            if ((menu.transform == _root || menu.transform.IsChildOf(_root)) && menu.MenuKind == MenuComponent.Kind.Folder)
+                yield return menu;
         }
     }
 
     public Transform? GetInstallTarget(Component owner, MenuSettings menu)
     {
-        if (menu.InstallContainer != null)
+        if (owner.transform != _root && !owner.transform.IsChildOf(_root))
+            return null;
+        if (menu.InstallContainer != null && (menu.InstallContainer == _root || menu.InstallContainer.IsChildOf(_root)))
             return menu.InstallContainer;
+        if (menu.InstallContainer != null)
+            return null;
         return EnumerateFolders(owner).LastOrDefault()?.transform;
     }
 }

@@ -32,7 +32,7 @@ internal sealed record MenuFolderPlan(
 internal sealed record MenuControlPlan(
     string DisplayName,
     MenuIconPlan Icon,
-    MenuItemKind Kind,
+    MenuComponent.Kind Kind,
     string ParameterName,
     float Value)
     : MenuNodePlan(DisplayName, Icon);

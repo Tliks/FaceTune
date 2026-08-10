@@ -31,6 +31,7 @@ internal class FaceTuneContext
     private AuthoringBuildSettings? AuthoringSettings { get; set; }
     private BuildSettings? Settings { get; set; }
     private ExpressionProgram? ExpressionProgram { get; set; }
+    private IReadOnlyList<MenuParameterPlan>? MenuParameters { get; set; }
     private MenuProgram? MenuProgram { get; set; }
 
     private FaceTuneContext(
@@ -85,6 +86,16 @@ internal class FaceTuneContext
     public ExpressionProgram RequireExpressionProgram()
     {
         return ExpressionProgram ?? throw new InvalidOperationException("ExpressionProgram has not been compiled.");
+    }
+
+    public void SetMenuParameters(IReadOnlyList<MenuParameterPlan> menuParameters)
+    {
+        MenuParameters = menuParameters;
+    }
+
+    public IReadOnlyList<MenuParameterPlan> RequireMenuParameters()
+    {
+        return MenuParameters ?? throw new InvalidOperationException("Menu parameters have not been normalized.");
     }
 
     public void SetMenuProgram(MenuProgram menuProgram)

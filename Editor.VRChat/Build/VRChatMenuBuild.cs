@@ -75,8 +75,8 @@ internal static class VRChatMenuBuilder
         var menuItem = obj.AddComponent<ModularAvatarMenuItem>();
         menuItem.PortableControl.Type = control.Kind switch
         {
-            MenuItemKind.Toggle => PortableControlType.Toggle,
-            MenuItemKind.Radial => PortableControlType.RadialPuppet,
+            MenuComponent.Kind.Toggle => PortableControlType.Toggle,
+            MenuComponent.Kind.Radial => PortableControlType.RadialPuppet,
             _ => throw new InvalidOperationException($"Unknown menu item kind: {control.Kind}")
         };
         menuItem.PortableControl.Parameter = control.ParameterName;

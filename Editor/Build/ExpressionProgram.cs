@@ -1,10 +1,6 @@
 namespace Aoyon.FaceTune.Build;
 
-/// <summary>
-/// Component hierarchy interpreted as FaceTune expressions for build backends.
-/// Conditions are platform-resolved, data is merged, and hierarchy order is preserved.
-/// Backend-specific layout decisions such as animator layer packing are intentionally not represented here.
-/// </summary>
+/// <summary>Component hierarchy interpreted as FaceTune expressions for build backends.</summary>
 internal sealed class ExpressionProgram
 {
     public IReadOnlyList<ExpressionItem> Items { get; }
@@ -17,43 +13,17 @@ internal sealed class ExpressionProgram
     }
 }
 
-internal sealed record class ExpressionItem
-{
-    public Transform SourceTransform { get; init; }
-    public string Name { get; init; }
-    
-    public BlendShapeWeightAnimationSet FacialAnimationSet { get; init; }
-    public BlendShapeWeightAnimationSet AnimationSet { get; init; }
-    public ExpressionSettings ExpressionSettings { get; init; }
-    public FacialSettings FacialSettings { get; init; }
-    public float TransitionDurationSeconds { get; init; }
-
-    /// <summary>
-    /// The expression's own activation condition after parent/scope conditions are applied.
-    /// This does not include priority suppression by later replace expressions.
-    /// </summary>
-    public DnfCondition RawWhen { get; init; }
-
-    public ExpressionWriteMode WriteMode => FacialSettings.WriteMode;
-
-    public ExpressionItem(
-        Transform sourceTransform,
-        string name,
-        BlendShapeWeightAnimationSet facialAnimationSet,
-        BlendShapeWeightAnimationSet animationSet,
-        ExpressionSettings expressionSettings,
-        FacialSettings facialSettings,
-        float transitionDurationSeconds,
-        DnfCondition rawWhen)
-    {
-        SourceTransform = sourceTransform;
-        Name = name;
-        FacialAnimationSet = new(facialAnimationSet);
-        AnimationSet = new(animationSet);
-        ExpressionSettings = expressionSettings;
-        FacialSettings = facialSettings;
-        TransitionDurationSeconds = transitionDurationSeconds;
-        RawWhen = rawWhen;
-    }
-
-}
+internal sealed record class ExpressionItem(
+    Transform SourceTransform,
+    string Name,
+    BlendShapeWeightAnimationSet AnimationSet,
+    ExpressionWriteMode WriteMode,
+    MultiFrameSettings MultiFrame,
+    TrackingPermission AllowEyeBlink,
+    TrackingPermission AllowLipSync,
+    EyeBlinkSettings EyeBlink,
+    LipSyncSettings LipSync,
+    TransitionSettings Transition,
+    PrioritySettings Priority,
+    ParameterDriverSettings ParameterDrivers,
+    DnfCondition RawWhen);

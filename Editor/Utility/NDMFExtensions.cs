@@ -5,21 +5,6 @@ namespace Aoyon.FaceTune;
 
 internal static class NDMFExtensions
 {
-    public static bool TryGetComponent(this ComputeContext ctx, GameObject obj, Type type, [NotNullWhen(true)] out Component? component)
-    {
-        if (obj == null) { component = null; return false; }
-        var c = ctx.GetComponent(obj, type);
-        if (c == null) { component = null; return false; }
-        component = c; return true;
-    }
-    public static bool TryGetComponent<T>(this ComputeContext ctx, GameObject obj, [NotNullWhen(true)] out T? component)
-    where T : Component
-    {
-        if (obj == null) { component = null; return false; }
-        var c = ctx.GetComponent<T>(obj);
-        if (c == null) { component = null; return false; }
-        component = c; return true;
-    }
     public static bool TryGetComponentInParent<T>(this ComputeContext ctx, GameObject obj, GameObject root, bool includeInactive, [NotNullWhen(true)] out T? component)
     where T : Component
     {

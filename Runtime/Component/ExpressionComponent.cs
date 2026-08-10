@@ -27,8 +27,7 @@ namespace Aoyon.FaceTune
         public bool DirectMenuEnabled = false;
         public DirectMenuSettings DirectMenuSettings = new();
 
-        // Todo: falseかつ親に条件があるときの挙動を考える
-        // falseなら通常条件では発動しない。Alwaysでも親のSettingsの条件は受ける。
+        // falseなら通常条件では発動しない。Alwaysでも親scopeの条件は受ける。
         public bool HasCondition = false;
         public ConditionSelection Condition = new();
 

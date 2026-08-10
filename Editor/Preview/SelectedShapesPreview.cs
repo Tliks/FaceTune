@@ -191,64 +191,18 @@ internal class SelectedShapesPreviewSession : IDisposable
 
     private static bool TryGetGameObjectAnimations(ComputeContext context, GameObject target, GameObject root, string bodyPath, List<BlendShapeWeightAnimation> resultToAdd, out bool isLooping)
     {
-        isLooping = false;
-
-        using var _dataComponents = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
-        if (TryGetDataSource(context, target, dataComponents, out var expressionComponent, out var sourceRoot))
-        { 
-            // dataCompononentのデータ取得用および、代入用にに顔つきを取得する
-            using var _facial = ListPool<BlendShapeWeightAnimation>.Get(out var facial);
-            FacialStyleContext.TryGetFacialStyleAnimations(sourceRoot, facial, root, bodyPath, context);
-            
-            resultToAdd.AddRange(facial);
-
-            if (expressionComponent != null)
-            {
-                context.Observe(expressionComponent);
-                expressionComponent.GetAnimations(resultToAdd, bodyPath);
-            }
-
-            foreach (var dataComponent in dataComponents)
-            {
-                context.Observe(dataComponent);
-                dataComponent.GetAnimations(resultToAdd, bodyPath);
-            }
-
-            if (expressionComponent != null)
-            {
-                isLooping = context.Observe(expressionComponent, e => e.ExpressionSettings.LoopTime, (a, b) => a == b);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryGetDataSource(ComputeContext context, GameObject gameObject, List<ExpressionDataComponent> dataComponents, out ExpressionComponent? expressionComponent, [NotNullWhen(true)]out GameObject? sourceRoot)
-    {
-        expressionComponent = null;
-        sourceRoot = null;
-
-        using var _expressionComponents = ListPool<ExpressionComponent>.Get(out var expressionComponents);
-        context.GetComponentsInChildren<ExpressionComponent>(gameObject, true, expressionComponents);
-
-        if (expressionComponents.Count > 1) return false;
-
-        if (expressionComponents.Count == 1)
+        using var _ = ListPool<ExpressionComponent>.Get(out var expressions);
+        context.GetComponentsInChildren<ExpressionComponent>(target, true, expressions);
+        if (expressions.Count != 1)
         {
-            expressionComponent = expressionComponents[0];
-            sourceRoot = expressionComponent.gameObject;
-
-            using var _children = ListPool<ExpressionDataComponent>.Get(out var children);
-            context.GetComponentsInChildren(sourceRoot, true, children);
-            dataComponents.AddRange(children);
-            return true;
+            isLooping = false;
+            return false;
         }
 
-        sourceRoot = gameObject;
-        context.GetComponentsInChildren<ExpressionDataComponent>(gameObject, true, dataComponents);
-        return dataComponents.Count > 0;
+        var expression = expressions[0];
+        new FaceTuneResolver(root, context).FacialData.Add(expression, resultToAdd, bodyPath);
+        isLooping = context.Observe(expression, e => e.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop, (a, b) => a == b);
+        return true;
     }
 
     sealed class Writer : IDisposable

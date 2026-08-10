@@ -26,7 +26,7 @@ internal static class FaceTuneProgramCompiler
     {
         var components = context.Root.GetComponentsInChildren<ExpressionComponent>(true);
         
-        var conditionCompiler = new ConditionCompiler(context.Root, platformSupport, settings.ParameterDomains);
+        var conditionCompiler = new ConditionCompiler(platformSupport, settings.ParameterDomains);
         var expressionCompiler = new ExpressionCompiler(context, platformSupport, settings, conditionCompiler);
 
         var items = components
@@ -42,8 +42,8 @@ internal sealed class ExpressionCompiler
 {
     private readonly AvatarContext _avatarContext;
     private readonly IMetabasePlatformSupport _platformSupport;
-    private readonly BuildSettings _settings;
     private readonly ConditionCompiler _conditionCompiler;
+    private readonly FaceTuneResolver _resolver;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _safeZeroBlendShapeAnimations;
 
     public ExpressionCompiler(
@@ -54,8 +54,8 @@ internal sealed class ExpressionCompiler
     {
         _avatarContext = avatarContext;
         _platformSupport = platformSupport;
-        _settings = settings;
         _conditionCompiler = conditionCompiler;
+        _resolver = new FaceTuneResolver(avatarContext.Root);
         _safeZeroBlendShapeAnimations = avatarContext.FaceRenderer
             .GetBlendShapeWeights(avatarContext.FaceMesh)
             .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
@@ -66,136 +66,66 @@ internal sealed class ExpressionCompiler
 
     public ExpressionItem Compile(ExpressionComponent component)
     {
-        var facialAnimations = new List<BlendShapeWeightAnimation>();
-        FacialStyleContext.TryGetFacialStyleAnimations(component.gameObject, facialAnimations, _avatarContext.BodyPath);
-
-        var expressionAnimationSet = CollectExpressionAnimations(component);
+        var animations = new BlendShapeWeightAnimationSet();
+        if (component.WriteMode == ExpressionWriteMode.Replace)
+            animations.AddRange(_safeZeroBlendShapeAnimations);
+        _resolver.FacialData.Add(component, animations, _avatarContext.BodyPath);
 
         return new ExpressionItem(
             component.transform,
             component.name,
-            new(facialAnimations),
-            CreateAnimationSet(component, facialAnimations, expressionAnimationSet),
-            ResolveExpressionSettings(component.ExpressionSettings),
-            ResolveFacialSettings(component),
-            ResolveTransitionDurationSeconds(component),
-            _conditionCompiler.Resolve(component));
+            animations,
+            component.WriteMode,
+            ResolveMultiFrame(component.MultiFrame),
+            component.AllowEyeBlink,
+            component.AllowLipSync,
+            _resolver.EyeBlink.Get(component),
+            _resolver.LipSync.Get(component),
+            _resolver.Transition.Get(component),
+            _resolver.Priority.Get(component),
+            _resolver.ParameterDrivers.Get(component),
+            _resolver.Conditions.Resolve(component, condition => _conditionCompiler.Resolve(condition) ?? DnfCondition.Never));
     }
 
-    private ExpressionSettings ResolveExpressionSettings(ExpressionSettings settings)
+    private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {
-        if (settings.MultiFrameMode != MultiFrameMode.Trigger) return settings;
-        var parameter = _platformSupport.ResolveGestureWeightParameter(settings.TriggerHand);
-        return string.IsNullOrEmpty(parameter)
-            ? settings with { MultiFrameMode = MultiFrameMode.Default }
-            : settings with { MultiFrameMode = MultiFrameMode.Parameter, ParameterName = parameter };
-    }
-
-    private BlendShapeWeightAnimationSet CreateAnimationSet(
-        ExpressionComponent component,
-        List<BlendShapeWeightAnimation> facialAnimations,
-        BlendShapeWeightAnimationSet expressionAnimationSet)
-    {
-        var animationSet = new BlendShapeWeightAnimationSet();
-
-        if (component.FacialSettings.WriteMode == ExpressionWriteMode.Replace)
+        var result = new MultiFrameSettings
         {
-            animationSet.AddRange(_safeZeroBlendShapeAnimations);
-            animationSet.AddRange(facialAnimations);
-        }
-
-        animationSet.AddRange(expressionAnimationSet);
-        return animationSet;
-    }
-
-    private BlendShapeWeightAnimationSet CollectExpressionAnimations(ExpressionComponent component)
-    {
-        var animationSet = new BlendShapeWeightAnimationSet();
-        component.GetAnimations(animationSet, _avatarContext.BodyPath);
-
-        var dataComponents = component.gameObject.GetComponentsInChildren<ExpressionDataComponent>(true);
-        foreach (var dataComponent in dataComponents)
-        {
-            dataComponent.GetAnimations(animationSet, _avatarContext.BodyPath);
-        }
-
-        return animationSet;
-    }
-
-    private float ResolveTransitionDurationSeconds(ExpressionComponent component)
-    {
-        return component.GetComponentInParent<TransitionComponent>(true)
-            .DestroyedAsNull()?.DurationSeconds
-            ?? 0.1f;
-    }
-
-    private static FacialSettings ResolveFacialSettings(ExpressionComponent component)
-    {
-        var advancedEyeBlinkComponent = component.gameObject.GetComponentInParent<EyeBlinkComponent>(true);
-        var blinkSettings = advancedEyeBlinkComponent == null
-            ? new EyeBlinkSettings()
-            : advancedEyeBlinkComponent.ResolveSettings();
-
-        var advancedLipSyncComponent = component.gameObject.GetComponentInParent<LipSyncComponent>(true);
-        var lipSyncSettings = advancedLipSyncComponent == null
-            ? AdvancedLipSyncSettings.Disabled()
-            : advancedLipSyncComponent.ResolveSettings();
-
-        return component.FacialSettings with
-        {
-            EyeBlinkSettings = blinkSettings,
-            AdvancedLipSyncSettings = lipSyncSettings
+            MultiFrameMode = settings.MultiFrameMode,
+            TriggerHand = settings.TriggerHand,
+            ParameterName = settings.ParameterName
         };
+        if (result.MultiFrameMode != MultiFrameSettings.Kind.Trigger)
+            return result;
+
+        var parameter = _platformSupport.ResolveGestureWeightParameter(result.TriggerHand);
+        if (string.IsNullOrEmpty(parameter))
+            result.MultiFrameMode = MultiFrameSettings.Kind.Default;
+        else
+        {
+            result.MultiFrameMode = MultiFrameSettings.Kind.Parameter;
+            result.ParameterName = parameter!;
+        }
+        return result;
     }
+
 }
 
 internal sealed class ConditionCompiler
 {
-    private readonly GameObject _root;
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly ParameterDomainRegistry _parameterDomains;
 
     public ConditionCompiler(
-        GameObject root,
         IMetabasePlatformSupport platformSupport,
         ParameterDomainRegistry parameterDomains)
     {
-        _root = root;
         _platformSupport = platformSupport;
         _parameterDomains = parameterDomains;
     }
 
-    public DnfCondition Resolve(ExpressionComponent component)
-    {
-        var activationConditions = CollectEffectiveConditions(component)
-            .Select(ResolveCondition)
-            .ToArray();
-        return activationConditions.Length == 0
-            ? DnfCondition.Never
-            : DnfCondition.All(activationConditions);
-    }
-
-    private IEnumerable<Condition> CollectEffectiveConditions(ExpressionComponent component)
-    {
-        var current = component.transform;
-        while (current != null)
-        {
-            foreach (var conditionComponent in current.GetComponents<ConditionComponent>())
-            {
-                yield return conditionComponent.Condition;
-            }
-
-            if (current.gameObject == _root) break;
-            current = current.parent;
-        }
-
-        if (component.HasCondition) yield return component.Condition;
-    }
-
     private DnfCondition ResolveCondition(Condition condition)
     {
-        if (condition.Always) return DnfCondition.Always;
-
         var resolvedCases = condition.Cases
             .Select(ResolveConditionCase)
             .OfType<DnfCondition>()

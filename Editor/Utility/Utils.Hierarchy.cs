@@ -20,12 +20,6 @@ internal static partial class Utils
         return result;
     }
 
-    public static bool TryGetComponentInParent<T>(this GameObject gameObject, bool includeInactive, [NotNullWhen(true)] out T? result) where T : Component
-    {
-        result = gameObject.GetComponentInParent<T>(includeInactive);
-        return result != null;
-    }
-
     /// <summary>自身のGameObjectを除く親からComponentを取得する。</summary>
     public static T[] GetComponentsInParentExcludingSelf<T>(this Component component, bool includeInactive)
         where T : Component

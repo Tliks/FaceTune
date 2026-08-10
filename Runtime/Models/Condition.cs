@@ -2,7 +2,6 @@ using UnityEngine.Serialization;
 
 namespace Aoyon.FaceTune;
 
-/// <summary>親の条件だけを使うAlways、またはこのComponent自身のCondition。</summary>
 [Serializable]
 internal class ConditionSelection
 {
