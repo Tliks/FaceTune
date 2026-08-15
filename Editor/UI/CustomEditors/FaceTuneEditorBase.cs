@@ -8,6 +8,7 @@ internal abstract class FaceTuneEditorBase<T> : Editor where T : FaceTuneTagComp
     public sealed override void OnInspectorGUI()
     {
         serializedObject.UpdateIfRequiredOrScript();
+        PrepareInspector();
 
         var height = GetInspectorHeight();
         var position = EditorGUILayout.GetControlRect(false, height, GUIStyle.none);
@@ -19,6 +20,14 @@ internal abstract class FaceTuneEditorBase<T> : Editor where T : FaceTuneTagComp
             EditorGUILayout.Space();
             Localization.DrawLanguageSwitcher();
         }
+    }
+
+    protected virtual void PrepareInspector()
+    {
+    }
+
+    protected virtual void OnDisable()
+    {
     }
 
     protected virtual float GetInspectorHeight()

@@ -16,6 +16,7 @@ internal sealed class ExpressionProgram
 internal sealed record class ExpressionItem(
     Transform SourceTransform,
     string Name,
+    BlendShapeWeightAnimationSet FacialAnimationSet,
     BlendShapeWeightAnimationSet AnimationSet,
     ExpressionWriteMode WriteMode,
     MultiFrameSettings MultiFrame,
@@ -25,5 +26,4 @@ internal sealed record class ExpressionItem(
     LipSyncSettings LipSync,
     TransitionSettings Transition,
     PrioritySettings Priority,
-    ParameterDriverSettings ParameterDrivers,
     DnfCondition RawWhen);

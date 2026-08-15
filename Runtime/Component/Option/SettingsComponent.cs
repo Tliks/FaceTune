@@ -6,8 +6,7 @@ namespace Aoyon.FaceTune
         IHasConditions,
         IReferenceableExpressionSettings<FacialBlendShapeData>,
         IReferenceableExpressionSettings<EyeBlinkSettings>,
-        IReferenceableExpressionSettings<LipSyncSettings>,
-        IReferenceableExpressionSettings<ParameterDriverSettings>
+        IReferenceableExpressionSettings<LipSyncSettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
 
@@ -22,11 +21,7 @@ namespace Aoyon.FaceTune
 
         // このGameObjectより下にあるExpressionの通常条件へANDする。
         public bool HasCondition = false;
-        public Condition Condition = new();
-
-        // このGameObject自身と配下へ追加する。
-        public bool HasParameterDriver = false;
-        public ParameterDriverSettingsSource ParameterDriver = new();
+        public Condition Condition = new(new ConditionCase());
 
         // このGameObject自身と配下で、最も近いSettingsの値を使う。
         public bool HasEyeBlink = false;
@@ -56,7 +51,5 @@ namespace Aoyon.FaceTune
         ISettingsSource<LipSyncSettings>? IReferenceableExpressionSettings<LipSyncSettings>.SettingsSource
             => HasLipSync ? LipSync : null;
 
-        ISettingsSource<ParameterDriverSettings>? IReferenceableExpressionSettings<ParameterDriverSettings>.SettingsSource
-            => HasParameterDriver ? ParameterDriver : null;
     }
 }

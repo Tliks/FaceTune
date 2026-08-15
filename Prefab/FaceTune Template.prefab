@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7363885164174601864}
-  - component: {fileID: 7810741059401449334}
-  - component: {fileID: 4095486903933448626}
+  - component: {fileID: 7589026912043303318}
+  - component: {fileID: 771047701667463400}
   m_Layer: 0
   m_Name: FaceTune Template
   m_TagString: Untagged
@@ -35,7 +35,7 @@ Transform:
   - {fileID: 2884333674023116675}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7810741059401449334
+--- !u!114 &7589026912043303318
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -44,19 +44,89 @@ MonoBehaviour:
   m_GameObject: {fileID: 5177479075933827586}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7c78602628c33342a7196db8db756fa, type: 3}
+  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DataReference:
-    referencePath: 
-    targetObject: {fileID: 0}
-  Data:
-    Clip: {fileID: 0}
-    ClipOption: 1
-    BlendShapeAnimations: []
-  ApplyToRenderer: 1
-  BlendShapeAnimations: []
---- !u!114 &4095486903933448626
+  HasFacialBlendShapes: 1
+  FacialBlendShapes:
+    SourceMode: 0
+    Source: {fileID: 0}
+    Direct:
+      Clip: {fileID: 0}
+      ClipOption: 1
+      BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 0
+  Condition:
+    Cases:
+    - HandGestureConditions: []
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlink:
+    SourceMode: 0
+    Source: {fileID: 0}
+    Direct:
+      EyeBlinkMode: 0
+      Animations:
+      - name: vrc.blink
+        curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 0.06666667
+            value: 100
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 0.13333334
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+      IntervalSeconds: {x: 3, y: 7}
+  HasLipSync: 0
+  LipSync:
+    SourceMode: 0
+    Source: {fileID: 0}
+    Direct:
+      CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
+--- !u!114 &771047701667463400
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -65,18 +135,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 5177479075933827586}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 114db5dba152e97468f319ce138b3584, type: 3}
+  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuName: 
-  Icon:
-    Mode: 2
-    ManualIcon: {fileID: 0}
-    PreviewExpression: {fileID: 0}
-  InstallSettings:
-    InstallContainerOverride:
-      referencePath: 
-      targetObject: {fileID: 0}
+  MenuKind: 2
+  Menu:
+    MenuName: 
+    Icon:
+      Mode: 0
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallContainer: {fileID: 0}
+  Binding: 0
+  Name: 
+  GroupName: 
+  InitialValue: 0
+  SelectedValue: 1
 --- !u!1 &8691778744146666929
 GameObject:
   m_ObjectHideFlags: 0
@@ -121,44 +195,90 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bb12ef50c9b464eaed227ce07f880b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConditionEnabled: 1
-  Condition:
-    Always: 1
-    Cases: []
+  AllowEyeBlink: 1
+  AllowLipSync: 0
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+  FacialBlendShapes:
+    SourceMode: 0
+    Source: {fileID: 0}
+    Direct:
+      Clip: {fileID: 0}
+      ClipOption: 1
+      BlendShapeAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
-    MenuName: 
-    Icon:
-      Mode: 1
-      ManualIcon: {fileID: 0}
-      PreviewExpression: {fileID: 0}
-    InstallSettings:
-      InstallContainerOverride:
-        referencePath: 
-        targetObject: {fileID: 0}
-    BlendExclusiveGroupName: 
-  ExpressionSettings:
-    multiFrameMode: 0
-    triggerHand: 0
-    parameterName: 
-    loopTime: 0
-    motionTimeParameterName: 
-  FacialSettings:
-    allowEyeBlink: 0
-    allowLipSync: 0
-    writeMode: 0
-    enableBlending: 0
-  DataReference:
-    referencePath: 
-    targetObject: {fileID: 0}
-  Data:
-    Clip: {fileID: 0}
-    ClipOption: 1
-    BlendShapeAnimations: []
-  EnableRealTimePreview: 1
-  references:
-    version: 2
-    RefIds: []
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+  HasCondition: 1
+  Condition:
+    Mode: 0
+    Condition:
+      Cases: []
+  HasEyeBlink: 0
+  EyeBlink:
+    SourceMode: 0
+    Source: {fileID: 0}
+    Direct:
+      EyeBlinkMode: 0
+      Animations:
+      - name: vrc.blink
+        curve:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 0.06666667
+            value: 100
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 0.13333334
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+      IntervalSeconds: {x: 3, y: 7}
+  HasLipSync: 0
+  LipSync:
+    SourceMode: 0
+    Source: {fileID: 0}
+    Direct:
+      CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
+  AlwaysOnPreviewEnabled: 1
 --- !u!1001 &9026705834737667022
 PrefabInstance:
   m_ObjectHideFlags: 0

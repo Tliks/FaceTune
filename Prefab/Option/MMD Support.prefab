@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5203428282089499939}
-  - component: {fileID: 841824838411543577}
+  - component: {fileID: 8728008260375032924}
   - component: {fileID: 1190269975176233602}
   m_Layer: 0
   m_Name: MMD Support
@@ -33,7 +33,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &841824838411543577
+--- !u!114 &8728008260375032924
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,26 +42,35 @@ MonoBehaviour:
   m_GameObject: {fileID: 1577578587252356234}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5326e885845e1a2409bd08d06ba4289d, type: 3}
+  m_Script: {fileID: 11500000, guid: 60bce3cdfe552854093fc459e13c80c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Settings:
-    ExplicitMmdBlendShapeNames: []
-    DisableMode: 0
-  DisableWhen:
-    Always: 0
-    Cases:
-    - Conditions:
-      - rid: 6831403248156147793
-  references:
-    version: 2
-    RefIds:
-    - rid: 6831403248156147793
-      type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        MenuSource: {fileID: 1190269975176233602}
-        Mode: 0
-        Threshold: 0.5
+  ControlKind: 3
+  MMD:
+    ExplicitBlendShapeNames: []
+    SupportMode: 0
+  Condition:
+    Mode: 1
+    Condition:
+      Cases:
+      - HandGestureConditions: []
+        MenuConditions:
+        - MenuSource: {fileID: 1190269975176233602}
+          Mode: 0
+          Threshold: 0.5
+        ParameterConditions:
+        - ParameterName: InStation
+          ParameterType: 2
+          ComparisonType: 0
+          FloatValue: 0
+          IntValue: 0
+          BoolValue: 1
+        - ParameterName: Seated
+          ParameterType: 2
+          ComparisonType: 0
+          FloatValue: 0
+          IntValue: 0
+          BoolValue: 0
 --- !u!114 &1190269975176233602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -74,21 +83,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MenuKind: 0
   Menu:
     MenuName: 
     Icon:
-      Mode: 2
+      Mode: 0
       ManualIcon: {fileID: 0}
-      PreviewExpression:
-        referencePath: 
-        targetObject: {fileID: 0}
-    InstallSettings:
-      InstallContainerOverride:
-        referencePath: 
-        targetObject: {fileID: 0}
-  Kind: 0
-  ExclusiveToggleGroup:
-    GroupName: 
-  ParameterName: 
-  FloatDefaultValue: 0
-  DefaultSelected: 0
+      PreviewExpression: {fileID: 0}
+    InstallContainer: {fileID: 0}
+  Binding: 0
+  Name: 
+  GroupName: 
+  InitialValue: 0
+  SelectedValue: 1

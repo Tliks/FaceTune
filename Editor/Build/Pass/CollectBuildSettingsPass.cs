@@ -8,19 +8,18 @@ internal class CollectBuildSettingsPass : FaceTunePass<CollectBuildSettingsPass>
     protected override void Execute(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
-        var settingsComponents = root.GetComponentsInChildren<AvatarSettingsComponent>(true);
-        if (settingsComponents.Length > 1)
-            LocalizedLog.Warning("Log:warning:AvatarContext:MultipleSettingsComponent", null, settingsComponents);
-        var avatarSettings = settingsComponents.FirstOrDefault()?.Settings ?? new AvatarSettings();
-
-        var excludedBlendShapeNames = context.PlatformSupport.GetExternallyControlledBlendShapeNames().ToHashSet();
-        excludedBlendShapeNames.UnionWith(avatarSettings.ExcludedBlendShapeNames.Where(x => !string.IsNullOrWhiteSpace(x)));
+        var components = root.GetComponentsInChildren<AvatarSettingsComponent>(true);
+        if (components.Length > 1)
+            LocalizedLog.Warning("Log:warning:AvatarContext:MultipleSettingsComponent", null, components);
+        var settings = components.FirstOrDefault();
+        var excluded = context.PlatformSupport.GetExternallyControlledBlendShapeNames().ToHashSet();
+        if (settings != null) excluded.UnionWith(settings.ExcludedBlendShapeNames.Where(name => !string.IsNullOrWhiteSpace(name)));
 
         context.SetAuthoringSettings(new AuthoringBuildSettings(
             context.AvatarContext,
-            excludedBlendShapeNames.ToImmutableHashSet(),
-            avatarSettings.AvoidEyeBlinkConflicts,
-            avatarSettings.AvoidLipSyncConflicts,
+            excluded.ToImmutableHashSet(),
+            settings?.AvoidEyeBlinkConflicts ?? true,
+            settings?.AvoidLipSyncConflicts ?? true,
             context.PlatformSupport.CreateBuiltInParameterDomains()));
     }
 }

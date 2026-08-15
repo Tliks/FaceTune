@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune.Gui;
 
-[CustomPropertyDrawer(typeof(FloatRange))]
+[CustomPropertyDrawer(typeof(FloatRangeAttribute))]
 internal sealed class FloatRangeDrawer : PropertyDrawer
 {
     private const float SeparatorWidth = 16f;
@@ -8,15 +8,17 @@ internal sealed class FloatRangeDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var value = EditorGUI.PrefixLabel(position, label);
-        var (min, remainder) = value.SplitRatio(.5f);
-        var (separator, max) = remainder.SplitLeft(SeparatorWidth);
-        var minProperty = property.FindPropertyRelative("min");
-        var maxProperty = property.FindPropertyRelative("max");
+        var value = label == GUIContent.none || string.IsNullOrEmpty(label.text)
+            ? position
+            : EditorGUI.PrefixLabel(position, label);
+        var (minimum, remainder) = value.SplitRatio(.5f);
+        var (separator, maximum) = remainder.SplitLeft(SeparatorWidth);
+        var x = property.FindPropertyRelative("x");
+        var y = property.FindPropertyRelative("y");
 
-        minProperty.floatValue = EditorGUI.FloatField(min, minProperty.floatValue);
+        x.floatValue = EditorGUI.FloatField(minimum, x.floatValue);
         EditorGUI.LabelField(separator, "~");
-        maxProperty.floatValue = EditorGUI.FloatField(max, maxProperty.floatValue);
+        y.floatValue = EditorGUI.FloatField(maximum, y.floatValue);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

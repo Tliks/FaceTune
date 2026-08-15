@@ -116,27 +116,13 @@ internal sealed class AnimatorBuildPlanBuilder
                 unitId,
                 expressions[0].SourceTransform,
                 expressionLayers,
-                BuildAdvancedEyeBlinkLayer(expressions),
-                BuildAdvancedLipSyncLayer(expressions),
+                null,
+                null,
                 parameters));
             start = splitIndex;
         }
 
         return units;
-    }
-
-    private AdvancedEyeBlinkLayerPlan? BuildAdvancedEyeBlinkLayer(IReadOnlyList<ExpressionItem> expressions)
-    {
-        return expressions.Any(expression => expression.FacialSettings.EyeBlinkSettings.IsAutomatic())
-            ? new AdvancedEyeBlinkLayerPlan("Advanced EyeBlink", _layerForceInactiveWhen)
-            : null;
-    }
-
-    private AdvancedLipSyncLayerPlan? BuildAdvancedLipSyncLayer(IReadOnlyList<ExpressionItem> expressions)
-    {
-        return expressions.Any(expression => expression.FacialSettings.AdvancedLipSyncSettings.IsAnimationEnabled())
-            ? new AdvancedLipSyncLayerPlan("Advanced LipSync", _layerForceInactiveWhen)
-            : null;
     }
 
     private TrackingControlLayerPlan? BuildTrackingControlLayer(Transform anchor)
@@ -322,10 +308,10 @@ internal sealed class ExpressionLayerPlanBuilder
         {
             var writeMode = expressions[index].WriteMode;
             var run = new List<ExpressionItem>();
-            var transitionDurationSeconds = expressions[index].TransitionDurationSeconds;
+            var transitionDurationSeconds = expressions[index].Transition.DurationSeconds;
             while (index < expressions.Count
                    && expressions[index].WriteMode == writeMode
-                   && expressions[index].TransitionDurationSeconds == transitionDurationSeconds)
+                   && expressions[index].Transition.DurationSeconds == transitionDurationSeconds)
             {
                 run.Add(expressions[index]);
                 index++;
@@ -373,7 +359,7 @@ internal sealed class ExpressionLayerPlanBuilder
 
         return BuildExpressionLayer(
             $"{unitId}-{layerIndex} Replace",
-            expressions[0].TransitionDurationSeconds,
+            expressions[0].Transition.DurationSeconds,
             statePlans.SelectMany(plans => plans));
     }
 
@@ -389,7 +375,7 @@ internal sealed class ExpressionLayerPlanBuilder
                 BuildExpressionStates(unitId, expression, expressionIndex, expression.RawWhen));
             yield return BuildExpressionLayer(
                 $"{unitId}-{firstLayerIndex + layerIndex} Blend",
-                packedLayers[layerIndex][0].TransitionDurationSeconds,
+                packedLayers[layerIndex][0].Transition.DurationSeconds,
                 statePlans);
         }
     }
@@ -434,8 +420,8 @@ internal sealed class ExpressionLayerPlanBuilder
             var layerIndex = 0;
             for (var previousIndex = 0; previousIndex < currentIndex; previousIndex++)
             {
-                var canShareLayer = expressions[previousIndex].TransitionDurationSeconds
-                                    == expressions[currentIndex].TransitionDurationSeconds
+                var canShareLayer = expressions[previousIndex].Transition.DurationSeconds
+                                    == expressions[currentIndex].Transition.DurationSeconds
                                     && expressions[previousIndex].RawWhen
                                         .And(expressions[currentIndex].RawWhen)
                                         .IsNever;
@@ -490,8 +476,8 @@ internal sealed class ExpressionLayerPlanBuilder
                 stateCondition,
                 exitWhen,
                 expression.AnimationSet,
-                expression.ExpressionSettings,
-                _aap.BuildWrites(unitId, expression.FacialSettings));
+                expression.MultiFrame,
+                _aap.BuildWrites(expression));
         }
     }
 }
@@ -618,131 +604,45 @@ internal sealed class AapProtocol
 {
     public const int AnimationDisabledIndex = 0;
     public const int AnimationEnabledIndex = 1;
-    private const int AdvancedNoneIndex = 0;
-
-    private readonly Dictionary<(int UnitId, EyeBlinkSettings Settings), int> _eyeBlinkAdvancedIndices = new();
-    private readonly Dictionary<(int UnitId, AdvancedLipSyncSettings Settings), int> _lipSyncAdvancedIndices = new();
-
 
     private const string AapParameterPrefix = FaceTuneConstants.GeneratedParameterPrefix + "/AAP/";
     public const string EyeBlinkAnimationName = AapParameterPrefix + "Blink/Animation";
     public const string LipSyncAnimationName = AapParameterPrefix + "LipSync/Animation";
-    private const string EyeBlinkAdvancedSelectorName = AapParameterPrefix + "Blink/Advanced";
-    private const string LipSyncAdvancedSelectorName = AapParameterPrefix + "LipSync/Advanced";
 
     public bool WritesEyeBlinkAnimation { get; }
     public bool WritesLipSyncAnimation { get; }
-    private bool WritesEyeBlinkAdvancedSelector { get; }
-    private bool WritesLipSyncAdvancedSelector { get; }
 
-    private AapProtocol(
-        bool writesEyeBlinkAnimation,
-        bool writesLipSyncAnimation,
-        bool writesEyeBlinkAdvancedSelector,
-        bool writesLipSyncAdvancedSelector)
+    private AapProtocol(bool writesEyeBlinkAnimation, bool writesLipSyncAnimation)
     {
         WritesEyeBlinkAnimation = writesEyeBlinkAnimation;
         WritesLipSyncAnimation = writesLipSyncAnimation;
-        WritesEyeBlinkAdvancedSelector = writesEyeBlinkAdvancedSelector;
-        WritesLipSyncAdvancedSelector = writesLipSyncAdvancedSelector;
     }
 
     public static AapProtocol From(IReadOnlyList<ExpressionItem> items)
-    {
-        var settings = items.Select(item => item.FacialSettings).ToArray();
-        var writesEyeBlinkAdvancedSelector = settings.Any(setting => setting.EyeBlinkSettings.IsAutomatic());
-        var writesLipSyncAdvancedSelector = settings.Any(setting => setting.AdvancedLipSyncSettings.IsAnimationEnabled());
-        return new AapProtocol(
-            settings.Any(setting => setting.AllowEyeBlink == TrackingPermission.Disallow)
-                || writesEyeBlinkAdvancedSelector,
-            settings.Any(setting => setting.AllowLipSync == TrackingPermission.Disallow)
-                || writesLipSyncAdvancedSelector,
-            writesEyeBlinkAdvancedSelector,
-            writesLipSyncAdvancedSelector);
-    }
+        => new(
+            items.Any(item => item.AllowEyeBlink == TrackingPermission.Disallow),
+            items.Any(item => item.AllowLipSync == TrackingPermission.Disallow));
 
-    public IReadOnlyList<AapWrite> BuildWrites(int unitId, FacialSettings settings)
+    public IReadOnlyList<AapWrite> BuildWrites(ExpressionItem expression)
     {
         var writes = new List<AapWrite>();
-
         if (WritesEyeBlinkAnimation)
-        {
-            writes.Add(new AapWrite(
-                EyeBlinkAnimationName,
-                Value(settings.AllowEyeBlink == TrackingPermission.Disallow || settings.EyeBlinkSettings.IsAutomatic()
-                    ? AnimationEnabledIndex
-                    : AnimationDisabledIndex)));
-        }
-
-        if (WritesEyeBlinkAdvancedSelector)
-        {
-            writes.Add(new AapWrite(
-                EyeBlinkAdvancedSelectorName,
-                Value(settings.EyeBlinkSettings.IsAutomatic()
-                    ? AdvancedIndex(_eyeBlinkAdvancedIndices, unitId, settings.EyeBlinkSettings)
-                    : AdvancedNoneIndex)));
-        }
-
+            writes.Add(new AapWrite(EyeBlinkAnimationName, Value(
+                expression.AllowEyeBlink == TrackingPermission.Disallow ? AnimationEnabledIndex : AnimationDisabledIndex)));
         if (WritesLipSyncAnimation)
-        {
-            writes.Add(new AapWrite(
-                LipSyncAnimationName,
-                Value(settings.AllowLipSync == TrackingPermission.Disallow
-                    ? AnimationEnabledIndex
-                    : AnimationDisabledIndex)));
-        }
-
-        if (WritesLipSyncAdvancedSelector)
-        {
-            writes.Add(new AapWrite(
-                LipSyncAdvancedSelectorName,
-                Value(settings.AdvancedLipSyncSettings.IsAnimationEnabled()
-                    ? AdvancedIndex(_lipSyncAdvancedIndices, unitId, settings.AdvancedLipSyncSettings)
-                    : AdvancedNoneIndex)));
-        }
-
+            writes.Add(new AapWrite(LipSyncAnimationName, Value(
+                expression.AllowLipSync == TrackingPermission.Disallow ? AnimationEnabledIndex : AnimationDisabledIndex)));
         return writes;
     }
 
     public void CollectParameters(Dictionary<string, PlanParameter> parameters)
     {
         if (WritesEyeBlinkAnimation)
-            parameters.TryAdd(EyeBlinkAnimationName, new PlanParameter(
-                EyeBlinkAnimationName, AnimatorControllerParameterType.Float, Value(AnimationDisabledIndex)));
-
-        if (WritesEyeBlinkAdvancedSelector)
-            parameters.TryAdd(EyeBlinkAdvancedSelectorName, new PlanParameter(
-                EyeBlinkAdvancedSelectorName, AnimatorControllerParameterType.Float, Value(AdvancedNoneIndex)));
-
+            parameters.TryAdd(EyeBlinkAnimationName, new PlanParameter(EyeBlinkAnimationName, AnimatorControllerParameterType.Float, Value(AnimationDisabledIndex)));
         if (WritesLipSyncAnimation)
-            parameters.TryAdd(LipSyncAnimationName, new PlanParameter(
-                LipSyncAnimationName, AnimatorControllerParameterType.Float, Value(AnimationDisabledIndex)));
-
-        if (WritesLipSyncAdvancedSelector)
-            parameters.TryAdd(LipSyncAdvancedSelectorName, new PlanParameter(
-                LipSyncAdvancedSelectorName, AnimatorControllerParameterType.Float, Value(AdvancedNoneIndex)));
+            parameters.TryAdd(LipSyncAnimationName, new PlanParameter(LipSyncAnimationName, AnimatorControllerParameterType.Float, Value(AnimationDisabledIndex)));
     }
 
-    public DnfCondition IndexIs(string parameterName, int index)
-    {
-        return AnimatorHelper.DiscreteFloatIndexCondition(parameterName, index);
-    }
-
-    private float Value(int index)
-    {
-        return AnimatorHelper.DiscreteFloatIndexToValue(index);
-    }
-
-    private static int AdvancedIndex<TSettings>(
-        Dictionary<(int UnitId, TSettings Settings), int> indices,
-        int unitId,
-        TSettings settings)
-        where TSettings : notnull
-    {
-        var key = (unitId, settings);
-        if (indices.TryGetValue(key, out var index)) return index;
-        index = indices.Count + 1;
-        indices.Add(key, index);
-        return index;
-    }
+    public DnfCondition IndexIs(string parameterName, int index) => AnimatorHelper.DiscreteFloatIndexCondition(parameterName, index);
+    private static float Value(int index) => AnimatorHelper.DiscreteFloatIndexToValue(index);
 }

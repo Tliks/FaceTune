@@ -38,7 +38,7 @@ internal sealed record class ExpressionStatePlan(
     DnfCondition EnterWhen,
     DnfCondition ExitWhen,
     BlendShapeWeightAnimationSet Animations,
-    ExpressionSettings Settings,
+    MultiFrameSettings Settings,
     IReadOnlyList<AapWrite> AapWrites);
 
 internal readonly record struct AapWrite(string ParameterName, float Value);

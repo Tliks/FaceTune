@@ -14,6 +14,8 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     protected override void Execute(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
+        NormalizeExpressionSets(root);
+        NormalizeDirectMenus(context);
         IgnoreEmptyCondition(root);
 
         var settings = context.RequireAuthoringSettings();
@@ -26,9 +28,75 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         context.SetMenuParameters(menuParameters);
 
         ResolveMenuConditions(root, context.PlatformSupport.GetAnimatorController());
-        FilterBlendShapeOutputs(context.AvatarContext.BodyPath, root, settings);
+        FilterExcludedBlendShapes(context.AvatarContext.BodyPath, root, settings);
     }
 
+
+    private static void NormalizeExpressionSets(GameObject root)
+    {
+        foreach (var settings in root.GetComponentsInChildren<SettingsComponent>(true)
+                     .Where(settings => settings.ExpressionSetEnabled))
+        {
+            var menu = settings.gameObject.EnsureComponent<MenuComponent>();
+            menu.MenuKind = MenuComponent.Kind.Toggle;
+            menu.Menu = settings.ExpressionSet.Menu;
+            menu.Binding = MenuComponent.ParameterBinding.Generate;
+            menu.Name = string.Empty;
+            menu.GroupName = string.Empty;
+            menu.InitialValue = settings.ExpressionSet.DefaultSelected ? 1f : 0f;
+            menu.SelectedValue = 1f;
+
+            settings.HasCondition = true;
+            if (settings.Condition.Cases.Count == 0)
+                settings.Condition.Cases.Add(new ConditionCase());
+            foreach (var conditionCase in settings.Condition.Cases)
+                conditionCase.MenuConditions.Add(MenuCondition.Enabled(menu));
+        }
+    }
+
+    private static void NormalizeDirectMenus(FaceTuneContext context)
+    {
+        var root = context.AvatarContext.Root;
+        var resolver = new FaceTuneResolver(root);
+        foreach (var expression in root.GetComponentsInChildren<ExpressionComponent>(true)
+                     .Where(expression => expression.DirectMenuEnabled))
+        {
+            var menu = expression.gameObject.EnsureComponent<MenuComponent>();
+            menu.MenuKind = MenuComponent.Kind.Toggle;
+            menu.Menu = expression.DirectMenuSettings.Menu;
+            menu.Binding = expression.WriteMode == ExpressionWriteMode.Replace
+                || !string.IsNullOrWhiteSpace(expression.DirectMenuSettings.GroupName)
+                ? MenuComponent.ParameterBinding.GenerateGroup
+                : MenuComponent.ParameterBinding.Generate;
+            menu.Name = string.Empty;
+            menu.GroupName = expression.WriteMode == ExpressionWriteMode.Replace
+                ? BuiltInMenuGroups.DirectMenuReplace
+                : expression.DirectMenuSettings.GroupName;
+
+            var proxyObject = new GameObject($"{expression.name} (Direct Menu)");
+            proxyObject.transform.SetParent(root.transform, false);
+            var proxy = proxyObject.AddComponent<ExpressionComponent>();
+            proxy.WriteMode = expression.WriteMode;
+            proxy.AllowEyeBlink = expression.AllowEyeBlink;
+            proxy.AllowLipSync = expression.AllowLipSync;
+            proxy.MultiFrame = expression.MultiFrame;
+            proxy.FacialBlendShapes.Direct = resolver.FacialData.Enumerate(expression)
+                .SelectMany(item => item.Value.BlendShapeAnimations)
+                .ToList() is var animations
+                ? new FacialBlendShapeData { BlendShapeAnimations = animations }
+                : new FacialBlendShapeData();
+            proxy.HasEyeBlink = true;
+            proxy.EyeBlink.Direct = resolver.EyeBlink.Get(expression);
+            proxy.HasLipSync = true;
+            proxy.LipSync.Direct = resolver.LipSync.Get(expression);
+            proxy.HasTransition = true;
+            proxy.Transition = resolver.Transition.Get(expression);
+            proxy.HasPriority = true;
+            proxy.Priority = resolver.Priority.Get(expression);
+            proxy.HasCondition = true;
+            proxy.Condition.Condition.Cases.Add(ConditionCase.From(MenuCondition.Enabled(menu)));
+        }
+    }
 
     private static void IgnoreEmptyCondition(GameObject root)
     {
@@ -40,13 +108,22 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 condition.Cases.RemoveAll(conditionCase => conditionCase.IsEmpty);
             }
 
-            if (source is ConditionComponent cc && cc.Condition.IsEmpty)
+            switch (source)
             {
-                Object.DestroyImmediate(cc);
-            }
-            else if (source is ExpressionComponent ec && ec.Condition.IsEmpty)
-            {
-                ec.HasCondition = false;
+                case ExpressionComponent expression
+                    when expression.HasCondition
+                      && expression.Condition.Mode == ConditionSelection.Kind.Conditional
+                      && expression.Condition.Condition.IsEmpty:
+                    expression.HasCondition = false;
+                    break;
+                case SettingsComponent settings when settings.HasCondition && settings.Condition.IsEmpty:
+                    settings.HasCondition = false;
+                    break;
+                case AvatarControlComponent control
+                    when control.Condition.Mode == ConditionSelection.Kind.Conditional
+                      && control.Condition.Condition.IsEmpty:
+                    control.Condition.Mode = ConditionSelection.Kind.Always;
+                    break;
             }
         }
     }
@@ -65,6 +142,9 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         {
             if (menu.MenuKind == MenuComponent.Kind.Folder) continue;
             if (menu.Binding == MenuComponent.ParameterBinding.GenerateGroup
+                && string.IsNullOrWhiteSpace(menu.GroupName))
+                menu.Binding = MenuComponent.ParameterBinding.Generate;
+            if (menu.Binding == MenuComponent.ParameterBinding.GenerateGroup
                 && menu.MenuKind != MenuComponent.Kind.Toggle)
                 throw new InvalidOperationException($"Only toggle menus can use Generate Group: '{menu.name}'.");
 
@@ -77,7 +157,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 parameters.Add(new MenuParameterPlan(
                     menu.Name,
                     menu.MenuKind == MenuComponent.Kind.Toggle ? MenuParameterType.Bool : MenuParameterType.Float,
-                    menu.MenuKind == MenuComponent.Kind.Toggle && menu.InitialValue != 0f ? menu.SelectedValue : menu.InitialValue,
+                    ResolveGeneratedInitialValue(menu),
                     true));
             }
             else if (menu.Binding == MenuComponent.ParameterBinding.Existing)
@@ -90,7 +170,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         foreach (var group in menus
                      .Where(menu => menu.MenuKind == MenuComponent.Kind.Toggle
                                     && menu.Binding == MenuComponent.ParameterBinding.GenerateGroup)
-                     .GroupBy(menu => menu.Name, StringComparer.Ordinal))
+                     .GroupBy(menu => menu.GroupName, StringComparer.Ordinal))
         {
             ValidateGroupName(group.Key, group.First());
             var parameterName = $"{FaceTuneConstants.GeneratedParameterPrefix}/MenuGroup/{group.Key}";
@@ -119,6 +199,14 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
 
         menuParameters = parameters;
         return parameterDomains;
+    }
+
+    private static float ResolveGeneratedInitialValue(MenuComponent menu)
+    {
+        if (menu.MenuKind != MenuComponent.Kind.Toggle) return menu.InitialValue;
+        var selectedValue = menu.SelectedValue != 0f;
+        var selectedByDefault = menu.InitialValue != 0f;
+        return selectedByDefault == selectedValue ? 1f : 0f;
     }
 
     private static string CreateAutomaticParameterName(GameObject root, MenuComponent menu)
@@ -165,15 +253,84 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         foreach (var condition in source.Conditions)
         foreach (var conditionCase in condition.Cases)
         {
-            for (var i = conditionCase.Conditions.Count - 1; i >= 0; i--)
+            for (var i = conditionCase.MenuConditions.Count - 1; i >= 0; i--)
             {
-                if (conditionCase.Conditions[i] is not MenuCondition menuCondition) continue;
+                var menuCondition = conditionCase.MenuConditions[i];
                 if (menuCondition.MenuSource == null)
-                    conditionCase.Conditions.RemoveAt(i);
+                    conditionCase.MenuConditions.RemoveAt(i);
                 else
-                    conditionCase.Conditions[i] = ToParameterCondition(menuCondition, controller);
+                    conditionCase.ParameterConditions.Add(ToParameterCondition(menuCondition, controller));
+            }
+            conditionCase.MenuConditions.Clear();
+        }
+    }
+
+    private static void FilterExcludedBlendShapes(string bodyPath, GameObject root, AuthoringBuildSettings settings)
+    {
+        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
+        {
+            switch (component)
+            {
+                case ExpressionComponent expression:
+                    FilterFacialSource(expression.FacialBlendShapes, expression, bodyPath, settings.ExcludedBlendShapeNames);
+                    if (expression.HasEyeBlink)
+                        FilterEyeBlinkSource(expression.EyeBlink, expression, settings.ExcludedBlendShapeNames);
+                    if (expression.HasLipSync)
+                        FilterLipSyncSource(expression.LipSync, settings.ExcludedBlendShapeNames);
+                    break;
+                case SettingsComponent setting:
+                    if (setting.HasFacialBlendShapes)
+                        FilterFacialSource(setting.FacialBlendShapes, setting, bodyPath, settings.ExcludedBlendShapeNames);
+                    if (setting.HasEyeBlink)
+                        FilterEyeBlinkSource(setting.EyeBlink, setting, settings.ExcludedBlendShapeNames);
+                    if (setting.HasLipSync)
+                        FilterLipSyncSource(setting.LipSync, settings.ExcludedBlendShapeNames);
+                    break;
+                case ExpressionDataComponent data:
+                    FilterFacialSource(data.FacialBlendShapes, data, bodyPath, settings.ExcludedBlendShapeNames);
+                    break;
             }
         }
+    }
+
+    private static void FilterFacialSource(FacialBlendShapeDataSource source, Component owner, string bodyPath, IReadOnlyCollection<string> excluded)
+    {
+        if (source.SourceMode != SettingsSourceMode.Direct) return;
+        if (source.Direct.Clip != null)
+        {
+            var animations = new List<BlendShapeWeightAnimation>();
+            source.Direct.Clip.GetBlendShapeAnimations(source.Direct.ClipOption, animations, bodyPath);
+            animations.AddRange(source.Direct.BlendShapeAnimations);
+            source.Direct.BlendShapeAnimations = animations;
+            source.Direct.Clip = null;
+        }
+        FilterAnimations(source.Direct.BlendShapeAnimations, owner, excluded);
+    }
+
+    private static void FilterEyeBlinkSource(EyeBlinkSettingsSource source, Component owner, IReadOnlyCollection<string> excluded)
+    {
+        if (source.SourceMode == SettingsSourceMode.Direct && source.Direct.EyeBlinkMode == EyeBlinkSettings.Kind.Automatic)
+            FilterAnimations(source.Direct.Animations, owner, excluded);
+    }
+
+    private static void FilterLipSyncSource(LipSyncSettingsSource source, IReadOnlyCollection<string> excluded)
+    {
+        if (source.SourceMode != SettingsSourceMode.Direct) return;
+        source.Direct.CancellerBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+    }
+
+    private static void FilterAnimations(List<BlendShapeWeightAnimation> animations, Component owner, IReadOnlyCollection<string> excluded)
+    {
+        List<string>? removed = null;
+        for (var index = animations.Count - 1; index >= 0; index--)
+        {
+            var name = animations[index].Name;
+            if (!excluded.Contains(name)) continue;
+            animations.RemoveAt(index);
+            if (removed == null || !removed.Contains(name)) (removed ??= new()).Add(name);
+        }
+        if (removed?.Count > 0)
+            LocalizedLog.Warning("log.processTrackedShapesPass.unAllowedBlendShapesFound.warning", $"{owner}:{string.Join(", ", removed)}");
     }
 
     private static ParameterCondition ToParameterCondition(MenuCondition condition, AnimatorController? controller)
@@ -195,7 +352,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             return ParameterCondition.Int(menu.Name, isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual, (int)menu.SelectedValue);
 
         if (menu.Binding == MenuComponent.ParameterBinding.Generate)
-            return ParameterCondition.Bool(menu.Name, isEnabled);
+            return ParameterCondition.Bool(menu.Name, isEnabled == (menu.SelectedValue != 0f));
 
         var type = ResolveExistingParameterType(menu, controller);
         return type == AnimatorControllerParameterType.Bool
@@ -203,95 +360,4 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             : ParameterCondition.Int(menu.Name, isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual, (int)menu.SelectedValue);
     }
 
-    private static void FilterBlendShapeOutputs(string bodyPath, GameObject root, AuthoringBuildSettings settings)
-    {
-        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
-        {
-            if (component is not IHasExpressionData) continue;
-            foreach (var data in component.EnumerateDataGraph())
-            {
-                FilterBlendShapeAnimations(data, component, bodyPath, settings);
-            }
-        }
-
-        foreach (var component in root.GetComponentsInChildren<EyeBlinkComponent>(true))
-        {
-            FilterEyeBlinkSettings(component, settings);
-        }
-
-        foreach (var component in root.GetComponentsInChildren<LipSyncComponent>(true))
-        {
-            FilterAdvancedLipSyncSettings(component, settings);
-        }
-    }
-
-    private static void FilterBlendShapeAnimations(FacialBlendShapeData data, Component owner, string bodyPath, AuthoringBuildSettings settings)
-    {
-        var animations = new List<BlendShapeWeightAnimation>();
-        if (data.Clip != null)
-            data.Clip.GetBlendShapeAnimations(data.ClipOption, animations, bodyPath);
-        animations.AddRange(data.BlendShapeAnimations);
-
-        data.BlendShapeAnimations = FilterBlendShapeAnimations(owner, animations, settings);
-        data.Clip = null;
-    }
-
-    private static void FilterEyeBlinkSettings(EyeBlinkComponent component, AuthoringBuildSettings settings)
-    {
-        if (component.ReferenceMode != SettingsSourceMode.Direct) return;
-
-        component.Settings = component.Settings with
-        {
-            Automatic = component.Settings.Automatic with
-            {
-                Animations = FilterBlendShapeAnimations(component, component.Settings.Automatic.Animations, settings)
-            }
-        };
-    }
-
-    private static void FilterAdvancedLipSyncSettings(LipSyncComponent component, AuthoringBuildSettings settings)
-    {
-        if (component.ReferenceMode != SettingsSourceMode.Direct) return;
-
-        var advancedSettings = component.AdvancedLipSyncSettings;
-        component.AdvancedLipSyncSettings = advancedSettings with
-        {
-            CancelerBlendShapeNames = FilterBlendShapeNames(component, advancedSettings.CancelerBlendShapeNames, settings)
-        };
-    }
-
-    private static List<BlendShapeWeightAnimation> FilterBlendShapeAnimations(
-        Component owner,
-        IEnumerable<BlendShapeWeightAnimation> animations,
-        AuthoringBuildSettings settings)
-    {
-        var list = animations.ToList();
-        WarnExcludedBlendShapes(owner, list.Select(animation => animation.Name), settings.ExcludedBlendShapeNames);
-        return list
-            .Where(animation => !settings.ExcludedBlendShapeNames.Contains(animation.Name))
-            .ToList();
-    }
-
-    private static List<string> FilterBlendShapeNames(Component owner, IEnumerable<string> names, AuthoringBuildSettings settings)
-    {
-        var list = names.ToList();
-        WarnExcludedBlendShapes(owner, list, settings.ExcludedBlendShapeNames);
-        return list
-            .Where(name => !settings.ExcludedBlendShapeNames.Contains(name))
-            .ToList();
-    }
-
-    private static void WarnExcludedBlendShapes(Component owner, IEnumerable<string> names, IReadOnlyCollection<string> excludedBlendShapeNames)
-    {
-        var removed = names
-            .Where(excludedBlendShapeNames.Contains)
-            .Distinct()
-            .ToList();
-
-        if (removed.Count == 0) return;
-
-        LocalizedLog.Warning(
-            "log.processTrackedShapesPass.unAllowedBlendShapesFound.warning",
-            $"{owner}:{string.Join(", ", removed)}");
-    }
 }

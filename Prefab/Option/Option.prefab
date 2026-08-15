@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3977788642607508742}
-  - component: {fileID: 6741757423284552027}
+  - component: {fileID: 191986864844893273}
   m_Layer: 0
   m_Name: Option
   m_TagString: Untagged
@@ -36,7 +36,7 @@ Transform:
   - {fileID: 2159274876803689322}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6741757423284552027
+--- !u!114 &191986864844893273
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -45,18 +45,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 8442655897507119744}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 114db5dba152e97468f319ce138b3584, type: 3}
+  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuName: 
-  Icon:
-    Mode: 2
-    ManualIcon: {fileID: 0}
-    PreviewExpression: {fileID: 0}
-  InstallSettings:
-    InstallContainerOverride:
-      referencePath: 
-      targetObject: {fileID: 0}
+  MenuKind: 2
+  Menu:
+    MenuName: 
+    Icon:
+      Mode: 0
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallContainer: {fileID: 0}
+  Binding: 0
+  Name: 
+  GroupName: 
+  InitialValue: 0
+  SelectedValue: 1
 --- !u!1001 &1196762602210491745
 PrefabInstance:
   m_ObjectHideFlags: 0

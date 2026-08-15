@@ -12,7 +12,7 @@ internal class ConditionSelection
     }
 
     public Kind Mode = Kind.Conditional;
-    public Condition Condition = new();
+    public Condition Condition = new(new ConditionCase());
 }
 
 /// <summary>Casesのいずれかが成立すれば成立する条件。</summary>
@@ -37,10 +37,20 @@ internal class Condition
 [Serializable]
 internal class ConditionCase
 {
-    [SerializeReference]
-    public List<ConditionBase> Conditions = new();
+    public List<HandGestureCondition> HandGestureConditions = new();
+    public List<MenuCondition> MenuConditions = new();
+    public List<ParameterCondition> ParameterConditions = new();
 
-    public bool IsEmpty => Conditions.Count == 0;
+    public bool IsEmpty => HandGestureConditions.Count == 0
+                        && MenuConditions.Count == 0
+                        && ParameterConditions.Count == 0;
+
+    public IEnumerable<object> EnumerateConditions()
+    {
+        foreach (var condition in HandGestureConditions) yield return condition;
+        foreach (var condition in MenuConditions) yield return condition;
+        foreach (var condition in ParameterConditions) yield return condition;
+    }
 
     public ConditionCase()
     {
@@ -50,7 +60,7 @@ internal class ConditionCase
     {
         return new ConditionCase
         {
-            Conditions = menuConditions.Cast<ConditionBase>().ToList()
+            MenuConditions = menuConditions.ToList()
         };
     }
 
@@ -58,7 +68,7 @@ internal class ConditionCase
     {
         return new ConditionCase
         {
-            Conditions = parameterConditions.Cast<ConditionBase>().ToList()
+            ParameterConditions = parameterConditions.ToList()
         };
     }
 
@@ -66,30 +76,28 @@ internal class ConditionCase
     {
         return new ConditionCase
         {
-            Conditions = handGestureConditions.Cast<ConditionBase>().ToList()
+            HandGestureConditions = handGestureConditions.ToList()
         };
     }
 }
 
-[Serializable]
-internal abstract class ConditionBase
+internal enum HandGestureHand
 {
+    Left,
+    Right,
+    Any,
+    Both
 }
 
-
 [Serializable]
-internal sealed class HandGestureCondition : ConditionBase
+internal sealed class HandGestureCondition
 {
-    public HandGestureMatch Match = HandGestureMatch.LeftHand;
+    public HandGestureHand Hand = HandGestureHand.Left;
 
-    [FormerlySerializedAs("handGesture")]
-    public HandGesture HandGesture = HandGesture.Fist;
+    [FormerlySerializedAs("HandGesture")]
+    public HandGesture Gesture = HandGesture.Fist;
 
-    [Obsolete("Use Match")]
-    public Hand hand = Hand.Left;
-
-    [Obsolete("Use Match")]
-    public EqualityComparison equalityComparison = EqualityComparison.Equal;
+    public bool Matches = true;
 
     public HandGestureCondition()
     {
@@ -108,7 +116,7 @@ internal enum MenuConditionMode
 
 /// <summary>Menu parameterの割当後にParameterConditionへ解決するalias。</summary>
 [Serializable]
-internal sealed class MenuCondition : ConditionBase
+internal sealed class MenuCondition
 {
     public MenuComponent? MenuSource = null;
     public MenuConditionMode Mode = MenuConditionMode.Enabled;
@@ -159,25 +167,25 @@ internal sealed class MenuCondition : ConditionBase
 
 
 [Serializable]
-internal sealed class ParameterCondition : ConditionBase
+internal sealed class ParameterCondition
 {
     [FormerlySerializedAs("parameterName")]
     public string ParameterName = string.Empty;
 
     [FormerlySerializedAs("parameterType")]
-    public ParameterType ParameterType = ParameterType.Int;
+    public ParameterType ParameterType = ParameterType.Bool;
 
     [FormerlySerializedAs("comparisonType")]
     public ComparisonType ComparisonType = ComparisonType.Equal;
 
     [FormerlySerializedAs("floatValue")]
-    public float FloatValue;
+    public float FloatValue = 0f;
 
     [FormerlySerializedAs("intValue")]
-    public int IntValue;
+    public int IntValue = 0;
 
     [FormerlySerializedAs("boolValue")]
-    public bool BoolValue;
+    public bool BoolValue = true;
 
     public ParameterCondition()
     {
@@ -226,37 +234,22 @@ internal sealed class ParameterCondition : ConditionBase
 
 internal enum Hand
 {
-    Left,
-    Right
-}
+    Left = 0,
 
-[Obsolete]
-internal enum EqualityComparison
-{
-    Equal,
-    NotEqual
-}
-
-internal enum HandGestureMatch
-{
-    LeftHand,
-    RightHand,
-    ExactlyOneHand,
-    BothHands,
-    AtLeastOneHand,
-    NeitherHand
+    Right = 10
 }
 
 internal enum HandGesture
 {
-    Neutral,
-    Fist,
-    HandOpen,
-    FingerPoint,
-    Victory,
-    RockNRoll,
-    HandGun,
-    ThumbsUp
+    Neutral = 0,
+
+    Fist = 10,
+    HandOpen = 20,
+    FingerPoint = 30,
+    Victory = 40,
+    RockNRoll = 50,
+    HandGun = 60,
+    ThumbsUp = 70
 }
 
 internal enum ParameterType

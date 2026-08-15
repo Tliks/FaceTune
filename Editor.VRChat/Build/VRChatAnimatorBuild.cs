@@ -265,14 +265,14 @@ internal static class VRChatAnimatorBuilder
             if (playback.DisableWhen == null)
                 return new(passthroughWhen, null, null);
 
-            var mode = playback.DisableMode == MmdDisableMode.Auto
-                ? analyzedWriteDefaults == true ? MmdDisableMode.DisableLayer : MmdDisableMode.DisableFx
+            var mode = playback.DisableMode == MMDSupportSettings.Mode.Auto
+                ? analyzedWriteDefaults == true ? MMDSupportSettings.Mode.DisableLayers : MMDSupportSettings.Mode.DisableFXlayer
                 : playback.DisableMode;
 
             return mode switch
             {
-                MmdDisableMode.DisableLayer => new(passthroughWhen, passthroughWhen, null),
-                MmdDisableMode.DisableFx => new(null, null, passthroughWhen),
+                MMDSupportSettings.Mode.DisableLayers => new(passthroughWhen, passthroughWhen, null),
+                MMDSupportSettings.Mode.DisableFXlayer => new(null, null, passthroughWhen),
                 _ => throw new ArgumentOutOfRangeException(nameof(playback.DisableMode), playback.DisableMode, null)
             };
         }

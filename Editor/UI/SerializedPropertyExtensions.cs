@@ -39,6 +39,7 @@ internal static class SerializedPropertyExtensions
                 case SerializedPropertyType.ObjectReference: property.objectReferenceValue = source as Object; break;
                 case SerializedPropertyType.ManagedReference: property.managedReferenceValue = source; break;
                 case SerializedPropertyType.AnimationCurve: property.animationCurveValue = (AnimationCurve)source; break;
+                case SerializedPropertyType.Vector2: property.vector2Value = (Vector2)source; break;
             }
             return;
         }

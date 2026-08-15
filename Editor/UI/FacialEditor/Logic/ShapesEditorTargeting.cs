@@ -11,22 +11,6 @@ internal abstract class IShapesEditorTargeting
     public abstract void SetTarget(Object? target);
     public event Action? OnTargetChanged;
     protected void RaiseTargetChanged() => OnTargetChanged?.Invoke();
-
-    protected static void SetStringArray(
-        Component target,
-        Func<SerializedObject, SerializedProperty> getProperty,
-        IReadOnlyCollection<string> values)
-    {
-        var serializedObject = new SerializedObject(target);
-        serializedObject.Update();
-        var property = getProperty(serializedObject);
-        property.arraySize = values.Count;
-        var index = 0;
-        foreach (var value in values)
-            property.GetArrayElementAtIndex(index++).stringValue = value;
-        serializedObject.ApplyModifiedProperties();
-    }
-
     public abstract void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager);
     public abstract VisualElement? DrawOptions();
 }
@@ -38,130 +22,59 @@ internal abstract class IShapesEditorTargeting<T> : IShapesEditorTargeting where
     public override Type GetObjectType() => typeof(T);
     public override void SetTarget(Object? target)
     {
-        if (Target == target) return;
-        if (target == null)
-        {
-            Target = null;
-        }
-        else
-        {
-            Target = (T)target;
-        }
+        Target = target as T;
         RaiseTargetChanged();
     }
-    public override VisualElement? DrawOptions()
-    {
-        return null;
-    }
+    public override VisualElement? DrawOptions() => null;
 }
 
-internal class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
+internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
 {
-    public override AnimationClip? Target { get; set; } = null;
-    public bool AddZeroWeight { get; set; } = true;
-    public bool AddBaseSet { get; set; } = true;
-    public bool ExcludeTrackedShapes { get; set; } = true;
-
+    public override AnimationClip? Target { get; set; }
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
-        if (Target == null) throw new Exception("Target is not set");
-        var animations = new BlendShapeWeightAnimationSet();
-        var path = RuntimeUtil.RelativePath(root, renderer.gameObject);
-        if (path == null) throw new Exception("TargetRenderer is not a child of root");
-        if (AddZeroWeight)
-        {
-            var zeroShapes = dataManager.AllKeys.Select(key => new BlendShapeWeight(key, 0f));
-            animations.AddRange(zeroShapes.ToBlendShapeAnimations());
-        }
-        if (AddBaseSet)
-        {
-            animations.AddRange(dataManager.EffectiveBaseSet.ToBlendShapeAnimations());
-        }
+        if (Target == null) throw new InvalidOperationException("Target is not set.");
         var overrides = new BlendShapeWeightSet();
         dataManager.GetCurrentOverrides(overrides);
-        animations.AddRange(overrides.ToBlendShapeAnimations());
-
+        var path = RuntimeUtil.RelativePath(root, renderer.gameObject) ?? throw new InvalidOperationException("Renderer is outside avatar root.");
         Target.RemoveAllCurveBindings();
-        Target.AddBlendShapeAnimations(path, animations);
+        Target.AddBlendShapeAnimations(path, overrides.ToBlendShapeAnimations());
         Target.SaveChanges();
     }
-
-    public override VisualElement? DrawOptions()
-    {
-        var holdout = new Foldout { text = "facialEditor.options.label".LS(), value = false };
-
-        var addZeroWeightToggle = new Toggle("facialEditor.addZeroWeight.option".LS()) { value = AddZeroWeight };
-        addZeroWeightToggle.RegisterValueChangedCallback(evt =>
-        {
-            AddZeroWeight = evt.newValue;
-        });
-
-        var addBaseSetToggle = new Toggle("facialEditor.addBaseSet.option".LS()) { value = AddBaseSet };
-        addBaseSetToggle.RegisterValueChangedCallback(evt =>
-        {
-            AddBaseSet = evt.newValue;
-        });
-
-        var excludeTrackedShapesToggle = new Toggle("facialEditor.excludeTrackedShapes.option".LS()) { value = ExcludeTrackedShapes };
-        excludeTrackedShapesToggle.RegisterValueChangedCallback(evt =>
-        {
-            ExcludeTrackedShapes = evt.newValue;
-        });
-
-        holdout.Add(addZeroWeightToggle);
-        holdout.Add(addBaseSetToggle);
-        holdout.Add(excludeTrackedShapesToggle);
-
-        return holdout;
-    }
 }
 
-internal abstract class ExpressionDataTargetingBase<T> : IShapesEditorTargeting<T> where T : Component, IHasExpressionData
+internal abstract class FacialSourceTargeting<T> : IShapesEditorTargeting<T> where T : Component
 {
+    protected abstract string SourcePropertyName { get; }
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
-        if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeWeightSet();
-        dataManager.GetCurrentOverrides(result);
-        var animations = result.ToBlendShapeAnimations().ToList();
-        var getProperty = (SerializedObject so) => so
-            .FindProperty(nameof(IHasExpressionData.Data))
+        if (Target == null) throw new InvalidOperationException("Target is not set.");
+        var overrides = new BlendShapeWeightSet();
+        dataManager.GetCurrentOverrides(overrides);
+        var serialized = new SerializedObject(Target);
+        serialized.Update();
+        var animations = serialized.FindProperty(SourcePropertyName)
+            .FindPropertyRelative(nameof(FacialBlendShapeDataSource.Direct))
             .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        var serializedObject = new SerializedObject(Target);
-        serializedObject.Update();
-        var blendShapeAnimations = getProperty(serializedObject);
-        ExpressionGUI.SetBlendShapeAnimations(blendShapeAnimations, animations);
-        serializedObject.ApplyModifiedProperties();
+        FacialDataGUI.SetBlendShapeAnimations(animations, overrides.ToBlendShapeAnimations().ToList());
+        serialized.ApplyModifiedProperties();
     }
 }
 
-internal sealed class ExpressionDataTargeting : ExpressionDataTargetingBase<ExpressionDataComponent>
+internal sealed class ExpressionDataTargeting : FacialSourceTargeting<ExpressionDataComponent>
 {
     public override ExpressionDataComponent? Target { get; set; }
+    protected override string SourcePropertyName => nameof(ExpressionDataComponent.FacialBlendShapes);
 }
 
-internal sealed class FaceTuneDataTargeting : ExpressionDataTargetingBase<ExpressionComponent>
+internal sealed class FaceTuneDataTargeting : FacialSourceTargeting<ExpressionComponent>
 {
     public override ExpressionComponent? Target { get; set; }
+    protected override string SourcePropertyName => nameof(ExpressionComponent.FacialBlendShapes);
 }
 
-internal sealed class FacialStyleTargeting : ExpressionDataTargetingBase<StyleComponent>
+internal sealed class SettingsFacialTargeting : FacialSourceTargeting<SettingsComponent>
 {
-    public override StyleComponent? Target { get; set; }
+    public override SettingsComponent? Target { get; set; }
+    protected override string SourcePropertyName => nameof(SettingsComponent.FacialBlendShapes);
 }
-
-internal class AdvancedLipSyncTargeting : IShapesEditorTargeting<LipSyncComponent>
-{
-    public override LipSyncComponent? Target { get; set; } = null;
-
-    public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
-    {
-        if (Target == null) throw new Exception("Target is not set");
-        var result = new BlendShapeWeightSet();
-        dataManager.GetCurrentOverrides(result);
-        var getProperty = (SerializedObject so) => so.FindProperty(nameof(LipSyncComponent.AdvancedLipSyncSettings)).FindPropertyRelative(AdvancedLipSyncSettings.CancelerBlendShapeNamesPropName);
-        SetStringArray(Target, getProperty, result.Keys);
-    }
-
-}
-

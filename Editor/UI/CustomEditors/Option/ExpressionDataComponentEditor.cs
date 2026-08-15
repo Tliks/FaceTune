@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune.Gui;
 
 [CanEditMultipleObjects]
 [CustomEditor(typeof(ExpressionDataComponent))]
-internal sealed class DataComponentEditor : FaceTuneSectionEditorBase<ExpressionDataComponent>
+internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<ExpressionDataComponent>
 {
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
         => new[] { CreateExpressionSection() };
@@ -10,9 +10,10 @@ internal sealed class DataComponentEditor : FaceTuneSectionEditorBase<Expression
     private FaceTuneSection CreateExpressionSection()
         => CreateSection(
             "expression.section.label",
-            new ExpressionSectionDrawer(
+            new FacialDataSectionDrawer(
                 serializedObject,
                 Component,
-                targets.Length),
+                targets.Length,
+                nameof(ExpressionDataComponent.FacialBlendShapes)),
             defaultExpanded: true);
 }

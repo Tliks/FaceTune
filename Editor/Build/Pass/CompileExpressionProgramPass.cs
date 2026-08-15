@@ -66,14 +66,22 @@ internal sealed class ExpressionCompiler
 
     public ExpressionItem Compile(ExpressionComponent component)
     {
+        var incomingAnimations = new BlendShapeWeightAnimationSet();
+        _resolver.FacialData.AddIncoming(component, incomingAnimations, _avatarContext.BodyPath);
+        var localAnimations = new BlendShapeWeightAnimationSet();
+        _resolver.FacialData.AddLocal(component, localAnimations, _avatarContext.BodyPath);
         var animations = new BlendShapeWeightAnimationSet();
         if (component.WriteMode == ExpressionWriteMode.Replace)
+        {
             animations.AddRange(_safeZeroBlendShapeAnimations);
-        _resolver.FacialData.Add(component, animations, _avatarContext.BodyPath);
+            animations.AddRange(incomingAnimations);
+        }
+        animations.AddRange(localAnimations);
 
         return new ExpressionItem(
             component.transform,
             component.name,
+            incomingAnimations,
             animations,
             component.WriteMode,
             ResolveMultiFrame(component.MultiFrame),
@@ -83,7 +91,6 @@ internal sealed class ExpressionCompiler
             _resolver.LipSync.Get(component),
             _resolver.Transition.Get(component),
             _resolver.Priority.Get(component),
-            _resolver.ParameterDrivers.Get(component),
             _resolver.Conditions.Resolve(component, condition => _conditionCompiler.Resolve(condition) ?? DnfCondition.Never));
     }
 
@@ -139,7 +146,7 @@ internal sealed class ConditionCompiler
     public DnfCondition? Resolve(Condition? condition)
         => condition == null ? null : ResolveCondition(condition);
 
-    public DnfCondition? Resolve(ConditionBase? condition)
+    public DnfCondition? Resolve(object? condition)
     {
         if (condition == null) return null;
 
@@ -158,7 +165,7 @@ internal sealed class ConditionCompiler
 
     private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)
     {
-        var resolvedConditions = conditionCase.Conditions
+        var resolvedConditions = conditionCase.EnumerateConditions()
             .Select(Resolve)
             .OfType<DnfCondition>()
             .ToArray();

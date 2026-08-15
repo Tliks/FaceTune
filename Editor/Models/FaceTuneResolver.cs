@@ -12,7 +12,6 @@ internal sealed class FaceTuneResolver
     private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
     private FaceTuneScopedResolver<TransitionSettings>? _transition;
     private FaceTuneScopedResolver<PrioritySettings>? _priority;
-    private FaceTuneScopedResolver<ParameterDriverSettings>? _parameterDrivers;
     private FaceTuneSettingsSourceResolver? _settingsSources;
     private FaceTuneMenuResolver? _menus;
 
@@ -48,16 +47,6 @@ internal sealed class FaceTuneResolver
         expression => expression.HasPriority ? expression.Priority : null,
         static () => new PrioritySettings(),
         static (_, next) => next);
-
-    public FaceTuneScopedResolver<ParameterDriverSettings> ParameterDrivers => _parameterDrivers ??= new(
-        setting => setting.HasParameterDriver && SettingsSources.TryResolve(setting.ParameterDriver, setting, out var value) ? value : null,
-        expression => expression.HasParameterDriver && SettingsSources.TryResolve(expression.ParameterDriver, expression, out var value) ? value : null,
-        static () => new ParameterDriverSettings(),
-        static (current, next) =>
-        {
-            current.Entries.AddRange(next.Entries);
-            return current;
-        });
 
     public FaceTuneMenuResolver Menus
         => _menus ??= new FaceTuneMenuResolver(_root);
@@ -134,11 +123,8 @@ internal sealed class FaceTuneFacialDataResolver
         }
     }
 
-    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> Enumerate(ExpressionComponent expression)
+    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
     {
-        foreach (var (incomingOwner, incomingValue) in EnumerateIncoming(expression))
-            yield return (incomingOwner, incomingValue);
-
         var owner = _context.Observe(expression);
         if (_sources.TryResolve(owner.FacialBlendShapes, owner, out var value, component => _context.Observe(component)))
             yield return (owner, value);
@@ -149,6 +135,24 @@ internal sealed class FaceTuneFacialDataResolver
             if (_sources.TryResolve(dataOwner.FacialBlendShapes, dataOwner, out var dataValue, component => _context.Observe(component)))
                 yield return (dataOwner, dataValue);
         }
+    }
+
+    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> Enumerate(ExpressionComponent expression)
+    {
+        foreach (var item in EnumerateIncoming(expression)) yield return item;
+        foreach (var item in EnumerateLocal(expression)) yield return item;
+    }
+
+    public void AddIncoming(Component target, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+    {
+        foreach (var (_, value) in EnumerateIncoming(target))
+            AddAnimations(value, result, bodyPath);
+    }
+
+    public void AddLocal(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+    {
+        foreach (var (_, value) in EnumerateLocal(expression))
+            AddAnimations(value, result, bodyPath);
     }
 
     public void Add(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
@@ -170,8 +174,8 @@ internal sealed class FaceTuneFacialDataResolver
 
     private static void AddAnimations(FacialBlendShapeData data, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
     {
-        if (data.Clip is { } clip)
-            clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
+        if (data.Clip != null)
+            data.Clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
 
         foreach (var animation in data.BlendShapeAnimations)
             result.Add(animation);

@@ -1,43 +1,48 @@
 namespace Aoyon.FaceTune.Gui;
 
-[CustomPropertyDrawer(typeof(Condition))]
-internal sealed class ConditionDrawer : PropertyDrawer
+[CustomPropertyDrawer(typeof(ConditionSelection))]
+internal sealed class ConditionSelectionDrawer : PropertyDrawer
 {
-    internal static float GetConditionBaseHeight(SerializedProperty condition)
-        => GUIHelper.LineHeight
-            + GUIHelper.VerticalSpacing
-            + Mathf.Max(GUIHelper.LineHeight, EditorGUI.GetPropertyHeight(condition, GUIContent.none, true));
-
-    internal static void DrawConditionBase(Rect position, SerializedProperty condition)
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        var types = new[] { typeof(HandGestureCondition), typeof(MenuCondition), typeof(ParameterCondition) };
-        var labels = new[]
-        {
-            "condition.kind.none.label".LG(),
-            "condition.kind.hand.label".LG(),
-            "condition.kind.menu.label".LG(),
-            "condition.kind.parameter.label".LG()
-        };
-        var currentType = condition.managedReferenceValue?.GetType();
-        var currentIndex = Array.IndexOf(types, currentType) + 1;
-
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        var mode = property.FindPropertyRelative(nameof(ConditionSelection.Mode));
+        var condition = property.FindPropertyRelative(nameof(ConditionSelection.Condition));
         position.SetSingleHeight();
-        var modeRect = EditorGUI.PrefixLabel(position, "common.mode.label".LG());
-        var nextIndex = EditorGUI.Popup(modeRect, currentIndex, labels);
-        if (nextIndex != currentIndex)
+        var showsCondition = mode.hasMultipleDifferentValues || mode.enumValueIndex == (int)ConditionSelection.Kind.Conditional;
+        var modeRect = position;
+        if (showsCondition)
         {
-            condition.managedReferenceValue = nextIndex == 0
-                ? null
-                : Activator.CreateInstance(types[nextIndex - 1]);
-            return;
+            var controlsRect = Rect.zero;
+            (modeRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
+            var cases = condition.FindPropertyRelative(nameof(Condition.Cases));
+            GUIHelper.DrawListControls(controlsRect, cases, ConditionGUI.CasesOptions);
         }
+        GUIHelper.LocalizedEnumPopup(
+            modeRect,
+            mode,
+            "condition.mode.label",
+            new[] { "condition.mode.always.label", "condition.mode.normal.label" });
+        if (!showsCondition) return;
 
         position.NewLine();
-        position.height = GetConditionBaseHeight(condition) - GUIHelper.LineHeight - GUIHelper.VerticalSpacing;
-        var conditionRect = EditorGUI.PrefixLabel(position, "condition.section.label".LG());
-        EditorGUI.PropertyField(conditionRect, condition, GUIContent.none, true);
+        position.height = ConditionGUI.GetHeight(condition, false);
+        ConditionGUI.Draw(position, condition, false);
     }
 
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+    {
+        var mode = property.FindPropertyRelative(nameof(ConditionSelection.Mode));
+        if (!mode.hasMultipleDifferentValues && mode.enumValueIndex == (int)ConditionSelection.Kind.Always)
+            return GUIHelper.LineHeight;
+        return GUIHelper.LineHeight
+             + GUIHelper.VerticalSpacing
+             + ConditionGUI.GetHeight(property.FindPropertyRelative(nameof(ConditionSelection.Condition)), false);
+    }
+}
+
+internal static class ConditionGUI
+{
     private const int SeparatorFontSize = 8;
     private const float EmptyMessageHeight = 30f;
     private static readonly GUIStyle SeparatorStyle = new(EditorStyles.miniLabel)
@@ -45,57 +50,40 @@ internal sealed class ConditionDrawer : PropertyDrawer
         alignment = TextAnchor.MiddleCenter,
         fontSize = SeparatorFontSize
     };
-    private static readonly ReorderableListOptions CasesOptions = new(
+    internal static readonly ReorderableListOptions CasesOptions = new(
         Header: ReorderableListOptions.HeaderMode.None,
         MaxVisibleHeight: 260f,
+        NestContent: false,
         EmptyContentHeight: EmptyMessageHeight,
         DrawEmptyOverride: DrawEmptyMessage,
-        InitializeElement: element => element.FindPropertyRelative("Conditions").arraySize = 0,
+        InitializeElement: element =>
+        {
+            element.FindPropertyRelative(nameof(ConditionCase.HandGestureConditions)).arraySize = 0;
+            element.FindPropertyRelative(nameof(ConditionCase.MenuConditions)).arraySize = 0;
+            element.FindPropertyRelative(nameof(ConditionCase.ParameterConditions)).arraySize = 0;
+        },
         DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()),
         Controls: ReorderableListOptions.ControlsPlacement.Manual);
-    private static readonly ReorderableListOptions DisabledCasesOptions = CasesOptions with
-    {
-        DrawEmptyOverride = null,
-        EmptyContentHeight = 0f
-    };
 
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    internal static float GetHeight(SerializedProperty condition, bool drawControls)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var always = property.FindPropertyRelative("Always");
-        position.SetSingleHeight();
-        var cases = property.FindPropertyRelative("Cases");
-        var (modeRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
-        var mode = always.boolValue ? 1 : 0;
-        var popupRect = EditorGUI.PrefixLabel(modeRect, "condition.mode.label".LG());
-        var nextMode = GUIHelper.LocalizedPopup(
-            popupRect,
-            mode,
-            null,
-            new[] { "condition.mode.normal.label", "condition.mode.always.label" });
-        if (nextMode != mode)
-        {
-            always.boolValue = nextMode == 1;
-            if (nextMode == 1) cases.arraySize = 0;
-        }
-
-        var disableCases = always.boolValue && !always.hasMultipleDifferentValues;
-        var casesOptions = disableCases ? DisabledCasesOptions : CasesOptions;
-        using (new EditorGUI.DisabledScope(disableCases))
-        {
-            GUIHelper.DrawListControls(controlsRect, cases, casesOptions);
-            position.NewLine();
-            position.height = GUIHelper.GetListHeight(cases, casesOptions);
-            GUIHelper.DrawList(position, cases, "condition.conditions.label".LG(), casesOptions);
-        }
+        var listHeight = GUIHelper.GetListHeight(condition.FindPropertyRelative(nameof(Condition.Cases)), CasesOptions);
+        return drawControls ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing + listHeight : listHeight;
     }
 
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+    internal static void Draw(Rect position, SerializedProperty condition, bool drawControls)
     {
-        var cases = property.FindPropertyRelative("Cases");
-        var always = property.FindPropertyRelative("Always");
-        var options = always.boolValue && !always.hasMultipleDifferentValues ? DisabledCasesOptions : CasesOptions;
-        return GUIHelper.LineHeight + GUIHelper.GetListHeight(cases, options);
+        var cases = condition.FindPropertyRelative(nameof(Condition.Cases));
+        if (drawControls)
+        {
+            position.SetSingleHeight();
+            var (labelRect, controlsRect) = position.SplitRight(GUIHelper.ListControlsWidth);
+            EditorGUI.LabelField(labelRect, "condition.conditions.label".LG());
+            GUIHelper.DrawListControls(controlsRect, cases, CasesOptions);
+            position.NewLine();
+        }
+        position.height = GUIHelper.GetListHeight(cases, CasesOptions);
+        GUIHelper.DrawList(position, cases, GUIContent.none, CasesOptions);
     }
 
     internal static void DrawSeparator(Rect boundary, GUIContent label)
@@ -109,11 +97,7 @@ internal sealed class ConditionDrawer : PropertyDrawer
 
     private static void DrawSeparator(float x, float y, float width, GUIContent label)
     {
-        var position = new Rect(
-            x,
-            y - GUIHelper.LineHeight * .5f,
-            width,
-            GUIHelper.LineHeight);
+        var position = new Rect(x, y - GUIHelper.LineHeight * .5f, width, GUIHelper.LineHeight);
         EditorGUI.LabelField(position, label, SeparatorStyle);
     }
 
@@ -121,43 +105,133 @@ internal sealed class ConditionDrawer : PropertyDrawer
         => EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
 }
 
+[CustomPropertyDrawer(typeof(Condition))]
+internal sealed class ConditionDrawer : PropertyDrawer
+{
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        ConditionGUI.Draw(position, property, true);
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        => ConditionGUI.GetHeight(property, true);
+}
+
 [CustomPropertyDrawer(typeof(ConditionCase))]
 internal sealed class ConditionCaseDrawer : PropertyDrawer
 {
     private const float EmptyMessageHeight = 30f;
-    private static readonly ReorderableListOptions ConditionsOptions = new(
-        Header: ReorderableListOptions.HeaderMode.Label,
-        AddElementOverride: ShowAddMenu,
-        DrawElementSeparator: DrawAndSeparator,
-        DrawElementOverride: DrawCondition,
-        EmptyContentHeight: EmptyMessageHeight,
-        DrawEmptyOverride: ConditionDrawer.DrawEmptyMessage,
-        NestContent: false,
-        Controls: ReorderableListOptions.ControlsPlacement.Header);
+    private const float MaxVisibleHeight = 126f;
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var conditions = property.FindPropertyRelative("Conditions");
-        GUIHelper.DrawList(position, conditions, GetCaseLabel(property), ConditionsOptions);
+        var rows = GetRows(property);
+        GUIHelper.DrawVirtualList(
+            position,
+            property,
+            rows,
+            GetCaseLabel(property),
+            index => EditorGUI.GetPropertyHeight(GetElement(property, rows[index]), GUIContent.none, true),
+            (rect, index) => DrawCondition(rect, property, rows, index),
+            () => ShowAddMenu(property),
+            index => Remove(property, rows, index),
+            rect => ConditionGUI.DrawEmptyMessage(rect, property),
+            EmptyMessageHeight,
+            MaxVisibleHeight);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var conditions = property.FindPropertyRelative("Conditions");
-        return GUIHelper.GetListHeight(conditions, ConditionsOptions);
+        var rows = GetRows(property);
+        return GUIHelper.GetVirtualListHeight(
+            rows,
+            index => EditorGUI.GetPropertyHeight(GetElement(property, rows[index]), GUIContent.none, true),
+            EmptyMessageHeight,
+            MaxVisibleHeight);
     }
 
-    private static void DrawCondition(Rect position, SerializedProperty condition)
+    private static void DrawCondition(Rect rect, SerializedProperty property, List<Row> rows, int index)
     {
-        var separatorWidth = ConditionDrawer.GetSeparatorWidth("condition.and.label".LG());
-        position.x += Mathf.Max(GUIHelper.IndentWidth, separatorWidth);
-        position.width = Mathf.Max(0f, position.width - Mathf.Max(GUIHelper.IndentWidth, separatorWidth));
-        EditorGUI.PropertyField(position, condition, GUIContent.none, true);
+        if (index < 0 || index >= rows.Count) return;
+        if (index > 0) ConditionGUI.DrawSeparatorAt(rect.x, rect.y, "condition.and.label".LG());
+        var separatorWidth = ConditionGUI.GetSeparatorWidth("condition.and.label".LG());
+        var indent = Mathf.Max(GUIHelper.IndentWidth, separatorWidth);
+        rect.x += indent;
+        rect.width = Mathf.Max(0f, rect.width - indent);
+        var element = GetElement(property, rows[index]);
+        rect.height = EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
+        EditorGUI.PropertyField(rect, element, GUIContent.none, true);
     }
 
-    private static void DrawAndSeparator(Rect boundary)
-        => ConditionDrawer.DrawSeparatorAt(boundary.x, boundary.y, "condition.and.label".LG());
+    private static List<Row> GetRows(SerializedProperty property)
+    {
+        var rows = new List<Row>();
+        AddRows(rows, property.FindPropertyRelative(nameof(ConditionCase.HandGestureConditions)), Kind.HandGesture);
+        AddRows(rows, property.FindPropertyRelative(nameof(ConditionCase.MenuConditions)), Kind.Menu);
+        AddRows(rows, property.FindPropertyRelative(nameof(ConditionCase.ParameterConditions)), Kind.Parameter);
+        return rows;
+    }
+
+    private static void AddRows(List<Row> rows, SerializedProperty array, Kind kind)
+    {
+        for (var index = 0; index < array.arraySize; index++)
+            rows.Add(new Row(kind, index));
+    }
+
+    private static void ShowAddMenu(SerializedProperty property)
+    {
+        var serializedObject = property.serializedObject;
+        var propertyPath = property.propertyPath;
+        var menu = new GenericMenu();
+        Add<HandGestureCondition>(menu, "condition.kind.hand.label", serializedObject, propertyPath, Kind.HandGesture);
+        Add<MenuCondition>(menu, "condition.kind.menu.label", serializedObject, propertyPath, Kind.Menu);
+        Add<ParameterCondition>(menu, "condition.kind.parameter.label", serializedObject, propertyPath, Kind.Parameter);
+        menu.ShowAsContext();
+    }
+
+    private static void Add<T>(GenericMenu menu, string labelKey, SerializedObject serializedObject, string propertyPath, Kind kind)
+        where T : new()
+        => menu.AddItem(labelKey.LG(), false, () =>
+        {
+            serializedObject.Update();
+            var property = serializedObject.FindProperty(propertyPath);
+            var array = GetArray(property, kind);
+            var index = array.arraySize;
+            array.InsertArrayElementAtIndex(index);
+            array.GetArrayElementAtIndex(index).CopyFrom(new T());
+            GUIHelper.SetVirtualListIndex(property, GetGlobalIndex(property, kind, index));
+            serializedObject.ApplyModifiedProperties();
+        });
+
+    private static void Remove(SerializedProperty property, List<Row> rows, int index)
+    {
+        var row = rows[index];
+        GetArray(property, row.Kind).DeleteArrayElementAtIndex(row.LocalIndex);
+    }
+
+    private static SerializedProperty GetElement(SerializedProperty property, Row row)
+        => GetArray(property, row.Kind).GetArrayElementAtIndex(row.LocalIndex);
+
+    private static SerializedProperty GetArray(SerializedProperty property, Kind kind) => kind switch
+    {
+        Kind.HandGesture => property.FindPropertyRelative(nameof(ConditionCase.HandGestureConditions)),
+        Kind.Menu => property.FindPropertyRelative(nameof(ConditionCase.MenuConditions)),
+        Kind.Parameter => property.FindPropertyRelative(nameof(ConditionCase.ParameterConditions)),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+    };
+
+    private static int GetGlobalIndex(SerializedProperty property, Kind kind, int localIndex)
+        => kind switch
+        {
+            Kind.HandGesture => localIndex,
+            Kind.Menu => property.FindPropertyRelative(nameof(ConditionCase.HandGestureConditions)).arraySize + localIndex,
+            Kind.Parameter => property.FindPropertyRelative(nameof(ConditionCase.HandGestureConditions)).arraySize
+                            + property.FindPropertyRelative(nameof(ConditionCase.MenuConditions)).arraySize
+                            + localIndex,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
 
     private static GUIContent GetCaseLabel(SerializedProperty property)
     {
@@ -166,30 +240,8 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
         return new GUIContent($"{"condition.case.label".LG().text} {number}");
     }
 
-    private static void ShowAddMenu(SerializedProperty conditions)
-    {
-        var serializedObject = conditions.serializedObject;
-        var propertyPath = conditions.propertyPath;
-        var menu = new GenericMenu();
-        Add<HandGestureCondition>(menu, "condition.kind.hand.label", serializedObject, propertyPath);
-        Add<MenuCondition>(menu, "condition.kind.menu.label", serializedObject, propertyPath);
-        Add<ParameterCondition>(menu, "condition.kind.parameter.label", serializedObject, propertyPath);
-        menu.ShowAsContext();
-    }
-
-    private static void Add<T>(GenericMenu menu, string labelKey, SerializedObject serializedObject, string propertyPath)
-        where T : ConditionBase, new()
-    {
-        menu.AddItem(labelKey.LG(), false, () =>
-        {
-            serializedObject.Update();
-            var conditions = serializedObject.FindProperty(propertyPath);
-            var index = conditions.arraySize;
-            conditions.InsertArrayElementAtIndex(index);
-            conditions.GetArrayElementAtIndex(index).managedReferenceValue = new T();
-            serializedObject.ApplyModifiedProperties();
-        });
-    }
+    private enum Kind { HandGesture, Menu, Parameter }
+    private sealed record Row(Kind Kind, int LocalIndex);
 }
 
 [CustomPropertyDrawer(typeof(HandGestureCondition))]
@@ -199,12 +251,25 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         position.SetSingleHeight();
-        var match = property.FindPropertyRelative("Match");
-        var gesture = property.FindPropertyRelative("HandGesture");
+        var hand = property.FindPropertyRelative(nameof(HandGestureCondition.Hand));
+        var gesture = property.FindPropertyRelative(nameof(HandGestureCondition.Gesture));
+        var matches = property.FindPropertyRelative(nameof(HandGestureCondition.Matches));
+        var matchOptions = new[] { "condition.hand.matches.label".LG(), "condition.hand.doesNotMatch.label".LG() };
+        var handWidth = GUIHelper.LocalizedEnumPopupWidth(hand, nameof(HandGestureHand));
         var gestureWidth = GUIHelper.LocalizedEnumPopupWidth(gesture, nameof(HandGesture));
-        var (matchRect, gestureRect) = position.SplitRight(gestureWidth);
-        DrawEnum(matchRect, match, nameof(HandGestureMatch));
+        var matchesWidth = GUIHelper.PopupWidth(matchOptions);
+        var preferredWidth = handWidth + gestureWidth + matchesWidth;
+        var scale = preferredWidth > position.width ? position.width / preferredWidth : 1f;
+        handWidth *= scale;
+        gestureWidth *= scale;
+        matchesWidth = position.width - handWidth - gestureWidth;
+
+        var handRect = new Rect(position.x, position.y, handWidth, position.height);
+        var gestureRect = new Rect(handRect.xMax, position.y, gestureWidth, position.height);
+        var matchesRect = new Rect(gestureRect.xMax, position.y, matchesWidth, position.height);
+        DrawEnum(handRect, hand, nameof(HandGestureHand));
         DrawEnum(gestureRect, gesture, nameof(HandGesture));
+        matches.boolValue = EditorGUI.Popup(matchesRect, matches.boolValue ? 0 : 1, matchOptions) == 0;
     }
 
     private static void DrawEnum(Rect position, SerializedProperty property, string typeName)
@@ -254,13 +319,13 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
         position.SetSingleHeight();
         if (type.enumValueIndex == (int)ParameterType.Bool)
         {
-            var boolOptions = new[] { "common.false.label".LG(), "common.true.label".LG() };
+            var boolOptions = new[] { "condition.bool.enabled.label".LG(), "condition.bool.disabled.label".LG() };
             var (beforeBoolValue, boolValueRect) = position.SplitRight(GUIHelper.PopupWidth(boolOptions));
             var (nameRect, typeRect) = beforeBoolValue.SplitRight(
                 GUIHelper.LocalizedEnumPopupWidth(type, nameof(ParameterType)));
             EditorGUI.PropertyField(nameRect, name, GUIContent.none);
             GUIHelper.DrawLocalizedEnum(typeRect, type, string.Empty, nameof(ParameterType));
-            value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 1 : 0, boolOptions) == 1;
+            value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 0 : 1, boolOptions) == 0;
             return;
         }
 

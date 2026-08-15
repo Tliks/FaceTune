@@ -64,6 +64,7 @@ internal class EyeBlinkSettings
 
     // for Kind.Automatic
     public List<BlendShapeWeightAnimation> Animations = CreateDefaultAnimations();
+    [FloatRange]
     public Vector2 IntervalSeconds = new(3f, 7f);
 
     internal static List<BlendShapeWeightAnimation> CreateDefaultAnimations() => new()
@@ -90,34 +91,6 @@ internal class LipSyncSettingsSource : ISettingsSource<LipSyncSettings>
 internal class LipSyncSettings
 {
     public List<BlendShapeWeight> CancellerBlendShapes = new();
-}
-
-[Serializable]
-internal class ParameterDriverSettingsSource : ISettingsSource<ParameterDriverSettings>
-{
-    public SettingsSourceMode SourceMode = SettingsSourceMode.Direct;
-    public Transform? Source;
-    public ParameterDriverSettings Direct = new();
-
-    SettingsSourceMode ISettingsSource<ParameterDriverSettings>.SourceMode => SourceMode;
-    Transform? ISettingsSource<ParameterDriverSettings>.Source => Source;
-    ParameterDriverSettings ISettingsSource<ParameterDriverSettings>.Direct => Direct;
-}
-
-/// <summary>表情の発動時に書き込むparameter群。</summary>
-[Serializable]
-internal class ParameterDriverSettings
-{
-    public struct Entry
-    {
-        public string Name;
-        public ParameterType Type;
-        public float FloatValue;
-        public int IntValue;
-        public bool BoolValue;
-    }
-
-    public List<Entry> Entries = new();
 }
 
 /// <summary>表情の遷移時間。</summary>

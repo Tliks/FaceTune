@@ -226,8 +226,8 @@ internal class AnimatorControllerImporter
 
         var expression = obj.AddComponent<ExpressionComponent>();
 
-        expression.FacialBlendShapes.Clip = clip;
-        expression.FacialBlendShapes.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
+        expression.FacialBlendShapes.Direct.Clip = clip;
+        expression.FacialBlendShapes.Direct.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
 
         if (!dnf.IsAlways && !dnf.IsNever)
         {
@@ -238,34 +238,30 @@ internal class AnimatorControllerImporter
             if (conditionCases.Length > 0)
             {
                 expression.HasCondition = true;
-                expression.Condition = new Condition(conditionCases);
+                expression.Condition.Condition = new Condition(conditionCases);
             }
         }
 
         var timeParameter = state.timeParameterActive ? state.timeParameter : string.Empty;
         var leftGestureWeightParameter = _platformSupport.ResolveGestureWeightParameter(Hand.Left);
         var rightGestureWeightParameter = _platformSupport.ResolveGestureWeightParameter(Hand.Right);
-        expression.ExpressionSettings = timeParameter switch
+        expression.MultiFrame = timeParameter switch
         {
             _ when leftGestureWeightParameter != null && timeParameter == leftGestureWeightParameter =>
-                new ExpressionSettings { MultiFrameMode = MultiFrameMode.Trigger, TriggerHand = Hand.Left },
+                new MultiFrameSettings { MultiFrameMode = MultiFrameSettings.Kind.Trigger, TriggerHand = Hand.Left },
             _ when rightGestureWeightParameter != null && timeParameter == rightGestureWeightParameter =>
-                new ExpressionSettings { MultiFrameMode = MultiFrameMode.Trigger, TriggerHand = Hand.Right },
-            _ when clip.isLooping => new ExpressionSettings { MultiFrameMode = MultiFrameMode.Loop },
-            _ when !string.IsNullOrEmpty(timeParameter) => new ExpressionSettings
+                new MultiFrameSettings { MultiFrameMode = MultiFrameSettings.Kind.Trigger, TriggerHand = Hand.Right },
+            _ when clip.isLooping => new MultiFrameSettings { MultiFrameMode = MultiFrameSettings.Kind.Loop },
+            _ when !string.IsNullOrEmpty(timeParameter) => new MultiFrameSettings
             {
-                MultiFrameMode = MultiFrameMode.Parameter,
+                MultiFrameMode = MultiFrameSettings.Kind.Parameter,
                 ParameterName = timeParameter
             },
-            _ => new ExpressionSettings()
+            _ => new MultiFrameSettings()
         };
-
-        expression.FacialSettings = new FacialSettings()
-        {
-            AllowEyeBlink = TrackingPermission.Disallow,
-            AllowLipSync = TrackingPermission.Allow,
-            WriteMode = isBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace
-        };
+        expression.AllowEyeBlink = TrackingPermission.Disallow;
+        expression.AllowLipSync = TrackingPermission.Allow;
+        expression.WriteMode = isBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace;
 
         return obj;
     }
@@ -294,22 +290,23 @@ internal class AnimatorControllerImporter
 
         return new ConditionCase
         {
-            Conditions = handGestureConditions.Cast<ConditionBase>()
-                .Concat(parameterConditions)
-                .ToList()
+            HandGestureConditions = handGestureConditions,
+            ParameterConditions = parameterConditions
         };
 
         bool TryConvertToHandGestureCondition(
             AnimatorConditionRule rule,
             [NotNullWhen(true)] out HandGestureCondition? condition)
         {
-            var match = rule.ParameterName switch
+            var hand = rule.ParameterName switch
             {
-                var parameter when leftGestureParameter != null && parameter == leftGestureParameter => HandGestureMatch.LeftHand,
-                var parameter when rightGestureParameter != null && parameter == rightGestureParameter => HandGestureMatch.RightHand,
-                _ => (HandGestureMatch?)null
+                var parameter when leftGestureParameter != null && parameter == leftGestureParameter => HandGestureHand.Left,
+                var parameter when rightGestureParameter != null && parameter == rightGestureParameter => HandGestureHand.Right,
+                _ => (HandGestureHand?)null
             };
-            if (match == null)
+            var gesture = ToHandGesture((int)rule.Condition.threshold);
+            if (hand == null || gesture == null
+                || rule.Condition.mode is not (AnimatorConditionMode.Equals or AnimatorConditionMode.NotEqual))
             {
                 condition = null;
                 return false;
@@ -317,11 +314,28 @@ internal class AnimatorControllerImporter
 
             condition = new HandGestureCondition
             {
-                Match = match.Value,
-                HandGesture = (HandGesture)(int)rule.Condition.threshold
+                Hand = hand.Value,
+                Gesture = gesture.Value,
+                Matches = rule.Condition.mode == AnimatorConditionMode.Equals
             };
             return true;
         }
+    }
+
+    private static HandGesture? ToHandGesture(int platformValue)
+    {
+        return platformValue switch
+        {
+            0 => HandGesture.Neutral,
+            1 => HandGesture.Fist,
+            2 => HandGesture.HandOpen,
+            3 => HandGesture.FingerPoint,
+            4 => HandGesture.Victory,
+            5 => HandGesture.RockNRoll,
+            6 => HandGesture.HandGun,
+            7 => HandGesture.ThumbsUp,
+            _ => null
+        };
     }
 
 }

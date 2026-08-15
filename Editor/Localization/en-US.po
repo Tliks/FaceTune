@@ -90,10 +90,10 @@ msgid "TrackingPermission"
 msgstr "Tracking"
 
 msgid "trackingPermission.option.allow"
-msgstr "Allow"
+msgstr "On"
 
 msgid "trackingPermission.option.disallow"
-msgstr "Disallow"
+msgstr "Off"
 
 msgid "trackingPermission.option.keep"
 msgstr "Keep"
@@ -163,9 +163,6 @@ msgstr "Always True"
 
 msgid "condition.case.label"
 msgstr "Case"
-
-msgid "condition.or.label"
-msgstr "or"
 
 msgid "condition.and.label"
 msgstr "and"
@@ -438,6 +435,12 @@ msgstr "Expression Editor"
 msgid "common.open.button"
 msgstr "Open"
 
+msgid "common.component.label"
+msgstr "Component"
+
+msgid "common.options.section.label"
+msgstr "Options"
+
 msgid "section.menu.reset"
 msgstr "Reset"
 
@@ -483,8 +486,50 @@ msgstr "↓"
 msgid "expression.previewSettings.section.label"
 msgstr "Preview Settings"
 
+msgid "expression.currentValue.default.label"
+msgstr "Default"
+
+msgid "expression.currentValue.multiple.label"
+msgstr "Multiple Sources"
+
+msgid "expression.settingSource.label"
+msgstr "Source"
+
+msgid "expression.settingSource.local.label"
+msgstr "Overriding"
+
+msgid "expression.settingSource.inherited.label"
+msgstr "Inherited from Parent"
+
+msgid "expression.settingSource.changeLocal.action"
+msgstr "Change in This Expression"
+
+msgid "expression.settingSource.overrideInherited.action"
+msgstr "Override in This Expression"
+
+msgid "expression.settingSource.clearLocal.action"
+msgstr "Clear Override"
+
+msgid "expression.settingSource.batch.action"
+msgstr "Change Globally from Parent"
+
+msgid "expression.settingSource.selectParent.action"
+msgstr "Select Parent Settings"
+
+msgid "expression.batchOverride.undo"
+msgstr "Create Global Override Settings"
+
 msgid "menu.section.label"
 msgstr "Menu"
+
+msgid "menu.mode.section.label"
+msgstr "Menu"
+
+msgid "menu.basicSettings.section.label"
+msgstr "Basic Settings"
+
+msgid "menu.advancedSettings.section.label"
+msgstr "Advanced Settings"
 
 msgid "menu.name.label"
 msgstr "Menu Name"
@@ -555,14 +600,29 @@ msgstr "Use Another Expression"
 msgid "style.otherStyle.label"
 msgstr "Use Another Facial Style"
 
-msgid "expression.component.label"
-msgstr "Component"
+msgid "settingsSourceMode.option.direct"
+msgstr "Direct: Configure Here"
 
-msgid "expression.clip.label"
-msgstr "Animation Clip"
+msgid "settingsSourceMode.option.reference"
+msgstr "Reference: Use Other Settings"
 
-msgid "expression.clip.importOption.label"
-msgstr "Import Option"
+msgid "settingsSourceMode.short.direct"
+msgstr "Direct"
+
+msgid "settingsSourceMode.short.reference"
+msgstr "Reference"
+
+msgid "expression.settingSource.short.standard"
+msgstr "Standard"
+
+msgid "expression.settingSource.short.batch"
+msgstr "Global"
+
+msgid "expression.settingSource.option.standard"
+msgstr "Standard: Use Standard Behavior"
+
+msgid "expression.settingSource.option.batch"
+msgstr "Global: Use Higher-Level Settings"
 
 msgid "expression.realTimePreview.label"
 msgstr "Always Preview This Expression"
@@ -620,6 +680,18 @@ msgstr "Left Hand"
 
 msgid "hand.option.right"
 msgstr "Right Hand"
+
+msgid "handGestureHand.option.left"
+msgstr "Left Hand"
+
+msgid "handGestureHand.option.right"
+msgstr "Right Hand"
+
+msgid "handGestureHand.option.any"
+msgstr "One or Both Hands"
+
+msgid "handGestureHand.option.both"
+msgstr "Both Hands"
 
 msgid "condition.kind.none.label"
 msgstr "None"
@@ -755,3 +827,126 @@ msgstr "Disable Entire FX Layer"
 
 msgid "mmdDisableMode.option.disableLayer"
 msgstr "Disable Individual Layers"
+
+msgid "condition.hand.matches.label"
+msgstr "Matches"
+
+msgid "condition.hand.doesNotMatch.label"
+msgstr "Does Not Match"
+
+msgid "condition.bool.disabled.label"
+msgstr "Disabled"
+
+msgid "condition.bool.enabled.label"
+msgstr "Enabled"
+
+msgid "settingsSource.mode.label"
+msgstr "Configuration"
+
+msgid "settingsSource.component.empty.message"
+msgstr "Specify the component to reference."
+
+msgid "priority.section.label"
+msgstr "Priority"
+
+msgid "priority.value.label"
+msgstr "Priority"
+
+msgid "lipSync.conflictPrevention.section.label"
+msgstr "Conflict Prevention"
+
+msgid "lipSync.cancellerBlendShapes.label"
+msgstr "Blend Shapes Cancelled During Lip Sync"
+
+msgid "expressionSet.defaultSelected.label"
+msgstr "Selected by Default"
+
+msgid "settings.facial.section.label"
+msgstr "Facial Expression"
+
+msgid "settings.configureFacial.section.label"
+msgstr "Add Facial Style / Base Expression"
+
+msgid "settings.eyeBlink.section.label"
+msgstr "Change Eye Blink Settings Globally"
+
+msgid "settings.lipSync.section.label"
+msgstr "Change Lip Sync Settings Globally"
+
+msgid "settings.transition.section.label"
+msgstr "Change Transition Settings Globally"
+
+msgid "settings.priority.section.label"
+msgstr "Change Priority Globally"
+
+msgid "settings.expressionSet.section.label"
+msgstr "Make an Expression Set"
+
+msgid "settings.addCondition.section.label"
+msgstr "Add Conditions Globally"
+
+msgid "settings.add.label"
+msgstr "Add Setting"
+
+msgid "settings.add.option.select"
+msgstr "Select"
+
+msgid "settings.remove.label"
+msgstr "Remove Setting"
+
+msgid "settings.applyToRenderer.label"
+msgstr "Apply to Renderer at Build Time"
+
+msgid "avatarControl.section.label"
+msgstr "Avatar Control"
+
+msgid "avatarControl.kind.label"
+msgstr "Control"
+
+msgid "avatarControl.kind.lockFacial.label"
+msgstr "Lock Facial Expressions"
+
+msgid "avatarControl.kind.disableEyeBlink.label"
+msgstr "Disable Eye Blink"
+
+msgid "avatarControl.kind.disableLipSync.label"
+msgstr "Disable Lip Sync"
+
+msgid "avatarControl.kind.supportMmd.label"
+msgstr "Support MMD"
+
+msgid "avatarSettings.faceMesh.empty.message"
+msgstr "Select the face mesh object."
+
+msgid "mmdSupport.mode.label"
+msgstr "Support Method"
+
+msgid "mmdSupport.mode.option.auto"
+msgstr "Automatic"
+
+msgid "mmdSupport.mode.option.disableFxLayer"
+msgstr "Disable Entire FX Layer"
+
+msgid "mmdSupport.mode.option.disableLayers"
+msgstr "Disable Individual Layers"
+
+msgid "menu.kind.toggle.label"
+msgstr "Toggle"
+
+msgid "menu.kind.radial.label"
+msgstr "Radial"
+
+msgid "menu.kind.folder.label"
+msgstr "Folder"
+
+msgid "menu.binding.label"
+msgstr "Parameter"
+
+msgid "menu.binding.generate.label"
+msgstr "Generate"
+
+msgid "menu.binding.existing.label"
+msgstr "Existing"
+
+msgid "menu.selectedValue.label"
+msgstr "Selected Value"

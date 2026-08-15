@@ -193,9 +193,10 @@ internal sealed class AnimatorInstaller
         state.Motion = clip;
 
         var settings = plan.Settings;
-        if (!settings.LoopTime && !string.IsNullOrEmpty(settings.MotionTimeParameterName))
+        if (settings.MultiFrameMode == MultiFrameSettings.Kind.Parameter
+            && !string.IsNullOrEmpty(settings.ParameterName))
         {
-            state.TimeParameter = settings.MotionTimeParameterName;
+            state.TimeParameter = settings.ParameterName;
         }
     }
 
@@ -213,7 +214,7 @@ internal sealed class AnimatorInstaller
             clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
         }
 
-        if (plan.Settings.LoopTime)
+        if (plan.Settings.MultiFrameMode == MultiFrameSettings.Kind.Loop)
         {
             var clipSettings = clip.Settings;
             clipSettings.loopTime = true;
@@ -338,12 +339,12 @@ internal sealed class AnimatorInstaller
     private sealed class ExpressionClipKey : IEquatable<ExpressionClipKey>
     {
         private readonly BlendShapeWeightAnimationSet animations;
-        private readonly ExpressionSettings settings;
+        private readonly MultiFrameSettings settings;
         private readonly IReadOnlyList<AapWrite> aapWrites;
 
         public ExpressionClipKey(
             BlendShapeWeightAnimationSet animations,
-            ExpressionSettings settings,
+            MultiFrameSettings settings,
             IReadOnlyList<AapWrite> aapWrites)
         {
             this.animations = animations;
