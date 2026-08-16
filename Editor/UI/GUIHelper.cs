@@ -6,6 +6,7 @@ internal static partial class GUIHelper
     public const float ContentPadding = 4f;
     public const float IndentWidth = 15f;
     public static float LineHeight => EditorGUIUtility.singleLineHeight;
+    public static float HorizontalSpacing => EditorGUIUtility.standardVerticalSpacing;
     public static float VerticalSpacing => EditorGUIUtility.standardVerticalSpacing;
 
     public static float GetLinesHeight(int count)
@@ -57,7 +58,7 @@ internal static partial class GUIHelper
     {
         width = Mathf.Clamp(width, 0f, source.width);
         var left = new Rect(source.x, source.y, width, source.height);
-        var rightX = Mathf.Min(source.xMax, left.xMax + VerticalSpacing);
+        var rightX = Mathf.Min(source.xMax, left.xMax + HorizontalSpacing);
         return (left, new Rect(rightX, source.y, Mathf.Max(0f, source.xMax - rightX), source.height));
     }
 
@@ -65,12 +66,49 @@ internal static partial class GUIHelper
     {
         width = Mathf.Clamp(width, 0f, source.width);
         var right = new Rect(source.xMax - width, source.y, width, source.height);
-        var leftWidth = Mathf.Max(0f, right.x - VerticalSpacing - source.x);
+        var leftWidth = Mathf.Max(0f, right.x - HorizontalSpacing - source.x);
         return (new Rect(source.x, source.y, leftWidth, source.height), right);
     }
 
     public static (Rect left, Rect right) SplitRatio(this Rect source, float ratio)
         => source.SplitLeft(source.width * Mathf.Clamp01(ratio));
+
+    /// <summary>
+    /// Preferred widthsを基準に、全要素を同じ比率で伸縮して横一列へ配置する。
+    /// </summary>
+    public static Rect[] FlexHorizontal(this Rect source, params float[] preferredWidths)
+        => FlexHorizontal(source, 0f, preferredWidths);
+
+    public static Rect[] FlexHorizontalSpaced(
+        this Rect source,
+        float spacing,
+        params float[] preferredWidths)
+        => FlexHorizontal(source, Mathf.Max(0f, spacing), preferredWidths);
+
+    private static Rect[] FlexHorizontal(Rect source, float spacing, float[] preferredWidths)
+    {
+        if (preferredWidths.Length == 0) return Array.Empty<Rect>();
+
+        var sourceWidth = Mathf.Max(0f, source.width);
+        var gapCount = preferredWidths.Length - 1;
+        if (gapCount > 0) spacing = Mathf.Min(spacing, sourceWidth / gapCount);
+        var availableWidth = Mathf.Max(0f, sourceWidth - spacing * gapCount);
+        var totalPreferredWidth = preferredWidths.Sum(width => Mathf.Max(0f, width));
+        var scale = totalPreferredWidth > 0f ? availableWidth / totalPreferredWidth : 0f;
+        var result = new Rect[preferredWidths.Length];
+        var x = source.x;
+        for (var i = 0; i < result.Length; i++)
+        {
+            var width = i == result.Length - 1
+                ? Mathf.Max(0f, source.x + sourceWidth - x)
+                : totalPreferredWidth > 0f
+                    ? Mathf.Max(0f, preferredWidths[i]) * scale
+                    : availableWidth / result.Length;
+            result[i] = new Rect(x, source.y, width, source.height);
+            x += width + spacing;
+        }
+        return result;
+    }
 }
 
 /// <summary>Foldouts whose drawing and hit area stay inside the supplied rectangle.</summary>
@@ -98,43 +136,37 @@ internal static partial class GUIHelper
 
 }
 
-/// <summary>Cached styles and shared geometry for FaceTune's IMGUI controls.</summary>
+/// <summary>Cached styles shared by IMGUI controls.</summary>
 internal static class GUIStyles
 {
-    public const float SectionHeaderHeight = 22f;
-    public const int SectionHeaderVerticalMargin = 0;
-    public const float SectionHeaderContentOffsetX = 20f;
-    public const float SectionHeaderToggleInset = 4f;
-    public const float SectionHeaderArrowSize = 13f;
-    public const float SectionHeaderArrowInsetX = 4f;
-    public const float SectionHeaderArrowInsetY = 2f;
-    public const float SectionHeaderControlEdgeMargin = 2f;
-
     private static GUIStyle? _sectionLayout;
     private static GUIStyle? _sectionHeader;
     private static GUIStyle? _toggleSectionHeader;
     private static GUIStyle? _sectionHeaderPopupLabel;
     private static GUIStyle? _simpleToggle;
+    private static GUIStyle? _listButton;
+    private static GUIStyle? _placeholderText;
+    private static GUIStyle? _placeholderObject;
 
     public static GUIStyle SectionLayout => _sectionLayout ??= new GUIStyle
     {
-        margin = new RectOffset(0, 0, SectionHeaderVerticalMargin, SectionHeaderVerticalMargin)
+        margin = new RectOffset(0, 0, GUIHelper.SectionHeaderVerticalMargin, GUIHelper.SectionHeaderVerticalMargin)
     };
 
     public static GUIStyle SectionHeader => _sectionHeader ??= new GUIStyle("ShurikenModuleTitle")
     {
         font = EditorStyles.label.font,
         border = new RectOffset(15, 7, 4, 4),
-        margin = new RectOffset(0, 0, SectionHeaderVerticalMargin, SectionHeaderVerticalMargin),
-        fixedHeight = SectionHeaderHeight,
-        contentOffset = new Vector2(SectionHeaderContentOffsetX, -2f),
+        margin = new RectOffset(0, 0, GUIHelper.SectionHeaderVerticalMargin, GUIHelper.SectionHeaderVerticalMargin),
+        fixedHeight = GUIHelper.ShurikenHeaderHeight,
+        contentOffset = new Vector2(GUIHelper.SectionHeaderContentOffsetX, -2f),
         fontSize = 12,
         normal = { textColor = new Color(1f, 1f, 1f, 0.9f) }
     };
 
     public static GUIStyle ToggleSectionHeader => _toggleSectionHeader ??= new GUIStyle(SectionHeader)
     {
-        contentOffset = new Vector2(SectionHeaderContentOffsetX + GUIHelper.LineHeight, -2f)
+        contentOffset = new Vector2(GUIHelper.SectionHeaderContentOffsetX + GUIHelper.LineHeight, -2f)
     };
 
     public static GUIStyle SectionHeaderPopupLabel
@@ -161,6 +193,49 @@ internal static class GUIStyles
         padding = new RectOffset()
     };
 
+    public static GUIStyle ListButton => _listButton ??= new GUIStyle(EditorStyles.miniButton)
+    {
+        margin = new RectOffset(),
+        overflow = new RectOffset(),
+        fixedWidth = 0f,
+        fixedHeight = 0f,
+        stretchWidth = true,
+        stretchHeight = true
+    };
+
+    public static GUIStyle PlaceholderText
+        => _placeholderText ??= CreatePlaceholder(EditorStyles.textField);
+
+    public static GUIStyle PlaceholderObject
+    {
+        get
+        {
+            if (_placeholderObject != null) return _placeholderObject;
+            var source = EditorStyles.objectField;
+            _placeholderObject = CreatePlaceholder(source);
+            _placeholderObject.padding = new RectOffset(
+                source.padding.left,
+                0,
+                source.padding.top,
+                source.padding.bottom);
+            return _placeholderObject;
+        }
+    }
+
+    private static GUIStyle CreatePlaceholder(GUIStyle source)
+    {
+        var color = EditorGUIUtility.isProSkin
+            ? new Color(1f, 1f, 1f, .45f)
+            : new Color(0f, 0f, 0f, .45f);
+        var style = new GUIStyle(source);
+        ClearBackgrounds(style);
+        style.normal.textColor = color;
+        style.hover.textColor = color;
+        style.focused.textColor = color;
+        style.active.textColor = color;
+        return style;
+    }
+
     private static void ClearBackgrounds(GUIStyle style)
     {
         style.normal.background = null;
@@ -176,7 +251,14 @@ internal static class GUIStyles
 
 internal static partial class GUIHelper
 {
-    internal const float ShurikenHeaderHeight = GUIStyles.SectionHeaderHeight;
+    internal const float ShurikenHeaderHeight = 22f;
+    internal const int SectionHeaderVerticalMargin = 0;
+    internal const float SectionHeaderContentOffsetX = 20f;
+    private const float SectionHeaderToggleInset = 4f;
+    private const float SectionHeaderArrowSize = 13f;
+    private const float SectionHeaderArrowInsetX = 4f;
+    private const float SectionHeaderArrowInsetY = 2f;
+    private const float SectionHeaderControlEdgeMargin = 2f;
 
     // Heuristic optical correction for the standard Toggle drawn inside a Shuriken header.
     // IMGUI does not expose the visual bounds of the Toggle glyph within its control Rect.
@@ -317,7 +399,7 @@ internal static partial class GUIHelper
         var headerControl = DrawHeaderControl(position, menuButton, drawHeader, headerWidth);
 
         var toggleRect = new Rect(
-            position.x + GUIStyles.SectionHeaderContentOffsetX + HeaderToggleVisualOffset.x,
+            position.x + SectionHeaderContentOffsetX + HeaderToggleVisualOffset.x,
             position.center.y - LineHeight * .5f + HeaderToggleVisualOffset.y,
             LineHeight,
             LineHeight);
@@ -337,7 +419,7 @@ internal static partial class GUIHelper
         GUI.Box(position, label, ShurikenStyle);
 
         var toggleRect = new Rect(
-            position.x + GUIStyles.SectionHeaderToggleInset + HeaderToggleVisualOffset.x,
+            position.x + SectionHeaderToggleInset + HeaderToggleVisualOffset.x,
             position.center.y - LineHeight * .5f + HeaderToggleVisualOffset.y,
             LineHeight,
             LineHeight);
@@ -370,7 +452,7 @@ internal static partial class GUIHelper
         if (createHeaderMenu == null) return Rect.zero;
         var button = new Rect(header.xMax - ShurikenHeaderHeight, header.y, ShurikenHeaderHeight, header.height);
         var content = EditorGUIUtility.IconContent("_Menu");
-        content.tooltip = "Menu";
+        content.tooltip = "common.menu.tooltip".LS();
         var image = content.image;
         var icon = new Rect(
             button.center.x - image.width * .5f,
@@ -387,7 +469,7 @@ internal static partial class GUIHelper
         if (drawHeader == null || width <= 0f) return Rect.zero;
         var hasMenu = menuButton.width > 0f;
         var right = hasMenu ? menuButton.x : header.xMax;
-        var rightMargin = hasMenu ? 0f : GUIStyles.SectionHeaderControlEdgeMargin;
+        var rightMargin = hasMenu ? 0f : SectionHeaderControlEdgeMargin;
         var control = new Rect(
             right - rightMargin - width,
             header.y,
@@ -400,10 +482,10 @@ internal static partial class GUIHelper
     private static bool HandleFoldout(Rect position, bool expanded, params Rect[] excluded)
     {
         var arrow = new Rect(
-            position.x + GUIStyles.SectionHeaderArrowInsetX,
-            position.y + GUIStyles.SectionHeaderArrowInsetY,
-            GUIStyles.SectionHeaderArrowSize,
-            GUIStyles.SectionHeaderArrowSize);
+            position.x + SectionHeaderArrowInsetX,
+            position.y + SectionHeaderArrowInsetY,
+            SectionHeaderArrowSize,
+            SectionHeaderArrowSize);
         DrawFoldoutArrow(arrow, expanded);
 
         var current = Event.current;
@@ -439,12 +521,6 @@ internal static partial class GUIHelper
     private static readonly Color LightOutline = new(0.52f, 0.52f, 0.52f, 1f);
 
 
-    private static GUIStyle? _placeholderTextStyle;
-    private static GUIStyle? _placeholderObjectStyle;
-
-    private static GUIStyle PlaceholderTextStyle => _placeholderTextStyle ??= CreatePlaceholderStyle(EditorStyles.textField);
-    private static GUIStyle PlaceholderObjectStyle => _placeholderObjectStyle ??= CreateObjectPlaceholderStyle();
-
     public static void DrawPlaceholderTextField(
         Rect position,
         SerializedProperty property,
@@ -458,7 +534,7 @@ internal static partial class GUIHelper
         if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
         EditorGUI.PropertyField(field, property, GUIContent.none);
         if (!string.IsNullOrEmpty(property.stringValue)) return;
-        GUI.Label(field, placeholder, PlaceholderTextStyle);
+        GUI.Label(field, placeholder, GUIStyles.PlaceholderText);
     }
 
     public static void DrawPlaceholderObjectField(
@@ -494,6 +570,8 @@ internal static partial class GUIHelper
     {
         // Redraw only the null presentation. The original field remains responsible
         // for picking, drag-and-drop, keyboard focus, Undo, and prefab overrides.
+        // ObjectFieldの背景は半透明なので、標準のNone表記を先に塗りつぶす。
+        EditorGUI.DrawRect(field, EditorGUIUtility.isProSkin ? DarkBackground : LightBackground);
         GUI.Box(field, GUIContent.none, EditorStyles.objectField);
         var buttonStyle = GUI.skin.FindStyle("ObjectFieldButton") ?? EditorStyles.miniButton;
         var buttonWidth = buttonStyle.fixedWidth > 0f ? buttonStyle.fixedWidth : LineHeight;
@@ -501,49 +579,7 @@ internal static partial class GUIHelper
         GUI.Box(button, GUIContent.none, buttonStyle);
 
         var text = new Rect(field.x, field.y, Mathf.Max(0f, field.width - buttonWidth), field.height);
-        GUI.Label(text, placeholder, PlaceholderObjectStyle);
-    }
-
-    private static GUIStyle CreateObjectPlaceholderStyle()
-    {
-        var source = EditorStyles.objectField;
-        var style = CreatePlaceholderStyle(source);
-        style.padding = new RectOffset(
-            source.padding.left,
-            0,
-            source.padding.top,
-            source.padding.bottom);
-        return style;
-    }
-
-    private static GUIStyle CreatePlaceholderStyle(GUIStyle source)
-    {
-        var color = EditorGUIUtility.isProSkin
-            ? new Color(1f, 1f, 1f, .45f)
-            : new Color(0f, 0f, 0f, .45f);
-        return new GUIStyle(source)
-        {
-            normal =
-            {
-                background = null,
-                textColor = color
-            },
-            hover =
-            {
-                background = null,
-                textColor = color
-            },
-            focused =
-            {
-                background = null,
-                textColor = color
-            },
-            active =
-            {
-                background = null,
-                textColor = color
-            }
-        };
+        GUI.Label(text, placeholder, GUIStyles.PlaceholderObject);
     }
 
     public static void DrawToggleLeft(Rect position, SerializedProperty property, GUIContent label)
@@ -608,6 +644,45 @@ internal static partial class GUIHelper
             selectedIndex,
             optionKeys.Select(key => key.LG()).ToArray());
 
+    public static bool OptionalListEnabled(SerializedProperty list)
+        => list.hasMultipleDifferentValues || list.arraySize > 0;
+
+    /// <summary>
+    /// 空配列を無効、要素のある配列を有効として編集する二択Popup。
+    /// 状態はUI上だけで表現し、シリアライズするフラグを増やさない。
+    /// </summary>
+    public static bool LocalizedOptionalListPopup(
+        Rect position,
+        SerializedProperty list,
+        GUIContent label,
+        string disabledOptionKey,
+        string enabledOptionKey,
+        Action<SerializedProperty> initializeElement)
+    {
+        var enabled = OptionalListEnabled(list);
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = list.hasMultipleDifferentValues;
+        EditorGUI.BeginChangeCheck();
+        var next = EditorGUI.Popup(
+            position,
+            label,
+            enabled ? 1 : 0,
+            new[] { disabledOptionKey.LG(), enabledOptionKey.LG() });
+        var changed = EditorGUI.EndChangeCheck();
+        EditorGUI.showMixedValue = previousMixed;
+        if (changed)
+        {
+            if (next == 0)
+                list.ClearArray();
+            else if (list.arraySize == 0)
+            {
+                list.InsertArrayElementAtIndex(0);
+                initializeElement(list.GetArrayElementAtIndex(0));
+            }
+        }
+        return next != 0;
+    }
+
     public static float CompactPopupWidth(IEnumerable<GUIContent> labels)
         => labels.Max(label => EditorStyles.label.CalcSize(label).x) + CompactPopupTrailingWidth;
 
@@ -641,7 +716,7 @@ internal static partial class GUIHelper
         if (Event.current.type != EventType.Repaint) return;
 
         var center = new Vector3(
-            position.xMax - GUIStyles.SectionHeaderArrowSize * .5f,
+            position.xMax - SectionHeaderArrowSize * .5f,
             position.center.y + CompactPopupArrowVisualOffsetY);
         var halfWidth = CompactPopupArrowWidth * .5f;
         var halfHeight = CompactPopupArrowHeight * .5f;

@@ -1,143 +1,143 @@
 namespace Aoyon.FaceTune.Gui;
 
-internal static class SettingsSourceGUI
+internal sealed class SerializedReferenceableSettings
+{
+    public SerializedProperty Reference { get; }
+    public SerializedProperty Mode { get; }
+    public SerializedProperty Source { get; }
+    public SerializedProperty Direct { get; }
+
+    public SerializedReferenceableSettings(
+        SerializedObject serializedObject,
+        string referencePropertyName,
+        string directPropertyName)
+    {
+        Reference = serializedObject.FindProperty(referencePropertyName);
+        Mode = Reference.FindPropertyRelative(nameof(SettingsReference.Mode));
+        Source = Reference.FindPropertyRelative(nameof(SettingsReference.Source));
+        Direct = serializedObject.FindProperty(directPropertyName);
+    }
+}
+
+internal static class SettingsReferenceGUI
 {
     private const float MissingReferenceWarningHeight = 30f;
-    private static readonly string[] ModeKeys = { "settingsSourceMode.option.direct", "settingsSourceMode.option.reference" };
-    private static readonly string[] ShortModeKeys = { "settingsSourceMode.short.direct", "settingsSourceMode.short.reference" };
+    private static readonly string[] ModeKeys = { "settingsReferenceMode.option.direct", "settingsReferenceMode.option.reference" };
+    private static readonly string[] ShortModeKeys = { "settingsReferenceMode.short.direct", "settingsReferenceMode.short.reference" };
 
-    public static float GetHeight(SerializedProperty property, float directHeight, bool includeMode = true)
-    {
-        var mode = property.FindPropertyRelative(nameof(FacialBlendShapeDataSource.SourceMode));
-        var source = property.FindPropertyRelative(nameof(FacialBlendShapeDataSource.Source));
-        var contentHeight = mode.enumValueIndex == (int)SettingsSourceMode.Reference
-            ? GUIHelper.LineHeight + (ShowsMissingReference(source)
+    public static float GetHeight(SerializedReferenceableSettings settings, float directHeight)
+        => settings.Mode.enumValueIndex == (int)SettingsReferenceMode.Reference
+            ? GUIHelper.LineHeight + (ShowsMissingReference(settings.Source)
                 ? GUIHelper.VerticalSpacing + MissingReferenceWarningHeight
                 : 0f)
             : directHeight;
-        return contentHeight + (includeMode ? GUIHelper.VerticalSpacing + GUIHelper.LineHeight : 0f);
-    }
 
     public static void Draw(
         Rect position,
-        SerializedProperty property,
+        SerializedReferenceableSettings settings,
         float directHeight,
-        Action<Rect> drawDirect,
-        bool includeMode = true)
+        Action<Rect> drawDirect)
     {
-        var mode = property.FindPropertyRelative(nameof(FacialBlendShapeDataSource.SourceMode));
-        if (mode.enumValueIndex == (int)SettingsSourceMode.Reference)
+        if (settings.Mode.enumValueIndex == (int)SettingsReferenceMode.Reference)
         {
-            var source = property.FindPropertyRelative(nameof(FacialBlendShapeDataSource.Source));
             position.SetSingleHeight();
-            EditorGUI.PropertyField(position, source, "common.component.label".LG());
+            EditorGUI.PropertyField(position, settings.Source, "common.component.label".LG());
             position.NewLine();
-            if (ShowsMissingReference(source))
+            if (ShowsMissingReference(settings.Source))
             {
                 position.height = MissingReferenceWarningHeight;
-                EditorGUI.HelpBox(position, "settingsSource.component.empty.message".LS(), MessageType.Warning);
-                position.NewLine();
+                EditorGUI.HelpBox(position, "settingsReference.component.empty.message".LS(), MessageType.Warning);
             }
-        }
-        else
-        {
-            position.height = directHeight;
-            drawDirect(position);
-            position.y += directHeight + GUIHelper.VerticalSpacing;
+            return;
         }
 
-        if (includeMode)
-        {
-            position.SetSingleHeight();
-            GUIHelper.LocalizedEnumPopup(position, mode, "settingsSource.mode.label", ModeKeys);
-        }
+        position.height = directHeight;
+        drawDirect(position);
     }
 
-    private static bool ShowsMissingReference(SerializedProperty source)
-        => !source.hasMultipleDifferentValues && source.objectReferenceValue == null;
-
-    public static float GetHeaderWidth(SerializedProperty property)
+    public static float GetHeaderWidth()
         => GUIHelper.CompactPopupWidth(ShortModeKeys.Select(key => key.LG()));
 
-    public static void DrawHeader(Rect position, SerializedProperty property)
+    public static void DrawHeader(Rect position, SerializedReferenceableSettings settings)
     {
-        var mode = property.FindPropertyRelative(nameof(FacialBlendShapeDataSource.SourceMode));
-        var selected = mode.enumValueIndex;
+        var selected = settings.Mode.enumValueIndex;
         GUIHelper.CompactPopup(
             position,
-            mode.hasMultipleDifferentValues ? EditorGUIUtility.TrTextContent("—") : ShortModeKeys[selected].LG(),
+            settings.Mode.hasMultipleDifferentValues ? EditorGUIUtility.TrTextContent("—") : ShortModeKeys[selected].LG(),
             ModeKeys.Select(key => key.LG()).ToArray(),
             selected,
             index =>
             {
-                mode.serializedObject.UpdateIfRequiredOrScript();
-                mode.enumValueIndex = index;
-                mode.serializedObject.ApplyModifiedProperties();
+                settings.Mode.serializedObject.UpdateIfRequiredOrScript();
+                settings.Mode.enumValueIndex = index;
+                settings.Mode.serializedObject.ApplyModifiedProperties();
             },
-            mode.hasMultipleDifferentValues);
+            settings.Mode.hasMultipleDifferentValues);
     }
+
+    private static bool ShowsMissingReference(SerializedProperty source)
+        => !source.hasMultipleDifferentValues && source.objectReferenceValue == null;
 }
 
-internal sealed class SettingsSourceSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
+internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
 {
-    private readonly SerializedProperty _property;
+    private readonly SerializedReferenceableSettings _settings;
 
-    public SettingsSourceSectionDrawer(SerializedProperty property) => _property = property;
-
-    private SerializedProperty Direct => _property.FindPropertyRelative("Direct");
+    public ReferenceableSettingsSectionDrawer(SerializedReferenceableSettings settings) => _settings = settings;
 
     public float GetHeight()
-        => SettingsSourceGUI.GetHeight(_property, EditorGUI.GetPropertyHeight(Direct, GUIContent.none, true), false);
+        => SettingsReferenceGUI.GetHeight(
+            _settings,
+            EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true));
 
     public void Draw(Rect position)
-        => SettingsSourceGUI.Draw(
+        => SettingsReferenceGUI.Draw(
             position,
-            _property,
-            EditorGUI.GetPropertyHeight(Direct, GUIContent.none, true),
-            rect => EditorGUI.PropertyField(rect, Direct, GUIContent.none, true),
-            false);
+            _settings,
+            EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true),
+            rect => EditorGUI.PropertyField(rect, _settings.Direct, GUIContent.none, true));
 
-    public float GetHeaderWidth() => SettingsSourceGUI.GetHeaderWidth(_property);
-    public void DrawHeader(Rect position) => SettingsSourceGUI.DrawHeader(position, _property);
-}
-
-internal abstract class SettingsSourceDrawer : PropertyDrawer
-{
-    protected abstract string DirectPropertyName { get; }
-
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var direct = property.FindPropertyRelative(DirectPropertyName);
-        var directHeight = EditorGUI.GetPropertyHeight(direct, GUIContent.none, true);
-        SettingsSourceGUI.Draw(
-            position,
-            property,
-            directHeight,
-            rect => EditorGUI.PropertyField(rect, direct, GUIContent.none, true));
-    }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => SettingsSourceGUI.GetHeight(
-            property,
-            EditorGUI.GetPropertyHeight(property.FindPropertyRelative(DirectPropertyName), GUIContent.none, true));
-}
-
-[CustomPropertyDrawer(typeof(EyeBlinkSettingsSource))]
-internal sealed class EyeBlinkSettingsSourceDrawer : SettingsSourceDrawer
-{
-    protected override string DirectPropertyName => nameof(EyeBlinkSettingsSource.Direct);
-}
-
-[CustomPropertyDrawer(typeof(LipSyncSettingsSource))]
-internal sealed class LipSyncSettingsSourceDrawer : SettingsSourceDrawer
-{
-    protected override string DirectPropertyName => nameof(LipSyncSettingsSource.Direct);
+    public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
+    public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);
 }
 
 [CustomPropertyDrawer(typeof(EyeBlinkSettings))]
 internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 {
+    private static readonly EyeBlinkSettings.Kind[] ModeValues =
+    {
+        EyeBlinkSettings.Kind.BuiltIn,
+        EyeBlinkSettings.Kind.SimpleAnimation,
+        EyeBlinkSettings.Kind.CustomAnimation
+    };
+    private static readonly string[] ModeKeys =
+    {
+        "eyeBlinkMode.option.builtIn",
+        "eyeBlinkMode.option.simpleAnimation",
+        "eyeBlinkMode.option.customAnimation"
+    };
+    private static readonly string[] IntervalLabelKeys =
+    {
+        "eyeBlink.interval.minimum.shortLabel",
+        "eyeBlink.interval.maximum.shortLabel"
+    };
+    private static readonly string[] DurationLabelKeys =
+    {
+        "eyeBlink.simple.duration.closing.shortLabel",
+        "eyeBlink.simple.duration.hold.shortLabel",
+        "eyeBlink.simple.duration.opening.shortLabel"
+    };
+    private static readonly ReorderableListOptions BlinkBlendShapesOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        InitializeElement: element => element.CopyFrom(EyeBlinkSettings.CreateDefaultBlinkBlendShape()));
+    private static readonly ReorderableListOptions ConflictBlendShapesOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()));
+    private static GUIStyle? _columnLabelStyle;
+    private static GUIStyle ColumnLabelStyle => _columnLabelStyle ??= new GUIStyle(EditorStyles.label)
+    {
+        alignment = TextAnchor.MiddleCenter
+    };
     private static readonly ReorderableListOptions AnimationsOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
         HeaderContentHeight: GUIHelper.LineHeight,
@@ -148,32 +148,163 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var mode = property.FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode));
         position.SetSingleHeight();
-        GUIHelper.LocalizedEnumPopup(position, mode, "eyeBlink.mode.label", new[] { "eyeBlinkMode.option.builtIn", "eyeBlinkMode.option.automatic" });
-        if (mode.enumValueIndex != (int)EyeBlinkSettings.Kind.Automatic) return;
+        DrawMode(position, mode);
         position.NewLine();
-        var animations = property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations));
-        position.height = GUIHelper.GetListHeight(animations, AnimationsOptions);
-        GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
-        position.NewLine();
-        GUIHelper.DrawPropertyWithIndentedLabel(ref position, property.FindPropertyRelative(nameof(EyeBlinkSettings.IntervalSeconds)), "eyeBlink.intervalSeconds.label");
+
+        var kind = (EyeBlinkSettings.Kind)mode.intValue;
+        if (kind == EyeBlinkSettings.Kind.BuiltIn) return;
+
+        switch (kind)
+        {
+            case EyeBlinkSettings.Kind.SimpleAnimation:
+                DrawSimple(position, property);
+                return;
+            case EyeBlinkSettings.Kind.CustomAnimation:
+                DrawCustom(position, property);
+                return;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        if (property.FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode)).enumValueIndex != (int)EyeBlinkSettings.Kind.Automatic)
-            return GUIHelper.LineHeight;
+        var kind = (EyeBlinkSettings.Kind)property
+            .FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode)).intValue;
+        if (kind == EyeBlinkSettings.Kind.BuiltIn) return GUIHelper.LineHeight;
+        var modeContentHeight = kind switch
+        {
+            EyeBlinkSettings.Kind.SimpleAnimation => GetSimpleHeight(property),
+            EyeBlinkSettings.Kind.CustomAnimation => GetCustomHeight(property),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        return GUIHelper.LineHeight
+             + GUIHelper.VerticalSpacing + modeContentHeight;
+    }
+
+    private static void DrawMode(Rect position, SerializedProperty mode)
+    {
+        var selected = Array.IndexOf(ModeValues, (EyeBlinkSettings.Kind)mode.intValue);
+        if (selected < 0) selected = 0;
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = mode.hasMultipleDifferentValues;
+        var next = GUIHelper.LocalizedPopup(position, selected, "eyeBlink.mode.label", ModeKeys);
+        EditorGUI.showMixedValue = previousMixed;
+        if (next != selected) mode.intValue = (int)ModeValues[next];
+    }
+
+    private static float GetSimpleHeight(SerializedProperty property)
+    {
+        var blink = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes));
+        var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
+        return GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions)
+             + GUIHelper.VerticalSpacing + GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions)
+             + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
+             + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
+    }
+
+    private static void DrawSimple(Rect position, SerializedProperty property)
+    {
+        var blink = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes));
+        position.height = GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions);
+        GUIHelper.DrawList(position, blink, "eyeBlink.simple.blinkBlendShapes.label".LG(), BlinkBlendShapesOptions);
+        position.NewLine();
+
+        var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
+        position.height = GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions);
+        GUIHelper.DrawLocalizedOptionalList(
+            position,
+            conflicts,
+            "eyeBlink.simple.conflictBlendShapes.label".LG(),
+            "common.option.none",
+            "common.option.present",
+            ConflictBlendShapesOptions);
+        position.NewLine();
+
+        DrawInterval(ref position, property);
+
+        position.height = GUIHelper.GetLinesHeight(2);
+        DrawDurations(position, property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleDurationsSeconds)));
+        position.NewLine();
+    }
+
+    private static void DrawDurations(Rect position, SerializedProperty property)
+    {
+        var value = property.vector3Value;
+        var values = new[] { value.x, value.y, value.z };
+        if (!DrawFloatTable(
+                position,
+                property,
+                "eyeBlink.simple.durations.label".LG(),
+                DurationLabelKeys,
+                values)) return;
+        property.vector3Value = new Vector3(values[0], values[1], values[2]);
+    }
+
+    private static float GetCustomHeight(SerializedProperty property)
+        => GUIHelper.GetListHeight(
+               property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations)),
+               AnimationsOptions)
+         + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
+
+    private static void DrawCustom(Rect position, SerializedProperty property)
+    {
         var animations = property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations));
-        return GUIHelper.LineHeight + GUIHelper.VerticalSpacing
-             + GUIHelper.GetListHeight(animations, AnimationsOptions)
-             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
+        position.height = GUIHelper.GetListHeight(animations, AnimationsOptions);
+        GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
+        position.NewLine();
+        DrawInterval(ref position, property);
+    }
+
+    private static void DrawInterval(ref Rect position, SerializedProperty property)
+    {
+        position.height = GUIHelper.GetLinesHeight(2);
+        var interval = property.FindPropertyRelative(nameof(EyeBlinkSettings.IntervalSeconds));
+        var value = interval.vector2Value;
+        var values = new[] { value.x, value.y };
+        if (DrawFloatTable(
+                position,
+                interval,
+                "eyeBlink.intervalSeconds.label".LG(),
+                IntervalLabelKeys,
+                values))
+            interval.vector2Value = new Vector2(values[0], values[1]);
+        position.NewLine();
+    }
+
+    private static bool DrawFloatTable(
+        Rect position,
+        SerializedProperty property,
+        GUIContent label,
+        IReadOnlyList<string> columnLabelKeys,
+        float[] values)
+    {
+        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        var header = new Rect(position.x, position.y, position.width, GUIHelper.LineHeight);
+        var fields = EditorGUI.PrefixLabel(header, scope.content);
+        var preferredWidths = Enumerable.Repeat(1f, values.Length).ToArray();
+        var labelColumns = fields.FlexHorizontalSpaced(GUIHelper.HorizontalSpacing, preferredWidths);
+        var valueRow = new Rect(
+            fields.x,
+            header.yMax + GUIHelper.VerticalSpacing,
+            fields.width,
+            GUIHelper.LineHeight);
+        var valueColumns = valueRow.FlexHorizontalSpaced(GUIHelper.HorizontalSpacing, preferredWidths);
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
+        EditorGUI.BeginChangeCheck();
+        for (var i = 0; i < values.Length; i++)
+        {
+            GUI.Label(labelColumns[i], columnLabelKeys[i].LG(), ColumnLabelStyle);
+            values[i] = Mathf.Max(0f, EditorGUI.FloatField(valueColumns[i], values[i]));
+        }
+        var changed = EditorGUI.EndChangeCheck();
+        EditorGUI.showMixedValue = previousMixed;
+        return changed;
     }
 
     private static void InitializeAnimation(SerializedProperty property)
-    {
-        var animation = EyeBlinkSettings.CreateDefaultAnimations()[0];
-        property.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = animation.Name;
-        property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = animation.Curve;
-    }
+        => property.CopyFrom(EyeBlinkSettings.CreateDefaultAnimation());
 
     private static void DrawClipImport(Rect position, SerializedProperty animations)
     {
@@ -190,34 +321,27 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(LipSyncSettings))]
 internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 {
-    private static readonly ReorderableListOptions BlendShapesOptions = new(Header: ReorderableListOptions.HeaderMode.Label);
+    private static readonly ReorderableListOptions BlendShapesOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()));
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         var blendShapes = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        var contentHeight = GUIHelper.GetListHeight(blendShapes, BlendShapesOptions);
-        var state = GUIState.Foldout(property, "LipSyncConflictPrevention", false);
-        if (GUIHelper.DrawShurikenSection(
-                position,
-                state,
-                "lipSync.conflictPrevention.section.label".LG(),
-                contentHeight,
-                out var content))
-        {
-            content.height = contentHeight;
-            GUIHelper.DrawList(content, blendShapes, "lipSync.cancellerBlendShapes.label".LG(), BlendShapesOptions);
-        }
+        position.height = GUIHelper.GetOptionalListHeight(blendShapes, BlendShapesOptions);
+        GUIHelper.DrawLocalizedOptionalList(
+            position,
+            blendShapes,
+            "lipSync.cancellerBlendShapes.label".LG(),
+            "common.option.none",
+            "common.option.present",
+            BlendShapesOptions);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-    {
-        var state = GUIState.Foldout(property, "LipSyncConflictPrevention", false);
-        return GUIHelper.GetShurikenSectionHeight(
-            state,
-            GUIHelper.GetListHeight(
-                property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes)),
-                BlendShapesOptions));
-    }
+        => GUIHelper.GetOptionalListHeight(
+            property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes)),
+            BlendShapesOptions);
 
 }
 
@@ -240,7 +364,6 @@ internal sealed class PrioritySettingsDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(ExpressionSetSettings))]
 internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
 {
-
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         position.SetSingleHeight();
@@ -251,29 +374,29 @@ internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
         position.NewLine();
 
         var menu = property.FindPropertyRelative(nameof(ExpressionSetSettings.Menu));
-        var menuHeight = EditorGUI.GetPropertyHeight(menu, GUIContent.none, true);
-        var state = GUIState.Foldout(property, "ExpressionSetMenu", false);
-        var section = new Rect(
-            position.x,
-            position.y,
-            position.width,
-            GUIHelper.GetShurikenSectionHeight(state, menuHeight));
-        if (GUIHelper.DrawShurikenSection(section, state, "menuSettings.section.label".LG(), menuHeight, out var content))
-        {
-            content.height = menuHeight;
-            EditorGUI.PropertyField(content, menu, GUIContent.none, true);
-        }
+        var foldout = GUIState.Foldout(property, "ExpressionSetMenu");
+        foldout.Expanded = GUIHelper.DrawFoldout(
+            position,
+            foldout.Expanded,
+            "menuSettings.section.label".LG());
+        if (!foldout.Expanded) return;
+
+        position.NewLine();
+        position.Indent();
+        position.height = EditorGUI.GetPropertyHeight(menu, GUIContent.none, true);
+        EditorGUI.PropertyField(position, menu, GUIContent.none, true);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
         var menu = property.FindPropertyRelative(nameof(ExpressionSetSettings.Menu));
-        var state = GUIState.Foldout(property, "ExpressionSetMenu", false);
+        var foldout = GUIState.Foldout(property, "ExpressionSetMenu");
         return GUIHelper.LineHeight
-             + GUIHelper.VerticalSpacing
-             + GUIHelper.GetShurikenSectionHeight(
-                 state,
-                 EditorGUI.GetPropertyHeight(menu, GUIContent.none, true));
+             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight
+             + (foldout.Expanded
+                 ? GUIHelper.VerticalSpacing
+                   + EditorGUI.GetPropertyHeight(menu, GUIContent.none, true)
+                 : 0f);
     }
 
 }
@@ -281,40 +404,43 @@ internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(MMDSupportSettings))]
 internal sealed class MMDSupportSettingsDrawer : PropertyDrawer
 {
-    private static readonly ReorderableListOptions BlendShapeListOptions = new(Header: ReorderableListOptions.HeaderMode.None, Controls: ReorderableListOptions.ControlsPlacement.Header, NestContent: false);
+    private static readonly string[] SupportModeKeys =
+    {
+        "mmdSupport.mode.option.auto",
+        "mmdSupport.mode.option.disableFxLayer",
+        "mmdSupport.mode.option.disableLayers"
+    };
+    private static readonly ReorderableListOptions BlendShapeListOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        Controls: ReorderableListOptions.ControlsPlacement.Header,
+        NestContent: false,
+        InitializeElement: element => element.stringValue = string.Empty);
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         var supportMode = property.FindPropertyRelative(nameof(MMDSupportSettings.SupportMode));
         position.SetSingleHeight();
-        GUIHelper.LocalizedEnumPopup(position, supportMode, "mmdSupport.mode.label", new[]
-        {
-            "mmdSupport.mode.option.auto",
-            "mmdSupport.mode.option.disableFxLayer",
-            "mmdSupport.mode.option.disableLayers"
-        });
+        GUIHelper.LocalizedEnumPopup(position, supportMode, "mmdSupport.mode.label", SupportModeKeys);
         position.NewLine();
         var names = property.FindPropertyRelative(nameof(MMDSupportSettings.ExplicitBlendShapeNames));
-        var selectedMode = names.arraySize == 0 ? 0 : 1;
-        var nextMode = GUIHelper.LocalizedPopup(position, selectedMode, "mmdSupport.blendShapes.label", new[] { "mmdSupport.blendShapes.option.auto", "mmdSupport.blendShapes.option.specified" });
-        if (nextMode != selectedMode)
-        {
-            if (nextMode == 0) names.ClearArray();
-            else
-            {
-                names.InsertArrayElementAtIndex(0);
-                names.GetArrayElementAtIndex(0).stringValue = string.Empty;
-            }
-        }
+        var usesSpecifiedNames = GUIHelper.LocalizedOptionalListPopup(
+            position,
+            names,
+            "mmdSupport.blendShapes.label".LG(),
+            "mmdSupport.blendShapes.option.auto",
+            "mmdSupport.blendShapes.option.specified",
+            element => element.stringValue = string.Empty);
         position.NewLine();
-        if (nextMode == 0) return;
+        if (!usesSpecifiedNames) return;
         position.Indent();
         position.height = GUIHelper.GetListHeight(names, BlendShapeListOptions);
-        GUIHelper.DrawList(position, names, GUIContent.none, BlendShapeListOptions);
+        GUIHelper.DrawList(position, names, "mmdSupport.blendShapeName.label".LG(), BlendShapeListOptions);
     }
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
         var names = property.FindPropertyRelative(nameof(MMDSupportSettings.ExplicitBlendShapeNames));
         return GUIHelper.GetLinesHeight(2)
-             + (names.arraySize == 0 ? 0f : GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(names, BlendShapeListOptions));
+             + (GUIHelper.OptionalListEnabled(names)
+                 ? GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(names, BlendShapeListOptions)
+                 : 0f);
     }
 }

@@ -21,13 +21,15 @@ internal static class VRChatParameterBuilder
             parameters.parameters.Add(new ParameterConfig
             {
                 nameOrPrefix = parameter.Name,
-                syncType = parameter.Type switch
-                {
-                    MenuParameterType.Bool => ParameterSyncType.Bool,
-                    MenuParameterType.Int => ParameterSyncType.Int,
-                    MenuParameterType.Float => ParameterSyncType.Float,
-                    _ => ParameterSyncType.NotSynced
-                },
+                syncType = !parameter.Synced
+                    ? ParameterSyncType.NotSynced
+                    : parameter.Type switch
+                    {
+                        MenuParameterType.Bool => ParameterSyncType.Bool,
+                        MenuParameterType.Int => ParameterSyncType.Int,
+                        MenuParameterType.Float => ParameterSyncType.Float,
+                        _ => ParameterSyncType.NotSynced
+                    },
                 saved = parameter.Saved,
                 defaultValue = parameter.DefaultValue,
                 hasExplicitDefaultValue = true

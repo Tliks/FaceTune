@@ -1,22 +1,18 @@
 namespace Aoyon.FaceTune;
 
 /// <summary>値を直接持つか、指定Transform上の同種設定を参照するか。</summary>
-internal enum SettingsSourceMode
+internal enum SettingsReferenceMode
 {
     Direct,
     Reference
 }
 
+/// <summary>設定値とは独立してシリアライズする参照情報。</summary>
 [Serializable]
-internal class FacialBlendShapeDataSource : ISettingsSource<FacialBlendShapeData>
+internal sealed class SettingsReference
 {
-    public SettingsSourceMode SourceMode = SettingsSourceMode.Direct;
+    public SettingsReferenceMode Mode = SettingsReferenceMode.Direct;
     public Transform? Source;
-    public FacialBlendShapeData Direct = new();
-
-    SettingsSourceMode ISettingsSource<FacialBlendShapeData>.SourceMode => SourceMode;
-    Transform? ISettingsSource<FacialBlendShapeData>.Source => Source;
-    FacialBlendShapeData ISettingsSource<FacialBlendShapeData>.Direct => Direct;
 }
 
 /// <summary>
@@ -38,18 +34,6 @@ internal enum ClipImportOption
     NonZero
 }
 
-[Serializable]
-internal class EyeBlinkSettingsSource : ISettingsSource<EyeBlinkSettings>
-{
-    public SettingsSourceMode SourceMode = SettingsSourceMode.Direct;
-    public Transform? Source;
-    public EyeBlinkSettings Direct = new();
-
-    SettingsSourceMode ISettingsSource<EyeBlinkSettings>.SourceMode => SourceMode;
-    Transform? ISettingsSource<EyeBlinkSettings>.Source => Source;
-    EyeBlinkSettings ISettingsSource<EyeBlinkSettings>.Direct => Direct;
-}
-
 /// <summary>platform標準Blinkか、FaceTune生成animationか。</summary>
 [Serializable]
 internal class EyeBlinkSettings
@@ -57,33 +41,29 @@ internal class EyeBlinkSettings
     public enum Kind
     {
         BuiltIn,
-        Automatic
+        CustomAnimation,
+        SimpleAnimation
     }
 
     public Kind EyeBlinkMode = Kind.BuiltIn;
 
-    // for Kind.Automatic
-    public List<BlendShapeWeightAnimation> Animations = CreateDefaultAnimations();
-    [FloatRange]
+    // for animation modes
     public Vector2 IntervalSeconds = new(3f, 7f);
 
-    internal static List<BlendShapeWeightAnimation> CreateDefaultAnimations() => new()
-    {
-        new BlendShapeWeightAnimation("vrc.blink", new AnimationCurve(
-            new Keyframe(0f, 0f), new Keyframe(.06666667f, 100f), new Keyframe(.13333334f, 0f)))
-    };
-}
+    // for Kind.SimpleAnimation (x: closing, y: hold, z: opening)
+    public Vector3 SimpleDurationsSeconds = new(.07f, 0f, .07f);
+    public List<BlendShapeWeight> SimpleBlinkBlendShapes = new() { CreateDefaultBlinkBlendShape() };
+    public List<BlendShapeWeight> SimpleConflictPreventionBlendShapes = new();
 
-[Serializable]
-internal class LipSyncSettingsSource : ISettingsSource<LipSyncSettings>
-{
-    public SettingsSourceMode SourceMode = SettingsSourceMode.Direct;
-    public Transform? Source;
-    public LipSyncSettings Direct = new();
+    internal static BlendShapeWeight CreateDefaultBlinkBlendShape()
+        => new("vrc.blink", 100f);
 
-    SettingsSourceMode ISettingsSource<LipSyncSettings>.SourceMode => SourceMode;
-    Transform? ISettingsSource<LipSyncSettings>.Source => Source;
-    LipSyncSettings ISettingsSource<LipSyncSettings>.Direct => Direct;
+    // for Kind.CustomAnimation
+    public List<BlendShapeWeightAnimation> Animations = new() { CreateDefaultAnimation() };
+
+    internal static BlendShapeWeightAnimation CreateDefaultAnimation()
+        => new("vrc.blink", new AnimationCurve(
+            new Keyframe(0f, 0f), new Keyframe(.07f, 100f), new Keyframe(.14f, 0f)));
 }
 
 /// <summary>LipSyncと競合するBlendShapeの打ち消し設定。</summary>
@@ -137,11 +117,13 @@ internal class MultiFrameSettings
         Default,
         Loop,
         Trigger,
-        Parameter
+        Parameter,
+        Menu
     }
 
     public Kind MultiFrameMode = Kind.Default;
 
     public Hand TriggerHand = Hand.Left; // For Kind.Trigger
     public string ParameterName = string.Empty; // For Kind.Parameter
+    public MenuComponent? MenuSource = null; // For Kind.Menu
 }

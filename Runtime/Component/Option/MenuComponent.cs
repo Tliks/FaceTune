@@ -13,31 +13,28 @@ namespace Aoyon.FaceTune
             Folder
         }
 
-        public enum ParameterBinding
-        {
-            Generate,
-            GenerateGroup,
-            Existing
-        }
-
         public Kind MenuKind = Kind.Toggle;
         public MenuSettings Menu = new();
 
         // Folder以外で使用する。
-        public ParameterBinding Binding = ParameterBinding.Generate;
+        public bool UseExistingParameter;
+
+        // GenerateかつToggleの場合に、同名groupで一つのparameterを生成する。
+        public bool GenerateParameterGroup;
+        public string GroupName = string.Empty;
 
         // Generate: 空なら自動命名、非空なら生成parameter名。
         // Existing: 既存parameter名。
         public string Name = string.Empty;
 
-        // GenerateGroupで使用するauthoring上のgroup名。
-        public string GroupName = string.Empty;
+        public bool Synced = true;
+        public bool Saved = true;
 
         [Range(0f, 1f)]
         public float InitialValue;
 
         // Toggleの選択状態を表すparameter値。
-        // GenerateGroupではNormalizeで割り当てる。
+        // GroupではNormalizeで割り当てる。
         public float SelectedValue = 1f;
     }
 }

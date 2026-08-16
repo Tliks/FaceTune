@@ -12,27 +12,27 @@ internal sealed class FaceTuneResolver
     private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
     private FaceTuneScopedResolver<TransitionSettings>? _transition;
     private FaceTuneScopedResolver<PrioritySettings>? _priority;
-    private FaceTuneSettingsSourceResolver? _settingsSources;
+    private FaceTuneSettingsReferenceResolver? _settingsReferences;
     private FaceTuneMenuResolver? _menus;
 
     public FaceTuneConditionResolver Conditions
         => _conditions ??= new FaceTuneConditionResolver();
 
     public FaceTuneFacialDataResolver FacialData
-        => _facialData ??= new FaceTuneFacialDataResolver(_root, SettingsSources, _context);
+        => _facialData ??= new FaceTuneFacialDataResolver(_root, SettingsReferences, _context);
 
-    public FaceTuneSettingsSourceResolver SettingsSources
-        => _settingsSources ??= new FaceTuneSettingsSourceResolver();
+    public FaceTuneSettingsReferenceResolver SettingsReferences
+        => _settingsReferences ??= new FaceTuneSettingsReferenceResolver();
 
     public FaceTuneScopedResolver<EyeBlinkSettings> EyeBlink => _eyeBlink ??= new(
-        setting => setting.HasEyeBlink && SettingsSources.TryResolve(setting.EyeBlink, setting, out var value) ? value : null,
-        expression => expression.HasEyeBlink && SettingsSources.TryResolve(expression.EyeBlink, expression, out var value) ? value : null,
+        setting => SettingsReferences.TryResolve<EyeBlinkSettings>(setting, out var value) ? value : null,
+        expression => SettingsReferences.TryResolve<EyeBlinkSettings>(expression, out var value) ? value : null,
         static () => new EyeBlinkSettings(),
         static (_, next) => next);
 
     public FaceTuneScopedResolver<LipSyncSettings> LipSync => _lipSync ??= new(
-        setting => setting.HasLipSync && SettingsSources.TryResolve(setting.LipSync, setting, out var value) ? value : null,
-        expression => expression.HasLipSync && SettingsSources.TryResolve(expression.LipSync, expression, out var value) ? value : null,
+        setting => SettingsReferences.TryResolve<LipSyncSettings>(setting, out var value) ? value : null,
+        expression => SettingsReferences.TryResolve<LipSyncSettings>(expression, out var value) ? value : null,
         static () => new LipSyncSettings(),
         static (_, next) => next);
 
@@ -99,16 +99,16 @@ internal sealed class FaceTuneConditionResolver
 internal sealed class FaceTuneFacialDataResolver
 {
     private readonly GameObject _root;
-    private readonly FaceTuneSettingsSourceResolver _sources;
+    private readonly FaceTuneSettingsReferenceResolver _references;
     private readonly ComputeContext _context;
 
     internal FaceTuneFacialDataResolver(
         GameObject root,
-        FaceTuneSettingsSourceResolver sources,
+        FaceTuneSettingsReferenceResolver references,
         ComputeContext? context)
     {
         _root = root;
-        _sources = sources;
+        _references = references;
         _context = context ?? ComputeContext.NullContext;
     }
 
@@ -118,7 +118,7 @@ internal sealed class FaceTuneFacialDataResolver
         for (var i = settings.Length - 1; i >= 0; i--)
         {
             var owner = _context.Observe(settings[i]);
-            if (owner.HasFacialBlendShapes && _sources.TryResolve(owner.FacialBlendShapes, owner, out var value, component => _context.Observe(component)))
+            if (owner.HasFacialBlendShapes && _references.TryResolve<FacialBlendShapeData>(owner, out var value, component => _context.Observe(component)))
                 yield return (owner, value);
         }
     }
@@ -126,13 +126,13 @@ internal sealed class FaceTuneFacialDataResolver
     public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
     {
         var owner = _context.Observe(expression);
-        if (_sources.TryResolve(owner.FacialBlendShapes, owner, out var value, component => _context.Observe(component)))
+        if (_references.TryResolve<FacialBlendShapeData>(owner, out var value, component => _context.Observe(component)))
             yield return (owner, value);
 
         foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(expression.gameObject, true))
         {
             var dataOwner = _context.Observe(data);
-            if (_sources.TryResolve(dataOwner.FacialBlendShapes, dataOwner, out var dataValue, component => _context.Observe(component)))
+            if (_references.TryResolve<FacialBlendShapeData>(dataOwner, out var dataValue, component => _context.Observe(component)))
                 yield return (dataOwner, dataValue);
         }
     }
@@ -167,7 +167,7 @@ internal sealed class FaceTuneFacialDataResolver
         {
             var owner = _context.Observe(settings);
             if (owner.HasFacialBlendShapes && owner.ApplyToRenderer
-                && _sources.TryResolve(owner.FacialBlendShapes, owner, out var value, component => _context.Observe(component)))
+                && _references.TryResolve<FacialBlendShapeData>(owner, out var value, component => _context.Observe(component)))
                 AddAnimations(value, result, bodyPath);
         }
     }
@@ -250,27 +250,32 @@ internal sealed class FaceTuneScopedResolver<TValue> where TValue : class
 }
 
 
-internal sealed class FaceTuneSettingsSourceResolver
+internal sealed class FaceTuneSettingsReferenceResolver
 {
     public bool TryResolve<TValue>(
-        ISettingsSource<TValue> source,
         Component owner,
         [NotNullWhen(true)] out TValue? value,
         Action<Component>? observe = null)
         where TValue : class
     {
         observe?.Invoke(owner);
-        return TryResolve(source, new HashSet<Component> { owner }, observe, out value);
+        if (owner is not IReferenceableExpressionSettings<TValue> referenceable
+            || !referenceable.Settings.Enabled)
+        {
+            value = null;
+            return false;
+        }
+        return TryResolve(referenceable.Settings, new HashSet<Component> { owner }, observe, out value);
     }
 
     private static bool TryResolve<TValue>(
-        ISettingsSource<TValue> source,
+        ReferenceableExpressionSettings<TValue> source,
         HashSet<Component> visited,
         Action<Component>? observe,
         [NotNullWhen(true)] out TValue? value)
         where TValue : class
     {
-        if (source.SourceMode == SettingsSourceMode.Direct)
+        if (source.Mode == SettingsReferenceMode.Direct)
         {
             value = source.Direct;
             return true;
@@ -283,12 +288,14 @@ internal sealed class FaceTuneSettingsSourceResolver
         }
 
         Component? referencedOwner = null;
-        ISettingsSource<TValue>? referencedValue = null;
+        ReferenceableExpressionSettings<TValue>? referencedValue = null;
         foreach (var component in source.Source.GetComponents<FaceTuneTagComponent>())
         {
             observe?.Invoke(component);
-            if (component is not IReferenceableExpressionSettings<TValue> referenceable
-                || referenceable.SettingsSource is not { } candidate)
+            if (component is not IReferenceableExpressionSettings<TValue> referenceable)
+                continue;
+            var candidate = referenceable.Settings;
+            if (!candidate.Enabled)
                 continue;
 
             // 同じGameObjectではInspector上で下にあるComponentを使う。
@@ -302,7 +309,7 @@ internal sealed class FaceTuneSettingsSourceResolver
             return false;
         }
 
-        return TryResolve(referencedValue, visited, observe, out value);
+        return TryResolve(referencedValue.Value, visited, observe, out value);
     }
 }
 

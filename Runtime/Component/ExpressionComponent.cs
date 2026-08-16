@@ -20,22 +20,25 @@ namespace Aoyon.FaceTune
         public MultiFrameSettings MultiFrame = new();
 
         // 親のSettingsから集めた顔つきの後に重ねる。
-        public FacialBlendShapeDataSource FacialBlendShapes = new();
+        public SettingsReference FacialBlendShapesReference = new();
+        public FacialBlendShapeData FacialBlendShapes = new();
 
         // 通常条件を迂回し、メニューを条件とする高優先度proxyを生成する。
         public bool DirectMenuEnabled = false;
-        public DirectMenuSettings DirectMenuSettings = new();
+        public DirectMenuSettings DirectMenuSettings = CreateDefaultDirectMenuSettings();
 
         // falseなら通常条件では発動しない。Alwaysでも親scopeの条件は受ける。
         public bool HasCondition = false;
-        public ConditionSelection Condition = new();
+        public ConditionSelection Condition = CreateDefaultCondition();
 
         // trueなら、このExpressionの値を親のSettingsより優先する。
         public bool HasEyeBlink = false;
-        public EyeBlinkSettingsSource EyeBlink = new();
+        public SettingsReference EyeBlinkReference = new();
+        public EyeBlinkSettings EyeBlink = new();
 
         public bool HasLipSync = false;
-        public LipSyncSettingsSource LipSync = new();
+        public SettingsReference LipSyncReference = new();
+        public LipSyncSettings LipSync = new();
 
         public bool HasTransition = false;
         public TransitionSettings Transition = new();
@@ -46,20 +49,34 @@ namespace Aoyon.FaceTune
         [ToggleLeft]
         public bool AlwaysOnPreviewEnabled = false;
 
+        internal static DirectMenuSettings CreateDefaultDirectMenuSettings()
+        {
+            var settings = new DirectMenuSettings();
+            settings.Menu.Icon.Mode = MenuIconSettings.Kind.ExpressionPreview;
+            return settings;
+        }
+
+        internal static ConditionSelection CreateDefaultCondition()
+            => new()
+            {
+                Condition = new Condition(
+                    ConditionCase.From(new HandGestureCondition()))
+            };
+
 
         IEnumerable<Condition> IHasConditions.Conditions
             => HasCondition && Condition.Mode == ConditionSelection.Kind.Conditional
                 ? new[] { Condition.Condition }
                 : Array.Empty<Condition>();
 
-        ISettingsSource<FacialBlendShapeData>? IReferenceableExpressionSettings<FacialBlendShapeData>.SettingsSource
-            => FacialBlendShapes;
+        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
+            => new(true, FacialBlendShapesReference.Mode, FacialBlendShapesReference.Source, FacialBlendShapes);
 
-        ISettingsSource<EyeBlinkSettings>? IReferenceableExpressionSettings<EyeBlinkSettings>.SettingsSource
-            => HasEyeBlink ? EyeBlink : null;
+        ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
+            => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
 
-        ISettingsSource<LipSyncSettings>? IReferenceableExpressionSettings<LipSyncSettings>.SettingsSource
-            => HasLipSync ? LipSync : null;
+        ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
+            => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
 
     }
 }

@@ -11,6 +11,7 @@ internal sealed record MenuParameterPlan(
     string Name,
     MenuParameterType Type,
     float DefaultValue,
+    bool Synced,
     bool Saved);
 
 internal abstract record MenuIconPlan

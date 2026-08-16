@@ -14,6 +14,7 @@ internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<
                 serializedObject,
                 Component,
                 targets.Length,
+                nameof(ExpressionDataComponent.FacialBlendShapesReference),
                 nameof(ExpressionDataComponent.FacialBlendShapes)),
             defaultExpanded: true);
 }

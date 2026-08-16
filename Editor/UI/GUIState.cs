@@ -22,9 +22,6 @@ internal static class GUIState
         return (T)value;
     }
 
-    public static FoldoutState Foldout(
-        SerializedProperty property,
-        string scope,
-        bool defaultExpanded)
-        => Get(property, scope, () => new FoldoutState(defaultExpanded));
+    public static FoldoutState Foldout(SerializedProperty property, string scope)
+        => Get(property, scope, () => new FoldoutState(false));
 }

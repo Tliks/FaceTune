@@ -59,7 +59,7 @@ internal class FacialShapesEditor : EditorWindow
         _initialUndoGroup = Undo.GetCurrentGroup();
 
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
-        titleContent = new GUIContent("facialEditor.title".LS());
+        titleContent = "facialEditor.title".LG();
         saveChangesMessage = "facialEditor.unsavedChanges.message".LS();
 
         hasUnsavedChanges = false;

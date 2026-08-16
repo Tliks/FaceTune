@@ -32,7 +32,12 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
         };
 
     private FaceTuneSection CreateExpressionSection()
-        => CreateSection("expression.section.label", new FacialDataSectionDrawer(serializedObject, Component, targets.Length, nameof(ExpressionComponent.FacialBlendShapes)), true);
+        => CreateSection("expression.section.label", new FacialDataSectionDrawer(
+            serializedObject,
+            Component,
+            targets.Length,
+            nameof(ExpressionComponent.FacialBlendShapesReference),
+            nameof(ExpressionComponent.FacialBlendShapes)), true);
 
     private FaceTuneSection CreateBehaviorSection()
         => CreateSection("expression.behavior.section.label", new ExpressionBehaviorSectionDrawer(serializedObject), true);
@@ -154,12 +159,10 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         switch (kind)
         {
             case ExpressionInheritedSettingKind.EyeBlink:
-                target.CopyFrom(new EyeBlinkSettingsSource());
-                target.FindPropertyRelative(nameof(EyeBlinkSettingsSource.Direct)).CopyFrom(_preview.EyeBlink);
+                target.CopyFrom(_preview.EyeBlink);
                 break;
             case ExpressionInheritedSettingKind.LipSync:
-                target.CopyFrom(new LipSyncSettingsSource());
-                target.FindPropertyRelative(nameof(LipSyncSettingsSource.Direct)).CopyFrom(_preview.LipSync);
+                target.CopyFrom(_preview.LipSync);
                 break;
             case ExpressionInheritedSettingKind.Transition:
                 target.CopyFrom(_preview.Transition);
@@ -194,15 +197,36 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         owner.enabled = true;
         var serializedOwner = new SerializedObject(owner);
         serializedOwner.Update();
-        var (enabledPropertyName, valuePropertyName) = kind switch
+        var (enabledPropertyName, valuePropertyName, referencePropertyName) = kind switch
         {
-            ExpressionInheritedSettingKind.EyeBlink => (nameof(SettingsComponent.HasEyeBlink), nameof(SettingsComponent.EyeBlink)),
-            ExpressionInheritedSettingKind.LipSync => (nameof(SettingsComponent.HasLipSync), nameof(SettingsComponent.LipSync)),
-            ExpressionInheritedSettingKind.Transition => (nameof(SettingsComponent.HasTransition), nameof(SettingsComponent.Transition)),
-            ExpressionInheritedSettingKind.Priority => (nameof(SettingsComponent.HasPriority), nameof(SettingsComponent.Priority)),
+            ExpressionInheritedSettingKind.EyeBlink => (
+                nameof(SettingsComponent.HasEyeBlink),
+                nameof(SettingsComponent.EyeBlink),
+                nameof(SettingsComponent.EyeBlinkReference)),
+            ExpressionInheritedSettingKind.LipSync => (
+                nameof(SettingsComponent.HasLipSync),
+                nameof(SettingsComponent.LipSync),
+                nameof(SettingsComponent.LipSyncReference)),
+            ExpressionInheritedSettingKind.Transition => (
+                nameof(SettingsComponent.HasTransition),
+                nameof(SettingsComponent.Transition),
+                (string?)null),
+            ExpressionInheritedSettingKind.Priority => (
+                nameof(SettingsComponent.HasPriority),
+                nameof(SettingsComponent.Priority),
+                (string?)null),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
         };
         InitializeOverride(serializedOwner.FindProperty(valuePropertyName), kind);
+        if (referencePropertyName != null)
+        {
+            var source = new SerializedReferenceableSettings(
+                serializedOwner,
+                referencePropertyName,
+                valuePropertyName);
+            source.Mode.enumValueIndex = (int)SettingsReferenceMode.Direct;
+            source.Source.objectReferenceValue = null;
+        }
         serializedOwner.FindProperty(enabledPropertyName).boolValue = true;
         serializedOwner.ApplyModifiedProperties();
 
@@ -300,8 +324,47 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
     private sealed class Entry
     {
+        private static readonly string[] ReferenceableShortModeKeys =
+        {
+            "expression.settingSource.short.standard",
+            "expression.settingSource.short.batch",
+            "settingsReferenceMode.short.direct",
+            "settingsReferenceMode.short.reference"
+        };
+        private static readonly string[] DirectShortModeKeys =
+        {
+            "expression.settingSource.short.standard",
+            "expression.settingSource.short.batch",
+            "settingsReferenceMode.short.direct"
+        };
+        private static readonly string[] InheritedReferenceableModeKeys =
+        {
+            "expression.settingSource.option.batch",
+            "settingsReferenceMode.option.direct",
+            "settingsReferenceMode.option.reference"
+        };
+        private static readonly string[] DefaultReferenceableModeKeys =
+        {
+            "expression.settingSource.option.standard",
+            "expression.settingSource.option.batch",
+            "settingsReferenceMode.option.direct",
+            "settingsReferenceMode.option.reference"
+        };
+        private static readonly string[] InheritedDirectModeKeys =
+        {
+            "expression.settingSource.option.batch",
+            "settingsReferenceMode.option.direct"
+        };
+        private static readonly string[] DefaultDirectModeKeys =
+        {
+            "expression.settingSource.option.standard",
+            "expression.settingSource.option.batch",
+            "settingsReferenceMode.option.direct"
+        };
+
         private readonly SerializedProperty _enabled;
         private readonly SerializedProperty _local;
+        private readonly SerializedReferenceableSettings? _source;
         private readonly ExpressionInheritedSettingKind _kind;
         private readonly ExpressionSettingsInheritance _inheritance;
 
@@ -314,27 +377,39 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             string labelKey,
             ExpressionInheritedSettingKind kind,
             ExpressionSettingsInheritance inheritance)
-            => (_enabled, _local, LabelKey, _kind, _inheritance) =
+        {
+            (_enabled, _local, LabelKey, _kind, _inheritance) =
                 (enabled, local, labelKey, kind, inheritance);
+            if (IsReferenceable)
+            {
+                var referencePropertyName = kind switch
+                {
+                    ExpressionInheritedSettingKind.EyeBlink => nameof(ExpressionComponent.EyeBlinkReference),
+                    ExpressionInheritedSettingKind.LipSync => nameof(ExpressionComponent.LipSyncReference),
+                    _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+                };
+                _source = new SerializedReferenceableSettings(
+                    local.serializedObject,
+                    referencePropertyName,
+                    local.name);
+            }
+        }
 
         private bool IsReferenceable
             => _kind is ExpressionInheritedSettingKind.EyeBlink or ExpressionInheritedSettingKind.LipSync;
 
         private bool ShowsLocalValue => _enabled.boolValue && !_enabled.hasMultipleDifferentValues;
 
-        private SerializedProperty? SourceMode
-            => IsReferenceable ? _local.FindPropertyRelative("SourceMode") : null;
+        private SerializedProperty? ReferenceMode => _source?.Mode;
 
         public float GetContentHeight()
         {
             var value = GetDisplayedValue();
             if (!ShowsLocalValue || !IsReferenceable)
                 return EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
-            var direct = _local.FindPropertyRelative("Direct");
-            return SettingsSourceGUI.GetHeight(
-                _local,
-                EditorGUI.GetPropertyHeight(direct, GUIContent.none, true),
-                false);
+            return SettingsReferenceGUI.GetHeight(
+                _source!,
+                EditorGUI.GetPropertyHeight(_local, GUIContent.none, true));
         }
 
         public void Draw(Rect position)
@@ -347,45 +422,29 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 return;
             }
 
-            var direct = _local.FindPropertyRelative("Direct");
-            SettingsSourceGUI.Draw(
+            SettingsReferenceGUI.Draw(
                 position,
-                _local,
-                EditorGUI.GetPropertyHeight(direct, GUIContent.none, true),
-                rect => EditorGUI.PropertyField(rect, direct, GUIContent.none, true),
-                false);
+                _source!,
+                EditorGUI.GetPropertyHeight(_local, GUIContent.none, true),
+                rect => EditorGUI.PropertyField(rect, _local, GUIContent.none, true));
         }
 
         public float GetHeaderWidth()
-        {
-            var keys = IsReferenceable
-                ? new[]
-                {
-                    "expression.settingSource.short.standard",
-                    "expression.settingSource.short.batch",
-                    "settingsSourceMode.short.direct",
-                    "settingsSourceMode.short.reference"
-                }
-                : new[]
-                {
-                    "expression.settingSource.short.standard",
-                    "expression.settingSource.short.batch",
-                    "settingsSourceMode.short.direct"
-                };
-            return GUIHelper.CompactPopupWidth(keys.Select(key => key.LG()));
-        }
+            => GUIHelper.CompactPopupWidth(
+                (IsReferenceable ? ReferenceableShortModeKeys : DirectShortModeKeys)
+                .Select(key => key.LG()));
 
         public void DrawHeader(Rect position)
         {
             var keys = GetModeKeys();
             var hasOwner = _inheritance.GetOwner(_kind) != null;
             var localOffset = hasOwner ? 1 : 2;
-            var selected = !ShowsLocalValue ? 0 : localOffset + (SourceMode?.enumValueIndex ?? 0);
+            var selected = !ShowsLocalValue ? 0 : localOffset + (ReferenceMode?.enumValueIndex ?? 0);
             var currentKey = !ShowsLocalValue
                 ? hasOwner ? "expression.settingSource.short.batch" : "expression.settingSource.short.standard"
-                : SourceMode?.enumValueIndex == (int)SettingsSourceMode.Reference
-                    ? "settingsSourceMode.short.reference"
-                    : "settingsSourceMode.short.direct";
+                : ReferenceMode?.enumValueIndex == (int)SettingsReferenceMode.Reference
+                    ? "settingsReferenceMode.short.reference"
+                    : "settingsReferenceMode.short.direct";
             GUIHelper.CompactPopup(
                 position,
                 _enabled.hasMultipleDifferentValues ? EditorGUIUtility.TrTextContent("—") : currentKey.LG(),
@@ -396,15 +455,13 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
         }
 
         private string[] GetModeKeys()
-        {
-            var inherited = _inheritance.GetOwner(_kind) != null
-                ? new[] { "expression.settingSource.option.batch" }
-                : new[] { "expression.settingSource.option.standard", "expression.settingSource.option.batch" };
-            var local = IsReferenceable
-                ? new[] { "settingsSourceMode.option.direct", "settingsSourceMode.option.reference" }
-                : new[] { "settingsSourceMode.option.direct" };
-            return inherited.Concat(local).ToArray();
-        }
+            => (_inheritance.GetOwner(_kind) != null, IsReferenceable) switch
+            {
+                (true, true) => InheritedReferenceableModeKeys,
+                (false, true) => DefaultReferenceableModeKeys,
+                (true, false) => InheritedDirectModeKeys,
+                (false, false) => DefaultDirectModeKeys
+            };
 
         private void SetMode(int mode, bool hasOwner)
         {
@@ -420,10 +477,10 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             }
 
             if (!ShowsLocalValue) SetLocalOverride(true);
-            if (SourceMode != null)
+            if (ReferenceMode != null)
             {
                 _enabled.serializedObject.UpdateIfRequiredOrScript();
-                SourceMode.enumValueIndex = mode - (hasOwner ? 1 : 2);
+                ReferenceMode.enumValueIndex = mode - (hasOwner ? 1 : 2);
                 _enabled.serializedObject.ApplyModifiedProperties();
             }
         }
@@ -432,7 +489,11 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
         {
             _enabled.serializedObject.UpdateIfRequiredOrScript();
             if (enabled)
+            {
                 _inheritance.InitializeOverride(_local, _kind);
+                if (_source != null)
+                    _source.Reference.CopyFrom(new SettingsReference());
+            }
             _enabled.boolValue = enabled;
             _enabled.serializedObject.ApplyModifiedProperties();
         }

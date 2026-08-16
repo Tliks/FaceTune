@@ -8,9 +8,10 @@ namespace Aoyon.FaceTune
         internal const string ComponentName = ComponentNamePrefix + "Expression Data";
 
         // 親Expressionへ、hierarchyの並び順どおりに追加する。
-        public FacialBlendShapeDataSource FacialBlendShapes = new();
+        public SettingsReference FacialBlendShapesReference = new();
+        public FacialBlendShapeData FacialBlendShapes = new();
 
-        ISettingsSource<FacialBlendShapeData>? IReferenceableExpressionSettings<FacialBlendShapeData>.SettingsSource
-            => FacialBlendShapes;
+        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
+            => new(true, FacialBlendShapesReference.Mode, FacialBlendShapesReference.Source, FacialBlendShapes);
     }
 }

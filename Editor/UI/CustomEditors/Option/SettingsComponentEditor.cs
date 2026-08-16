@@ -51,33 +51,42 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
     private void EnableSetting(SettingEntry setting)
     {
         serializedObject.UpdateIfRequiredOrScript();
-        setting.Value.CopyFrom(setting.CreateDefault());
+        setting.Initialize();
         setting.Enabled.boolValue = true;
         serializedObject.ApplyModifiedProperties();
     }
 
     private SettingEntry[] Settings => _settings ??= new[]
     {
-        CreateSetting(
+        CreateReferenceableSetting(
             nameof(SettingsComponent.HasFacialBlendShapes),
+            nameof(SettingsComponent.FacialBlendShapesReference),
             nameof(SettingsComponent.FacialBlendShapes),
-            () => new FacialBlendShapeDataSource(),
+            () => new FacialBlendShapeData(),
             "settings.configureFacial.section.label",
             new SettingsFacialSectionDrawer(serializedObject, Component, targets.Length),
             0),
-        CreateSetting(
+        CreateReferenceableSetting(
             nameof(SettingsComponent.HasEyeBlink),
+            nameof(SettingsComponent.EyeBlinkReference),
             nameof(SettingsComponent.EyeBlink),
-            () => new EyeBlinkSettingsSource(),
+            () => new EyeBlinkSettings(),
             "settings.eyeBlink.section.label",
-            new SettingsSourceSectionDrawer(serializedObject.FindProperty(nameof(SettingsComponent.EyeBlink))),
+            new ReferenceableSettingsSectionDrawer(new SerializedReferenceableSettings(
+                serializedObject,
+                nameof(SettingsComponent.EyeBlinkReference),
+                nameof(SettingsComponent.EyeBlink))),
             1),
-        CreateSetting(
+        CreateReferenceableSetting(
             nameof(SettingsComponent.HasLipSync),
+            nameof(SettingsComponent.LipSyncReference),
             nameof(SettingsComponent.LipSync),
-            () => new LipSyncSettingsSource(),
+            () => new LipSyncSettings(),
             "settings.lipSync.section.label",
-            new SettingsSourceSectionDrawer(serializedObject.FindProperty(nameof(SettingsComponent.LipSync))),
+            new ReferenceableSettingsSectionDrawer(new SerializedReferenceableSettings(
+                serializedObject,
+                nameof(SettingsComponent.LipSyncReference),
+                nameof(SettingsComponent.LipSync))),
             1),
         CreateSetting(
             nameof(SettingsComponent.ExpressionSetEnabled),
@@ -89,7 +98,7 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         CreateSetting(
             nameof(SettingsComponent.HasCondition),
             nameof(SettingsComponent.Condition),
-            () => new Condition(new ConditionCase()),
+            SettingsComponent.CreateDefaultCondition,
             "settings.addCondition.section.label",
             Property(nameof(SettingsComponent.Condition)),
             2),
@@ -119,13 +128,40 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         string labelKey,
         ISectionDrawer drawer,
         int spacingGroup)
-        => new(
+    {
+        var value = serializedObject.FindProperty(valuePropertyName);
+        return new(
             serializedObject.FindProperty(enabledPropertyName),
-            serializedObject.FindProperty(valuePropertyName),
-            createDefault,
+            () => value.CopyFrom(createDefault()),
             labelKey,
             drawer,
             spacingGroup);
+    }
+
+    private SettingEntry CreateReferenceableSetting(
+        string enabledPropertyName,
+        string referencePropertyName,
+        string valuePropertyName,
+        Func<object> createDefault,
+        string labelKey,
+        ISectionDrawer drawer,
+        int spacingGroup)
+    {
+        var source = new SerializedReferenceableSettings(
+            serializedObject,
+            referencePropertyName,
+            valuePropertyName);
+        return new(
+            serializedObject.FindProperty(enabledPropertyName),
+            () =>
+            {
+                source.Reference.CopyFrom(new SettingsReference());
+                source.Direct.CopyFrom(createDefault());
+            },
+            labelKey,
+            drawer,
+            spacingGroup);
+    }
 
     private void PopulateRemoveMenu(GenericMenu menu, SerializedProperty enabled)
         => menu.AddItem("settings.remove.label".LG(), false, () =>
@@ -140,8 +176,7 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
 
     private sealed record SettingEntry(
         SerializedProperty Enabled,
-        SerializedProperty Value,
-        Func<object> CreateDefault,
+        Action Initialize,
         string LabelKey,
         ISectionDrawer Drawer,
         int SpacingGroup);
@@ -155,14 +190,21 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
 
     public SettingsFacialSectionDrawer(SerializedObject serializedObject, Component component, int targetCount)
     {
-        _expression = new FacialDataSectionDrawer(serializedObject, component, targetCount, nameof(SettingsComponent.FacialBlendShapes));
+        _expression = new FacialDataSectionDrawer(
+            serializedObject,
+            component,
+            targetCount,
+            nameof(SettingsComponent.FacialBlendShapesReference),
+            nameof(SettingsComponent.FacialBlendShapes));
         _applyToRenderer = serializedObject.FindProperty(nameof(SettingsComponent.ApplyToRenderer));
     }
 
     public float GetHeight()
         => _expression.GetHeight()
          + GUIHelper.VerticalSpacing
-         + GUIHelper.GetShurikenSectionHeight(_additionalSettings, GUIHelper.LineHeight);
+         + (_additionalSettings.Expanded
+             ? GUIHelper.GetLinesHeight(2)
+             : GUIHelper.LineHeight);
 
     public float GetHeaderWidth() => _expression.GetHeaderWidth();
     public void DrawHeader(Rect position) => _expression.DrawHeader(position);
@@ -172,16 +214,15 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         position.height = _expression.GetHeight();
         _expression.Draw(position);
         position.y += position.height + GUIHelper.VerticalSpacing;
-        position.height = GUIHelper.GetShurikenSectionHeight(_additionalSettings, GUIHelper.LineHeight);
-        if (GUIHelper.DrawShurikenSection(
-                position,
-                _additionalSettings,
-                "common.options.section.label".LG(),
-                GUIHelper.LineHeight,
-                out var content))
-        {
-            content.height = GUIHelper.LineHeight;
-            GUIHelper.DrawToggleLeft(content, _applyToRenderer, "settings.applyToRenderer.label".LG());
-        }
+        position.SetSingleHeight();
+        _additionalSettings.Expanded = GUIHelper.DrawFoldout(
+            position,
+            _additionalSettings.Expanded,
+            "common.options.section.label".LG());
+        if (!_additionalSettings.Expanded) return;
+
+        position.NewLine();
+        position.Indent();
+        EditorGUI.PropertyField(position, _applyToRenderer, "settings.applyToRenderer.label".LG());
     }
 }

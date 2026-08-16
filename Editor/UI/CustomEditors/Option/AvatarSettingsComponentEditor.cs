@@ -17,7 +17,11 @@ internal sealed class AvatarSettingsComponentEditor : FaceTuneSectionEditorBase<
 internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
 {
     private const float WarningHeight = 30f;
-    private static readonly ReorderableListOptions ExcludedBlendShapesOptions = new(Header: ReorderableListOptions.HeaderMode.None, Controls: ReorderableListOptions.ControlsPlacement.Header, NestContent: false);
+    private static readonly ReorderableListOptions ExcludedBlendShapesOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        Controls: ReorderableListOptions.ControlsPlacement.Header,
+        NestContent: false,
+        InitializeElement: element => element.stringValue = string.Empty);
     private readonly SerializedProperty _faceObject;
     private readonly SerializedProperty _excludedBlendShapes;
 
@@ -36,7 +40,7 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
             if (AvatarObjectReference.IsNull(_faceObject)) height += GUIHelper.VerticalSpacing + WarningHeight;
         }
         height += GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
-        if (UsesExclusionList)
+        if (GUIHelper.OptionalListEnabled(_excludedBlendShapes))
             height += GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapesOptions);
         return height;
     }
@@ -62,18 +66,14 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
         }
 
         position.SetSingleHeight();
-        var blendShapeMode = UsesExclusionList ? 1 : 0;
-        var nextBlendShapeMode = GUIHelper.LocalizedPopup(position, blendShapeMode, "avatarSettings.blendShapes.label", new[] { "avatarSettings.blendShapes.option.all", "avatarSettings.blendShapes.option.excludeSome" });
-        if (nextBlendShapeMode != blendShapeMode)
-        {
-            if (nextBlendShapeMode == 0) _excludedBlendShapes.ClearArray();
-            else
-            {
-                _excludedBlendShapes.InsertArrayElementAtIndex(0);
-                _excludedBlendShapes.GetArrayElementAtIndex(0).stringValue = string.Empty;
-            }
-        }
-        if (nextBlendShapeMode == 0) return;
+        var usesExclusionList = GUIHelper.LocalizedOptionalListPopup(
+            position,
+            _excludedBlendShapes,
+            "avatarSettings.blendShapes.label".LG(),
+            "avatarSettings.blendShapes.option.all",
+            "avatarSettings.blendShapes.option.excludeSome",
+            element => element.stringValue = string.Empty);
+        if (!usesExclusionList) return;
         position.NewLine();
         position.Indent();
         position.height = GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapesOptions);
@@ -81,8 +81,6 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
     }
 
     private bool IsManualFaceSelection => _faceObject.hasMultipleDifferentValues || !AvatarObjectReference.IsNull(_faceObject);
-    private bool UsesExclusionList => _excludedBlendShapes.hasMultipleDifferentValues || _excludedBlendShapes.arraySize != 0;
-
     private static void ClearAvatarObjectReference(SerializedProperty property)
     {
         property.FindPropertyRelative("referencePath").stringValue = string.Empty;
@@ -105,8 +103,8 @@ internal sealed class AvatarAdvancedSettingsSectionDrawer : ISectionDrawer
 
     public void Draw(Rect position)
     {
-        GUIHelper.DrawToggleLeft(position, _eyeBlink, "avatarSettings.avoidEyeBlinkConflicts.label".LG());
+        EditorGUI.PropertyField(position, _eyeBlink, "avatarSettings.avoidEyeBlinkConflicts.label".LG());
         position.NewLine();
-        GUIHelper.DrawToggleLeft(position, _lipSync, "avatarSettings.avoidLipSyncConflicts.label".LG());
+        EditorGUI.PropertyField(position, _lipSync, "avatarSettings.avoidLipSyncConflicts.label".LG());
     }
 }

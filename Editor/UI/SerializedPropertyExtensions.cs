@@ -35,11 +35,12 @@ internal static class SerializedPropertyExtensions
                 case SerializedPropertyType.Boolean: property.boolValue = (bool)source; break;
                 case SerializedPropertyType.Float: property.floatValue = Convert.ToSingle(source); break;
                 case SerializedPropertyType.String: property.stringValue = source.ToString(); break;
-                case SerializedPropertyType.Enum: property.enumValueFlag = Convert.ToInt32(source); break;
+                case SerializedPropertyType.Enum: property.intValue = Convert.ToInt32(source); break;
                 case SerializedPropertyType.ObjectReference: property.objectReferenceValue = source as Object; break;
                 case SerializedPropertyType.ManagedReference: property.managedReferenceValue = source; break;
                 case SerializedPropertyType.AnimationCurve: property.animationCurveValue = (AnimationCurve)source; break;
                 case SerializedPropertyType.Vector2: property.vector2Value = (Vector2)source; break;
+                case SerializedPropertyType.Vector3: property.vector3Value = (Vector3)source; break;
             }
             return;
         }

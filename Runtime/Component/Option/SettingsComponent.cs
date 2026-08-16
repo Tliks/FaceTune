@@ -12,7 +12,9 @@ namespace Aoyon.FaceTune
 
         // このGameObjectより下のExpressionへ、親側から順に重ねる。
         public bool HasFacialBlendShapes = false;
-        public FacialBlendShapeDataSource FacialBlendShapes = new();
+        public SettingsReference FacialBlendShapesReference = new();
+        public FacialBlendShapeData FacialBlendShapes = new();
+        [ToggleLeft]
         public bool ApplyToRenderer = false;
 
         // Menuと、選択中だけこのGameObjectより下を有効にする条件の組。
@@ -21,14 +23,16 @@ namespace Aoyon.FaceTune
 
         // このGameObjectより下にあるExpressionの通常条件へANDする。
         public bool HasCondition = false;
-        public Condition Condition = new(new ConditionCase());
+        public Condition Condition = CreateDefaultCondition();
 
         // このGameObject自身と配下で、最も近いSettingsの値を使う。
         public bool HasEyeBlink = false;
-        public EyeBlinkSettingsSource EyeBlink = new();
+        public SettingsReference EyeBlinkReference = new();
+        public EyeBlinkSettings EyeBlink = new();
 
         public bool HasLipSync = false;
-        public LipSyncSettingsSource LipSync = new();
+        public SettingsReference LipSyncReference = new();
+        public LipSyncSettings LipSync = new();
 
         public bool HasTransition = false;
         public TransitionSettings Transition = new();
@@ -36,20 +40,23 @@ namespace Aoyon.FaceTune
         public bool HasPriority = false;
         public PrioritySettings Priority = new();
 
+        internal static Condition CreateDefaultCondition()
+            => new(new ConditionCase());
+
 
         IEnumerable<Condition> IHasConditions.Conditions
             => HasCondition
                 ? new[] { Condition }
                 : Array.Empty<Condition>();
 
-        ISettingsSource<FacialBlendShapeData>? IReferenceableExpressionSettings<FacialBlendShapeData>.SettingsSource
-            => HasFacialBlendShapes ? FacialBlendShapes : null;
+        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
+            => new(HasFacialBlendShapes, FacialBlendShapesReference.Mode, FacialBlendShapesReference.Source, FacialBlendShapes);
 
-        ISettingsSource<EyeBlinkSettings>? IReferenceableExpressionSettings<EyeBlinkSettings>.SettingsSource
-            => HasEyeBlink ? EyeBlink : null;
+        ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
+            => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
 
-        ISettingsSource<LipSyncSettings>? IReferenceableExpressionSettings<LipSyncSettings>.SettingsSource
-            => HasLipSync ? LipSync : null;
+        ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
+            => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
 
     }
 }

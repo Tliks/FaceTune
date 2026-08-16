@@ -41,17 +41,39 @@ internal static partial class GUIHelper
     private const float VisualHandleHeight = 6f;
     private const float VisualHandleLeftOffset = 2f;
     internal const float ListControlsWidth = ButtonWidth * 2f;
-    private static GUIStyle? _listButtonStyle;
 
-    private static GUIStyle ListButtonStyle => _listButtonStyle ??= new GUIStyle(EditorStyles.miniButton)
+    public static float GetOptionalListHeight(
+        SerializedProperty property,
+        ReorderableListOptions options)
+        => ShouldDrawOptionalList(property)
+            ? GetListHeight(property, options)
+            : LineHeight;
+
+    public static void DrawLocalizedOptionalList(
+        Rect position,
+        SerializedProperty property,
+        GUIContent label,
+        string disabledOptionKey,
+        string enabledOptionKey,
+        ReorderableListOptions options)
     {
-        margin = new RectOffset(),
-        overflow = new RectOffset(),
-        fixedWidth = 0f,
-        fixedHeight = 0f,
-        stretchWidth = true,
-        stretchHeight = true
-    };
+        if (ShouldDrawOptionalList(property))
+        {
+            DrawList(position, property, label, options);
+            return;
+        }
+
+        LocalizedOptionalListPopup(
+            position,
+            property,
+            label,
+            disabledOptionKey,
+            enabledOptionKey,
+            options.InitializeElement ?? (_ => { }));
+    }
+
+    private static bool ShouldDrawOptionalList(SerializedProperty property)
+        => !property.hasMultipleDifferentValues && property.arraySize > 0;
 
     public static void DrawList(Rect position, SerializedProperty property, GUIContent label, ReorderableListOptions? options = null)
     {
@@ -426,7 +448,7 @@ internal static partial class GUIHelper
 
     private static bool DrawListButton(Rect position, string iconName)
     {
-        var clicked = GUI.Button(position, GUIContent.none, ListButtonStyle);
+        var clicked = GUI.Button(position, GUIContent.none, GUIStyles.ListButton);
         var iconRect = new Rect(
             position.center.x - ButtonIconSize * .5f,
             position.center.y - ButtonIconSize * .5f,

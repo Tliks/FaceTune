@@ -19,7 +19,14 @@ namespace Aoyon.FaceTune
         public MMDSupportSettings MMD = new();
 
         // for All kind
-        public ConditionSelection Condition = new();
+        public ConditionSelection Condition = CreateDefaultCondition();
+
+        internal static ConditionSelection CreateDefaultCondition()
+            => new()
+            {
+                Condition = new Condition(
+                    ConditionCase.From(new MenuCondition()))
+            };
 
         IEnumerable<Condition> IHasConditions.Conditions
             => Condition.Mode == ConditionSelection.Kind.Conditional

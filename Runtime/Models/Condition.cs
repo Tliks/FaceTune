@@ -12,7 +12,7 @@ internal class ConditionSelection
     }
 
     public Kind Mode = Kind.Conditional;
-    public Condition Condition = new(new ConditionCase());
+    public Condition Condition = new();
 }
 
 /// <summary>Casesのいずれかが成立すれば成立する条件。</summary>

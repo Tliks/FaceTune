@@ -1,5 +1,3 @@
-using UnityEditor.Animations;
-
 namespace Aoyon.FaceTune.Build;
 
 /// <summary>
@@ -22,12 +20,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         var parameterDomains = NormalizeMenuParameters(
             root,
             settings.ParameterDomains,
-            context.PlatformSupport.GetAnimatorController(),
             out var menuParameters);
         context.SetAuthoringSettings(settings with { ParameterDomains = parameterDomains });
         context.SetMenuParameters(menuParameters);
 
-        ResolveMenuConditions(root, context.PlatformSupport.GetAnimatorController());
+        ResolveMultiFrameMenus(root);
+        ResolveMenuConditions(root);
         FilterExcludedBlendShapes(context.AvatarContext.BodyPath, root, settings);
     }
 
@@ -40,9 +38,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             var menu = settings.gameObject.EnsureComponent<MenuComponent>();
             menu.MenuKind = MenuComponent.Kind.Toggle;
             menu.Menu = settings.ExpressionSet.Menu;
-            menu.Binding = MenuComponent.ParameterBinding.Generate;
+            menu.UseExistingParameter = false;
+            menu.GenerateParameterGroup = false;
             menu.Name = string.Empty;
             menu.GroupName = string.Empty;
+            menu.Synced = true;
+            menu.Saved = true;
             menu.InitialValue = settings.ExpressionSet.DefaultSelected ? 1f : 0f;
             menu.SelectedValue = 1f;
 
@@ -64,14 +65,15 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             var menu = expression.gameObject.EnsureComponent<MenuComponent>();
             menu.MenuKind = MenuComponent.Kind.Toggle;
             menu.Menu = expression.DirectMenuSettings.Menu;
-            menu.Binding = expression.WriteMode == ExpressionWriteMode.Replace
-                || !string.IsNullOrWhiteSpace(expression.DirectMenuSettings.GroupName)
-                ? MenuComponent.ParameterBinding.GenerateGroup
-                : MenuComponent.ParameterBinding.Generate;
+            menu.UseExistingParameter = false;
+            menu.GenerateParameterGroup = expression.WriteMode == ExpressionWriteMode.Replace
+                || !string.IsNullOrWhiteSpace(expression.DirectMenuSettings.GroupName);
             menu.Name = string.Empty;
             menu.GroupName = expression.WriteMode == ExpressionWriteMode.Replace
                 ? BuiltInMenuGroups.DirectMenuReplace
                 : expression.DirectMenuSettings.GroupName;
+            menu.Synced = true;
+            menu.Saved = true;
 
             var proxyObject = new GameObject($"{expression.name} (Direct Menu)");
             proxyObject.transform.SetParent(root.transform, false);
@@ -80,19 +82,23 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             proxy.AllowEyeBlink = expression.AllowEyeBlink;
             proxy.AllowLipSync = expression.AllowLipSync;
             proxy.MultiFrame = expression.MultiFrame;
-            proxy.FacialBlendShapes.Direct = resolver.FacialData.Enumerate(expression)
+            proxy.FacialBlendShapes = resolver.FacialData.Enumerate(expression)
                 .SelectMany(item => item.Value.BlendShapeAnimations)
                 .ToList() is var animations
                 ? new FacialBlendShapeData { BlendShapeAnimations = animations }
                 : new FacialBlendShapeData();
             proxy.HasEyeBlink = true;
-            proxy.EyeBlink.Direct = resolver.EyeBlink.Get(expression);
+            proxy.EyeBlink = resolver.EyeBlink.Get(expression);
             proxy.HasLipSync = true;
-            proxy.LipSync.Direct = resolver.LipSync.Get(expression);
+            proxy.LipSync = resolver.LipSync.Get(expression);
             proxy.HasTransition = true;
             proxy.Transition = resolver.Transition.Get(expression);
             proxy.HasPriority = true;
-            proxy.Priority = resolver.Priority.Get(expression);
+            proxy.Priority = new PrioritySettings
+            {
+                Priority = resolver.Priority.Get(expression).Priority
+                         + expression.DirectMenuSettings.PriorityOffset
+            };
             proxy.HasCondition = true;
             proxy.Condition.Condition.Cases.Add(ConditionCase.From(MenuCondition.Enabled(menu)));
         }
@@ -131,7 +137,6 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
     private static ParameterDomainRegistry NormalizeMenuParameters(
         GameObject root,
         ParameterDomainRegistry parameterDomains,
-        AnimatorController? controller,
         out IReadOnlyList<MenuParameterPlan> menuParameters)
     {
         var menus = root.GetComponentsInChildren<MenuComponent>(true);
@@ -141,14 +146,12 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
         foreach (var menu in menus)
         {
             if (menu.MenuKind == MenuComponent.Kind.Folder) continue;
-            if (menu.Binding == MenuComponent.ParameterBinding.GenerateGroup
-                && string.IsNullOrWhiteSpace(menu.GroupName))
-                menu.Binding = MenuComponent.ParameterBinding.Generate;
-            if (menu.Binding == MenuComponent.ParameterBinding.GenerateGroup
-                && menu.MenuKind != MenuComponent.Kind.Toggle)
-                throw new InvalidOperationException($"Only toggle menus can use Generate Group: '{menu.name}'.");
+            if (menu.UseExistingParameter
+                || menu.MenuKind != MenuComponent.Kind.Toggle
+                || string.IsNullOrWhiteSpace(menu.GroupName))
+                menu.GenerateParameterGroup = false;
 
-            if (menu.Binding == MenuComponent.ParameterBinding.Generate)
+            if (!menu.UseExistingParameter && !UsesGeneratedGroup(menu))
             {
                 if (string.IsNullOrWhiteSpace(menu.Name)) menu.Name = CreateAutomaticParameterName(root, menu);
                 ValidateParameterName(menu.Name, menu);
@@ -158,18 +161,17 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                     menu.Name,
                     menu.MenuKind == MenuComponent.Kind.Toggle ? MenuParameterType.Bool : MenuParameterType.Float,
                     ResolveGeneratedInitialValue(menu),
-                    true));
+                    menu.Synced,
+                    menu.Saved));
             }
-            else if (menu.Binding == MenuComponent.ParameterBinding.Existing)
+            else if (menu.UseExistingParameter)
             {
                 ValidateParameterName(menu.Name, menu);
-                ValidateExistingParameter(menu, controller);
             }
         }
 
         foreach (var group in menus
-                     .Where(menu => menu.MenuKind == MenuComponent.Kind.Toggle
-                                    && menu.Binding == MenuComponent.ParameterBinding.GenerateGroup)
+                     .Where(UsesGeneratedGroup)
                      .GroupBy(menu => menu.GroupName, StringComparer.Ordinal))
         {
             ValidateGroupName(group.Key, group.First());
@@ -178,6 +180,10 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 throw new InvalidOperationException($"Generated menu parameter is duplicated: '{parameterName}'.");
 
             var options = group.ToArray();
+            var parameterSettings = options[0];
+            if (options.Any(menu => menu.Synced != parameterSettings.Synced
+                                 || menu.Saved != parameterSettings.Saved))
+                throw new InvalidOperationException($"Menu group '{group.Key}' has inconsistent sync or save settings.");
             var initial = options.Where(menu => menu.InitialValue != 0f).ToArray();
             if (initial.Length > 1)
                 throw new InvalidOperationException($"Menu group '{group.Key}' has multiple initial options.");
@@ -194,12 +200,16 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
                 parameterName,
                 MenuParameterType.Int,
                 initial.Length == 0 ? 0f : initial[0].SelectedValue,
-                true));
+                parameterSettings.Synced,
+                parameterSettings.Saved));
         }
 
         menuParameters = parameters;
         return parameterDomains;
     }
+
+    private static bool UsesGeneratedGroup(MenuComponent menu)
+        => !menu.UseExistingParameter && menu.GenerateParameterGroup;
 
     private static float ResolveGeneratedInitialValue(MenuComponent menu)
     {
@@ -230,39 +240,65 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             throw new InvalidOperationException($"Menu parameter name is invalid: '{menu.name}'.");
     }
 
-    private static void ValidateExistingParameter(MenuComponent menu, AnimatorController? controller)
+    private static void ResolveMultiFrameMenus(GameObject root)
     {
-        var type = ResolveExistingParameterType(menu, controller);
-        if (menu.MenuKind == MenuComponent.Kind.Radial && type != AnimatorControllerParameterType.Float
-            || menu.MenuKind == MenuComponent.Kind.Toggle && type is not (AnimatorControllerParameterType.Bool or AnimatorControllerParameterType.Int))
-            throw new InvalidOperationException($"Existing parameter '{menu.Name}' has an incompatible type for menu '{menu.name}'.");
+        foreach (var expression in root.GetComponentsInChildren<ExpressionComponent>(true))
+        {
+            var settings = expression.MultiFrame;
+            if (settings.MultiFrameMode != MultiFrameSettings.Kind.Menu) continue;
+            if (settings.MenuSource == null)
+            {
+                settings.MultiFrameMode = MultiFrameSettings.Kind.Default;
+                continue;
+            }
+
+            settings.MultiFrameMode = MultiFrameSettings.Kind.Parameter;
+            settings.ParameterName = ResolveMenuParameterName(settings.MenuSource);
+            settings.MenuSource = null;
+        }
     }
 
-    private static AnimatorControllerParameterType ResolveExistingParameterType(MenuComponent menu, AnimatorController? controller)
-    {
-        var parameter = controller?.parameters.FirstOrDefault(item => item.name == menu.Name);
-        if (parameter == null)
-            throw new InvalidOperationException($"Existing menu parameter was not found: '{menu.Name}'.");
-        return parameter.type;
-    }
-
-    // MenuConditionを正規化済みのparameter conditionへ変換する。
-    private static void ResolveMenuConditions(GameObject root, AnimatorController? controller)
+    private static void ResolveMenuConditions(GameObject root)
     {
         foreach (var source in root.GetComponentsInChildren<FaceTuneTagComponent>(true).OfType<IHasConditions>())
         foreach (var condition in source.Conditions)
         foreach (var conditionCase in condition.Cases)
         {
-            for (var i = conditionCase.MenuConditions.Count - 1; i >= 0; i--)
+            foreach (var menuCondition in conditionCase.MenuConditions)
             {
-                var menuCondition = conditionCase.MenuConditions[i];
-                if (menuCondition.MenuSource == null)
-                    conditionCase.MenuConditions.RemoveAt(i);
-                else
-                    conditionCase.ParameterConditions.Add(ToParameterCondition(menuCondition, controller));
+                if (menuCondition.MenuSource != null)
+                    conditionCase.ParameterConditions.Add(ResolveMenuCondition(menuCondition));
             }
             conditionCase.MenuConditions.Clear();
         }
+    }
+
+    private static ParameterCondition ResolveMenuCondition(MenuCondition condition)
+    {
+        var menu = condition.MenuSource!;
+        var parameterName = ResolveMenuParameterName(menu);
+        if (menu.MenuKind == MenuComponent.Kind.Radial)
+        {
+            if (condition.Mode is not (MenuConditionMode.LessThan or MenuConditionMode.GreaterThan))
+                throw new InvalidOperationException($"Radial menu '{menu.name}' requires a radial condition.");
+            return ParameterCondition.Float(
+                parameterName,
+                (ComparisonType)condition.Mode,
+                condition.Threshold);
+        }
+
+        if (menu.MenuKind != MenuComponent.Kind.Toggle
+            || condition.Mode is not (MenuConditionMode.Enabled or MenuConditionMode.Disabled))
+            throw new InvalidOperationException($"Menu '{menu.name}' has an incompatible condition.");
+        var isEnabled = condition.Mode == MenuConditionMode.Enabled;
+        return !menu.UseExistingParameter && menu.GenerateParameterGroup
+            ? ParameterCondition.Int(
+                parameterName,
+                isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual,
+                (int)menu.SelectedValue)
+            : ParameterCondition.Bool(
+                parameterName,
+                isEnabled == (menu.SelectedValue != 0f));
     }
 
     private static void FilterExcludedBlendShapes(string bodyPath, GameObject root, AuthoringBuildSettings settings)
@@ -272,51 +308,65 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             switch (component)
             {
                 case ExpressionComponent expression:
-                    FilterFacialSource(expression.FacialBlendShapes, expression, bodyPath, settings.ExcludedBlendShapeNames);
+                    FilterFacialReference(expression.GetReferenceableSettings<FacialBlendShapeData>(), expression, bodyPath, settings.ExcludedBlendShapeNames);
                     if (expression.HasEyeBlink)
-                        FilterEyeBlinkSource(expression.EyeBlink, expression, settings.ExcludedBlendShapeNames);
+                        FilterEyeBlinkReference(expression.GetReferenceableSettings<EyeBlinkSettings>(), expression, settings.ExcludedBlendShapeNames);
                     if (expression.HasLipSync)
-                        FilterLipSyncSource(expression.LipSync, settings.ExcludedBlendShapeNames);
+                        FilterLipSyncReference(expression.GetReferenceableSettings<LipSyncSettings>(), settings.ExcludedBlendShapeNames);
                     break;
                 case SettingsComponent setting:
                     if (setting.HasFacialBlendShapes)
-                        FilterFacialSource(setting.FacialBlendShapes, setting, bodyPath, settings.ExcludedBlendShapeNames);
+                        FilterFacialReference(setting.GetReferenceableSettings<FacialBlendShapeData>(), setting, bodyPath, settings.ExcludedBlendShapeNames);
                     if (setting.HasEyeBlink)
-                        FilterEyeBlinkSource(setting.EyeBlink, setting, settings.ExcludedBlendShapeNames);
+                        FilterEyeBlinkReference(setting.GetReferenceableSettings<EyeBlinkSettings>(), setting, settings.ExcludedBlendShapeNames);
                     if (setting.HasLipSync)
-                        FilterLipSyncSource(setting.LipSync, settings.ExcludedBlendShapeNames);
+                        FilterLipSyncReference(setting.GetReferenceableSettings<LipSyncSettings>(), settings.ExcludedBlendShapeNames);
                     break;
                 case ExpressionDataComponent data:
-                    FilterFacialSource(data.FacialBlendShapes, data, bodyPath, settings.ExcludedBlendShapeNames);
+                    FilterFacialReference(data.GetReferenceableSettings<FacialBlendShapeData>(), data, bodyPath, settings.ExcludedBlendShapeNames);
                     break;
             }
         }
     }
 
-    private static void FilterFacialSource(FacialBlendShapeDataSource source, Component owner, string bodyPath, IReadOnlyCollection<string> excluded)
+    private static void FilterFacialReference(ReferenceableExpressionSettings<FacialBlendShapeData> settings, Component owner, string bodyPath, IReadOnlyCollection<string> excluded)
     {
-        if (source.SourceMode != SettingsSourceMode.Direct) return;
-        if (source.Direct.Clip != null)
+        if (settings.Mode != SettingsReferenceMode.Direct) return;
+        var value = settings.Direct;
+        if (value.Clip != null)
         {
             var animations = new List<BlendShapeWeightAnimation>();
-            source.Direct.Clip.GetBlendShapeAnimations(source.Direct.ClipOption, animations, bodyPath);
-            animations.AddRange(source.Direct.BlendShapeAnimations);
-            source.Direct.BlendShapeAnimations = animations;
-            source.Direct.Clip = null;
+            value.Clip.GetBlendShapeAnimations(value.ClipOption, animations, bodyPath);
+            animations.AddRange(value.BlendShapeAnimations);
+            value.BlendShapeAnimations = animations;
+            value.Clip = null;
         }
-        FilterAnimations(source.Direct.BlendShapeAnimations, owner, excluded);
+        FilterAnimations(value.BlendShapeAnimations, owner, excluded);
     }
 
-    private static void FilterEyeBlinkSource(EyeBlinkSettingsSource source, Component owner, IReadOnlyCollection<string> excluded)
+    private static void FilterEyeBlinkReference(ReferenceableExpressionSettings<EyeBlinkSettings> settings, Component owner, IReadOnlyCollection<string> excluded)
     {
-        if (source.SourceMode == SettingsSourceMode.Direct && source.Direct.EyeBlinkMode == EyeBlinkSettings.Kind.Automatic)
-            FilterAnimations(source.Direct.Animations, owner, excluded);
+        if (settings.Mode != SettingsReferenceMode.Direct) return;
+        switch (settings.Direct.EyeBlinkMode)
+        {
+            case EyeBlinkSettings.Kind.BuiltIn:
+                return;
+            case EyeBlinkSettings.Kind.SimpleAnimation:
+                settings.Direct.SimpleBlinkBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+                settings.Direct.SimpleConflictPreventionBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+                return;
+            case EyeBlinkSettings.Kind.CustomAnimation:
+                FilterAnimations(settings.Direct.Animations, owner, excluded);
+                return;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 
-    private static void FilterLipSyncSource(LipSyncSettingsSource source, IReadOnlyCollection<string> excluded)
+    private static void FilterLipSyncReference(ReferenceableExpressionSettings<LipSyncSettings> settings, IReadOnlyCollection<string> excluded)
     {
-        if (source.SourceMode != SettingsSourceMode.Direct) return;
-        source.Direct.CancellerBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+        if (settings.Mode != SettingsReferenceMode.Direct) return;
+        settings.Direct.CancellerBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
     }
 
     private static void FilterAnimations(List<BlendShapeWeightAnimation> animations, Component owner, IReadOnlyCollection<string> excluded)
@@ -333,31 +383,7 @@ internal class NormalizeAuthoringHierarchyPass : FaceTunePass<NormalizeAuthoring
             LocalizedLog.Warning("log.processTrackedShapesPass.unAllowedBlendShapesFound.warning", $"{owner}:{string.Join(", ", removed)}");
     }
 
-    private static ParameterCondition ToParameterCondition(MenuCondition condition, AnimatorController? controller)
-    {
-        var menu = condition.MenuSource!;
-        if (menu.MenuKind == MenuComponent.Kind.Radial)
-        {
-            if (condition.Mode is not (MenuConditionMode.LessThan or MenuConditionMode.GreaterThan))
-                throw new InvalidOperationException($"Radial menu '{menu.name}' requires a radial condition.");
-            return ParameterCondition.Float(menu.Name, (ComparisonType)condition.Mode, condition.Threshold);
-        }
-
-        if (menu.MenuKind != MenuComponent.Kind.Toggle
-            || condition.Mode is not (MenuConditionMode.Enabled or MenuConditionMode.Disabled))
-            throw new InvalidOperationException($"Menu '{menu.name}' has an incompatible condition.");
-
-        var isEnabled = condition.Mode == MenuConditionMode.Enabled;
-        if (menu.Binding == MenuComponent.ParameterBinding.GenerateGroup)
-            return ParameterCondition.Int(menu.Name, isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual, (int)menu.SelectedValue);
-
-        if (menu.Binding == MenuComponent.ParameterBinding.Generate)
-            return ParameterCondition.Bool(menu.Name, isEnabled == (menu.SelectedValue != 0f));
-
-        var type = ResolveExistingParameterType(menu, controller);
-        return type == AnimatorControllerParameterType.Bool
-            ? ParameterCondition.Bool(menu.Name, isEnabled == (menu.SelectedValue != 0f))
-            : ParameterCondition.Int(menu.Name, isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual, (int)menu.SelectedValue);
-    }
+    private static string ResolveMenuParameterName(MenuComponent menu)
+        => menu.Name;
 
 }

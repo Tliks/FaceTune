@@ -14,7 +14,9 @@ namespace Aoyon.FaceTune
 
         // FaceTune外部のまばたき/リップシンク制御との競合問題を良い感じにする契約。
         // VRCにおける現行実装はTracking ControlのAAPへの置き換えと中央制御。
+        [ToggleLeft]
         public bool AvoidEyeBlinkConflicts = true;
+        [ToggleLeft]
         public bool AvoidLipSyncConflicts = true;
 
         void IHasObjectReferences.ResolveReferences() => FaceObjectReference.Get(this);

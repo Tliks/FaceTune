@@ -77,8 +77,13 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
 
 internal static class MenuGUI
 {
-    public static bool IsCreatingGroup(SerializedProperty groupName)
-        => GetGroupState(groupName).IsCreating;
+    private static void BeginGroupCreation(SerializedProperty groupName)
+    {
+        groupName.stringValue = string.Empty;
+        var state = GetGroupState(groupName);
+        state.IsCreating = true;
+        state.FocusRequested = true;
+    }
 
     public static bool DrawGroupSelector(Rect position, SerializedProperty groupName, Component? owner, GUIContent label)
     {
@@ -91,12 +96,38 @@ internal static class MenuGUI
         var state = GetGroupState(groupName);
         if (state.IsCreating)
         {
+            GUI.SetNextControlName(state.ControlName);
             groupName.stringValue = EditorGUI.DelayedTextField(position, label, groupName.stringValue);
             if (!string.IsNullOrWhiteSpace(groupName.stringValue)) state.IsCreating = false;
-            return true;
+
+            var current = Event.current;
+            if (current.type == EventType.KeyDown
+                && current.keyCode == KeyCode.Escape
+                && GUI.GetNameOfFocusedControl() == state.ControlName)
+            {
+                groupName.stringValue = string.Empty;
+                state.IsCreating = false;
+                current.Use();
+            }
+            else if (state.FocusRequested && current.type == EventType.Repaint)
+            {
+                EditorGUI.FocusTextInControl(state.ControlName);
+                state.FocusRequested = false;
+            }
+            else if (!state.FocusRequested
+                     && current.type == EventType.Repaint
+                     && GUI.GetNameOfFocusedControl() != state.ControlName
+                     && string.IsNullOrWhiteSpace(groupName.stringValue))
+            {
+                state.IsCreating = false;
+            }
+            return state.IsCreating || !string.IsNullOrWhiteSpace(groupName.stringValue);
         }
 
         var groups = GetDefinedGroupNames(owner);
+        if (!string.IsNullOrWhiteSpace(groupName.stringValue)
+            && !groups.Contains(groupName.stringValue, StringComparer.Ordinal))
+            groups.Add(groupName.stringValue);
         var currentIndex = groups.IndexOf(groupName.stringValue);
         var options = new GUIContent[groups.Count + 2];
         options[0] = "menu.group.none.label".LG();
@@ -107,9 +138,7 @@ internal static class MenuGUI
         if (nextIndex == selectedIndex) return !string.IsNullOrWhiteSpace(groupName.stringValue);
         if (nextIndex == options.Length - 1)
         {
-            groupName.stringValue = string.Empty;
-            state.IsCreating = true;
-            GUI.FocusControl(null);
+            BeginGroupCreation(groupName);
             return true;
         }
         groupName.stringValue = nextIndex == 0 ? string.Empty : groups[nextIndex - 1];
@@ -121,7 +150,9 @@ internal static class MenuGUI
 
     private sealed class GroupState
     {
+        public readonly string ControlName = $"FaceTuneGroup_{Guid.NewGuid():N}";
         public bool IsCreating;
+        public bool FocusRequested;
     }
 
     public static void DrawBuiltInGroup(Rect position, GUIContent label, string groupName)
@@ -135,7 +166,9 @@ internal static class MenuGUI
         var root = owner == null ? null : RuntimeUtil.FindAvatarInParents(owner.transform);
         if (root == null) return new();
         return root.GetComponentsInChildren<MenuComponent>(true)
-            .Where(menu => menu.Binding == MenuComponent.ParameterBinding.GenerateGroup)
+            .Where(menu => !menu.UseExistingParameter
+                        && menu.GenerateParameterGroup
+                        && !string.IsNullOrWhiteSpace(menu.GroupName))
             .Select(menu => menu.GroupName)
             .Concat(root.GetComponentsInChildren<ExpressionComponent>(true)
                 .Where(expression => expression.WriteMode == ExpressionWriteMode.Blend && expression.DirectMenuEnabled)
@@ -219,21 +252,48 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
         var menu = property.FindPropertyRelative(nameof(DirectMenuSettings.Menu));
+        var advanced = GUIState.Foldout(property, "DirectMenuAdvancedSettings");
+
         position.height = EditorGUI.GetPropertyHeight(menu, GUIContent.none, true);
         EditorGUI.PropertyField(position, menu, GUIContent.none, true);
+        position.y = position.yMax + GUIHelper.VerticalSpacing;
+        position.SetSingleHeight();
+        advanced.Expanded = GUIHelper.DrawFoldout(
+            position,
+            advanced.Expanded,
+            "menu.advancedSettings.section.label".LG());
+        if (!advanced.Expanded) return;
+
         position.NewLine();
-        position.height = GUIHelper.LineHeight;
+        position.Indent();
         var group = property.FindPropertyRelative(nameof(DirectMenuSettings.GroupName));
         if (IsReplaceMode(property.serializedObject))
             MenuGUI.DrawBuiltInGroup(position, "menu.group.label".LG(), BuiltInMenuGroups.DirectMenuReplace);
         else
-            MenuGUI.DrawGroupSelector(position, group, property.serializedObject.targetObject as Component, "menu.group.label".LG());
+            MenuGUI.DrawGroupSelector(
+                position,
+                group,
+                property.serializedObject.targetObject as Component,
+                "menu.group.label".LG());
+        position.NewLine();
+        EditorGUI.PropertyField(
+            position,
+            property.FindPropertyRelative(nameof(DirectMenuSettings.PriorityOffset)),
+            "directMenu.priorityOffset.label".LG());
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => EditorGUI.GetPropertyHeight(property.FindPropertyRelative(nameof(DirectMenuSettings.Menu)), GUIContent.none, true)
-         + GUIHelper.VerticalSpacing
-         + GUIHelper.LineHeight;
+    {
+        var advanced = GUIState.Foldout(property, "DirectMenuAdvancedSettings");
+        return EditorGUI.GetPropertyHeight(
+                   property.FindPropertyRelative(nameof(DirectMenuSettings.Menu)),
+                   GUIContent.none,
+                   true)
+             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight
+             + (advanced.Expanded
+                 ? GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
+                 : 0f);
+    }
 
     private static bool IsReplaceMode(SerializedObject serializedObject)
     {

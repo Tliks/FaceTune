@@ -21,7 +21,6 @@ internal class MenuIconSettings
 [Serializable]
 internal class MenuSettings
 {
-    [MenuName]
     public string MenuName = string.Empty;
     public MenuIconSettings Icon = new();
     [MenuInstallContainer]
@@ -35,6 +34,7 @@ internal class DirectMenuSettings
 {
     public MenuSettings Menu = new();
     public string GroupName = string.Empty;
+    public int PriorityOffset = 10;
 }
 
 internal static class BuiltInMenuGroups

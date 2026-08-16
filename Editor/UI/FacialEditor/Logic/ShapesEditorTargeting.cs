@@ -54,7 +54,6 @@ internal abstract class FacialSourceTargeting<T> : IShapesEditorTargeting<T> whe
         var serialized = new SerializedObject(Target);
         serialized.Update();
         var animations = serialized.FindProperty(SourcePropertyName)
-            .FindPropertyRelative(nameof(FacialBlendShapeDataSource.Direct))
             .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         FacialDataGUI.SetBlendShapeAnimations(animations, overrides.ToBlendShapeAnimations().ToList());
         serialized.ApplyModifiedProperties();

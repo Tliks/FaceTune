@@ -98,6 +98,12 @@ msgstr "なし"
 msgid "trackingPermission.option.keep"
 msgstr "維持"
 
+msgid "common.option.none"
+msgstr "なし"
+
+msgid "common.option.present"
+msgstr "あり"
+
 msgid "ClipImportOption"
 msgstr "表情アニメーションの取り込み"
 
@@ -264,12 +270,6 @@ msgstr "クリップとして保存"
 msgid "customEditorUtility.saveAsClip.message"
 msgstr "アニメーションクリップ名を入力してください。"
 
-msgid "blendShapeWeightAnimation.name.label"
-msgstr "ブレンドシェイプ名"
-
-msgid "blendShapeWeightAnimation.curve.label"
-msgstr "カーブ"
-
 msgid "menuIconSettings.manualIcon.label"
 msgstr "手動アイコン"
 
@@ -423,6 +423,9 @@ msgstr "配置先"
 msgid "directMenu.menuGroup.label"
 msgstr "メニューグループ"
 
+msgid "directMenu.priorityOffset.label"
+msgstr "優先度差分"
+
 msgid "parameterCondition.parameterType.label"
 msgstr "種類"
 
@@ -434,6 +437,9 @@ msgstr "表情編集画面"
 
 msgid "common.open.button"
 msgstr "開く"
+
+msgid "common.menu.tooltip"
+msgstr "メニュー"
 
 msgid "common.component.label"
 msgstr "コンポーネント"
@@ -567,6 +573,12 @@ msgstr "デフォルトで選択"
 msgid "menu.floatDefaultValue.label"
 msgstr "初期値"
 
+msgid "menu.parameterSynced.label"
+msgstr "同期"
+
+msgid "menu.parameterSaved.label"
+msgstr "保存"
+
 msgid "menuFolder.section.label"
 msgstr "メニューフォルダ"
 
@@ -600,16 +612,16 @@ msgstr "他の表情を使用"
 msgid "style.otherStyle.label"
 msgstr "他の顔つきを使用"
 
-msgid "settingsSourceMode.option.direct"
+msgid "settingsReferenceMode.option.direct"
 msgstr "直接：ここで設定"
 
-msgid "settingsSourceMode.option.reference"
+msgid "settingsReferenceMode.option.reference"
 msgstr "参照：他の設定を使用"
 
-msgid "settingsSourceMode.short.direct"
+msgid "settingsReferenceMode.short.direct"
 msgstr "直接"
 
-msgid "settingsSourceMode.short.reference"
+msgid "settingsReferenceMode.short.reference"
 msgstr "参照"
 
 msgid "expression.settingSource.short.standard"
@@ -622,7 +634,7 @@ msgid "expression.settingSource.option.standard"
 msgstr "標準：標準の動作を使用"
 
 msgid "expression.settingSource.option.batch"
-msgstr "一括：上位の設定を使用"
+msgstr "一括：親で一括設定"
 
 msgid "expression.realTimePreview.label"
 msgstr "この表情を常にプレビュー"
@@ -645,8 +657,17 @@ msgstr "トリガー連動"
 msgid "expression.multiFrame.parameter.label"
 msgstr "パラメータ連動"
 
+msgid "expression.multiFrame.menu.label"
+msgstr "メニュー連動"
+
+msgid "expression.multiFrame.menuSource.label"
+msgstr "メニュー"
+
 msgid "expression.multiFrame.parameterName.empty.message"
 msgstr "パラメータ名を入力してください。"
+
+msgid "expression.multiFrame.menuSource.empty.message"
+msgstr "メニューを指定してください。"
 
 msgid "expression.group.expression.label"
 msgstr "表情"
@@ -742,19 +763,46 @@ msgid "eyeBlink.component.label"
 msgstr "コンポーネント"
 
 msgid "eyeBlink.mode.label"
-msgstr "瞬き方法"
+msgstr "モード"
 
 msgid "eyeBlinkMode.option.builtIn"
-msgstr "アバター設定を使用"
+msgstr "アバター設定"
 
-msgid "eyeBlinkMode.option.automatic"
-msgstr "アニメーションを使用"
+msgid "eyeBlinkMode.option.simpleAnimation"
+msgstr "アニメーション"
+
+msgid "eyeBlinkMode.option.customAnimation"
+msgstr "カスタムアニメーション"
+
+msgid "eyeBlink.simple.durations.label"
+msgstr "時間（秒）"
+
+msgid "eyeBlink.simple.duration.closing.shortLabel"
+msgstr "閉じる"
+
+msgid "eyeBlink.simple.duration.hold.shortLabel"
+msgstr "維持"
+
+msgid "eyeBlink.simple.duration.opening.shortLabel"
+msgstr "開く"
+
+msgid "eyeBlink.simple.blinkBlendShapes.label"
+msgstr "ブレンドシェイプ"
+
+msgid "eyeBlink.simple.conflictBlendShapes.label"
+msgstr "干渉補正"
 
 msgid "eyeBlink.animations.label"
 msgstr "アニメーション"
 
 msgid "eyeBlink.intervalSeconds.label"
-msgstr "瞬き間隔 (秒)"
+msgstr "間隔（秒）"
+
+msgid "eyeBlink.interval.minimum.shortLabel"
+msgstr "最小"
+
+msgid "eyeBlink.interval.maximum.shortLabel"
+msgstr "最大"
 
 msgid "lockFacial.section.label"
 msgstr "表情固定"
@@ -813,6 +861,9 @@ msgstr "自動"
 msgid "mmdSupport.blendShapes.option.specified"
 msgstr "指定"
 
+msgid "mmdSupport.blendShapeName.label"
+msgstr "ブレンドシェイプ名"
+
 msgid "mmdSupport.disableWhen.label"
 msgstr "無効化条件"
 
@@ -840,10 +891,7 @@ msgstr "無効"
 msgid "condition.bool.enabled.label"
 msgstr "有効"
 
-msgid "settingsSource.mode.label"
-msgstr "設定方法"
-
-msgid "settingsSource.component.empty.message"
+msgid "settingsReference.component.empty.message"
 msgstr "参照するコンポーネントを指定してください。"
 
 msgid "priority.section.label"
@@ -852,11 +900,8 @@ msgstr "優先度"
 msgid "priority.value.label"
 msgstr "優先度"
 
-msgid "lipSync.conflictPrevention.section.label"
-msgstr "干渉対策"
-
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "リップシンク時に打ち消すブレンドシェイプ"
+msgstr "干渉補正"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"

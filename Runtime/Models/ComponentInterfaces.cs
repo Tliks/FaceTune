@@ -11,18 +11,28 @@ internal interface IHasConditions
     IEnumerable<Condition> Conditions { get; }
 }
 
-/// <summary>値を直接持つか、指定Transform上の同種設定を参照する設定。</summary>
-internal interface ISettingsSource<out TValue>
-    where TValue : class
-{
-    SettingsSourceMode SourceMode { get; }
-    Transform? Source { get; }
-    TValue Direct { get; }
-}
+/// <summary>シリアライズ構造から独立した、参照可能な設定の読み取りモデル。</summary>
+internal readonly record struct ReferenceableExpressionSettings<TValue>(
+    bool Enabled,
+    SettingsReferenceMode Mode,
+    Transform? Source,
+    TValue Direct)
+    where TValue : class;
 
-/// <summary>Transformから参照できる同種のExpression設定。</summary>
+/// <summary>
+/// Transformから参照できるExpression設定。
+/// Scoped / Unscopedの収集規則は設定種別ごとのResolverが担う。
+/// </summary>
 internal interface IReferenceableExpressionSettings<TValue>
     where TValue : class
 {
-    ISettingsSource<TValue>? SettingsSource { get; }
+    ReferenceableExpressionSettings<TValue> Settings { get; }
+}
+
+internal static class ReferenceableExpressionSettingsExtensions
+{
+    public static ReferenceableExpressionSettings<TValue> GetReferenceableSettings<TValue>(
+        this IReferenceableExpressionSettings<TValue> source)
+        where TValue : class
+        => source.Settings;
 }

@@ -98,6 +98,12 @@ msgstr "Off"
 msgid "trackingPermission.option.keep"
 msgstr "Keep"
 
+msgid "common.option.none"
+msgstr "No"
+
+msgid "common.option.present"
+msgstr "Yes"
+
 msgid "ClipImportOption"
 msgstr "Expression Animation Import"
 
@@ -264,12 +270,6 @@ msgstr "Save as a Clip"
 msgid "customEditorUtility.saveAsClip.message"
 msgstr "Please enter the name of the animation clip."
 
-msgid "blendShapeWeightAnimation.name.label"
-msgstr "Blend Shape Name"
-
-msgid "blendShapeWeightAnimation.curve.label"
-msgstr "Curve"
-
 msgid "menuIconSettings.manualIcon.label"
 msgstr "Manual Icon"
 
@@ -423,6 +423,9 @@ msgstr "Destination"
 msgid "directMenu.menuGroup.label"
 msgstr "Menu Group"
 
+msgid "directMenu.priorityOffset.label"
+msgstr "Priority Offset"
+
 msgid "parameterCondition.parameterType.label"
 msgstr "Type"
 
@@ -434,6 +437,9 @@ msgstr "Expression Editor"
 
 msgid "common.open.button"
 msgstr "Open"
+
+msgid "common.menu.tooltip"
+msgstr "Menu"
 
 msgid "common.component.label"
 msgstr "Component"
@@ -567,6 +573,12 @@ msgstr "Selected by Default"
 msgid "menu.floatDefaultValue.label"
 msgstr "Default Value"
 
+msgid "menu.parameterSynced.label"
+msgstr "Synced"
+
+msgid "menu.parameterSaved.label"
+msgstr "Saved"
+
 msgid "menuFolder.section.label"
 msgstr "Menu Folder"
 
@@ -600,16 +612,16 @@ msgstr "Use Another Expression"
 msgid "style.otherStyle.label"
 msgstr "Use Another Facial Style"
 
-msgid "settingsSourceMode.option.direct"
+msgid "settingsReferenceMode.option.direct"
 msgstr "Direct: Configure Here"
 
-msgid "settingsSourceMode.option.reference"
+msgid "settingsReferenceMode.option.reference"
 msgstr "Reference: Use Other Settings"
 
-msgid "settingsSourceMode.short.direct"
+msgid "settingsReferenceMode.short.direct"
 msgstr "Direct"
 
-msgid "settingsSourceMode.short.reference"
+msgid "settingsReferenceMode.short.reference"
 msgstr "Reference"
 
 msgid "expression.settingSource.short.standard"
@@ -622,7 +634,7 @@ msgid "expression.settingSource.option.standard"
 msgstr "Standard: Use Standard Behavior"
 
 msgid "expression.settingSource.option.batch"
-msgstr "Global: Use Higher-Level Settings"
+msgstr "Batch: Configure on Parent"
 
 msgid "expression.realTimePreview.label"
 msgstr "Always Preview This Expression"
@@ -645,8 +657,17 @@ msgstr "Trigger"
 msgid "expression.multiFrame.parameter.label"
 msgstr "Parameter"
 
+msgid "expression.multiFrame.menu.label"
+msgstr "Menu"
+
+msgid "expression.multiFrame.menuSource.label"
+msgstr "Menu"
+
 msgid "expression.multiFrame.parameterName.empty.message"
 msgstr "Enter a parameter name."
+
+msgid "expression.multiFrame.menuSource.empty.message"
+msgstr "Select a menu."
 
 msgid "expression.group.expression.label"
 msgstr "Expression"
@@ -742,19 +763,46 @@ msgid "eyeBlink.component.label"
 msgstr "Component"
 
 msgid "eyeBlink.mode.label"
-msgstr "Blink Mode"
+msgstr "Mode"
 
 msgid "eyeBlinkMode.option.builtIn"
-msgstr "Use Avatar Settings"
+msgstr "Avatar Settings"
 
-msgid "eyeBlinkMode.option.automatic"
-msgstr "Use Animation"
+msgid "eyeBlinkMode.option.simpleAnimation"
+msgstr "Animation"
+
+msgid "eyeBlinkMode.option.customAnimation"
+msgstr "Custom Animation"
+
+msgid "eyeBlink.simple.durations.label"
+msgstr "Duration (Seconds)"
+
+msgid "eyeBlink.simple.duration.closing.shortLabel"
+msgstr "Close"
+
+msgid "eyeBlink.simple.duration.hold.shortLabel"
+msgstr "Hold"
+
+msgid "eyeBlink.simple.duration.opening.shortLabel"
+msgstr "Open"
+
+msgid "eyeBlink.simple.blinkBlendShapes.label"
+msgstr "Blend Shapes"
+
+msgid "eyeBlink.simple.conflictBlendShapes.label"
+msgstr "Conflict Correction"
 
 msgid "eyeBlink.animations.label"
 msgstr "Animations"
 
 msgid "eyeBlink.intervalSeconds.label"
-msgstr "Blink Interval (Seconds)"
+msgstr "Interval (Seconds)"
+
+msgid "eyeBlink.interval.minimum.shortLabel"
+msgstr "Minimum"
+
+msgid "eyeBlink.interval.maximum.shortLabel"
+msgstr "Maximum"
 
 msgid "lockFacial.section.label"
 msgstr "Lock Facial"
@@ -813,6 +861,9 @@ msgstr "Auto"
 msgid "mmdSupport.blendShapes.option.specified"
 msgstr "Specified"
 
+msgid "mmdSupport.blendShapeName.label"
+msgstr "Blend Shape Name"
+
 msgid "mmdSupport.disableWhen.label"
 msgstr "Disable When"
 
@@ -840,10 +891,7 @@ msgstr "Disabled"
 msgid "condition.bool.enabled.label"
 msgstr "Enabled"
 
-msgid "settingsSource.mode.label"
-msgstr "Configuration"
-
-msgid "settingsSource.component.empty.message"
+msgid "settingsReference.component.empty.message"
 msgstr "Specify the component to reference."
 
 msgid "priority.section.label"
@@ -852,11 +900,8 @@ msgstr "Priority"
 msgid "priority.value.label"
 msgstr "Priority"
 
-msgid "lipSync.conflictPrevention.section.label"
-msgstr "Conflict Prevention"
-
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "Blend Shapes Cancelled During Lip Sync"
+msgstr "Conflict Correction"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected by Default"

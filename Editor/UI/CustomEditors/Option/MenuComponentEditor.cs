@@ -67,9 +67,12 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
 {
     private readonly Component _owner;
     private readonly SerializedProperty _kind;
-    private readonly SerializedProperty _binding;
+    private readonly SerializedProperty _useExistingParameter;
+    private readonly SerializedProperty _generateParameterGroup;
     private readonly SerializedProperty _name;
     private readonly SerializedProperty _groupName;
+    private readonly SerializedProperty _synced;
+    private readonly SerializedProperty _saved;
     private readonly SerializedProperty _initialValue;
     private readonly SerializedProperty _selectedValue;
 
@@ -77,9 +80,12 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     {
         _owner = owner;
         _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
-        _binding = serializedObject.FindProperty(nameof(MenuComponent.Binding));
+        _useExistingParameter = serializedObject.FindProperty(nameof(MenuComponent.UseExistingParameter));
+        _generateParameterGroup = serializedObject.FindProperty(nameof(MenuComponent.GenerateParameterGroup));
         _name = serializedObject.FindProperty(nameof(MenuComponent.Name));
         _groupName = serializedObject.FindProperty(nameof(MenuComponent.GroupName));
+        _synced = serializedObject.FindProperty(nameof(MenuComponent.Synced));
+        _saved = serializedObject.FindProperty(nameof(MenuComponent.Saved));
         _initialValue = serializedObject.FindProperty(nameof(MenuComponent.InitialValue));
         _selectedValue = serializedObject.FindProperty(nameof(MenuComponent.SelectedValue));
     }
@@ -87,36 +93,39 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     public float GetHeight()
     {
         var rows = 1;
-        if (ShowsGroup) rows++;
+        if (!IsExisting && IsToggle) rows++;
         if (!IsGroup) rows++;
-        if (!IsExisting) rows++;
+        if (!IsExisting) rows += 3;
         if (IsToggle && !IsGroup) rows++;
         return GUIHelper.GetLinesHeight(rows);
     }
 
     public void Draw(Rect position)
     {
+        if (!IsToggle && !_generateParameterGroup.hasMultipleDifferentValues)
+            _generateParameterGroup.boolValue = false;
+
+        position.SetSingleHeight();
+        if (DrawBinding(position)) return;
+        position.NewLine();
+
         var isExisting = IsExisting;
         var isToggle = IsToggle;
         var isGroup = IsGroup;
-        var showsGroup = ShowsGroup;
-
-        position.SetSingleHeight();
-        DrawBinding(position);
-        position.NewLine();
-
-        if (showsGroup)
+        if (!isExisting && isToggle)
         {
-            var usesGroup = MenuGUI.DrawGroupSelector(position, _groupName, _owner, "menu.group.label".LG());
-            if (!_binding.hasMultipleDifferentValues
-                && _binding.enumValueIndex != (int)MenuComponent.ParameterBinding.Existing
-                && !_groupName.hasMultipleDifferentValues)
-                _binding.enumValueIndex = string.IsNullOrWhiteSpace(_groupName.stringValue)
-                    ? (int)MenuComponent.ParameterBinding.Generate
-                    : (int)MenuComponent.ParameterBinding.GenerateGroup;
-            isGroup = usesGroup
-                   && !_binding.hasMultipleDifferentValues
-                   && _binding.enumValueIndex != (int)MenuComponent.ParameterBinding.Existing;
+            if (!isGroup && !_groupName.hasMultipleDifferentValues)
+                _groupName.stringValue = string.Empty;
+            var usesGroup = MenuGUI.DrawGroupSelector(
+                position,
+                _groupName,
+                _owner,
+                "menu.group.label".LG());
+            if (usesGroup != isGroup)
+            {
+                _generateParameterGroup.boolValue = usesGroup;
+                return;
+            }
             position.NewLine();
         }
 
@@ -137,31 +146,34 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
             else
                 EditorGUI.PropertyField(position, _initialValue, "menu.floatDefaultValue.label".LG());
             position.NewLine();
+            EditorGUI.PropertyField(position, _synced, "menu.parameterSynced.label".LG());
+            position.NewLine();
+            EditorGUI.PropertyField(position, _saved, "menu.parameterSaved.label".LG());
+            position.NewLine();
         }
 
         if (isToggle && !isGroup)
             DrawFloatToggle(position, _selectedValue, "menu.selectedValue.label");
     }
 
-    private void DrawBinding(Rect position)
+    private bool DrawBinding(Rect position)
     {
-        using var scope = new EditorGUI.PropertyScope(position, "menu.binding.label".LG(), _binding);
         var previousMixed = EditorGUI.showMixedValue;
-        EditorGUI.showMixedValue = _binding.hasMultipleDifferentValues;
-        var displayed = IsExisting ? 1 : 0;
-        EditorGUI.BeginChangeCheck();
+        EditorGUI.showMixedValue = _useExistingParameter.hasMultipleDifferentValues;
+        var selected = _useExistingParameter.boolValue ? 1 : 0;
         var next = GUIHelper.LocalizedPopup(
             position,
-            displayed,
+            selected,
             "menu.binding.label",
             new[] { "menu.binding.generate.label", "menu.binding.existing.label" });
-        if (EditorGUI.EndChangeCheck())
-            _binding.enumValueIndex = next == 1
-                ? (int)MenuComponent.ParameterBinding.Existing
-                : string.IsNullOrWhiteSpace(_groupName.stringValue)
-                    ? (int)MenuComponent.ParameterBinding.Generate
-                    : (int)MenuComponent.ParameterBinding.GenerateGroup;
+        var changed = next != selected;
+        if (changed)
+        {
+            _useExistingParameter.boolValue = next == 1;
+            if (_useExistingParameter.boolValue) _generateParameterGroup.boolValue = false;
+        }
         EditorGUI.showMixedValue = previousMixed;
+        return changed;
     }
 
     private static void DrawFloatToggle(Rect position, SerializedProperty property, string labelKey)
@@ -177,10 +189,10 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     }
 
     private bool IsToggle => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == (int)MenuComponent.Kind.Toggle;
-    private bool ShowsGroup => !IsExisting && IsToggle;
-    private bool IsGroup => !IsExisting
-                         && (!_binding.hasMultipleDifferentValues
-                             && _binding.enumValueIndex == (int)MenuComponent.ParameterBinding.GenerateGroup
-                             || MenuGUI.IsCreatingGroup(_groupName));
-    private bool IsExisting => !_binding.hasMultipleDifferentValues && _binding.enumValueIndex == (int)MenuComponent.ParameterBinding.Existing;
+    private bool IsGroup => IsToggle
+                         && !IsExisting
+                         && (_generateParameterGroup.hasMultipleDifferentValues
+                             || _generateParameterGroup.boolValue);
+    private bool IsExisting => !_useExistingParameter.hasMultipleDifferentValues
+                            && _useExistingParameter.boolValue;
 }

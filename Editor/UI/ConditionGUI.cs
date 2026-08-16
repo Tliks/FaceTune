@@ -45,7 +45,8 @@ internal static class ConditionGUI
 {
     private const int SeparatorFontSize = 8;
     private const float EmptyMessageHeight = 30f;
-    private static readonly GUIStyle SeparatorStyle = new(EditorStyles.miniLabel)
+    private static GUIStyle? _separatorStyle;
+    private static GUIStyle SeparatorStyle => _separatorStyle ??= new GUIStyle(EditorStyles.miniLabel)
     {
         alignment = TextAnchor.MiddleCenter,
         fontSize = SeparatorFontSize
@@ -56,12 +57,7 @@ internal static class ConditionGUI
         NestContent: false,
         EmptyContentHeight: EmptyMessageHeight,
         DrawEmptyOverride: DrawEmptyMessage,
-        InitializeElement: element =>
-        {
-            element.FindPropertyRelative(nameof(ConditionCase.HandGestureConditions)).arraySize = 0;
-            element.FindPropertyRelative(nameof(ConditionCase.MenuConditions)).arraySize = 0;
-            element.FindPropertyRelative(nameof(ConditionCase.ParameterConditions)).arraySize = 0;
-        },
+        InitializeElement: element => element.CopyFrom(new ConditionCase()),
         DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()),
         Controls: ReorderableListOptions.ControlsPlacement.Manual);
 
@@ -102,7 +98,7 @@ internal static class ConditionGUI
     }
 
     internal static void DrawEmptyMessage(Rect position, SerializedProperty _)
-        => EditorGUI.HelpBox(position, "condition.emptyCase.message".LG().text, MessageType.Warning);
+        => EditorGUI.HelpBox(position, "condition.emptyCase.message".LS(), MessageType.Warning);
 }
 
 [CustomPropertyDrawer(typeof(Condition))]
@@ -258,25 +254,13 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
         var handWidth = GUIHelper.LocalizedEnumPopupWidth(hand, nameof(HandGestureHand));
         var gestureWidth = GUIHelper.LocalizedEnumPopupWidth(gesture, nameof(HandGesture));
         var matchesWidth = GUIHelper.PopupWidth(matchOptions);
-        var preferredWidth = handWidth + gestureWidth + matchesWidth;
-        var scale = preferredWidth > position.width ? position.width / preferredWidth : 1f;
-        handWidth *= scale;
-        gestureWidth *= scale;
-        matchesWidth = position.width - handWidth - gestureWidth;
-
-        var handRect = new Rect(position.x, position.y, handWidth, position.height);
-        var gestureRect = new Rect(handRect.xMax, position.y, gestureWidth, position.height);
-        var matchesRect = new Rect(gestureRect.xMax, position.y, matchesWidth, position.height);
-        DrawEnum(handRect, hand, nameof(HandGestureHand));
-        DrawEnum(gestureRect, gesture, nameof(HandGesture));
+        var fields = position.FlexHorizontal(handWidth, gestureWidth, matchesWidth);
+        var handRect = fields[0];
+        var gestureRect = fields[1];
+        var matchesRect = fields[2];
+        GUIHelper.DrawLocalizedEnum(handRect, hand, string.Empty, nameof(HandGestureHand));
+        GUIHelper.DrawLocalizedEnum(gestureRect, gesture, string.Empty, nameof(HandGesture));
         matches.boolValue = EditorGUI.Popup(matchesRect, matches.boolValue ? 0 : 1, matchOptions) == 0;
-    }
-
-    private static void DrawEnum(Rect position, SerializedProperty property, string typeName)
-    {
-        var prefix = char.ToLowerInvariant(typeName[0]) + typeName.Substring(1);
-        var keys = property.enumNames.Select(name => $"{prefix}.option.{char.ToLowerInvariant(name[0]) + name.Substring(1)}");
-        GUIHelper.LocalizedEnumPopup(position, property, string.Empty, keys);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => GUIHelper.LineHeight;

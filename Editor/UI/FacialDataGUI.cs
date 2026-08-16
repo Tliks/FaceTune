@@ -4,21 +4,26 @@ namespace Aoyon.FaceTune.Gui;
 
 internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
 {
-    private readonly SerializedProperty _source;
+    private readonly SerializedReferenceableSettings _source;
     private readonly Component _component;
     private readonly int _targetCount;
 
-    public FacialDataSectionDrawer(SerializedObject serializedObject, Component component, int targetCount, string sourcePropertyName)
+    public FacialDataSectionDrawer(
+        SerializedObject serializedObject,
+        Component component,
+        int targetCount,
+        string referencePropertyName,
+        string directPropertyName)
     {
-        _source = serializedObject.FindProperty(sourcePropertyName);
+        _source = new SerializedReferenceableSettings(serializedObject, referencePropertyName, directPropertyName);
         _component = component;
         _targetCount = targetCount;
     }
 
-    public float GetHeight() => FacialDataGUI.GetContentHeight(_source, false);
-    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source, _component, _targetCount, false);
-    public float GetHeaderWidth() => SettingsSourceGUI.GetHeaderWidth(_source);
-    public void DrawHeader(Rect position) => SettingsSourceGUI.DrawHeader(position, _source);
+    public float GetHeight() => FacialDataGUI.GetContentHeight(_source);
+    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source, _component, _targetCount);
+    public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
+    public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _source);
 }
 
 internal static class FacialDataGUI
@@ -27,27 +32,21 @@ internal static class FacialDataGUI
         Header: ReorderableListOptions.HeaderMode.Label,
         HeaderContentHeight: GUIHelper.LineHeight,
         DrawHeaderContent: DrawClipRow,
-        InitializeElement: property =>
-        {
-            property.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue = string.Empty;
-            property.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue = new AnimationCurve();
-        });
+        InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()));
 
-    public static float GetContentHeight(SerializedProperty source, bool includeMode = true)
-        => SettingsSourceGUI.GetHeight(source, GetDirectHeight(source), includeMode);
+    public static float GetContentHeight(SerializedReferenceableSettings source)
+        => SettingsReferenceGUI.GetHeight(source, GetDirectHeight(source));
 
-    public static void DrawContent(Rect position, SerializedProperty source, Component component, int targetCount, bool includeMode = true)
-        => SettingsSourceGUI.Draw(
+    public static void DrawContent(Rect position, SerializedReferenceableSettings source, Component component, int targetCount)
+        => SettingsReferenceGUI.Draw(
             position,
             source,
             GetDirectHeight(source),
-            rect => DrawDirect(rect, source, component, targetCount),
-            includeMode);
+            rect => DrawDirect(rect, source, component, targetCount));
 
-    private static float GetDirectHeight(SerializedProperty source)
+    private static float GetDirectHeight(SerializedReferenceableSettings source)
     {
-        var animations = source.FindPropertyRelative(nameof(FacialBlendShapeDataSource.Direct))
-            .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        var animations = source.Direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         return GUIHelper.GetListHeight(animations, AnimationListOptions)
              + GUIHelper.VerticalSpacing
              + GUIHelper.LineHeight;
@@ -55,11 +54,11 @@ internal static class FacialDataGUI
 
     private static void DrawDirect(
         Rect position,
-        SerializedProperty source,
+        SerializedReferenceableSettings source,
         Component component,
         int targetCount)
     {
-        var direct = source.FindPropertyRelative(nameof(FacialBlendShapeDataSource.Direct));
+        var direct = source.Direct;
         var animations = direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         position.height = GUIHelper.GetListHeight(animations, AnimationListOptions);
         GUIHelper.DrawList(position, animations, "expression.blendShapes.label".LG(), AnimationListOptions);
@@ -114,9 +113,9 @@ internal static class FacialDataGUI
         resolver.FacialData.AddIncoming(component, baseAnimations, avatar.BodyPath);
         var direct = component switch
         {
-            ExpressionComponent expression => expression.FacialBlendShapes.Direct,
-            ExpressionDataComponent data => data.FacialBlendShapes.Direct,
-            SettingsComponent settings => settings.FacialBlendShapes.Direct,
+            ExpressionComponent expression => expression.FacialBlendShapes,
+            ExpressionDataComponent data => data.FacialBlendShapes,
+            SettingsComponent settings => settings.FacialBlendShapes,
             _ => null
         };
         if (direct != null && direct.Clip != null)
@@ -172,9 +171,12 @@ internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
             "expression.multiFrame.default.label",
             "expression.multiFrame.loop.label",
             "expression.multiFrame.trigger.label",
-            "expression.multiFrame.parameter.label"
+            "expression.multiFrame.parameter.label",
+            "expression.multiFrame.menu.label"
         });
-        if (mode.enumValueIndex is not ((int)MultiFrameSettings.Kind.Trigger or (int)MultiFrameSettings.Kind.Parameter)) return;
+        if (mode.enumValueIndex is not ((int)MultiFrameSettings.Kind.Trigger
+                                     or (int)MultiFrameSettings.Kind.Parameter
+                                     or (int)MultiFrameSettings.Kind.Menu)) return;
         position.NewLine();
         if (mode.enumValueIndex == (int)MultiFrameSettings.Kind.Trigger)
         {
@@ -184,26 +186,51 @@ internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
             GUIHelper.LocalizedEnumPopup(handValue, hand, string.Empty, new[] { "hand.option.left", "hand.option.right" });
             return;
         }
-        var parameter = property.FindPropertyRelative(nameof(MultiFrameSettings.ParameterName));
-        var (parameterLabel, parameterValue) = GUIHelper.SplitIndentedLabel(position);
-        EditorGUI.LabelField(parameterLabel, "expression.multiFrame.parameterName.label".LG());
-        EditorGUI.PropertyField(parameterValue, parameter, GUIContent.none);
-        if (!string.IsNullOrWhiteSpace(parameter.stringValue)) return;
-        position.NewLine();
-        position.height = ParameterWarningHeight;
-        position.Indent();
-        EditorGUI.HelpBox(position, "expression.multiFrame.parameterName.empty.message".LS(), MessageType.Warning);
+        if (mode.enumValueIndex == (int)MultiFrameSettings.Kind.Parameter)
+        {
+            var parameter = property.FindPropertyRelative(nameof(MultiFrameSettings.ParameterName));
+            var (parameterLabel, parameterValue) = GUIHelper.SplitIndentedLabel(position);
+            EditorGUI.LabelField(parameterLabel, "expression.multiFrame.parameterName.label".LG());
+            EditorGUI.PropertyField(parameterValue, parameter, GUIContent.none);
+            if (!string.IsNullOrWhiteSpace(parameter.stringValue)) return;
+            DrawWarning(ref position, "expression.multiFrame.parameterName.empty.message");
+            return;
+        }
+
+        var menu = property.FindPropertyRelative(nameof(MultiFrameSettings.MenuSource));
+        var (menuLabel, menuValue) = GUIHelper.SplitIndentedLabel(position);
+        EditorGUI.LabelField(menuLabel, "expression.multiFrame.menuSource.label".LG());
+        EditorGUI.PropertyField(menuValue, menu, GUIContent.none);
+        if (menu.objectReferenceValue != null) return;
+        DrawWarning(ref position, "expression.multiFrame.menuSource.empty.message");
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
         var mode = property.FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode)).enumValueIndex;
-        if (mode is not ((int)MultiFrameSettings.Kind.Trigger or (int)MultiFrameSettings.Kind.Parameter)) return GUIHelper.LineHeight;
+        if (mode is not ((int)MultiFrameSettings.Kind.Trigger
+                      or (int)MultiFrameSettings.Kind.Parameter
+                      or (int)MultiFrameSettings.Kind.Menu)) return GUIHelper.LineHeight;
         var height = GUIHelper.GetLinesHeight(2);
-        return mode == (int)MultiFrameSettings.Kind.Parameter
-            && string.IsNullOrWhiteSpace(property.FindPropertyRelative(nameof(MultiFrameSettings.ParameterName)).stringValue)
-                ? height + GUIHelper.VerticalSpacing + ParameterWarningHeight
-                : height;
+        var isEmpty = mode switch
+        {
+            (int)MultiFrameSettings.Kind.Parameter => string.IsNullOrWhiteSpace(property
+                .FindPropertyRelative(nameof(MultiFrameSettings.ParameterName)).stringValue),
+            (int)MultiFrameSettings.Kind.Menu => property
+                .FindPropertyRelative(nameof(MultiFrameSettings.MenuSource)).objectReferenceValue == null,
+            _ => false
+        };
+        return isEmpty
+            ? height + GUIHelper.VerticalSpacing + ParameterWarningHeight
+            : height;
+    }
+
+    private static void DrawWarning(ref Rect position, string messageKey)
+    {
+        position.NewLine();
+        position.height = ParameterWarningHeight;
+        position.Indent();
+        EditorGUI.HelpBox(position, messageKey.LS(), MessageType.Warning);
     }
 }
 
