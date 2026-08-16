@@ -95,6 +95,7 @@ internal class ExpressionSetSettings
     public bool DefaultSelected;
 }
 
+/// <summary>Serialized tracking permission shared by current and legacy data.</summary>
 internal enum TrackingPermission
 {
     Allow,

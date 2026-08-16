@@ -97,7 +97,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7538788716294851306}
+      addedObject: {fileID: 3687265323103317878}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &2053886060035036008 stripped
 Transform:
@@ -109,7 +109,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 742531573104136499}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7538788716294851306
+--- !u!114 &3687265323103317878
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -118,17 +118,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 6227717546616551414}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -150,53 +150,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -261,7 +266,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7651077571623015873}
+      addedObject: {fileID: 1719538166194953672}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &355626143696950614 stripped
 Transform:
@@ -273,7 +278,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 1306517655536506637}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7651077571623015873
+--- !u!114 &1719538166194953672
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -282,17 +287,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 5621304283123036616}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -314,53 +319,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -425,7 +435,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 785858842081763193}
+      addedObject: {fileID: 5494547341019639140}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &904122683927418626 stripped
 Transform:
@@ -437,7 +447,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 1892294967166784857}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &785858842081763193
+--- !u!114 &5494547341019639140
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -446,17 +456,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 5071480529511379868}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -478,53 +488,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -589,7 +604,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2524844545730219862}
+      addedObject: {fileID: 1278294948825979206}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &2414262663248970473 stripped
 Transform:
@@ -601,7 +616,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 3985670193669996722}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2524844545730219862
+--- !u!114 &1278294948825979206
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -610,17 +625,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 7740770184037246583}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -642,53 +657,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -753,14 +773,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1454596300552009429}
+      addedObject: {fileID: 1346091674839208387}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &1634548288219104504 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 5371766959571231293}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1454596300552009429
+--- !u!114 &1346091674839208387
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -769,17 +789,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1634548288219104504}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -801,53 +821,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -917,14 +942,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6655812072100783349}
+      addedObject: {fileID: 6450275394913983698}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &1279028390230158754 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 5612409960805124967}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6655812072100783349
+--- !u!114 &6450275394913983698
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -933,17 +958,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1279028390230158754}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -965,53 +990,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -1081,14 +1111,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4572096353984815787}
+      addedObject: {fileID: 939060511394232525}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &2460214509853873 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 6641667167664732788}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &4572096353984815787
+--- !u!114 &939060511394232525
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1097,17 +1127,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 2460214509853873}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -1129,53 +1159,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -1245,14 +1280,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5497441475678359008}
+      addedObject: {fileID: 7614528492410534346}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &3744954612359587212 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 8060190938234798921}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5497441475678359008
+--- !u!114 &7614528492410534346
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1261,17 +1296,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 3744954612359587212}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32190af6eb721ad409c693602e718a3c, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   HasFacialBlendShapes: 0
-  FacialBlendShapes:
-    SourceMode: 0
+  FacialBlendShapesReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      Clip: {fileID: 0}
-      ClipOption: 1
-      BlendShapeAnimations: []
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
   ExpressionSet:
@@ -1293,53 +1328,58 @@ MonoBehaviour:
       MenuConditions: []
       ParameterConditions: []
   HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
   EyeBlink:
-    SourceMode: 0
-    Source: {fileID: 0}
-    Direct:
-      EyeBlinkMode: 0
-      Animations:
-      - name: vrc.blink
-        curve:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.06666667
-            value: 100
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.13333334
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-      IntervalSeconds: {x: 3, y: 7}
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   HasLipSync: 0
-  LipSync:
-    SourceMode: 0
+  LipSyncReference:
+    Mode: 0
     Source: {fileID: 0}
-    Direct:
-      CancellerBlendShapes: []
+  LipSync:
+    CancellerBlendShapes: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1

@@ -1,5 +1,3 @@
-using UnityEngine.Serialization;
-
 namespace Aoyon.FaceTune;
 
 [Serializable]
@@ -93,8 +91,6 @@ internal enum HandGestureHand
 internal sealed class HandGestureCondition
 {
     public HandGestureHand Hand = HandGestureHand.Left;
-
-    [FormerlySerializedAs("HandGesture")]
     public HandGesture Gesture = HandGesture.Fist;
 
     public bool Matches = true;
@@ -169,22 +165,11 @@ internal sealed class MenuCondition
 [Serializable]
 internal sealed class ParameterCondition
 {
-    [FormerlySerializedAs("parameterName")]
     public string ParameterName = string.Empty;
-
-    [FormerlySerializedAs("parameterType")]
     public ParameterType ParameterType = ParameterType.Bool;
-
-    [FormerlySerializedAs("comparisonType")]
     public ComparisonType ComparisonType = ComparisonType.Equal;
-
-    [FormerlySerializedAs("floatValue")]
     public float FloatValue = 0f;
-
-    [FormerlySerializedAs("intValue")]
     public int IntValue = 0;
-
-    [FormerlySerializedAs("boolValue")]
     public bool BoolValue = true;
 
     public ParameterCondition()
@@ -252,6 +237,7 @@ internal enum HandGesture
     ThumbsUp = 70
 }
 
+/// <summary>Serialized parameter type shared by current and legacy data.</summary>
 internal enum ParameterType
 {
     Int,
@@ -259,6 +245,7 @@ internal enum ParameterType
     Bool
 }
 
+/// <summary>Serialized comparison shared by current and legacy data.</summary>
 internal enum ComparisonType
 {
     Equal,

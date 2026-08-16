@@ -1,7 +1,9 @@
+#pragma warning disable CS0618
+
 namespace Aoyon.FaceTune;
 
-[Obsolete("Use EyeBlinkSettings instead.")]
 [Serializable]
+[Obsolete("Legacy serialized data retained only for migration.")]
 internal record class AdvancedEyeBlinkSettings // Immutable
 {
     [SerializeField] private bool useAdvancedEyeBlink;
@@ -140,23 +142,14 @@ internal record class AdvancedEyeBlinkSettings // Immutable
         hash ^= UseRandomInterval.GetHashCode();
         hash ^= RandomIntervalMinSeconds.GetHashCode();
         hash ^= RandomIntervalMaxSeconds.GetHashCode();
-        hash ^= GetSequenceHashCode(BlinkBlendShapeNames);
+        hash ^= BlinkBlendShapeNames.GetSequenceHashCode();
         hash ^= ClosingDurationSeconds.GetHashCode();
         hash ^= HoldDurationSeconds.GetHashCode();
         hash ^= OpeningDurationSeconds.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
-        hash ^= GetSequenceHashCode(CancelerBlendShapeNames);
-        return hash;
-    }
-
-    private static int GetSequenceHashCode<T>(IEnumerable<T> sequence)
-    {
-        var hash = 0;
-        foreach (var item in sequence)
-        {
-            if (item == null) continue;
-            hash ^= item.GetHashCode();
-        }
+        hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
         return hash;
     }
 }
+
+#pragma warning restore CS0618

@@ -2,6 +2,7 @@ using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune;
 
+/// <summary>Serialized avatar reference shared by current and legacy components.</summary>
 [Serializable]
 internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
 {

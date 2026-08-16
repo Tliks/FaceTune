@@ -2,6 +2,7 @@ namespace Aoyon.FaceTune;
 
 // 明示的な適用対象(Binding)を持たずnameのみで適用対象を決定する
 // ブレンドシェイプを汎用的に取り扱えるようにするため。似たブレンドシェイプを持つ異なる対象への適用や、キメラ対応などが楽になる。
+/// <summary>Serialized shape animation shared by current and legacy data.</summary>
 [Serializable]
 internal record BlendShapeWeightAnimation // Immutable
 {

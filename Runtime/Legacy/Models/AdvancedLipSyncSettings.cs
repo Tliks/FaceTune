@@ -1,6 +1,9 @@
+#pragma warning disable CS0618
+
 namespace Aoyon.FaceTune;
 
 [Serializable]
+[Obsolete("Legacy serialized data retained only for migration.")]
 internal record class AdvancedLipSyncSettings // Immutable
 {
     [SerializeField] private bool useAdvancedLipSync;
@@ -70,8 +73,7 @@ internal record class AdvancedLipSyncSettings // Immutable
     internal static AdvancedLipSyncSettings Disabled() => new(false);
 
     internal bool IsEnabled() => useAdvancedLipSync;
-    internal bool IsAnimationEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
-    internal bool IsCancelerEnabled() => IsAnimationEnabled();
+    internal bool IsCancelerEnabled() => IsEnabled() && useCanceler && cancelerBlendShapeNames.Count > 0;
 
     public virtual bool Equals(AdvancedLipSyncSettings other)
     {
@@ -87,20 +89,11 @@ internal record class AdvancedLipSyncSettings // Immutable
     {
         var hash = UseAdvancedLipSync.GetHashCode();
         hash ^= UseCanceler.GetHashCode();
-        hash ^= GetSequenceHashCode(CancelerBlendShapeNames);
+        hash ^= CancelerBlendShapeNames.GetSequenceHashCode();
         hash ^= CancelerEntryDurationSeconds.GetHashCode();
         hash ^= CancelerExitDurationSeconds.GetHashCode();
         return hash;
     }
-
-    private static int GetSequenceHashCode<T>(IEnumerable<T> sequence)
-    {
-        var hash = 0;
-        foreach (var item in sequence)
-        {
-            if (item == null) continue;
-            hash ^= item.GetHashCode();
-        }
-        return hash;
-    }
 }
+
+#pragma warning restore CS0618
