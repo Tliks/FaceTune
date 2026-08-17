@@ -12,8 +12,8 @@ namespace Aoyon.FaceTune
         // 読み書きしないBlendShape。空なら全て読み書き。
         public List<string> ExcludedBlendShapeNames = new();
 
-        // FaceTune外部のまばたき/リップシンク制御との競合問題を良い感じにする契約。
-        // VRCにおける現行実装はTracking ControlのAAPへの置き換えと中央制御。
+        // facetune外部（VRChat標準Tracking等）のまばたき/リップシンク制御へ介入するか。
+        // internalなAAP中央制御とは独立し、ここは外部Trackingの統制（VRCAnimatorTrackingControl）有無のみを決める。
         [ToggleLeft]
         public bool AvoidEyeBlinkConflicts = true;
         [ToggleLeft]

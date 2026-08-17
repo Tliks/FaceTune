@@ -1,3 +1,5 @@
+using UnityEditor.Animations;
+
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal sealed record class AnimatorBuildPlan(
