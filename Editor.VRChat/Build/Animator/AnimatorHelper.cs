@@ -1,7 +1,7 @@
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
 
-namespace Aoyon.FaceTune.Build.Animator;
+namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static class AnimatorHelper
 {
@@ -17,33 +17,34 @@ internal static class AnimatorHelper
             .GroupBy(b => b)
             .ToDictionary(g => g.Key, g => g.Count());
 
-        if (wdStateCounter.Count == 1) writeDefaults = wdStateCounter.First().Key;
+        if (wdStateCounter.Count == 1)
+        {
+            writeDefaults = wdStateCounter.First().Key;
+        }
         return writeDefaults;
     }
 
     private static bool IsWriteDefaultsSafeLayer(VirtualLayer virtualLayer)
     {
-        if (virtualLayer.BlendingMode == AnimatorLayerBlendingMode.Additive) return true;
-        var sm = virtualLayer.StateMachine;
-
-        if (sm == null) return false;
-        if (sm.StateMachines.Count != 0) return false;
-        return sm.States.Count == 1 && sm.AnyStateTransitions.Count == 0 &&
-                sm.DefaultState?.Transitions.Count == 0 && sm.DefaultState.Motion is VirtualBlendTree;
-    }
-
-    public static TBehavior EnsureBehavior<TBehavior>(this VirtualStateMachine stateMachine) where TBehavior : StateMachineBehaviour
-    {
-        var behavior = stateMachine.Behaviours.OfType<TBehavior>().FirstOrDefault();
-        if (behavior == null)
+        if (virtualLayer.BlendingMode == AnimatorLayerBlendingMode.Additive)
         {
-            behavior = ScriptableObject.CreateInstance<TBehavior>();
-            stateMachine.Behaviours = stateMachine.Behaviours.Add(behavior);
+            return true;
         }
-        return behavior;
+
+        var stateMachine = virtualLayer.StateMachine;
+        if (stateMachine == null || stateMachine.StateMachines.Count != 0)
+        {
+            return false;
+        }
+
+        return stateMachine.States.Count == 1
+            && stateMachine.AnyStateTransitions.Count == 0
+            && stateMachine.DefaultState?.Transitions.Count == 0
+            && stateMachine.DefaultState.Motion is VirtualBlendTree;
     }
 
-    public static TBehavior EnsureBehavior<TBehavior>(this VirtualState state) where TBehavior : StateMachineBehaviour
+    public static TBehavior EnsureBehavior<TBehavior>(this VirtualState state)
+        where TBehavior : StateMachineBehaviour
     {
         var behavior = state.Behaviours.OfType<TBehavior>().FirstOrDefault();
         if (behavior == null)
@@ -57,22 +58,27 @@ internal static class AnimatorHelper
     public static VirtualStateTransition CreateTransitionWithDurationSeconds(float duration)
     {
         var transition = VirtualStateTransition.Create();
-        transition.ExitTime = null; 
+        transition.ExitTime = null;
         transition.HasFixedDuration = true;
         transition.Duration = duration;
         return transition;
     }
 
-    public static VirtualStateTransition CreateTransitionWithExitTime(float exitTime = 1f, float duration = 0f)
+    public static VirtualStateTransition CreateTransitionWithExitTime(
+        float exitTime = 1f,
+        float duration = 0f)
     {
         var transition = VirtualStateTransition.Create();
-        transition.ExitTime = exitTime; 
+        transition.ExitTime = exitTime;
         transition.HasFixedDuration = true;
         transition.Duration = duration;
         return transition;
     }
 
-    public static void EnsureBoolParameterExists(this VirtualAnimatorController controller, string parameter, bool defaultValue = false)
+    public static void EnsureBoolParameterExists(
+        this VirtualAnimatorController controller,
+        string parameter,
+        bool defaultValue = false)
     {
         if (!controller.Parameters.ContainsKey(parameter))
         {
@@ -86,7 +92,10 @@ internal static class AnimatorHelper
         }
     }
 
-    public static void EnsureIntParameterExists(this VirtualAnimatorController controller, string parameter, int defaultValue = 0)
+    public static void EnsureIntParameterExists(
+        this VirtualAnimatorController controller,
+        string parameter,
+        int defaultValue = 0)
     {
         if (!controller.Parameters.ContainsKey(parameter))
         {
@@ -100,7 +109,10 @@ internal static class AnimatorHelper
         }
     }
 
-    public static void EnsureFloatParameterExists(this VirtualAnimatorController controller, string parameter, float defaultValue = 0f)
+    public static void EnsureFloatParameterExists(
+        this VirtualAnimatorController controller,
+        string parameter,
+        float defaultValue = 0f)
     {
         if (!controller.Parameters.ContainsKey(parameter))
         {
@@ -114,26 +126,11 @@ internal static class AnimatorHelper
         }
     }
 
-    public static void EnsureParameterExists(this VirtualAnimatorController controller, AnimatorControllerParameterType type, string parameter)
-    {
-        switch (type)
-        {
-            case AnimatorControllerParameterType.Bool:
-            case AnimatorControllerParameterType.Trigger:
-                EnsureBoolParameterExists(controller, parameter);
-                break;
-            case AnimatorControllerParameterType.Int:
-                EnsureIntParameterExists(controller, parameter);
-                break;
-            case AnimatorControllerParameterType.Float:
-                EnsureFloatParameterExists(controller, parameter);
-                break;
-            default:
-                throw new ArgumentException($"Invalid parameter type: {type}");
-        }
-    }
-
-    public static void EnsureParameterExists(this VirtualAnimatorController controller, AnimatorControllerParameterType type, string parameter, float defaultValue)
+    public static void EnsureParameterExists(
+        this VirtualAnimatorController controller,
+        AnimatorControllerParameterType type,
+        string parameter,
+        float defaultValue)
     {
         switch (type)
         {
@@ -151,58 +148,71 @@ internal static class AnimatorHelper
         }
     }
 
-    public static void CollectConditionParameters(Dictionary<string, PlanParameter> parameters, DnfCondition condition)
+    public static void CollectConditionParameters(
+        Dictionary<string, PlanParameter> parameters,
+        DnfCondition condition)
     {
         foreach (var conditionCase in condition.Cases)
         {
             foreach (var rule in conditionCase.Rules)
             {
-                if (rule is not AnimatorConditionRule acr) continue;
-                parameters.TryAdd(acr.ParameterName, new PlanParameter(
-                    acr.ParameterName, acr.ParameterType, (float)acr.Condition.threshold));
+                if (rule is not AnimatorConditionRule animatorRule)
+                {
+                    continue;
+                }
+
+                parameters.TryAdd(
+                    animatorRule.ParameterName,
+                    new PlanParameter(
+                        animatorRule.ParameterName,
+                        animatorRule.ParameterType,
+                        0f));
             }
         }
     }
 
     public static float DiscreteFloatIndexToValue(int index)
     {
-        if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+        if (index < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
         return index;
     }
 
     public static DnfCondition DiscreteFloatIndexCondition(string parameter, int index)
     {
-        if (index < 0 || index == int.MaxValue) throw new ArgumentOutOfRangeException(nameof(index));
+        if (index < 0 || index == int.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
 
         var conditions = new List<DnfCondition>();
         if (index > 0)
         {
-            conditions.Add(DnfCondition.Single(new AnimatorConditionRule(
+            conditions.Add(DnfCondition.Single(
+                new AnimatorConditionRule(
+                    new AnimatorCondition
+                    {
+                        parameter = parameter,
+                        mode = AnimatorConditionMode.Greater,
+                        threshold = DiscreteFloatIndexToValue(index - 1)
+                    },
+                    AnimatorControllerParameterType.Float),
+                ParameterDomainRegistry.Empty));
+        }
+
+        conditions.Add(DnfCondition.Single(
+            new AnimatorConditionRule(
                 new AnimatorCondition
                 {
                     parameter = parameter,
-                    mode = AnimatorConditionMode.Greater,
-                    threshold = DiscreteFloatIndexToValue(index - 1)
+                    mode = AnimatorConditionMode.Less,
+                    threshold = DiscreteFloatIndexToValue(index + 1)
                 },
-                AnimatorControllerParameterType.Float), ParameterDomainRegistry.Empty));
-        }
-
-        conditions.Add(DnfCondition.Single(new AnimatorConditionRule(
-            new AnimatorCondition
-            {
-                parameter = parameter,
-                mode = AnimatorConditionMode.Less,
-                threshold = DiscreteFloatIndexToValue(index + 1)
-            },
-            AnimatorControllerParameterType.Float), ParameterDomainRegistry.Empty));
+                AnimatorControllerParameterType.Float),
+            ParameterDomainRegistry.Empty));
         return DnfCondition.All(conditions);
-    }
-
-    public static bool TryGetClip(this VirtualState state, [NotNullWhen(true)] out VirtualClip? clip)
-    {
-        var motion = state.Motion as VirtualClip;
-        clip = motion;
-        return motion != null;
     }
 
     public static VirtualClip SetNewClip(this VirtualState state, string name)
@@ -212,19 +222,8 @@ internal static class AnimatorHelper
         return clip;
     }
 
-    public static VirtualClip EnsureClip(this VirtualState state, string name)
-    {
-        if (state.TryGetClip(out var clip))
-        {
-            clip.Name = name;
-            return clip;
-        }
-        clip = SetNewClip(state, name);
-        return clip;
-    }
-
-    // 適当なGameObjectのactiveを切り替える2フレームアニメーションを作成
-    public static VirtualClip CreateCustomEmptyClip(string clipName = "FaceTune Custom Empty Clip")
+    public static VirtualClip CreateCustomEmptyClip(
+        string clipName = "FaceTune Custom Empty Clip")
     {
         var clip = VirtualClip.Create(clipName);
 
@@ -250,12 +249,22 @@ internal static class AnimatorHelper
 
     private const string AnimatedBlendShapePrefix = "blendShape.";
 
-    public static void AddBlendShapeAnimation(this VirtualClip clip, string bodyPath, BlendShapeWeightAnimation animation)
+    public static void AddBlendShapeAnimation(
+        this VirtualClip clip,
+        string bodyPath,
+        BlendShapeWeightAnimation animation)
     {
-        clip.SetFloatCurve(bodyPath, typeof(SkinnedMeshRenderer), AnimatedBlendShapePrefix + animation.Name, animation.Curve);
+        clip.SetFloatCurve(
+            bodyPath,
+            typeof(SkinnedMeshRenderer),
+            AnimatedBlendShapePrefix + animation.Name,
+            animation.Curve);
     }
 
-    public static void AddBlendShapeAnimations(this VirtualClip clip, string bodyPath, IEnumerable<BlendShapeWeightAnimation> animations)
+    public static void AddBlendShapeAnimations(
+        this VirtualClip clip,
+        string bodyPath,
+        IEnumerable<BlendShapeWeightAnimation> animations)
     {
         foreach (var animation in animations)
         {

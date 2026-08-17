@@ -1,9 +1,10 @@
 using UnityEditor.Animations;
 
-namespace Aoyon.FaceTune.Build.Animator;
+namespace Aoyon.FaceTune.Platforms.VRChat;
 
 /// <summary>
-/// Animator condition carried as a DNF rule. ParameterType is kept only because AnimatorCondition itself does not contain it.
+/// Animator condition carried as a DNF rule.
+/// ParameterType is retained because AnimatorCondition does not contain it.
 /// </summary>
 internal sealed record class AnimatorConditionRule(
     AnimatorCondition Condition,
@@ -384,7 +385,10 @@ internal sealed class FiniteParameterConstraint : DnfConstraint
 
     public override int CompareTo(DnfConstraint other)
     {
-        if (other is not FiniteParameterConstraint constraint) return StringComparer.Ordinal.Compare(GetType().Name, other.GetType().Name);
+        if (other is not FiniteParameterConstraint constraint)
+        {
+            return StringComparer.Ordinal.Compare(GetType().Name, other.GetType().Name);
+        }
         for (var index = 0; index < Math.Min(_allowedValues.Length, constraint._allowedValues.Length); index++)
         {
             var comparison = _allowedValues[index].CompareTo(constraint._allowedValues[index]);
@@ -561,7 +565,8 @@ internal static class AnimatorParameterConditionConverter
             ComparisonType.GreaterThan => AnimatorConditionMode.Greater,
             ComparisonType.LessThan => AnimatorConditionMode.Less,
             ComparisonType.Equal => throw new InvalidOperationException("Equal is not supported for float parameters."),
-            ComparisonType.NotEqual => throw new InvalidOperationException("NotEqual is not supported for float parameters."),
+            ComparisonType.NotEqual => throw new InvalidOperationException(
+                "NotEqual is not supported for float parameters."),
             _ => throw new InvalidOperationException($"Invalid comparison type: {comparisonType}")
         };
     }
@@ -593,7 +598,9 @@ internal static class AnimatorConditionExtensions
 {
     private const float FloatTolerance = 0.00001f;
 
-    public static AnimatorCondition Negate(this AnimatorCondition condition, AnimatorControllerParameterType parameterType)
+    public static AnimatorCondition Negate(
+        this AnimatorCondition condition,
+        AnimatorControllerParameterType parameterType)
     {
         return parameterType switch
         {
@@ -620,8 +627,16 @@ internal static class AnimatorConditionExtensions
         {
             AnimatorConditionMode.Equals => condition with { mode = AnimatorConditionMode.NotEqual },
             AnimatorConditionMode.NotEqual => condition with { mode = AnimatorConditionMode.Equals },
-            AnimatorConditionMode.Greater => condition with { mode = AnimatorConditionMode.Less, threshold = condition.threshold + 1 },
-            AnimatorConditionMode.Less => condition with { mode = AnimatorConditionMode.Greater, threshold = condition.threshold - 1 },
+            AnimatorConditionMode.Greater => condition with
+            {
+                mode = AnimatorConditionMode.Less,
+                threshold = condition.threshold + 1
+            },
+            AnimatorConditionMode.Less => condition with
+            {
+                mode = AnimatorConditionMode.Greater,
+                threshold = condition.threshold - 1
+            },
             _ => throw new InvalidOperationException($"Invalid int condition mode: {condition.mode}")
         };
     }
@@ -630,8 +645,16 @@ internal static class AnimatorConditionExtensions
     {
         return condition.mode switch
         {
-            AnimatorConditionMode.Greater => condition with { mode = AnimatorConditionMode.Less, threshold = condition.threshold + FloatTolerance },
-            AnimatorConditionMode.Less => condition with { mode = AnimatorConditionMode.Greater, threshold = condition.threshold - FloatTolerance },
+            AnimatorConditionMode.Greater => condition with
+            {
+                mode = AnimatorConditionMode.Less,
+                threshold = condition.threshold + FloatTolerance
+            },
+            AnimatorConditionMode.Less => condition with
+            {
+                mode = AnimatorConditionMode.Greater,
+                threshold = condition.threshold - FloatTolerance
+            },
             _ => throw new InvalidOperationException($"Invalid float condition mode: {condition.mode}")
         };
     }

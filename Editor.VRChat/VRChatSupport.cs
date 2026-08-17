@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Build.Animator;
 using Aoyon.FaceTune.Platforms.VRChat;
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
@@ -138,6 +137,14 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .OfType<AnimatorController>()
             .FirstOrDefault()
             .DestroyedAsNull();
+    }
+
+    public void ImportAnimatorController(
+        AvatarContext context,
+        AnimatorController controller,
+        GameObject parent)
+    {
+        new AnimatorControllerImporter(context, controller, this).Import(parent);
     }
 
     private static DnfCondition HandRule(

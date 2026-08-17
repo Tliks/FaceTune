@@ -1,6 +1,5 @@
 using UnityEngine.SceneManagement;
 using M = UnityEditor.MenuItem;
-using Aoyon.FaceTune.Importer;
 using Aoyon.FaceTune.Platforms;
 using UnityEditorInternal;
 using Aoyon.FaceTune.Settings;
@@ -97,8 +96,7 @@ internal static class GameObjectMenu
         if (candidates.Length != 1) throw new Exception("Failed to uniquely identify an animator controller");
 
         var (support, animatorController) = candidates[0];
-        var importer = new AnimatorControllerImporter(context, animatorController, support);
-        importer.Import(selected);
+        support.ImportAnimatorController(context, animatorController, selected);
     }
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 

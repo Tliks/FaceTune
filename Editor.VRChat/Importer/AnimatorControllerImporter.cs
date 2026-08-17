@@ -1,8 +1,7 @@
 using UnityEditor.Animations;
-using Aoyon.FaceTune.Build.Animator;
 using Aoyon.FaceTune.Platforms;
 
-namespace Aoyon.FaceTune.Importer;
+namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal class AnimatorControllerImporter
 {

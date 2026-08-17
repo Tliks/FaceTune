@@ -1,19 +1,13 @@
 using nadena.dev.modular_avatar.core;
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Build.Animator;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
-using VRC.SDKBase;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static class VRChatAnimatorBuilder
 {
-    private const int InitialControllerPriority = -1;
-    private const int UnitControllerPriority = 0;
-    private const int TrackingControlControllerPriority = 0;
-
     public static void Build(
         BuildContext buildContext,
         BuildSettings settings,
@@ -31,7 +25,7 @@ internal static class VRChatAnimatorBuilder
             analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         }
 
-        var platformServices = new VRChatAnimatorPlatformServices(analyzedWriteDefaults);
+        var mmdPolicy = ResolveMmdAnimatorPolicy(avatarControlSettings, analyzedWriteDefaults);
 
         ISet<Transform> unitBoundaryTransforms;
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.FindUnitBoundaries"))
@@ -47,13 +41,12 @@ internal static class VRChatAnimatorBuilder
                 settings,
                 avatarControlSettings,
                 unitBoundaryTransforms,
-                platformServices);
+                mmdPolicy);
         }
 
         var installer = new AnimatorInstaller(
             settings.AvatarContext,
-            analyzedWriteDefaults ?? true,
-            platformServices);
+            analyzedWriteDefaults ?? true);
 
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.InstallInitial"))
         {
@@ -61,8 +54,11 @@ internal static class VRChatAnimatorBuilder
                 controllerContext,
                 animatorPlan.InitialLayer.Anchor,
                 animatorPlan.InitialLayer.Name,
-                InitialControllerPriority);
-            installer.InstallInitial(initialController, animatorPlan.InitialLayer, InitialControllerPriority);
+                animatorPlan.InitialLayer.Priority);
+            installer.InstallInitial(
+                initialController,
+                animatorPlan.InitialLayer,
+                animatorPlan.InitialLayer.Priority);
         }
 
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.InstallUnits"))
@@ -73,28 +69,35 @@ internal static class VRChatAnimatorBuilder
                     controllerContext,
                     unit.Anchor,
                     $"Unit {unit.Id}",
-                    UnitControllerPriority);
-                installer.InstallUnit(unitController, unit, UnitControllerPriority);
+                    unit.Priority);
+                installer.InstallUnit(unitController, unit, unit.Priority);
             }
         }
 
-        if (animatorPlan.TrackingControlLayer is { } trackingControl)
+        if (animatorPlan.EyeBlinkLayer != null || animatorPlan.LipSyncLayer != null)
         {
-            using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.InstallTrackingControl"))
+            using var _ = new Utils.ProfilingSampleScope(
+                "FaceTune.Build.Animator.InstallTrackingControls");
+            var controlController = CreateMergeAnimatorController(
+                controllerContext,
+                animatorPlan.ControlAnchor,
+                "Tracking Controls",
+                animatorPlan.ControlPriority);
+            if (animatorPlan.EyeBlinkLayer is { } eyeBlink)
             {
-                var trackingController = CreateMergeAnimatorController(
-                    controllerContext,
-                    trackingControl.Anchor,
-                    trackingControl.Name,
-                    TrackingControlControllerPriority);
-                installer.InstallTrackingControl(
-                    trackingController,
-                    trackingControl,
-                    TrackingControlControllerPriority);
+                installer.InstallEyeBlink(
+                    controlController,
+                    eyeBlink,
+                    animatorPlan.ControlPriority);
+            }
+            if (animatorPlan.LipSyncLayer is { } lipSync)
+            {
+                installer.InstallLipSync(
+                    controlController,
+                    lipSync,
+                    animatorPlan.ControlPriority);
             }
         }
-
-        // Controller disable remains a VRChat-specific controller-assignment concern.
     }
 
     private static VirtualAnimatorController CreateMergeAnimatorController(
@@ -179,108 +182,29 @@ internal static class VRChatAnimatorBuilder
             .Select(binding => binding.propertyName["blendShape.".Length..]);
     }
 
-    private static DnfCondition ParameterBool(string parameterName, bool value)
+    private static MmdAnimatorPolicy ResolveMmdAnimatorPolicy(
+        AvatarControlSettings avatarControlSettings,
+        bool? analyzedWriteDefaults)
     {
-        return DnfCondition.Single(
-            AnimatorConditionRule.FromParameterCondition(ParameterCondition.Bool(parameterName, value)),
-            ParameterDomainRegistry.Empty);
-    }
+        var playback = avatarControlSettings.MmdPlayback;
+        if (!playback.Enabled) return new(null, MmdDisableMode.None);
 
-    private sealed class VRChatAnimatorPlatformServices : IAnimatorPlatformServices
-    {
-        private readonly bool? _analyzedWriteDefaults;
+        var playbackWhen = playback.DisableWhen ?? DnfCondition.Always;
+        if (playback.DisableWhen == null)
+            return new(playbackWhen, MmdDisableMode.None);
 
-        public VRChatAnimatorPlatformServices(bool? analyzedWriteDefaults)
-        {
-            _analyzedWriteDefaults = analyzedWriteDefaults;
-        }
-
-        public void SetEyeBlinkTracking(VirtualState state, bool isTracking)
-        {
-            var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
-            trackingControl.trackingEyes = isTracking
-                ? VRCAnimatorTrackingControl.TrackingType.Tracking
-                : VRCAnimatorTrackingControl.TrackingType.Animation;
-        }
-
-        public void SetLipSyncTracking(VirtualState state, bool isTracking)
-        {
-            var trackingControl = state.EnsureBehavior<VRCAnimatorTrackingControl>();
-            trackingControl.trackingMouth = isTracking
-                ? VRCAnimatorTrackingControl.TrackingType.Tracking
-                : VRCAnimatorTrackingControl.TrackingType.Animation;
-        }
-
-        public void AddRandomDriver(VirtualState state, string parameterName, float min, float max)
-        {
-            state.EnsureBehavior<VRCAvatarParameterDriver>().parameters.Add(
-                new VRC_AvatarParameterDriver.Parameter
-                {
-                    type = VRC_AvatarParameterDriver.ChangeType.Random,
-                    name = parameterName,
-                    valueMin = min,
-                    valueMax = max
-                });
-        }
-
-        public DnfCondition? GetLayerForceInactiveWhen(AvatarControlSettings avatarControlSettings)
-            => ResolveMmdAnimatorPolicy(avatarControlSettings, _analyzedWriteDefaults).LayerForceInactiveWhen;
-
-        public InitialLayerPlan TransformInitialLayer(
-            InitialLayerPlan initial,
-            AvatarControlSettings avatarControlSettings)
-        {
-            var policy = ResolveMmdAnimatorPolicy(avatarControlSettings, _analyzedWriteDefaults);
-            if (policy.BlendShapePassthroughWhen == null || avatarControlSettings.MmdPlayback.BlendShapeNames.Count == 0)
-                return initial;
-
-            var mmdPlaybackState = new InitialStatePlan(
-                "MMD Playback",
-                policy.BlendShapePassthroughWhen,
-                initial.DefaultState.BlendShapes
-                    .Where(shape => !avatarControlSettings.MmdPlayback.BlendShapeNames.Contains(shape.Name))
-                    .ToArray());
-            return initial with
+        var mode = playback.DisableMode == MMDSupportSettings.Mode.Auto
+            ? analyzedWriteDefaults == true
+                ? MMDSupportSettings.Mode.DisableLayers
+                : MMDSupportSettings.Mode.DisableFXlayer
+            : playback.DisableMode;
+        return new MmdAnimatorPolicy(
+            playbackWhen,
+            mode switch
             {
-                DefaultState = initial.DefaultState with { When = policy.BlendShapePassthroughWhen },
-                States = initial.States.Append(mmdPlaybackState).ToArray()
-            };
-        }
-
-        private readonly record struct MmdAnimatorPolicy(
-            DnfCondition? BlendShapePassthroughWhen,
-            DnfCondition? LayerForceInactiveWhen,
-            DnfCondition? ControllerDisableWhen);
-
-        private static MmdAnimatorPolicy ResolveMmdAnimatorPolicy(
-            AvatarControlSettings avatarControlSettings,
-            bool? analyzedWriteDefaults)
-        {
-            var playback = avatarControlSettings.MmdPlayback;
-            if (!playback.Enabled)
-                return new(null, null, null);
-
-            var passthroughWhen = playback.DisableWhen == null
-                ? DnfCondition.Always
-                : DnfCondition.All(new[]
-                {
-                    playback.DisableWhen,
-                    ParameterBool("InStation", true),
-                    ParameterBool("Seated", false)
-                });
-            if (playback.DisableWhen == null)
-                return new(passthroughWhen, null, null);
-
-            var mode = playback.DisableMode == MMDSupportSettings.Mode.Auto
-                ? analyzedWriteDefaults == true ? MMDSupportSettings.Mode.DisableLayers : MMDSupportSettings.Mode.DisableFXlayer
-                : playback.DisableMode;
-
-            return mode switch
-            {
-                MMDSupportSettings.Mode.DisableLayers => new(passthroughWhen, passthroughWhen, null),
-                MMDSupportSettings.Mode.DisableFXlayer => new(null, null, passthroughWhen),
+                MMDSupportSettings.Mode.DisableLayers => MmdDisableMode.DisableLayers,
+                MMDSupportSettings.Mode.DisableFXlayer => MmdDisableMode.DisableFxLayer,
                 _ => throw new ArgumentOutOfRangeException(nameof(playback.DisableMode), playback.DisableMode, null)
-            };
-        }
+            });
     }
 }

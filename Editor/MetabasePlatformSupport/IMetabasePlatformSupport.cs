@@ -46,4 +46,12 @@ internal interface IMetabasePlatformSupport
     {
         return null;
     }
+
+    void ImportAnimatorController(
+        AvatarContext context,
+        AnimatorController controller,
+        GameObject parent)
+    {
+        throw new NotSupportedException("Animator controller import is not supported on this platform.");
+    }
 }
