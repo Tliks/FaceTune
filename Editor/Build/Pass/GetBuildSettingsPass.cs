@@ -17,16 +17,19 @@ internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
                 components);
         }
         var settings = components.FirstOrDefault().DestroyedAsNull();
-        var excluded = context.PlatformSupport.GetExternallyControlledBlendShapeNames().ToHashSet();
-        if (settings != null)
-        {
-            excluded.UnionWith(settings.ExcludedBlendShapeNames
-                .Where(name => !string.IsNullOrWhiteSpace(name)));
-        }
+        var externallyControlled = context.PlatformSupport
+            .GetExternallyControlledBlendShapeNames()
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToImmutableHashSet(StringComparer.Ordinal);
+        var explicitlyExcluded = settings?.ExcludedBlendShapeNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToImmutableHashSet(StringComparer.Ordinal)
+            ?? ImmutableHashSet.Create<string>(StringComparer.Ordinal);
 
         context.SetSettings(new BuildSettings(
             context.AvatarContext,
-            excluded.ToImmutableHashSet(),
+            externallyControlled,
+            explicitlyExcluded,
             settings?.AvoidEyeBlinkConflicts ?? true,
             settings?.AvoidLipSyncConflicts ?? true,
             context.PlatformSupport.CreateBuiltInParameterDomains()));

@@ -1,3 +1,5 @@
+using nadena.dev.ndmf;
+
 namespace Aoyon.FaceTune.Build;
 
 /// <summary>Componentを後続Passが扱う標準形に揃える。</summary>
@@ -10,6 +12,7 @@ internal sealed class CanonicalizeComponentsPass : FaceTunePass<CanonicalizeComp
     {
         MenuCanonicalizer.Canonicalize(context);
         EmptyConditionRemover.Remove(context.AvatarContext.Root);
+        EyeBlinkBlendShapeCanonicalizer.Canonicalize(context);
         ExcludedBlendShapeRemover.Remove(context);
     }
 }
@@ -384,13 +387,124 @@ internal static class EmptyConditionRemover
            && control.Condition.Condition.IsEmpty;
 }
 
+internal static class EyeBlinkBlendShapeCanonicalizer
+{
+    public static void Canonicalize(FaceTuneContext context)
+    {
+        var buildSettings = context.RequireSettings();
+        var eyeBlinkSettings = EnumerateSettings(context.AvatarContext.Root).ToArray();
+        var namesToClone = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var settings in eyeBlinkSettings)
+        {
+            switch (settings.EyeBlinkMode)
+            {
+                case EyeBlinkSettings.Kind.BuiltIn:
+                    break;
+                case EyeBlinkSettings.Kind.SimpleAnimation:
+                    namesToClone.UnionWith(settings.SimpleBlinkBlendShapes
+                        .Select(shape => shape.Name)
+                        .Where(name => ShouldClone(name, buildSettings)));
+                    break;
+                case EyeBlinkSettings.Kind.CustomAnimation:
+                    namesToClone.UnionWith(settings.Animations
+                        .Select(animation => animation.Name)
+                        .Where(name => ShouldClone(name, buildSettings)));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        if (namesToClone.Count == 0) return;
+
+        var renderer = context.AvatarContext.FaceRenderer;
+        var mapping = Utils.CloneShapes(
+            renderer,
+            namesToClone,
+            (source, clone) =>
+            {
+                clone.name = $"{source.name} (FaceTune)";
+                ObjectRegistry.RegisterReplacedObject(source, clone);
+            },
+            name => Debug.LogWarning(
+                $"FaceTune eye blink blend shape was not found: '{name}'.",
+                renderer),
+            "_FaceTune");
+        if (mapping.Count == 0) return;
+
+        var mesh = renderer.sharedMesh.DestroyedAsNull()
+            ?? throw new InvalidOperationException("Face renderer has no mesh.");
+        context.ReplaceFaceMesh(mesh);
+
+        foreach (var settings in eyeBlinkSettings)
+        {
+            Rewrite(settings, mapping);
+        }
+    }
+
+    private static IEnumerable<EyeBlinkSettings> EnumerateSettings(GameObject root)
+    {
+        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
+        {
+            ReferenceableExpressionSettings<EyeBlinkSettings>? settings = component switch
+            {
+                ExpressionComponent expression when expression.HasEyeBlink
+                    => expression.GetReferenceableSettings<EyeBlinkSettings>(),
+                SettingsComponent owner when owner.HasEyeBlink
+                    => owner.GetReferenceableSettings<EyeBlinkSettings>(),
+                _ => null
+            };
+            if (settings is { Mode: SettingsReferenceMode.Direct, Direct: var direct })
+            {
+                yield return direct;
+            }
+        }
+    }
+
+    private static bool ShouldClone(string name, BuildSettings settings)
+        => settings.ExternallyControlledBlendShapeNames.Contains(name)
+           && !settings.ExplicitlyExcludedBlendShapeNames.Contains(name);
+
+    private static void Rewrite(
+        EyeBlinkSettings settings,
+        IReadOnlyDictionary<string, string> mapping)
+    {
+        if (settings.EyeBlinkMode == EyeBlinkSettings.Kind.SimpleAnimation)
+        {
+            for (var index = 0; index < settings.SimpleBlinkBlendShapes.Count; index++)
+            {
+                var shape = settings.SimpleBlinkBlendShapes[index];
+                if (mapping.TryGetValue(shape.Name, out var cloneName))
+                {
+                    settings.SimpleBlinkBlendShapes[index] = shape with { Name = cloneName };
+                }
+            }
+        }
+
+        if (settings.EyeBlinkMode == EyeBlinkSettings.Kind.CustomAnimation)
+        {
+            for (var index = 0; index < settings.Animations.Count; index++)
+            {
+                var animation = settings.Animations[index];
+                if (mapping.TryGetValue(animation.Name, out var cloneName))
+                {
+                    settings.Animations[index] = animation with { Name = cloneName };
+                }
+            }
+        }
+    }
+}
+
 internal static class ExcludedBlendShapeRemover
 {
     public static void Remove(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
         var bodyPath = context.AvatarContext.BodyPath;
-        var excluded = context.RequireSettings().ExcludedBlendShapeNames;
+        var buildSettings = context.RequireSettings();
+        var excluded = buildSettings.ExternallyControlledBlendShapeNames
+            .Union(buildSettings.ExplicitlyExcludedBlendShapeNames);
 
         foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
         {

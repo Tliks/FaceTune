@@ -18,7 +18,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         {
             set.AddRange(avatarContext.FaceRenderer
                 .GetBlendShapeWeights(avatarContext.FaceMesh)
-                .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
+                .Where(shape => !settings.IsBlendShapeExcluded(shape.Name))
                 .Select(shape => shape with { Weight = 0f }));
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }

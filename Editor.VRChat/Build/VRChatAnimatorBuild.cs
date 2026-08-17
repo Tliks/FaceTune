@@ -123,7 +123,7 @@ internal static class VRChatAnimatorBuilder
         VirtualControllerContext controllerContext)
     {
         var managedBlendShapeNames = settings.AvatarContext.FaceMesh.GetBlendShapeNames()
-            .Where(name => !settings.ExcludedBlendShapeNames.Contains(name))
+            .Where(name => !settings.IsBlendShapeExcluded(name))
             .ToHashSet();
         if (managedBlendShapeNames.Count == 0) return new HashSet<Transform>();
 

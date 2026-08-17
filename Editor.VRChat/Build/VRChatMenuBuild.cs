@@ -121,7 +121,7 @@ internal static class VRChatMenuBuilder
             var settings = context.RequireSettings();
             var managedZeroes = new BlendShapeWeightSet(avatar.FaceRenderer
                 .GetBlendShapeWeights(avatar.FaceMesh)
-                .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
+                .Where(shape => !settings.IsBlendShapeExcluded(shape.Name))
                 .Select(shape => shape with { Weight = 0f }));
             var generatedTextures = new List<Texture2D>(controls.Count);
             var textureCache = new Dictionary<BlendShapeWeightSet, Texture2D>();

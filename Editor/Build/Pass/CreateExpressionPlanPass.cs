@@ -58,7 +58,7 @@ internal sealed class ExpressionItemBuilder
         _resolver = new FaceTuneResolver(avatarContext.Root);
         _safeZeroBlendShapeAnimations = avatarContext.FaceRenderer
             .GetBlendShapeWeights(avatarContext.FaceMesh)
-            .Where(shape => !settings.ExcludedBlendShapeNames.Contains(shape.Name))
+            .Where(shape => !settings.IsBlendShapeExcluded(shape.Name))
             .Select(shape => shape with { Weight = 0f })
             .ToBlendShapeAnimations()
             .ToArray();

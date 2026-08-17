@@ -78,7 +78,7 @@ internal sealed class AnimatorBuildPlanBuilder
     {
         var blendShapes = AvatarContext.FaceRenderer
             .GetBlendShapeWeights(AvatarContext.FaceMesh)
-            .Where(shape => !_settings.ExcludedBlendShapeNames.Contains(shape.Name))
+            .Where(shape => !_settings.IsBlendShapeExcluded(shape.Name))
             .ToArray();
         var initial = new InitialLayerPlan(
             "Initial",

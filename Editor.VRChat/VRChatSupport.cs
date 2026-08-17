@@ -218,7 +218,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         BlendShapeWeightSet blendShapes)
     {
         blendShapes.AddRange(avatarControlSettings.MmdPlayback.BlendShapeNames
-            .Where(name => !settings.ExcludedBlendShapeNames.Contains(name))
+            .Where(name => !settings.IsBlendShapeExcluded(name))
             .Select(name => new BlendShapeWeight(name, 0f)));
     }
 
