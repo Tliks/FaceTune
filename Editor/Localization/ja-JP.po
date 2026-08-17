@@ -634,7 +634,13 @@ msgid "expression.settingSource.option.standard"
 msgstr "標準：標準の動作を使用"
 
 msgid "expression.settingSource.option.batch"
-msgstr "一括：親で一括設定"
+msgstr "一括：親の一括設定を使用"
+
+msgid "expression.settingSource.option.direct"
+msgstr "直接：この表情で設定"
+
+msgid "expression.settingSource.option.reference"
+msgstr "参照：別の設定を使用"
 
 msgid "expression.realTimePreview.label"
 msgstr "この表情を常にプレビュー"

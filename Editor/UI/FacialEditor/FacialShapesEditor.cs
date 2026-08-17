@@ -76,6 +76,7 @@ internal class FacialShapesEditor : EditorWindow
     {
         EndContext();
 
+        renderer = renderer.DestroyedAsNull();
         targeting ??= new AnimationClipTargeting();
 
         var serializedObject = new SerializedObject(this);
@@ -124,6 +125,7 @@ internal class FacialShapesEditor : EditorWindow
 
     private bool TryChangeRenderer(SkinnedMeshRenderer? renderer)
     {
+        renderer = renderer.DestroyedAsNull();
         if (_context == null || !_context.CanChangeRenderer) return false;
         if (_context.Renderer == renderer) return false;
         if (!CanDiscardCurrentContext()) return false;

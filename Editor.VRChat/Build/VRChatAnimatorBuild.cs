@@ -14,10 +14,11 @@ internal static class VRChatAnimatorBuilder
     private const int UnitControllerPriority = 0;
     private const int TrackingControlControllerPriority = 0;
 
-    public static void Emit(
+    public static void Build(
         BuildContext buildContext,
         BuildSettings settings,
-        ExpressionProgram expressionProgram)
+        AvatarControlSettings avatarControlSettings,
+        ExpressionPlan expressionProgram)
     {
         if (expressionProgram.IsEmpty) return;
 
@@ -25,7 +26,7 @@ internal static class VRChatAnimatorBuilder
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
 
         bool? analyzedWriteDefaults;
-        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.AnalyzeWriteDefaults"))
+        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.AnalyzeWriteDefaults"))
         {
             analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         }
@@ -33,17 +34,18 @@ internal static class VRChatAnimatorBuilder
         var platformServices = new VRChatAnimatorPlatformServices(analyzedWriteDefaults);
 
         ISet<Transform> unitBoundaryTransforms;
-        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.FindUnitBoundaries"))
+        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.FindUnitBoundaries"))
         {
             unitBoundaryTransforms = FindUnitBoundaryTransforms(settings, controllerContext);
         }
 
         AnimatorBuildPlan animatorPlan;
-        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.BuildPlan"))
+        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.BuildPlan"))
         {
             animatorPlan = AnimatorBuildPlanBuilder.Build(
                 expressionProgram,
                 settings,
+                avatarControlSettings,
                 unitBoundaryTransforms,
                 platformServices);
         }
@@ -53,7 +55,7 @@ internal static class VRChatAnimatorBuilder
             analyzedWriteDefaults ?? true,
             platformServices);
 
-        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallInitial"))
+        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.InstallInitial"))
         {
             var initialController = CreateMergeAnimatorController(
                 controllerContext,
@@ -63,7 +65,7 @@ internal static class VRChatAnimatorBuilder
             installer.InstallInitial(initialController, animatorPlan.InitialLayer, InitialControllerPriority);
         }
 
-        using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallUnits"))
+        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.InstallUnits"))
         {
             foreach (var unit in animatorPlan.Units)
             {
@@ -78,7 +80,7 @@ internal static class VRChatAnimatorBuilder
 
         if (animatorPlan.TrackingControlLayer is { } trackingControl)
         {
-            using (new Utils.ProfilingSampleScope("FaceTune.Emit.Animator.InstallTrackingControl"))
+            using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.InstallTrackingControl"))
             {
                 var trackingController = CreateMergeAnimatorController(
                     controllerContext,
@@ -221,20 +223,22 @@ internal static class VRChatAnimatorBuilder
                 });
         }
 
-        public DnfCondition? GetLayerForceInactiveWhen(BuildSettings settings)
-            => ResolveMmdAnimatorPolicy(settings, _analyzedWriteDefaults).LayerForceInactiveWhen;
+        public DnfCondition? GetLayerForceInactiveWhen(AvatarControlSettings avatarControlSettings)
+            => ResolveMmdAnimatorPolicy(avatarControlSettings, _analyzedWriteDefaults).LayerForceInactiveWhen;
 
-        public InitialLayerPlan TransformInitialLayer(InitialLayerPlan initial, BuildSettings settings)
+        public InitialLayerPlan TransformInitialLayer(
+            InitialLayerPlan initial,
+            AvatarControlSettings avatarControlSettings)
         {
-            var policy = ResolveMmdAnimatorPolicy(settings, _analyzedWriteDefaults);
-            if (policy.BlendShapePassthroughWhen == null || settings.MmdPlayback.BlendShapeNames.Count == 0)
+            var policy = ResolveMmdAnimatorPolicy(avatarControlSettings, _analyzedWriteDefaults);
+            if (policy.BlendShapePassthroughWhen == null || avatarControlSettings.MmdPlayback.BlendShapeNames.Count == 0)
                 return initial;
 
             var mmdPlaybackState = new InitialStatePlan(
                 "MMD Playback",
                 policy.BlendShapePassthroughWhen,
                 initial.DefaultState.BlendShapes
-                    .Where(shape => !settings.MmdPlayback.BlendShapeNames.Contains(shape.Name))
+                    .Where(shape => !avatarControlSettings.MmdPlayback.BlendShapeNames.Contains(shape.Name))
                     .ToArray());
             return initial with
             {
@@ -248,9 +252,11 @@ internal static class VRChatAnimatorBuilder
             DnfCondition? LayerForceInactiveWhen,
             DnfCondition? ControllerDisableWhen);
 
-        private static MmdAnimatorPolicy ResolveMmdAnimatorPolicy(BuildSettings settings, bool? analyzedWriteDefaults)
+        private static MmdAnimatorPolicy ResolveMmdAnimatorPolicy(
+            AvatarControlSettings avatarControlSettings,
+            bool? analyzedWriteDefaults)
         {
-            var playback = settings.MmdPlayback;
+            var playback = avatarControlSettings.MmdPlayback;
             if (!playback.Enabled)
                 return new(null, null, null);
 

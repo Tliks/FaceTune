@@ -1,3 +1,5 @@
+#pragma warning disable CS0618
+
 namespace Aoyon.FaceTune;
 
 internal static class LegacyFaceTuneConstants
@@ -45,3 +47,5 @@ internal static class LegacyModelSupport
             _ => (value, current)
         };
 }
+
+#pragma warning restore CS0618

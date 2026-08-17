@@ -17,9 +17,7 @@ internal static class GUIState
     {
         var targets = string.Join(",", property.serializedObject.targetObjects.Select(target => target.GetInstanceID()));
         var key = $"{typeof(T).FullName}:{scope}:{targets}:{property.propertyPath}";
-        if (!PropertyStates.TryGetValue(key, out var value))
-            PropertyStates[key] = value = create();
-        return (T)value;
+        return (T)PropertyStates.GetOrAdd(key, _ => create());
     }
 
     public static FoldoutState Foldout(SerializedProperty property, string scope)

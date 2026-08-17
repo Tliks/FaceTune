@@ -16,25 +16,27 @@ namespace Aoyon.FaceTune
         public Kind MenuKind = Kind.Toggle;
         public MenuSettings Menu = new();
 
-        // Folder以外で使用する。
+        // ParameterNameで既存Parameterを参照する。Folderでは使用しない。
         public bool UseExistingParameter;
 
-        // GenerateかつToggleの場合に、同名groupで一つのparameterを生成する。
+        // 同じGroupNameのToggleで一つのInt Parameterを共有する。
         public bool GenerateParameterGroup;
+
+        // Groupで共有するParameterNameの生成元。
         public string GroupName = string.Empty;
 
-        // Generate: 空なら自動命名、非空なら生成parameter名。
-        // Existing: 既存parameter名。
-        public string Name = string.Empty;
+        // 生成時に空なら自動生成する。
+        public string ParameterName = string.Empty;
 
+        // 生成Parameter用。Groupでは両方true固定。
         public bool Synced = true;
         public bool Saved = true;
 
+        // 生成Parameter用。Menuのデフォルト状態。Toggleでは0以外を選択状態とする。
         [Range(0f, 1f)]
-        public float InitialValue;
+        public float DefaultValue = 0f;
 
-        // Toggleの選択状態を表すparameter値。
-        // GroupではNormalizeで割り当てる。
+        // Groupでは自動割り当てする。
         public float SelectedValue = 1f;
     }
 }

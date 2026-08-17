@@ -102,7 +102,7 @@ internal record AvatarContext(
     {
         var candidates = platformSupports
             .Select(support => support.GetFaceRenderer())
-            .Where(renderer => renderer != null)
+            .SkipDestroyed()
             .Distinct()
             .ToArray();
         if (candidates.Length == 1) return candidates[0];

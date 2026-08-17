@@ -88,7 +88,9 @@ internal static class GameObjectMenu
         if (selected == null) throw new InvalidOperationException("No GameObject selected");
         if (!AvatarContext.TryGet(selected, out var context, out _)) throw new Exception("Failed to get context");
         var candidates = MetabasePlatformSupport.GetForAvatar(context.Root.transform)
-            .Select(support => (Support: support, Controller: support.GetAnimatorController()))
+            .Select(support => (
+                Support: support,
+                Controller: support.GetAnimatorController().DestroyedAsNull()))
             .Where(candidate => candidate.Controller != null)
             .Select(candidate => (candidate.Support, Controller: candidate.Controller!))
             .ToArray();

@@ -189,9 +189,15 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     public void CreateBatchOverride(ExpressionInheritedSettingKind kind)
     {
         if (_batchOverrideTarget == null) return;
-        var owner = _batchOverrideTarget.GetComponent<SettingsComponent>();
+
+        var owner = _component
+            .GetComponentsInParentExcludingSelf<SettingsComponent>(true)
+            .FirstOrDefault()
+            .DestroyedAsNull();
         if (owner == null)
+        {
             owner = Undo.AddComponent<SettingsComponent>(_batchOverrideTarget.gameObject);
+        }
         Undo.RecordObject(owner, "expression.batchOverride.undo".LS());
 
         owner.enabled = true;
@@ -247,7 +253,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     }
 
     private static Transform? FindBatchOverrideTarget(ExpressionComponent expression)
-        => expression.transform.parent;
+        => expression.transform.parent.DestroyedAsNull();
 }
 
 internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
@@ -340,26 +346,26 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
         private static readonly string[] InheritedReferenceableModeKeys =
         {
             "expression.settingSource.option.batch",
-            "settingsReferenceMode.option.direct",
-            "settingsReferenceMode.option.reference"
+            "expression.settingSource.option.direct",
+            "expression.settingSource.option.reference"
         };
         private static readonly string[] DefaultReferenceableModeKeys =
         {
             "expression.settingSource.option.standard",
             "expression.settingSource.option.batch",
-            "settingsReferenceMode.option.direct",
-            "settingsReferenceMode.option.reference"
+            "expression.settingSource.option.direct",
+            "expression.settingSource.option.reference"
         };
         private static readonly string[] InheritedDirectModeKeys =
         {
             "expression.settingSource.option.batch",
-            "settingsReferenceMode.option.direct"
+            "expression.settingSource.option.direct"
         };
         private static readonly string[] DefaultDirectModeKeys =
         {
             "expression.settingSource.option.standard",
             "expression.settingSource.option.batch",
-            "settingsReferenceMode.option.direct"
+            "expression.settingSource.option.direct"
         };
 
         private readonly SerializedProperty _enabled;
@@ -451,7 +457,8 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 keys.Select(key => key.LG()).ToArray(),
                 selected,
                 index => SetMode(index, hasOwner),
-                _enabled.hasMultipleDifferentValues);
+                _enabled.hasMultipleDifferentValues,
+                separatorBefore: localOffset);
         }
 
         private string[] GetModeKeys()
@@ -472,7 +479,11 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             }
             if (!hasOwner && mode == 1)
             {
-                if (_inheritance.CanCreateBatchOverride) _inheritance.CreateBatchOverride(_kind);
+                if (_inheritance.CanCreateBatchOverride)
+                {
+                    _inheritance.CreateBatchOverride(_kind);
+                    SetLocalOverride(false);
+                }
                 return;
             }
 

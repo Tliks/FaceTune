@@ -634,7 +634,13 @@ msgid "expression.settingSource.option.standard"
 msgstr "Standard: Use Standard Behavior"
 
 msgid "expression.settingSource.option.batch"
-msgstr "Batch: Configure on Parent"
+msgstr "Batch: Use Parent Batch Settings"
+
+msgid "expression.settingSource.option.direct"
+msgstr "Direct: Configure for This Expression"
+
+msgid "expression.settingSource.option.reference"
+msgstr "Reference: Use Different Settings"
 
 msgid "expression.realTimePreview.label"
 msgstr "Always Preview This Expression"

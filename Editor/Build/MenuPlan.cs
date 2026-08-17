@@ -1,19 +1,5 @@
 namespace Aoyon.FaceTune.Build;
 
-internal enum MenuParameterType
-{
-    Bool,
-    Int,
-    Float
-}
-
-internal sealed record MenuParameterPlan(
-    string Name,
-    MenuParameterType Type,
-    float DefaultValue,
-    bool Synced,
-    bool Saved);
-
 internal abstract record MenuIconPlan
 {
     public sealed record Manual(Texture2D? Texture) : MenuIconPlan;
@@ -38,20 +24,18 @@ internal sealed record MenuControlPlan(
     float Value)
     : MenuNodePlan(DisplayName, Icon);
 
-internal sealed record MenuInstallationPlan(
-    Transform? Anchor,
-    IReadOnlyList<MenuNodePlan> Nodes);
-
-internal sealed class MenuProgram
+internal sealed class MenuPlan
 {
-    public IReadOnlyList<MenuInstallationPlan> Installations { get; }
-    public IReadOnlyList<MenuParameterPlan> Parameters { get; }
+    public IReadOnlyList<MenuNodePlan> RootNodes { get; }
+    public IReadOnlyDictionary<Transform, IReadOnlyList<MenuNodePlan>> ExistingFolderChildren { get; }
 
-    public MenuProgram(
-        IReadOnlyList<MenuInstallationPlan> installations,
-        IReadOnlyList<MenuParameterPlan> parameters)
+    public MenuPlan(
+        IEnumerable<MenuNodePlan> rootNodes,
+        IReadOnlyDictionary<Transform, IReadOnlyList<MenuNodePlan>> existingFolderChildren)
     {
-        Installations = installations;
-        Parameters = parameters;
+        RootNodes = rootNodes.ToArray();
+        ExistingFolderChildren = existingFolderChildren.ToDictionary(
+            pair => pair.Key,
+            pair => (IReadOnlyList<MenuNodePlan>)pair.Value.ToArray());
     }
 }

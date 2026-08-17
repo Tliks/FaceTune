@@ -16,7 +16,7 @@ internal static class MenuSettingsGUI
             position,
             settings.FindPropertyRelative(nameof(MenuSettings.MenuName)),
             menuNameLabelKey.LG(),
-            new GUIContent(owner?.gameObject.name ?? string.Empty));
+            new GUIContent(owner.DestroyedAsNull()?.gameObject.name ?? string.Empty));
         position.NewLine();
         GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.Icon)), "menu.icon.label");
         GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.InstallContainer)), "menu.destination.label");
@@ -43,7 +43,7 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        var owner = property.serializedObject.targetObject as Component;
+        var owner = (property.serializedObject.targetObject as Component).DestroyedAsNull();
         var destination = FindParentFolder(owner) is { } folder
             ? EffectiveMenuName(folder)
             : "menuInstallSettings.root.placeholder".LS();
@@ -61,6 +61,7 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
 
     private static MenuComponent? FindParentFolder(Component? owner)
     {
+        owner = owner.DestroyedAsNull();
         for (var current = owner?.transform.parent; current != null; current = current.parent)
         {
             var menu = current.GetComponent<MenuComponent>();
@@ -163,7 +164,10 @@ internal static class MenuGUI
 
     private static List<string> GetDefinedGroupNames(Component? owner)
     {
-        var root = owner == null ? null : RuntimeUtil.FindAvatarInParents(owner.transform);
+        owner = owner.DestroyedAsNull();
+        var root = owner == null
+            ? null
+            : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
         if (root == null) return new();
         return root.GetComponentsInChildren<MenuComponent>(true)
             .Where(menu => !menu.UseExistingParameter

@@ -1,6 +1,5 @@
 namespace Aoyon.FaceTune
 {
-    [DisallowMultipleComponent]
     [AddComponentMenu(MenuPathPrefix + ComponentName)]
     internal class ExpressionComponent : FaceTuneTagComponent,
         IHasConditions,

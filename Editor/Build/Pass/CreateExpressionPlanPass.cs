@@ -2,59 +2,59 @@ using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Build;
 
-internal class CompileExpressionProgramPass : FaceTunePass<CompileExpressionProgramPass>
+internal class CreateExpressionPlanPass : FaceTunePass<CreateExpressionPlanPass>
 {
-    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.compile-expression-program";
-    public override string DisplayName => "Compile Expression Program";
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.create-expression-plan";
+    public override string DisplayName => "Create Expression Plan";
 
     protected override void Execute(FaceTuneContext context)
     {
         var settings = context.RequireSettings();
-        context.SetExpressionProgram(FaceTuneProgramCompiler.Compile(
+        context.SetExpressionPlan(ExpressionPlanBuilder.Build(
             context.AvatarContext,
             context.PlatformSupport,
             settings));
     }
 }
 
-internal static class FaceTuneProgramCompiler
+internal static class ExpressionPlanBuilder
 {
-    public static ExpressionProgram Compile(
+    public static ExpressionPlan Build(
         AvatarContext context,
         IMetabasePlatformSupport platformSupport,
         BuildSettings settings)
     {
         var components = context.Root.GetComponentsInChildren<ExpressionComponent>(true);
         
-        var conditionCompiler = new ConditionCompiler(platformSupport, settings.ParameterDomains);
-        var expressionCompiler = new ExpressionCompiler(context, platformSupport, settings, conditionCompiler);
+        var conditionResolver = new ConditionResolver(platformSupport, settings.ParameterDomains);
+        var expressionBuilder = new ExpressionItemBuilder(context, platformSupport, settings, conditionResolver);
 
         var items = components
-            .Select(expressionCompiler.Compile)
+            .SelectMany(expressionBuilder.Build)
             .Where(item => !item.RawWhen.IsNever)
             .ToList();
 
-        return new ExpressionProgram(items);
+        return new ExpressionPlan(items);
     }
 }
 
-internal sealed class ExpressionCompiler
+internal sealed class ExpressionItemBuilder
 {
     private readonly AvatarContext _avatarContext;
     private readonly IMetabasePlatformSupport _platformSupport;
-    private readonly ConditionCompiler _conditionCompiler;
+    private readonly ConditionResolver _conditionResolver;
     private readonly FaceTuneResolver _resolver;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _safeZeroBlendShapeAnimations;
 
-    public ExpressionCompiler(
+    public ExpressionItemBuilder(
         AvatarContext avatarContext,
         IMetabasePlatformSupport platformSupport,
         BuildSettings settings,
-        ConditionCompiler conditionCompiler)
+        ConditionResolver conditionResolver)
     {
         _avatarContext = avatarContext;
         _platformSupport = platformSupport;
-        _conditionCompiler = conditionCompiler;
+        _conditionResolver = conditionResolver;
         _resolver = new FaceTuneResolver(avatarContext.Root);
         _safeZeroBlendShapeAnimations = avatarContext.FaceRenderer
             .GetBlendShapeWeights(avatarContext.FaceMesh)
@@ -64,7 +64,7 @@ internal sealed class ExpressionCompiler
             .ToArray();
     }
 
-    public ExpressionItem Compile(ExpressionComponent component)
+    public IEnumerable<ExpressionItem> Build(ExpressionComponent component)
     {
         var incomingAnimations = new BlendShapeWeightAnimationSet();
         _resolver.FacialData.AddIncoming(component, incomingAnimations, _avatarContext.BodyPath);
@@ -78,9 +78,40 @@ internal sealed class ExpressionCompiler
         }
         animations.AddRange(localAnimations);
 
-        return new ExpressionItem(
-            component.transform,
+        yield return BuildItem(
+            component,
             component.name,
+            incomingAnimations,
+            animations,
+            _resolver.Priority.Get(component),
+            _conditionResolver.Resolve(component));
+
+        var directCondition = component.DirectMenuSettings.GeneratedCondition;
+        if (!component.DirectMenuEnabled || directCondition == null) yield break;
+
+        var priority = _resolver.Priority.Get(component);
+        yield return BuildItem(
+            component,
+            $"{component.name} (Direct Menu)",
+            incomingAnimations,
+            animations,
+            new PrioritySettings
+            {
+                Priority = priority.Priority + component.DirectMenuSettings.PriorityOffset
+            },
+            _conditionResolver.Resolve(directCondition) ?? DnfCondition.Never);
+    }
+
+    private ExpressionItem BuildItem(
+        ExpressionComponent component,
+        string name,
+        BlendShapeWeightAnimationSet incomingAnimations,
+        BlendShapeWeightAnimationSet animations,
+        PrioritySettings priority,
+        DnfCondition when)
+        => new(
+            component.transform,
+            name,
             incomingAnimations,
             animations,
             component.WriteMode,
@@ -90,9 +121,8 @@ internal sealed class ExpressionCompiler
             _resolver.EyeBlink.Get(component),
             _resolver.LipSync.Get(component),
             _resolver.Transition.Get(component),
-            _resolver.Priority.Get(component),
-            _resolver.Conditions.Resolve(component, condition => _conditionCompiler.Resolve(condition) ?? DnfCondition.Never));
-    }
+            priority,
+            when);
 
     private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {
@@ -116,61 +146,4 @@ internal sealed class ExpressionCompiler
         return result;
     }
 
-}
-
-internal sealed class ConditionCompiler
-{
-    private readonly IMetabasePlatformSupport _platformSupport;
-    private readonly ParameterDomainRegistry _parameterDomains;
-
-    public ConditionCompiler(
-        IMetabasePlatformSupport platformSupport,
-        ParameterDomainRegistry parameterDomains)
-    {
-        _platformSupport = platformSupport;
-        _parameterDomains = parameterDomains;
-    }
-
-    private DnfCondition ResolveCondition(Condition condition)
-    {
-        var resolvedCases = condition.Cases
-            .Select(ResolveConditionCase)
-            .OfType<DnfCondition>()
-            .ToList();
-
-        return resolvedCases.Count == 0
-            ? DnfCondition.Never
-            : DnfCondition.Any(resolvedCases);
-    }
-
-    public DnfCondition? Resolve(Condition? condition)
-        => condition == null ? null : ResolveCondition(condition);
-
-    public DnfCondition? Resolve(object? condition)
-    {
-        if (condition == null) return null;
-
-        return condition switch
-        {
-            HandGestureCondition handGesture =>
-                _platformSupport.ResolveHandGestureCondition(handGesture, _parameterDomains),
-            ParameterCondition parameter =>
-                _platformSupport.ResolveParameterCondition(parameter, _parameterDomains),
-            MenuCondition => throw new InvalidOperationException(
-                "Menu conditions must be normalized before compiling expressions."),
-            _ => throw new InvalidOperationException(
-                $"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
-        };
-    }
-
-    private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)
-    {
-        var resolvedConditions = conditionCase.EnumerateConditions()
-            .Select(Resolve)
-            .OfType<DnfCondition>()
-            .ToArray();
-        return resolvedConditions.Length == 0
-            ? null
-            : DnfCondition.All(resolvedConditions);
-    }
 }

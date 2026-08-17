@@ -34,13 +34,8 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
 
     private static void RebuildSessionFromSelection()
     {
-        RebuildSession(GetCurrentSelection());
-    }
-
-    private static Object? GetCurrentSelection()
-    {
-        var selections = Selection.objects;
-        return selections.Length == 1 ? selections[0] : null;
+        var selection = Selection.objects.Length == 1 ? Selection.objects[0] : null;
+        RebuildSession(selection);
     }
 
     private static void RebuildSession(Object? selection)

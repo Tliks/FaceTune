@@ -35,9 +35,13 @@ internal class DirectMenuSettings
     public MenuSettings Menu = new();
     public string GroupName = string.Empty;
     public int PriorityOffset = 10;
+
+    [NonSerialized]
+    internal ParameterCondition? GeneratedCondition;
 }
 
 internal static class BuiltInMenuGroups
 {
     public const string DirectMenuReplace = "DirectMenuReplace";
+    public const string ExpressionSet = "ExpressionSet";
 }

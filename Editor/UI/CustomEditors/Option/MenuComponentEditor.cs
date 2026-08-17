@@ -69,7 +69,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     private readonly SerializedProperty _kind;
     private readonly SerializedProperty _useExistingParameter;
     private readonly SerializedProperty _generateParameterGroup;
-    private readonly SerializedProperty _name;
+    private readonly SerializedProperty _parameterName;
     private readonly SerializedProperty _groupName;
     private readonly SerializedProperty _synced;
     private readonly SerializedProperty _saved;
@@ -82,11 +82,11 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
         _useExistingParameter = serializedObject.FindProperty(nameof(MenuComponent.UseExistingParameter));
         _generateParameterGroup = serializedObject.FindProperty(nameof(MenuComponent.GenerateParameterGroup));
-        _name = serializedObject.FindProperty(nameof(MenuComponent.Name));
+        _parameterName = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
         _groupName = serializedObject.FindProperty(nameof(MenuComponent.GroupName));
         _synced = serializedObject.FindProperty(nameof(MenuComponent.Synced));
         _saved = serializedObject.FindProperty(nameof(MenuComponent.Saved));
-        _initialValue = serializedObject.FindProperty(nameof(MenuComponent.InitialValue));
+        _initialValue = serializedObject.FindProperty(nameof(MenuComponent.DefaultValue));
         _selectedValue = serializedObject.FindProperty(nameof(MenuComponent.SelectedValue));
     }
 
@@ -95,7 +95,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         var rows = 1;
         if (!IsExisting && IsToggle) rows++;
         if (!IsGroup) rows++;
-        if (!IsExisting) rows += 3;
+        if (!IsExisting) rows += IsGroup ? 1 : 3;
         if (IsToggle && !IsGroup) rows++;
         return GUIHelper.GetLinesHeight(rows);
     }
@@ -133,7 +133,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         {
             GUIHelper.DrawPlaceholderTextField(
                 position,
-                _name,
+                _parameterName,
                 "menu.parameterName.label".LG(),
                 isExisting ? GUIContent.none : "menu.parameterName.auto.placeholder".LG());
             position.NewLine();
@@ -146,10 +146,13 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
             else
                 EditorGUI.PropertyField(position, _initialValue, "menu.floatDefaultValue.label".LG());
             position.NewLine();
-            EditorGUI.PropertyField(position, _synced, "menu.parameterSynced.label".LG());
-            position.NewLine();
-            EditorGUI.PropertyField(position, _saved, "menu.parameterSaved.label".LG());
-            position.NewLine();
+            if (!isGroup)
+            {
+                EditorGUI.PropertyField(position, _synced, "menu.parameterSynced.label".LG());
+                position.NewLine();
+                EditorGUI.PropertyField(position, _saved, "menu.parameterSaved.label".LG());
+                position.NewLine();
+            }
         }
 
         if (isToggle && !isGroup)

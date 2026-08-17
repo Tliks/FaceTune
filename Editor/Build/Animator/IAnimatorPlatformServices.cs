@@ -4,8 +4,10 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal interface IAnimatorPlatformServices
 {
-    DnfCondition? GetLayerForceInactiveWhen(BuildSettings settings);
-    InitialLayerPlan TransformInitialLayer(InitialLayerPlan initial, BuildSettings settings);
+    DnfCondition? GetLayerForceInactiveWhen(AvatarControlSettings avatarControlSettings);
+    InitialLayerPlan TransformInitialLayer(
+        InitialLayerPlan initial,
+        AvatarControlSettings avatarControlSettings);
 
     void SetEyeBlinkTracking(VirtualState state, bool isTracking);
     void SetLipSyncTracking(VirtualState state, bool isTracking);

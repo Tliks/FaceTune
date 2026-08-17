@@ -8,15 +8,17 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static class VRChatMenuBuilder
 {
-    public static void Emit(BuildContext context, MenuProgram program)
+    public static void Build(BuildContext context, MenuPlan plan)
     {
-        foreach (var installation in program.Installations)
+        CreateChildren(
+            context,
+            plan.RootNodes,
+            context.AvatarRootTransform,
+            installRoots: true);
+
+        foreach (var (folder, children) in plan.ExistingFolderChildren)
         {
-            CreateChildren(
-                context,
-                installation.Nodes,
-                installation.Anchor ?? context.AvatarRootTransform,
-                installation.Anchor == null);
+            CreateChildren(context, children, folder);
         }
     }
 
@@ -101,7 +103,7 @@ internal static class VRChatMenuBuilder
         };
     }
 
-    public static void Finalize(FaceTuneContext context)
+    public static void Finish(FaceTuneContext context)
     {
         var buildContext = context.BuildContext;
         var thumbnails = buildContext.GetState(_ => new VRChatMenuThumbnailState());
@@ -123,7 +125,7 @@ internal static class VRChatMenuBuilder
                 .Select(shape => shape with { Weight = 0f }));
             var generatedTextures = new List<Texture2D>(controls.Count);
             var textureCache = new Dictionary<BlendShapeWeightSet, Texture2D>();
-            var animator = descriptor.GetComponent<Animator>()
+            var animator = descriptor.GetComponent<Animator>().DestroyedAsNull()
                 ?? throw new InvalidOperationException("Avatar animator was not found.");
             using var capture = new BlendShapeThumbnailCapture(
                 avatar.FaceRenderer,
@@ -137,16 +139,15 @@ internal static class VRChatMenuBuilder
 
                 // managedZeroes is common to every thumbnail, so only values that differ from
                 // that common zero baseline are needed to identify the rendered expression.
-                var cacheKey = new BlendShapeWeightSet(blendShapes.Where(shape => shape.Weight != 0f));
-                textureCache.TryGetValue(cacheKey, out var texture);
-                if (texture == null)
+                var cacheKey = new BlendShapeWeightSet(
+                    blendShapes.Where(shape => shape.Weight != 0f));
+                control.icon = textureCache.GetOrAdd(cacheKey, _ =>
                 {
-                    texture = capture.Capture(blendShapes);
+                    var texture = capture.Capture(blendShapes);
                     texture.name = $"{FaceTuneConstants.Name} Thumbnail {generatedTextures.Count + 1}";
-                    textureCache.Add(cacheKey, texture);
                     generatedTextures.Add(texture);
-                }
-                control.icon = texture;
+                    return texture;
+                });
             }
             SaveThumbnails(buildContext.AssetSaver, generatedTextures);
         }

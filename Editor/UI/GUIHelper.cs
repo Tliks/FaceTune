@@ -692,7 +692,8 @@ internal static partial class GUIHelper
         IReadOnlyList<GUIContent> options,
         int selectedIndex,
         Action<int> select,
-        bool mixed = false)
+        bool mixed = false,
+        int separatorBefore = -1)
     {
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = mixed;
@@ -705,6 +706,11 @@ internal static partial class GUIHelper
         var menu = new GenericMenu();
         for (var i = 0; i < options.Count; i++)
         {
+            if (i == separatorBefore)
+            {
+                menu.AddSeparator(string.Empty);
+            }
+
             var index = i;
             menu.AddItem(options[i], i == selectedIndex, () => select(index));
         }

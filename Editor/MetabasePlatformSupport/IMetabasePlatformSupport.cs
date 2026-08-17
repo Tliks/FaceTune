@@ -16,7 +16,10 @@ internal interface IMetabasePlatformSupport
         return MmdPlaybackSettings.Disabled;
     }
 
-    void PostProcessDefaultBlendShapes(BuildSettings settings, BlendShapeWeightSet blendShapes)
+    void PostProcessDefaultBlendShapes(
+        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
+        BlendShapeWeightSet blendShapes)
     {
     }
 

@@ -6,7 +6,6 @@ internal sealed class FaceTuneResolver
 {
     private readonly GameObject _root;
     private readonly ComputeContext? _context;
-    private FaceTuneConditionResolver? _conditions;
     private FaceTuneFacialDataResolver? _facialData;
     private FaceTuneScopedResolver<EyeBlinkSettings>? _eyeBlink;
     private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
@@ -14,9 +13,6 @@ internal sealed class FaceTuneResolver
     private FaceTuneScopedResolver<PrioritySettings>? _priority;
     private FaceTuneSettingsReferenceResolver? _settingsReferences;
     private FaceTuneMenuResolver? _menus;
-
-    public FaceTuneConditionResolver Conditions
-        => _conditions ??= new FaceTuneConditionResolver();
 
     public FaceTuneFacialDataResolver FacialData
         => _facialData ??= new FaceTuneFacialDataResolver(_root, SettingsReferences, _context);
@@ -55,44 +51,6 @@ internal sealed class FaceTuneResolver
     {
         _root = root;
         _context = context;
-    }
-}
-
-internal sealed class FaceTuneConditionResolver
-{
-    public IEnumerable<(SettingsComponent Owner, Condition Value)> EnumerateIncoming(Component target)
-    {
-        var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-        for (var i = settings.Length - 1; i >= 0; i--)
-        {
-            if (settings[i].HasCondition)
-                yield return (settings[i], settings[i].Condition);
-        }
-    }
-
-    public IEnumerable<(Component Owner, Condition Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var (owner, value) in EnumerateIncoming(expression))
-            yield return (owner, value);
-        if (expression.HasCondition && expression.Condition.Mode == ConditionSelection.Kind.Conditional)
-            yield return (expression, expression.Condition.Condition);
-    }
-
-    public DnfCondition Resolve(ExpressionComponent expression, Func<Condition, DnfCondition> resolve)
-    {
-        if (!expression.HasCondition)
-            return DnfCondition.Never;
-        return DnfCondition.All(Enumerate(expression).Select(item => resolve(item.Value)));
-    }
-
-    public IEnumerable<(SettingsComponent Owner, ExpressionSetSettings Value)> EnumerateIncomingExpressionSets(Component target)
-    {
-        var settings = target.GetComponentsInParentExcludingSelf<SettingsComponent>(true);
-        for (var i = settings.Length - 1; i >= 0; i--)
-        {
-            if (settings[i].ExpressionSetEnabled)
-                yield return (settings[i], settings[i].ExpressionSet);
-        }
     }
 }
 
@@ -341,7 +299,10 @@ internal sealed class FaceTuneMenuResolver
             return menu.InstallContainer;
         if (menu.InstallContainer != null)
             return null;
-        return EnumerateFolders(owner).LastOrDefault()?.transform;
+        var folder = EnumerateFolders(owner)
+            .LastOrDefault()
+            .DestroyedAsNull();
+        return folder == null ? null : folder.transform.DestroyedAsNull();
     }
 }
 

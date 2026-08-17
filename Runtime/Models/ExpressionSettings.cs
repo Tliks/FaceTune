@@ -48,7 +48,7 @@ internal class EyeBlinkSettings
     public Kind EyeBlinkMode = Kind.BuiltIn;
 
     // for animation modes
-    public Vector2 IntervalSeconds = new(3f, 7f);
+    public Vector2 IntervalSeconds = new(4f, 20f);
 
     // for Kind.SimpleAnimation (x: closing, y: hold, z: opening)
     public Vector3 SimpleDurationsSeconds = new(.07f, 0f, .07f);

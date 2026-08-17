@@ -73,7 +73,10 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         {
             var child = avatarRoot.GetChild(i);
             if (!string.Equals(child.name, name, comparison)) continue;
-            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
+            {
+                return renderer.DestroyedAsNull();
+            }
         }
 
         return null;
@@ -133,7 +136,8 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .Where(layer => layer.type == VRCAvatarDescriptor.AnimLayerType.FX)
             .Select(layer => layer.animatorController)
             .OfType<AnimatorController>()
-            .FirstOrDefault();
+            .FirstOrDefault()
+            .DestroyedAsNull();
     }
 
     private static DnfCondition HandRule(
@@ -208,9 +212,12 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         }
     }
 
-    public void PostProcessDefaultBlendShapes(BuildSettings settings, BlendShapeWeightSet blendShapes)
+    public void PostProcessDefaultBlendShapes(
+        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
+        BlendShapeWeightSet blendShapes)
     {
-        blendShapes.AddRange(settings.MmdPlayback.BlendShapeNames
+        blendShapes.AddRange(avatarControlSettings.MmdPlayback.BlendShapeNames
             .Where(name => !settings.ExcludedBlendShapeNames.Contains(name))
             .Select(name => new BlendShapeWeight(name, 0f)));
     }

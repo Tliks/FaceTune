@@ -24,7 +24,8 @@ internal static partial class Utils
     public static T[] GetComponentsInParentExcludingSelf<T>(this Component component, bool includeInactive)
         where T : Component
     {
-        return component.transform.parent is { } parent
+        var parent = component.transform.parent.DestroyedAsNull();
+        return parent != null
             ? parent.GetComponentsInParent<T>(includeInactive)
             : Array.Empty<T>();
     }

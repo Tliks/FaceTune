@@ -2,8 +2,9 @@ namespace Aoyon.FaceTune.Build.Animator;
 
 internal sealed class AnimatorBuildPlanBuilder
 {
-    private readonly ExpressionProgram _program;
+    private readonly ExpressionPlan _plan;
     private readonly BuildSettings _settings;
+    private readonly AvatarControlSettings _avatarControlSettings;
     private readonly ISet<Transform> _unitBoundaryTransforms;
     private readonly AapProtocol _aap;
     private readonly IAnimatorPlatformServices _platformServices;
@@ -12,30 +13,34 @@ internal sealed class AnimatorBuildPlanBuilder
     private AvatarContext AvatarContext => _settings.AvatarContext;
 
     public static AnimatorBuildPlan Build(
-        ExpressionProgram program,
+        ExpressionPlan plan,
         BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
         ISet<Transform> unitBoundaryTransforms,
         IAnimatorPlatformServices platformServices)
     {
         return new AnimatorBuildPlanBuilder(
-            program,
+            plan,
             settings,
+            avatarControlSettings,
             unitBoundaryTransforms,
             platformServices).Build();
     }
 
     private AnimatorBuildPlanBuilder(
-        ExpressionProgram program,
+        ExpressionPlan plan,
         BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
         ISet<Transform> unitBoundaryTransforms,
         IAnimatorPlatformServices platformServices)
     {
-        _program = program;
+        _plan = plan;
         _settings = settings;
+        _avatarControlSettings = avatarControlSettings;
         _unitBoundaryTransforms = unitBoundaryTransforms;
-        _aap = AapProtocol.From(program.Items);
+        _aap = AapProtocol.From(plan.Items);
         _platformServices = platformServices;
-        _layerForceInactiveWhen = platformServices.GetLayerForceInactiveWhen(settings);
+        _layerForceInactiveWhen = platformServices.GetLayerForceInactiveWhen(avatarControlSettings);
     }
 
     private AnimatorBuildPlan Build()
@@ -81,7 +86,7 @@ internal sealed class AnimatorBuildPlanBuilder
             new InitialStatePlan("Default", DnfCondition.Never, blendShapes),
             Array.Empty<InitialStatePlan>(),
             Array.Empty<PlanParameter>());
-        return _platformServices.TransformInitialLayer(initial, _settings);
+        return _platformServices.TransformInitialLayer(initial, _avatarControlSettings);
     }
 
     private IReadOnlyList<OutputUnitPlan> BuildUnits()
@@ -94,9 +99,9 @@ internal sealed class AnimatorBuildPlanBuilder
 
         var units = new List<OutputUnitPlan>();
         var start = 0;
-        foreach (var splitIndex in splitIndices.Append(_program.Items.Count))
+        foreach (var splitIndex in splitIndices.Append(_plan.Items.Count))
         {
-            var expressions = _program.Items.Skip(start).Take(splitIndex - start).ToArray();
+            var expressions = _plan.Items.Skip(start).Take(splitIndex - start).ToArray();
             if (expressions.Length == 0)
             {
                 start = splitIndex;
@@ -104,7 +109,10 @@ internal sealed class AnimatorBuildPlanBuilder
             }
 
             var unitId = units.Count;
-            var expressionLayerBuilder = new ExpressionLayerPlanBuilder(_settings, _layerForceInactiveWhen, _aap);
+            var expressionLayerBuilder = new ExpressionLayerPlanBuilder(
+                _avatarControlSettings,
+                _layerForceInactiveWhen,
+                _aap);
             IReadOnlyList<ExpressionLayerPlan> expressionLayers;
             IReadOnlyList<PlanParameter> parameters;
             using (new Utils.ProfilingSampleScope("FaceTune.AnimatorPlan.ExpressionLayers"))
@@ -127,14 +135,18 @@ internal sealed class AnimatorBuildPlanBuilder
 
     private TrackingControlLayerPlan? BuildTrackingControlLayer(Transform anchor)
     {
-        return new TrackingControlPlanBuilder(_settings, _layerForceInactiveWhen, _aap).Build(anchor);
+        return new TrackingControlPlanBuilder(
+            _settings,
+            _avatarControlSettings,
+            _layerForceInactiveWhen,
+            _aap).Build(anchor);
     }
 
     private IEnumerable<int> FindExternalOverlapSplitIndices()
     {
-        if (_program.Items.Count < 2 || _unitBoundaryTransforms.Count == 0) yield break;
+        if (_plan.Items.Count < 2 || _unitBoundaryTransforms.Count == 0) yield break;
 
-        var expressionIndexByTransform = _program.Items
+        var expressionIndexByTransform = _plan.Items
             .Select((item, index) => (item.SourceTransform, index))
             .ToDictionary(entry => entry.SourceTransform, entry => entry.index);
 
@@ -290,11 +302,11 @@ internal sealed class ExpressionLayerPlanBuilder
     private readonly AapProtocol _aap;
 
     public ExpressionLayerPlanBuilder(
-        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
         DnfCondition? forceInactiveWhen,
         AapProtocol aap)
     {
-        _lockFacialInactiveWhen = settings.LockFacialWhen?.Complement();
+        _lockFacialInactiveWhen = avatarControlSettings.LockFacialWhen?.Complement();
         _forceInactiveWhen = forceInactiveWhen;
         _aap = aap;
     }
@@ -485,15 +497,18 @@ internal sealed class ExpressionLayerPlanBuilder
 internal sealed class TrackingControlPlanBuilder
 {
     private readonly BuildSettings _settings;
+    private readonly AvatarControlSettings _avatarControlSettings;
     private readonly DnfCondition? _forceInactiveWhen;
     private readonly AapProtocol _aap;
 
     public TrackingControlPlanBuilder(
         BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
         DnfCondition? forceInactiveWhen,
         AapProtocol aap)
     {
         _settings = settings;
+        _avatarControlSettings = avatarControlSettings;
         _forceInactiveWhen = forceInactiveWhen;
         _aap = aap;
     }
@@ -501,9 +516,9 @@ internal sealed class TrackingControlPlanBuilder
     public TrackingControlLayerPlan? Build(Transform anchor)
     {
         var controlsEyeBlink = _settings.AvoidEyeBlinkConflicts
-            && (_settings.DisableEyeBlinkWhen != null || _aap.WritesEyeBlinkAnimation);
+            && (_avatarControlSettings.DisableEyeBlinkWhen != null || _aap.WritesEyeBlinkAnimation);
         var controlsLipSync = _settings.AvoidLipSyncConflicts
-            && (_settings.DisableLipSyncWhen != null || _aap.WritesLipSyncAnimation);
+            && (_avatarControlSettings.DisableLipSyncWhen != null || _aap.WritesLipSyncAnimation);
 
         if (!controlsEyeBlink && !controlsLipSync) return null;
 
@@ -519,14 +534,14 @@ internal sealed class TrackingControlPlanBuilder
             var eyeBlink = ConditionsFor(
                 AapProtocol.EyeBlinkAnimationName,
                 _aap.WritesEyeBlinkAnimation,
-                _settings.DisableEyeBlinkWhen);
+                _avatarControlSettings.DisableEyeBlinkWhen);
 
             if (controlsLipSync)
             {
                 var lipSync = ConditionsFor(
                     AapProtocol.LipSyncAnimationName,
                     _aap.WritesLipSyncAnimation,
-                    _settings.DisableLipSyncWhen);
+                    _avatarControlSettings.DisableLipSyncWhen);
 
                 states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Tracking", eyeBlink.Tracking.And(lipSync.Tracking), true, true));
                 states.Add(new TrackingControlStatePlan("EyeBlink Tracking / LipSync Animation", eyeBlink.Tracking.And(lipSync.Animation), true, false));
@@ -544,7 +559,7 @@ internal sealed class TrackingControlPlanBuilder
             var lipSync = ConditionsFor(
                 AapProtocol.LipSyncAnimationName,
                 _aap.WritesLipSyncAnimation,
-                _settings.DisableLipSyncWhen);
+                _avatarControlSettings.DisableLipSyncWhen);
 
             states.Add(new TrackingControlStatePlan("LipSync Tracking", lipSync.Tracking, null, true));
             states.Add(new TrackingControlStatePlan("LipSync Animation", lipSync.Animation, null, false));
@@ -567,10 +582,10 @@ internal sealed class TrackingControlPlanBuilder
     {
         _aap.CollectParameters(parameters);
 
-        if (_settings.DisableEyeBlinkWhen != null)
-            AnimatorHelper.CollectConditionParameters(parameters, _settings.DisableEyeBlinkWhen);
-        if (_settings.DisableLipSyncWhen != null)
-            AnimatorHelper.CollectConditionParameters(parameters, _settings.DisableLipSyncWhen);
+        if (_avatarControlSettings.DisableEyeBlinkWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _avatarControlSettings.DisableEyeBlinkWhen);
+        if (_avatarControlSettings.DisableLipSyncWhen != null)
+            AnimatorHelper.CollectConditionParameters(parameters, _avatarControlSettings.DisableLipSyncWhen);
         if (_forceInactiveWhen != null)
             AnimatorHelper.CollectConditionParameters(parameters, _forceInactiveWhen);
     }

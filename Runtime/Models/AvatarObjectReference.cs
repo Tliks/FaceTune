@@ -27,7 +27,8 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
         if (avatarRoot == null) return null;
         if (IsValidTarget(targetObject, avatarRoot)) return targetObject;
         if (referencePath == AvatarRootPath) return avatarRoot.gameObject;
-        return avatarRoot.Find(referencePath)?.gameObject;
+        var resolved = avatarRoot.Find(referencePath).DestroyedAsNull();
+        return resolved == null ? null : resolved.gameObject.DestroyedAsNull();
     }
 
 
@@ -37,14 +38,15 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
         var path = property.FindPropertyRelative(nameof(referencePath)).stringValue;
         if (string.IsNullOrEmpty(path)) return null;
 
-        if (property.serializedObject.targetObject is not Component owner) return null;
+        if (property.serializedObject.targetObject.DestroyedAsNull() is not Component owner) return null;
         var avatarRoot = RuntimeUtil.FindAvatarInParents(owner.transform);
         if (avatarRoot == null) return null;
 
         var target = property.FindPropertyRelative(nameof(targetObject)).objectReferenceValue as GameObject;
         if (IsValidTarget(target, avatarRoot)) return target;
         if (path == AvatarRootPath) return avatarRoot.gameObject;
-        return avatarRoot.Find(path)?.gameObject;
+        var resolved = avatarRoot.Find(path).DestroyedAsNull();
+        return resolved == null ? null : resolved.gameObject.DestroyedAsNull();
     }
 
 
@@ -54,6 +56,7 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
 
     public void Set(GameObject? target)
     {
+        target = target.DestroyedAsNull();
         targetObject = target;
         if (target == null)
         {

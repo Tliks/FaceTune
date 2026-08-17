@@ -38,13 +38,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
     }
 
     private static DirectPreviewState GetOrCreateState(SkinnedMeshRenderer renderer)
-    {
-        if (_directStates.TryGetValue(renderer, out var state)) return state;
-
-        state = new DirectPreviewState();
-        _directStates[renderer] = state;
-        return state;
-    }
+        => _directStates.GetOrAdd(renderer, _ => new DirectPreviewState());
 
     private static bool TryGetNode(SkinnedMeshRenderer renderer, [NotNullWhen(true)] out BlendShapePreviewNode? node)
     {

@@ -22,7 +22,10 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
         {
             var child = _root.GetChild(i);
             if (!string.Equals(child.name, name, comparison)) continue;
-            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
+            {
+                return renderer.DestroyedAsNull();
+            }
         }
 
         return null;

@@ -184,13 +184,9 @@ internal sealed class AnimatorInstaller
     {
         using var _ = new Utils.ProfilingSampleScope("FaceTune.AnimatorInstall.ExpressionClip");
         var key = new ExpressionClipKey(plan.Animations, plan.Settings, plan.AapWrites);
-        if (!_expressionClips.TryGetValue(key, out var clip))
-        {
-            clip = CreateExpressionClip(plan);
-            _expressionClips.Add(key, clip);
-        }
-
-        state.Motion = clip;
+        state.Motion = _expressionClips.GetOrAdd(
+            key,
+            _ => CreateExpressionClip(plan));
 
         var settings = plan.Settings;
         if (settings.MultiFrameMode == MultiFrameSettings.Kind.Parameter

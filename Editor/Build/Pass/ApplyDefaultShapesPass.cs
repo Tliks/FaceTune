@@ -23,7 +23,10 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
 
-        context.PlatformSupport.PostProcessDefaultBlendShapes(settings, set);
+        context.PlatformSupport.PostProcessDefaultBlendShapes(
+            settings,
+            context.RequireAvatarControlSettings(),
+            set);
         if (set.Count == 0) return;
         
         avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);

@@ -1,17 +1,27 @@
 namespace Aoyon.FaceTune;
 
-internal static partial class Utils
+internal static class UnityObjectExtensions
 {
-    public static T? DestroyedAsNull<T>(this T? obj) where T : notnull, UnityEngine.Object
+    public static T? DestroyedAsNull<T>(this T? obj)
+        where T : notnull, UnityEngine.Object
     {
-        return (obj == null) ? null : obj;
+        return obj == null ? null : obj;
     }
+
     public static IEnumerable<T> SkipDestroyed<T>(this IEnumerable<T?> source)
         where T : notnull, UnityEngine.Object
     {
-        return source.Where(item => item != null)!;
+        foreach (var item in source)
+        {
+            if (item != null)
+            {
+                yield return item;
+            }
+        }
     }
-    public static IEnumerable<TResult> OfType<TResult>(this IEnumerable<UnityEngine.Object?> source)
+
+    public static IEnumerable<TResult> OfType<TResult>(
+        this IEnumerable<UnityEngine.Object?> source)
         where TResult : notnull, UnityEngine.Object
     {
         if (source == null)
