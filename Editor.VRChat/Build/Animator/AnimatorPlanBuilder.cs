@@ -1,5 +1,6 @@
 using Aoyon.FaceTune.Build;
 using UnityEditor.Animations;
+using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
@@ -76,6 +77,38 @@ internal sealed class AapProtocol
 
     public static AapProtocol From(IReadOnlyList<ExpressionItem> items)
         => new(items);
+
+    /// <summary>
+    /// 外部VRCAnimatorTrackingControlをAAP書込へ置き換えるための書き込み列を生成する。
+    /// NoChangeは置換対象外なので何も書かない。
+    /// </summary>
+    public static IReadOnlyList<AapWrite> BuildTrackingReplacementWrites(
+        VRCAnimatorTrackingControl.TrackingType eyeTracking,
+        VRCAnimatorTrackingControl.TrackingType mouthTracking)
+    {
+        var writes = new List<AapWrite>();
+        switch (eyeTracking)
+        {
+            case VRCAnimatorTrackingControl.TrackingType.Tracking:
+                writes.Add(new AapWrite(EyeBlinkEnabledName, 1f));
+                writes.Add(new AapWrite(EyeBlinkModeName, BuiltInMode));
+                break;
+            case VRCAnimatorTrackingControl.TrackingType.Animation:
+                writes.Add(new AapWrite(EyeBlinkEnabledName, 0f));
+                break;
+        }
+        switch (mouthTracking)
+        {
+            case VRCAnimatorTrackingControl.TrackingType.Tracking:
+                writes.Add(new AapWrite(LipSyncEnabledName, 1f));
+                writes.Add(new AapWrite(LipSyncModeName, BuiltInMode));
+                break;
+            case VRCAnimatorTrackingControl.TrackingType.Animation:
+                writes.Add(new AapWrite(LipSyncEnabledName, 0f));
+                break;
+        }
+        return writes;
+    }
 
     public IReadOnlyList<AapWrite> BuildWrites(ExpressionItem expression)
     {
@@ -285,13 +318,11 @@ internal sealed class AnimatorBuildPlanBuilder
 
         var eyeBlinkLayer = new EyeBlinkLayerPlanBuilder(
             _aap,
-            _avatarControlSettings.DisableEyeBlinkWhen,
-            _settings.AvoidEyeBlinkConflicts)
+            _avatarControlSettings.DisableEyeBlinkWhen)
             .Build(LayerMmdPlaybackWhen);
         var lipSyncLayer = new LipSyncLayerPlanBuilder(
             _aap,
-            _avatarControlSettings.DisableLipSyncWhen,
-            _settings.AvoidLipSyncConflicts)
+            _avatarControlSettings.DisableLipSyncWhen)
             .Build(LayerMmdPlaybackWhen);
 
         var conditionLowerer = new AnimatorConditionPlanLowerer(_settings.ParameterDomains);
@@ -306,7 +337,9 @@ internal sealed class AnimatorBuildPlanBuilder
             units[^1].Anchor,
             units.Max(unit => unit.Priority),
             eyeBlinkLayer,
-            lipSyncLayer);
+            lipSyncLayer,
+            _aap.ControlsEyeBlink,
+            _aap.ControlsLipSync);
     }
 
     private InitialLayerPlan BuildInitialLayer(
@@ -796,16 +829,13 @@ internal sealed class EyeBlinkLayerPlanBuilder
 
     private readonly AapProtocol _aap;
     private readonly DnfCondition? _disableWhen;
-    private readonly bool _useTrackingControl;
 
     public EyeBlinkLayerPlanBuilder(
         AapProtocol aap,
-        DnfCondition? disableWhen,
-        bool useTrackingControl)
+        DnfCondition? disableWhen)
     {
         _aap = aap;
-        _disableWhen = useTrackingControl ? disableWhen : null;
-        _useTrackingControl = useTrackingControl;
+        _disableWhen = disableWhen;
     }
 
     public EyeBlinkLayerPlan? Build(DnfCondition? mmdPlaybackWhen)
@@ -833,7 +863,6 @@ internal sealed class EyeBlinkLayerPlanBuilder
             : enabled;
         return new EyeBlinkLayerPlan(
             "Eye Blink",
-            _useTrackingControl,
             DnfCondition.Always,
             enabled.Complement(),
             builtInWhen,
@@ -902,16 +931,13 @@ internal sealed class LipSyncLayerPlanBuilder
 
     private readonly AapProtocol _aap;
     private readonly DnfCondition? _disableWhen;
-    private readonly bool _useTrackingControl;
 
     public LipSyncLayerPlanBuilder(
         AapProtocol aap,
-        DnfCondition? disableWhen,
-        bool useTrackingControl)
+        DnfCondition? disableWhen)
     {
         _aap = aap;
-        _disableWhen = useTrackingControl ? disableWhen : null;
-        _useTrackingControl = useTrackingControl;
+        _disableWhen = disableWhen;
     }
 
     public LipSyncLayerPlan? Build(DnfCondition? mmdPlaybackWhen)
@@ -958,7 +984,6 @@ internal sealed class LipSyncLayerPlanBuilder
         var voiceActiveWhen = VoiceActiveWhen();
         return new LipSyncLayerPlan(
             "Lip Sync",
-            _useTrackingControl,
             DnfCondition.Always,
             enabled.Complement(),
             enabled,

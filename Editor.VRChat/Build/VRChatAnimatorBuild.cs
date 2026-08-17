@@ -44,6 +44,17 @@ internal static class VRChatAnimatorBuilder
                 mmdPolicy);
         }
 
+        if (settings.AvoidEyeBlinkConflicts && animatorPlan.ControlsEyeBlink
+            || settings.AvoidLipSyncConflicts && animatorPlan.ControlsLipSync)
+        {
+            using var _ = new Utils.ProfilingSampleScope(
+                "FaceTune.Build.Animator.ReplaceExternalTrackingControls");
+            ReplaceExternalTrackingControls(
+                controllerContext,
+                settings.AvoidEyeBlinkConflicts && animatorPlan.ControlsEyeBlink,
+                settings.AvoidLipSyncConflicts && animatorPlan.ControlsLipSync);
+        }
+
         var installer = new AnimatorInstaller(
             settings.AvatarContext,
             analyzedWriteDefaults ?? true);
@@ -180,6 +191,143 @@ internal static class VRChatAnimatorBuilder
             .Where(binding => binding.type == typeof(SkinnedMeshRenderer)
                               && binding.propertyName.StartsWith("blendShape."))
             .Select(binding => binding.propertyName["blendShape.".Length..]);
+    }
+
+    private static void ReplaceExternalTrackingControls(
+        VirtualControllerContext controllerContext,
+        bool replaceEyeBlink,
+        bool replaceLipSync)
+    {
+        if (!replaceEyeBlink && !replaceLipSync) return;
+
+        foreach (var (key, controller) in controllerContext.Controllers)
+        {
+            if (!IsFxController(key)) continue;
+
+            foreach (var layer in controller.Layers)
+            {
+                if (layer.StateMachine == null) continue;
+
+                foreach (var state in layer.StateMachine.AllStates())
+                {
+                    ReplaceExternalTrackingControls(state, replaceEyeBlink, replaceLipSync);
+                }
+            }
+        }
+    }
+
+    private static void ReplaceExternalTrackingControls(
+        VirtualState state,
+        bool replaceEyeBlink,
+        bool replaceLipSync)
+    {
+        var behaviours = state.Behaviours;
+        var trackingControls = behaviours.OfType<VRCAnimatorTrackingControl>().ToArray();
+        if (trackingControls.Length == 0) return;
+
+        var writes = new List<AapWrite>();
+        foreach (var control in trackingControls)
+        {
+            var eyeTracking = replaceEyeBlink
+                ? control.trackingEyes
+                : VRCAnimatorTrackingControl.TrackingType.NoChange;
+            var mouthTracking = replaceLipSync
+                ? control.trackingMouth
+                : VRCAnimatorTrackingControl.TrackingType.NoChange;
+            writes.AddRange(AapProtocol.BuildTrackingReplacementWrites(eyeTracking, mouthTracking));
+            if (replaceEyeBlink)
+            {
+                control.trackingEyes = VRCAnimatorTrackingControl.TrackingType.NoChange;
+            }
+            if (replaceLipSync)
+            {
+                control.trackingMouth = VRCAnimatorTrackingControl.TrackingType.NoChange;
+            }
+        }
+
+        if (writes.Count > 0)
+        {
+            AddAapWritesToClip(state, writes);
+        }
+
+        state.Behaviours = behaviours
+            .Where(behavior => !IsNoOpTrackingControl(behavior))
+            .ToImmutableList();
+    }
+
+    private static void AddAapWritesToClip(
+        VirtualState state,
+        IReadOnlyList<AapWrite> writes)
+    {
+        var clips = CollectClips(state.Motion).ToArray();
+        if (clips.Length == 0)
+        {
+            var clip = VirtualClip.Create("FaceTune Tracking");
+            state.Motion = clip;
+            clips = new[] { clip };
+        }
+
+        foreach (var clip in clips)
+        {
+            foreach (var write in writes)
+            {
+                var curve = new AnimationCurve(new Keyframe(0f, write.Value));
+                clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
+            }
+        }
+    }
+
+    private static IEnumerable<VirtualClip> CollectClips(VirtualMotion? motion)
+    {
+        switch (motion)
+        {
+            case VirtualClip clip:
+                yield return clip;
+                break;
+            case VirtualBlendTree tree:
+                foreach (var child in tree.Children)
+                {
+                    foreach (var clip in CollectClips(child.Motion))
+                    {
+                        yield return clip;
+                    }
+                }
+                break;
+        }
+    }
+
+    private static bool IsFxController(object key)
+    {
+        return key switch
+        {
+            VRCAvatarDescriptor.AnimLayerType layerType =>
+                layerType == VRCAvatarDescriptor.AnimLayerType.FX,
+            IVirtualizeAnimatorController virtualize
+                when virtualize.TargetControllerKey
+                    is VRCAvatarDescriptor.AnimLayerType targetLayer =>
+                targetLayer == VRCAvatarDescriptor.AnimLayerType.FX,
+            _ => false
+        };
+    }
+
+    private static bool IsNoOpTrackingControl(StateMachineBehaviour behavior)
+    {
+        if (behavior is not VRCAnimatorTrackingControl control)
+        {
+            return false;
+        }
+
+        var noChange = VRCAnimatorTrackingControl.TrackingType.NoChange;
+        return control.trackingHead == noChange
+            && control.trackingLeftHand == noChange
+            && control.trackingRightHand == noChange
+            && control.trackingHip == noChange
+            && control.trackingLeftFoot == noChange
+            && control.trackingRightFoot == noChange
+            && control.trackingLeftFingers == noChange
+            && control.trackingRightFingers == noChange
+            && control.trackingEyes == noChange
+            && control.trackingMouth == noChange;
     }
 
     private static MmdAnimatorPolicy ResolveMmdAnimatorPolicy(

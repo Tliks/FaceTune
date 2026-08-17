@@ -8,7 +8,9 @@ internal sealed record class AnimatorBuildPlan(
     Transform ControlAnchor,
     int ControlPriority,
     EyeBlinkLayerPlan? EyeBlinkLayer,
-    LipSyncLayerPlan? LipSyncLayer);
+    LipSyncLayerPlan? LipSyncLayer,
+    bool ControlsEyeBlink,
+    bool ControlsLipSync);
 
 internal sealed record class InitialLayerPlan(
     string Name,
@@ -63,7 +65,6 @@ internal readonly record struct AapWrite(string ParameterName, float Value);
 
 internal sealed record class EyeBlinkLayerPlan(
     string Name,
-    bool UseTrackingControl,
     DnfCondition InitialExitWhen,
     DnfCondition DisabledWhen,
     DnfCondition BuiltInWhen,
@@ -84,7 +85,6 @@ internal sealed record class EyeBlinkAnimationPlan(
 
 internal sealed record class LipSyncLayerPlan(
     string Name,
-    bool UseTrackingControl,
     DnfCondition InitialExitWhen,
     DnfCondition DisabledWhen,
     DnfCondition BuiltInWhen,

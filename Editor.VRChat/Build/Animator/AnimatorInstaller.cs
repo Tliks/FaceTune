@@ -412,14 +412,12 @@ internal sealed class EyeBlinkAnimatorInstaller
             "Disabled",
             plan.DisabledWhen,
             false,
-            plan.UseTrackingControl,
             origin + new Vector3(0, yStep * 2, 0));
         InstallModeState(
             layer,
             "Built-in",
             plan.BuiltInWhen,
             true,
-            plan.UseTrackingControl,
             origin + new Vector3(0, yStep * 3, 0));
         if (plan.Animations.Count > 0)
         {
@@ -455,15 +453,11 @@ internal sealed class EyeBlinkAnimatorInstaller
         string name,
         DnfCondition when,
         bool tracking,
-        bool useTrackingControl,
         Vector3 position)
     {
         var state = _graph.AddState(layer, name, position);
         _graph.AsPassThrough(state);
-        if (useTrackingControl)
-        {
-            SetEyeBlinkTracking(state, tracking);
-        }
+        SetEyeBlinkTracking(state, tracking);
         _graph.AddEntryTransition(layer, state, when);
         _graph.SetExitTransitions(state, when.Complement(), 0f);
     }
@@ -477,10 +471,7 @@ internal sealed class EyeBlinkAnimatorInstaller
     {
         var gate = _graph.AddState(layer, "Animation", gatePosition);
         _graph.AsPassThrough(gate);
-        if (plan.UseTrackingControl)
-        {
-            SetEyeBlinkTracking(gate, false);
-        }
+        SetEyeBlinkTracking(gate, false);
         _graph.AddEntryTransition(layer, gate, plan.AnimationWhen);
 
         var position = gatePosition + new Vector3(xStep, 0, 0);
@@ -710,10 +701,7 @@ internal sealed class LipSyncAnimatorInstaller
     {
         var disabled = _graph.AddState(layer, "Disabled", position);
         _graph.AsPassThrough(disabled);
-        if (plan.UseTrackingControl)
-        {
-            SetLipSyncTracking(disabled, false);
-        }
+        SetLipSyncTracking(disabled, false);
         _graph.AddEntryTransition(layer, disabled, plan.DisabledWhen);
         _graph.SetExitTransitions(
             disabled,
@@ -728,10 +716,7 @@ internal sealed class LipSyncAnimatorInstaller
     {
         var builtIn = _graph.AddState(layer, "Built-in", position);
         _graph.AsPassThrough(builtIn);
-        if (plan.UseTrackingControl)
-        {
-            SetLipSyncTracking(builtIn, true);
-        }
+        SetLipSyncTracking(builtIn, true);
         _graph.AddEntryTransition(layer, builtIn, plan.BuiltInWhen);
         _graph.SetExitTransitions(
             builtIn,
