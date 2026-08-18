@@ -4,11 +4,13 @@ namespace Aoyon.FaceTune.Build;
 
 internal interface IPlatformBuildBackend
 {
-    void Emit(
+    void Build(
         BuildContext buildContext,
         BuildSettings settings,
-        ExpressionProgram expressions,
-        MenuProgram menus);
+        AvatarControlSettings avatarControlSettings,
+        ExpressionPlan expressions,
+        MenuPlan menus,
+        ParameterPlan parameters);
 
-    void Finalize(FaceTuneContext context);
+    void Finish(FaceTuneContext context);
 }

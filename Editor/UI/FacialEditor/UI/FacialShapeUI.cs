@@ -4,6 +4,10 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class FacialShapeUI : IDisposable
 {
+    internal const float RowHeight = 18f;
+    internal const float Spacing = 2f;
+    internal const float ListItemHeight = RowHeight + Spacing;
+
     private static VisualTreeAsset? _uxml;
     private static StyleSheet? _uss;
 

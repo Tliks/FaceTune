@@ -11,12 +11,15 @@ internal interface IMetabasePlatformSupport
 
     IEnumerable<string> GetExternallyControlledBlendShapeNames();
 
-    MmdPlaybackSettings ResolveMmdPlaybackSettings(DnfCondition? disableWhen)
+    MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
     {
         return MmdPlaybackSettings.Disabled;
     }
 
-    void PostProcessDefaultBlendShapes(BuildSettings settings, BlendShapeWeightSet blendShapes)
+    void PostProcessDefaultBlendShapes(
+        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
+        BlendShapeWeightSet blendShapes)
     {
     }
 
@@ -42,5 +45,13 @@ internal interface IMetabasePlatformSupport
     AnimatorController? GetAnimatorController()
     {
         return null;
+    }
+
+    void ImportAnimatorController(
+        AvatarContext context,
+        AnimatorController controller,
+        GameObject parent)
+    {
+        throw new NotSupportedException("Animator controller import is not supported on this platform.");
     }
 }

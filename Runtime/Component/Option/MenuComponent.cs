@@ -1,27 +1,42 @@
 namespace Aoyon.FaceTune
 {
-    // 厳密なhierarchy構造を要求せず、近くFolderなど入るだけなので、禁止する理由がないかも
-    // [DisallowMultipleComponent]
+    [DisallowMultipleComponent]
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class MenuComponent : FaceTuneTagComponent, IHasObjectReferences, IHasMenuInstallSettings
+    internal class MenuComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = ComponentNamePrefix + "Menu";
 
-        public string MenuName = string.Empty;
-        public MenuIconSettings Icon = new();
-        public MenuInstallSettings InstallSettings = new();
-        public MenuItemKind Kind = MenuItemKind.Toggle;
-        public ExclusiveToggleGroup ExclusiveToggleGroup = new();
-        public string ParameterName = string.Empty; // opt-inでの明示用。Toggleのとき、排他でないなら有効、Radialなら有効。
-        [Range(0f, 1f)] public float FloatDefaultValue = 0f; // Radialの初期値。Toggleでは無視。
-        public bool DefaultSelected = false; // Toggleの初期値。Radialでは無視。
-
-        MenuInstallSettings? IHasMenuInstallSettings.InstallSettings => InstallSettings;
-
-        void IHasObjectReferences.ResolveReferences()
+        public enum Kind
         {
-            Icon.ResolveReferences(this);
-            InstallSettings.ResolveReferences(this);
+            Toggle,
+            Radial,
+            Folder
         }
+
+        public Kind MenuKind = Kind.Toggle;
+        public MenuSettings Menu = new();
+
+        // ParameterNameで既存Parameterを参照する。Folderでは使用しない。
+        public bool UseExistingParameter;
+
+        // 同じGroupNameのToggleで一つのInt Parameterを共有する。
+        public bool GenerateParameterGroup;
+
+        // Groupで共有するParameterNameの生成元。
+        public string GroupName = string.Empty;
+
+        // 生成時に空なら自動生成する。
+        public string ParameterName = string.Empty;
+
+        // 生成Parameter用。Groupでは両方true固定。
+        public bool Synced = true;
+        public bool Saved = true;
+
+        // 生成Parameter用。Menuのデフォルト状態。Toggleでは0以外を選択状態とする。
+        [Range(0f, 1f)]
+        public float DefaultValue = 0f;
+
+        // Groupでは自動割り当てする。
+        public float SelectedValue = 1f;
     }
 }

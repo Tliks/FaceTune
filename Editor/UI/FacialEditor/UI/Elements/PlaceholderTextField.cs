@@ -124,3 +124,44 @@ internal partial class PlaceholderTextField : TextField
     }
 }
 
+internal class PlaceholderObjectField : UnityEditor.UIElements.ObjectField
+{
+    private const string ObjectLabelClass = "unity-object-field-display__label";
+
+    private Label? _objectLabel;
+    private string _placeholder = string.Empty;
+
+    public string Placeholder
+    {
+        get => _placeholder;
+        set
+        {
+            _placeholder = value;
+            UpdatePlaceholder();
+        }
+    }
+
+    public PlaceholderObjectField()
+    {
+        RegisterCallback<AttachToPanelEvent>(_ =>
+        {
+            _objectLabel = this.Q<Label>(className: ObjectLabelClass);
+            UpdatePlaceholder();
+        });
+        RegisterCallback<ChangeEvent<UnityEngine.Object>>(_ => schedule.Execute(UpdatePlaceholder));
+    }
+
+    public override void SetValueWithoutNotify(UnityEngine.Object newValue)
+    {
+        base.SetValueWithoutNotify(newValue);
+        UpdatePlaceholder();
+    }
+
+    private void UpdatePlaceholder()
+    {
+        if (value == null && _objectLabel != null)
+        {
+            _objectLabel.text = _placeholder;
+        }
+    }
+}

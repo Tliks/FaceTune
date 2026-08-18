@@ -97,7 +97,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 127953461572005897}
+      addedObject: {fileID: 3687265323103317878}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &2053886060035036008 stripped
 Transform:
@@ -109,7 +109,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 742531573104136499}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &127953461572005897
+--- !u!114 &3687265323103317878
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -118,26 +118,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 6227717546616551414}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089169363495
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089169363495
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 3
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 30
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!1001 &1306517655536506637
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -196,7 +266,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 76523513560136939}
+      addedObject: {fileID: 1719538166194953672}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &355626143696950614 stripped
 Transform:
@@ -208,7 +278,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 1306517655536506637}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &76523513560136939
+--- !u!114 &1719538166194953672
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -217,26 +287,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 5621304283123036616}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089169363173
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089169363173
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 1
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 10
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!1001 &1892294967166784857
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -295,7 +435,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6764216686666400625}
+      addedObject: {fileID: 5494547341019639140}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &904122683927418626 stripped
 Transform:
@@ -307,7 +447,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 1892294967166784857}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6764216686666400625
+--- !u!114 &5494547341019639140
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -316,26 +456,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 5071480529511379868}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089169363688
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089169363688
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 4
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 40
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!1001 &3985670193669996722
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -394,7 +604,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1192643260525585895}
+      addedObject: {fileID: 1278294948825979206}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!4 &2414262663248970473 stripped
 Transform:
@@ -406,7 +616,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 3985670193669996722}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1192643260525585895
+--- !u!114 &1278294948825979206
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -415,26 +625,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 7740770184037246583}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089135022882
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089135022882
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 7
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 70
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!1001 &5371766959571231293
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -493,14 +773,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5571333151339950048}
+      addedObject: {fileID: 1346091674839208387}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &1634548288219104504 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 5371766959571231293}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5571333151339950048
+--- !u!114 &1346091674839208387
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -509,26 +789,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 1634548288219104504}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089169363881
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089169363881
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 5
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 50
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!4 &6648024861397344358 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1643496058973684315, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
@@ -592,14 +942,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 403158136188570425}
+      addedObject: {fileID: 6450275394913983698}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &1279028390230158754 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 5612409960805124967}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &403158136188570425
+--- !u!114 &6450275394913983698
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -608,26 +958,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 1279028390230158754}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089180635242
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089180635242
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 6
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 60
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!4 &6570074466427521340 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1643496058973684315, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
@@ -691,14 +1111,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 13973152083960962}
+      addedObject: {fileID: 939060511394232525}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &2460214509853873 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 6641667167664732788}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &13973152083960962
+--- !u!114 &939060511394232525
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -707,26 +1127,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 2460214509853873}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089169363302
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089169363302
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 2
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 20
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!4 &5396772422720845871 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1643496058973684315, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
@@ -790,14 +1280,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5684810560742542529}
+      addedObject: {fileID: 7614528492410534346}
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
 --- !u!1 &3744954612359587212 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6639234477550315205, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 8060190938234798921}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5684810560742542529
+--- !u!114 &7614528492410534346
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -806,26 +1296,96 @@ MonoBehaviour:
   m_GameObject: {fileID: 3744954612359587212}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d31a930df9595894cacd5912a22e5173, type: 3}
+  m_Script: {fileID: 11500000, guid: b9bfb5ab716649c6ab1b22c2361d4b82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HasFacialBlendShapes: 0
+  FacialBlendShapesReference:
+    Mode: 0
+    Source: {fileID: 0}
+  FacialBlendShapes:
+    Clip: {fileID: 0}
+    ClipOption: 1
+    BlendShapeAnimations: []
+  ApplyToRenderer: 0
+  ExpressionSetEnabled: 0
+  ExpressionSet:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 0
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    DefaultSelected: 0
+  HasCondition: 1
   Condition:
-    Always: 0
     Cases:
-    - Conditions:
-      - rid: 5999160089169362980
-  HandGestureConditions: []
-  ParameterConditions: []
-  references:
-    version: 2
-    RefIds:
-    - rid: 5999160089169362980
-      type: {class: HandGestureCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        Match: 0
-        HandGesture: 0
-        hand: 0
-        equalityComparison: 0
+    - HandGestureConditions:
+      - Hand: 0
+        Gesture: 0
+        Matches: 1
+      MenuConditions: []
+      ParameterConditions: []
+  HasEyeBlink: 0
+  EyeBlinkReference:
+    Mode: 0
+    Source: {fileID: 0}
+  EyeBlink:
+    EyeBlinkMode: 0
+    IntervalSeconds: {x: 3, y: 7}
+    SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
+    SimpleBlinkBlendShapes:
+    - name: vrc.blink
+      weight: 100
+    SimpleConflictPreventionBlendShapes: []
+    Animations:
+    - name: vrc.blink
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.07
+          value: 100
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.14
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+  HasLipSync: 0
+  LipSyncReference:
+    Mode: 0
+    Source: {fileID: 0}
+  LipSync:
+    CancellerBlendShapes: []
+  HasTransition: 0
+  Transition:
+    DurationSeconds: 0.1
+  HasPriority: 0
+  Priority:
+    Priority: 0
 --- !u!4 &8724970018953969938 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1643496058973684315, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}

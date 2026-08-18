@@ -58,8 +58,8 @@ internal record AvatarContext(
         }
 
         SkinnedMeshRenderer? faceRenderer = null;
-        using var _settingsComponents = ListPool<SettingsComponent>.Get(out var settingsComponents);
-        context.GetComponents<SettingsComponent>(root, settingsComponents);
+        using var _settingsComponents = ListPool<AvatarSettingsComponent>.Get(out var settingsComponents);
+        context.GetComponents<AvatarSettingsComponent>(root, settingsComponents);
         if (settingsComponents.Count > 1)
         {
             LocalizedLog.Warning("Log:warning:AvatarContext:MultipleSettingsComponent", null, settingsComponents);
@@ -69,7 +69,7 @@ internal record AvatarContext(
             var settingsComponent = settingsComponents[0];
             var faceObject = context.Observe(
                 settingsComponent,
-                c => c.Settings.FaceObjectReference.Get(c),
+                c => c.FaceObjectReference.Get(c),
                 (a, b) => a == b).DestroyedAsNull();
             faceRenderer = faceObject != null
                 ? context.GetComponent<SkinnedMeshRenderer>(faceObject).DestroyedAsNull()
@@ -102,7 +102,7 @@ internal record AvatarContext(
     {
         var candidates = platformSupports
             .Select(support => support.GetFaceRenderer())
-            .Where(renderer => renderer != null)
+            .SkipDestroyed()
             .Distinct()
             .ToArray();
         if (candidates.Length == 1) return candidates[0];

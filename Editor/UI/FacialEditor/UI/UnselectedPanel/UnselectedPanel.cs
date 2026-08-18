@@ -1,4 +1,5 @@
 using UnityEngine.UIElements;
+using Aoyon.FaceTune.Gui.Components;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
@@ -58,6 +59,8 @@ internal class UnselectedPanel
     {
         _unselectedSearchField = _element.Q<TextField>("unselected-search-field");
         _unselectedSearchField.RegisterValueChangedCallback(_ => RebuildListViewSlow());
+        if (_unselectedSearchField is PlaceholderTextField placeholderSearchField)
+            placeholderSearchField.Placeholder = "facialEditor.search.placeholder".LS();
         
         var selectAllButton = _element.Q<Button>("select-all-button");
         selectAllButton.Add(new Image { image = _selectAllIcon });
@@ -74,6 +77,7 @@ internal class UnselectedPanel
     {
         _unselectedListView = _element.Q<ListView>("unselected-list-view");
         _unselectedListView.focusable = false;
+        _unselectedListView.fixedItemHeight = FacialShapeUI.ListItemHeight;
         _unselectedListView.selectionType = SelectionType.None;
         _unselectedListView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
 

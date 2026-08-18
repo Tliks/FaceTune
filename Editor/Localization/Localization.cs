@@ -2,6 +2,7 @@ using Aoyon.FaceTune.Gui;
 using nadena.dev.ndmf.localization;
 using nadena.dev.ndmf.ui;
 using UnityEngine.UIElements;
+using UnityEditorInternal;
 
 namespace Aoyon.FaceTune;
 
@@ -12,11 +13,12 @@ internal static class Localization
     private static readonly string[] SupportedLanguages = new string[] { "en-US", "ja-JP" };
 
     private static Localizer? _ndmfLocalizer;
+    private static bool _missingAssetReloadAttempted;
+
     public static Localizer NdmfLocalizer => _ndmfLocalizer ??= InitializeLocalizer();
 
     public static event Action? OnLanguageChanged;
 
-    [InitializeOnLoadMethod]
     static void Init()
     {
         LanguagePrefs.RegisterLanguageChangeCallback(typeof(Localization), _ => OnLanguageChanged?.Invoke());
@@ -34,6 +36,7 @@ internal static class Localization
                 if (asset == null)
                 {
                     Debug.LogError($"Localization asset not found for language: {language}");
+                    QueueMissingAssetReload();
                     continue;
                 }
                 assets.Add(asset);
@@ -47,6 +50,15 @@ internal static class Localization
     {
         Localizer.ReloadLocalizations();
         OnLanguageChanged?.Invoke();
+        InternalEditorUtility.RepaintAllViews();
+    }
+
+    private static void QueueMissingAssetReload()
+    {
+        if (_missingAssetReloadAttempted) return;
+
+        _missingAssetReloadAttempted = true;
+        EditorApplication.delayCall += ReloadLocalization;
     }
 
     public static string S(string key) => NdmfLocalizer.GetLocalizedString(key);

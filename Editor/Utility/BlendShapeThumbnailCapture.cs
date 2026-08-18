@@ -15,7 +15,7 @@ internal readonly record struct ThumbnailFraming(
         Transform avatarRoot,
         Animator animator)
     {
-        var mesh = renderer.sharedMesh
+        var mesh = renderer.sharedMesh.DestroyedAsNull()
             ?? throw new InvalidOperationException("Face renderer has no mesh.");
         var vertices = mesh.vertices;
         if (vertices.Length == 0)
@@ -173,7 +173,8 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
     {
         using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Initialize");
         _renderer = renderer;
-        _mesh = renderer.sharedMesh ?? throw new ArgumentException("Renderer has no mesh.", nameof(renderer));
+        _mesh = renderer.sharedMesh.DestroyedAsNull()
+            ?? throw new ArgumentException("Renderer has no mesh.", nameof(renderer));
         _initialWeights = new BlendShapeWeightSet(renderer.GetBlendShapeWeights(_mesh));
         var avatarRoot = Utils.FindAvatarInParents(renderer.transform) ?? renderer.transform.root;
         _originalLayers = avatarRoot.GetComponentsInChildren<Renderer>(true)

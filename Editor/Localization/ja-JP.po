@@ -90,13 +90,19 @@ msgid "TrackingPermission"
 msgstr "トラッキング"
 
 msgid "trackingPermission.option.allow"
-msgstr "有効"
+msgstr "あり"
 
 msgid "trackingPermission.option.disallow"
-msgstr "無効"
+msgstr "なし"
 
 msgid "trackingPermission.option.keep"
 msgstr "維持"
+
+msgid "common.option.none"
+msgstr "なし"
+
+msgid "common.option.present"
+msgstr "あり"
 
 msgid "ClipImportOption"
 msgstr "表情アニメーションの取り込み"
@@ -152,17 +158,17 @@ msgstr "インポート"
 msgid "condition.always.label"
 msgstr "常に有効"
 
+msgid "condition.mode.label"
+msgstr "適用条件"
+
 msgid "condition.mode.normal.label"
-msgstr "通常"
+msgstr "条件付き"
 
 msgid "condition.mode.always.label"
-msgstr "常に再生"
+msgstr "常に成立"
 
 msgid "condition.case.label"
 msgstr "ケース"
-
-msgid "condition.or.label"
-msgstr "もしくは"
 
 msgid "condition.and.label"
 msgstr "かつ"
@@ -244,19 +250,25 @@ msgid "facialEditor.excludeTrackedShapes.option"
 msgstr "追跡対象のシェイプを除外"
 
 msgid "facialEditor.title"
-msgstr "表情シェイプエディター"
+msgstr "表情編集画面"
+
+msgid "facialEditor.save.button"
+msgstr "保存"
+
+msgid "facialEditor.style.option"
+msgstr "顔つき"
+
+msgid "facialEditor.base.option"
+msgstr "ベース"
+
+msgid "facialEditor.search.placeholder"
+msgstr "検索"
 
 msgid "customEditorUtility.saveAsClip.title"
 msgstr "クリップとして保存"
 
 msgid "customEditorUtility.saveAsClip.message"
 msgstr "アニメーションクリップ名を入力してください。"
-
-msgid "blendShapeWeightAnimation.name.label"
-msgstr "ブレンドシェイプ名"
-
-msgid "blendShapeWeightAnimation.curve.label"
-msgstr "カーブ"
 
 msgid "menuIconSettings.manualIcon.label"
 msgstr "手動アイコン"
@@ -411,20 +423,41 @@ msgstr "配置先"
 msgid "directMenu.menuGroup.label"
 msgstr "メニューグループ"
 
+msgid "directMenu.priorityOffset.label"
+msgstr "優先度差分"
+
 msgid "parameterCondition.parameterType.label"
 msgstr "種類"
 
 msgid "menuIcon.icon.label"
 msgstr "アイコン"
 
-msgid "expression.openEditor.button"
-msgstr "表情編集画面を開く"
+msgid "expression.editor.label"
+msgstr "表情編集画面"
+
+msgid "common.open.button"
+msgstr "開く"
+
+msgid "common.menu.tooltip"
+msgstr "メニュー"
+
+msgid "common.component.label"
+msgstr "コンポーネント"
+
+msgid "common.options.section.label"
+msgstr "オプション"
+
+msgid "section.menu.reset"
+msgstr "リセット"
+
+msgid "section.empty.message"
+msgstr "現在、設定項目はありません"
 
 msgid "componentReferenceMode.option.direct"
-msgstr "直接設定"
+msgstr "通常"
 
 msgid "componentReferenceMode.option.reference"
-msgstr "参照"
+msgstr "他の設定を使用"
 
 msgid "expression.condition.section.label"
 msgstr "条件"
@@ -459,8 +492,50 @@ msgstr "↓"
 msgid "expression.previewSettings.section.label"
 msgstr "プレビュー設定"
 
+msgid "expression.currentValue.default.label"
+msgstr "デフォルト"
+
+msgid "expression.currentValue.multiple.label"
+msgstr "複数の設定"
+
+msgid "expression.settingSource.label"
+msgstr "設定元"
+
+msgid "expression.settingSource.local.label"
+msgstr "上書き中"
+
+msgid "expression.settingSource.inherited.label"
+msgstr "親から継承"
+
+msgid "expression.settingSource.changeLocal.action"
+msgstr "この表情で変更"
+
+msgid "expression.settingSource.overrideInherited.action"
+msgstr "この表情で上書き"
+
+msgid "expression.settingSource.clearLocal.action"
+msgstr "上書きを解除"
+
+msgid "expression.settingSource.batch.action"
+msgstr "親から一括変更"
+
+msgid "expression.settingSource.selectParent.action"
+msgstr "親の設定を選択"
+
+msgid "expression.batchOverride.undo"
+msgstr "一括上書き設定を作成"
+
 msgid "menu.section.label"
 msgstr "メニュー"
+
+msgid "menu.mode.section.label"
+msgstr "メニュー"
+
+msgid "menu.basicSettings.section.label"
+msgstr "基本設定"
+
+msgid "menu.advancedSettings.section.label"
+msgstr "詳細設定"
 
 msgid "menu.name.label"
 msgstr "メニュー名"
@@ -498,6 +573,12 @@ msgstr "デフォルトで選択"
 msgid "menu.floatDefaultValue.label"
 msgstr "初期値"
 
+msgid "menu.parameterSynced.label"
+msgstr "同期"
+
+msgid "menu.parameterSaved.label"
+msgstr "保存"
+
 msgid "menuFolder.section.label"
 msgstr "メニューフォルダ"
 
@@ -507,20 +588,20 @@ msgstr "フォルダ名"
 msgid "condition.section.label"
 msgstr "条件"
 
-msgid "preset.section.label"
-msgstr "プリセット"
+msgid "set.section.label"
+msgstr "表情セット"
 
 msgid "menuSettings.section.label"
 msgstr "メニュー設定"
-
-msgid "data.expression.section.label"
-msgstr "表情データ"
 
 msgid "style.expression.section.label"
 msgstr "顔つき"
 
 msgid "style.applyToRenderer.label"
 msgstr "ビルド時にこの顔つきをレンダラーに適用"
+
+msgid "style.applyToRenderer.menu"
+msgstr "レンダラーへ適用"
 
 msgid "style.getFromRenderer.button"
 msgstr "レンダラーから取得"
@@ -531,14 +612,35 @@ msgstr "他の表情を使用"
 msgid "style.otherStyle.label"
 msgstr "他の顔つきを使用"
 
-msgid "expression.component.label"
-msgstr "コンポーネント"
+msgid "settingsReferenceMode.option.direct"
+msgstr "直接：ここで設定"
 
-msgid "expression.clip.label"
-msgstr "アニメーションクリップ"
+msgid "settingsReferenceMode.option.reference"
+msgstr "参照：他の設定を使用"
 
-msgid "expression.clip.importOption.label"
-msgstr "取り込み設定"
+msgid "settingsReferenceMode.short.direct"
+msgstr "直接"
+
+msgid "settingsReferenceMode.short.reference"
+msgstr "参照"
+
+msgid "expression.settingSource.short.standard"
+msgstr "標準"
+
+msgid "expression.settingSource.short.batch"
+msgstr "一括"
+
+msgid "expression.settingSource.option.standard"
+msgstr "標準：標準の動作を使用"
+
+msgid "expression.settingSource.option.batch"
+msgstr "一括：親の一括設定を使用"
+
+msgid "expression.settingSource.option.direct"
+msgstr "直接：この表情で設定"
+
+msgid "expression.settingSource.option.reference"
+msgstr "参照：別の設定を使用"
 
 msgid "expression.realTimePreview.label"
 msgstr "この表情を常にプレビュー"
@@ -561,8 +663,17 @@ msgstr "トリガー連動"
 msgid "expression.multiFrame.parameter.label"
 msgstr "パラメータ連動"
 
+msgid "expression.multiFrame.menu.label"
+msgstr "メニュー連動"
+
+msgid "expression.multiFrame.menuSource.label"
+msgstr "メニュー"
+
 msgid "expression.multiFrame.parameterName.empty.message"
 msgstr "パラメータ名を入力してください。"
+
+msgid "expression.multiFrame.menuSource.empty.message"
+msgstr "メニューを指定してください。"
 
 msgid "expression.group.expression.label"
 msgstr "表情"
@@ -597,6 +708,18 @@ msgstr "左手"
 msgid "hand.option.right"
 msgstr "右手"
 
+msgid "handGestureHand.option.left"
+msgstr "左手"
+
+msgid "handGestureHand.option.right"
+msgstr "右手"
+
+msgid "handGestureHand.option.any"
+msgstr "片手以上"
+
+msgid "handGestureHand.option.both"
+msgstr "両手"
+
 msgid "condition.kind.none.label"
 msgstr "なし"
 
@@ -623,3 +746,258 @@ msgstr "なし"
 
 msgid "menu.group.new.label"
 msgstr "新規…"
+
+msgid "menu.group.directMenuReplace.label"
+msgstr "置き換え表情"
+
+msgid "disableEyeBlink.section.label"
+msgstr "まばたき無効化"
+
+msgid "disableLipSync.section.label"
+msgstr "リップシンク無効化"
+
+msgid "lipSync.section.label"
+msgstr "リップシンク設定"
+
+msgid "eyeBlink.section.label"
+msgstr "まばたき設定"
+
+msgid "eyeBlink.configuration.label"
+msgstr "設定方法"
+
+msgid "eyeBlink.component.label"
+msgstr "コンポーネント"
+
+msgid "eyeBlink.mode.label"
+msgstr "モード"
+
+msgid "eyeBlinkMode.option.builtIn"
+msgstr "アバター設定"
+
+msgid "eyeBlinkMode.option.simpleAnimation"
+msgstr "アニメーション"
+
+msgid "eyeBlinkMode.option.customAnimation"
+msgstr "カスタムアニメーション"
+
+msgid "eyeBlink.simple.durations.label"
+msgstr "時間（秒）"
+
+msgid "eyeBlink.simple.duration.closing.shortLabel"
+msgstr "閉じる"
+
+msgid "eyeBlink.simple.duration.hold.shortLabel"
+msgstr "維持"
+
+msgid "eyeBlink.simple.duration.opening.shortLabel"
+msgstr "開く"
+
+msgid "eyeBlink.simple.blinkBlendShapes.label"
+msgstr "ブレンドシェイプ"
+
+msgid "eyeBlink.simple.conflictBlendShapes.label"
+msgstr "干渉補正"
+
+msgid "eyeBlink.animations.label"
+msgstr "アニメーション"
+
+msgid "eyeBlink.intervalSeconds.label"
+msgstr "間隔（秒）"
+
+msgid "eyeBlink.interval.minimum.shortLabel"
+msgstr "最小"
+
+msgid "eyeBlink.interval.maximum.shortLabel"
+msgstr "最大"
+
+msgid "lockFacial.section.label"
+msgstr "表情固定"
+
+msgid "mmdSupport.section.label"
+msgstr "MMDワールドモード"
+
+msgid "settings.section.label"
+msgstr "アバター設定"
+
+msgid "transition.section.label"
+msgstr "遷移設定"
+
+msgid "transition.duration.label"
+msgstr "遷移時間（秒）"
+
+msgid "avatarSettings.faceMesh.label"
+msgstr "顔メッシュ"
+
+msgid "avatarSettings.faceMesh.option.auto"
+msgstr "自動推定"
+
+msgid "avatarSettings.faceMesh.option.manual"
+msgstr "手動指定"
+
+msgid "avatarSettings.meshObject.label"
+msgstr "メッシュオブジェクト"
+
+msgid "avatarSettings.blendShapes.label"
+msgstr "ブレンドシェイプ"
+
+msgid "avatarSettings.blendShapes.option.all"
+msgstr "すべて"
+
+msgid "avatarSettings.blendShapes.option.excludeSome"
+msgstr "一部除外"
+
+msgid "avatarSettings.excludedBlendShapes.label"
+msgstr "除外するブレンドシェイプ"
+
+msgid "avatarSettings.advancedSettings.label"
+msgstr "高度な設定"
+
+msgid "avatarSettings.avoidEyeBlinkConflicts.label"
+msgstr "まばたきの競合を回避（推奨）"
+
+msgid "avatarSettings.avoidLipSyncConflicts.label"
+msgstr "リップシンクの競合を回避（推奨）"
+
+msgid "mmdSupport.blendShapes.label"
+msgstr "MMDブレンドシェイプ"
+
+msgid "mmdSupport.blendShapes.option.auto"
+msgstr "自動"
+
+msgid "mmdSupport.blendShapes.option.specified"
+msgstr "指定"
+
+msgid "mmdSupport.blendShapeName.label"
+msgstr "ブレンドシェイプ名"
+
+msgid "mmdSupport.disableWhen.label"
+msgstr "無効化条件"
+
+msgid "mmdSupport.disableMode.label"
+msgstr "対応方法"
+
+msgid "mmdDisableMode.option.auto"
+msgstr "自動"
+
+msgid "mmdDisableMode.option.disableFx"
+msgstr "FXレイヤー全体を無効化"
+
+msgid "mmdDisableMode.option.disableLayer"
+msgstr "各レイヤーを無効化"
+
+msgid "condition.hand.matches.label"
+msgstr "一致する"
+
+msgid "condition.hand.doesNotMatch.label"
+msgstr "一致しない"
+
+msgid "condition.bool.disabled.label"
+msgstr "無効"
+
+msgid "condition.bool.enabled.label"
+msgstr "有効"
+
+msgid "settingsReference.component.empty.message"
+msgstr "参照するコンポーネントを指定してください。"
+
+msgid "priority.section.label"
+msgstr "優先度"
+
+msgid "priority.value.label"
+msgstr "優先度"
+
+msgid "lipSync.cancellerBlendShapes.label"
+msgstr "干渉補正"
+
+msgid "expressionSet.defaultSelected.label"
+msgstr "初期状態で選択"
+
+msgid "settings.facial.section.label"
+msgstr "表情"
+
+msgid "settings.configureFacial.section.label"
+msgstr "顔つき・ベース表情を追加"
+
+msgid "settings.eyeBlink.section.label"
+msgstr "まばたき設定を一括変更"
+
+msgid "settings.lipSync.section.label"
+msgstr "リップシンク設定を一括変更"
+
+msgid "settings.transition.section.label"
+msgstr "遷移設定を一括変更"
+
+msgid "settings.priority.section.label"
+msgstr "優先度を一括変更"
+
+msgid "settings.expressionSet.section.label"
+msgstr "表情セットにする"
+
+msgid "settings.addCondition.section.label"
+msgstr "条件を一括追加する"
+
+msgid "settings.add.label"
+msgstr "設定を追加"
+
+msgid "settings.add.option.select"
+msgstr "選択"
+
+msgid "settings.remove.label"
+msgstr "設定を削除"
+
+msgid "settings.applyToRenderer.label"
+msgstr "ビルド時にレンダラーへ適用"
+
+msgid "avatarControl.section.label"
+msgstr "アバター制御"
+
+msgid "avatarControl.kind.label"
+msgstr "制御内容"
+
+msgid "avatarControl.kind.lockFacial.label"
+msgstr "表情を固定"
+
+msgid "avatarControl.kind.disableEyeBlink.label"
+msgstr "まばたきを無効化"
+
+msgid "avatarControl.kind.disableLipSync.label"
+msgstr "リップシンクを無効化"
+
+msgid "avatarControl.kind.supportMmd.label"
+msgstr "MMD対応"
+
+msgid "avatarSettings.faceMesh.empty.message"
+msgstr "顔メッシュのオブジェクトを選択してください。"
+
+msgid "mmdSupport.mode.label"
+msgstr "対応方法"
+
+msgid "mmdSupport.mode.option.auto"
+msgstr "自動"
+
+msgid "mmdSupport.mode.option.disableFxLayer"
+msgstr "FXレイヤー全体を無効化"
+
+msgid "mmdSupport.mode.option.disableLayers"
+msgstr "各レイヤーを無効化"
+
+msgid "menu.kind.toggle.label"
+msgstr "トグル"
+
+msgid "menu.kind.radial.label"
+msgstr "ラジアル"
+
+msgid "menu.kind.folder.label"
+msgstr "フォルダー"
+
+msgid "menu.binding.label"
+msgstr "パラメーター"
+
+msgid "menu.binding.generate.label"
+msgstr "生成"
+
+msgid "menu.binding.existing.label"
+msgstr "既存"
+
+msgid "menu.selectedValue.label"
+msgstr "選択時の値"

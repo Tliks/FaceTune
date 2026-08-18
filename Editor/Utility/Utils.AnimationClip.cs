@@ -16,6 +16,7 @@ internal static partial class Utils
 
     private static void ProcessBlendShapeBindings(this AnimationClip clip, ClipImportOption option, Action<string, AnimationCurve> addAction, string facialPath)
     {
+        if (clip == null) return;
         var bindings = AnimationUtility.GetCurveBindings(clip);
         foreach (var binding in bindings)
         {

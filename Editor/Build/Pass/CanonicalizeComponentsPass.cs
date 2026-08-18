@@ -1,0 +1,664 @@
+using nadena.dev.ndmf;
+
+namespace Aoyon.FaceTune.Build;
+
+/// <summary>Componentを後続Passが扱う標準形に揃える。</summary>
+internal sealed class CanonicalizeComponentsPass : FaceTunePass<CanonicalizeComponentsPass>
+{
+    public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.canonicalize-components";
+    public override string DisplayName => "Canonicalize Components";
+
+    protected override void Execute(FaceTuneContext context)
+    {
+        MenuCanonicalizer.Canonicalize(context);
+        EmptyConditionRemover.Remove(context.AvatarContext.Root);
+        EyeBlinkBlendShapeCanonicalizer.Canonicalize(context);
+        ExcludedBlendShapeRemover.Remove(context);
+    }
+}
+
+internal static class MenuCanonicalizer
+{
+    public static void Canonicalize(FaceTuneContext context)
+    {
+        var root = context.AvatarContext.Root;
+
+        ExpandExpressionSets(root);
+        var directMenus = ExpandDirectMenus(root);
+
+        var settings = context.RequireSettings();
+        var parameterDomains = BindParameters(root, settings.ParameterDomains);
+        context.SetSettings(settings with { ParameterDomains = parameterDomains });
+
+        LowerMenuReferences(root, directMenus);
+        ApplyInstallOverrides(root);
+    }
+
+    private static void ExpandExpressionSets(GameObject root)
+    {
+        var expressionSets = root.GetComponentsInChildren<SettingsComponent>(true)
+            .Where(settings => settings.ExpressionSetEnabled)
+            .ToArray();
+
+        foreach (var settings in expressionSets)
+        {
+            var menuObject = new GameObject($"{settings.name} (Expression Set Menu)");
+            var parent = settings.transform.parent.DestroyedAsNull() ?? root.transform;
+            menuObject.transform.SetParent(parent, false);
+
+            var menu = menuObject.AddComponent<MenuComponent>();
+            menu.MenuKind = MenuComponent.Kind.Toggle;
+            menu.Menu = settings.ExpressionSet.Menu;
+            menu.UseExistingParameter = false;
+            menu.GenerateParameterGroup = true;
+            menu.GroupName = BuiltInMenuGroups.ExpressionSet;
+            menu.Synced = true;
+            menu.Saved = true;
+            menu.DefaultValue = settings.ExpressionSet.DefaultSelected ? 1f : 0f;
+            menu.SelectedValue = 1f;
+
+            settings.HasCondition = true;
+            if (settings.Condition.Cases.Count == 0)
+                settings.Condition.Cases.Add(new ConditionCase());
+
+            foreach (var conditionCase in settings.Condition.Cases)
+                conditionCase.MenuConditions.Add(MenuCondition.Enabled(menu));
+        }
+    }
+
+    private static IReadOnlyList<(DirectMenuSettings Settings, MenuComponent Menu)> ExpandDirectMenus(
+        GameObject root)
+    {
+        var sources = root.GetComponentsInChildren<ExpressionComponent>(true)
+            .Where(expression => expression.DirectMenuEnabled)
+            .ToArray();
+        var result = new List<(DirectMenuSettings Settings, MenuComponent Menu)>();
+
+        foreach (var source in sources)
+        {
+            var menuObject = new GameObject($"{source.name} (Direct Menu)");
+            var parent = source.transform.parent.DestroyedAsNull() ?? root.transform;
+            menuObject.transform.SetParent(parent, false);
+            result.Add((source.DirectMenuSettings, CreateDirectMenu(menuObject, source)));
+        }
+
+        return result;
+    }
+
+    private static MenuComponent CreateDirectMenu(GameObject menuObject, ExpressionComponent source)
+    {
+        var menu = menuObject.AddComponent<MenuComponent>();
+        menu.MenuKind = MenuComponent.Kind.Toggle;
+        menu.Menu = source.DirectMenuSettings.Menu;
+        menu.UseExistingParameter = false;
+        menu.GenerateParameterGroup = source.WriteMode == ExpressionWriteMode.Replace
+            || !string.IsNullOrWhiteSpace(source.DirectMenuSettings.GroupName);
+        menu.GroupName = source.WriteMode == ExpressionWriteMode.Replace
+            ? BuiltInMenuGroups.DirectMenuReplace
+            : source.DirectMenuSettings.GroupName;
+        menu.Synced = true;
+        menu.Saved = true;
+        return menu;
+    }
+
+    private static ParameterDomainRegistry BindParameters(
+        GameObject root,
+        ParameterDomainRegistry parameterDomains)
+    {
+        var menus = root.GetComponentsInChildren<MenuComponent>(true);
+        var configuredNames = new HashSet<string>(StringComparer.Ordinal);
+        NormalizeParameterGroups(menus);
+        BindIndividualParameters(root, menus, configuredNames);
+        return BindParameterGroups(menus, configuredNames, parameterDomains);
+    }
+
+    private static void NormalizeParameterGroups(IEnumerable<MenuComponent> menus)
+    {
+        foreach (var menu in menus)
+        {
+            var canUseGroup = !menu.UseExistingParameter
+                && menu.MenuKind == MenuComponent.Kind.Toggle
+                && !string.IsNullOrWhiteSpace(menu.GroupName);
+            if (!canUseGroup)
+            {
+                menu.GenerateParameterGroup = false;
+            }
+            else if (menu.GenerateParameterGroup)
+            {
+                menu.Synced = true;
+                menu.Saved = true;
+            }
+        }
+    }
+
+    private static void BindIndividualParameters(
+        GameObject root,
+        IEnumerable<MenuComponent> menus,
+        ISet<string> configuredNames)
+    {
+        var individualMenus = menus.Where(menu =>
+            menu.MenuKind != MenuComponent.Kind.Folder
+            && !IsGeneratedGroup(menu));
+
+        foreach (var menu in individualMenus)
+        {
+            if (menu.UseExistingParameter)
+            {
+                ValidateParameterName(menu.ParameterName, menu);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(menu.ParameterName))
+            {
+                menu.ParameterName = GenerateAutomaticParameterName(root, menu);
+                continue;
+            }
+
+            ValidateParameterName(menu.ParameterName, menu);
+            if (!configuredNames.Add(menu.ParameterName))
+            {
+                throw new InvalidOperationException(
+                    $"Menu parameter name is used by multiple generated controls: '{menu.ParameterName}'.");
+            }
+        }
+    }
+
+    private static ParameterDomainRegistry BindParameterGroups(
+        IEnumerable<MenuComponent> menus,
+        ISet<string> configuredNames,
+        ParameterDomainRegistry parameterDomains)
+    {
+        var groups = menus
+            .Where(IsGeneratedGroup)
+            .GroupBy(menu => menu.GroupName, StringComparer.Ordinal);
+
+        foreach (var group in groups)
+        {
+            var options = group.ToArray();
+            var parameterName = $"{FaceTuneConstants.GeneratedParameterPrefix}/MenuGroup/{group.Key}";
+            ValidateParameterGroup(group.Key, parameterName, options[0]);
+            if (!configuredNames.Add(parameterName))
+            {
+                throw new InvalidOperationException(
+                    $"Menu parameter name conflicts with a generated group: '{parameterName}'.");
+            }
+
+            if (options.Count(menu => menu.DefaultValue != 0f) > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Menu group '{group.Key}' has multiple initial options.");
+            }
+
+            for (var index = 0; index < options.Length; index++)
+            {
+                options[index].ParameterName = parameterName;
+                options[index].SelectedValue = index + 1;
+            }
+            parameterDomains = parameterDomains.WithIntDomainOverride(
+                parameterName,
+                new IntParameterDomain(0, options.Length));
+        }
+
+        return parameterDomains;
+    }
+
+    private static bool IsGeneratedGroup(MenuComponent menu)
+        => !menu.UseExistingParameter && menu.GenerateParameterGroup;
+
+    private static string GenerateAutomaticParameterName(GameObject root, MenuComponent menu)
+    {
+        var indices = new Stack<int>();
+        for (var current = menu.transform; current != root.transform; current = current.parent!)
+            indices.Push(current.GetSiblingIndex());
+        var pathHash = Hash128.Compute(string.Join("/", indices));
+        return $"{FaceTuneConstants.GeneratedParameterPrefix}/Menu/{menu.gameObject.name}_{pathHash}";
+    }
+
+    private static void ValidateParameterGroup(
+        string groupName,
+        string parameterName,
+        MenuComponent menu)
+    {
+        if (string.IsNullOrWhiteSpace(groupName) || groupName.Any(char.IsControl))
+        {
+            throw new InvalidOperationException(
+                $"Menu group name is invalid: '{menu.name}'.");
+        }
+
+        ValidateParameterName(parameterName, menu);
+    }
+
+    private static void ValidateParameterName(string name, MenuComponent menu)
+    {
+        if (string.IsNullOrWhiteSpace(name)
+            || name.Length > 256
+            || name.Any(char.IsControl))
+        {
+            throw new InvalidOperationException(
+                $"Menu parameter name is invalid: '{menu.name}'.");
+        }
+    }
+
+    private static void ApplyInstallOverrides(GameObject root)
+    {
+        foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
+        {
+            var target = menu.Menu.InstallContainer;
+            if (target == null) continue;
+
+            if (target != root.transform && !target.IsChildOf(root.transform))
+            {
+                throw new InvalidOperationException(
+                    $"Menu install target is outside the avatar: '{menu.name}'.");
+            }
+
+            if (target == menu.transform || target.IsChildOf(menu.transform))
+            {
+                throw new InvalidOperationException(
+                    $"Menu install target creates a hierarchy cycle: '{menu.name}'.");
+            }
+
+            menu.transform.SetParent(target, false);
+            menu.Menu.InstallContainer = null;
+        }
+    }
+
+    private static void LowerMenuReferences(
+        GameObject root,
+        IEnumerable<(DirectMenuSettings Settings, MenuComponent Menu)> directMenus)
+    {
+        LowerMultiFrameMenuReferences(root);
+        LowerMenuConditions(root);
+        foreach (var (settings, menu) in directMenus)
+            settings.GeneratedCondition = LowerMenuCondition(MenuCondition.Enabled(menu));
+    }
+
+    private static void LowerMultiFrameMenuReferences(GameObject root)
+    {
+        foreach (var expression in root.GetComponentsInChildren<ExpressionComponent>(true))
+        {
+            var settings = expression.MultiFrame;
+            if (settings.MultiFrameMode != MultiFrameSettings.Kind.Menu) continue;
+            if (settings.MenuSource == null)
+            {
+                settings.MultiFrameMode = MultiFrameSettings.Kind.Default;
+                continue;
+            }
+
+            settings.MultiFrameMode = MultiFrameSettings.Kind.Parameter;
+            settings.ParameterName = settings.MenuSource.ParameterName;
+            settings.MenuSource = null;
+        }
+    }
+
+    private static void LowerMenuConditions(GameObject root)
+    {
+        var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
+            .OfType<IHasConditions>();
+        foreach (var source in sources)
+        {
+            foreach (var condition in source.Conditions)
+            {
+                foreach (var conditionCase in condition.Cases)
+                {
+                    var parameterConditions = conditionCase.MenuConditions
+                        .Where(menuCondition => menuCondition.MenuSource != null)
+                        .Select(LowerMenuCondition);
+                    conditionCase.ParameterConditions.AddRange(parameterConditions);
+                    conditionCase.MenuConditions.Clear();
+                }
+            }
+        }
+    }
+
+    private static ParameterCondition LowerMenuCondition(MenuCondition condition)
+    {
+        var menu = condition.MenuSource!;
+        if (menu.MenuKind == MenuComponent.Kind.Radial)
+        {
+            if (condition.Mode is not (MenuConditionMode.LessThan or MenuConditionMode.GreaterThan))
+            {
+                throw new InvalidOperationException(
+                    $"Radial menu '{menu.name}' requires a radial condition.");
+            }
+            return ParameterCondition.Float(
+                menu.ParameterName,
+                (ComparisonType)condition.Mode,
+                condition.Threshold);
+        }
+
+        if (menu.MenuKind != MenuComponent.Kind.Toggle
+            || condition.Mode is not (MenuConditionMode.Enabled or MenuConditionMode.Disabled))
+        {
+            throw new InvalidOperationException(
+                $"Menu '{menu.name}' has an incompatible condition.");
+        }
+        var isEnabled = condition.Mode == MenuConditionMode.Enabled;
+        return !menu.UseExistingParameter && menu.GenerateParameterGroup
+            ? ParameterCondition.Int(
+                menu.ParameterName,
+                isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual,
+                (int)menu.SelectedValue)
+            : ParameterCondition.Bool(
+                menu.ParameterName,
+                isEnabled == (menu.SelectedValue != 0f));
+    }
+}
+
+internal static class EmptyConditionRemover
+{
+    public static void Remove(GameObject root)
+    {
+        var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
+            .OfType<IHasConditions>();
+
+        foreach (var source in sources)
+        {
+            foreach (var condition in source.Conditions)
+                condition.Cases.RemoveAll(conditionCase => conditionCase.IsEmpty);
+
+            switch (source)
+            {
+                case ExpressionComponent expression when HasEmptyCondition(expression):
+                    expression.HasCondition = false;
+                    break;
+
+                case SettingsComponent settings when HasEmptyCondition(settings):
+                    settings.HasCondition = false;
+                    break;
+
+                case AvatarControlComponent control when HasEmptyCondition(control):
+                    Object.DestroyImmediate(control);
+                    break;
+            }
+        }
+    }
+
+    private static bool HasEmptyCondition(ExpressionComponent expression)
+        => expression.HasCondition
+           && expression.Condition.Mode == ConditionSelection.Kind.Conditional
+           && expression.Condition.Condition.IsEmpty;
+
+    private static bool HasEmptyCondition(SettingsComponent settings)
+        => settings.HasCondition && settings.Condition.IsEmpty;
+
+    private static bool HasEmptyCondition(AvatarControlComponent control)
+        => control.Condition.Mode == ConditionSelection.Kind.Conditional
+           && control.Condition.Condition.IsEmpty;
+}
+
+internal static class EyeBlinkBlendShapeCanonicalizer
+{
+    public static void Canonicalize(FaceTuneContext context)
+    {
+        var buildSettings = context.RequireSettings();
+        var eyeBlinkSettings = EnumerateSettings(context.AvatarContext.Root).ToArray();
+        var namesToClone = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var settings in eyeBlinkSettings)
+        {
+            switch (settings.EyeBlinkMode)
+            {
+                case EyeBlinkSettings.Kind.BuiltIn:
+                    break;
+                case EyeBlinkSettings.Kind.SimpleAnimation:
+                    namesToClone.UnionWith(settings.SimpleBlinkBlendShapes
+                        .Select(shape => shape.Name)
+                        .Where(name => ShouldClone(name, buildSettings)));
+                    break;
+                case EyeBlinkSettings.Kind.CustomAnimation:
+                    namesToClone.UnionWith(settings.Animations
+                        .Select(animation => animation.Name)
+                        .Where(name => ShouldClone(name, buildSettings)));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        if (namesToClone.Count == 0) return;
+
+        var renderer = context.AvatarContext.FaceRenderer;
+        var mapping = Utils.CloneShapes(
+            renderer,
+            namesToClone,
+            (source, clone) =>
+            {
+                clone.name = $"{source.name} (FaceTune)";
+                ObjectRegistry.RegisterReplacedObject(source, clone);
+            },
+            name => Debug.LogWarning(
+                $"FaceTune eye blink blend shape was not found: '{name}'.",
+                renderer),
+            "_FaceTune");
+        if (mapping.Count == 0) return;
+
+        var mesh = renderer.sharedMesh.DestroyedAsNull()
+            ?? throw new InvalidOperationException("Face renderer has no mesh.");
+        context.ReplaceFaceMesh(mesh);
+
+        foreach (var settings in eyeBlinkSettings)
+        {
+            Rewrite(settings, mapping);
+        }
+    }
+
+    private static IEnumerable<EyeBlinkSettings> EnumerateSettings(GameObject root)
+    {
+        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
+        {
+            ReferenceableExpressionSettings<EyeBlinkSettings>? settings = component switch
+            {
+                ExpressionComponent expression when expression.HasEyeBlink
+                    => expression.GetReferenceableSettings<EyeBlinkSettings>(),
+                SettingsComponent owner when owner.HasEyeBlink
+                    => owner.GetReferenceableSettings<EyeBlinkSettings>(),
+                _ => null
+            };
+            if (settings is { Mode: SettingsReferenceMode.Direct, Direct: var direct })
+            {
+                yield return direct;
+            }
+        }
+    }
+
+    private static bool ShouldClone(string name, BuildSettings settings)
+        => settings.ExternallyControlledBlendShapeNames.Contains(name)
+           && !settings.ExplicitlyExcludedBlendShapeNames.Contains(name);
+
+    private static void Rewrite(
+        EyeBlinkSettings settings,
+        IReadOnlyDictionary<string, string> mapping)
+    {
+        if (settings.EyeBlinkMode == EyeBlinkSettings.Kind.SimpleAnimation)
+        {
+            for (var index = 0; index < settings.SimpleBlinkBlendShapes.Count; index++)
+            {
+                var shape = settings.SimpleBlinkBlendShapes[index];
+                if (mapping.TryGetValue(shape.Name, out var cloneName))
+                {
+                    settings.SimpleBlinkBlendShapes[index] = shape with { Name = cloneName };
+                }
+            }
+        }
+
+        if (settings.EyeBlinkMode == EyeBlinkSettings.Kind.CustomAnimation)
+        {
+            for (var index = 0; index < settings.Animations.Count; index++)
+            {
+                var animation = settings.Animations[index];
+                if (mapping.TryGetValue(animation.Name, out var cloneName))
+                {
+                    settings.Animations[index] = animation with { Name = cloneName };
+                }
+            }
+        }
+    }
+}
+
+internal static class ExcludedBlendShapeRemover
+{
+    public static void Remove(FaceTuneContext context)
+    {
+        var root = context.AvatarContext.Root;
+        var bodyPath = context.AvatarContext.BodyPath;
+        var buildSettings = context.RequireSettings();
+        var excluded = buildSettings.ExternallyControlledBlendShapeNames
+            .Union(buildSettings.ExplicitlyExcludedBlendShapeNames);
+
+        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
+        {
+            switch (component)
+            {
+                case ExpressionComponent expression:
+                    RemoveFromExpression(expression, bodyPath, excluded);
+                    break;
+
+                case SettingsComponent settings:
+                    RemoveFromSettings(settings, bodyPath, excluded);
+                    break;
+
+                case ExpressionDataComponent data:
+                    RemoveFromFacialData(
+                        data.GetReferenceableSettings<FacialBlendShapeData>(),
+                        data,
+                        bodyPath,
+                        excluded);
+                    break;
+            }
+        }
+    }
+
+    private static void RemoveFromExpression(
+        ExpressionComponent expression,
+        string bodyPath,
+        IReadOnlyCollection<string> excluded)
+    {
+        RemoveFromFacialData(
+            expression.GetReferenceableSettings<FacialBlendShapeData>(),
+            expression,
+            bodyPath,
+            excluded);
+
+        if (expression.HasEyeBlink)
+        {
+            RemoveFromEyeBlink(
+                expression.GetReferenceableSettings<EyeBlinkSettings>(),
+                expression,
+                excluded);
+        }
+
+        if (expression.HasLipSync)
+        {
+            RemoveFromLipSync(
+                expression.GetReferenceableSettings<LipSyncSettings>(),
+                excluded);
+        }
+    }
+
+    private static void RemoveFromSettings(
+        SettingsComponent settings,
+        string bodyPath,
+        IReadOnlyCollection<string> excluded)
+    {
+        if (settings.HasFacialBlendShapes)
+        {
+            RemoveFromFacialData(
+                settings.GetReferenceableSettings<FacialBlendShapeData>(),
+                settings,
+                bodyPath,
+                excluded);
+        }
+
+        if (settings.HasEyeBlink)
+        {
+            RemoveFromEyeBlink(
+                settings.GetReferenceableSettings<EyeBlinkSettings>(),
+                settings,
+                excluded);
+        }
+
+        if (settings.HasLipSync)
+        {
+            RemoveFromLipSync(
+                settings.GetReferenceableSettings<LipSyncSettings>(),
+                excluded);
+        }
+    }
+
+    private static void RemoveFromFacialData(
+        ReferenceableExpressionSettings<FacialBlendShapeData> settings,
+        Component owner,
+        string bodyPath,
+        IReadOnlyCollection<string> excluded)
+    {
+        if (settings.Mode != SettingsReferenceMode.Direct) return;
+        var value = settings.Direct;
+        if (value.Clip != null)
+        {
+            var animations = new List<BlendShapeWeightAnimation>();
+            value.Clip.GetBlendShapeAnimations(value.ClipOption, animations, bodyPath);
+            animations.AddRange(value.BlendShapeAnimations);
+            value.BlendShapeAnimations = animations;
+            value.Clip = null;
+        }
+        RemoveFromAnimations(value.BlendShapeAnimations, owner, excluded);
+    }
+
+    // Todo:
+    private static void RemoveFromEyeBlink(
+        ReferenceableExpressionSettings<EyeBlinkSettings> settings,
+        Component owner,
+        IReadOnlyCollection<string> excluded)
+    {
+        if (settings.Mode != SettingsReferenceMode.Direct) return;
+        switch (settings.Direct.EyeBlinkMode)
+        {
+            case EyeBlinkSettings.Kind.BuiltIn:
+                return;
+            case EyeBlinkSettings.Kind.SimpleAnimation:
+                settings.Direct.SimpleBlinkBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+                settings.Direct.SimpleConflictPreventionBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+                return;
+            case EyeBlinkSettings.Kind.CustomAnimation:
+                RemoveFromAnimations(settings.Direct.Animations, owner, excluded);
+                return;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private static void RemoveFromLipSync(
+        ReferenceableExpressionSettings<LipSyncSettings> settings,
+        IReadOnlyCollection<string> excluded)
+    {
+        if (settings.Mode != SettingsReferenceMode.Direct) return;
+        settings.Direct.CancellerBlendShapes.RemoveAll(shape => excluded.Contains(shape.Name));
+    }
+
+    private static void RemoveFromAnimations(
+        List<BlendShapeWeightAnimation> animations,
+        Component owner,
+        IReadOnlyCollection<string> excluded)
+    {
+        List<string>? removed = null;
+        for (var index = animations.Count - 1; index >= 0; index--)
+        {
+            var name = animations[index].Name;
+            if (!excluded.Contains(name)) continue;
+
+            animations.RemoveAt(index);
+            if (removed == null || !removed.Contains(name))
+            {
+                (removed ??= new()).Add(name);
+            }
+        }
+
+        if (removed?.Count > 0)
+        {
+            LocalizedLog.Warning(
+                "log.processTrackedShapesPass.unAllowedBlendShapesFound.warning",
+                $"{owner}:{string.Join(", ", removed)}");
+        }
+    }
+}

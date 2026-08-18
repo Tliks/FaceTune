@@ -131,16 +131,20 @@ internal class GeneralControls : IDisposable
         {
             targetingOptionsContainer.Add(options);
         }
+        else
+        {
+            targetingOptionsContainer.RemoveFromHierarchy();
+        }
 
         _saveButton = _element.Q<Button>("save-button");
         _saveButton.clicked += _save;
 
         _undoButton = _element.Q<Button>("undo-button");
-        _undoButton.Add(new Image { image = _undoIcon });
+        _undoButton.Add(CreateStepIcon(_undoIcon));
         _undoButton.clicked += () => Undo.PerformUndo();
 
         _redoButton = _element.Q<Button>("redo-button");
-        _redoButton.Add(new Image { image = _redoIcon });
+        _redoButton.Add(CreateStepIcon(_redoIcon));
         _redoButton.clicked += () => Undo.PerformRedo();
 
         _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
@@ -166,6 +170,7 @@ internal class GeneralControls : IDisposable
         _blendShapeManager.OnAnyDataChange += QueueUndoStateUpdate;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
+        clipField.AddToClassList("compact-field");
         clipField.AddToClassList("clip-import-field");
         clipField.RegisterValueChangedCallback(evt =>
         {
@@ -177,9 +182,17 @@ internal class GeneralControls : IDisposable
         });
         _element.Q<VisualElement>("clip-field-container").Add(clipField);
 
-        var clipImportOptionField = new EnumField(_clipImportOption);
-        clipImportOptionField.AddToClassList("clip-import-field");
-        clipImportOptionField.RegisterValueChangedCallback(evt => _clipImportOption = (ClipImportOption)evt.newValue);
+        var clipImportOptions = new List<string>
+        {
+            "clipImportOption.option.all".LS(),
+            "clipImportOption.option.nonZero".LS()
+        };
+        var clipImportOptionField = new PopupField<string>(clipImportOptions, (int)_clipImportOption);
+        clipImportOptionField.AddToClassList("compact-field");
+        clipImportOptionField.RegisterValueChangedCallback(evt =>
+        {
+            _clipImportOption = evt.newValue == clipImportOptions[0] ? ClipImportOption.All : ClipImportOption.NonZero;
+        });
         _element.Q<VisualElement>("import-option-field-container").Add(clipImportOptionField);
 
         _filterContent = _element.Q<VisualElement>("filter-content");
@@ -218,6 +231,13 @@ internal class GeneralControls : IDisposable
         rightToggle.RegisterValueChangedCallback(evt => _groupManager.IsRightSelected = evt.newValue);
     }
 
+    private static Image CreateStepIcon(Texture icon)
+    {
+        var image = new Image { image = icon, scaleMode = ScaleMode.ScaleToFit };
+        image.AddToClassList("step-action-icon");
+        return image;
+    }
+
     private void ImportClip(AnimationClip clip)
     {
         var result = new BlendShapeWeightSet();
@@ -249,6 +269,7 @@ internal class GeneralControls : IDisposable
         foreach (var group in _groupManager.Groups)
         {
             var toggle = new SimpleToggle { text = group.Name, value = group.IsSelected };
+            toggle.AddToClassList("compact-control");
             toggle.AddToClassList("group-toggle");
             toggle.style.width = toggleWidth;
             toggle.style.flexBasis = toggleWidth;

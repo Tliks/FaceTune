@@ -1,6 +1,5 @@
 using UnityEngine.SceneManagement;
 using M = UnityEditor.MenuItem;
-using Aoyon.FaceTune.Importer;
 using Aoyon.FaceTune.Platforms;
 using UnityEditorInternal;
 using Aoyon.FaceTune.Settings;
@@ -59,68 +58,6 @@ internal static class MenuItems
 
 }
 
-#if false // Temporarily disabled: depends on Modular Avatar editor functionality.
-internal static class AssetsMenu
-{
-
-
-    [M(MenuItems.SelectedClipsToExclusiveMenuPath, true)]
-    private static bool ValidateSelectedClipsToExclusiveMenu()
-    {
-        var clips = Selection.objects.OfType<AnimationClip>();
-        return clips.Count() >= 2;
-    }
-
-    [M(MenuItems.SelectedClipsToExclusiveMenuPath, false, MenuItems.SelectedClipsToExclusiveMenuPriority)]
-    private static void SelectedClipsToExclusiveMenu()
-    {
-        GenerateExclusiveMenuFromClips(Selection.objects.OfType<AnimationClip>().ToArray());
-    }
-
-    private static void GenerateExclusiveMenuFromClips(AnimationClip[] clips)
-    {
-        var menuName = "ExclusiveMenu";
-        var menuObject = new GameObject(menuName);
-        var subMenu = menuObject.AddComponent<ModularAvatarMenuItem>();
-        subMenu.PortableControl.Type = PortableControlType.SubMenu;
-        subMenu.MenuSource = SubmenuSource.Children;
-
-        var uniqueParameterId = FaceTuneConstants.Name + "/ExclusiveMenu/" + Guid.NewGuid();
-        var parameters = menuObject.AddComponent<ModularAvatarParameters>();
-        parameters.parameters.Add(new ParameterConfig()
-        {
-            nameOrPrefix = uniqueParameterId,
-            syncType = ParameterSyncType.Int,
-            defaultValue = 0,
-        });
-        
-        for (int i = 1; i <= clips.Length; i++)
-        {
-            var clip = clips[i - 1];
-            var toggle = new GameObject(clip.name);
-            toggle.transform.SetParent(subMenu.transform);
-            var toggleComponent = toggle.AddComponent<ModularAvatarMenuItem>();
-            toggleComponent.PortableControl.Type = PortableControlType.Toggle;
-            toggleComponent.PortableControl.Parameter = uniqueParameterId;
-            toggleComponent.PortableControl.Value = i;
-
-            toggle.AddComponent<FaceTuneComponent>();
-            var dataComponent = toggle.AddComponent<DataComponent>();
-            dataComponent.Data.Clip = clip;
-            dataComponent.Data.ClipOption = ClipImportOption.NonZero;
-        }
-
-        menuObject.AddComponent<PatternComponent>();
-
-        SceneManager.MoveGameObjectToScene(menuObject, SceneManager.GetActiveScene());
-        Selection.activeGameObject = menuObject;
-
-        Undo.RegisterCreatedObjectUndo(menuObject, "Create Exclusive Menu");
-    }
-}
-
-
-#endif
 
 internal static class GameObjectMenu
 {
@@ -150,15 +87,16 @@ internal static class GameObjectMenu
         if (selected == null) throw new InvalidOperationException("No GameObject selected");
         if (!AvatarContext.TryGet(selected, out var context, out _)) throw new Exception("Failed to get context");
         var candidates = MetabasePlatformSupport.GetForAvatar(context.Root.transform)
-            .Select(support => (Support: support, Controller: support.GetAnimatorController()))
+            .Select(support => (
+                Support: support,
+                Controller: support.GetAnimatorController().DestroyedAsNull()))
             .Where(candidate => candidate.Controller != null)
             .Select(candidate => (candidate.Support, Controller: candidate.Controller!))
             .ToArray();
         if (candidates.Length != 1) throw new Exception("Failed to uniquely identify an animator controller");
 
         var (support, animatorController) = candidates[0];
-        var importer = new AnimatorControllerImporter(context, animatorController, support);
-        importer.Import(selected);
+        support.ImportAnimatorController(context, animatorController, selected);
     }
 
     [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 

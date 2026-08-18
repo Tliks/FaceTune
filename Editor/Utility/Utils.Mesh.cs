@@ -2,62 +2,94 @@ namespace Aoyon.FaceTune;
 
 internal static partial class Utils
 {
-    public static Dictionary<string, string> CloneShapes(SkinnedMeshRenderer renderer, HashSet<string> shapesToClone, Action<Mesh, Mesh> onClone, Action<string> onNotFound, string suffix = "_clone")
+    public static Dictionary<string, string> CloneShapes(
+        SkinnedMeshRenderer renderer,
+        HashSet<string> shapesToClone,
+        Action<Mesh, Mesh> onClone,
+        Action<string> onNotFound,
+        string suffix = "_clone")
     {
-        var oldMesh = renderer.sharedMesh;
+        var oldMesh = renderer.sharedMesh.DestroyedAsNull()
+            ?? throw new ArgumentException("Renderer has no mesh.", nameof(renderer));
         var newMesh = Object.Instantiate(oldMesh);
-        onClone(oldMesh, newMesh);
         var mapping = CloneShapes(newMesh, shapesToClone, onNotFound, suffix);
+        if (mapping.Count == 0)
+        {
+            Object.DestroyImmediate(newMesh);
+            return mapping;
+        }
+
+        onClone(oldMesh, newMesh);
         renderer.sharedMesh = newMesh;
         return mapping;
     }
 
-    public static Dictionary<string, string> CloneShapes(Mesh editableMesh, HashSet<string> shapesToClose, Action<string> onNotFound, string suffix = "_clone")
+    public static Dictionary<string, string> CloneShapes(
+        Mesh mesh,
+        HashSet<string> shapesToClone,
+        Action<string> onNotFound,
+        string suffix = "_clone")
     {
-        var mapping = new Dictionary<string, string>();
-        var existingNames = new HashSet<string>();
+        var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
+        var existingNames = new HashSet<string>(StringComparer.Ordinal);
+        var shapeIndices = new Dictionary<string, int>(StringComparer.Ordinal);
 
-        int blendShapeCount = editableMesh.blendShapeCount;
-        var nameToIndex = new Dictionary<string, int>(blendShapeCount);
-        for (int i = 0; i < blendShapeCount; i++)
+        for (var index = 0; index < mesh.blendShapeCount; index++)
         {
-            var name = editableMesh.GetBlendShapeName(i);
+            var name = mesh.GetBlendShapeName(index);
             existingNames.Add(name);
-            nameToIndex[name] = i;
+            shapeIndices[name] = index;
         }
 
-        var deltaVertices = new Vector3[editableMesh.vertexCount];
-        var deltaNormals = new Vector3[editableMesh.vertexCount];
-        var deltaTangents = new Vector3[editableMesh.vertexCount];
+        var deltaVertices = new Vector3[mesh.vertexCount];
+        var deltaNormals = new Vector3[mesh.vertexCount];
+        var deltaTangents = new Vector3[mesh.vertexCount];
 
-        foreach (var shape in shapesToClose)
+        foreach (var shape in shapesToClone)
         {
-            if (nameToIndex.TryGetValue(shape, out int index))
-            {
-                string newShapeName;
-                int counter = 1;
-                do
-                {
-                    newShapeName = shape + "_clone" + (counter > 1 ? counter.ToString() : "");
-                    counter++;
-                } while (existingNames.Contains(newShapeName));
-
-                existingNames.Add(newShapeName);
-
-                int frameCount = editableMesh.GetBlendShapeFrameCount(index);
-                for (int frame = 0; frame < frameCount; frame++)
-                {
-                    editableMesh.GetBlendShapeFrameVertices(index, frame, deltaVertices, deltaNormals, deltaTangents);
-                    var frameWeight = editableMesh.GetBlendShapeFrameWeight(index, frame);
-                    editableMesh.AddBlendShapeFrame(newShapeName, frameWeight, deltaVertices, deltaNormals, deltaTangents);
-                }
-                mapping[shape] = newShapeName;
-            }
-            else
+            if (!shapeIndices.TryGetValue(shape, out var shapeIndex))
             {
                 onNotFound(shape);
+                continue;
             }
+
+            var cloneName = GetCloneName(shape, suffix, existingNames);
+            existingNames.Add(cloneName);
+
+            var frameCount = mesh.GetBlendShapeFrameCount(shapeIndex);
+            for (var frame = 0; frame < frameCount; frame++)
+            {
+                mesh.GetBlendShapeFrameVertices(
+                    shapeIndex,
+                    frame,
+                    deltaVertices,
+                    deltaNormals,
+                    deltaTangents);
+                var frameWeight = mesh.GetBlendShapeFrameWeight(shapeIndex, frame);
+                mesh.AddBlendShapeFrame(
+                    cloneName,
+                    frameWeight,
+                    deltaVertices,
+                    deltaNormals,
+                    deltaTangents);
+            }
+
+            mapping.Add(shape, cloneName);
         }
+
         return mapping;
-    } 
+    }
+
+    private static string GetCloneName(
+        string sourceName,
+        string suffix,
+        ISet<string> existingNames)
+    {
+        for (var index = 1;; index++)
+        {
+            var number = index == 1 ? string.Empty : index.ToString();
+            var candidate = $"{sourceName}{suffix}{number}";
+            if (!existingNames.Contains(candidate)) return candidate;
+        }
+    }
 }

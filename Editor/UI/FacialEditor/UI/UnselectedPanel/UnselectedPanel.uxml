@@ -1,7 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
-    <components:HorizontalElement name="search-row">
-        <components:PlaceholderTextField name="unselected-search-field" placeholder="Search"/>
-        <ui:Button name="select-all-button"/>
-    </components:HorizontalElement>
-    <ui:ListView name="unselected-list-view" class="border-line" />
-</ui:UXML> 
+    <components:SpacedVerticalElement>
+        <components:SpacedHorizontalElement name="search-row">
+            <components:PlaceholderTextField name="unselected-search-field" class="compact-field" />
+            <ui:Button name="select-all-button" class="compact-control" />
+        </components:SpacedHorizontalElement>
+
+        <ui:ListView name="unselected-list-view" />
+    </components:SpacedVerticalElement>
+</ui:UXML>

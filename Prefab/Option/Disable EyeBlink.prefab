@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7623126770283136895}
-  - component: {fileID: 3429468075273258145}
-  - component: {fileID: 7244751548035657847}
+  - component: {fileID: 3972293056898820720}
+  - component: {fileID: 3733286235768483549}
   m_Layer: 0
   m_Name: Disable EyeBlink
   m_TagString: Untagged
@@ -33,7 +33,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3429468075273258145
+--- !u!114 &3972293056898820720
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,47 +42,48 @@ MonoBehaviour:
   m_GameObject: {fileID: 7042324794355258853}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
+  m_Script: {fileID: 11500000, guid: 28b747624bf54d2a9da06deb0fd9987a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuName: 
-  Icon:
-    Mode: 2
-    ManualIcon: {fileID: 0}
-    PreviewExpression:
-      referencePath: 
-      targetObject: {fileID: 0}
-  InstallSettings:
-    InstallContainerOverride:
-      referencePath: 
-      targetObject: {fileID: 0}
-  Kind: 0
-  ExclusiveToggleGroup:
-    GroupName: 
-  ParameterName: 
-  FloatDefaultValue: 0
-  DefaultSelected: 0
---- !u!114 &7244751548035657847
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7042324794355258853}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 20c17b8d1f92eb541a469c001442ca01, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  DisableWhen:
+  ControlKind: 1
+  MMD:
+    ExplicitBlendShapeNames: []
+    SupportMode: 0
+  Condition:
+    Mode: 1
     Condition:
-      rid: 5534185782725312577
-  references:
-    version: 2
-    RefIds:
-    - rid: 5534185782725312577
-      type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        MenuSource: {fileID: 3429468075273258145}
-        Mode: 0
-        Threshold: 0.5
+      Cases:
+      - HandGestureConditions: []
+        MenuConditions:
+        - MenuSource: {fileID: 3733286235768483549}
+          Mode: 0
+          Threshold: 0.5
+        ParameterConditions: []
+--- !u!114 &3733286235768483549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7042324794355258853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75722db5e20f4b628443dc4e1e6c1313, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MenuKind: 0
+  Menu:
+    MenuName: 
+    Icon:
+      Mode: 0
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallContainer: {fileID: 0}
+  UseExistingParameter: 0
+  GenerateParameterGroup: 0
+  GroupName: 
+  Name: 
+  Synced: 1
+  Saved: 1
+  InitialValue: 0
+  SelectedValue: 1

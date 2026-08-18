@@ -1,5 +1,6 @@
 namespace Aoyon.FaceTune;
 
+/// <summary>Serialized shape value shared by current and legacy data.</summary>
 [Serializable]
 internal record struct BlendShapeWeight
 {

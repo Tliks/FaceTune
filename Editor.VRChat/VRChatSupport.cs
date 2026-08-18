@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Build.Animator;
 using Aoyon.FaceTune.Platforms.VRChat;
 using nadena.dev.ndmf;
 using nadena.dev.modular_avatar.core;
@@ -73,7 +72,10 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         {
             var child = avatarRoot.GetChild(i);
             if (!string.Equals(child.name, name, comparison)) continue;
-            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer)) return renderer;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
+            {
+                return renderer.DestroyedAsNull();
+            }
         }
 
         return null;
@@ -97,24 +99,17 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         HandGestureCondition condition,
         ParameterDomainRegistry parameterDomains)
     {
-        var gesture = condition.HandGesture;
-        return condition.Match switch
+        var left = HandRule(GestureLeftParameter, true, condition.Gesture, parameterDomains);
+        var right = HandRule(GestureRightParameter, true, condition.Gesture, parameterDomains);
+        var matches = condition.Hand switch
         {
-            HandGestureMatch.LeftHand => HandRule(GestureLeftParameter, true, gesture, parameterDomains),
-            HandGestureMatch.RightHand => HandRule(GestureRightParameter, true, gesture, parameterDomains),
-            HandGestureMatch.BothHands => HandRule(GestureLeftParameter, true, gesture, parameterDomains)
-                .And(HandRule(GestureRightParameter, true, gesture, parameterDomains)),
-            HandGestureMatch.AtLeastOneHand => HandRule(GestureLeftParameter, true, gesture, parameterDomains)
-                .Or(HandRule(GestureRightParameter, true, gesture, parameterDomains)),
-            HandGestureMatch.ExactlyOneHand => HandRule(GestureLeftParameter, true, gesture, parameterDomains)
-                .And(HandRule(GestureRightParameter, false, gesture, parameterDomains))
-                .Or(HandRule(GestureLeftParameter, false, gesture, parameterDomains)
-                    .And(HandRule(GestureRightParameter, true, gesture, parameterDomains))),
-            HandGestureMatch.NeitherHand => HandRule(GestureLeftParameter, false, gesture, parameterDomains)
-                .And(HandRule(GestureRightParameter, false, gesture, parameterDomains)),
-            _ => throw new NotSupportedException(
-                $"Hand gesture match {condition.Match} is not supported by VRChat")
+            HandGestureHand.Left => left,
+            HandGestureHand.Right => right,
+            HandGestureHand.Any => left.Or(right),
+            HandGestureHand.Both => left.And(right),
+            _ => throw new ArgumentOutOfRangeException(nameof(condition.Hand), condition.Hand, null)
         };
+        return condition.Matches ? matches : matches.Complement();
     }
 
     public DnfCondition ResolveParameterCondition(
@@ -140,7 +135,16 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .Where(layer => layer.type == VRCAvatarDescriptor.AnimLayerType.FX)
             .Select(layer => layer.animatorController)
             .OfType<AnimatorController>()
-            .FirstOrDefault();
+            .FirstOrDefault()
+            .DestroyedAsNull();
+    }
+
+    public void ImportAnimatorController(
+        AvatarContext context,
+        AnimatorController controller,
+        GameObject parent)
+    {
+        new AnimatorControllerImporter(context, controller, this).Import(parent);
     }
 
     private static DnfCondition HandRule(
@@ -154,9 +158,25 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             {
                 parameter = parameterName,
                 mode = equal ? AnimatorConditionMode.Equals : AnimatorConditionMode.NotEqual,
-                threshold = (int)handGesture
+                threshold = ToPlatformGestureValue(handGesture)
             },
             AnimatorControllerParameterType.Int), parameterDomains);
+    }
+
+    private static int ToPlatformGestureValue(HandGesture gesture)
+    {
+        return gesture switch
+        {
+            HandGesture.Neutral => 0,
+            HandGesture.Fist => 1,
+            HandGesture.HandOpen => 2,
+            HandGesture.FingerPoint => 3,
+            HandGesture.Victory => 4,
+            HandGesture.RockNRoll => 5,
+            HandGesture.HandGun => 6,
+            HandGesture.ThumbsUp => 7,
+            _ => throw new NotSupportedException($"Hand gesture '{gesture}' is not supported by VRChat.")
+        };
     }
 
     private IEnumerable<string> GetBlinkBlendShapes()
@@ -199,35 +219,31 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         }
     }
 
-    public void PostProcessDefaultBlendShapes(BuildSettings settings, BlendShapeWeightSet blendShapes)
+    public void PostProcessDefaultBlendShapes(
+        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
+        BlendShapeWeightSet blendShapes)
     {
-        blendShapes.AddRange(settings.MmdPlayback.BlendShapeNames
-            .Where(name => !settings.ExcludedBlendShapeNames.Contains(name))
+        blendShapes.AddRange(avatarControlSettings.MmdPlayback.BlendShapeNames
+            .Where(name => !settings.IsBlendShapeExcluded(name))
             .Select(name => new BlendShapeWeight(name, 0f)));
     }
 
-    public MmdPlaybackSettings ResolveMmdPlaybackSettings(DnfCondition? disableWhen)
+    public MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
     {
-        var components = _descriptor.GetComponentsInChildren<MMDSupportComponent>(true);
-        if (components.Length > 1)
-        {
-            LocalizedLog.Warning("Log:warning:CollectBuildSettingsPass:MultipleMMDSupportComponent", null, components);
-        }
-
-        var settings = components.FirstOrDefault()?.Settings;
         return settings == null
             ? MmdPlaybackSettings.Disabled
             : new MmdPlaybackSettings(
                 true,
                 ResolveMmdBlendShapeNames(settings).ToHashSet(),
                 disableWhen,
-                settings.DisableMode);
+                settings.SupportMode);
     }
 
     private static IEnumerable<string> ResolveMmdBlendShapeNames(
-        MmdSupportSettings settings)
+        MMDSupportSettings settings)
     {
-        var explicitNames = settings.ExplicitMmdBlendShapeNames
+        var explicitNames = settings.ExplicitBlendShapeNames
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToArray();
         if (explicitNames.Length > 0) return explicitNames;
