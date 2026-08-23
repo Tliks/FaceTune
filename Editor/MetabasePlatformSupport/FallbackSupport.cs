@@ -13,7 +13,8 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
     {
         return FindRenderer("Face", StringComparison.OrdinalIgnoreCase)
                ?? FindRenderer("Body", StringComparison.Ordinal)
-               ?? FindRenderer("body", StringComparison.Ordinal);
+               ?? FindRenderer("body", StringComparison.Ordinal)
+               ?? _root.GetComponentInChildren<SkinnedMeshRenderer>(true).DestroyedAsNull();
     }
 
     private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
@@ -36,10 +37,11 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
         return ParameterDomainRegistry.Empty;
     }
 
-    public IEnumerable<string> GetExternallyControlledBlendShapeNames()
-    {
-        return Array.Empty<string>();;
-    }
+    public IEnumerable<string> GetExternalEyeBlinkBlendShapeNames()
+        => Array.Empty<string>();
+
+    public IEnumerable<string> GetExternalLipSyncBlendShapeNames()
+        => Array.Empty<string>();
 
     public DnfCondition? ResolveHandGestureCondition(
         HandGestureCondition condition,

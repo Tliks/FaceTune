@@ -12,6 +12,28 @@ internal interface ISectionHeaderDrawer
     void DrawHeader(Rect position);
 }
 
+internal interface ISectionHeaderMenuDrawer
+{
+    void PopulateHeaderMenu(GenericMenu menu);
+}
+
+internal interface ICollapsedSectionHeaderDrawer : ISectionHeaderDrawer
+{
+    void DrawCollapsedHeader(Rect position);
+}
+
+internal static class SectionHeaderGUI
+{
+    public static Action<Rect>? GetDrawAction(ISectionHeaderDrawer? drawer, bool expanded)
+    {
+        if (drawer == null) return null;
+        if (expanded) return drawer.DrawHeader;
+        return drawer is ICollapsedSectionHeaderDrawer collapsed
+            ? collapsed.DrawCollapsedHeader
+            : null;
+    }
+}
+
 internal sealed class PropertiesSectionDrawer : ISectionDrawer
 {
     internal readonly record struct Entry(SerializedProperty Property, string? LabelKey = null);
@@ -155,10 +177,12 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                 GUIHelper.GetShurikenSectionHeight(section.Foldout, contentHeight));
             Rect content;
             bool drawn;
-            var drawHeader = section.Foldout.Expanded && section.HeaderDrawer != null
-                ? section.HeaderDrawer.DrawHeader
-                : (Action<Rect>?)null;
-            var headerWidth = section.HeaderDrawer?.GetHeaderWidth() ?? 0f;
+            var drawHeader = SectionHeaderGUI.GetDrawAction(
+                section.HeaderDrawer,
+                section.Foldout.Expanded);
+            var headerWidth = drawHeader == null
+                ? 0f
+                : section.HeaderDrawer!.GetHeaderWidth();
             if (section.EnabledProperty == null)
             {
                 drawn = GUIHelper.DrawShurikenSection(

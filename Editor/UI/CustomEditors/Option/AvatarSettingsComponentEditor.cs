@@ -21,7 +21,14 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
         Header: ReorderableListOptions.HeaderMode.Label,
         Controls: ReorderableListOptions.ControlsPlacement.Header,
         NestContent: false,
-        InitializeElement: element => element.stringValue = string.Empty);
+        InitializeElement: element => element.stringValue = string.Empty,
+        DrawElementOverride: BlendShapeNameGUI.DrawStringElement,
+        DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
+            position,
+            list,
+            element => element,
+            (element, name) => element.stringValue = name),
+        ElementHeight: GUIHelper.LineHeight);
     private readonly SerializedProperty _faceObject;
     private readonly SerializedProperty _excludedBlendShapes;
 
@@ -50,7 +57,13 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
         position.SetSingleHeight();
         var faceMode = IsManualFaceSelection ? 1 : 0;
         var nextFaceMode = GUIHelper.LocalizedPopup(position, faceMode, "avatarSettings.faceMesh.label", new[] { "avatarSettings.faceMesh.option.auto", "avatarSettings.faceMesh.option.manual" });
-        if (nextFaceMode != faceMode && nextFaceMode == 0) ClearAvatarObjectReference(_faceObject);
+        if (nextFaceMode != faceMode)
+        {
+            if (nextFaceMode == 0)
+                AvatarObjectReference.Set(_faceObject, null);
+            else
+                SetResolvedFaceObject(_faceObject);
+        }
         position.NewLine();
         if (nextFaceMode == 1)
         {
@@ -81,10 +94,13 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
     }
 
     private bool IsManualFaceSelection => _faceObject.hasMultipleDifferentValues || !AvatarObjectReference.IsNull(_faceObject);
-    private static void ClearAvatarObjectReference(SerializedProperty property)
+
+    private static void SetResolvedFaceObject(SerializedProperty property)
     {
-        property.FindPropertyRelative("referencePath").stringValue = string.Empty;
-        property.FindPropertyRelative("targetObject").objectReferenceValue = null;
+        if (property.serializedObject.targetObjects.Length != 1
+            || property.serializedObject.targetObject is not Component component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
+        AvatarObjectReference.Set(property, avatar.FaceRenderer.gameObject);
     }
 }
 

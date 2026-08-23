@@ -35,7 +35,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
                 : null);
     }
 
-    private VRChatSupport(VRCAvatarDescriptor descriptor)
+    internal VRChatSupport(VRCAvatarDescriptor descriptor)
     {
         _descriptor = descriptor;
     }
@@ -121,13 +121,11 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             parameterDomains);
     }
 
-    public IEnumerable<string> GetExternallyControlledBlendShapeNames()
-    {
-        var names = new HashSet<string>();
-        names.UnionWith(GetLipSyncBlendShapes());
-        // names.UnionWith(GetBlinkBlendShapes());
-        return names;
-    }
+    public IEnumerable<string> GetExternalEyeBlinkBlendShapeNames()
+        => GetBlinkBlendShapes();
+
+    public IEnumerable<string> GetExternalLipSyncBlendShapeNames()
+        => GetLipSyncBlendShapes();
 
     public AnimatorController? GetAnimatorController()
     {
@@ -182,22 +180,26 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     {
         var settings = _descriptor.customEyeLookSettings;
         var renderer = settings.eyelidsSkinnedMesh;
-        if (settings.eyelidsBlendshapes == null || renderer == null || renderer.sharedMesh == null
-            || settings.eyelidsBlendshapes.Length == 0)
+        if (settings.eyelidType != VRCAvatarDescriptor.EyelidType.Blendshapes
+            || settings.eyelidsBlendshapes == null || renderer == null || renderer != GetFaceRenderer()
+            || renderer.sharedMesh == null || settings.eyelidsBlendshapes.Length == 0)
         {
             return Array.Empty<string>();
         }
 
-        var index = settings.eyelidsBlendshapes[0];
-        return 0 <= index && index < renderer.sharedMesh.blendShapeCount
-            ? new[] { renderer.sharedMesh.GetBlendShapeName(index) }
-            : Array.Empty<string>();
+        return settings.eyelidsBlendshapes
+            .Where(index => 0 <= index && index < renderer.sharedMesh.blendShapeCount)
+            .Select(renderer.sharedMesh.GetBlendShapeName)
+            .Distinct(StringComparer.Ordinal);
     }
 
-    private IEnumerable<string> GetLipSyncBlendShapes()
+    internal IEnumerable<string> GetLipSyncBlendShapes()
     {
-        return _descriptor.VisemeSkinnedMesh != null && _descriptor.VisemeBlendShapes != null
-            ? _descriptor.VisemeBlendShapes
+        return _descriptor.lipSync == VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape
+               && _descriptor.VisemeSkinnedMesh != null
+               && _descriptor.VisemeSkinnedMesh == GetFaceRenderer()
+               && _descriptor.VisemeBlendShapes != null
+            ? _descriptor.VisemeBlendShapes.Where(name => !string.IsNullOrWhiteSpace(name))
             : Array.Empty<string>();
     }
 
@@ -224,7 +226,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         BlendShapeWeightSet blendShapes)
     {
         blendShapes.AddRange(avatarControlSettings.MmdPlayback.BlendShapeNames
-            .Where(name => !settings.IsBlendShapeExcluded(name))
+            .Where(name => !settings.IsBlendShapeExplicitlyExcluded(name))
             .Select(name => new BlendShapeWeight(name, 0f)));
     }
 

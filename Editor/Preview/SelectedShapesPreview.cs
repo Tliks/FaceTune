@@ -196,6 +196,11 @@ internal class SelectedShapesPreviewSession : IDisposable
 
         var expression = expressions[0];
         new FaceTuneResolver(root, context).FacialData.Add(expression, resultToAdd, bodyPath);
+        var excluded = AvatarContext.GetExplicitlyExcludedBlendShapeNames(root, context);
+        resultToAdd.RemoveAll(animation => excluded.Contains(animation.Name));
+        resultToAdd.AddRange(excluded.Select(name => new BlendShapeWeightAnimation(
+            name,
+            AnimationCurve.Constant(0f, 0f, -1f))));
         isLooping = context.Observe(expression, e => e.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop, (a, b) => a == b);
         return true;
     }

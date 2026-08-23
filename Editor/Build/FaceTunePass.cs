@@ -25,7 +25,7 @@ internal class BuildEnabledState
 internal class FaceTuneContext
 {
     public BuildContext BuildContext { get; }
-    public AvatarContext AvatarContext { get; private set; }
+    public AvatarContext AvatarContext { get; }
     public IMetabasePlatformSupport PlatformSupport { get; }
 
     private BuildSettings? Settings { get; set; }
@@ -65,15 +65,6 @@ internal class FaceTuneContext
     {
         if (Settings is { } settings) return settings;
         throw new InvalidOperationException("BuildSettings has not been created.");
-    }
-
-    public void ReplaceFaceMesh(Mesh mesh)
-    {
-        AvatarContext = AvatarContext with { FaceMesh = mesh };
-        if (Settings is { } settings)
-        {
-            Settings = settings with { AvatarContext = AvatarContext };
-        }
     }
 
     public void SetAvatarControlSettings(AvatarControlSettings avatarControlSettings)

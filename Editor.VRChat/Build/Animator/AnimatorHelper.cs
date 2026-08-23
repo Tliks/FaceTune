@@ -148,29 +148,6 @@ internal static class AnimatorHelper
         }
     }
 
-    public static void CollectConditionParameters(
-        Dictionary<string, PlanParameter> parameters,
-        DnfCondition condition)
-    {
-        foreach (var conditionCase in condition.Cases)
-        {
-            foreach (var rule in conditionCase.Rules)
-            {
-                if (rule is not AnimatorConditionRule animatorRule)
-                {
-                    continue;
-                }
-
-                parameters.TryAdd(
-                    animatorRule.ParameterName,
-                    new PlanParameter(
-                        animatorRule.ParameterName,
-                        animatorRule.ParameterType,
-                        0f));
-            }
-        }
-    }
-
     public static float DiscreteFloatIndexToValue(int index)
     {
         if (index < 0)

@@ -14,7 +14,11 @@ internal sealed record ReorderableListOptions(
     Action<Rect, SerializedProperty>? DrawElementOverride = null,
     Action<Rect>? DrawElementSeparator = null,
     Action<SerializedProperty>? InitializeElement = null,
-    Action<SerializedProperty>? AddElementOverride = null)
+    Action<SerializedProperty>? AddElementOverride = null,
+    Action<Rect, SerializedProperty>? DrawHeaderAction = null,
+    float HeaderActionWidth = 60f,
+    float? ElementHeight = null,
+    bool Reorderable = true)
 {
     internal enum HeaderMode
     {
@@ -219,7 +223,7 @@ internal static partial class GUIHelper
             state.List = new ReorderableList(
                 serializedObject,
                 property.Copy(),
-                true,
+                options.Reorderable,
                 false,
                 false,
                 false);
@@ -240,15 +244,24 @@ internal static partial class GUIHelper
                 var boundary = new Rect(rect.x, rect.y, rect.width, 0f);
                 options.DrawElementSeparator(boundary);
             }
-            rect.height = EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
+            rect.height = options.ElementHeight
+                       ?? EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
             if (options.DrawElementOverride != null)
                 options.DrawElementOverride(rect, element);
             else
                 EditorGUI.PropertyField(rect, element, GUIContent.none, true);
         };
-        list.elementHeightCallback = index => index < 0 || index >= list.serializedProperty.arraySize
-            ? GUIHelper.LineHeight
-            : EditorGUI.GetPropertyHeight(list.serializedProperty.GetArrayElementAtIndex(index), GUIContent.none, true);
+        if (options.ElementHeight.HasValue)
+        {
+            list.elementHeight = options.ElementHeight.Value;
+            list.elementHeightCallback = null;
+        }
+        else
+        {
+            list.elementHeightCallback = index => index < 0 || index >= list.serializedProperty.arraySize
+                ? GUIHelper.LineHeight
+                : EditorGUI.GetPropertyHeight(list.serializedProperty.GetArrayElementAtIndex(index), GUIContent.none, true);
+        }
         return list;
     }
 
@@ -297,7 +310,8 @@ internal static partial class GUIHelper
         {
             var view = new Rect(0f, 0f, Mathf.Max(0f, body.width - 16f), fullHeight);
             state.Scroll = GUI.BeginScrollView(body, state.Scroll, view, false, true);
-            list.DoList(view);
+            var visibleRect = new Rect(state.Scroll.x, state.Scroll.y, body.width, body.height);
+            list.DoList(view, visibleRect);
             GUI.EndScrollView();
         }
         else
@@ -432,7 +446,11 @@ internal static partial class GUIHelper
                 var index = list.index >= 0 && list.index < property.arraySize ? list.index : property.arraySize - 1;
                 property.DeleteArrayElementAtIndex(index);
                 list.index = Mathf.Min(index, property.arraySize - 1);
-            });
+            },
+            options.DrawHeaderAction == null
+                ? null
+                : rect => options.DrawHeaderAction(rect, property),
+            options.HeaderActionWidth);
     }
 
     private static void DrawHeader(
@@ -440,19 +458,24 @@ internal static partial class GUIHelper
         Action<Rect> drawLabel,
         Action add,
         bool canRemove,
-        Action remove)
+        Action remove,
+        Action<Rect>? drawAction = null,
+        float actionWidth = 0f)
     {
-        var controlsWidth = ButtonWidth * 2f;
+        actionWidth = drawAction == null ? 0f : Mathf.Max(0f, actionWidth);
+        var controlsWidth = ButtonWidth * 2f + actionWidth;
         var controlsY = position.center.y - HeaderHeight * .5f;
         var labelRect = new Rect(
             position.x,
             position.y,
             Mathf.Max(0f, position.width - controlsWidth),
             position.height);
-        var addRect = new Rect(labelRect.xMax, controlsY, ButtonWidth, HeaderHeight);
+        var actionRect = new Rect(labelRect.xMax, controlsY, actionWidth, HeaderHeight);
+        var addRect = new Rect(actionRect.xMax, controlsY, ButtonWidth, HeaderHeight);
         var removeRect = new Rect(addRect.xMax, controlsY, ButtonWidth, HeaderHeight);
 
         drawLabel(labelRect);
+        drawAction?.Invoke(actionRect);
         if (DrawListButton(addRect, "Toolbar Plus")) add();
         using var disabled = new EditorGUI.DisabledScope(!canRemove);
         if (DrawListButton(removeRect, "Toolbar Minus")) remove();

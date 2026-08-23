@@ -129,10 +129,14 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     };
     private static readonly ReorderableListOptions BlinkBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
-        InitializeElement: element => element.CopyFrom(EyeBlinkSettings.CreateDefaultBlinkBlendShape()));
+        InitializeElement: element => element.CopyFrom(EyeBlinkSettings.CreateDefaultBlinkBlendShape()),
+        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(position, list, 100f),
+        ElementHeight: GUIHelper.LineHeight);
     private static readonly ReorderableListOptions ConflictBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
-        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()));
+        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
+        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(position, list, 0f),
+        ElementHeight: GUIHelper.LineHeight);
     private static GUIStyle? _columnLabelStyle;
     private static GUIStyle ColumnLabelStyle => _columnLabelStyle ??= new GUIStyle(EditorStyles.label)
     {
@@ -306,6 +310,13 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     private static void InitializeAnimation(SerializedProperty property)
         => property.CopyFrom(EyeBlinkSettings.CreateDefaultAnimation());
 
+    private static void DrawBlendShapeWeightPicker(Rect position, SerializedProperty list, float weight)
+        => BlendShapeNameGUI.DrawListPicker(
+            position,
+            list,
+            element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
+            (element, name) => element.CopyFrom(new BlendShapeWeight(name, weight)));
+
     private static void DrawClipImport(Rect position, SerializedProperty animations)
     {
         using var disabled = new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1);
@@ -323,7 +334,13 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 {
     private static readonly ReorderableListOptions BlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
-        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()));
+        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
+        DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
+            position,
+            list,
+            element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
+            (element, name) => element.CopyFrom(new BlendShapeWeight(name, 0f))),
+        ElementHeight: GUIHelper.LineHeight);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -414,7 +431,14 @@ internal sealed class MMDSupportSettingsDrawer : PropertyDrawer
         Header: ReorderableListOptions.HeaderMode.Label,
         Controls: ReorderableListOptions.ControlsPlacement.Header,
         NestContent: false,
-        InitializeElement: element => element.stringValue = string.Empty);
+        InitializeElement: element => element.stringValue = string.Empty,
+        DrawElementOverride: BlendShapeNameGUI.DrawStringElement,
+        DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
+            position,
+            list,
+            element => element,
+            (element, name) => element.stringValue = name),
+        ElementHeight: GUIHelper.LineHeight);
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         var supportMode = property.FindPropertyRelative(nameof(MMDSupportSettings.SupportMode));

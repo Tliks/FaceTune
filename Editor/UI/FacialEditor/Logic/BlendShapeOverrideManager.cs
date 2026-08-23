@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-// override状態はflagで判断する。weightはflagが立っている場合だけoverride値として意味を持つ。
+// flagは保存対象のtarget listに含まれるかを表す。weightはflagが立つ場合だけ出力値として意味を持つ。
 [Serializable]
 internal class BlendShapeOverrideManager : IDisposable
 {
@@ -32,30 +32,33 @@ internal class BlendShapeOverrideManager : IDisposable
                                             _restoreEditedRevision.Value == _modificationRevision;
 
     private string[] _allKeysArray = new string[0];
-    private IReadOnlyBlendShapeSet _styleSet = new BlendShapeWeightSet();
+    private IReadOnlyBlendShapeSet _facialSet = new BlendShapeWeightSet();
     private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
+    private readonly BlendShapeWeightSet _effectiveBaseSet = new();
+    private ISet<string> _explicitlyExcluded = new HashSet<string>();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
-    public IReadOnlyBlendShapeSet StyleSet => _styleSet;
+    public IReadOnlyBlendShapeSet FacialSet => _facialSet;
     public IReadOnlyBlendShapeSet BaseSet => _baseSet;
-    public IReadOnlyBlendShapeSet EffectiveBaseSet => GetEffectiveBaseSet();
-    private BlendShapeWeightSet GetEffectiveBaseSet()
+    public IReadOnlyBlendShapeSet EffectiveBaseSet => _effectiveBaseSet;
+    public IEnumerable<string> ExplicitlyExcluded => _explicitlyExcluded;
+    public bool IsExplicitlyExcluded(string name) => _explicitlyExcluded.Contains(name);
+
+    private void RebuildEffectiveBaseSet()
     {
-        var result = new BlendShapeWeightSet();
-        result.AddRange(_styleSet);
-        result.AddRange(_baseSet);
-        return result;
+        _effectiveBaseSet.Clear();
+        _effectiveBaseSet.AddRange(_facialSet);
+        _effectiveBaseSet.AddRange(_baseSet);
     }
 
-    public event Action<int>? OnSingleShapeOverride;
-    public event Action<IEnumerable<int>>? OnMultipleShapeOverride;
-    public event Action<int>? OnSingleShapeUnoverride;
-    public event Action<IEnumerable<int>>? OnMultipleShapeUnoverride;
+    public event Action<int>? OnSingleShapeAdded;
+    public event Action<IEnumerable<int>>? OnMultipleShapesAdded;
+    public event Action<int>? OnSingleShapeRemoved;
+    public event Action<IEnumerable<int>>? OnMultipleShapesRemoved;
     public event Action<int>? OnSingleShapeWeightChanged;
     public event Action<IEnumerable<int>>? OnMultipleShapeWeightChanged;
     public event Action? OnUnknownChange;
-    public event Action? OnBaseSetChange;
     public event Action? OnAnyDataChange;
 
     public BlendShapeOverrideManager(SerializedObject serializedObject, SerializedProperty baseProperty)
@@ -72,17 +75,25 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void SetInitialState(
         SkinnedMeshRenderer? targetRenderer,
-        IReadOnlyBlendShapeSet? styleSet,
+        IReadOnlyBlendShapeSet? facialSet,
         IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? defaultOverrides)
+        IReadOnlyBlendShapeSet? targetSet,
+        ISet<string> explicitlyExcluded)
     {
-        InitializeTargetRenderer(targetRenderer);
-        InitializeSourceSets(styleSet, baseSet, defaultOverrides);
+        _explicitlyExcluded = explicitlyExcluded;
+        InitializeTargetRenderer(targetRenderer, explicitlyExcluded);
+        InitializeSourceSets(facialSet, baseSet, targetSet);
     }
 
-    private void InitializeTargetRenderer(SkinnedMeshRenderer? targetRenderer)
+    private void InitializeTargetRenderer(
+        SkinnedMeshRenderer? targetRenderer,
+        ISet<string> explicitlyExcluded)
     {
-        var allBlendShapes = targetRenderer == null ? new BlendShapeWeight[0] : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh);
+        var allBlendShapes = targetRenderer == null
+            ? Array.Empty<BlendShapeWeight>()
+            : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh)
+                .Where(shape => !explicitlyExcluded.Contains(shape.Name))
+                .ToArray();
         _allKeysArray = allBlendShapes.Select(x => x.Name).ToArray();
         _shapeNameToIndexMap = _allKeysArray.Select((x, i) => (x, i)).ToDictionary(x => x.x, x => x.i);
         _overrideFlagsProperty.arraySize = _allKeysArray.Length;
@@ -91,18 +102,21 @@ internal class BlendShapeOverrideManager : IDisposable
         _serializedObject.Update();
     }
 
-    private void InitializeSourceSets(IReadOnlyBlendShapeSet? styleSet, IReadOnlyBlendShapeSet? baseSet, IReadOnlyBlendShapeSet? defaultOverrides)
+    private void InitializeSourceSets(
+        IReadOnlyBlendShapeSet? facialSet,
+        IReadOnlyBlendShapeSet? baseSet,
+        IReadOnlyBlendShapeSet? targetSet)
     {
-        _styleSet = styleSet ?? new BlendShapeWeightSet();
+        _facialSet = facialSet ?? new BlendShapeWeightSet();
         _baseSet = baseSet ?? new BlendShapeWeightSet();
-        var defaultOverrideSet = defaultOverrides ?? new BlendShapeWeightSet();
-        var effectiveBaseSet = GetEffectiveBaseSet();
+        var initialTargetSet = targetSet ?? new BlendShapeWeightSet();
+        RebuildEffectiveBaseSet();
         ExecuteModification(() =>
         {
             for (int i = 0; i < _allKeysArray.Length; i++)
             {
                 _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = false;
-                if (effectiveBaseSet.TryGetValue(_allKeysArray[i], out var baseShape))
+                if (_effectiveBaseSet.TryGetValue(_allKeysArray[i], out var baseShape))
                 {
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = baseShape.Weight;
                 }
@@ -110,7 +124,7 @@ internal class BlendShapeOverrideManager : IDisposable
                 {
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = 0f;
                 }
-                if (defaultOverrideSet.TryGetValue(_allKeysArray[i], out var defaultShape))
+                if (initialTargetSet.TryGetValue(_allKeysArray[i], out var defaultShape))
                 {
                     _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = true;
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = defaultShape.Weight;
@@ -122,7 +136,6 @@ internal class BlendShapeOverrideManager : IDisposable
         _editedSnapshotBeforeRestoreInitial = null;
         _restoreEditedRevision = null;
 
-        OnBaseSetChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
 
@@ -147,8 +160,12 @@ internal class BlendShapeOverrideManager : IDisposable
         var length = snapshot.Flags.Length;
         for (int i = 0; i < length; i++)
         {
-            if (_overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue != snapshot.Flags[i]) return false;
-            if (!Mathf.Approximately(_overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue, snapshot.Weights[i])) return false;
+            var isOverridden = _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue;
+            if (isOverridden != snapshot.Flags[i]) return false;
+            if (isOverridden && !Mathf.Approximately(
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue,
+                    snapshot.Weights[i]))
+                return false;
         }
         return true;
     }
@@ -206,12 +223,12 @@ internal class BlendShapeOverrideManager : IDisposable
         return true;
     }
 
-    public void GetCurrentOverrides(BlendShapeWeightSet resultToAdd)
+    public void GetTargetValues(BlendShapeWeightSet resultToAdd)
     {
         var length = _allKeysArray.Length;
         for (int i = 0; i < length; i++)
         {
-            if (IsOverridden(i))
+            if (IsInTarget(i))
             {
                 var shapeName = _allKeysArray[i];
                 var weight = GetShapeWeight(i);
@@ -225,20 +242,16 @@ internal class BlendShapeOverrideManager : IDisposable
         return _shapeNameToIndexMap.TryGetValue(shapeName, out var index) ? index : -1;
     }
 
-    public bool IsOverridden(int index) 
+    public bool IsInTarget(int index)
     {
         return _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue;
     }
     
-    public bool IsStyleShape(int index)
-    {
-        return _styleSet.ContainsKey(_allKeysArray[index]);
-    }
+    public bool IsFacialShape(int index)
+        => _facialSet.ContainsKey(_allKeysArray[index]);
 
-    public bool IsBaseShape(int index) 
-    {
-        return _baseSet.ContainsKey(_allKeysArray[index]);
-    }
+    public bool IsBaseShape(int index)
+        => _baseSet.ContainsKey(_allKeysArray[index]);
     
     public float GetShapeWeight(int index) 
     {
@@ -247,24 +260,15 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public float GetEffectiveShapeWeight(int index)
     {
-        if (IsOverridden(index)) return GetShapeWeight(index);
-        return GetEffectiveBaseSet().TryGetValue(_allKeysArray[index], out var shape) ? shape.Weight : 0f;
+        if (IsInTarget(index)) return GetShapeWeight(index);
+        return _effectiveBaseSet.TryGetValue(_allKeysArray[index], out var shape) ? shape.Weight : 0f;
     }
 
-    public float GetRequiredInitialBaseWeight(string shapeName)
-    {
-        return GetEffectiveBaseSet().TryGetValue(shapeName, out var shape) ? shape.Weight : throw new Exception($"Shape {shapeName} not found in base set");
-    }
-    public bool IsInitialBaseWeight(int index)
-    {
-        return GetEffectiveBaseSet().TryGetValue(_allKeysArray[index], out var shape) && Mathf.Approximately(shape.Weight, GetShapeWeight(index));
-    }
-
-    public IEnumerable<int> GetOverridenIndices(Func<int, bool> predicate)
+    public IEnumerable<int> GetTargetIndices(Func<int, bool> predicate)
     {
         for (int i = 0; i < _allKeysArray.Length; i++)
         {
-            if (IsOverridden(i) && predicate(i)) yield return i;
+            if (IsInTarget(i) && predicate(i)) yield return i;
         }
     }
 
@@ -296,138 +300,107 @@ internal class BlendShapeOverrideManager : IDisposable
         _serializedObject.Update();
     }
     
-    // override
-    public void OverrideShapeAndSetWeightWithOutApply(int index, float weight)
+    public void AddShapeWithWeightWithoutApply(int index, float weight)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
-        SetShapeWeightWithOutApply(index, weight);
+        SetShapeWeightWithoutApply(index, weight);
     }
-    public void OverrideShapeAndSetWeight(int index, float weight)
+    public void AddShapeWithWeight(int index, float weight)
     {
-        ExecuteModification(() =>
-        {
-            OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnSingleShapeOverride?.Invoke(index);
-            OnAnyDataChange?.Invoke();
-        });
+        ExecuteModification(() => AddShapeWithWeightWithoutApply(index, weight));
+        OnSingleShapeAdded?.Invoke(index);
+        OnAnyDataChange?.Invoke();
     }
-    public void OverrideShapesAndSetWeight(IEnumerable<int> indices, float weight)
+    public void AddShapesWithWeight(IEnumerable<int> indices, float weight)
     {
         var indicesList = indices as IReadOnlyList<int> ?? indices.ToList();
         ExecuteModification(() =>
         {
-            foreach (var index in indicesList) OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnMultipleShapeOverride?.Invoke(indicesList);
-            OnAnyDataChange?.Invoke();
+            foreach (var index in indicesList) AddShapeWithWeightWithoutApply(index, weight);
         });
+        OnMultipleShapesAdded?.Invoke(indicesList);
+        OnAnyDataChange?.Invoke();
     }
 
-    public void OverrideShapesAndSetWeight(IEnumerable<(int, float)> indicesAndWeights)
+    public void AddShapesWithWeight(IEnumerable<(int, float)> indicesAndWeights)
     {
-        var list = indicesAndWeights.ToList();
+        var values = new Dictionary<int, float>();
+        foreach (var (index, weight) in indicesAndWeights)
+        {
+            if ((uint)index < (uint)_allKeysArray.Length) values[index] = weight;
+        }
+        var list = values.ToArray();
         ExecuteModification(() =>
         {
-            foreach (var (index, weight) in list) OverrideShapeAndSetWeightWithOutApply(index, weight);
-            OnMultipleShapeOverride?.Invoke(list.Select(x => x.Item1).ToList());
-            OnAnyDataChange?.Invoke();
+            foreach (var (index, weight) in list) AddShapeWithWeightWithoutApply(index, weight);
         });
+        OnMultipleShapesAdded?.Invoke(list.Select(x => x.Key).ToArray());
+        OnAnyDataChange?.Invoke();
     }
-    public void OverrideShapesAndSetWeight(IReadOnlyCollection<BlendShapeWeight> shapes)
+    public void AddShapesWithWeight(IReadOnlyCollection<BlendShapeWeight> shapes)
     {
         var indicesAndWeights = shapes.Select(x => (GetIndexForShape(x.Name), x.Weight))
             .Where(pair => pair.Item1 != -1);
-        OverrideShapesAndSetWeight(indicesAndWeights);
+        AddShapesWithWeight(indicesAndWeights);
     }
 
-    // unoverride
-    public void UnoverrideShapeWithOutApply(int index)
+    public void RemoveShapeWithoutApply(int index)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
     }
-    public void UnoverrideShape(int index)
+    public void RemoveShape(int index)
     {
-        ExecuteModification(() =>
-        {
-            UnoverrideShapeWithOutApply(index);
-            OnSingleShapeUnoverride?.Invoke(index);
-            OnAnyDataChange?.Invoke();
-        });
+        ExecuteModification(() => RemoveShapeWithoutApply(index));
+        OnSingleShapeRemoved?.Invoke(index);
+        OnAnyDataChange?.Invoke();
     }
-    public void UnoverrideShapes(IEnumerable<int> indices)
+    public void RemoveShapes(IEnumerable<int> indices)
     {
+        var list = indices.Distinct().ToArray();
         ExecuteModification(() =>
         {
-            foreach (var index in indices) UnoverrideShapeWithOutApply(index);
-            OnMultipleShapeUnoverride?.Invoke(indices);
-            OnAnyDataChange?.Invoke();
+            foreach (var index in list) RemoveShapeWithoutApply(index);
         });
+        OnMultipleShapesRemoved?.Invoke(list);
+        OnAnyDataChange?.Invoke();
     }
 
-    // weight
-    public void SetShapeWeightWithOutApply(int index, float weight)
+    public void SetShapeWeightWithoutApply(int index, float weight)
     {        
         _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
     }
     public void SetShapeWeight(int index, float weight)
     {
-        ExecuteModification(() =>
-        {
-            SetShapeWeightWithOutApply(index, weight);
-            OnSingleShapeWeightChanged?.Invoke(index);
-            OnAnyDataChange?.Invoke();
-        });
+        ExecuteModification(() => SetShapeWeightWithoutApply(index, weight));
+        OnSingleShapeWeightChanged?.Invoke(index);
+        OnAnyDataChange?.Invoke();
     }
     public void SetShapesWeight(IEnumerable<int> indices, float weight)
     {
+        var list = indices.Distinct().ToArray();
         ExecuteModification(() =>
         {
-            foreach (var index in indices) SetShapeWeightWithOutApply(index, weight);
-            OnMultipleShapeWeightChanged?.Invoke(indices);
-            OnAnyDataChange?.Invoke();
+            foreach (var index in list) SetShapeWeightWithoutApply(index, weight);
         });
+        OnMultipleShapeWeightChanged?.Invoke(list);
+        OnAnyDataChange?.Invoke();
     }
     public void SetShapesWeight(IEnumerable<(int, float)> indicesAndWeights)
     {
+        var list = indicesAndWeights.ToArray();
         ExecuteModification(() =>
         {
-            foreach (var (index, weight) in indicesAndWeights) SetShapeWeightWithOutApply(index, weight);
-            OnMultipleShapeWeightChanged?.Invoke(indicesAndWeights.Select(x => x.Item1));
-            OnAnyDataChange?.Invoke();
+            foreach (var (index, weight) in list) SetShapeWeightWithoutApply(index, weight);
         });
+        OnMultipleShapeWeightChanged?.Invoke(list.Select(x => x.Item1).ToArray());
+        OnAnyDataChange?.Invoke();
     }
     
-    public float ResetShapeWeightWithOutApply(int index)
-    {
-        _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
-        var newWeight = GetRequiredInitialBaseWeight(_allKeysArray[index]);
-        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = newWeight;
-        return newWeight;
-    }
-    public float ResetShapeWeight(int index)
-    {
-        float weight = 0f;
-        ExecuteModification(() =>
-        {
-            weight = ResetShapeWeightWithOutApply(index);
-            OnSingleShapeWeightChanged?.Invoke(index);
-            OnAnyDataChange?.Invoke();
-        });
-        return weight;
-    }
-    public void ResetShapesWeight(IEnumerable<int> indices)
-    {
-        ExecuteModification(() =>
-        {
-            foreach (var index in indices) ResetShapeWeightWithOutApply(index);
-            OnMultipleShapeWeightChanged?.Invoke(indices);
-            OnAnyDataChange?.Invoke();
-        });
-    }
-
     public void OnUndoRedo()
     {
         _serializedObject.Update();
+        _modificationRevision++;
         OnAnyDataChange?.Invoke();
         OnUnknownChange?.Invoke();
     }

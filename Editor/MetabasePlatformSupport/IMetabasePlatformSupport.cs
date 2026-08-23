@@ -9,7 +9,9 @@ internal interface IMetabasePlatformSupport
 
     SkinnedMeshRenderer? GetFaceRenderer();
 
-    IEnumerable<string> GetExternallyControlledBlendShapeNames();
+    IEnumerable<string> GetExternalEyeBlinkBlendShapeNames();
+
+    IEnumerable<string> GetExternalLipSyncBlendShapeNames();
 
     MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
     {

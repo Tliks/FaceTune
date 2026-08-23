@@ -87,13 +87,6 @@ internal static partial class Utils
         AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
     }
 
-    public static void RemoveAllCurveBindings(this AnimationClip clip)
-    {
-        var bindings = AnimationUtility.GetCurveBindings(clip);
-        var curves = Enumerable.Repeat<AnimationCurve?>(null, bindings.Length).ToArray();
-        AnimationUtility.SetEditorCurves(clip, bindings, curves);
-    }
-
     public static void SaveChanges(this AnimationClip clip)
     {
         EditorUtility.SetDirty(clip);

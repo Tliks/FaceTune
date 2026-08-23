@@ -24,6 +24,7 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
         {
             CreateExpressionSection(),
             CreateBehaviorSection(),
+            CreateAdditionalAnimationsSection(),
             CreateAnimationSection(),
             CreateConditionSection(),
             CreateDirectMenuSection(),
@@ -34,13 +35,20 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
     private FaceTuneSection CreateExpressionSection()
         => CreateSection("expression.section.label", new FacialDataSectionDrawer(
             serializedObject,
-            Component,
-            targets.Length,
             nameof(ExpressionComponent.FacialBlendShapesReference),
             nameof(ExpressionComponent.FacialBlendShapes)), true);
 
     private FaceTuneSection CreateBehaviorSection()
         => CreateSection("expression.behavior.section.label", new ExpressionBehaviorSectionDrawer(serializedObject), true);
+
+    private FaceTuneSection CreateAdditionalAnimationsSection()
+        => CreateSection(
+            "expression.additionalAnimations.section.label",
+            new NonFacialAnimationDataSectionDrawer(
+                serializedObject,
+                nameof(ExpressionComponent.NonFacialAnimationsReference),
+                nameof(ExpressionComponent.NonFacialAnimations)),
+            false);
 
     private FaceTuneSection CreateAnimationSection()
         => CreateSection("expression.animationSettings.section.label", new PropertiesSectionDrawer(
@@ -84,6 +92,66 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
 
     private ExpressionSettingsInheritance Inheritance
         => _inheritance ??= new ExpressionSettingsInheritance(Component, targets.Length == 1);
+}
+
+internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
+{
+    private static readonly ReorderableListOptions ListOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label);
+
+    private readonly SerializedReferenceableSettings _source;
+
+    public NonFacialAnimationDataSectionDrawer(
+        SerializedObject serializedObject,
+        string referencePropertyName,
+        string directPropertyName)
+    {
+        _source = new SerializedReferenceableSettings(
+            serializedObject,
+            referencePropertyName,
+            directPropertyName);
+    }
+
+    public float GetHeight()
+        => SettingsReferenceGUI.GetHeight(_source, GetDirectHeight());
+
+    public void Draw(Rect position)
+        => SettingsReferenceGUI.Draw(position, _source, GetDirectHeight(), DrawDirect);
+
+    public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
+    public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _source);
+
+    private float GetDirectHeight()
+    {
+        var animationClips = _source.Direct.FindPropertyRelative(
+            nameof(NonFacialAnimationData.AnimationClips));
+        var transformAnimations = _source.Direct.FindPropertyRelative(
+            nameof(NonFacialAnimationData.TransformAnimations));
+        return GUIHelper.GetListHeight(animationClips, ListOptions)
+             + GUIHelper.VerticalSpacing
+             + GUIHelper.GetListHeight(transformAnimations, ListOptions);
+    }
+
+    private void DrawDirect(Rect position)
+    {
+        var animationClips = _source.Direct.FindPropertyRelative(
+            nameof(NonFacialAnimationData.AnimationClips));
+        var transformAnimations = _source.Direct.FindPropertyRelative(
+            nameof(NonFacialAnimationData.TransformAnimations));
+        position.height = GUIHelper.GetListHeight(animationClips, ListOptions);
+        GUIHelper.DrawList(
+            position,
+            animationClips,
+            "expression.additionalAnimations.clips.label".LG(),
+            ListOptions);
+        position.NewLine();
+        position.height = GUIHelper.GetListHeight(transformAnimations, ListOptions);
+        GUIHelper.DrawList(
+            position,
+            transformAnimations,
+            "expression.additionalAnimations.transforms.label".LG(),
+            ListOptions);
+    }
 }
 
 internal enum ExpressionInheritedSettingKind
@@ -315,14 +383,15 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 position.y,
                 position.width,
                 GUIHelper.GetShurikenSectionHeight(entry.Foldout, contentHeight));
-            var headerWidth = entry.Foldout.Expanded ? entry.GetHeaderWidth() : 0f;
+            var drawHeader = SectionHeaderGUI.GetDrawAction(entry, entry.Foldout.Expanded);
+            var headerWidth = drawHeader == null ? 0f : entry.GetHeaderWidth();
             if (GUIHelper.DrawShurikenSection(
                     section,
                     entry.Foldout,
                     entry.LabelKey.LG(),
                     contentHeight,
                     out var content,
-                    drawHeader: entry.Foldout.Expanded ? entry.DrawHeader : null,
+                    drawHeader: drawHeader,
                     headerWidth: headerWidth))
             {
                 content.height = contentHeight;
@@ -332,7 +401,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
         }
     }
 
-    private sealed class Entry
+    private sealed class Entry : ICollapsedSectionHeaderDrawer
     {
         private static readonly string[] ReferenceableShortModeKeys =
         {
@@ -450,19 +519,37 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             var hasOwner = _inheritance.GetOwner(_kind) != null;
             var localOffset = hasOwner ? 1 : 2;
             var selected = !ShowsLocalValue ? 0 : localOffset + (ReferenceMode?.enumValueIndex ?? 0);
-            var currentKey = !ShowsLocalValue
-                ? hasOwner ? "expression.settingSource.short.batch" : "expression.settingSource.short.standard"
-                : ReferenceMode?.enumValueIndex == (int)SettingsReferenceMode.Reference
-                    ? "settingsReferenceMode.short.reference"
-                    : "settingsReferenceMode.short.direct";
             GUIHelper.CompactPopup(
                 position,
-                _enabled.hasMultipleDifferentValues ? EditorGUIUtility.TrTextContent("—") : currentKey.LG(),
+                GetCurrentModeLabel(hasOwner),
                 keys.Select(key => key.LG()).ToArray(),
                 selected,
                 index => SetMode(index, hasOwner),
                 _enabled.hasMultipleDifferentValues,
                 separatorBefore: localOffset);
+        }
+
+        public void DrawCollapsedHeader(Rect position)
+        {
+            var hasOwner = _inheritance.GetOwner(_kind) != null;
+            GUIHelper.CompactHeaderValue(
+                position,
+                GetCurrentModeLabel(hasOwner),
+                _enabled.hasMultipleDifferentValues);
+        }
+
+        private GUIContent GetCurrentModeLabel(bool hasOwner)
+        {
+            if (_enabled.hasMultipleDifferentValues)
+                return EditorGUIUtility.TrTextContent("—");
+            var key = !ShowsLocalValue
+                ? hasOwner
+                    ? "expression.settingSource.short.batch"
+                    : "expression.settingSource.short.standard"
+                : ReferenceMode?.enumValueIndex == (int)SettingsReferenceMode.Reference
+                    ? "settingsReferenceMode.short.reference"
+                    : "settingsReferenceMode.short.direct";
+            return key.LG();
         }
 
         private string[] GetModeKeys()

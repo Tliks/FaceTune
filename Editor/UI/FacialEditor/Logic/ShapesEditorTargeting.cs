@@ -34,11 +34,20 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new InvalidOperationException("Target is not set.");
-        var overrides = new BlendShapeWeightSet();
-        dataManager.GetCurrentOverrides(overrides);
+        var targetValues = new BlendShapeWeightSet();
+        dataManager.GetTargetValues(targetValues);
         var path = RuntimeUtil.RelativePath(root, renderer.gameObject) ?? throw new InvalidOperationException("Renderer is outside avatar root.");
-        Target.RemoveAllCurveBindings();
-        Target.AddBlendShapeAnimations(path, overrides.ToBlendShapeAnimations());
+        foreach (var binding in AnimationUtility.GetCurveBindings(Target))
+        {
+            const string prefix = "blendShape.";
+            if (binding.path != path || binding.type != typeof(SkinnedMeshRenderer)
+                || !binding.propertyName.StartsWith(prefix, StringComparison.Ordinal))
+                continue;
+            var name = binding.propertyName[prefix.Length..];
+            if (!dataManager.IsExplicitlyExcluded(name))
+                AnimationUtility.SetEditorCurve(Target, binding, null);
+        }
+        Target.AddBlendShapeAnimations(path, targetValues.ToBlendShapeAnimations());
         Target.SaveChanges();
     }
 }
@@ -49,13 +58,25 @@ internal abstract class FacialSourceTargeting<T> : IShapesEditorTargeting<T> whe
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new InvalidOperationException("Target is not set.");
-        var overrides = new BlendShapeWeightSet();
-        dataManager.GetCurrentOverrides(overrides);
+        var targetValues = new BlendShapeWeightSet();
+        dataManager.GetTargetValues(targetValues);
         var serialized = new SerializedObject(Target);
         serialized.Update();
         var animations = serialized.FindProperty(SourcePropertyName)
             .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        FacialDataGUI.SetBlendShapeAnimations(animations, overrides.ToBlendShapeAnimations().ToList());
+        var values = new List<BlendShapeWeightAnimation>();
+        for (var index = 0; index < animations.arraySize; index++)
+        {
+            var element = animations.GetArrayElementAtIndex(index);
+            var name = element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue;
+            if (!dataManager.IsExplicitlyExcluded(name)) continue;
+            values.Add(new BlendShapeWeightAnimation(
+                name,
+                element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName)
+                    .animationCurveValue));
+        }
+        values.AddRange(targetValues.ToBlendShapeAnimations());
+        FacialDataGUI.SetBlendShapeAnimations(animations, values);
         serialized.ApplyModifiedProperties();
     }
 }

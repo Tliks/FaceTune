@@ -574,6 +574,17 @@ internal static partial class GUIHelper
     public static float CompactPopupWidth(IEnumerable<GUIContent> labels)
         => labels.Max(label => EditorStyles.label.CalcSize(label).x) + CompactPopupTrailingWidth;
 
+    public static void CompactHeaderValue(
+        Rect position,
+        GUIContent value,
+        bool mixed = false)
+    {
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = mixed;
+        GUI.Label(position, value, GUIStyles.SectionHeaderPopupLabel);
+        EditorGUI.showMixedValue = previousMixed;
+    }
+
     public static void CompactPopup(
         Rect position,
         GUIContent current,
@@ -583,12 +594,9 @@ internal static partial class GUIHelper
         bool mixed = false,
         int separatorBefore = -1)
     {
-        var previousMixed = EditorGUI.showMixedValue;
-        EditorGUI.showMixedValue = mixed;
         var opened = GUI.Button(position, GUIContent.none, GUIStyle.none);
-        GUI.Label(position, current, GUIStyles.SectionHeaderPopupLabel);
+        CompactHeaderValue(position, current, mixed);
         DrawCompactPopupArrow(position);
-        EditorGUI.showMixedValue = previousMixed;
         if (!opened) return;
 
         var menu = new GenericMenu();

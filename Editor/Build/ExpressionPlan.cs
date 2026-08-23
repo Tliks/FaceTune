@@ -18,6 +18,7 @@ internal sealed record class ExpressionItem(
     string Name,
     BlendShapeWeightAnimationSet FacialAnimationSet,
     BlendShapeWeightAnimationSet AnimationSet,
+    ResolvedNonFacialAnimationSet NonFacialAnimations,
     ExpressionWriteMode WriteMode,
     MultiFrameSettings MultiFrame,
     TrackingPermission AllowEyeBlink,

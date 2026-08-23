@@ -41,12 +41,12 @@ internal class FacialShapesEditor : EditorWindow
     public static FacialShapesEditor? TryOpenEditor(
         SkinnedMeshRenderer? renderer = null,
         IShapesEditorTargeting? targeting = null,
-        IReadOnlyBlendShapeSet? styleSet = null,
+        IReadOnlyBlendShapeSet? facialSet = null,
         IReadOnlyBlendShapeSet? baseSet = null,
-        IReadOnlyBlendShapeSet? defaultOverrides = null)
+        IReadOnlyBlendShapeSet? targetSet = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
-        window.StartContext(renderer, targeting, styleSet, baseSet, defaultOverrides);
+        window.StartContext(renderer, targeting, facialSet, baseSet, targetSet);
         return window;
     }
 
@@ -70,9 +70,9 @@ internal class FacialShapesEditor : EditorWindow
     private void StartContext(
         SkinnedMeshRenderer? renderer,
         IShapesEditorTargeting? targeting,
-        IReadOnlyBlendShapeSet? styleSet,
+        IReadOnlyBlendShapeSet? facialSet,
         IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? defaultOverrides)
+        IReadOnlyBlendShapeSet? targetSet)
     {
         EndContext();
 
@@ -84,7 +84,18 @@ internal class FacialShapesEditor : EditorWindow
             serializedObject,
             serializedObject.FindProperty(nameof(_dataManager)));
         serializedObject.Update();
-        _dataManager.SetInitialState(renderer, styleSet, baseSet, defaultOverrides);
+        var avatarRoot = renderer == null
+            ? null
+            : RuntimeUtil.FindAvatarInParents(renderer.transform).DestroyedAsNull();
+        var explicitlyExcluded = avatarRoot == null
+            ? ImmutableHashSet.Create<string>(StringComparer.Ordinal)
+            : AvatarContext.GetExplicitlyExcludedBlendShapeNames(avatarRoot.gameObject);
+        _dataManager.SetInitialState(
+            renderer,
+            facialSet,
+            baseSet,
+            targetSet,
+            explicitlyExcluded);
         _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(

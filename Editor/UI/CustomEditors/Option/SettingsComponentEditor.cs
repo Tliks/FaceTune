@@ -17,7 +17,7 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                 setting.LabelKey,
                 setting.Drawer,
                 false,
-                populateHeaderMenu: menu => PopulateRemoveMenu(menu, setting.Enabled),
+                populateHeaderMenu: menu => PopulateHeaderMenu(menu, setting),
                 isVisible: () => IsEnabled(setting.Enabled),
                 spacingGroup: setting.SpacingGroup);
         }
@@ -64,7 +64,7 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             nameof(SettingsComponent.FacialBlendShapes),
             () => new FacialBlendShapeData(),
             "settings.configureFacial.section.label",
-            new SettingsFacialSectionDrawer(serializedObject, Component, targets.Length),
+            new SettingsFacialSectionDrawer(serializedObject),
             0),
         CreateReferenceableSetting(
             nameof(SettingsComponent.HasEyeBlink),
@@ -163,6 +163,16 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             spacingGroup);
     }
 
+    private void PopulateHeaderMenu(GenericMenu menu, SettingEntry setting)
+    {
+        if (setting.Drawer is ISectionHeaderMenuDrawer menuDrawer)
+        {
+            menuDrawer.PopulateHeaderMenu(menu);
+            menu.AddSeparator(string.Empty);
+        }
+        PopulateRemoveMenu(menu, setting.Enabled);
+    }
+
     private void PopulateRemoveMenu(GenericMenu menu, SerializedProperty enabled)
         => menu.AddItem("settings.remove.label".LG(), false, () =>
         {
@@ -182,18 +192,15 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         int SpacingGroup);
 }
 
-internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
+internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHeaderDrawer, ISectionHeaderMenuDrawer
 {
     private readonly FacialDataSectionDrawer _expression;
     private readonly SerializedProperty _applyToRenderer;
-    private readonly FoldoutState _additionalSettings = new(false);
 
-    public SettingsFacialSectionDrawer(SerializedObject serializedObject, Component component, int targetCount)
+    public SettingsFacialSectionDrawer(SerializedObject serializedObject)
     {
         _expression = new FacialDataSectionDrawer(
             serializedObject,
-            component,
-            targetCount,
             nameof(SettingsComponent.FacialBlendShapesReference),
             nameof(SettingsComponent.FacialBlendShapes));
         _applyToRenderer = serializedObject.FindProperty(nameof(SettingsComponent.ApplyToRenderer));
@@ -202,12 +209,23 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
     public float GetHeight()
         => _expression.GetHeight()
          + GUIHelper.VerticalSpacing
-         + (_additionalSettings.Expanded
-             ? GUIHelper.GetLinesHeight(2)
-             : GUIHelper.LineHeight);
+         + GUIHelper.LineHeight;
 
     public float GetHeaderWidth() => _expression.GetHeaderWidth();
     public void DrawHeader(Rect position) => _expression.DrawHeader(position);
+
+    public void PopulateHeaderMenu(GenericMenu menu)
+    {
+        if (_applyToRenderer.serializedObject.targetObjects.Length != 1)
+        {
+            menu.AddDisabledItem("settings.applyToRenderer.menu".LG());
+            menu.AddDisabledItem("settings.getFromRenderer.menu".LG());
+            return;
+        }
+
+        menu.AddItem("settings.applyToRenderer.menu".LG(), false, ApplyToRenderer);
+        menu.AddItem("settings.getFromRenderer.menu".LG(), false, GetFromRenderer);
+    }
 
     public void Draw(Rect position)
     {
@@ -215,14 +233,49 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         _expression.Draw(position);
         position.y += position.height + GUIHelper.VerticalSpacing;
         position.SetSingleHeight();
-        _additionalSettings.Expanded = GUIHelper.DrawFoldout(
-            position,
-            _additionalSettings.Expanded,
-            "common.options.section.label".LG());
-        if (!_additionalSettings.Expanded) return;
-
-        position.NewLine();
-        position.Indent();
         EditorGUI.PropertyField(position, _applyToRenderer, "settings.applyToRenderer.label".LG());
+    }
+
+    private void ApplyToRenderer()
+    {
+        if (_applyToRenderer.serializedObject.targetObject is not SettingsComponent settings
+            || !AvatarContext.TryGet(settings.gameObject, out var context, out _)) return;
+
+        var resolver = new FaceTuneResolver(context.Root);
+        if (!resolver.SettingsReferences.TryResolve<FacialBlendShapeData>(settings, out var data)) return;
+        var animations = new List<BlendShapeWeightAnimation>();
+        if (data.Clip != null)
+            data.Clip.GetBlendShapeAnimations(data.ClipOption, animations, context.BodyPath);
+        foreach (var animation in data.BlendShapeAnimations) animations.Add(animation);
+
+        var values = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        Undo.RecordObject(context.FaceRenderer, "Apply Blend Shapes");
+        context.FaceRenderer.ApplyBlendShapes(context.FaceMesh, values, 0f);
+        Selection.activeGameObject = context.FaceRenderer.gameObject;
+        EditorGUIUtility.PingObject(context.FaceRenderer);
+    }
+
+    private void GetFromRenderer()
+    {
+        var serializedObject = _applyToRenderer.serializedObject;
+        if (serializedObject.targetObject is not SettingsComponent settings
+            || !AvatarContext.TryGet(settings.gameObject, out var context, out _)) return;
+
+        var values = context.FaceRenderer
+            .GetBlendShapeWeights(context.FaceMesh)
+            .ToBlendShapeAnimations()
+            .ToArray();
+        serializedObject.UpdateIfRequiredOrScript();
+        var reference = serializedObject.FindProperty(nameof(SettingsComponent.FacialBlendShapesReference));
+        reference.FindPropertyRelative(nameof(SettingsReference.Mode)).enumValueIndex = (int)SettingsReferenceMode.Direct;
+        var direct = serializedObject.FindProperty(nameof(SettingsComponent.FacialBlendShapes));
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)).SynchronizeArrayByKey(
+            values,
+            element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
+            animation => animation.Name,
+            (element, animation) => element.CopyFrom(animation),
+            overwrite: true);
+        serializedObject.ApplyModifiedProperties();
     }
 }

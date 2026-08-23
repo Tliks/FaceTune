@@ -52,6 +52,26 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
 
     internal static bool IsNull(UnityEditor.SerializedProperty property)
         => Get(property) == null;
+
+    internal static void Set(UnityEditor.SerializedProperty property, GameObject? target)
+    {
+        var path = property.FindPropertyRelative(nameof(referencePath));
+        var targetProperty = property.FindPropertyRelative(nameof(targetObject));
+        target = target.DestroyedAsNull();
+        targetProperty.objectReferenceValue = target;
+        if (target == null)
+        {
+            path.stringValue = string.Empty;
+            return;
+        }
+
+        var avatarRoot = RuntimeUtil.FindAvatarInParents(target.transform);
+        path.stringValue = avatarRoot == null
+            ? string.Empty
+            : target.transform == avatarRoot
+                ? AvatarRootPath
+                : RuntimeUtil.RelativePath(avatarRoot, target.transform) ?? string.Empty;
+    }
 #endif
 
     public void Set(GameObject? target)

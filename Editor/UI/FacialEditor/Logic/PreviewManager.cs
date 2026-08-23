@@ -135,7 +135,9 @@ internal class PreviewManager : IDisposable
     {
         result.Clear();
         result.AddRange(_blendShapeOverrideManager.EffectiveBaseSet);
-        _blendShapeOverrideManager.GetCurrentOverrides(result);
+        _blendShapeOverrideManager.GetTargetValues(result);
+        result.AddRange(_blendShapeOverrideManager.ExplicitlyExcluded
+            .Select(name => new BlendShapeWeight(name, -1f)));
     }
 
     public void Dispose()

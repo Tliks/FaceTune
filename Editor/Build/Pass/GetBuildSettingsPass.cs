@@ -1,3 +1,5 @@
+using Aoyon.FaceTune.Platforms;
+
 namespace Aoyon.FaceTune.Build;
 
 internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
@@ -17,18 +19,23 @@ internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
                 components);
         }
         var settings = components.FirstOrDefault().DestroyedAsNull();
-        var externallyControlled = context.PlatformSupport
-            .GetExternallyControlledBlendShapeNames()
+        var platformSupports = MetabasePlatformSupport.GetForAvatar(root.transform)
+            .Append(context.PlatformSupport)
+            .ToArray();
+        var externalEyeBlink = platformSupports
+            .SelectMany(support => support.GetExternalEyeBlinkBlendShapeNames())
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToImmutableHashSet(StringComparer.Ordinal);
-        var explicitlyExcluded = settings?.ExcludedBlendShapeNames
+        var externalLipSync = platformSupports
+            .SelectMany(support => support.GetExternalLipSyncBlendShapeNames())
             .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToImmutableHashSet(StringComparer.Ordinal)
-            ?? ImmutableHashSet.Create<string>(StringComparer.Ordinal);
+            .ToImmutableHashSet(StringComparer.Ordinal);
+        var explicitlyExcluded = AvatarContext.GetExplicitlyExcludedBlendShapeNames(root);
 
         context.SetSettings(new BuildSettings(
             context.AvatarContext,
-            externallyControlled,
+            externalEyeBlink,
+            externalLipSync,
             explicitlyExcluded,
             settings?.AvoidEyeBlinkConflicts ?? true,
             settings?.AvoidLipSyncConflicts ?? true,

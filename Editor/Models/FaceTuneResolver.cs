@@ -7,6 +7,7 @@ internal sealed class FaceTuneResolver
     private readonly GameObject _root;
     private readonly ComputeContext? _context;
     private FaceTuneFacialDataResolver? _facialData;
+    private FaceTuneExpressionDataResolver? _expressionData;
     private FaceTuneScopedResolver<EyeBlinkSettings>? _eyeBlink;
     private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
     private FaceTuneScopedResolver<TransitionSettings>? _transition;
@@ -15,7 +16,14 @@ internal sealed class FaceTuneResolver
     private FaceTuneMenuResolver? _menus;
 
     public FaceTuneFacialDataResolver FacialData
-        => _facialData ??= new FaceTuneFacialDataResolver(_root, SettingsReferences, _context);
+        => _facialData ??= new FaceTuneFacialDataResolver(
+            _root,
+            SettingsReferences,
+            ExpressionData,
+            _context);
+
+    public FaceTuneExpressionDataResolver ExpressionData
+        => _expressionData ??= new FaceTuneExpressionDataResolver(SettingsReferences, _context);
 
     public FaceTuneSettingsReferenceResolver SettingsReferences
         => _settingsReferences ??= new FaceTuneSettingsReferenceResolver();
@@ -58,15 +66,18 @@ internal sealed class FaceTuneFacialDataResolver
 {
     private readonly GameObject _root;
     private readonly FaceTuneSettingsReferenceResolver _references;
+    private readonly FaceTuneExpressionDataResolver _expressionData;
     private readonly ComputeContext _context;
 
     internal FaceTuneFacialDataResolver(
         GameObject root,
         FaceTuneSettingsReferenceResolver references,
+        FaceTuneExpressionDataResolver expressionData,
         ComputeContext? context)
     {
         _root = root;
         _references = references;
+        _expressionData = expressionData;
         _context = context ?? ComputeContext.NullContext;
     }
 
@@ -82,18 +93,7 @@ internal sealed class FaceTuneFacialDataResolver
     }
 
     public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
-    {
-        var owner = _context.Observe(expression);
-        if (_references.TryResolve<FacialBlendShapeData>(owner, out var value, component => _context.Observe(component)))
-            yield return (owner, value);
-
-        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(expression.gameObject, true))
-        {
-            var dataOwner = _context.Observe(data);
-            if (_references.TryResolve<FacialBlendShapeData>(dataOwner, out var dataValue, component => _context.Observe(component)))
-                yield return (dataOwner, dataValue);
-        }
-    }
+        => _expressionData.EnumerateLocal<FacialBlendShapeData>(expression);
 
     public IEnumerable<(Component Owner, FacialBlendShapeData Value)> Enumerate(ExpressionComponent expression)
     {
@@ -137,6 +137,36 @@ internal sealed class FaceTuneFacialDataResolver
 
         foreach (var animation in data.BlendShapeAnimations)
             result.Add(animation);
+    }
+}
+
+internal sealed class FaceTuneExpressionDataResolver
+{
+    private readonly FaceTuneSettingsReferenceResolver _references;
+    private readonly ComputeContext _context;
+
+    internal FaceTuneExpressionDataResolver(
+        FaceTuneSettingsReferenceResolver references,
+        ComputeContext? context)
+    {
+        _references = references;
+        _context = context ?? ComputeContext.NullContext;
+    }
+
+    public IEnumerable<(Component Owner, TValue Value)> EnumerateLocal<TValue>(
+        ExpressionComponent expression)
+        where TValue : class
+    {
+        var owner = _context.Observe(expression);
+        if (_references.TryResolve<TValue>(owner, out var value, component => _context.Observe(component)))
+            yield return (owner, value);
+
+        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(expression.gameObject, true))
+        {
+            var dataOwner = _context.Observe(data);
+            if (_references.TryResolve<TValue>(dataOwner, out var dataValue, component => _context.Observe(component)))
+                yield return (dataOwner, dataValue);
+        }
     }
 }
 

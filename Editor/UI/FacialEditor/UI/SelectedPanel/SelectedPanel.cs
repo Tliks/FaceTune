@@ -30,13 +30,11 @@ internal class SelectedPanel
     private readonly Dictionary<int, double> _flashExpiryByKeyIndex = new();
     private IVisualElementScheduledItem? _flashCleanupSchedule;
     
-    private struct ElementData
-    {
-        public string ShapeName;
-        public int KeyIndex;
-        public bool IsBase;
-        public bool IsStyle;
-    }
+    private readonly record struct ElementData(
+        string ShapeName,
+        int KeyIndex,
+        bool IsFacial,
+        bool IsBase);
 
     private IReadOnlyList<ElementData> _allSource = null!;
     private List<ElementData> _currentSource = null!;
@@ -66,18 +64,18 @@ internal class SelectedPanel
         // rebuild sourcce
         _groupManager.OnGroupSelectionChanged += (groups) => RebuildListViewsSlow();
         _groupManager.OnLeftSelectionChanged += (isLeftSelected) => RebuildListViewsSlow();
-        _blendShapeManager.OnSingleShapeOverride += (keyIndex) =>
+        _blendShapeManager.OnSingleShapeAdded += (keyIndex) =>
         {
             RebuildListViewsSlow();
             FlashOverrides(new[] { keyIndex });
         };
-        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) =>
+        _blendShapeManager.OnMultipleShapesAdded += (keyIndices) =>
         {
             RebuildListViewsSlow();
             FlashOverrides(keyIndices);
         };
-        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RebuildListViewsSlow();
-        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => RebuildListViewsSlow();
+        _blendShapeManager.OnSingleShapeRemoved += (keyIndex) => RebuildListViewsSlow();
+        _blendShapeManager.OnMultipleShapesRemoved += (keyIndices) => RebuildListViewsSlow();
         // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => RebuildListViewsSlow();
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => RebuildListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => RebuildListViewsSlow();
@@ -95,10 +93,12 @@ internal class SelectedPanel
         _control = _element.Q("selected-shapes-controls");
 
         _styleToggle = _control.Q<SimpleToggle>("style-toggle");
-        _styleToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
+        _styleToggle.SetValueWithoutNotify(false);
+        _styleToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 
         _baseToggle = _control.Q<SimpleToggle>("base-toggle");
-        _baseToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
+        _baseToggle.SetValueWithoutNotify(true);
+        _baseToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 
         _zeroToggle = _control.Q<SimpleToggle>("zero-toggle");
         _zeroToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
@@ -107,9 +107,10 @@ internal class SelectedPanel
         UpdateSelectedRemoveAll0ButtonVisibility();
         _selectedRemoveAll0Button.clicked += () =>
         {
-            // 現在表示しているものに限らず全ブレンドシェイプから0値を削除
-            var indices = _blendShapeManager.GetOverridenIndices(index => !_blendShapeManager.IsBaseShape(index) && _blendShapeManager.GetShapeWeight(index) == 0f); 
-            _blendShapeManager.UnoverrideShapes(indices);
+            // 現在表示しているものに限らず、target listの明示的な0値をすべて削除。
+            var indices = _blendShapeManager.GetTargetIndices(
+                index => Mathf.Approximately(_blendShapeManager.GetShapeWeight(index), 0f));
+            _blendShapeManager.RemoveShapes(indices);
         };
 
         var selected0100Toggle = _control.Q<Button>("selected-0-100-toggle");
@@ -127,8 +128,8 @@ internal class SelectedPanel
         {
             var indices = _currentSource
                 .Select(item => item.KeyIndex)
-                .Where(index => _blendShapeManager.IsOverridden(index));
-            _blendShapeManager.UnoverrideShapes(indices);
+                .Where(index => _blendShapeManager.IsInTarget(index));
+            _blendShapeManager.RemoveShapes(indices);
         };
     }
 
@@ -173,7 +174,6 @@ internal class SelectedPanel
                 if (element.userData is ElementData item)
                 {
                     _blendShapeManager.SetShapeWeight(item.KeyIndex, evt.newValue);
-                    UpdateActionButton(item, actionButton);
                 }
             });
             _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) =>
@@ -197,8 +197,6 @@ internal class SelectedPanel
                     var currentWeight = _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex);
                     var newWeight = currentWeight == 0f ? 100f : 0f;
                     _blendShapeManager.SetShapeWeight(item.KeyIndex, newWeight);
-                    sliderFloatField.SetValueWithoutNotify(newWeight);
-                    UpdateActionButton(item, actionButton);
                 }
             };
                         
@@ -206,9 +204,7 @@ internal class SelectedPanel
             {
                 if (element.userData is ElementData item)
                 {
-                    _blendShapeManager.UnoverrideShape(item.KeyIndex);
-                    sliderFloatField.SetValueWithoutNotify(_blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex));
-                    UpdateActionButton(item, actionButton);
+                    _blendShapeManager.RemoveShape(item.KeyIndex);
                 }
             };
             
@@ -241,7 +237,7 @@ internal class SelectedPanel
 
         void UpdateActionButton(ElementData item, Button actionButton)
         {
-            actionButton.SetEnabled(_blendShapeManager.IsOverridden(item.KeyIndex));
+            actionButton.SetEnabled(_blendShapeManager.IsInTarget(item.KeyIndex));
         }
     }
 
@@ -300,13 +296,11 @@ internal class SelectedPanel
         var allKeys = _blendShapeManager.AllKeys;
         for (int i = 0; i < allKeys.Count; i++)
         {
-            allSource.Add(new ElementData
-            {
-                ShapeName = allKeys[i],
-                KeyIndex = i,
-                IsBase = _blendShapeManager.IsBaseShape(i),
-                IsStyle = _blendShapeManager.IsStyleShape(i)
-            });
+            allSource.Add(new ElementData(
+                allKeys[i],
+                i,
+                _blendShapeManager.IsFacialShape(i),
+                _blendShapeManager.IsBaseShape(i)));
         }
         _allSource = allSource.AsReadOnly();
         _currentSource = new();
@@ -319,13 +313,14 @@ internal class SelectedPanel
 
     private void UpdateSourceToggleVisibility()
     {
-        _styleToggle.SetVisible(_blendShapeManager.StyleSet.Count > 0);
+        _styleToggle.SetVisible(_blendShapeManager.FacialSet.Count > 0);
         _baseToggle.SetVisible(_blendShapeManager.BaseSet.Count > 0);
     }
 
     private void UpdateSelectedRemoveAll0ButtonVisibility()
     {
-        var anyZero = _blendShapeManager.GetOverridenIndices(index => !_blendShapeManager.IsBaseShape(index) && _blendShapeManager.GetShapeWeight(index) == 0f).Any();
+        var anyZero = _blendShapeManager.GetTargetIndices(
+            index => Mathf.Approximately(_blendShapeManager.GetShapeWeight(index), 0f)).Any();
         _selectedRemoveAll0Button.SetVisible(anyZero);
     }
 
@@ -335,28 +330,26 @@ internal class SelectedPanel
 
         _currentSource.Clear();
 
-        var searchText = _searchField.value?.ToLower() ?? "";
-        var hasSearchText = !string.IsNullOrEmpty(searchText);
+        var searchText = _searchField.value ?? string.Empty;
+        var hasSearchText = searchText.Length > 0;
 
         var allSourceCount = _allSource.Count;
         for (int i = 0; i < allSourceCount; i++)
         {
             var item = _allSource[i];
 
-            if (hasSearchText && !item.ShapeName.ToLower().Contains(searchText))
+            if (hasSearchText && item.ShapeName.IndexOf(
+                    searchText,
+                    StringComparison.OrdinalIgnoreCase) < 0)
                 continue;
 
             if (_groupManager.IsLeftSelected && !_groupManager.IsBlendShapeVisible(item.KeyIndex))
                 continue;
 
-            var isOverridden = _blendShapeManager.IsOverridden(item.KeyIndex);
-            if (!item.IsStyle && !item.IsBase && !isOverridden)
-                continue;
-
-            if (!_styleToggle.value && item.IsStyle && !isOverridden)
-                continue;
-
-            if (!_baseToggle.value && item.IsBase && !isOverridden)
+            var isInTarget = _blendShapeManager.IsInTarget(item.KeyIndex);
+            var isVisibleSource = _styleToggle.value && item.IsFacial
+                || _baseToggle.value && item.IsBase;
+            if (!isVisibleSource && !isInTarget)
                 continue;
 
             if (!_zeroToggle.value && _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex) == 0f)

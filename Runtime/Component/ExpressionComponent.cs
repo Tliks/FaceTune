@@ -4,6 +4,7 @@ namespace Aoyon.FaceTune
     internal class ExpressionComponent : FaceTuneTagComponent,
         IHasConditions,
         IReferenceableExpressionSettings<FacialBlendShapeData>,
+        IReferenceableExpressionSettings<NonFacialAnimationData>,
         IReferenceableExpressionSettings<EyeBlinkSettings>,
         IReferenceableExpressionSettings<LipSyncSettings>
     {
@@ -21,6 +22,10 @@ namespace Aoyon.FaceTune
         // 親のSettingsから集めた顔つきの後に重ねる。
         public SettingsReference FacialBlendShapesReference = new();
         public FacialBlendShapeData FacialBlendShapes = new();
+
+        // 顔以外に、この表情と同じ条件・時間で再生するアニメーション。
+        public SettingsReference NonFacialAnimationsReference = new();
+        public NonFacialAnimationData NonFacialAnimations = new();
 
         // 通常条件を迂回し、メニューを条件とする高優先度proxyを生成する。
         public bool DirectMenuEnabled = false;
@@ -70,6 +75,13 @@ namespace Aoyon.FaceTune
 
         ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
             => new(true, FacialBlendShapesReference.Mode, FacialBlendShapesReference.Source, FacialBlendShapes);
+
+        ReferenceableExpressionSettings<NonFacialAnimationData> IReferenceableExpressionSettings<NonFacialAnimationData>.Settings
+            => new(
+                true,
+                NonFacialAnimationsReference.Mode,
+                NonFacialAnimationsReference.Source,
+                NonFacialAnimations);
 
         ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
             => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);

@@ -1,26 +1,10 @@
-using System.Text.RegularExpressions;
-
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class BlendShapeGrouping
 {
-    private const string DefaultGroupName = "Default";
 
-    private static readonly string GroupNameSymbolPattern = string.Join("|", new[]
-    {
-        @"\W",
-        @"\p{Pc}",
-        @"ー",
-        @"ｰ",
-    });
-
-    private static readonly string GroupNamePattern = string.Join("|", new[]
-    {
-        $"^(?:(?:{GroupNameSymbolPattern}){{3,}})(.*?)(?:(?:{GroupNameSymbolPattern}){{3,}})?$",
-        $"^(?:(?:{GroupNameSymbolPattern}){{3,}})?(.*?)(?:(?:{GroupNameSymbolPattern}){{3,}})$",
-    });
-
-    public IReadOnlyList<BlendShapeGroup> Groups { get; private set; }
+    public IReadOnlyList<BlendShapeGroup> Groups { get; }
+    private readonly BlendShapeGroup[] _groupByBlendShapeIndex;
     public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
     private bool _isLeftSelected = true;
@@ -56,41 +40,29 @@ internal class BlendShapeGrouping
     public BlendShapeGrouping(BlendShapeOverrideManager dataManager)
     {
         Groups = BuildGroups(dataManager.AllKeys);
+        _groupByBlendShapeIndex = new BlendShapeGroup[dataManager.AllKeys.Count];
         foreach (var group in Groups)
         {
-            group.OnSelectionChanged += (selected) => OnGroupSelectionChanged?.Invoke(new[] { (group, selected) });
+            foreach (var index in group.BlendShapeIndices)
+                _groupByBlendShapeIndex[index] = group;
+            group.OnSelectionChanged += selected =>
+                OnGroupSelectionChanged?.Invoke(new[] { (group, selected) });
         }
     }
 
     private static IReadOnlyList<BlendShapeGroup> BuildGroups(IReadOnlyList<string> allKeys)
-    {
-        var groups = new List<BlendShapeGroup>(){ new(DefaultGroupName) };
-
-        for (var index = 0; index < allKeys.Count; index++)
-        {
-            var key = allKeys[index];
-            var match = Regex.Match(key, GroupNamePattern);
-            if (match.Success)
+        => new BlendShapeGroupCatalog(allKeys).Groups
+            .Select(definition =>
             {
-                var extractedName = match.Groups.Cast<Group>().Skip(1).First(x => x.Success).Value;
-                groups.Add(new BlendShapeGroup(extractedName));
-            }
-            groups.Last().BlendShapeIndices.Add(index);
-        }
-        return groups.AsReadOnly();
-    }
+                var group = new BlendShapeGroup(definition.Name);
+                group.BlendShapeIndices.UnionWith(definition.BlendShapeIndices);
+                return group;
+            })
+            .ToArray();
 
     public bool IsBlendShapeVisible(int index)
-    {
-        foreach (var group in Groups)
-        {
-            if (group.BlendShapeIndices.Contains(index))
-            {
-                return group.IsSelected;
-            }
-        }
-        return false;
-    }
+        => (uint)index < (uint)_groupByBlendShapeIndex.Length
+        && _groupByBlendShapeIndex[index].IsSelected;
     
     public void SelectAll(bool selected)
     {

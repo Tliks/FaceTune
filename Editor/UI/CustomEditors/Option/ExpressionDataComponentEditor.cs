@@ -5,16 +5,23 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<ExpressionDataComponent>
 {
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
-        => new[] { CreateExpressionSection() };
+        => new[] { CreateExpressionSection(), CreateAdditionalAnimationsSection() };
 
     private FaceTuneSection CreateExpressionSection()
         => CreateSection(
             "expression.section.label",
             new FacialDataSectionDrawer(
                 serializedObject,
-                Component,
-                targets.Length,
                 nameof(ExpressionDataComponent.FacialBlendShapesReference),
                 nameof(ExpressionDataComponent.FacialBlendShapes)),
             defaultExpanded: true);
+
+    private FaceTuneSection CreateAdditionalAnimationsSection()
+        => CreateSection(
+            "expression.additionalAnimations.section.label",
+            new NonFacialAnimationDataSectionDrawer(
+                serializedObject,
+                nameof(ExpressionDataComponent.NonFacialAnimationsReference),
+                nameof(ExpressionDataComponent.NonFacialAnimations)),
+            defaultExpanded: false);
 }

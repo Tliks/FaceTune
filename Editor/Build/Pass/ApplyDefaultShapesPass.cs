@@ -14,11 +14,12 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
 
         var animations = new List<BlendShapeWeightAnimation>();
         new FaceTuneResolver(avatarContext.Root).FacialData.AddRenderer(animations, avatarContext.BodyPath);
+        animations.RemoveAll(animation => settings.IsBlendShapeExplicitlyExcluded(animation.Name));
         if (animations.Count > 0)
         {
             set.AddRange(avatarContext.FaceRenderer
                 .GetBlendShapeWeights(avatarContext.FaceMesh)
-                .Where(shape => !settings.IsBlendShapeExcluded(shape.Name))
+                .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name))
                 .Select(shape => shape with { Weight = 0f }));
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
@@ -27,6 +28,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             settings,
             context.RequireAvatarControlSettings(),
             set);
+        set.RemoveRange(settings.ExplicitlyExcludedBlendShapeNames);
         if (set.Count == 0) return;
         
         avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);

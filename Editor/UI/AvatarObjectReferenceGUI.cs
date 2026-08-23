@@ -23,12 +23,7 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
         var next = EditorGUI.ObjectField(field, current, typeof(Transform), true) as Transform;
         if (!EditorGUI.EndChangeCheck()) return;
 
-        target.objectReferenceValue = next != null ? next.gameObject : null;
-        path.stringValue = next == null
-            ? string.Empty
-            : next == avatarRoot
-                ? AvatarObjectReference.AvatarRootPath
-                : RuntimeUtil.RelativePath(avatarRoot, next) ?? string.Empty;
+        AvatarObjectReference.Set(property, next != null ? next.gameObject : null);
     }
 
     private static Transform? Resolve(string path, GameObject? target, Transform avatarRoot)

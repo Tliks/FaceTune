@@ -5,6 +5,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: en-US\n"
 
+msgid "expression.editor.button"
+msgstr "Editor"
+
+msgid "blendShapePicker.group.all"
+msgstr "All"
+
+msgid "blendShapePicker.selectVisible.button"
+msgstr "Select Visible"
+
+msgid "blendShapePicker.clearVisible.button"
+msgstr "Deselect Visible"
+
+msgid "blendShapePicker.apply.button"
+msgstr "Apply"
+
 msgid "FacialSettings"
 msgstr "Facial Settings"
 
@@ -256,7 +271,7 @@ msgid "facialEditor.save.button"
 msgstr "Save"
 
 msgid "facialEditor.style.option"
-msgstr "Style"
+msgstr "Facial"
 
 msgid "facialEditor.base.option"
 msgstr "Base"
@@ -372,6 +387,15 @@ msgstr "Multi Frame"
 msgid "expression.facialSettings.section.label"
 msgstr "Facial Settings"
 
+msgid "expression.additionalAnimations.section.label"
+msgstr "Non-Facial Animations"
+
+msgid "expression.additionalAnimations.clips.label"
+msgstr "Animation Clips"
+
+msgid "expression.additionalAnimations.transforms.label"
+msgstr "Transforms"
+
 msgid "expression.animationSettings.section.label"
 msgstr "Animation Settings"
 
@@ -431,12 +455,6 @@ msgstr "Type"
 
 msgid "menuIcon.icon.label"
 msgstr "Icon"
-
-msgid "expression.editor.label"
-msgstr "Expression Editor"
-
-msgid "common.open.button"
-msgstr "Open"
 
 msgid "common.menu.tooltip"
 msgstr "Menu"
@@ -950,7 +968,13 @@ msgid "settings.remove.label"
 msgstr "Remove Setting"
 
 msgid "settings.applyToRenderer.label"
-msgstr "Apply to Renderer at Build Time"
+msgstr "Apply to Renderer"
+
+msgid "settings.applyToRenderer.menu"
+msgstr "Apply to Renderer Now"
+
+msgid "settings.getFromRenderer.menu"
+msgstr "Get from Renderer"
 
 msgid "avatarControl.section.label"
 msgstr "Avatar Control"

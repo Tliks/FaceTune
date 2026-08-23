@@ -5,6 +5,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ja-JP\n"
 
+msgid "expression.editor.button"
+msgstr "編集画面"
+
+msgid "blendShapePicker.group.all"
+msgstr "すべて"
+
+msgid "blendShapePicker.selectVisible.button"
+msgstr "表示中をすべて選択"
+
+msgid "blendShapePicker.clearVisible.button"
+msgstr "表示中を選択解除"
+
+msgid "blendShapePicker.apply.button"
+msgstr "適用"
+
 msgid "FacialSettings"
 msgstr "表情設定"
 
@@ -372,6 +387,15 @@ msgstr "マルチフレーム"
 msgid "expression.facialSettings.section.label"
 msgstr "表情設定"
 
+msgid "expression.additionalAnimations.section.label"
+msgstr "表情以外"
+
+msgid "expression.additionalAnimations.clips.label"
+msgstr "アニメーションクリップ"
+
+msgid "expression.additionalAnimations.transforms.label"
+msgstr "トランスフォーム"
+
 msgid "expression.animationSettings.section.label"
 msgstr "アニメーション設定"
 
@@ -431,12 +455,6 @@ msgstr "種類"
 
 msgid "menuIcon.icon.label"
 msgstr "アイコン"
-
-msgid "expression.editor.label"
-msgstr "表情編集画面"
-
-msgid "common.open.button"
-msgstr "開く"
 
 msgid "common.menu.tooltip"
 msgstr "メニュー"
@@ -950,7 +968,13 @@ msgid "settings.remove.label"
 msgstr "設定を削除"
 
 msgid "settings.applyToRenderer.label"
-msgstr "ビルド時にレンダラーへ適用"
+msgstr "レンダラーへ適用"
+
+msgid "settings.applyToRenderer.menu"
+msgstr "今すぐレンダラーへ適用"
+
+msgid "settings.getFromRenderer.menu"
+msgstr "レンダラーから取得"
 
 msgid "avatarControl.section.label"
 msgstr "アバター制御"

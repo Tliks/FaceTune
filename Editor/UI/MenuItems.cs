@@ -1,4 +1,3 @@
-using UnityEngine.SceneManagement;
 using M = UnityEditor.MenuItem;
 using Aoyon.FaceTune.Platforms;
 using UnityEditorInternal;
@@ -19,6 +18,9 @@ internal static class MenuItems
     public const string SelectedExpressionPreviewPath = ToolsSettingsPath + "Selected Expression Preview";
     public const int SelectedExpressionPreviewPriority = 1100;
 
+    public const string ProjectSelectedExpressionPreviewPath = ToolsSettingsPath + "Project Selected Expression Preview";
+    public const int ProjectSelectedExpressionPreviewPriority = 1101;
+
     private const string ToolsDebugPath = ToolsPath + "Debug/";
     public const string ReloadLocalizationPath = ToolsDebugPath + "Reload Localization";
     public const int ReloadLocalizationPriority = 1200;
@@ -28,9 +30,6 @@ internal static class MenuItems
 
     public const string EditAnimationClipMenuPath = AssetsPath + "Edit Animation Clip";
     public const int EditAnimationClipMenuPriority = 1000;
-
-    public const string SelectedClipsToExclusiveMenuPath = AssetsPath + "SelectedClipsToExclusiveMenu";
-    public const int SelectedClipsToExclusiveMenuPriority = 1001;
 
 
     // GameObject
@@ -42,29 +41,15 @@ internal static class MenuItems
     public const string ImportFxPath = GameObjectPath + "Import FX";
     public const int ImportFxPriority = 101;
 
-    public const string ConditionPath = GameObjectPath + "Condition";
-    public const int ConditionPriority = 200;
-
-    public const string MenuSinglePath = GameObjectPath + "Menu/Single";
-    public const int MenuSinglePriority = 201;
-
-    public const string MenuExclusivePath = GameObjectPath + "Menu/Exclusive";
-    public const int MenuExclusivePriority = 202;
-
-    public const string MenuBlendingPath = GameObjectPath + "Menu/Blending";
-    public const int MenuBlendingPriority = 203;
-
-    private const string DebugPath = GameObjectPath + "Debug/";
-
 }
 
 
 internal static class GameObjectMenu
 {
-    private static GameObject IP(string guid, bool unpack = true, bool isFirstSibling = false, bool addInstaller = false)
+    private static GameObject IP(string guid, bool unpack = true)
     {
         var parent = Selection.activeGameObject;
-        return Utils.InstantiatePrefab(guid, unpack: unpack, parent: parent, isFirstSibling: isFirstSibling, addInstaller: addInstaller);
+        return Utils.InstantiatePrefab(guid, unpack: unpack, parent: parent);
     }
     
     [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 
@@ -99,18 +84,6 @@ internal static class GameObjectMenu
         support.ImportAnimatorController(context, animatorController, selected);
     }
 
-    [M(MenuItems.ConditionPath, false, MenuItems.ConditionPriority)] 
-    static void Condition() => IP("20aca02f84d174940bb4ca676555589a");
-    
-    [M(MenuItems.MenuSinglePath, false, MenuItems.MenuSinglePriority)] 
-    static void MenuSingle() => IP("a045ae2cad411ae43b4c008ff814957e", addInstaller: true); // Installerが必要
-
-    [M(MenuItems.MenuExclusivePath, false, MenuItems.MenuExclusivePriority)] 
-    static void MenuExclusive() => IP("9e1741e66ac069742976cf8c7e785a35", addInstaller: true); // Installerが必要
-
-    [M(MenuItems.MenuBlendingPath, false, MenuItems.MenuBlendingPriority)] 
-    static void MenuBlending() => IP("557c13125870f764bb20173aa14b004f", addInstaller: true); // Installerが必要
-
 }
 
 internal static class ToolsMenu
@@ -132,6 +105,22 @@ internal static class ToolsMenu
     private static void ToggleSelectedExpressionPreview()
     {
         ProjectSettings.EnableHierarchySelectedExpressionPreview = !ProjectSettings.EnableHierarchySelectedExpressionPreview;
+        InternalEditorUtility.RepaintAllViews();
+    }
+
+    [MenuItem(MenuItems.ProjectSelectedExpressionPreviewPath, true)]
+    private static bool ValidateProjectSelectedExpressionPreview()
+    {
+        Menu.SetChecked(
+            MenuItems.ProjectSelectedExpressionPreviewPath,
+            ProjectSettings.EnableProjectSelectedExpressionPreview);
+        return true;
+    }
+
+    [MenuItem(MenuItems.ProjectSelectedExpressionPreviewPath, false, MenuItems.ProjectSelectedExpressionPreviewPriority)]
+    private static void ToggleProjectSelectedExpressionPreview()
+    {
+        ProjectSettings.EnableProjectSelectedExpressionPreview = !ProjectSettings.EnableProjectSelectedExpressionPreview;
         InternalEditorUtility.RepaintAllViews();
     }
 }

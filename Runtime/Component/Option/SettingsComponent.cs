@@ -14,7 +14,6 @@ namespace Aoyon.FaceTune
         public bool HasFacialBlendShapes = false;
         public SettingsReference FacialBlendShapesReference = new();
         public FacialBlendShapeData FacialBlendShapes = new();
-        [ToggleLeft]
         public bool ApplyToRenderer = false;
 
         // Menuと、選択中だけこのGameObjectより下を有効にする条件の組。

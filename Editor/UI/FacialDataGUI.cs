@@ -5,23 +5,17 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
 {
     private readonly SerializedReferenceableSettings _source;
-    private readonly Component _component;
-    private readonly int _targetCount;
 
     public FacialDataSectionDrawer(
         SerializedObject serializedObject,
-        Component component,
-        int targetCount,
         string referencePropertyName,
         string directPropertyName)
     {
         _source = new SerializedReferenceableSettings(serializedObject, referencePropertyName, directPropertyName);
-        _component = component;
-        _targetCount = targetCount;
     }
 
     public float GetHeight() => FacialDataGUI.GetContentHeight(_source);
-    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source, _component, _targetCount);
+    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source);
     public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _source);
 }
@@ -32,40 +26,43 @@ internal static class FacialDataGUI
         Header: ReorderableListOptions.HeaderMode.Label,
         HeaderContentHeight: GUIHelper.LineHeight,
         DrawHeaderContent: DrawClipRow,
-        InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()));
+        InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()),
+        DrawHeaderAction: DrawEditorButton,
+        ElementHeight: GUIHelper.LineHeight,
+        Reorderable: false);
 
     public static float GetContentHeight(SerializedReferenceableSettings source)
         => SettingsReferenceGUI.GetHeight(source, GetDirectHeight(source));
 
-    public static void DrawContent(Rect position, SerializedReferenceableSettings source, Component component, int targetCount)
+    public static void DrawContent(Rect position, SerializedReferenceableSettings source)
         => SettingsReferenceGUI.Draw(
             position,
             source,
             GetDirectHeight(source),
-            rect => DrawDirect(rect, source, component, targetCount));
+            rect => DrawDirect(rect, source));
 
     private static float GetDirectHeight(SerializedReferenceableSettings source)
     {
         var animations = source.Direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        return GUIHelper.GetListHeight(animations, AnimationListOptions)
-             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
+        return GUIHelper.GetListHeight(animations, AnimationListOptions);
     }
 
     private static void DrawDirect(
         Rect position,
-        SerializedReferenceableSettings source,
-        Component component,
-        int targetCount)
+        SerializedReferenceableSettings source)
     {
         var direct = source.Direct;
         var animations = direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         position.height = GUIHelper.GetListHeight(animations, AnimationListOptions);
         GUIHelper.DrawList(position, animations, "expression.blendShapes.label".LG(), AnimationListOptions);
-        position.NewLine();
-        position.SetSingleHeight();
-        var open = EditorGUI.PrefixLabel(position, "expression.editor.label".LG());
-        using (new EditorGUI.DisabledScope(targetCount != 1))
-            if (GUI.Button(open, "common.open.button".LG())) OpenEditor(component);
+    }
+
+    private static void DrawEditorButton(Rect position, SerializedProperty animations)
+    {
+        using var disabled = new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1);
+        if (GUI.Button(position, "expression.editor.button".LG(), GUIStyles.ListButton)
+            && animations.serializedObject.targetObject is Component component)
+            OpenEditor(component);
     }
 
     private static void DrawClipRow(Rect position, SerializedProperty animations)
@@ -108,8 +105,9 @@ internal static class FacialDataGUI
         };
         if (targeting == null) return;
         var resolver = new FaceTuneResolver(avatar.Root);
-        var baseAnimations = new List<BlendShapeWeightAnimation>();
-        resolver.FacialData.AddIncoming(component, baseAnimations, avatar.BodyPath);
+        var facialAnimations = new List<BlendShapeWeightAnimation>();
+        resolver.FacialData.AddIncoming(component, facialAnimations, avatar.BodyPath);
+        var baseAnimations = ResolveEditorBaseAnimations(component, resolver, avatar.BodyPath);
         var direct = component switch
         {
             ExpressionComponent expression => expression.FacialBlendShapes,
@@ -117,17 +115,57 @@ internal static class FacialDataGUI
             SettingsComponent settings => settings.FacialBlendShapes,
             _ => null
         };
-        if (direct != null && direct.Clip != null)
-            direct.Clip.GetBlendShapeAnimations(direct.ClipOption, baseAnimations, avatar.BodyPath);
-        var defaults = direct == null
+        var targetValues = direct == null
             ? new BlendShapeWeightSet()
             : new BlendShapeWeightSet(direct.BlendShapeAnimations.ToFirstFrameBlendShapes());
         FacialShapesEditor.TryOpenEditor(
             avatar.FaceRenderer,
             targeting,
-            new BlendShapeWeightSet(),
+            new BlendShapeWeightSet(facialAnimations.ToFirstFrameBlendShapes()),
             new BlendShapeWeightSet(baseAnimations.ToFirstFrameBlendShapes()),
-            defaults);
+            targetValues);
+    }
+
+    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveEditorBaseAnimations(
+        Component component,
+        FaceTuneResolver resolver,
+        string bodyPath)
+    {
+        var result = new List<BlendShapeWeightAnimation>();
+        switch (component)
+        {
+            case ExpressionComponent expression:
+                var expressionData = resolver.FacialData.EnumerateLocal(expression)
+                    .FirstOrDefault().Value;
+                AddClipAnimations(expressionData, result, bodyPath);
+                break;
+            case ExpressionDataComponent targetData:
+                var owner = targetData.GetComponentInParent<ExpressionComponent>(true);
+                if (owner == null) break;
+                foreach (var (source, data) in resolver.FacialData.EnumerateLocal(owner))
+                {
+                    AddClipAnimations(data, result, bodyPath);
+                    if (source == targetData) break;
+                    foreach (var animation in data.BlendShapeAnimations) result.Add(animation);
+                }
+                break;
+            case SettingsComponent settings:
+                if (resolver.SettingsReferences.TryResolve<FacialBlendShapeData>(
+                        settings,
+                        out var settingsData))
+                    AddClipAnimations(settingsData, result, bodyPath);
+                break;
+        }
+        return result;
+    }
+
+    private static void AddClipAnimations(
+        FacialBlendShapeData? data,
+        ICollection<BlendShapeWeightAnimation> result,
+        string bodyPath)
+    {
+        if (data?.Clip != null)
+            data.Clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
     }
 
     internal static void SetBlendShapeAnimations(SerializedProperty property, IReadOnlyList<BlendShapeWeightAnimation> animations)
@@ -141,18 +179,16 @@ internal static class FacialDataGUI
         }
     }
 
-    private static void MergeBlendShapeAnimations(SerializedProperty property, IReadOnlyCollection<BlendShapeWeightAnimation> animations, bool overwrite)
-    {
-        var values = new List<BlendShapeWeightAnimation>();
-        for (var i = 0; i < property.arraySize; i++) values.Add(new BlendShapeWeightAnimation(property.GetArrayElementAtIndex(i).FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue, property.GetArrayElementAtIndex(i).FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue));
-        foreach (var animation in animations)
-        {
-            var index = values.FindIndex(value => value.Name == animation.Name);
-            if (index < 0) values.Add(animation);
-            else if (overwrite) values[index] = animation;
-        }
-        SetBlendShapeAnimations(property, values);
-    }
+    private static void MergeBlendShapeAnimations(
+        SerializedProperty property,
+        IReadOnlyCollection<BlendShapeWeightAnimation> animations,
+        bool overwrite)
+        => property.MergeArrayByKey(
+            animations,
+            element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
+            animation => animation.Name,
+            (element, animation) => element.CopyFrom(animation),
+            overwrite);
 }
 
 [CustomPropertyDrawer(typeof(MultiFrameSettings))]
@@ -238,10 +274,11 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 {
     private const float MultiFrameDuration = 1f;
     private const float ModeToggleWidth = 24f;
-    private const float PreferredNameRatio = .4f;
+    private const float PreferredNameRatio = .46f;
     private const float MinimumNameWidth = 64f;
     private const float MinimumValueWidth = 64f;
-    private const float SliderWithNumberWidth = 110f;
+    private const float SliderWithNumberWidth = 90f;
+    private const float SliderNumberWidth = 38f;
     private static GUIContent MultiFrameToggleLabel => new(
         "M",
         "blendShapeAnimation.multiFrame.label".LS());
@@ -262,7 +299,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
         var animationCurve = curve.animationCurveValue;
         var mode = animationCurve.length >= 2 ? 1 : 0;
 
-        EditorGUI.PropertyField(nameRect, name, GUIContent.none);
+        BlendShapeNameGUI.Draw(nameRect, name);
         var multiFrame = GUIHelper.DrawSimpleToggle(modeRect, mode == 1, MultiFrameToggleLabel);
         var nextMode = multiFrame ? 1 : 0;
         if (nextMode != mode)
@@ -279,9 +316,16 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
         {
             var value = animationCurve.length == 0 ? 0f : animationCurve.Evaluate(0f);
             EditorGUI.BeginChangeCheck();
-            value = valueRect.width >= SliderWithNumberWidth
-                ? EditorGUI.Slider(valueRect, value, 0f, 100f)
-                : GUI.HorizontalSlider(valueRect, value, 0f, 100f);
+            if (valueRect.width >= SliderWithNumberWidth)
+            {
+                var (slider, number) = valueRect.SplitRight(SliderNumberWidth);
+                value = GUI.HorizontalSlider(slider, value, 0f, 100f);
+                value = Mathf.Clamp(EditorGUI.FloatField(number, value), 0f, 100f);
+            }
+            else
+            {
+                value = GUI.HorizontalSlider(valueRect, value, 0f, 100f);
+            }
             if (EditorGUI.EndChangeCheck()) curve.animationCurveValue = CreateSingleFrameCurve(value);
         }
         else

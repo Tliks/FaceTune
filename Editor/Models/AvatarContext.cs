@@ -110,6 +110,23 @@ internal record AvatarContext(
         return new FallbackSupport(root).GetFaceRenderer();
     }
 
+    public static ImmutableHashSet<string> GetExplicitlyExcludedBlendShapeNames(
+        GameObject root,
+        ComputeContext? context = null)
+    {
+        context ??= ComputeContext.NullContext;
+        using var _ = ListPool<AvatarSettingsComponent>.Get(out var settings);
+        context.GetComponentsInChildren<AvatarSettingsComponent>(root, true, settings);
+        if (settings.FirstOrDefault().DestroyedAsNull() is not { } component)
+            return ImmutableHashSet.Create<string>(StringComparer.Ordinal);
+        return context.Observe(
+                component,
+                value => value.ExcludedBlendShapeNames.ToArray(),
+                (left, right) => left.SequenceEqual(right))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToImmutableHashSet(StringComparer.Ordinal);
+    }
+
     public enum BuildResult
     {
         Success,

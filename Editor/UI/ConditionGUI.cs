@@ -44,6 +44,7 @@ internal sealed class ConditionSelectionDrawer : PropertyDrawer
 internal static class ConditionGUI
 {
     private const int SeparatorFontSize = 8;
+    private const float OrSeparatorLeftOffset = 20f;
     private const float EmptyMessageHeight = 30f;
     private static GUIStyle? _separatorStyle;
     private static GUIStyle SeparatorStyle => _separatorStyle ??= new GUIStyle(EditorStyles.miniLabel)
@@ -58,7 +59,10 @@ internal static class ConditionGUI
         EmptyContentHeight: EmptyMessageHeight,
         DrawEmptyOverride: DrawEmptyMessage,
         InitializeElement: element => element.CopyFrom(new ConditionCase()),
-        DrawElementSeparator: rect => DrawSeparator(rect, "condition.or.label".LG()),
+        DrawElementSeparator: rect => DrawSeparatorAt(
+            rect.x - OrSeparatorLeftOffset,
+            rect.y,
+            "condition.or.label".LG()),
         Controls: ReorderableListOptions.ControlsPlacement.Manual);
 
     internal static float GetHeight(SerializedProperty condition, bool drawControls)
@@ -81,9 +85,6 @@ internal static class ConditionGUI
         position.height = GUIHelper.GetListHeight(cases, CasesOptions);
         GUIHelper.DrawList(position, cases, GUIContent.none, CasesOptions);
     }
-
-    internal static void DrawSeparator(Rect boundary, GUIContent label)
-        => DrawSeparator(boundary.x, boundary.y, boundary.width, label);
 
     internal static float GetSeparatorWidth(GUIContent label)
         => SeparatorStyle.CalcSize(label).x;
