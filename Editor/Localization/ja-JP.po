@@ -1030,4 +1030,248 @@ msgstr "既存"
 msgid "menu.selectedValue.label"
 msgstr "選択時の値"
 
+# FaceTune Window
+msgid "window.avatar.label"
+msgstr "対象アバター"
+
+msgid "window.avatarMissing.message"
+msgstr "アバターを右クリックし、GameObject/FaceTune/Windowから開き直してください。"
+
+msgid "window.home.button"
+msgstr "ホーム"
+
+msgid "window.home.title"
+msgstr "FaceTune"
+
+msgid "window.home.description"
+msgstr "このアバターで行う操作を選択してください。"
+
+msgid "window.open.button"
+msgstr "開く"
+
+msgid "window.recommended.badge"
+msgstr "おすすめ"
+
+msgid "window.standard.title"
+msgstr "標準構成を追加"
+
+msgid "window.standard.description"
+msgstr "FaceTuneで表情を管理するための、推奨される基本構成を追加します。"
+
+msgid "window.standard.introduction"
+msgstr "多くのアバターに適したFaceTuneの標準構成を追加します。"
+
+msgid "window.standard.contents.title"
+msgstr "含まれるもの"
+
+msgid "window.standard.contents.settings"
+msgstr "・顔つきとメニューフォルダーを管理するSettings"
+
+msgid "window.standard.contents.option"
+msgstr "・Lock Facialなどを配置するOption"
+
+msgid "window.standard.contents.default"
+msgstr "・通常時の顔を管理するDefault Expression"
+
+msgid "window.standard.includeDefault.label"
+msgstr "Default Expressionを含める"
+
+msgid "window.standard.default.notice"
+msgstr "Default Expressionは常時有効で、低い優先度の表情制御を置き換えます。"
+
+msgid "window.standard.noDefault.notice"
+msgstr "既存の表情制御を置き換えずに、基本部分だけを追加します。"
+
+msgid "window.standard.existing.warning"
+msgstr "このアバターには標準構成が既に存在する可能性があります。追加するとフォルダーやDefaultが重複することがあります。"
+
+msgid "window.standard.add.button"
+msgstr "標準構成を追加"
+
+msgid "window.add.title"
+msgstr "必要な表情・制御を追加"
+
+msgid "window.add.description"
+msgstr "必要なExpression、ハンドサイン、メニュー制御だけを追加します。"
+
+msgid "window.add.introduction"
+msgstr "FaceTuneは以下の項目を単独でも使用できます。標準構成は必須ではありません。"
+
+msgid "window.add.button"
+msgstr "追加"
+
+msgid "window.category.expression"
+msgstr "表情"
+
+msgid "window.category.pattern"
+msgstr "パターン"
+
+msgid "window.category.control"
+msgstr "制御"
+
+msgid "window.destination.label"
+msgstr "追加先"
+
+msgid "window.recipe.expression.title"
+msgstr "Expression"
+
+msgid "window.recipe.expression.description"
+msgstr "空のExpressionを1つ追加します。顔と発動条件は追加後にInspectorで設定します。"
+
+msgid "window.recipe.handSign.title"
+msgstr "Hand Sign"
+
+msgid "window.recipe.handSign.description"
+msgstr "基本的なハンドサイン用Expressionをまとめて追加します。"
+
+msgid "window.recipe.leftHand.title"
+msgstr "Left Hand"
+
+msgid "window.recipe.leftHand.description"
+msgstr "左手のハンドサインで表情を切り替える構成を追加します。"
+
+msgid "window.recipe.rightHand.title"
+msgstr "Right Hand"
+
+msgid "window.recipe.rightHand.description"
+msgstr "右手のハンドサインで表情を切り替える構成を追加します。"
+
+msgid "window.recipe.leftHandPriority.title"
+msgstr "Left Hand Priority"
+
+msgid "window.recipe.leftHandPriority.description"
+msgstr "両手の入力がある場合に、左手を優先する構成を追加します。"
+
+msgid "window.recipe.rightHandPriority.title"
+msgstr "Right Hand Priority"
+
+msgid "window.recipe.rightHandPriority.description"
+msgstr "両手の入力がある場合に、右手を優先する構成を追加します。"
+
+msgid "window.recipe.blending.title"
+msgstr "Blending"
+
+msgid "window.recipe.blending.description"
+msgstr "左右のハンドサイン表情を重ねて再生する構成を追加します。"
+
+msgid "window.recipe.lockFacial.title"
+msgstr "Lock Facial"
+
+msgid "window.recipe.lockFacial.description"
+msgstr "メニューから表情を固定する制御を追加します。"
+
+msgid "window.recipe.disableEyeBlink.title"
+msgstr "Disable Eye Blink"
+
+msgid "window.recipe.disableEyeBlink.description"
+msgstr "条件成立中にまばたきを停止する制御を追加します。"
+
+msgid "window.recipe.disableLipSync.title"
+msgstr "Disable Lip Sync"
+
+msgid "window.recipe.disableLipSync.description"
+msgstr "条件成立中にリップシンクを停止する制御を追加します。"
+
+msgid "window.recipe.mmdSupport.title"
+msgstr "MMD Support"
+
+msgid "window.recipe.mmdSupport.description"
+msgstr "MMDワールド向けの表情制御を追加します。"
+
+msgid "window.import.title"
+msgstr "既存の表情制御を取り込む"
+
+msgid "window.import.description"
+msgstr "Animator Controller、AnimationClip、旧バージョン、対応ツールなどからFaceTuneの設定を作成します。"
+
+msgid "window.import.introduction"
+msgstr "取り込み元を選択してください。明記されていない限り、元の設定は変更されません。"
+
+msgid "window.import.none.badge"
+msgstr "取り込み元なし"
+
+msgid "window.import.none.message"
+msgstr "このアバターで利用できるImporterはありません。"
+
+msgid "window.import.changeSource.button"
+msgstr "取り込み元を選び直す"
+
+msgid "window.import.foundation.title"
+msgstr "FaceTuneの基本構成"
+
+msgid "window.import.foundation.existing"
+msgstr "既存のFaceTune標準構成へ、取り込んだ内容を追加します。"
+
+msgid "window.import.foundation.addStandard.label"
+msgstr "標準構成も追加する"
+
+msgid "window.import.foundation.addStandard.description"
+msgstr "Settings、Option、必要に応じてDefault Expressionを追加し、その中へ取り込んだ内容を配置します。"
+
+msgid "window.import.foundation.contentOnly.description"
+msgstr "取り込んだ内容だけを追加します。既存制御へのちょい足しに適しています。"
+
+msgid "window.import.sourceUnchanged.notice"
+msgstr "取り込み元は削除・無効化されません。元の制御とFaceTuneを両方残す場合は、競合がないことを確認してください。"
+
+msgid "window.import.button"
+msgstr "取り込む"
+
+msgid "window.import.avatarInvalid.message"
+msgstr "このアバターの顔Rendererまたは顔Meshを特定できませんでした。"
+
+msgid "window.import.vrchatAnimator.title"
+msgstr "VRChat FX Animator Controller"
+
+msgid "window.import.vrchatAnimator.description"
+msgstr "VRChatのFX Animator Controllerにある表情Animationと条件からExpressionを作成します。"
+
+msgid "window.import.controller.label"
+msgstr "Controller"
+
+msgid "window.import.controller.empty"
+msgstr "取り込むAnimator Controllerを選択してください。"
+
+msgid "window.result.title"
+msgstr "完了"
+
+msgid "window.result.default"
+msgstr "処理が完了しました。"
+
+msgid "window.result.standard.title"
+msgstr "標準構成を追加しました。"
+
+msgid "window.result.standard.guide"
+msgstr "Defaultを選択し、Inspectorの「表情」で通常時の顔を設定してください。必要な表情や制御は、このWindowから追加できます。"
+
+msgid "window.result.standardWithoutDefault.guide"
+msgstr "Default Expressionを含めずに基本部分を追加しました。この構成だけでは既存の表情制御を置き換えません。"
+
+msgid "window.result.recipe.title"
+msgstr "項目を追加しました。"
+
+msgid "window.result.expression.guide"
+msgstr "Inspectorの「表情」で顔を設定し、「条件」または「ダイレクトメニュー」を有効にして発動方法を設定してください。"
+
+msgid "window.result.pattern.guide"
+msgstr "生成された各Expressionを選択し、Inspectorで顔を設定してください。ハンドサインの構成は設定済みです。"
+
+msgid "window.result.control.guide"
+msgstr "Inspectorで発動条件とメニュー設定を確認してください。"
+
+msgid "window.result.import.title"
+msgstr "内容を取り込みました。"
+
+msgid "window.result.animatorImport.guide"
+msgstr "取り込んだExpressionと条件を確認してください。元のAnimator Controllerは変更されていないため、FaceTuneの制御と競合しないことを確認してください。"
+
+msgid "window.result.created.label"
+msgstr "作成したもの"
+
+msgid "window.result.select.button"
+msgstr "作成したObjectを選択"
+
+msgid "window.result.addAnother.button"
+msgstr "続けて追加"
+
 

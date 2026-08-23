@@ -127,23 +127,6 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     public IEnumerable<string> GetExternalLipSyncBlendShapeNames()
         => GetLipSyncBlendShapes();
 
-    public AnimatorController? GetAnimatorController()
-    {
-        return _descriptor.baseAnimationLayers
-            .Where(layer => layer.type == VRCAvatarDescriptor.AnimLayerType.FX)
-            .Select(layer => layer.animatorController)
-            .OfType<AnimatorController>()
-            .FirstOrDefault();
-    }
-
-    public void ImportAnimatorController(
-        AvatarContext context,
-        AnimatorController controller,
-        GameObject parent)
-    {
-        new AnimatorControllerImporter(context, controller, this).Import(parent);
-    }
-
     private static DnfCondition HandRule(
         string parameterName,
         bool equal,

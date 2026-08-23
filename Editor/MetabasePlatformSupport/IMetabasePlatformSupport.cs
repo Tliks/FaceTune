@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Build;
-using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Platforms;
 
@@ -43,17 +42,4 @@ internal interface IMetabasePlatformSupport
     string? ResolveGestureParameter(Hand hand);
 
     string? ResolveGestureWeightParameter(Hand hand);
-
-    AnimatorController? GetAnimatorController()
-    {
-        return null;
-    }
-
-    void ImportAnimatorController(
-        AvatarContext context,
-        AnimatorController controller,
-        GameObject parent)
-    {
-        throw new NotSupportedException("Animator controller import is not supported on this platform.");
-    }
 }
