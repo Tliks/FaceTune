@@ -10,6 +10,8 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
     private static readonly Dictionary<SkinnedMeshRenderer, BlendShapePreviewNode> _currentNodes = new();
     private static readonly Dictionary<SkinnedMeshRenderer, DirectPreviewState> _directStates = new();
 
+    private static readonly PublishedValue<int> _instaciatingTrigger = new(0, $"{nameof(DirectBlendShapePreview<TFilter>)}.{nameof(_instaciatingTrigger)}");
+
     /// <summary>
     ///  現在のNodeの内容を直接置き換える。
     /// </summary>
@@ -25,6 +27,10 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         {
             node.SetDirectly(state.Set, state.DefaultValue);
         }
+        else
+        {
+            RequestInstantiate();
+        }
     }
 
     protected internal static void ClearCurrentNodeDirectly(SkinnedMeshRenderer renderer)
@@ -34,6 +40,10 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         if (TryGetNode(renderer, out var node))
         {
             node.SetDirectly(DirectPreviewState.Empty.Set, DirectPreviewState.Empty.DefaultValue);
+        }
+        else
+        {
+            RequestInstantiate();
         }
     }
 
@@ -79,6 +89,8 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         if (pair.Item1 is not SkinnedMeshRenderer original) throw new Exception("SkinnedMeshRenderer not found");
         if (pair.Item2 is not SkinnedMeshRenderer proxy) throw new Exception("SkinnedMeshRenderer not found");
 
+        context.Observe(_instaciatingTrigger, _ => _instaciatingTrigger.Value, (a, b) => a == b);
+
         var state = _directStates.TryGetValue(original, out var directState)
             ? directState
             : DirectPreviewState.Empty;
@@ -87,6 +99,11 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         _currentNodes[original] = node;
 
         return Task.FromResult<IRenderFilterNode>(node);
+    }
+
+    private static void RequestInstantiate()
+    {
+        _instaciatingTrigger.Value++;
     }
 
     private sealed class DirectPreviewState

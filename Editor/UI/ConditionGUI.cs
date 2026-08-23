@@ -251,10 +251,7 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
         var gesture = property.FindPropertyRelative(nameof(HandGestureCondition.Gesture));
         var matches = property.FindPropertyRelative(nameof(HandGestureCondition.Matches));
         var matchOptions = new[] { "condition.hand.matches.label".LG(), "condition.hand.doesNotMatch.label".LG() };
-        var handWidth = GUIHelper.LocalizedEnumPopupWidth(hand, nameof(HandGestureHand));
-        var gestureWidth = GUIHelper.LocalizedEnumPopupWidth(gesture, nameof(HandGesture));
-        var matchesWidth = GUIHelper.PopupWidth(matchOptions);
-        var fields = position.FlexHorizontal(handWidth, gestureWidth, matchesWidth);
+        var fields = position.FlexHorizontal(1f, 1f, 1f);
         var handRect = fields[0];
         var gestureRect = fields[1];
         var matchesRect = fields[2];

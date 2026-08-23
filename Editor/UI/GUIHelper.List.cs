@@ -79,7 +79,7 @@ internal static partial class GUIHelper
     {
         options ??= new ReorderableListOptions();
         var state = GetState(property);
-        var list = CreateList(property, state, options);
+        var list = GetList(property, state, options);
 
         var bodyY = position.y;
         var hasHeader = options.Header != ReorderableListOptions.HeaderMode.None;
@@ -128,7 +128,8 @@ internal static partial class GUIHelper
         {
             var view = new Rect(0f, 0f, Mathf.Max(0f, body.width - 16f), fullHeight);
             state.Scroll = GUI.BeginScrollView(body, state.Scroll, view, false, true);
-            list.DoList(view);
+            var visibleRect = new Rect(state.Scroll.x, state.Scroll.y, body.width, body.height);
+            list.DoList(view, visibleRect);
             GUI.EndScrollView();
         }
         else
@@ -171,7 +172,7 @@ internal static partial class GUIHelper
         var state = GetState(property);
         if (options.Header == ReorderableListOptions.HeaderMode.Foldout && !state.Foldout.Expanded)
             return headerHeight;
-        var list = CreateList(property, state, options);
+        var list = GetList(property, state, options);
         var listHeight = property.arraySize == 0 ? 0f : list.GetHeight();
         if (options.MaxVisibleHeight.HasValue) listHeight = Mathf.Min(listHeight, options.MaxVisibleHeight.Value);
         var emptyHeight = property.arraySize == 0
@@ -210,14 +211,24 @@ internal static partial class GUIHelper
         return height;
     }
 
-    private static ReorderableList CreateList(SerializedProperty property, State state, ReorderableListOptions options)
+    private static ReorderableList GetList(SerializedProperty property, State state, ReorderableListOptions options)
     {
-        var list = new ReorderableList(property.serializedObject, property.Copy(), true, false, false, false)
+        var serializedObject = property.serializedObject;
+        if (!ReferenceEquals(state.ListSerializedObject, serializedObject))
         {
-            headerHeight = 0f,
-            footerHeight = 0f,
-            index = Mathf.Min(state.Index, property.arraySize - 1)
-        };
+            state.List = new ReorderableList(
+                serializedObject,
+                property.Copy(),
+                true,
+                false,
+                false,
+                false);
+            state.ListSerializedObject = serializedObject;
+        }
+        var list = state.List!;
+        list.headerHeight = 0f;
+        list.footerHeight = 0f;
+        list.index = Mathf.Min(state.Index, property.arraySize - 1);
         list.drawFooterCallback = _ => { };
         list.drawElementCallback = (rect, index, _, _) =>
         {
@@ -368,7 +379,8 @@ internal static partial class GUIHelper
     public static void DrawListControls(Rect position, SerializedProperty property, ReorderableListOptions? options = null)
     {
         options ??= new ReorderableListOptions();
-        var list = CreateList(property, GetState(property), options);
+        var state = GetState(property);
+        var list = GetList(property, state, options);
         DrawControls(position, _ => { }, property, list, options);
     }
 
@@ -463,6 +475,8 @@ internal static partial class GUIHelper
 
     private sealed class State
     {
+        public ReorderableList? List;
+        public SerializedObject? ListSerializedObject;
         public Vector2 Scroll;
         public int Index = -1;
         public FoldoutState Foldout { get; } = new(true);

@@ -477,14 +477,18 @@ msgstr "Blend Shapes"
 msgid "expression.behavior.section.label"
 msgstr "Expression Settings"
 
+
 msgid "expression.application.label"
-msgstr "Lower Expressions"
+msgstr "Write Scope"
+
+msgid "expression.application.tooltip"
+msgstr "Specifies the range this expression writes to. \"Entire Expression\" writes the configured blend shapes and sets the rest to 0. \"Specified Parts Only\" writes only the configured blend shapes and leaves all other values untouched. Expressions lower in the hierarchy usually take precedence."
 
 msgid "expression.application.replace.label"
-msgstr "Replace"
+msgstr "Entire Expression"
 
 msgid "expression.application.blend.label"
-msgstr "Blend (Advanced)"
+msgstr "Specified Parts Only (Advanced)"
 
 msgid "expression.clip.import.button"
 msgstr "↓"
@@ -1001,3 +1005,5 @@ msgstr "Existing"
 
 msgid "menu.selectedValue.label"
 msgstr "Selected Value"
+
+

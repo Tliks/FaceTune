@@ -40,9 +40,9 @@ namespace Aoyon.FaceTune
         public bool HasPriority = false;
         public PrioritySettings Priority = new();
 
+
         internal static Condition CreateDefaultCondition()
             => new(new ConditionCase());
-
 
         IEnumerable<Condition> IHasConditions.Conditions
             => HasCondition

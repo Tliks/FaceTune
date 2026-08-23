@@ -76,7 +76,11 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             spacingGroup: 2);
 
     private FaceTuneSection CreatePreviewSection()
-        => CreateSection("expression.previewSettings.section.label", new PreviewSettingsSectionDrawer(serializedObject), false, spacingGroup: 2);
+        => CreateSection(
+            "expression.previewSettings.section.label",
+            new PreviewSettingsSectionDrawer(serializedObject),
+            serializedObject.FindProperty(nameof(ExpressionComponent.AlwaysOnPreviewEnabled)).boolValue,
+            spacingGroup: 2);
 
     private ExpressionSettingsInheritance Inheritance
         => _inheritance ??= new ExpressionSettingsInheritance(Component, targets.Length == 1);
@@ -533,9 +537,10 @@ internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer
 
     public void Draw(Rect position)
     {
+        GUIHelper.LocalizedEnumPopup(position, _writeMode, "expression.application.label", new[] { "expression.application.replace.label", "expression.application.blend.label" });
+        position.NewLine();
         GUIHelper.DrawLocalizedEnum(ref position, _eyeBlink, "facialSettings.allowEyeBlink.label", nameof(TrackingPermission));
         GUIHelper.DrawLocalizedEnum(ref position, _lipSync, "facialSettings.allowLipSync.label", nameof(TrackingPermission));
-        GUIHelper.LocalizedEnumPopup(position, _writeMode, "expression.application.label", new[] { "expression.application.replace.label", "expression.application.blend.label" });
     }
 }
 

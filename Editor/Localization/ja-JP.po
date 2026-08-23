@@ -477,14 +477,18 @@ msgstr "ブレンドシェイプ"
 msgid "expression.behavior.section.label"
 msgstr "表情設定"
 
+
 msgid "expression.application.label"
-msgstr "下位の表情"
+msgstr "適用範囲"
+
+msgid "expression.application.tooltip"
+msgstr "この表情が書き込む範囲を指定します。「表情全体」は指定したブレンドシェイプを書き込み、それ以外を0にします。「指定部分のみ」は指定したブレンドシェイプだけを書き込み、その他の値には触れません。通常はヒエラルキーで下の表情ほど優先されます。"
 
 msgid "expression.application.replace.label"
-msgstr "置き換え"
+msgstr "表情全体"
 
 msgid "expression.application.blend.label"
-msgstr "重ねる（高度）"
+msgstr "指定部分のみ（高度）"
 
 msgid "expression.clip.import.button"
 msgstr "↓"
@@ -931,10 +935,10 @@ msgid "settings.priority.section.label"
 msgstr "優先度を一括変更"
 
 msgid "settings.expressionSet.section.label"
-msgstr "表情セットにする"
+msgstr "表情セットを設定"
 
 msgid "settings.addCondition.section.label"
-msgstr "条件を一括追加する"
+msgstr "条件を一括追加"
 
 msgid "settings.add.label"
 msgstr "設定を追加"
@@ -1001,3 +1005,5 @@ msgstr "既存"
 
 msgid "menu.selectedValue.label"
 msgstr "選択時の値"
+
+

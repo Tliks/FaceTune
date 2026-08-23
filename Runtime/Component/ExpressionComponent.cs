@@ -48,6 +48,7 @@ namespace Aoyon.FaceTune
         [ToggleLeft]
         public bool AlwaysOnPreviewEnabled = false;
 
+
         internal static DirectMenuSettings CreateDefaultDirectMenuSettings()
         {
             var settings = new DirectMenuSettings();
@@ -61,7 +62,6 @@ namespace Aoyon.FaceTune
                 Condition = new Condition(
                     ConditionCase.From(new HandGestureCondition()))
             };
-
 
         IEnumerable<Condition> IHasConditions.Conditions
             => HasCondition && Condition.Mode == ConditionSelection.Kind.Conditional

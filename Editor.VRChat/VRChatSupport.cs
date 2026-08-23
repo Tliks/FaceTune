@@ -74,7 +74,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             if (!string.Equals(child.name, name, comparison)) continue;
             if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
             {
-                return renderer.DestroyedAsNull();
+                return renderer;
             }
         }
 
@@ -125,7 +125,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     {
         var names = new HashSet<string>();
         names.UnionWith(GetLipSyncBlendShapes());
-        names.UnionWith(GetBlinkBlendShapes());
+        // names.UnionWith(GetBlinkBlendShapes());
         return names;
     }
 
@@ -135,8 +135,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .Where(layer => layer.type == VRCAvatarDescriptor.AnimLayerType.FX)
             .Select(layer => layer.animatorController)
             .OfType<AnimatorController>()
-            .FirstOrDefault()
-            .DestroyedAsNull();
+            .FirstOrDefault();
     }
 
     public void ImportAnimatorController(

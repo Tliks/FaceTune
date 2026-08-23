@@ -48,8 +48,7 @@ internal static class FacialDataGUI
     {
         var animations = source.Direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
         return GUIHelper.GetListHeight(animations, AnimationListOptions)
-             + GUIHelper.VerticalSpacing
-             + GUIHelper.LineHeight;
+             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
     }
 
     private static void DrawDirect(
