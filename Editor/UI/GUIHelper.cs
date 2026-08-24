@@ -38,7 +38,7 @@ internal static partial class GUIHelper
         return rect;
     }
 
-    public static Rect Indent(this ref Rect rect, int count = 1)
+    public static Rect Indent(this ref Rect rect, float count = 1f)
     {
         var offset = IndentWidth * count;
         rect.x += offset;
@@ -577,11 +577,16 @@ internal static partial class GUIHelper
     public static void CompactHeaderValue(
         Rect position,
         GUIContent value,
-        bool mixed = false)
+        bool mixed = false,
+        bool centered = false)
     {
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = mixed;
-        GUI.Label(position, value, GUIStyles.SectionHeaderPopupLabel);
+        if (centered) position.width = Mathf.Max(0f, position.width - CompactPopupTrailingWidth);
+        GUI.Label(
+            position,
+            value,
+            centered ? GUIStyles.SectionHeaderPopupCenteredLabel : GUIStyles.SectionHeaderPopupLabel);
         EditorGUI.showMixedValue = previousMixed;
     }
 
@@ -592,10 +597,11 @@ internal static partial class GUIHelper
         int selectedIndex,
         Action<int> select,
         bool mixed = false,
-        int separatorBefore = -1)
+        int separatorBefore = -1,
+        bool centered = false)
     {
         var opened = GUI.Button(position, GUIContent.none, GUIStyle.none);
-        CompactHeaderValue(position, current, mixed);
+        CompactHeaderValue(position, current, mixed, centered);
         DrawCompactPopupArrow(position);
         if (!opened) return;
 

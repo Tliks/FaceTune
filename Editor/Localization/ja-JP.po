@@ -388,7 +388,7 @@ msgid "expression.facialSettings.section.label"
 msgstr "表情設定"
 
 msgid "expression.additionalAnimations.section.label"
-msgstr "表情以外"
+msgstr "表情外アニメーション"
 
 msgid "expression.additionalAnimations.clips.label"
 msgstr "アニメーションクリップ"
@@ -397,7 +397,7 @@ msgid "expression.additionalAnimations.transforms.label"
 msgstr "トランスフォーム"
 
 msgid "expression.animationSettings.section.label"
-msgstr "アニメーション設定"
+msgstr "マルチフレーム設定"
 
 msgid "menuIcon.none.label"
 msgstr "なし"
@@ -635,13 +635,13 @@ msgid "style.otherStyle.label"
 msgstr "他の顔つきを使用"
 
 msgid "settingsReferenceMode.option.direct"
-msgstr "直接：ここで設定"
+msgstr "この表情で設定"
 
 msgid "settingsReferenceMode.option.reference"
-msgstr "参照：他の設定を使用"
+msgstr "他の設定を使用"
 
 msgid "settingsReferenceMode.short.direct"
-msgstr "直接"
+msgstr "標準"
 
 msgid "settingsReferenceMode.short.reference"
 msgstr "参照"
@@ -652,17 +652,23 @@ msgstr "標準"
 msgid "expression.settingSource.short.batch"
 msgstr "一括"
 
+msgid "expression.settingSource.short.setting"
+msgstr "設定"
+
+msgid "expression.settingSource.short.reference"
+msgstr "参照"
+
 msgid "expression.settingSource.option.standard"
-msgstr "標準：標準の動作を使用"
+msgstr "標準設定を使用"
 
 msgid "expression.settingSource.option.batch"
-msgstr "一括：親の一括設定を使用"
+msgstr "親の一括設定を使用"
 
 msgid "expression.settingSource.option.direct"
-msgstr "直接：この表情で設定"
+msgstr "この表情で設定"
 
 msgid "expression.settingSource.option.reference"
-msgstr "参照：別の設定を使用"
+msgstr "他の設定を使用"
 
 msgid "expression.realTimePreview.label"
 msgstr "この表情を常にプレビュー"

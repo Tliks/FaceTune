@@ -388,7 +388,7 @@ msgid "expression.facialSettings.section.label"
 msgstr "Facial Settings"
 
 msgid "expression.additionalAnimations.section.label"
-msgstr "Non-Facial Animations"
+msgstr "Non-Facial Animation"
 
 msgid "expression.additionalAnimations.clips.label"
 msgstr "Animation Clips"
@@ -397,7 +397,7 @@ msgid "expression.additionalAnimations.transforms.label"
 msgstr "Transforms"
 
 msgid "expression.animationSettings.section.label"
-msgstr "Animation Settings"
+msgstr "Multi-Frame Settings"
 
 msgid "menuIcon.none.label"
 msgstr "None"
@@ -635,13 +635,13 @@ msgid "style.otherStyle.label"
 msgstr "Use Another Facial Style"
 
 msgid "settingsReferenceMode.option.direct"
-msgstr "Direct: Configure Here"
+msgstr "Set for This Expression"
 
 msgid "settingsReferenceMode.option.reference"
-msgstr "Reference: Use Other Settings"
+msgstr "Use Other Settings"
 
 msgid "settingsReferenceMode.short.direct"
-msgstr "Direct"
+msgstr "Standard"
 
 msgid "settingsReferenceMode.short.reference"
 msgstr "Reference"
@@ -650,19 +650,25 @@ msgid "expression.settingSource.short.standard"
 msgstr "Standard"
 
 msgid "expression.settingSource.short.batch"
-msgstr "Global"
+msgstr "Batch"
+
+msgid "expression.settingSource.short.setting"
+msgstr "Set"
+
+msgid "expression.settingSource.short.reference"
+msgstr "Reference"
 
 msgid "expression.settingSource.option.standard"
-msgstr "Standard: Use Standard Behavior"
+msgstr "Use Standard Settings"
 
 msgid "expression.settingSource.option.batch"
-msgstr "Batch: Use Parent Batch Settings"
+msgstr "Use Parent Batch Settings"
 
 msgid "expression.settingSource.option.direct"
-msgstr "Direct: Configure for This Expression"
+msgstr "Set for This Expression"
 
 msgid "expression.settingSource.option.reference"
-msgstr "Reference: Use Different Settings"
+msgstr "Use Other Settings"
 
 msgid "expression.realTimePreview.label"
 msgstr "Always Preview This Expression"
