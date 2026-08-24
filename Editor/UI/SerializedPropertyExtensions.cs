@@ -18,6 +18,84 @@ internal static class SerializedPropertyExtensions
             property.managedReferenceValue = null;
     }
 
+    /// <summary>
+    /// Merges values into an array by key. Existing elements retain their indices;
+    /// unmatched values are appended in source order.
+    /// </summary>
+    internal static void MergeArrayByKey<T>(
+        this SerializedProperty property,
+        IEnumerable<T> values,
+        Func<SerializedProperty, string> getPropertyKey,
+        Func<T, string> getValueKey,
+        Action<SerializedProperty, T> copyValue,
+        bool overwrite = false)
+        => UpdateArrayByKey(property, values, getPropertyKey, getValueKey, copyValue, overwrite, false);
+
+    /// <summary>
+    /// Synchronizes an array by key while retaining surviving elements in their current order.
+    /// Removed elements are deleted and new elements are appended in source order.
+    /// </summary>
+    internal static void SynchronizeArrayByKey<T>(
+        this SerializedProperty property,
+        IEnumerable<T> values,
+        Func<SerializedProperty, string> getPropertyKey,
+        Func<T, string> getValueKey,
+        Action<SerializedProperty, T> copyValue,
+        bool overwrite = false)
+        => UpdateArrayByKey(property, values, getPropertyKey, getValueKey, copyValue, overwrite, true);
+
+    private static void UpdateArrayByKey<T>(
+        SerializedProperty property,
+        IEnumerable<T> values,
+        Func<SerializedProperty, string> getPropertyKey,
+        Func<T, string> getValueKey,
+        Action<SerializedProperty, T> copyValue,
+        bool overwrite,
+        bool removeMissing)
+    {
+        var orderedValues = new List<T>();
+        var valuesByKey = new Dictionary<string, T>(StringComparer.Ordinal);
+        foreach (var value in values)
+        {
+            var key = getValueKey(value);
+            if (!valuesByKey.TryAdd(key, value)) continue;
+            orderedValues.Add(value);
+        }
+
+        if (removeMissing)
+        {
+            var retainedKeys = new HashSet<string>(StringComparer.Ordinal);
+            var removedIndices = new List<int>();
+            for (var index = 0; index < property.arraySize; index++)
+            {
+                var key = getPropertyKey(property.GetArrayElementAtIndex(index));
+                if (valuesByKey.ContainsKey(key) && retainedKeys.Add(key)) continue;
+                removedIndices.Add(index);
+            }
+            for (var index = removedIndices.Count - 1; index >= 0; index--)
+                property.DeleteArrayElementAtIndex(removedIndices[index]);
+        }
+
+        var indicesByKey = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var index = 0; index < property.arraySize; index++)
+            indicesByKey.TryAdd(getPropertyKey(property.GetArrayElementAtIndex(index)), index);
+
+        foreach (var value in orderedValues)
+        {
+            var key = getValueKey(value);
+            if (indicesByKey.TryGetValue(key, out var existingIndex))
+            {
+                if (overwrite) copyValue(property.GetArrayElementAtIndex(existingIndex), value);
+                continue;
+            }
+
+            var index = property.arraySize;
+            property.InsertArrayElementAtIndex(index);
+            copyValue(property.GetArrayElementAtIndex(index), value);
+            indicesByKey.Add(key, index);
+        }
+    }
+
     private static void CopyValue(SerializedProperty property, object source)
     {
         if (property.isArray && property.propertyType != SerializedPropertyType.String)
@@ -35,10 +113,12 @@ internal static class SerializedPropertyExtensions
                 case SerializedPropertyType.Boolean: property.boolValue = (bool)source; break;
                 case SerializedPropertyType.Float: property.floatValue = Convert.ToSingle(source); break;
                 case SerializedPropertyType.String: property.stringValue = source.ToString(); break;
-                case SerializedPropertyType.Enum: property.enumValueFlag = Convert.ToInt32(source); break;
+                case SerializedPropertyType.Enum: property.intValue = Convert.ToInt32(source); break;
                 case SerializedPropertyType.ObjectReference: property.objectReferenceValue = source as Object; break;
                 case SerializedPropertyType.ManagedReference: property.managedReferenceValue = source; break;
                 case SerializedPropertyType.AnimationCurve: property.animationCurveValue = (AnimationCurve)source; break;
+                case SerializedPropertyType.Vector2: property.vector2Value = (Vector2)source; break;
+                case SerializedPropertyType.Vector3: property.vector3Value = (Vector3)source; break;
             }
             return;
         }

@@ -242,7 +242,7 @@ internal class GeneralControls : IDisposable
     {
         var result = new BlendShapeWeightSet();
         clip.GetFirstFrameBlendShapes(_clipImportOption, result, string.Empty);
-        _blendShapeManager.OverrideShapesAndSetWeight(result.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
+        _blendShapeManager.AddShapesWithWeight(result.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
     }
 
     private void UpdateActionButtonStates()

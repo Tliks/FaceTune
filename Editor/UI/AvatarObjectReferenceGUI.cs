@@ -23,12 +23,7 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
         var next = EditorGUI.ObjectField(field, current, typeof(Transform), true) as Transform;
         if (!EditorGUI.EndChangeCheck()) return;
 
-        target.objectReferenceValue = next != null ? next.gameObject : null;
-        path.stringValue = next == null
-            ? string.Empty
-            : next == avatarRoot
-                ? AvatarObjectReference.AvatarRootPath
-                : RuntimeUtil.RelativePath(avatarRoot, next) ?? string.Empty;
+        AvatarObjectReference.Set(property, next != null ? next.gameObject : null);
     }
 
     private static Transform? Resolve(string path, GameObject? target, Transform avatarRoot)
@@ -45,8 +40,8 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
         Transform? result = null;
         foreach (var target in targets)
         {
-            if (target is not Component component) return null;
-            var root = RuntimeUtil.FindAvatarInParents(component.transform);
+            if (target.DestroyedAsNull() is not Component component) return null;
+            var root = RuntimeUtil.FindAvatarInParents(component.transform).DestroyedAsNull();
             if (root == null || result != null && result != root) return null;
             result = root;
         }

@@ -58,8 +58,8 @@ internal record AvatarContext(
         }
 
         SkinnedMeshRenderer? faceRenderer = null;
-        using var _settingsComponents = ListPool<SettingsComponent>.Get(out var settingsComponents);
-        context.GetComponents<SettingsComponent>(root, settingsComponents);
+        using var _settingsComponents = ListPool<AvatarSettingsComponent>.Get(out var settingsComponents);
+        context.GetComponents<AvatarSettingsComponent>(root, settingsComponents);
         if (settingsComponents.Count > 1)
         {
             LocalizedLog.Warning("Log:warning:AvatarContext:MultipleSettingsComponent", null, settingsComponents);
@@ -67,12 +67,10 @@ internal record AvatarContext(
         if (settingsComponents.Count > 0)
         {
             var settingsComponent = settingsComponents[0];
-            var faceObject = settingsComponent.Settings.FaceMeshSelection == FaceMeshSelectionMode.Manual
-                ? context.Observe(
-                    settingsComponent,
-                    c => c.Settings.FaceObjectReference.Get(c),
-                    (a, b) => a == b).DestroyedAsNull()
-                : null;
+            var faceObject = context.Observe(
+                settingsComponent,
+                c => c.FaceObjectReference.Get(c),
+                (a, b) => a == b).DestroyedAsNull();
             faceRenderer = faceObject != null
                 ? context.GetComponent<SkinnedMeshRenderer>(faceObject).DestroyedAsNull()
                 : null;
@@ -104,12 +102,29 @@ internal record AvatarContext(
     {
         var candidates = platformSupports
             .Select(support => support.GetFaceRenderer())
-            .Where(renderer => renderer != null)
+            .SkipDestroyed()
             .Distinct()
             .ToArray();
         if (candidates.Length == 1) return candidates[0];
 
         return new FallbackSupport(root).GetFaceRenderer();
+    }
+
+    public static ImmutableHashSet<string> GetExplicitlyExcludedBlendShapeNames(
+        GameObject root,
+        ComputeContext? context = null)
+    {
+        context ??= ComputeContext.NullContext;
+        using var _ = ListPool<AvatarSettingsComponent>.Get(out var settings);
+        context.GetComponentsInChildren<AvatarSettingsComponent>(root, true, settings);
+        if (settings.FirstOrDefault().DestroyedAsNull() is not { } component)
+            return ImmutableHashSet.Create<string>(StringComparer.Ordinal);
+        return context.Observe(
+                component,
+                value => value.ExcludedBlendShapeNames.ToArray(),
+                (left, right) => left.SequenceEqual(right))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToImmutableHashSet(StringComparer.Ordinal);
     }
 
     public enum BuildResult

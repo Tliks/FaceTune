@@ -5,96 +5,197 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class MenuComponentEditor : FaceTuneSectionEditorBase<MenuComponent>
 {
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
-        => new[] { CreateMenuSection() };
+        => new[]
+        {
+            CreateMenuModeSection(),
+            CreateBasicSettingsSection(),
+            CreateParameterSettingsSection()
+        };
 
-    private FaceTuneSection CreateMenuSection()
-        => CreateSection(
-            "menu.section.label",
-            new MenuSectionDrawer(serializedObject),
-            defaultExpanded: false);
+    private FaceTuneSection CreateMenuModeSection()
+        => CreateSection("menu.mode.section.label", new MenuModeSectionDrawer(serializedObject), true);
+
+    private FaceTuneSection CreateBasicSettingsSection()
+        => CreateSection("menu.basicSettings.section.label", new MenuBasicSettingsSectionDrawer(serializedObject, Component), false);
+
+    private FaceTuneSection CreateParameterSettingsSection()
+    {
+        var kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
+        return CreateSection(
+            "menu.advancedSettings.section.label",
+            new MenuParameterSettingsSectionDrawer(serializedObject, Component),
+            false,
+            isVisible: () => kind.hasMultipleDifferentValues || kind.enumValueIndex != (int)MenuComponent.Kind.Folder);
+    }
 }
 
-internal sealed class MenuSectionDrawer : ISectionDrawer
+internal sealed class MenuModeSectionDrawer : ISectionDrawer
 {
-    private const float ModeSpacing = 10f;
-
-    private readonly PropertiesSectionDrawer _menuSettings;
     private readonly SerializedProperty _kind;
-    private readonly SerializedProperty _group;
-    private readonly SerializedProperty _parameter;
-    private readonly SerializedProperty _floatDefaultValue;
-    private readonly SerializedProperty _defaultSelected;
-    private bool _parameterSettingsExpanded;
 
-    public MenuSectionDrawer(SerializedObject serializedObject)
+    public MenuModeSectionDrawer(SerializedObject serializedObject)
+        => _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
+
+    public float GetHeight() => GUIHelper.LineHeight;
+
+    public void Draw(Rect position)
+        => GUIHelper.LocalizedEnumPopup(
+            position,
+            _kind,
+            "menu.kind.label",
+            new[] { "menu.kind.toggle.label", "menu.kind.radial.label", "menu.kind.folder.label" });
+}
+
+internal sealed class MenuBasicSettingsSectionDrawer : ISectionDrawer
+{
+    private readonly SerializedProperty _menu;
+    private readonly Component _owner;
+
+    public MenuBasicSettingsSectionDrawer(SerializedObject serializedObject, Component owner)
     {
-        _menuSettings = new PropertiesSectionDrawer(
-            new PropertiesSectionDrawer.Entry(
-                serializedObject.FindProperty(nameof(MenuComponent.Menu)),
-                MenuComponent.CreateDefaultMenu()));
-        _kind = serializedObject.FindProperty(nameof(MenuComponent.Kind));
-        _group = serializedObject.FindProperty(nameof(MenuComponent.ExclusiveToggleGroup));
-        _parameter = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
-        _floatDefaultValue = serializedObject.FindProperty(nameof(MenuComponent.FloatDefaultValue));
-        _defaultSelected = serializedObject.FindProperty(nameof(MenuComponent.DefaultSelected));
+        _menu = serializedObject.FindProperty(nameof(MenuComponent.Menu));
+        _owner = owner;
+    }
+
+    public float GetHeight() => MenuSettingsGUI.GetHeight(_menu);
+
+    public void Draw(Rect position)
+        => MenuSettingsGUI.Draw(position, _menu, _owner, "menu.name.label");
+}
+
+internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
+{
+    private readonly Component _owner;
+    private readonly SerializedProperty _kind;
+    private readonly SerializedProperty _useExistingParameter;
+    private readonly SerializedProperty _generateParameterGroup;
+    private readonly SerializedProperty _parameterName;
+    private readonly SerializedProperty _groupName;
+    private readonly SerializedProperty _synced;
+    private readonly SerializedProperty _saved;
+    private readonly SerializedProperty _initialValue;
+    private readonly SerializedProperty _selectedValue;
+
+    public MenuParameterSettingsSectionDrawer(SerializedObject serializedObject, Component owner)
+    {
+        _owner = owner;
+        _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
+        _useExistingParameter = serializedObject.FindProperty(nameof(MenuComponent.UseExistingParameter));
+        _generateParameterGroup = serializedObject.FindProperty(nameof(MenuComponent.GenerateParameterGroup));
+        _parameterName = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
+        _groupName = serializedObject.FindProperty(nameof(MenuComponent.GroupName));
+        _synced = serializedObject.FindProperty(nameof(MenuComponent.Synced));
+        _saved = serializedObject.FindProperty(nameof(MenuComponent.Saved));
+        _initialValue = serializedObject.FindProperty(nameof(MenuComponent.DefaultValue));
+        _selectedValue = serializedObject.FindProperty(nameof(MenuComponent.SelectedValue));
     }
 
     public float GetHeight()
     {
-        var height = _menuSettings.GetHeight() + ModeSpacing + GUIHelper.PropertyHeight(_kind) + GUIHelper.LineHeight;
-        if (!_parameterSettingsExpanded) return height;
-
-        var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
-        var isToggle = IsMode((int)MenuItemKind.Toggle);
-        var isFloat = IsMode((int)MenuItemKind.Radial);
-        var parameterVisible = !IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue);
-        var childHeight = 0f;
-        var childCount = 0;
-        if (isToggle) { childHeight += EditorGUI.GetPropertyHeight(_group, true); childCount++; }
-        if (parameterVisible) { childHeight += GUIHelper.LineHeight; childCount++; }
-        if (isFloat) { childHeight += EditorGUI.GetPropertyHeight(_floatDefaultValue, true); childCount++; }
-        if (isToggle) { childHeight += EditorGUI.GetPropertyHeight(_defaultSelected, true); childCount++; }
-        return height + GUIHelper.VerticalSpacing + childHeight + GUIHelper.VerticalSpacing * Mathf.Max(0, childCount - 1);
+        var rows = 1;
+        if (!IsExisting && IsToggle) rows++;
+        if (!IsGroup) rows++;
+        if (!IsExisting) rows += IsGroup ? 1 : 3;
+        if (IsToggle && !IsGroup) rows++;
+        return GUIHelper.GetLinesHeight(rows);
     }
 
     public void Draw(Rect position)
     {
-        _menuSettings.Draw(position);
-        position.y += _menuSettings.GetHeight() + ModeSpacing;
-        GUIHelper.DrawProperty(ref position, _kind, "menu.mode.label");
-        position.height = GUIHelper.LineHeight;
-        _parameterSettingsExpanded = GUIHelper.DrawFoldout(position, _parameterSettingsExpanded, "menu.options.label".LG());
-        if (!_parameterSettingsExpanded) return;
+        if (!IsToggle && !_generateParameterGroup.hasMultipleDifferentValues)
+            _generateParameterGroup.boolValue = false;
 
+        position.SetSingleHeight();
+        if (DrawBinding(position)) return;
         position.NewLine();
-        var groupName = _group.FindPropertyRelative(nameof(ExclusiveToggleGroup.GroupName));
-        var isToggle = IsMode((int)MenuItemKind.Toggle);
-        var isFloat = IsMode((int)MenuItemKind.Radial);
-        if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _group, "menu.group.label");
-        if (!IsMode((int)MenuItemKind.Toggle) || groupName.hasMultipleDifferentValues || string.IsNullOrWhiteSpace(groupName.stringValue))
+
+        var isExisting = IsExisting;
+        var isToggle = IsToggle;
+        var isGroup = IsGroup;
+        if (!isExisting && isToggle)
+        {
+            if (!isGroup && !_groupName.hasMultipleDifferentValues)
+                _groupName.stringValue = string.Empty;
+            var usesGroup = MenuGUI.DrawGroupSelector(
+                position,
+                _groupName,
+                _owner,
+                "menu.group.label".LG());
+            if (usesGroup != isGroup)
+            {
+                _generateParameterGroup.boolValue = usesGroup;
+                return;
+            }
+            position.NewLine();
+        }
+
+        if (!isGroup)
         {
             GUIHelper.DrawPlaceholderTextField(
                 position,
-                _parameter,
+                _parameterName,
                 "menu.parameterName.label".LG(),
-                "menu.parameterName.auto.placeholder".LG(),
-                indentLabel: true);
+                isExisting ? GUIContent.none : "menu.parameterName.auto.placeholder".LG());
             position.NewLine();
         }
-        if (isFloat) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _floatDefaultValue, "menu.floatDefaultValue.label");
-        if (isToggle) GUIHelper.DrawPropertyWithIndentedLabel(ref position, _defaultSelected, "menu.defaultSelected.label");
+
+        if (!isExisting)
+        {
+            if (isToggle)
+                DrawFloatToggle(position, _initialValue, "menu.defaultSelected.label");
+            else
+                EditorGUI.PropertyField(position, _initialValue, "menu.floatDefaultValue.label".LG());
+            position.NewLine();
+            if (!isGroup)
+            {
+                EditorGUI.PropertyField(position, _synced, "menu.parameterSynced.label".LG());
+                position.NewLine();
+                EditorGUI.PropertyField(position, _saved, "menu.parameterSaved.label".LG());
+                position.NewLine();
+            }
+        }
+
+        if (isToggle && !isGroup)
+            DrawFloatToggle(position, _selectedValue, "menu.selectedValue.label");
     }
 
-    public void Reset()
+    private bool DrawBinding(Rect position)
     {
-        _menuSettings.Reset();
-        _kind.CopyFrom(MenuComponent.DefaultKind);
-        _group.CopyFrom(MenuComponent.CreateDefaultExclusiveToggleGroup());
-        _parameter.CopyFrom(MenuComponent.DefaultParameterName);
-        _floatDefaultValue.CopyFrom(MenuComponent.DefaultFloatValue);
-        _defaultSelected.CopyFrom(MenuComponent.DefaultSelectedValue);
-        _parameterSettingsExpanded = false;
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = _useExistingParameter.hasMultipleDifferentValues;
+        var selected = _useExistingParameter.boolValue ? 1 : 0;
+        var next = GUIHelper.LocalizedPopup(
+            position,
+            selected,
+            "menu.binding.label",
+            new[] { "menu.binding.generate.label", "menu.binding.existing.label" });
+        var changed = next != selected;
+        if (changed)
+        {
+            _useExistingParameter.boolValue = next == 1;
+            if (_useExistingParameter.boolValue) _generateParameterGroup.boolValue = false;
+        }
+        EditorGUI.showMixedValue = previousMixed;
+        return changed;
     }
 
-    private bool IsMode(int value) => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == value;
+    private static void DrawFloatToggle(Rect position, SerializedProperty property, string labelKey)
+    {
+        using var scope = new EditorGUI.PropertyScope(position, labelKey.LG(), property);
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
+        var value = !Mathf.Approximately(property.floatValue, 0f);
+        EditorGUI.BeginChangeCheck();
+        var next = EditorGUI.Toggle(position, scope.content, value);
+        if (EditorGUI.EndChangeCheck()) property.floatValue = next ? 1f : 0f;
+        EditorGUI.showMixedValue = previousMixed;
+    }
+
+    private bool IsToggle => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == (int)MenuComponent.Kind.Toggle;
+    private bool IsGroup => IsToggle
+                         && !IsExisting
+                         && (_generateParameterGroup.hasMultipleDifferentValues
+                             || _generateParameterGroup.boolValue);
+    private bool IsExisting => !_useExistingParameter.hasMultipleDifferentValues
+                            && _useExistingParameter.boolValue;
 }

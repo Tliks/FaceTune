@@ -4,12 +4,39 @@ internal interface ISectionDrawer
 {
     float GetHeight();
     void Draw(Rect position);
-    void Reset();
+}
+
+internal interface ISectionHeaderDrawer
+{
+    float GetHeaderWidth();
+    void DrawHeader(Rect position);
+}
+
+internal interface ISectionHeaderMenuDrawer
+{
+    void PopulateHeaderMenu(GenericMenu menu);
+}
+
+internal interface ICollapsedSectionHeaderDrawer : ISectionHeaderDrawer
+{
+    void DrawCollapsedHeader(Rect position);
+}
+
+internal static class SectionHeaderGUI
+{
+    public static Action<Rect>? GetDrawAction(ISectionHeaderDrawer? drawer, bool expanded)
+    {
+        if (drawer == null) return null;
+        if (expanded) return drawer.DrawHeader;
+        return drawer is ICollapsedSectionHeaderDrawer collapsed
+            ? collapsed.DrawCollapsedHeader
+            : null;
+    }
 }
 
 internal sealed class PropertiesSectionDrawer : ISectionDrawer
 {
-    internal readonly record struct Entry(SerializedProperty Property, object? ResetSource, string? LabelKey = null);
+    internal readonly record struct Entry(SerializedProperty Property, string? LabelKey = null);
 
     private readonly Entry[] _entries;
 
@@ -49,11 +76,6 @@ internal sealed class PropertiesSectionDrawer : ISectionDrawer
         }
     }
 
-    public void Reset()
-    {
-        foreach (var entry in _entries)
-            entry.Property.CopyFrom(entry.ResetSource);
-    }
 }
 
 internal sealed record FaceTuneSection(
@@ -62,115 +84,166 @@ internal sealed record FaceTuneSection(
     Action<Rect> DrawContent,
     bool DefaultExpanded,
     SerializedProperty? EnabledProperty = null,
-    Func<GenericMenu>? CreateHeaderMenu = null)
+    Func<GenericMenu>? CreateHeaderMenu = null,
+    ISectionHeaderDrawer? HeaderDrawer = null,
+    Func<bool>? IsVisible = null,
+    int SpacingGroup = 0)
 {
-    public bool Expanded = DefaultExpanded;
+    public FoldoutState Foldout { get; } = new(DefaultExpanded);
+    public bool Visible => IsVisible?.Invoke() ?? true;
 }
 
 internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> where T : FaceTuneTagComponent
 {
     private IReadOnlyList<FaceTuneSection>? _sections;
+    private bool[]? _visibleSections;
 
     protected abstract IReadOnlyList<FaceTuneSection> CreateSections();
 
-    protected virtual float GetAdditionalSectionSpacingBefore(int sectionIndex) => 0f;
+    protected virtual float GetFooterHeight() => 0f;
+
+    protected virtual void DrawFooter(Rect position)
+    {
+    }
 
     protected FaceTuneSection CreateSection(
         string labelKey,
         ISectionDrawer drawer,
         bool defaultExpanded,
         SerializedProperty? enabledProperty = null,
-        Action<GenericMenu>? populateHeaderMenu = null)
+        Action<GenericMenu>? populateHeaderMenu = null,
+        Func<bool>? isVisible = null,
+        int spacingGroup = 0)
         => new(
             () => labelKey.LG(),
             drawer.GetHeight,
             drawer.Draw,
             defaultExpanded,
             enabledProperty,
-            () => CreateHeaderMenu(drawer, populateHeaderMenu));
+            populateHeaderMenu == null ? null : () => CreateHeaderMenu(populateHeaderMenu),
+            drawer as ISectionHeaderDrawer,
+            isVisible,
+            spacingGroup);
 
     protected sealed override float GetInspectorHeight()
     {
         var sections = Sections;
+        if (_visibleSections == null || _visibleSections.Length != sections.Count)
+            _visibleSections = new bool[sections.Count];
+
         var height = 0f;
+        height += HeaderSpacing;
+
+        FaceTuneSection? previous = null;
         for (var i = 0; i < sections.Count; i++)
         {
-            if (i > 0) height += GUIHelper.HeaderSpacing;
-            height += GetAdditionalSectionSpacingBefore(i);
-            height += GetSectionHeight(sections[i]);
+            var section = sections[i];
+            _visibleSections[i] = section.Visible;
+            if (!_visibleSections[i]) continue;
+            if (previous != null)
+            {
+                height += GUIHelper.HeaderSpacing;
+                if (section.SpacingGroup != previous.SpacingGroup) height += SectionGroupSpacing;
+            }
+            height += GetSectionHeight(section);
+            previous = section;
+        }
+        var footerHeight = GetFooterHeight();
+        if (footerHeight > 0f)
+        {
+            if (previous != null) height += SectionGroupSpacing;
+            height += footerHeight;
         }
         return height;
     }
 
     protected sealed override void DrawInspector(Rect position)
     {
+        position.Space(HeaderSpacing);
+
         var sections = Sections;
+        FaceTuneSection? previous = null;
         for (var i = 0; i < sections.Count; i++)
         {
             var section = sections[i];
-            if (i > 0) position.y += GUIHelper.HeaderSpacing;
-            position.y += GetAdditionalSectionSpacingBefore(i);
+            if (_visibleSections == null || !_visibleSections[i]) continue;
+            if (previous != null)
+            {
+                position.y += GUIHelper.HeaderSpacing;
+                if (section.SpacingGroup != previous.SpacingGroup) position.y += SectionGroupSpacing;
+            }
 
             var contentHeight = section.GetContentHeight();
             var sectionPosition = new Rect(
                 position.x,
                 position.y,
                 position.width,
-                GUIHelper.GetShurikenSectionHeight(section.Expanded, contentHeight));
-            var expanded = section.Expanded;
+                GUIHelper.GetShurikenSectionHeight(section.Foldout, contentHeight));
             Rect content;
             bool drawn;
+            var drawHeader = SectionHeaderGUI.GetDrawAction(
+                section.HeaderDrawer,
+                section.Foldout.Expanded);
+            var headerWidth = drawHeader == null
+                ? 0f
+                : section.HeaderDrawer!.GetHeaderWidth();
             if (section.EnabledProperty == null)
             {
                 drawn = GUIHelper.DrawShurikenSection(
                     sectionPosition,
-                    ref expanded,
+                    section.Foldout,
                     section.GetLabel(),
                     contentHeight,
                     out content,
-                    section.CreateHeaderMenu);
+                    section.CreateHeaderMenu,
+                    drawHeader,
+                    headerWidth);
             }
             else
             {
                 drawn = GUIHelper.DrawShurikenToggleSection(
                     sectionPosition,
-                    ref expanded,
+                    section.Foldout,
                     section.EnabledProperty,
                     section.GetLabel(),
                     contentHeight,
                     out content,
-                    section.CreateHeaderMenu);
+                    section.CreateHeaderMenu,
+                    drawHeader,
+                    headerWidth);
             }
             if (drawn)
             {
                 content.height = GUIHelper.LineHeight;
+                using var disabled = new EditorGUI.DisabledScope(
+                    section.EnabledProperty != null
+                    && (!section.EnabledProperty.boolValue || section.EnabledProperty.hasMultipleDifferentValues));
                 section.DrawContent(content);
             }
-            section.Expanded = expanded;
             position.y = sectionPosition.yMax;
+            previous = section;
         }
+
+        var footerHeight = GetFooterHeight();
+        if (footerHeight <= 0f) return;
+        if (previous != null) position.y += SectionGroupSpacing;
+        position.height = footerHeight;
+        DrawFooter(position);
     }
 
-    private GenericMenu CreateHeaderMenu(ISectionDrawer drawer, Action<GenericMenu>? populateHeaderMenu)
+    private static GenericMenu CreateHeaderMenu(Action<GenericMenu> populateHeaderMenu)
     {
         var menu = new GenericMenu();
-        menu.AddItem("section.menu.reset".LG(), false, () =>
-        {
-            serializedObject.UpdateIfRequiredOrScript();
-            drawer.Reset();
-            serializedObject.ApplyModifiedProperties();
-        });
-        if (populateHeaderMenu != null)
-        {
-            menu.AddSeparator(string.Empty);
-            populateHeaderMenu(menu);
-        }
+        populateHeaderMenu(menu);
         return menu;
     }
+
+    private const float HeaderSpacing = 3f;
+    private const float SectionGroupSpacing = 6f;
 
     private IReadOnlyList<FaceTuneSection> Sections
         => _sections ??= CreateSections();
 
     private static float GetSectionHeight(FaceTuneSection section)
-        => GUIHelper.GetShurikenSectionHeight(section.Expanded, section.GetContentHeight());
+        => GUIHelper.GetShurikenSectionHeight(section.Foldout, section.GetContentHeight());
 }

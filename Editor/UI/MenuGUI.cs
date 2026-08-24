@@ -7,17 +7,19 @@ internal static class MenuSettingsGUI
     public static float GetHeight(SerializedProperty settings)
         => GUIHelper.PropertyHeight(settings.FindPropertyRelative(nameof(MenuSettings.MenuName)))
          + GUIHelper.PropertyHeight(settings.FindPropertyRelative(nameof(MenuSettings.Icon)))
-         + GUIHelper.PropertyHeight(settings.FindPropertyRelative(nameof(MenuSettings.InstallSettings)));
+         + EditorGUI.GetPropertyHeight(settings.FindPropertyRelative(nameof(MenuSettings.InstallContainer)), GUIContent.none, true);
 
     public static void Draw(Rect position, SerializedProperty settings, Component? owner, string menuNameLabelKey)
     {
-        MenuGUI.DrawMenuName(
-            ref position,
+        position.height = GUIHelper.LineHeight;
+        GUIHelper.DrawPlaceholderTextField(
+            position,
             settings.FindPropertyRelative(nameof(MenuSettings.MenuName)),
-            owner,
-            menuNameLabelKey.LG());
+            menuNameLabelKey.LG(),
+            new GUIContent(owner.DestroyedAsNull()?.gameObject.name ?? string.Empty));
+        position.NewLine();
         GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.Icon)), "menu.icon.label");
-        GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.InstallSettings)), "menu.destination.label");
+        GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.InstallContainer)), "menu.destination.label");
     }
 }
 
@@ -25,239 +27,226 @@ internal static class MenuSettingsGUI
 internal sealed class MenuSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        => MenuSettingsGUI.Draw(
-            position,
-            property,
-            property.serializedObject.targetObject as Component,
-            GetMenuNameLabelKey(property));
+        => MenuSettingsGUI.Draw(position, property, property.serializedObject.targetObject as Component, GetMenuNameLabelKey(property));
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         => MenuSettingsGUI.GetHeight(property);
 
     private static string GetMenuNameLabelKey(SerializedProperty property)
-        => property.serializedObject.targetObject is MenuFolderComponent
-            ? "menuFolder.name.label"
-            : property.propertyPath.StartsWith(nameof(FaceTuneComponent.DirectMenuSettings))
-                ? "directMenu.menuName.label"
-                : "menu.name.label";
+        => property.propertyPath.StartsWith(nameof(ExpressionComponent.DirectMenuSettings), StringComparison.Ordinal)
+            ? "directMenu.menuName.label"
+            : "menu.name.label";
+}
+
+[CustomPropertyDrawer(typeof(MenuInstallContainerAttribute))]
+internal sealed class MenuInstallContainerDrawer : PropertyDrawer
+{
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        var owner = (property.serializedObject.targetObject as Component).DestroyedAsNull();
+        var destination = FindParentFolder(owner) is { } folder
+            ? EffectiveMenuName(folder)
+            : "menuInstallSettings.root.placeholder".LS();
+        var placeholder = $"{destination} ({"menuInstallSettings.destinationType.placeholder".LS()})";
+        GUIHelper.DrawPlaceholderObjectLikeField(
+            position,
+            property,
+            label,
+            new GUIContent(placeholder),
+            property.objectReferenceValue == null);
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        => GUIHelper.LineHeight;
+
+    private static MenuComponent? FindParentFolder(Component? owner)
+    {
+        owner = owner.DestroyedAsNull();
+        for (var current = owner?.transform.parent; current != null; current = current.parent)
+        {
+            var menu = current.GetComponent<MenuComponent>();
+            if (menu != null && menu.MenuKind == MenuComponent.Kind.Folder) return menu;
+        }
+        return null;
+    }
+
+    private static string EffectiveMenuName(MenuComponent folder)
+        => string.IsNullOrWhiteSpace(folder.Menu.MenuName)
+            ? folder.gameObject.name
+            : folder.Menu.MenuName;
 }
 
 internal static class MenuGUI
 {
-    private static readonly Dictionary<string, bool> NewGroupNameEditingByProperty = new();
-
-    public static void DrawMenuName(
-        ref Rect position,
-        SerializedProperty property,
-        Component? owner,
-        GUIContent label)
+    private static void BeginGroupCreation(SerializedProperty groupName)
     {
-        position.height = GUIHelper.LineHeight;
-        GUIHelper.DrawPlaceholderTextField(
-            position,
-            property,
-            label,
-            new GUIContent(owner != null ? owner.gameObject.name : string.Empty));
-        position.NewLine();
+        groupName.stringValue = string.Empty;
+        var state = GetGroupState(groupName);
+        state.IsCreating = true;
+        state.FocusRequested = true;
     }
 
-    public static void DrawGroupSelector(
-        Rect position,
-        SerializedProperty groupName,
-        Component? owner,
-        GUIContent label)
+    public static bool DrawGroupSelector(Rect position, SerializedProperty groupName, Component? owner, GUIContent label)
     {
         if (groupName.hasMultipleDifferentValues)
         {
             EditorGUI.PropertyField(position, groupName, label);
-            return;
+            return true;
         }
 
-        var stateKey = $"{groupName.serializedObject.targetObject.GetInstanceID()}:{groupName.propertyPath}";
-        if (NewGroupNameEditingByProperty.ContainsKey(stateKey))
+        var state = GetGroupState(groupName);
+        if (state.IsCreating)
         {
-            EditorGUI.BeginChangeCheck();
-            var value = EditorGUI.DelayedTextField(position, label, groupName.stringValue);
-            if (EditorGUI.EndChangeCheck()) groupName.stringValue = value;
-            if (!string.IsNullOrWhiteSpace(groupName.stringValue))
-                NewGroupNameEditingByProperty.Remove(stateKey);
-            return;
+            GUI.SetNextControlName(state.ControlName);
+            groupName.stringValue = EditorGUI.DelayedTextField(position, label, groupName.stringValue);
+            if (!string.IsNullOrWhiteSpace(groupName.stringValue)) state.IsCreating = false;
+
+            var current = Event.current;
+            if (current.type == EventType.KeyDown
+                && current.keyCode == KeyCode.Escape
+                && GUI.GetNameOfFocusedControl() == state.ControlName)
+            {
+                groupName.stringValue = string.Empty;
+                state.IsCreating = false;
+                current.Use();
+            }
+            else if (state.FocusRequested && current.type == EventType.Repaint)
+            {
+                EditorGUI.FocusTextInControl(state.ControlName);
+                state.FocusRequested = false;
+            }
+            else if (!state.FocusRequested
+                     && current.type == EventType.Repaint
+                     && GUI.GetNameOfFocusedControl() != state.ControlName
+                     && string.IsNullOrWhiteSpace(groupName.stringValue))
+            {
+                state.IsCreating = false;
+            }
+            return state.IsCreating || !string.IsNullOrWhiteSpace(groupName.stringValue);
         }
 
         var groups = GetDefinedGroupNames(owner);
+        if (!string.IsNullOrWhiteSpace(groupName.stringValue)
+            && !groups.Contains(groupName.stringValue, StringComparer.Ordinal))
+            groups.Add(groupName.stringValue);
         var currentIndex = groups.IndexOf(groupName.stringValue);
         var options = new GUIContent[groups.Count + 2];
         options[0] = "menu.group.none.label".LG();
         for (var i = 0; i < groups.Count; i++) options[i + 1] = new GUIContent(groups[i]);
         options[^1] = "menu.group.new.label".LG();
-
         var selectedIndex = currentIndex < 0 ? 0 : currentIndex + 1;
         var nextIndex = EditorGUI.Popup(position, label, selectedIndex, options);
-        if (nextIndex == selectedIndex) return;
+        if (nextIndex == selectedIndex) return !string.IsNullOrWhiteSpace(groupName.stringValue);
         if (nextIndex == options.Length - 1)
         {
-            groupName.stringValue = string.Empty;
-            NewGroupNameEditingByProperty[stateKey] = true;
-            GUI.FocusControl(null);
-            return;
+            BeginGroupCreation(groupName);
+            return true;
         }
-
         groupName.stringValue = nextIndex == 0 ? string.Empty : groups[nextIndex - 1];
+        return nextIndex != 0;
     }
 
-    public static void DrawBuiltInGroup(Rect position, GUIContent label, string groupName, Component? owner)
+    private static GroupState GetGroupState(SerializedProperty groupName)
+        => GUIState.Get(groupName, "MenuGroup", () => new GroupState());
+
+    private sealed class GroupState
     {
-        var groups = GetDefinedGroupNames(owner);
-        var options = new GUIContent[groups.Count + 1];
-        options[0] = GetBuiltInGroupLabel(groupName);
-        for (var i = 0; i < groups.Count; i++) options[i + 1] = new GUIContent(groups[i]);
-
-        using var _ = new EditorGUI.DisabledScope(true);
-        EditorGUI.Popup(position, label, 0, options);
+        public readonly string ControlName = $"FaceTuneGroup_{Guid.NewGuid():N}";
+        public bool IsCreating;
+        public bool FocusRequested;
     }
 
-    private static GUIContent GetBuiltInGroupLabel(string groupName)
-        => groupName == BuiltInMenuGroups.DirectMenuReplace
-            ? "menu.group.directMenuReplace.label".LG()
-            : new GUIContent(groupName);
+    public static void DrawBuiltInGroup(Rect position, GUIContent label, string groupName)
+    {
+        using var _ = new EditorGUI.DisabledScope(true);
+        EditorGUI.Popup(position, label, 0, new[] { "menu.group.directMenuReplace.label".LG() });
+    }
 
     private static List<string> GetDefinedGroupNames(Component? owner)
     {
-        if (owner == null) return new();
-        var root = RuntimeUtil.FindAvatarInParents(owner.transform);
+        owner = owner.DestroyedAsNull();
+        var root = owner == null
+            ? null
+            : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
         if (root == null) return new();
-
-        var groups = new HashSet<string>();
-        foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
-        {
-            var groupName = menu.ExclusiveToggleGroup.GroupName;
-            if (!string.IsNullOrWhiteSpace(groupName) && groupName != BuiltInMenuGroups.DirectMenuReplace)
-                groups.Add(groupName);
-        }
-        foreach (var expression in root.GetComponentsInChildren<FaceTuneComponent>(true))
-        {
-            var groupName = expression.DirectMenuSettings.BlendExclusiveGroupName;
-            if (!string.IsNullOrWhiteSpace(groupName)) groups.Add(groupName);
-        }
-        return groups.OrderBy(name => name, StringComparer.Ordinal).ToList();
+        return root.GetComponentsInChildren<MenuComponent>(true)
+            .Where(menu => !menu.UseExistingParameter
+                        && menu.GenerateParameterGroup
+                        && !string.IsNullOrWhiteSpace(menu.GroupName))
+            .Select(menu => menu.GroupName)
+            .Concat(root.GetComponentsInChildren<ExpressionComponent>(true)
+                .Where(expression => expression.WriteMode == ExpressionWriteMode.Blend && expression.DirectMenuEnabled)
+                .Select(expression => expression.DirectMenuSettings.GroupName))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
     }
 }
 
 [CustomPropertyDrawer(typeof(MenuIconSettings))]
 internal sealed class MenuIconSettingsDrawer : PropertyDrawer
 {
-    private const float MissingIconWarningHeight = 30f;
-    private const float MissingExpressionWarningHeight = 30f;
-    private static readonly string[] ModeKeys =
-    {
-        "menuIcon.manual.label",
-        "menuIcon.automatic.label",
-        "menuIcon.none.label"
-    };
+    private const float WarningHeight = 30f;
+    private static readonly string[] ModeKeys = { "menuIcon.none.label", "menuIcon.manual.label", "menuIcon.automatic.label" };
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var mode = property.FindPropertyRelative("Mode");
-        var manual = property.FindPropertyRelative("ManualIcon");
-        var preview = property.FindPropertyRelative("PreviewExpression");
+        var mode = property.FindPropertyRelative(nameof(MenuIconSettings.Mode));
+        var manual = property.FindPropertyRelative(nameof(MenuIconSettings.ManualIcon));
+        var preview = property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression));
         position.SetSingleHeight();
-        var next = GUIHelper.LocalizedPopup(
-            position,
-            mode.enumValueIndex,
-            "menuIcon.icon.label",
-            ModeKeys);
-        if (next != mode.enumValueIndex)
-        {
-            mode.enumValueIndex = next;
-            if (next == (int)MenuIconMode.None) manual.objectReferenceValue = null;
-        }
+        mode.enumValueIndex = GUIHelper.LocalizedPopup(position, mode.enumValueIndex, "menuIcon.icon.label", ModeKeys);
+        if (mode.enumValueIndex == (int)MenuIconSettings.Kind.None) return;
         position.NewLine();
 
-        if (next == (int)MenuIconMode.Manual)
+        if (mode.enumValueIndex == (int)MenuIconSettings.Kind.Manual)
         {
             GUIHelper.DrawPropertyWithIndentedLabel(ref position, manual, "menuIcon.manualIcon.label");
             if (manual.objectReferenceValue == null)
             {
-                position.height = MissingIconWarningHeight;
-                EditorGUI.HelpBox(
-                    position,
-                    "menuIcon.manualIcon.empty.message".LS(),
-                    MessageType.Warning);
+                position.height = WarningHeight;
+                position.Indent();
+                EditorGUI.HelpBox(position, "menuIcon.manualIcon.empty.message".LS(), MessageType.Warning);
             }
+            return;
         }
-        else if (next == (int)MenuIconMode.ExpressionPreview)
+
+        if (preview.objectReferenceValue == null && property.serializedObject.targetObject is ExpressionComponent)
         {
-            var ownerIsExpression = property.serializedObject.targetObject is FaceTuneComponent;
-            if (ownerIsExpression)
-            {
-                var placeholder = "menuIcon.currentExpression.placeholder".LG().text;
-                GUIHelper.DrawPlaceholderObjectLikeField(
-                    position,
-                    preview,
-                    "menuIcon.previewExpression.label".LG(),
-                    new GUIContent($"{placeholder} ({FaceTuneComponent.ComponentName})"),
-                    preview.objectReferenceValue == null,
-                    indentLabel: true);
-            }
-            else
-            {
-                GUIHelper.DrawPropertyWithIndentedLabel(ref position, preview, "menuIcon.previewExpression.label");
-                if (preview.objectReferenceValue == null)
-                {
-                    position.height = MissingExpressionWarningHeight;
-                    EditorGUI.HelpBox(
-                        position,
-                        "menuIcon.previewExpression.empty.message".LS(),
-                        MessageType.Warning);
-                }
-            }
+            GUIHelper.DrawPlaceholderObjectLikeField(
+                position,
+                preview,
+                "menuIcon.previewExpression.label".LG(),
+                "menuIcon.currentExpression.placeholder".LG(),
+                true,
+                indentLabel: true);
+            position.NewLine();
+        }
+        else
+        {
+            GUIHelper.DrawPropertyWithIndentedLabel(ref position, preview, "menuIcon.previewExpression.label");
+        }
+        if (preview.objectReferenceValue == null && property.serializedObject.targetObject is not ExpressionComponent)
+        {
+            position.height = WarningHeight;
+            position.Indent();
+            EditorGUI.HelpBox(position, "menuIcon.previewExpression.empty.message".LS(), MessageType.Warning);
         }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var mode = property.FindPropertyRelative("Mode").enumValueIndex;
-        if (mode == (int)MenuIconMode.None) return GUIHelper.LineHeight;
-
-        var height = GUIHelper.LineHeight * 2f + GUIHelper.VerticalSpacing;
-        if (mode == (int)MenuIconMode.Manual
-            && property.FindPropertyRelative("ManualIcon").objectReferenceValue == null)
-            height += GUIHelper.VerticalSpacing + MissingIconWarningHeight;
-        if (mode == (int)MenuIconMode.ExpressionPreview
-            && property.serializedObject.targetObject is not FaceTuneComponent
-            && property.FindPropertyRelative("PreviewExpression").objectReferenceValue == null)
-            height += GUIHelper.VerticalSpacing + MissingExpressionWarningHeight;
-        return height;
+        var mode = property.FindPropertyRelative(nameof(MenuIconSettings.Mode)).enumValueIndex;
+        if (mode == (int)MenuIconSettings.Kind.None) return GUIHelper.LineHeight;
+        var height = GUIHelper.GetLinesHeight(2);
+        var missing = mode == (int)MenuIconSettings.Kind.Manual
+            ? property.FindPropertyRelative(nameof(MenuIconSettings.ManualIcon)).objectReferenceValue == null
+            : property.serializedObject.targetObject is not ExpressionComponent
+              && property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression)).objectReferenceValue == null;
+        return missing ? height + GUIHelper.VerticalSpacing + WarningHeight : height;
     }
-}
-
-[CustomPropertyDrawer(typeof(MenuInstallSettings))]
-internal sealed class MenuInstallSettingsDrawer : PropertyDrawer
-{
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    {
-        var reference = property.FindPropertyRelative("InstallContainerOverride");
-        var owner = property.serializedObject.targetObject as Component;
-        var folder = owner is MenuFolderComponent
-            ? owner.transform.parent?.GetComponentInParent<MenuFolderComponent>()
-            : owner?.GetComponentInParent<MenuFolderComponent>();
-        var rootLabel = "menuInstallSettings.root.placeholder".LS();
-        var destination = folder != null ? EffectiveMenuName(folder) : rootLabel;
-        var placeholder = $"{destination} ({"menuInstallSettings.destinationType.placeholder".LS()})";
-        GUIHelper.DrawPlaceholderObjectLikeField(
-            position,
-            reference,
-            label,
-            new GUIContent(placeholder),
-            reference.objectReferenceValue == null);
-    }
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => EditorGUI.GetPropertyHeight(property.FindPropertyRelative("InstallContainerOverride"), label);
-
-    private static string EffectiveMenuName(MenuFolderComponent folder)
-        => string.IsNullOrWhiteSpace(folder.Menu.MenuName) ? folder.gameObject.name : folder.Menu.MenuName;
 }
 
 [CustomPropertyDrawer(typeof(DirectMenuSettings))]
@@ -266,51 +255,53 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var menu = property.FindPropertyRelative("Menu");
+        var menu = property.FindPropertyRelative(nameof(DirectMenuSettings.Menu));
+        var advanced = GUIState.Foldout(property, "DirectMenuAdvancedSettings");
+
         position.height = EditorGUI.GetPropertyHeight(menu, GUIContent.none, true);
         EditorGUI.PropertyField(position, menu, GUIContent.none, true);
+        position.y = position.yMax + GUIHelper.VerticalSpacing;
+        position.SetSingleHeight();
+        advanced.Expanded = GUIHelper.DrawFoldout(
+            position,
+            advanced.Expanded,
+            "menu.advancedSettings.section.label".LG());
+        if (!advanced.Expanded) return;
+
         position.NewLine();
-        var group = property.FindPropertyRelative("BlendExclusiveGroupName");
-        var replaceMode = IsReplaceMode(property.serializedObject);
-        position.height = GUIHelper.LineHeight;
-        if (replaceMode)
-            MenuGUI.DrawBuiltInGroup(
-                position,
-                "menu.group.label".LG(),
-                BuiltInMenuGroups.DirectMenuReplace,
-                property.serializedObject.targetObject as Component);
+        position.Indent();
+        var group = property.FindPropertyRelative(nameof(DirectMenuSettings.GroupName));
+        if (IsReplaceMode(property.serializedObject))
+            MenuGUI.DrawBuiltInGroup(position, "menu.group.label".LG(), BuiltInMenuGroups.DirectMenuReplace);
         else
-            MenuGUI.DrawGroupSelector(position, group, property.serializedObject.targetObject as Component, "menu.group.label".LG());
+            MenuGUI.DrawGroupSelector(
+                position,
+                group,
+                property.serializedObject.targetObject as Component,
+                "menu.group.label".LG());
         position.NewLine();
+        EditorGUI.PropertyField(
+            position,
+            property.FindPropertyRelative(nameof(DirectMenuSettings.PriorityOffset)),
+            "directMenu.priorityOffset.label".LG());
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var menu = property.FindPropertyRelative("Menu");
-        return GUIHelper.PropertyHeight(menu)
-             + GUIHelper.PropertyHeight(property.FindPropertyRelative("BlendExclusiveGroupName"));
+        var advanced = GUIState.Foldout(property, "DirectMenuAdvancedSettings");
+        return EditorGUI.GetPropertyHeight(
+                   property.FindPropertyRelative(nameof(DirectMenuSettings.Menu)),
+                   GUIContent.none,
+                   true)
+             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight
+             + (advanced.Expanded
+                 ? GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
+                 : 0f);
     }
 
     private static bool IsReplaceMode(SerializedObject serializedObject)
     {
-        var settings = serializedObject.FindProperty(nameof(FaceTuneComponent.FacialSettings));
-        var mode = settings?.FindPropertyRelative(FacialSettings.WriteModePropName);
-        return mode != null
-            && !mode.hasMultipleDifferentValues
-            && mode.enumValueIndex == (int)ExpressionWriteMode.Replace;
+        var mode = serializedObject.FindProperty(nameof(ExpressionComponent.WriteMode));
+        return mode != null && !mode.hasMultipleDifferentValues && mode.enumValueIndex == (int)ExpressionWriteMode.Replace;
     }
-}
-
-[CustomPropertyDrawer(typeof(ExclusiveToggleGroup))]
-internal sealed class ExclusiveToggleGroupDrawer : PropertyDrawer
-{
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        => MenuGUI.DrawGroupSelector(
-            position,
-            property.FindPropertyRelative("GroupName"),
-            property.serializedObject.targetObject as Component,
-            label);
-
-    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => EditorGUI.GetPropertyHeight(property.FindPropertyRelative("GroupName"), label);
 }

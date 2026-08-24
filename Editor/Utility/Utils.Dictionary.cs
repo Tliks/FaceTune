@@ -30,22 +30,36 @@ internal static partial class Utils
         return canAdd;
     }
 
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue addValue)
+    public static TValue GetOrAdd<TKey, TValue>(
+        this IDictionary<TKey, TValue> dict,
+        TKey key,
+        TValue addValue)
     {
-        dict.TryAdd(key, addValue);
-        return dict[key];
+        if (dict.TryGetValue(key, out var value)) return value;
+        dict.Add(key, addValue);
+        return addValue;
     }
 
-    public static TValue GetOrAddNew<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key) where TValue : new()
+    public static TValue GetOrAddNew<TKey, TValue>(
+        this IDictionary<TKey, TValue> dict,
+        TKey key)
+        where TValue : new()
     {
-        dict.TryAddNew(key);
-        return dict[key];
+        if (dict.TryGetValue(key, out var value)) return value;
+        value = new TValue();
+        dict.Add(key, value);
+        return value;
     }
-    
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, Func<TKey, TValue> valueFactory)
+
+    public static TValue GetOrAdd<TKey, TValue>(
+        this IDictionary<TKey, TValue> dict,
+        TKey key,
+        Func<TKey, TValue> valueFactory)
     {
-        dict.TryAdd(key, valueFactory);
-        return dict[key];
+        if (dict.TryGetValue(key, out var value)) return value;
+        value = valueFactory(key);
+        dict.Add(key, value);
+        return value;
     }
 
     public static void AddRange<TKey, TValue>(this IDictionary<TKey, TValue> source, IEnumerable<KeyValuePair<TKey, TValue>> addPairs)

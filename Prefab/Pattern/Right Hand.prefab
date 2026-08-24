@@ -8,28 +8,12 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 420971131414794567, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349147].Match
+    - target: {fileID: 196839064403189976, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1333938627763096109, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349148].Match
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1566056844248714750, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349146].Match
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2752508068255845060, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349145].Match
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2836967046156325946, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349151].Match
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2915475407305133317, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349150].Match
+    - target: {fileID: 580471233427694779, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
@@ -72,17 +56,33 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6242727870376411332, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349149].Match
+    - target: {fileID: 5572135474713407049, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6511333595699222925, guid: 9f044864c335d38499244290e12697d3, type: 3}
-      propertyPath: managedReferences[5999160087458349144].Match
+    - target: {fileID: 5725063788950102543, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7136326512871861865, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118859454288863856, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_Name
       value: Right Hand
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637336120474858227, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8772620051276661418, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

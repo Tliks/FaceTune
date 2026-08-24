@@ -48,10 +48,10 @@ internal class UnselectedPanel
         SetupListView();
         _groupManager.OnGroupSelectionChanged += (groups) => RebuildListViewSlow();
         _groupManager.OnRightSelectionChanged += (isRightSelected) => RebuildListViewSlow();
-        _blendShapeManager.OnSingleShapeOverride += (keyIndex) => RedrawItemByKeyIndex(keyIndex);
-        _blendShapeManager.OnMultipleShapeOverride += (keyIndices) => RebuildListViewSlow();
-        _blendShapeManager.OnSingleShapeUnoverride += (keyIndex) => RedrawItemByKeyIndex(keyIndex);
-        _blendShapeManager.OnMultipleShapeUnoverride += (keyIndices) => RebuildListViewSlow();
+        _blendShapeManager.OnSingleShapeAdded += (keyIndex) => RedrawItemByKeyIndex(keyIndex);
+        _blendShapeManager.OnMultipleShapesAdded += (keyIndices) => RebuildListViewSlow();
+        _blendShapeManager.OnSingleShapeRemoved += (keyIndex) => RedrawItemByKeyIndex(keyIndex);
+        _blendShapeManager.OnMultipleShapesRemoved += (keyIndices) => RebuildListViewSlow();
         _blendShapeManager.OnUnknownChange += () => RebuildListViewSlow();
     }
 
@@ -66,9 +66,11 @@ internal class UnselectedPanel
         selectAllButton.Add(new Image { image = _selectAllIcon });
         selectAllButton.clicked += () =>
         {
-            _blendShapeManager.OverrideShapesAndSetWeight(_currentSource
-                .Where(item => !_blendShapeManager.IsBaseShape(item.KeyIndex) && !_blendShapeManager.IsOverridden(item.KeyIndex))
-                .Select(item => item.KeyIndex), 0);
+            _blendShapeManager.AddShapesWithWeight(_currentSource
+                .Where(item => !_blendShapeManager.IsInTarget(item.KeyIndex))
+                .Select(item => (
+                    item.KeyIndex,
+                    _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex))));
             RebuildListViewSlow();
         };
     }
@@ -100,7 +102,9 @@ internal class UnselectedPanel
             {
                 if (element.userData is ListViewItem data)
                 {
-                    _blendShapeManager.OverrideShapeAndSetWeight(data.KeyIndex, 100);
+                    _blendShapeManager.AddShapeWithWeight(
+                        data.KeyIndex,
+                        _blendShapeManager.GetEffectiveShapeWeight(data.KeyIndex));
                 }
             });
             
@@ -119,7 +123,7 @@ internal class UnselectedPanel
             var item = _currentSource[index];
             element.userData = item;
             element.Q<Label>("name").text = item.ShapeName;
-            element.SetEnabled(!_blendShapeManager.IsOverridden(item.KeyIndex));
+            element.SetEnabled(!_blendShapeManager.IsInTarget(item.KeyIndex));
         }
     }   
 
@@ -144,15 +148,17 @@ internal class UnselectedPanel
         using var _ = new Utils.ProfilingSampleScope("UnselectedPanel.BuildCurrentSource");
         _currentSource.Clear();
         
-        var searchText = _unselectedSearchField.value?.ToLower() ?? "";
-        var hasSearchText = !string.IsNullOrEmpty(searchText);
+        var searchText = _unselectedSearchField.value ?? string.Empty;
+        var hasSearchText = searchText.Length > 0;
         
         var allSourceCount = _allSource.Count;
         for (int i = 0; i < allSourceCount; i++)
         {
             var item = _allSource[i];
 
-            if (hasSearchText && !item.ShapeName.ToLower().Contains(searchText))
+            if (hasSearchText && item.ShapeName.IndexOf(
+                    searchText,
+                    StringComparison.OrdinalIgnoreCase) < 0)
                 continue;
                 
             if (_groupManager.IsRightSelected && !_groupManager.IsBlendShapeVisible(item.KeyIndex))

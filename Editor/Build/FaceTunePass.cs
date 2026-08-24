@@ -3,22 +3,22 @@ using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Build;
 
-internal class BuildPassState
+internal class BuildEnabledState
 {
     public bool Enabled { get; }
 
-    private BuildPassState(bool enabled)
+    private BuildEnabledState(bool enabled)
     {
         Enabled = enabled;
     }
 
-    public static BuildPassState Create(BuildContext buildContext)
+    public static BuildEnabledState Create(BuildContext buildContext)
     {
         var root = buildContext.AvatarRootObject;
         var platformSupport = MetabasePlatformSupport.GetForBuild(buildContext);
         var canBuild = AvatarContext.TryGet(root, platformSupport, out _, out _);
         var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Length > 0;
-        return new BuildPassState(canBuild && anyComponents);
+        return new BuildEnabledState(canBuild && anyComponents);
     }
 }
 
@@ -28,10 +28,11 @@ internal class FaceTuneContext
     public AvatarContext AvatarContext { get; }
     public IMetabasePlatformSupport PlatformSupport { get; }
 
-    private AuthoringBuildSettings? AuthoringSettings { get; set; }
     private BuildSettings? Settings { get; set; }
-    private ExpressionProgram? ExpressionProgram { get; set; }
-    private MenuProgram? MenuProgram { get; set; }
+    private AvatarControlSettings? AvatarControlSettingsState { get; set; }
+    private ExpressionPlan? ExpressionPlan { get; set; }
+    private ParameterPlan? ParameterPlan { get; set; }
+    private MenuPlan? MenuPlan { get; set; }
 
     private FaceTuneContext(
         BuildContext buildContext,
@@ -55,17 +56,6 @@ internal class FaceTuneContext
         return new FaceTuneContext(buildContext, avatarContext, platformSupport);
     }
 
-    public void SetAuthoringSettings(AuthoringBuildSettings settings)
-    {
-        AuthoringSettings = settings;
-    }
-
-    public AuthoringBuildSettings RequireAuthoringSettings()
-    {
-        if (AuthoringSettings is { } settings) return settings;
-        throw new InvalidOperationException("AuthoringBuildSettings has not been collected.");
-    }
-
     public void SetSettings(BuildSettings settings)
     {
         Settings = settings;
@@ -74,27 +64,48 @@ internal class FaceTuneContext
     public BuildSettings RequireSettings()
     {
         if (Settings is { } settings) return settings;
-        throw new InvalidOperationException("BuildSettings has not been collected.");
+        throw new InvalidOperationException("BuildSettings has not been created.");
     }
 
-    public void SetExpressionProgram(ExpressionProgram expressionProgram)
+    public void SetAvatarControlSettings(AvatarControlSettings avatarControlSettings)
     {
-        ExpressionProgram = expressionProgram;
+        AvatarControlSettingsState = avatarControlSettings;
     }
 
-    public ExpressionProgram RequireExpressionProgram()
+    public AvatarControlSettings RequireAvatarControlSettings()
     {
-        return ExpressionProgram ?? throw new InvalidOperationException("ExpressionProgram has not been compiled.");
+        if (AvatarControlSettingsState is { } avatarControlSettings) return avatarControlSettings;
+        throw new InvalidOperationException("AvatarControlSettings has not been created.");
     }
 
-    public void SetMenuProgram(MenuProgram menuProgram)
+    public void SetExpressionPlan(ExpressionPlan expressionPlan)
     {
-        MenuProgram = menuProgram;
+        ExpressionPlan = expressionPlan;
     }
 
-    public MenuProgram RequireMenuProgram()
+    public ExpressionPlan RequireExpressionPlan()
     {
-        return MenuProgram ?? throw new InvalidOperationException("MenuProgram has not been compiled.");
+        return ExpressionPlan ?? throw new InvalidOperationException("ExpressionPlan has not been created.");
+    }
+
+    public void SetParameterPlan(ParameterPlan parameterPlan)
+    {
+        ParameterPlan = parameterPlan;
+    }
+
+    public ParameterPlan RequireParameterPlan()
+    {
+        return ParameterPlan ?? throw new InvalidOperationException("ParameterPlan has not been created.");
+    }
+
+    public void SetMenuPlan(MenuPlan menuPlan)
+    {
+        MenuPlan = menuPlan;
+    }
+
+    public MenuPlan RequireMenuPlan()
+    {
+        return MenuPlan ?? throw new InvalidOperationException("MenuPlan has not been created.");
     }
 }
 
@@ -102,7 +113,7 @@ internal abstract class FaceTunePass<TPass> : Pass<TPass> where TPass : Pass<TPa
 {
     protected sealed override void Execute(BuildContext context)
     {
-        if (!context.GetState<BuildPassState>(BuildPassState.Create).Enabled) return;
+        if (!context.GetState<BuildEnabledState>(BuildEnabledState.Create).Enabled) return;
         var faceTuneContext = context.GetState<FaceTuneContext>(FaceTuneContext.Create);
         using var _ = new Utils.ProfilingSampleScope(typeof(TPass).Name);
         Execute(faceTuneContext);

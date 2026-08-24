@@ -8,26 +8,28 @@ internal static class VRChatParameterBuilder
 {
     private const string GeneratedParameterRootName = FaceTuneConstants.Name + " Generated Parameter";
 
-    public static void Emit(BuildContext context, MenuProgram program)
+    public static void Build(BuildContext context, ParameterPlan plan)
     {
-        if (program.Parameters.Count == 0) return;
+        if (plan.Items.Count == 0) return;
 
         var generatedRoot = new GameObject(GeneratedParameterRootName);
         generatedRoot.transform.SetParent(context.AvatarRootTransform, false);
 
         var parameters = generatedRoot.AddComponent<ModularAvatarParameters>();
-        foreach (var parameter in program.Parameters)
+        foreach (var parameter in plan.Items)
         {
             parameters.parameters.Add(new ParameterConfig
             {
                 nameOrPrefix = parameter.Name,
-                syncType = parameter.Type switch
-                {
-                    MenuParameterType.Bool => ParameterSyncType.Bool,
-                    MenuParameterType.Int => ParameterSyncType.Int,
-                    MenuParameterType.Float => ParameterSyncType.Float,
-                    _ => ParameterSyncType.NotSynced
-                },
+                syncType = !parameter.Synced
+                    ? ParameterSyncType.NotSynced
+                    : parameter.Type switch
+                    {
+                        ParameterValueType.Bool => ParameterSyncType.Bool,
+                        ParameterValueType.Int => ParameterSyncType.Int,
+                        ParameterValueType.Float => ParameterSyncType.Float,
+                        _ => ParameterSyncType.NotSynced
+                    },
                 saved = parameter.Saved,
                 defaultValue = parameter.DefaultValue,
                 hasExplicitDefaultValue = true

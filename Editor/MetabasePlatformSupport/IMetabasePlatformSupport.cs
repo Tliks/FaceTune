@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Build;
-using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Platforms;
 
@@ -9,14 +8,19 @@ internal interface IMetabasePlatformSupport
 
     SkinnedMeshRenderer? GetFaceRenderer();
 
-    IEnumerable<string> GetExternallyControlledBlendShapeNames();
+    IEnumerable<string> GetExternalEyeBlinkBlendShapeNames();
 
-    MmdPlaybackSettings ResolveMmdPlaybackSettings(DnfCondition? disableWhen)
+    IEnumerable<string> GetExternalLipSyncBlendShapeNames();
+
+    MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
     {
         return MmdPlaybackSettings.Disabled;
     }
 
-    void PostProcessDefaultBlendShapes(BuildSettings settings, BlendShapeWeightSet blendShapes)
+    void PostProcessDefaultBlendShapes(
+        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
+        BlendShapeWeightSet blendShapes)
     {
     }
 
@@ -38,9 +42,4 @@ internal interface IMetabasePlatformSupport
     string? ResolveGestureParameter(Hand hand);
 
     string? ResolveGestureWeightParameter(Hand hand);
-
-    AnimatorController? GetAnimatorController()
-    {
-        return null;
-    }
 }

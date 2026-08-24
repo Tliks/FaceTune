@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5203428282089499939}
-  - component: {fileID: 841824838411543577}
-  - component: {fileID: 1190269975176233602}
+  - component: {fileID: 2049258124908675962}
+  - component: {fileID: 2547321528885834092}
   m_Layer: 0
   m_Name: MMD Support
   m_TagString: Untagged
@@ -33,7 +33,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &841824838411543577
+--- !u!114 &2049258124908675962
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,27 +42,36 @@ MonoBehaviour:
   m_GameObject: {fileID: 1577578587252356234}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5326e885845e1a2409bd08d06ba4289d, type: 3}
+  m_Script: {fileID: 11500000, guid: 28b747624bf54d2a9da06deb0fd9987a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Settings:
-    ExplicitMmdBlendShapeNames: []
-    DisableMode: 0
-  DisableWhen:
-    Always: 0
-    Cases:
-    - Conditions:
-      - rid: 6831403248156147793
-  references:
-    version: 2
-    RefIds:
-    - rid: 6831403248156147793
-      type: {class: MenuCondition, ns: Aoyon.FaceTune, asm: Aoyon.FaceTune.Runtime}
-      data:
-        MenuSource: {fileID: 1190269975176233602}
-        Mode: 0
-        Threshold: 0.5
---- !u!114 &1190269975176233602
+  ControlKind: 3
+  MMD:
+    ExplicitBlendShapeNames: []
+    SupportMode: 0
+  Condition:
+    Mode: 1
+    Condition:
+      Cases:
+      - HandGestureConditions: []
+        MenuConditions:
+        - MenuSource: {fileID: 2547321528885834092}
+          Mode: 0
+          Threshold: 0.5
+        ParameterConditions:
+        - ParameterName: InStation
+          ParameterType: 2
+          ComparisonType: 0
+          FloatValue: 0
+          IntValue: 0
+          BoolValue: 1
+        - ParameterName: Seated
+          ParameterType: 2
+          ComparisonType: 0
+          FloatValue: 0
+          IntValue: 0
+          BoolValue: 0
+--- !u!114 &2547321528885834092
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -71,24 +80,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 1577578587252356234}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26ab6f20c4f8d734d977345fb90a9055, type: 3}
+  m_Script: {fileID: 11500000, guid: 75722db5e20f4b628443dc4e1e6c1313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MenuKind: 0
   Menu:
     MenuName: 
     Icon:
-      Mode: 2
+      Mode: 0
       ManualIcon: {fileID: 0}
-      PreviewExpression:
-        referencePath: 
-        targetObject: {fileID: 0}
-    InstallSettings:
-      InstallContainerOverride:
-        referencePath: 
-        targetObject: {fileID: 0}
-  Kind: 0
-  ExclusiveToggleGroup:
-    GroupName: 
-  ParameterName: 
-  FloatDefaultValue: 0
-  DefaultSelected: 0
+      PreviewExpression: {fileID: 0}
+    InstallContainer: {fileID: 0}
+  UseExistingParameter: 0
+  GenerateParameterGroup: 0
+  GroupName: 
+  Name: 
+  Synced: 1
+  Saved: 1
+  InitialValue: 0
+  SelectedValue: 1

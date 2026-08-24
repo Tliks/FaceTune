@@ -19,20 +19,21 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
 
         sequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
-        sequence.Run(CollectBuildSettingsPass.Instance);
-        sequence.Run(NormalizeAuthoringHierarchyPass.Instance);
-        sequence.Run(ResolveBuildSettingsPass.Instance);
-        sequence.Run(CompileExpressionProgramPass.Instance);
-        sequence.Run(CompileMenuProgramPass.Instance);
+        sequence.Run(GetBuildSettingsPass.Instance);
+        sequence.Run(CanonicalizeComponentsPass.Instance);
+        sequence.Run(CreateAvatarControlSettingsPass.Instance);
+        sequence.Run(CreateParameterPlanPass.Instance);
+        sequence.Run(CreateExpressionPlanPass.Instance);
+        sequence.Run(CreateMenuPlanPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(new RealTimeExpressionPreview());
-        sequence.Run(EmitPlatformBuildPass.Instance);
+        sequence.Run(BuildPlatformAssetsPass.Instance);
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
         sequence = InPhase(BuildPhase.Transforming)
             .AfterPlugin("nadena.dev.modular-avatar")
             .AfterPlugin("net.rs64.tex-trans-tool");
-        sequence.Run(FinalizePlatformBuildPass.Instance);
+        sequence.Run(FinishPlatformBuildPass.Instance);
 
         sequence = InPhase(BuildPhase.PlatformFinish);
         sequence.Run("Empty Pass", _ => { })
