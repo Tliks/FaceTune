@@ -132,6 +132,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
             _visibleSections = new bool[sections.Count];
 
         var height = 0f;
+        height += HeaderSpacing;
+
         FaceTuneSection? previous = null;
         for (var i = 0; i < sections.Count; i++)
         {
@@ -157,6 +159,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
 
     protected sealed override void DrawInspector(Rect position)
     {
+        position.Space(HeaderSpacing);
+
         var sections = Sections;
         FaceTuneSection? previous = null;
         for (var i = 0; i < sections.Count; i++)
@@ -234,7 +238,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         return menu;
     }
 
-    private const float SectionGroupSpacing = 10f;
+    private const float HeaderSpacing = 3f;
+    private const float SectionGroupSpacing = 6f;
 
     private IReadOnlyList<FaceTuneSection> Sections
         => _sections ??= CreateSections();

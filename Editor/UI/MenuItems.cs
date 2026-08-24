@@ -1,8 +1,8 @@
 using M = UnityEditor.MenuItem;
-using Aoyon.FaceTune.Platforms;
 using UnityEditorInternal;
 using Aoyon.FaceTune.Settings;
 using Aoyon.FaceTune.Gui.ShapesEditor;
+using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -35,55 +35,35 @@ internal static class MenuItems
     // GameObject
     private const string GameObjectPath = "GameObject/" + FaceTuneConstants.Name + "/";
 
-    public const string TemplatePath = GameObjectPath + "Template";
-    public const int TemplatePriority = 100;
-
-    public const string ImportFxPath = GameObjectPath + "Import FX";
-    public const int ImportFxPriority = 101;
+    public const string WindowPath = GameObjectPath + "Window";
+    public const int WindowPriority = 100;
 
 }
 
 
 internal static class GameObjectMenu
 {
-    private static GameObject IP(string guid, bool unpack = true)
+    [M(MenuItems.WindowPath, false, MenuItems.WindowPriority)]
+    private static void OpenWindow()
     {
-        var parent = Selection.activeGameObject;
-        return Utils.InstantiatePrefab(guid, unpack: unpack, parent: parent);
-    }
-    
-    [M(MenuItems.TemplatePath, false, MenuItems.TemplatePriority)] 
-    static GameObject Template() {
-        var root = IP("e643b160cc0f24a4fa8e33fb4df1fe7e", unpack: false);
-
-        PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.OutermostRoot, InteractionMode.UserAction);
-        foreach (Transform child in root.transform)
-        {
-            if (child.name == "Option") continue;
-            PrefabUtility.UnpackPrefabInstance(child.gameObject, PrefabUnpackMode.Completely, InteractionMode.UserAction);
-        }
-
-        return root;
+        var avatarRoot = GetSelectedAvatarRoot();
+        if (avatarRoot != null) FaceTuneWindow.Open(avatarRoot);
     }
 
-    [M(MenuItems.ImportFxPath, false, MenuItems.ImportFxPriority)] 
-    static void ImportFx() {
+    [M(MenuItems.WindowPath, true)]
+    private static bool ValidateOpenWindow()
+    {
+        var avatarRoot = GetSelectedAvatarRoot();
+        return avatarRoot != null && Selection.activeGameObject == avatarRoot;
+    }
+
+    private static GameObject? GetSelectedAvatarRoot()
+    {
         var selected = Selection.activeGameObject;
-        if (selected == null) throw new InvalidOperationException("No GameObject selected");
-        if (!AvatarContext.TryGet(selected, out var context, out _)) throw new Exception("Failed to get context");
-        var candidates = MetabasePlatformSupport.GetForAvatar(context.Root.transform)
-            .Select(support => (
-                Support: support,
-                Controller: support.GetAnimatorController().DestroyedAsNull()))
-            .Where(candidate => candidate.Controller != null)
-            .Select(candidate => (candidate.Support, Controller: candidate.Controller!))
-            .ToArray();
-        if (candidates.Length != 1) throw new Exception("Failed to uniquely identify an animator controller");
-
-        var (support, animatorController) = candidates[0];
-        support.ImportAnimatorController(context, animatorController, selected);
+        if (selected == null) return null;
+        var root = RuntimeUtil.FindAvatarInParents(selected.transform).DestroyedAsNull();
+        return root == null ? null : root.gameObject;
     }
-
 }
 
 internal static class ToolsMenu

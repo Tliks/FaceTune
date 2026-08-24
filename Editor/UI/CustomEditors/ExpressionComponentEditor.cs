@@ -24,12 +24,10 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
         {
             CreateExpressionSection(),
             CreateBehaviorSection(),
-            CreateAdditionalAnimationsSection(),
-            CreateAnimationSection(),
             CreateConditionSection(),
             CreateDirectMenuSection(),
-            CreatePreviewSection(),
-            CreateAdditionalSettingsSection()
+            CreateAdditionalSettingsSection(),
+            CreatePreviewSection()
         };
 
     private FaceTuneSection CreateExpressionSection()
@@ -39,20 +37,8 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             nameof(ExpressionComponent.FacialBlendShapes)), true);
 
     private FaceTuneSection CreateBehaviorSection()
-        => CreateSection("expression.behavior.section.label", new ExpressionBehaviorSectionDrawer(serializedObject), true);
-
-    private FaceTuneSection CreateAdditionalAnimationsSection()
-        => CreateSection(
-            "expression.additionalAnimations.section.label",
-            new NonFacialAnimationDataSectionDrawer(
-                serializedObject,
-                nameof(ExpressionComponent.NonFacialAnimationsReference),
-                nameof(ExpressionComponent.NonFacialAnimations)),
-            false);
-
-    private FaceTuneSection CreateAnimationSection()
-        => CreateSection("expression.animationSettings.section.label", new PropertiesSectionDrawer(
-            new PropertiesSectionDrawer.Entry(serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)), null)), false);
+        => CreateSection("expression.behavior.section.label", new ExpressionBehaviorSectionDrawer(serializedObject), true,
+            spacingGroup: 1);
 
     private FaceTuneSection CreateConditionSection()
     {
@@ -62,7 +48,7 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             new ConditionSectionDrawer(serializedObject.FindProperty(nameof(ExpressionComponent.Condition))),
             enabled.boolValue,
             enabled,
-            spacingGroup: 1);
+            spacingGroup: 2);
     }
 
     private FaceTuneSection CreateDirectMenuSection()
@@ -73,7 +59,7 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             new DirectMenuSectionDrawer(serializedObject.FindProperty(nameof(ExpressionComponent.DirectMenuSettings))),
             false,
             enabled,
-            spacingGroup: 1);
+            spacingGroup: 2);
     }
 
     private FaceTuneSection CreateAdditionalSettingsSection()
@@ -81,14 +67,14 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             "common.options.section.label",
             new ExpressionOverrideSettingsGroupDrawer(serializedObject, Inheritance),
             false,
-            spacingGroup: 2);
+            spacingGroup: 3);
 
     private FaceTuneSection CreatePreviewSection()
         => CreateSection(
             "expression.previewSettings.section.label",
             new PreviewSettingsSectionDrawer(serializedObject),
             serializedObject.FindProperty(nameof(ExpressionComponent.AlwaysOnPreviewEnabled)).boolValue,
-            spacingGroup: 2);
+            spacingGroup: 3);
 
     private ExpressionSettingsInheritance Inheritance
         => _inheritance ??= new ExpressionSettingsInheritance(Component, targets.Length == 1);
@@ -330,14 +316,22 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
 internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 {
-    private readonly Entry[] _entries;
+    private const float EntryGroupSpacing = 6f;
+    private readonly IOptionEntry[] _entries;
 
     public ExpressionOverrideSettingsGroupDrawer(
         SerializedObject serializedObject,
         ExpressionSettingsInheritance inheritance)
     {
-        _entries = new[]
+        _entries = new IOptionEntry[]
         {
+            new NonFacialAnimationEntry(serializedObject),
+            new SummaryEntry(
+                "expression.animationSettings.section.label",
+                new PropertiesSectionDrawer(new PropertiesSectionDrawer.Entry(
+                    serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)), null)),
+                new[] { "expression.settingSource.short.standard", "expression.settingSource.short.setting" },
+                () => GetMultiFrameSummary(serializedObject)),
             new Entry(
                 serializedObject.FindProperty(nameof(ExpressionComponent.HasEyeBlink)),
                 serializedObject.FindProperty(nameof(ExpressionComponent.EyeBlink)),
@@ -367,7 +361,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
     public float GetHeight()
     {
-        var height = 0f;
+        var height = EntryGroupSpacing * 2f;
         foreach (var entry in _entries)
             height += GUIHelper.GetShurikenSectionHeight(entry.Foldout, entry.GetContentHeight());
         return height;
@@ -375,8 +369,11 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
     public void Draw(Rect position)
     {
-        foreach (var entry in _entries)
+        position.Indent(.5f);
+        var sharedHeaderWidth = _entries.Max(entry => entry.GetHeaderWidth());
+        for (var i = 0; i < _entries.Length; i++)
         {
+            var entry = _entries[i];
             var contentHeight = entry.GetContentHeight();
             var section = new Rect(
                 position.x,
@@ -384,7 +381,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 position.width,
                 GUIHelper.GetShurikenSectionHeight(entry.Foldout, contentHeight));
             var drawHeader = SectionHeaderGUI.GetDrawAction(entry, entry.Foldout.Expanded);
-            var headerWidth = drawHeader == null ? 0f : entry.GetHeaderWidth();
+            var headerWidth = drawHeader == null ? 0f : sharedHeaderWidth;
             if (GUIHelper.DrawShurikenSection(
                     section,
                     entry.Foldout,
@@ -398,23 +395,151 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 entry.Draw(content);
             }
             position.y = section.yMax;
+            if (i is 1 or 3) position.y += EntryGroupSpacing;
         }
     }
 
-    private sealed class Entry : ICollapsedSectionHeaderDrawer
+    private static GUIContent GetMultiFrameSummary(SerializedObject serializedObject)
+    {
+        var mode = serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame))
+            .FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode));
+        if (mode.hasMultipleDifferentValues)
+            return EditorGUIUtility.TrTextContent("—");
+        return (mode.enumValueIndex == (int)MultiFrameSettings.Kind.Default
+            ? "expression.settingSource.short.standard"
+            : "expression.settingSource.short.setting").LG();
+    }
+
+    private interface IOptionEntry : ICollapsedSectionHeaderDrawer
+    {
+        string LabelKey { get; }
+        FoldoutState Foldout { get; }
+        float GetContentHeight();
+        void Draw(Rect position);
+    }
+
+    private sealed class NonFacialAnimationEntry : IOptionEntry
+    {
+        private static readonly string[] SummaryKeys =
+        {
+            "expression.settingSource.short.standard",
+            "expression.settingSource.short.setting",
+            "expression.settingSource.short.reference"
+        };
+        private static readonly string[] ModeKeys =
+        {
+            "expression.settingSource.option.direct",
+            "expression.settingSource.option.reference"
+        };
+
+        private readonly NonFacialAnimationDataSectionDrawer _drawer;
+        private readonly SerializedReferenceableSettings _source;
+
+        public string LabelKey => "expression.additionalAnimations.section.label";
+        public FoldoutState Foldout { get; } = new(false);
+
+        public NonFacialAnimationEntry(SerializedObject serializedObject)
+        {
+            _drawer = new NonFacialAnimationDataSectionDrawer(
+                serializedObject,
+                nameof(ExpressionComponent.NonFacialAnimationsReference),
+                nameof(ExpressionComponent.NonFacialAnimations));
+            _source = new SerializedReferenceableSettings(
+                serializedObject,
+                nameof(ExpressionComponent.NonFacialAnimationsReference),
+                nameof(ExpressionComponent.NonFacialAnimations));
+        }
+
+        public float GetContentHeight() => _drawer.GetHeight();
+        public void Draw(Rect position) => _drawer.Draw(position);
+        public float GetHeaderWidth()
+            => GUIHelper.CompactPopupWidth(SummaryKeys.Select(key => key.LG()));
+
+        public void DrawHeader(Rect position)
+        {
+            var selected = _source.Mode.enumValueIndex;
+            GUIHelper.CompactPopup(
+                position,
+                GetSummary(),
+                ModeKeys.Select(key => key.LG()).ToArray(),
+                selected,
+                SetMode,
+                _source.Mode.hasMultipleDifferentValues,
+                separatorBefore: 1,
+                centered: true);
+        }
+
+        public void DrawCollapsedHeader(Rect position)
+            => GUIHelper.CompactHeaderValue(
+                position,
+                GetSummary(),
+                _source.Mode.hasMultipleDifferentValues,
+                centered: true);
+
+        private GUIContent GetSummary()
+        {
+            if (_source.Mode.hasMultipleDifferentValues)
+                return EditorGUIUtility.TrTextContent("—");
+            if (_source.Mode.enumValueIndex == (int)SettingsReferenceMode.Reference)
+                return "expression.settingSource.short.reference".LG();
+
+            var clips = _source.Direct.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
+            var transforms = _source.Direct.FindPropertyRelative(nameof(NonFacialAnimationData.TransformAnimations));
+            if (clips.hasMultipleDifferentValues || transforms.hasMultipleDifferentValues)
+                return EditorGUIUtility.TrTextContent("—");
+            return (clips.arraySize > 0 || transforms.arraySize > 0
+                ? "expression.settingSource.short.setting"
+                : "expression.settingSource.short.standard").LG();
+        }
+
+        private void SetMode(int mode)
+        {
+            _source.Mode.serializedObject.UpdateIfRequiredOrScript();
+            _source.Mode.enumValueIndex = mode;
+            _source.Mode.serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    private sealed class SummaryEntry : IOptionEntry
+    {
+        private readonly ISectionDrawer _drawer;
+        private readonly string[] _summaryKeys;
+        private readonly Func<GUIContent> _getSummary;
+
+        public string LabelKey { get; }
+        public FoldoutState Foldout { get; } = new(false);
+
+        public SummaryEntry(
+            string labelKey,
+            ISectionDrawer drawer,
+            string[] summaryKeys,
+            Func<GUIContent> getSummary)
+            => (LabelKey, _drawer, _summaryKeys, _getSummary) =
+                (labelKey, drawer, summaryKeys, getSummary);
+
+        public float GetContentHeight() => _drawer.GetHeight();
+        public void Draw(Rect position) => _drawer.Draw(position);
+        public float GetHeaderWidth()
+            => GUIHelper.CompactPopupWidth(_summaryKeys.Select(key => key.LG()));
+        public void DrawHeader(Rect position)
+            => GUIHelper.CompactHeaderValue(position, _getSummary(), centered: true);
+        public void DrawCollapsedHeader(Rect position) => DrawHeader(position);
+    }
+
+    private sealed class Entry : IOptionEntry
     {
         private static readonly string[] ReferenceableShortModeKeys =
         {
             "expression.settingSource.short.standard",
             "expression.settingSource.short.batch",
-            "settingsReferenceMode.short.direct",
-            "settingsReferenceMode.short.reference"
+            "expression.settingSource.short.setting",
+            "expression.settingSource.short.reference"
         };
         private static readonly string[] DirectShortModeKeys =
         {
             "expression.settingSource.short.standard",
             "expression.settingSource.short.batch",
-            "settingsReferenceMode.short.direct"
+            "expression.settingSource.short.setting"
         };
         private static readonly string[] InheritedReferenceableModeKeys =
         {
@@ -447,7 +572,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
         private readonly ExpressionInheritedSettingKind _kind;
         private readonly ExpressionSettingsInheritance _inheritance;
 
-        public readonly string LabelKey;
+        public string LabelKey { get; }
         public FoldoutState Foldout { get; } = new(false);
 
         public Entry(
@@ -526,7 +651,8 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 selected,
                 index => SetMode(index, hasOwner),
                 _enabled.hasMultipleDifferentValues,
-                separatorBefore: localOffset);
+                separatorBefore: IsReferenceable ? keys.Length - 1 : -1,
+                centered: true);
         }
 
         public void DrawCollapsedHeader(Rect position)
@@ -535,7 +661,8 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             GUIHelper.CompactHeaderValue(
                 position,
                 GetCurrentModeLabel(hasOwner),
-                _enabled.hasMultipleDifferentValues);
+                _enabled.hasMultipleDifferentValues,
+                centered: true);
         }
 
         private GUIContent GetCurrentModeLabel(bool hasOwner)
@@ -547,8 +674,8 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                     ? "expression.settingSource.short.batch"
                     : "expression.settingSource.short.standard"
                 : ReferenceMode?.enumValueIndex == (int)SettingsReferenceMode.Reference
-                    ? "settingsReferenceMode.short.reference"
-                    : "settingsReferenceMode.short.direct";
+                    ? "expression.settingSource.short.reference"
+                    : "expression.settingSource.short.setting";
             return key.LG();
         }
 

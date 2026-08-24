@@ -24,38 +24,29 @@ internal class AnimatorControllerImporter
         _parameterTypes = animatorController.parameters.ToDictionary(p => p.name, p => p.type);
     }
 
-    public void Import(GameObject parent)
+    public GameObject? Import(GameObject parent)
     {
-        AssetDatabase.StartAssetEditing();
-        try
+        GameObject? firstLayerObject = null;
+        foreach (var layer in _animatorController.layers)
         {
-            var expressionCount = 0;
-            GameObject? firstLayerObj = null;
-            foreach (var layer in _animatorController.layers)
-            {
-                var stateMachine = layer.stateMachine;
-                if (stateMachine == null) continue;
+            var stateMachine = layer.stateMachine;
+            if (stateMachine == null) continue;
 
-                var stateConditions = CollectStateConditions(stateMachine);
-                var expressions = CreateExpressions(stateConditions);
-                var layerObj = PlaceExpressions(parent, layer.name, expressions);
+            var stateConditions = CollectStateConditions(stateMachine);
+            var expressions = CreateExpressions(stateConditions);
+            var layerObject = PlaceExpressions(parent, layer.name, expressions);
+            if (layerObject == null) continue;
 
-                expressionCount += expressions.Count;
-                firstLayerObj ??= layerObj;
-            }
-
-            Undo.RegisterCreatedObjectUndo(parent, "Import FX");
-            if (firstLayerObj != null)
-            {
-                Selection.activeObject = firstLayerObj;
-                EditorGUIUtility.PingObject(firstLayerObj);
-            }
+            Undo.RegisterCreatedObjectUndo(layerObject, "Import FX");
+            firstLayerObject ??= layerObject;
         }
-        finally
+
+        if (firstLayerObject != null)
         {
-            AssetDatabase.StopAssetEditing();
-            AssetDatabase.SaveAssets();
+            Selection.activeObject = firstLayerObject;
+            EditorGUIUtility.PingObject(firstLayerObject);
         }
+        return firstLayerObject;
     }
 
     private List<(AnimatorState State, DnfCondition Condition)> CollectStateConditions(AnimatorStateMachine rootStateMachine)
@@ -164,18 +155,18 @@ internal class AnimatorControllerImporter
         if (expressions.Count == 1)
         {
             var expression = expressions[0];
-            expression.transform.parent = parent.transform;
+            expression.transform.SetParent(parent.transform, false);
             expression.name = layerName + "_" + expression.name;
-            return null;
+            return expression;
         }
 
         if (expressions.Count == 0) return null;
 
         var layerObj = new GameObject(layerName);
-        layerObj.transform.parent = parent.transform;
+        layerObj.transform.SetParent(parent.transform, false);
         foreach (var expression in expressions)
         {
-            expression.transform.parent = layerObj.transform;
+            expression.transform.SetParent(layerObj.transform, false);
         }
 
         return layerObj;

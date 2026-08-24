@@ -6,6 +6,7 @@ internal static class GUIStyles
     private static GUIStyle? _sectionHeader;
     private static GUIStyle? _toggleSectionHeader;
     private static GUIStyle? _sectionHeaderPopupLabel;
+    private static GUIStyle? _sectionHeaderPopupCenteredLabel;
     private static GUIStyle? _simpleToggle;
     private static GUIStyle? _listButton;
     private static GUIStyle? _placeholderText;
@@ -48,6 +49,12 @@ internal static class GUIStyles
             return _sectionHeaderPopupLabel;
         }
     }
+
+    public static GUIStyle SectionHeaderPopupCenteredLabel
+        => _sectionHeaderPopupCenteredLabel ??= new GUIStyle(SectionHeaderPopupLabel)
+        {
+            alignment = TextAnchor.MiddleCenter
+        };
 
     public static GUIStyle SimpleToggle => _simpleToggle ??= new GUIStyle(EditorStyles.miniButton)
     {

@@ -24,6 +24,7 @@ internal static class FacialDataGUI
 {
     private static readonly ReorderableListOptions AnimationListOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
+        NestContent: false,
         HeaderContentHeight: GUIHelper.LineHeight,
         DrawHeaderContent: DrawClipRow,
         InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()),
@@ -77,7 +78,8 @@ internal static class FacialDataGUI
         var (fields, button) = valueRect.SplitRight(GUI.skin.button.CalcSize(importLabel).x);
         var (clipRect, optionRect) = fields.SplitRight(GUIHelper.PopupWidth(new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() }));
         EditorGUI.PropertyField(clipRect, clip, GUIContent.none);
-        option.enumValueIndex = EditorGUI.Popup(optionRect, option.enumValueIndex, new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() });
+        using (new EditorGUI.DisabledScope(clip.objectReferenceValue == null))
+            option.enumValueIndex = EditorGUI.Popup(optionRect, option.enumValueIndex, new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() });
         using (new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1 || clip.objectReferenceValue == null))
             if (GUI.Button(button, importLabel)) ImportClip(component, direct);
     }
@@ -274,7 +276,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 {
     private const float MultiFrameDuration = 1f;
     private const float ModeToggleWidth = 24f;
-    private const float PreferredNameRatio = .46f;
+    private const float PreferredNameRatio = .50f;
     private const float MinimumNameWidth = 64f;
     private const float MinimumValueWidth = 64f;
     private const float SliderWithNumberWidth = 90f;

@@ -165,12 +165,11 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
 
     private void PopulateHeaderMenu(GenericMenu menu, SettingEntry setting)
     {
-        if (setting.Drawer is ISectionHeaderMenuDrawer menuDrawer)
-        {
-            menuDrawer.PopulateHeaderMenu(menu);
-            menu.AddSeparator(string.Empty);
-        }
         PopulateRemoveMenu(menu, setting.Enabled);
+        if (setting.Drawer is not ISectionHeaderMenuDrawer menuDrawer) return;
+
+        menu.AddSeparator(string.Empty);
+        menuDrawer.PopulateHeaderMenu(menu);
     }
 
     private void PopulateRemoveMenu(GenericMenu menu, SerializedProperty enabled)
