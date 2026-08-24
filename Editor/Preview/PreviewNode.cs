@@ -17,7 +17,8 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 
     public BlendShapePreviewNode(SkinnedMeshRenderer smr, IReadOnlyBlendShapeSet set, float defaultValue = -1)
     {
-        var mesh = smr.sharedMesh;
+        var mesh = smr.sharedMesh.DestroyedAsNull()
+            ?? throw new ArgumentException("Renderer has no mesh.", nameof(smr));
         _blendShapeCount = mesh.blendShapeCount;
         _blendShapeNames = ListPool<string>.Get(out var names);
         for (int i = 0; i < _blendShapeCount; i++)

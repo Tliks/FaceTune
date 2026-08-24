@@ -1,48 +1,45 @@
-using nadena.dev.modular_avatar.core;
-using nadena.dev.ndmf;
-using nadena.dev.ndmf.animator;
 using Aoyon.FaceTune.Build;
-using UnityEditor.Animations;
 
 namespace Aoyon.FaceTune.Platforms;
 
 internal interface IMetabasePlatformSupport
 {
-    public bool IsTarget(Transform root);
-    public void Initialize(Transform root)
+    IPlatformBuildBackend? BuildBackend => null;
+
+    SkinnedMeshRenderer? GetFaceRenderer();
+
+    IEnumerable<string> GetExternalEyeBlinkBlendShapeNames();
+
+    IEnumerable<string> GetExternalLipSyncBlendShapeNames();
+
+    MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
     {
-        return;
-    }
-    public SkinnedMeshRenderer? GetFaceRenderer();
-    public void InstallPatternData(BuildPassContext buildPassContext, BuildContext buildContext, InstallerData installerData)
-    {
-        return;
-    }
-    public IEnumerable<string> GetTrackedBlendShape()
-    {
-        return new string[] { };
+        return MmdPlaybackSettings.Disabled;
     }
 
-
-    public void SetEyeBlinkTrack(VirtualState state, bool isTracking)
+    void PostProcessDefaultBlendShapes(
+        BuildSettings settings,
+        AvatarControlSettings avatarControlSettings,
+        BlendShapeWeightSet blendShapes)
     {
-        return;
-    }
-    public void SetLipSyncTrack(VirtualState state, bool isTracking)
-    {
-        return;
-    }
-    public void StateAsRandrom(VirtualState state, string parameterName, float min, float max)
-    {
-        return;
-    }
-    public (TrackingPermission eye, TrackingPermission mouth)? GetTrackingPermission(AnimatorState state)
-    {
-        return null;
     }
 
-    public AnimatorController? GetAnimatorController()
+    IEnumerable<GameObject> GetMenuFolderObjects()
     {
-        return null;
+        return Array.Empty<GameObject>();
     }
+
+    ParameterDomainRegistry CreateBuiltInParameterDomains();
+
+    DnfCondition? ResolveHandGestureCondition(
+        HandGestureCondition condition,
+        ParameterDomainRegistry parameterDomains);
+
+    DnfCondition? ResolveParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry parameterDomains);
+
+    string? ResolveGestureParameter(Hand hand);
+
+    string? ResolveGestureWeightParameter(Hand hand);
 }

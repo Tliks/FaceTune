@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using nadena.dev.ndmf.preview;
 
+
 namespace Aoyon.FaceTune.Preview;
 
 // early
@@ -8,20 +9,16 @@ internal class RealTimeExpressionPreview : IRenderFilter
 {
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
-        var observeContext = new NDMFPreviewObserveContext(context);
         var builder = ImmutableList.CreateBuilder<RenderGroup>();
         foreach (var root in context.GetAvatarRoots())
         {
-            if (!AvatarContextBuilder.TryGetFaceRenderer(root, out var faceRenderer, out var facePath, null, observeContext)) continue;
-            
-            var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
-            if (faceMesh == null) continue;
+            if (!AvatarContext.TryGet(root, out var avatarContext, out _, context)) continue;
 
             var component = _targetComponent.Get(context, root);
             if (component == null) continue;
 
-            var data = new PassingData(root, component, facePath);
-            builder.Add(RenderGroup.For(faceRenderer).WithData(data, (a, b) => a.Equals(b)));
+            var data = new PassingData(root, component, avatarContext.BodyPath);
+            builder.Add(RenderGroup.For(avatarContext.FaceRenderer).WithData(data, (a, b) => a.Equals(b)));
         }
         return builder.ToImmutable();
     }
@@ -39,11 +36,11 @@ internal class RealTimeExpressionPreview : IRenderFilter
         ExpressionComponent? target = null;
         foreach (var component in components)
         {
-            var enabled = context.Observe(component, c => c.EnableRealTimePreview, (a, b) => a == b);
+            var enabled = context.Observe(component, c => c.AlwaysOnPreviewEnabled, (a, b) => a == b);
             if (!enabled) continue;
             var isEditorOnly = context.EditorOnlyInHierarchy(component.gameObject);
             if (isEditorOnly) continue;
-            if (target != null) LocalizedLog.Warning("RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview");
+            if (target != null) LocalizedLog.Warning("realTimeExpressionPreview.log.warning.multipleExpressionComponentWithEnableRealTimePreview");
             target = component;
         }
         
@@ -78,17 +75,12 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
     private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, ExpressionComponent target, GameObject root, string bodyPath)
     {
-        var observeContext = new NDMFPreviewObserveContext(context);
-
-        using var _3 = ListPool<BlendShapeWeightAnimation>.Get(out var facialStyleAnimations);
-        FacialStyleContext.TryGetFacialStyleAnimationsAndObserve(target.gameObject, facialStyleAnimations, root, observeContext);
-        result.AddRange(facialStyleAnimations.ToFirstFrameBlendShapes());
-
-        using var _4 = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
-        context.GetComponentsInChildren<ExpressionDataComponent>(target.gameObject, true, dataComponents);
-        foreach (var dataComponent in dataComponents)
-        {
-            dataComponent.GetBlendShapes(result, facialStyleAnimations, bodyPath, observeContext);
-        }
+        using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
+        new FaceTuneResolver(root, context).FacialData.Add(target, animations, bodyPath);
+        var excluded = AvatarContext.GetExplicitlyExcludedBlendShapeNames(root, context);
+        result.AddRange(animations
+            .Where(animation => !excluded.Contains(animation.Name))
+            .ToFirstFrameBlendShapes());
+        result.AddRange(excluded.Select(name => new BlendShapeWeight(name, -1f)));
     }
 }

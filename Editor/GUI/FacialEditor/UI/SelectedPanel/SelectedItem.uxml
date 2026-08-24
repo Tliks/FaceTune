@@ -1,8 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:aoyon="Aoyon.FaceTune.Gui.Components">
-    <ui:VisualElement name="list-item-container">
-        <ui:Label name="name" />
-        <aoyon:SliderFloatField name="slider-float-field" low-value="0" high-value="100"/>
-        <ui:Button name="toggle-button" />
-        <ui:Button name="action" />
-    </ui:VisualElement>
-</ui:UXML> 

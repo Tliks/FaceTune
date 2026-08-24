@@ -1,0 +1,31 @@
+#list-item-container {
+    align-items: center;
+    position: relative;
+}
+
+#name {
+    flex: 1 1 100px;
+}
+
+#slider-float-field {
+    flex: 2 1 100px;
+    padding: 0px;
+}
+
+#toggle-button,
+#action {
+    flex: 0 0 35px;
+}
+
+.flash-overlay {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    opacity: 0;
+    background-color: rgba(255, 220, 120, 0.35);
+    transition-property: opacity;
+    transition-duration: 500ms;
+    transition-timing-function: ease-out;
+}

@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="list-item-container" class="list-item-row">
+        <ui:Label name="name" class="list-item-label" />
+    </ui:VisualElement>
+</ui:UXML> 

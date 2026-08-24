@@ -1,0 +1,71 @@
+#root {
+    --space: 2px;
+    --frame-space: 3px;
+    --row-height: 18px;
+    padding: var(--frame-space);
+}
+
+.section-frame {
+    border-color: rgba(128, 128, 128, 0.5);
+    border-width: 1px;
+    border-radius: 3px;
+    padding: var(--space);
+}
+
+.compact-control {
+    height: var(--row-height);
+    min-height: 0px;
+    margin: 0px;
+    padding: 0px;
+}
+
+.compact-field {
+    height: var(--row-height);
+    min-height: 0px;
+    margin: 0px;
+}
+
+.shape-filter-toggle {
+    font-size: 12px;
+}
+
+.list-item-row {
+    height: var(--row-height);
+    margin: 0px;
+    padding: 0px;
+}
+
+.list-item-label {
+    -unity-text-align: middle-left;
+    margin: 0px;
+    padding: 0px var(--space);
+}
+
+#left-panel {
+    flex: 1 1 65%;
+}
+
+#right-panel {
+    flex: 1 1 35%;
+}
+
+#general-controls-container {
+    flex: 0 0 auto;
+}
+
+.horizontal-layout-gap {
+    flex: 0 0 var(--space);
+}
+
+.vertical-layout-gap {
+    flex: 0 0 var(--space);
+}
+
+.frame-layout-gap {
+    flex: 0 0 var(--frame-space);
+}
+
+#selected-content-container {
+    flex: 1 1 auto;
+}
+

@@ -17,7 +17,6 @@ internal class EditingShapesPreview : DirectBlendShapePreview<EditingShapesPrevi
     public static void Refresh(IReadOnlyBlendShapeSet set, float defaultValue)
     {
         if (_target.Value == null) return;
-        if (NDMFPreview.DisablePreviewDepth != 0) return;
         SetCurrentNodeDirectly(_target.Value, set, defaultValue);
     }
 

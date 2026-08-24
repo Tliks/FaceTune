@@ -1,30 +1,63 @@
 namespace Aoyon.FaceTune.Platforms;
 
-internal class FallbackSupport : IMetabasePlatformSupport
-{     
-    public bool IsTarget(Transform root)
-    {
-        return true;
-    }
+internal sealed class FallbackSupport : IMetabasePlatformSupport
+{
+    private readonly Transform _root;
 
-    private Transform _root = null!;
-    public void Initialize(Transform root)
+    public FallbackSupport(Transform root)
     {
         _root = root;
     }
 
     public SkinnedMeshRenderer? GetFaceRenderer()
     {
-        SkinnedMeshRenderer? faceRenderer = null;
-        for (int i = 0; i < _root.childCount; i++)
+        return FindRenderer("Face", StringComparison.OrdinalIgnoreCase)
+               ?? FindRenderer("Body", StringComparison.Ordinal)
+               ?? FindRenderer("body", StringComparison.Ordinal)
+               ?? _root.GetComponentInChildren<SkinnedMeshRenderer>(true).DestroyedAsNull();
+    }
+
+    private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
+    {
+        for (var i = 0; i < _root.childCount; i++)
         {
             var child = _root.GetChild(i);
-            if (child.name == "Body")
+            if (!string.Equals(child.name, name, comparison)) continue;
+            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
             {
-                faceRenderer = child.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null;
-                if (faceRenderer != null) { break; }
+                return renderer.DestroyedAsNull();
             }
         }
-        return faceRenderer;
+
+        return null;
     }
+
+    public ParameterDomainRegistry CreateBuiltInParameterDomains()
+    {
+        return ParameterDomainRegistry.Empty;
+    }
+
+    public IEnumerable<string> GetExternalEyeBlinkBlendShapeNames()
+        => Array.Empty<string>();
+
+    public IEnumerable<string> GetExternalLipSyncBlendShapeNames()
+        => Array.Empty<string>();
+
+    public DnfCondition? ResolveHandGestureCondition(
+        HandGestureCondition condition,
+        ParameterDomainRegistry parameterDomains)
+    {
+        return null;
+    }
+
+    public DnfCondition? ResolveParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry parameterDomains)
+    {
+        return null;
+    }
+
+    public string? ResolveGestureParameter(Hand hand) => null;
+
+    public string? ResolveGestureWeightParameter(Hand hand) => null;
 }

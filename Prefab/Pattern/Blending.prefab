@@ -30,7 +30,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4301943602412395084}
-  - {fileID: 1158127442111567626}
+  - {fileID: 801415032922042354}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &261936302014072921
@@ -41,100 +41,241 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 257858774868111890}
     m_Modifications:
-    - target: {fileID: 420971131414794567, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 196839064403189976, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1333938627763096109, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 196839064403189976, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 196839064403189976, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 420971131414794567, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 1566056844248714750, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 420971131414794567, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 420971131414794567, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 580471233427694779, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 2752508068255845060, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 580471233427694779, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 580471233427694779, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1333938627763096109, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 2836967046156325946, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 1333938627763096109, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1333938627763096109, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1566056844248714750, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 2915475407305133317, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 1566056844248714750, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1566056844248714750, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2752508068255845060, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 2752508068255845060, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2752508068255845060, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2836967046156325946, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2836967046156325946, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2836967046156325946, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2915475407305133317, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2915475407305133317, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2915475407305133317, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6242727870376411332, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 5572135474713407049, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6511333595699222925, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 5572135474713407049, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5572135474713407049, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5725063788950102543, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3,
-        type: 3}
+    - target: {fileID: 5725063788950102543, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5725063788950102543, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6242727870376411332, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6242727870376411332, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6242727870376411332, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6511333595699222925, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6511333595699222925, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6511333595699222925, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7136326512871861865, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7136326512871861865, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7136326512871861865, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118859454288863856, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118859454288863856, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118859454288863856, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_Name
       value: Left Hand
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637336120474858227, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637336120474858227, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637336120474858227, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8772620051276661418, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8772620051276661418, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8772620051276661418, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -143,8 +284,7 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 9f044864c335d38499244290e12697d3, type: 3}
 --- !u!4 &4301943602412395084 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
   m_PrefabInstance: {fileID: 261936302014072921}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2148758311382052265
@@ -155,109 +295,205 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 257858774868111890}
     m_Modifications:
-    - target: {fileID: 164149071001300413, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 480197267005168971, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 253538085069377231, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 480197267005168971, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 480197267005168971, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 643177126420470410, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
+    - target: {fileID: 643177126420470410, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
+    - target: {fileID: 643177126420470410, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalRotation.w
+    - target: {fileID: 684889976300143732, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
+    - target: {fileID: 684889976300143732, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
+    - target: {fileID: 684889976300143732, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5129038026141425213, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: m_Name
-      value: Right Hand
-      objectReference: {fileID: 0}
-    - target: {fileID: 6533161233553423881, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 2797269952521958645, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7095661423061188687, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 2797269952521958645, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2797269952521958645, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3100814870368993545, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7538845102695677385, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 3100814870368993545, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3100814870368993545, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3198832987531096214, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8152567463761656177, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 3198832987531096214, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3198832987531096214, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4279573954596183472, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8984721409370909803, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 4279573954596183472, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4279573954596183472, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4349566484335712867, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 9211514212091228666, guid: 73a1d844c3155444696e054ae47b9f7c,
-        type: 3}
-      propertyPath: FacialSettings.enableBlending
+    - target: {fileID: 4349566484335712867, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4349566484335712867, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5608822763639176743, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5608822763639176743, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5608822763639176743, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6296387165566472932, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6296387165566472932, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6296387165566472932, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413727031664992957, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413727031664992957, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6413727031664992957, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6806102428036772414, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6806102428036772414, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6806102428036772414, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7038099959084298817, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7038099959084298817, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7038099959084298817, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7173084119262215687, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7173084119262215687, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7173084119262215687, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8395623233210255811, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8395623233210255811, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8395623233210255811, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8682173023312941194, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: WriteMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8682173023312941194, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowLipSync
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8682173023312941194, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
+      propertyPath: AllowEyeBlink
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
---- !u!4 &1158127442111567626 stripped
+--- !u!4 &801415032922042354 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 991797462033857187, guid: 73a1d844c3155444696e054ae47b9f7c,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 1643496058973684315, guid: 73a1d844c3155444696e054ae47b9f7c, type: 3}
   m_PrefabInstance: {fileID: 2148758311382052265}
   m_PrefabAsset: {fileID: 0}

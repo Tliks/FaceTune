@@ -1,0 +1,20 @@
+#selected-shapes-controls {
+    flex: 0 0 var(--row-height);
+    align-items: center;
+}
+
+.filter-toggle {
+    flex: 0 0 55px;
+}
+
+#control-spacer {
+    flex: 1 1 auto;
+}
+
+.control-button {
+    flex: 0 0 35px;
+}
+
+#selected-list-view {
+    flex: 1 1 auto;
+}

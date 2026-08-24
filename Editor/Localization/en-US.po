@@ -5,500 +5,1279 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: en-US\n"
 
-# PatternGUI
+msgid "expression.editor.button"
+msgstr "Editor"
 
-msgid "PatternGUI:label:Title"
-msgstr "Add Expression Control"
+msgid "blendShapePicker.group.all"
+msgstr "All"
 
-msgid "PatternGUI:label:SelectedHandGesturePattern"
-msgstr "Selected Pattern:"
+msgid "blendShapePicker.selectVisible.button"
+msgstr "Select Visible"
 
-msgid "PatternGUI:label:SelectedMenuPattern"
-msgstr "Selected Pattern:"
+msgid "blendShapePicker.clearVisible.button"
+msgstr "Deselect Visible"
 
-msgid "PatternGUI:label:SelectedAnimatorControllerPattern"
-msgstr "Selected Animator Controller:"
-
-msgid "PatternGUI:label:AnimatorControllerPattern:Desc"
-msgstr "Analyzes the Animator Controller and generates expression controls that behave as closely as possible."
-
-msgid "PatternGUI:label:SelectedOtherPattern"
-msgstr "Selected Pattern:"
-
-msgid "PatternGUI:button:Add"
-msgstr "Add"
-
-# PatternGUIMode(enum)
-
-msgid "PatternGUIMode:enum:Gesture"
-msgstr "Gesture"
-
-msgid "PatternGUIMode:enum:Menu"
-msgstr "Menu"
-
-msgid "PatternGUIMode:enum:AnimatorController"
-msgstr "Animator Controller"
-
-msgid "PatternGUIMode:enum:Others"
-msgstr "Others"
-
-# HandGesturePatternType(enum)
-
-msgid "HandGesturePatternType:enum:LeftOnly"
-msgstr "Left Hand Only"
-
-msgid "HandGesturePatternType:enum:LeftOnly:Desc"
-msgstr "Pattern for left hand only (8 types)."
-
-msgid "HandGesturePatternType:enum:RightOnly"
-msgstr "Right Hand Only"
-
-msgid "HandGesturePatternType:enum:RightOnly:Desc"
-msgstr "Pattern for right hand only (8 types)."
-
-msgid "HandGesturePatternType:enum:BasicRight"
-msgstr "Right Hand Priority"
-
-msgid "HandGesturePatternType:enum:BasicRight:Desc"
-msgstr "Basic pattern with right hand priority (16 types)."
-
-msgid "HandGesturePatternType:BasicLeft"
-msgstr "Left Hand Priority"
-
-msgid "HandGesturePatternType:enum:BasicLeft:Desc"
-msgstr "Basic pattern with left hand priority (16 types)."
-
-msgid "HandGesturePatternType:enum:HandSign"
-msgstr "All Two-Handed Patterns"
-
-msgid "HandGesturePatternType:enum:HandSign:Desc"
-msgstr "Pattern that allows creating up to 64 gestures with left and right hand combinations (64 types)."
-
-msgid "HandGesturePatternType:enum:Blending"
-msgstr "Two-Hand Blending"
-
-msgid "HandGesturePatternType:enum:Blending:Desc"
-msgstr "Pattern where animations for each hand are blended. Useful when assigning eye and mouth controls to respective hands (64 types)."
-
-# MenuPatternType(enum)
-
-msgid "MenuPatternType:enum:ExclusiveMenu"
-msgstr "Exclusive Menu"
-
-msgid "MenuPatternType:enum:ExclusiveMenu:Desc"
-msgstr "A sample that generates exclusive menus."
-
-msgid "MenuPatternType:enum:BlendingMenu"
-msgstr "Blending Menu"
-
-msgid "MenuPatternType:enum:BlendingMenu:Desc"
-msgstr "A sample that generates menus that blend with other expressions."
-
-# OtherPatternType(enum)
-
-msgid "OtherPatternType:enum:HeadContact"
-msgstr "Head Contact"
-
-msgid "OtherPatternType:enum:HeadContact:Desc"
-msgstr "A sample using contact. Useful for specifying expressions when being petted."
-
-# FaceTuneAssistant
-
-msgid "FaceTuneAssistant:label:ExpressionDescription"
-msgstr "Expression components added will be prioritized based on their position lower in the hierarchy."
-
-# ExpressionDataComponent
-
-msgid "ExpressionDataComponent:label:MissingBlendShapes"
-msgstr "Missing Blend Shapes"
-
-msgid "ExpressionDataComponent:label:AnimationClipMode"
-msgstr "Animation Clip"
-
-msgid "ExpressionDataComponent:prop:Clip"
-msgstr "Animation Clip"
-
-msgid "ExpressionDataComponent:prop:Clip:tooltip"
-msgstr "This animation clip primarily applies blend shape animations for expressions, but can also include other types of animations such as ear movements, which are applied at build time."
-
-msgid "ExpressionDataComponent:button:Import"
-msgstr "Import"
-
-msgid "ExpressionDataComponent:button:Import:tooltip"
-msgstr "Imports an animation clip. It will still work even if not imported. Importing converts expression animations to manual settings, and a dedicated animation clip is created for non-expression animations."
-
-msgid "ExpressionDataComponent:label:ClipFacialAnimationCount"
-msgstr "Number of Facial Animations"
-
-msgid "ExpressionDataComponent:label:ClipNonFacialAnimationCount"
-msgstr "Number of Non-Facial Animations"
-
-msgid "ExpressionDataComponent:prop:BlendShapeAnimations"
-msgstr "Facial Animations"
-
-msgid "ExpressionDataComponent:prop:BlendShapeAnimations:tooltip"
-msgstr "These are manually set facial animations. They can be used in conjunction with animation clips, or either one can be used alone. If the same blend shape is set simultaneously, manual settings take precedence."
-
-msgid "ExpressionDataComponent:button:OpenEditor"
-msgstr "Edit Facial Expressions"
-
-msgid "ExpressionDataComponent:label:AdvancedOptions"
-msgstr "Advanced Options"
-
-msgid "ExpressionDataComponent:prop:AllBlendShapeAnimationAsFacial"
-msgstr "Treat all blend shape animations as facial animations"
-
-msgid "ExpressionDataComponent:prop:AllBlendShapeAnimationAsFacial:tooltip"
-msgstr "Treats all blend shape animations included in the animation clip as facial animations. This is useful when dealing with animation clips for other avatars where paths may differ."
-
-# ExpressionDataClipImporter
-
-msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:title"
-msgstr "Create Animation Clip?"
-
-msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:message"
-msgstr "Non-facial animations were detected. Do you want to create an animation clip to preserve non-facial animations? If you don't create it, only facial animations will be imported, and non-facial animations will not be carried over."
-
-msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:create"
-msgstr "Create"
-
-msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:skip"
-msgstr "Skip"
-
-msgid "ExpressionDataClipImporter:dialog:ConfirmCreateClip:folder"
-msgstr "Select a save destination for animation clips for non-facial animations."
-
-msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotSelected"
-msgstr "Folder is not selected."
-
-msgid "ExpressionDataClipImporter:Log:warning:ExpressionDataClipImporter:folderNotInProject"
-msgstr "Folder is not in the project."
-
-# ExpressionComponent
-
-msgid "ExpressionComponent:prop:EnableRealTimePreview"
-msgstr "Always Preview"
-
-msgid "ExpressionComponent:prop:EnableRealTimePreview:tooltip"
-msgstr "Set this if you want to always preview this expression. Only one expression can be active at a time within an avatar."
-
-# FacialSettings
+msgid "blendShapePicker.apply.button"
+msgstr "Apply"
 
 msgid "FacialSettings"
 msgstr "Facial Settings"
 
-msgid "FacialSettings:prop:AllowLipSync"
+msgid "facialSettings.allowLipSync.label"
 msgstr "Lip Sync"
 
-msgid "FacialSettings:prop:AllowLipSync:tooltip"
-msgstr "Sets whether to enable lip sync when playing expressions. If set to `Keep`, settings from lower priority expressions will be used."
-
-msgid "FacialSettings:prop:AllowEyeBlink"
+msgid "facialSettings.allowEyeBlink.label"
 msgstr "Eye Blink"
-
-msgid "FacialSettings:prop:AllowEyeBlink:tooltip"
-msgstr "Sets whether to enable eye blinking when playing expressions. If set to `Keep`, settings from lower priority expressions will be used."
-
-msgid "FacialSettings:prop:EnableBlending"
-msgstr "Blend with Expressions"
-
-msgid "FacialSettings:prop:EnableBlending:tooltip"
-msgstr "Sets whether to blend with lower priority expressions. For example, if you want to blend blink blend shapes into the current expression. When OFF, all unspecified facial blend shapes are treated as 0, completely overriding lower priority expressions. Default is OFF."
-
-# ExpressionSettings
 
 msgid "ExpressionSettings"
 msgstr "Animation Settings"
 
-msgid "ExpressionSettings:prop:LoopTime"
+msgid "expressionSettings.loopTime.label"
 msgstr "Loop"
 
-msgid "ExpressionSettings:prop:LoopTime:tooltip"
-msgstr "Set this to loop the animation. Effective for multi-frame animations."
-
-msgid "ExpressionSettings:prop:MotionTimeParameterName"
-msgstr "Parameter Name for MotionTime"
-
-msgid "ExpressionSettings:prop:MotionTimeParameterName:tooltip"
-msgstr "Specify the name of the parameter (float) for MotionTime. The playback point of multi-frame animation changes according to the value of this parameter. Effective for multi-frame animations when looping is OFF."
-
-# FacialStyleComponent
-
-msgid "FacialStyleComponent:prop:BlendShapeAnimations"
-msgstr "Facial Animations"
-
-msgid "FacialStyleComponent:prop:BlendShapeAnimations:tooltip"
-msgstr "Settings for facial animations (expression). The contents set here will be applied to all expressions under this GameObject."
-
-msgid "FacialStyleComponent:prop:ApplyToRenderer"
-msgstr "Apply to SkinnedMeshRenderer"
-
-msgid "FacialStyleComponent:prop:ApplyToRenderer:tooltip"
-msgstr "Applies this expression to SkinnedMeshRenderer at build time. This is effective when you want to apply an expression in an environment where animations do not work."
-
-msgid "FacialStyleComponent:button:UpdateFromScene"
-msgstr "Get from SkinnedMeshRenderer"
-
-msgid "FacialStyleComponent:button:UpdateFromScene:tooltip"
-msgstr "Retrieves blend shapes set in the target SkinnedMeshRenderer."
-
-msgid "FacialStyleComponent:button:OpenEditor"
-msgstr "Edit Facial Style"
-
-msgid "FacialStyleComponent:button:AsDefault"
-msgstr "Set as Default Expression"
-
-msgid "FacialStyleComponent:button:AsDefault:tooltip"
-msgstr "Sets this expression as default. It will generate a child ExpressionComponent that is affected by this facial style and is always playing. Grayed out if already set."
-
-# PatternComponent
-
-msgid "PatternComponent:label:Desc"
-msgstr "This component makes expressions under the attached GameObject mutually exclusive. If the Condition linked to each Expression is not exclusive, the Expression lower in the Hierarchy will be prioritized. It is recommended to set exclusive Conditions while using this component."
-
-# BlendShapeWeight
-
-msgid "BlendShapeWeight:prop:Name"
-msgstr "Blend Shape Name"
-
-msgid "BlendShapeWeight:prop:Weight"
-msgstr "Value"
-
-# ConditionComponent
-
-msgid "ConditionComponent:prop:HandGestureConditions"
-msgstr "Hand Gestures"
-
-msgid "ConditionComponent:prop:ParameterConditions"
-msgstr "Parameters"
-
-# Hand(enum)
+msgid "expression.multiFrame.parameterName.label"
+msgstr "Parameter Name"
 
 msgid "Hand"
 msgstr "Right Hand/Left Hand"
 
-msgid "Hand:enum:Left"
-msgstr "Left Hand"
-
-msgid "Hand:enum:Right"
-msgstr "Right Hand"
-
-# HandGesture(enum)
-
 msgid "HandGesture"
 msgstr "Hand Gesture"
 
-msgid "HandGesture:enum:Neutral"
+msgid "handGesture.option.neutral"
 msgstr "Neutral"
 
-msgid "HandGesture:enum:Fist"
+msgid "handGesture.option.fist"
 msgstr "Fist"
 
-msgid "HandGesture:enum:HandOpen"
+msgid "handGesture.option.handOpen"
 msgstr "HandOpen"
 
-msgid "HandGesture:enum:FingerPoint"
+msgid "handGesture.option.fingerPoint"
 msgstr "FingerPoint"
 
-msgid "HandGesture:enum:Victory"
+msgid "handGesture.option.victory"
 msgstr "Victory"
 
-msgid "HandGesture:enum:RockNRoll"
+msgid "handGesture.option.rockNRoll"
 msgstr "RockNRoll"
 
-msgid "HandGesture:enum:HandGun"
+msgid "handGesture.option.handGun"
 msgstr "HandGun"
 
-msgid "HandGesture:enum:ThumbsUp"
+msgid "handGesture.option.thumbsUp"
 msgstr "ThumbsUp"
 
-# EqualityComparison(enum)
 msgid "EqualityComparison"
 msgstr "Condition"
 
-msgid "EqualityComparison:enum:Equal"
-msgstr "Equal"
-
-msgid "EqualityComparison:enum:NotEqual"
-msgstr "Not Equal"
-
-# HandGestureCondition
-
-msgid "HandGestureCondition:label:Connector1"
-msgstr "to"
-
-msgid "HandGestureCondition:label:Connector2"
-msgstr "is"
-
-msgid "HandGestureCondition:label:Order"
-msgstr "0,3,4,1,2"
-
-# ParameterCondition
-
-msgid "ParameterCondition:label:Connector1"
-msgstr ""
-
-msgid "ParameterCondition:label:Connector2"
-msgstr "is"
-
-msgid "ParameterCondition:label:Order"
-msgstr "0,1,5,2,3"
-
-msgid "ParameterCondition:prop:ParameterName"
+msgid "parameterCondition.parameterName.label"
 msgstr "Parameter Name"
-
-msgid "ParameterCondition:prop:ParameterName:placeholder"
-msgstr "Parameter Name"
-
-msgid "ParameterCondition:prop:IntValue"
-msgstr "Value (int)"
-
-msgid "ParameterCondition:prop:FloatValue"
-msgstr "Value (float)"
-
-msgid "ParameterCondition:prop:BoolValue"
-msgstr "Value (bool)"
-
-# ParameterType(enum)
 
 msgid "ParameterType"
 msgstr "Parameter Type"
 
-msgid "ParameterType:enum:Int"
+msgid "parameterType.option.int"
 msgstr "Int"
 
-msgid "ParameterType:enum:Float"
+msgid "parameterType.option.float"
 msgstr "Float"
 
-msgid "ParameterType:enum:Bool"
+msgid "parameterType.option.bool"
 msgstr "Bool"
-
-# ComparisonType(enum)
 
 msgid "ComparisonType"
 msgstr "Comparison Operator"
 
-msgid "ComparisonType:enum:Equal"
+msgid "comparisonType.option.equal"
 msgstr "Equal To"
 
-msgid "ComparisonType:enum:NotEqual"
+msgid "comparisonType.option.notEqual"
 msgstr "Not Equal To"
 
-msgid "ComparisonType:enum:GreaterThan"
+msgid "comparisonType.option.greaterThan"
 msgstr "Greater Than"
 
-msgid "ComparisonType:enum:LessThan"
+msgid "comparisonType.option.lessThan"
 msgstr "Less Than"
-
-# TrackingPermission(enum)
 
 msgid "TrackingPermission"
 msgstr "Tracking"
 
-msgid "TrackingPermission:enum:Allow"
-msgstr "Allow"
+msgid "trackingPermission.option.allow"
+msgstr "On"
 
-msgid "TrackingPermission:enum:Disallow"
-msgstr "Disallow"
+msgid "trackingPermission.option.disallow"
+msgstr "Off"
 
-msgid "TrackingPermission:enum:Keep"
+msgid "trackingPermission.option.keep"
 msgstr "Keep"
 
-# ClipImportOption(enum)
+msgid "common.option.none"
+msgstr "No"
+
+msgid "common.option.present"
+msgstr "Yes"
 
 msgid "ClipImportOption"
 msgstr "Expression Animation Import"
 
-msgid "ClipImportOption:tooltip"
-msgstr "Options for handling facial animations included in the animation clip."
-
-msgid "ClipImportOption:enum:All"
+msgid "clipImportOption.option.all"
 msgstr "All"
 
-msgid "ClipImportOption:enum:NonZero"
+msgid "clipImportOption.option.nonZero"
 msgstr "Non-Zero"
 
-msgid "ClipImportOption:enum:FacialStyleOverridesOrNonZero"
-msgstr "Facial Style Overrides or Non-Zero"
-
-# FacialEditor
-
-msgid "FacialEditor:label:BaseShapes"
-msgstr "Base"
-
-msgid "FacialEditor:label:SelectedShapes"
-msgstr "Selected"
-
-msgid "FacialEditor:label:TargetRenderer"
-msgstr "Target"
-
-msgid "FacialEditor:button:Save"
-msgstr "Save (Ctrl+S)"
-
-msgid "FacialEditor:label:filter"
-msgstr "Filter"
-
-msgid "FacialEditor:label:ClipImport"
-msgstr "Animation Clip Import"
-
-msgid "FacialEditor:label:Clip"
-msgstr "Animation Clip"
-
-msgid "FacialEditor:label:ImportOption"
-msgstr "Import Settings"
-
-msgid "FacialEditor:button:Import"
-msgstr "Import"
-
-msgid "FacialEditor:UnsavedChanges:Title"
+msgid "facialEditor.unsavedChanges.title"
 msgstr "Unsaved Changes"
 
-msgid "FacialEditor:UnsavedChanges:Message"
+msgid "facialEditor.unsavedChanges.message"
 msgstr "There are unsaved changes in this window. Do you want to save them?"
 
-msgid "FacialEditor:UnsavedChanges:Save"
+msgid "facialEditor.unsavedChanges.save"
 msgstr "Save"
 
-msgid "FacialEditor:UnsavedChanges:Discard"
+msgid "facialEditor.unsavedChanges.discard"
 msgstr "Discard"
 
-msgid "FacialEditor:UnsavedChanges:Cancel"
+msgid "facialEditor.unsavedChanges.cancel"
 msgstr "Cancel"
 
-# AnimatorControllerImporter
-
-msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:Importing"
+msgid "animatorControllerImporter.log.info.animatorControllerImporter.importing"
 msgstr "Importing Animator Controller"
 
-msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:LayerCollected"
+msgid "animatorControllerImporter.log.info.animatorControllerImporter.layerCollected"
 msgstr "Layers Collected"
 
-msgid "AnimatorControllerImporter:Log:info:AnimatorControllerImporter:FinishedImporting"
+msgid "animatorControllerImporter.log.info.animatorControllerImporter.finishedImporting"
 msgstr "Finished Importing Animator Controller"
 
-# Preview
-
-msgid "Preview:Log:error:failedToInstantiate"
-msgstr "Failed to process preview."
-
-msgid "RealTimeExpressionPreview:Log:warning:MultipleExpressionComponentWithEnableRealTimePreview"
+msgid "realTimeExpressionPreview.log.warning.multipleExpressionComponentWithEnableRealTimePreview"
 msgstr "Multiple Expression components with 'Always Preview This Expression' enabled were found. Only one can be enabled at a time."
 
-# build
-
-msgid "Log:error:CloneShapes:ShapeNotFound"
-msgstr "Source blend shape not found."
-
-msgid "Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer"
+msgid "log.applyDefaultShapesPass.multipleFacialStyleComponentWithApplyToRenderer.warning"
 msgstr "Multiple FacialStyleComponents with the 'Apply to SkinnedMeshRenderer' option enabled were found. Only one can be set."
 
-msgid "Log:warning:ProcessTrackedShapesPass:UnAllowedBlendShapesFound"
+msgid "log.processTrackedShapesPass.unAllowedBlendShapesFound.warning"
 msgstr "Unallowed blend shapes were found. Please add an AllowTrackedBlendShapes component or exclude these blend shapes."
 
-# other log
+msgid "ComponentReferenceMode"
+msgstr "Reference Mode"
 
-msgid "Log:warning:AvatarContextBuilder:MultipleOverrideFaceRenderer"
-msgstr "Multiple OverrideFaceRendererComponents were found. Only one can be set."
+msgid "MenuItemKind"
+msgstr "Kind"
 
-msgid "Log:error:AvatarContextBuilder:FailedToBuild"
-msgstr "Failed to build avatar context."
+msgid "dataComponent.import.button"
+msgstr "Import"
+
+msgid "condition.always.label"
+msgstr "Always"
+
+msgid "condition.mode.label"
+msgstr "Condition"
+
+msgid "condition.mode.normal.label"
+msgstr "Conditional"
+
+msgid "condition.mode.always.label"
+msgstr "Always True"
+
+msgid "condition.case.label"
+msgstr "Case"
+
+msgid "condition.and.label"
+msgstr "and"
+
+msgid "condition.emptyCase.message"
+msgstr "Add at least one condition."
+
+
+msgid "condition.conditions.label"
+msgstr "Conditions"
+
+msgid "conditionCase.handGestureConditions.label"
+msgstr "Hand Gestures"
+
+msgid "conditionCase.menuConditions.label"
+msgstr "Menus"
+
+msgid "conditionCase.parameterConditions.label"
+msgstr "Parameters"
+
+msgid "handGestureCondition.match.label"
+msgstr "Hands"
+
+msgid "handGestureCondition.handGesture.label"
+msgstr "Gesture"
+
+msgid "menuCondition.menuSource.label"
+msgstr "Menu"
+
+msgid "menuCondition.mode.label"
+msgstr "Mode"
+
+msgid "menuCondition.threshold.label"
+msgstr "Threshold"
+
+msgid "parameterCondition.comparisonType.label"
+msgstr "Comparison"
+
+msgid "expressionData.clip.label"
+msgstr "Animation Clip"
+
+msgid "expressionData.clipOption.label"
+msgstr "Import Option"
+
+msgid "expressionData.blendShapeAnimations.label"
+msgstr "Blend Shape Animations"
+
+msgid "expressionData.allBlendShapeAnimationAsFacial.label"
+msgstr "Treat all blend shapes as facial"
+
+msgid "expressionData.advancedOptions.label"
+msgstr "Advanced Options"
+
+msgid "expressionData.legacyData.warning"
+msgstr "Legacy expression data found. Migrate it to the new data."
+
+msgid "expressionData.migrateLegacyData.button"
+msgstr "Migrate Legacy Expression Data"
+
+msgid "expressionSettings.option.gestureLeftWeight"
+msgstr "Gesture Left Weight"
+
+msgid "expressionSettings.option.gestureRightWeight"
+msgstr "Gesture Right Weight"
+
+msgid "expressionSettings.option.custom"
+msgstr "Custom"
+
+msgid "facialEditor.options.label"
+msgstr "Options"
+
+msgid "facialEditor.addZeroWeight.option"
+msgstr "Add Zero Weight"
+
+msgid "facialEditor.addBaseSet.option"
+msgstr "Add Base Set"
+
+msgid "facialEditor.excludeTrackedShapes.option"
+msgstr "Exclude Tracked Shapes"
+
+msgid "facialEditor.title"
+msgstr "Facial Shapes Editor"
+
+msgid "facialEditor.save.button"
+msgstr "Save"
+
+msgid "facialEditor.style.option"
+msgstr "Facial"
+
+msgid "facialEditor.base.option"
+msgstr "Base"
+
+msgid "facialEditor.search.placeholder"
+msgstr "Search"
+
+msgid "customEditorUtility.saveAsClip.title"
+msgstr "Save as a Clip"
+
+msgid "customEditorUtility.saveAsClip.message"
+msgstr "Please enter the name of the animation clip."
+
+msgid "menuIconSettings.manualIcon.label"
+msgstr "Manual Icon"
+
+msgid "menuIconSettings.previewExpression.label"
+msgstr "Preview Expression"
+
+msgid "menuInstallSettings.installContainerOverride.label"
+msgstr "Install Container Override"
+
+msgid "directMenuSettings.menuName.label"
+msgstr "Menu Name"
+
+msgid "directMenuSettings.icon.label"
+msgstr "Icon"
+
+msgid "directMenuSettings.installSettings.label"
+msgstr "Install Settings"
+
+msgid "directMenuSettings.blendExclusiveGroupName.label"
+msgstr "Blend Exclusive Group"
+
+msgid "exclusiveToggleGroup.groupName.label"
+msgstr "Group Name"
+
+msgid "MenuIconMode"
+msgstr "Icon Mode"
+
+msgid "menuIconMode.option.manual"
+msgstr "Manual"
+
+msgid "menuIconMode.option.expressionPreview"
+msgstr "Expression Preview"
+
+msgid "MenuConditionMode"
+msgstr "Mode"
+
+msgid "menuConditionMode.option.enabled"
+msgstr "Enabled"
+
+msgid "menuConditionMode.option.disabled"
+msgstr "Disabled"
+
+msgid "menuConditionMode.option.greaterThan"
+msgstr "Greater Than"
+
+msgid "menuConditionMode.option.lessThan"
+msgstr "Less Than"
+
+msgid "HandGestureMatch"
+msgstr "Hands"
+
+msgid "handGestureMatch.option.leftHand"
+msgstr "Left Hand"
+
+msgid "handGestureMatch.option.rightHand"
+msgstr "Right Hand"
+
+msgid "handGestureMatch.option.bothHands"
+msgstr "Both Hands"
+
+msgid "handGestureMatch.option.atLeastOneHand"
+msgstr "At Least One Hand"
+
+msgid "handGestureMatch.option.exactlyOneHand"
+msgstr "Exactly One Hand"
+
+msgid "handGestureMatch.option.neitherHand"
+msgstr "Neither Hand"
+
+msgid "facialSettings.writeMode.label"
+msgstr "Write Mode"
+
+msgid "ExpressionWriteMode"
+msgstr "Write Mode"
+
+msgid "expressionWriteMode.option.replace"
+msgstr "Replace"
+
+msgid "expressionWriteMode.option.blend"
+msgstr "Blend"
+
+msgid "expression.condition.label"
+msgstr "Configure Conditions"
+
+msgid "expression.directMenu.label"
+msgstr "Direct Menu Control"
+
+msgid "expression.section.label"
+msgstr "Expression"
+
+msgid "expression.blendShapeAnimations.label"
+msgstr "Blend Shape Animations"
+
+msgid "blendShapeAnimation.singleFrame.label"
+msgstr "Single Frame"
+
+msgid "blendShapeAnimation.multiFrame.label"
+msgstr "Multi Frame"
+
+msgid "expression.facialSettings.section.label"
+msgstr "Facial Settings"
+
+msgid "expression.additionalAnimations.section.label"
+msgstr "Non-Facial Animation"
+
+msgid "expression.additionalAnimations.clips.label"
+msgstr "Animation Clips"
+
+msgid "expression.additionalAnimations.transforms.label"
+msgstr "Transforms"
+
+msgid "expression.animationSettings.section.label"
+msgstr "Multi-Frame Settings"
+
+msgid "menuIcon.none.label"
+msgstr "None"
+
+msgid "menuIcon.manual.label"
+msgstr "Manual"
+
+msgid "menuIcon.automatic.label"
+msgstr "Automatic"
+
+msgid "menuIcon.manualIcon.label"
+msgstr "Texture"
+
+msgid "menuIcon.previewExpression.label"
+msgstr "Expression Component"
+
+msgid "menuIcon.currentExpression.placeholder"
+msgstr "This Expression"
+
+msgid "menuIcon.manualIcon.empty.message"
+msgstr "Select a texture."
+
+msgid "menuIcon.previewExpression.empty.message"
+msgstr "Select an expression component."
+
+msgid "menuInstallSettings.folder.placeholder"
+msgstr "Folder"
+
+msgid "menuInstallSettings.root.placeholder"
+msgstr "Root"
+
+msgid "menuInstallSettings.destinationType.placeholder"
+msgstr "Menu Folder, etc."
+
+msgid "directMenu.menuName.label"
+msgstr "Menu Name"
+
+msgid "directMenu.replaceGroup.placeholder"
+msgstr "Replace Group"
+
+msgid "directMenu.icon.label"
+msgstr "Icon"
+
+msgid "directMenu.destination.label"
+msgstr "Destination"
+
+msgid "directMenu.menuGroup.label"
+msgstr "Menu Group"
+
+msgid "directMenu.priorityOffset.label"
+msgstr "Priority Offset"
+
+msgid "parameterCondition.parameterType.label"
+msgstr "Type"
+
+msgid "menuIcon.icon.label"
+msgstr "Icon"
+
+msgid "common.menu.tooltip"
+msgstr "Menu"
+
+msgid "common.component.label"
+msgstr "Component"
+
+msgid "common.options.section.label"
+msgstr "Options"
+
+msgid "section.menu.reset"
+msgstr "Reset"
+
+msgid "section.empty.message"
+msgstr "There are currently no settings."
+
+msgid "componentReferenceMode.option.direct"
+msgstr "Normal"
+
+msgid "componentReferenceMode.option.reference"
+msgstr "Use Other Settings"
+
+msgid "expression.condition.section.label"
+msgstr "Conditions"
+
+msgid "common.mode.label"
+msgstr "Mode"
+
+msgid "common.false.label"
+msgstr "False"
+
+msgid "common.true.label"
+msgstr "True"
+
+msgid "expression.blendShapes.label"
+msgstr "Blend Shapes"
+
+msgid "expression.behavior.section.label"
+msgstr "Expression Settings"
+
+
+msgid "expression.application.label"
+msgstr "Write Scope"
+
+msgid "expression.application.tooltip"
+msgstr "Specifies the range this expression writes to. \"Entire Expression\" writes the configured blend shapes and sets the rest to 0. \"Specified Parts Only\" writes only the configured blend shapes and leaves all other values untouched. Expressions lower in the hierarchy usually take precedence."
+
+msgid "expression.application.replace.label"
+msgstr "Entire Expression"
+
+msgid "expression.application.blend.label"
+msgstr "Specified Parts Only (Advanced)"
+
+msgid "expression.clip.import.button"
+msgstr "↓"
+
+msgid "expression.previewSettings.section.label"
+msgstr "Preview Settings"
+
+msgid "expression.currentValue.default.label"
+msgstr "Default"
+
+msgid "expression.currentValue.multiple.label"
+msgstr "Multiple Sources"
+
+msgid "expression.settingSource.label"
+msgstr "Source"
+
+msgid "expression.settingSource.local.label"
+msgstr "Overriding"
+
+msgid "expression.settingSource.inherited.label"
+msgstr "Inherited from Parent"
+
+msgid "expression.settingSource.changeLocal.action"
+msgstr "Change in This Expression"
+
+msgid "expression.settingSource.overrideInherited.action"
+msgstr "Override in This Expression"
+
+msgid "expression.settingSource.clearLocal.action"
+msgstr "Clear Override"
+
+msgid "expression.settingSource.batch.action"
+msgstr "Change Globally from Parent"
+
+msgid "expression.settingSource.selectParent.action"
+msgstr "Select Parent Settings"
+
+msgid "expression.batchOverride.undo"
+msgstr "Create Global Override Settings"
+
+msgid "menu.section.label"
+msgstr "Menu"
+
+msgid "menu.mode.section.label"
+msgstr "Menu"
+
+msgid "menu.basicSettings.section.label"
+msgstr "Basic Settings"
+
+msgid "menu.advancedSettings.section.label"
+msgstr "Advanced Settings"
+
+msgid "menu.name.label"
+msgstr "Menu Name"
+
+msgid "menu.icon.label"
+msgstr "Icon"
+
+msgid "menu.destination.label"
+msgstr "Destination"
+
+msgid "menu.kind.label"
+msgstr "Type"
+
+msgid "menu.mode.label"
+msgstr "Mode"
+
+msgid "menu.options.label"
+msgstr "Options"
+
+msgid "menu.group.label"
+msgstr "Group"
+
+msgid "menu.exclusiveGroup.label"
+msgstr "Exclusive Group"
+
+msgid "menu.parameterName.label"
+msgstr "Parameter Name"
+
+msgid "menu.parameterName.auto.placeholder"
+msgstr "Auto Generate"
+
+msgid "menu.defaultSelected.label"
+msgstr "Selected by Default"
+
+msgid "menu.floatDefaultValue.label"
+msgstr "Default Value"
+
+msgid "menu.parameterSynced.label"
+msgstr "Synced"
+
+msgid "menu.parameterSaved.label"
+msgstr "Saved"
+
+msgid "menuFolder.section.label"
+msgstr "Menu Folder"
+
+msgid "menuFolder.name.label"
+msgstr "Folder Name"
+
+msgid "condition.section.label"
+msgstr "Conditions"
+
+msgid "set.section.label"
+msgstr "Expression Set"
+
+msgid "menuSettings.section.label"
+msgstr "Menu Settings"
+
+msgid "style.expression.section.label"
+msgstr "Facial Style"
+
+msgid "style.applyToRenderer.label"
+msgstr "Apply This Facial Style to the Renderer at Build Time"
+
+msgid "style.applyToRenderer.menu"
+msgstr "Apply to Renderer"
+
+msgid "style.getFromRenderer.button"
+msgstr "Get from Renderer"
+
+msgid "expression.otherExpression.label"
+msgstr "Use Another Expression"
+
+msgid "style.otherStyle.label"
+msgstr "Use Another Facial Style"
+
+msgid "settingsReferenceMode.option.direct"
+msgstr "Set for This Expression"
+
+msgid "settingsReferenceMode.option.reference"
+msgstr "Use Other Settings"
+
+msgid "settingsReferenceMode.short.direct"
+msgstr "Standard"
+
+msgid "settingsReferenceMode.short.reference"
+msgstr "Reference"
+
+msgid "expression.settingSource.short.standard"
+msgstr "Standard"
+
+msgid "expression.settingSource.short.batch"
+msgstr "Batch"
+
+msgid "expression.settingSource.short.setting"
+msgstr "Set"
+
+msgid "expression.settingSource.short.reference"
+msgstr "Reference"
+
+msgid "expression.settingSource.option.standard"
+msgstr "Use Standard Settings"
+
+msgid "expression.settingSource.option.batch"
+msgstr "Use Parent Batch Settings"
+
+msgid "expression.settingSource.option.direct"
+msgstr "Set for This Expression"
+
+msgid "expression.settingSource.option.reference"
+msgstr "Use Other Settings"
+
+msgid "expression.realTimePreview.label"
+msgstr "Always Preview This Expression"
+
+msgid "expression.selectedExpressionPreview.label"
+msgstr "Preview Expression Selected in Hierarchy"
+
+msgid "expression.selectedProjectExpressionPreview.label"
+msgstr "Preview Expression Selected in Project"
+
+msgid "expression.multiFrame.default.label"
+msgstr "Default"
+
+msgid "expression.multiFrame.loop.label"
+msgstr "Loop"
+
+msgid "expression.multiFrame.trigger.label"
+msgstr "Trigger"
+
+msgid "expression.multiFrame.parameter.label"
+msgstr "Parameter"
+
+msgid "expression.multiFrame.menu.label"
+msgstr "Menu"
+
+msgid "expression.multiFrame.menuSource.label"
+msgstr "Menu"
+
+msgid "expression.multiFrame.parameterName.empty.message"
+msgstr "Enter a parameter name."
+
+msgid "expression.multiFrame.menuSource.empty.message"
+msgstr "Select a menu."
+
+msgid "expression.group.expression.label"
+msgstr "Expression"
+
+msgid "expression.group.conditions.label"
+msgstr "Conditions"
+
+msgid "expression.group.other.label"
+msgstr "Other"
+
+msgid "expression.multiFrame.mode.label"
+msgstr "Multi-frame Mode"
+
+msgid "expression.multiFrame.linkedHand.label"
+msgstr "Linked Hand"
+
+msgid "multiFrameMode.option.default"
+msgstr "Default"
+
+msgid "multiFrameMode.option.loop"
+msgstr "Loop"
+
+msgid "multiFrameMode.option.trigger"
+msgstr "Trigger"
+
+msgid "multiFrameMode.option.parameter"
+msgstr "Parameter"
+
+msgid "hand.option.left"
+msgstr "Left Hand"
+
+msgid "hand.option.right"
+msgstr "Right Hand"
+
+msgid "handGestureHand.option.left"
+msgstr "Left Hand"
+
+msgid "handGestureHand.option.right"
+msgstr "Right Hand"
+
+msgid "handGestureHand.option.any"
+msgstr "One or Both Hands"
+
+msgid "handGestureHand.option.both"
+msgstr "Both Hands"
+
+msgid "condition.kind.none.label"
+msgstr "None"
+
+msgid "condition.kind.hand.label"
+msgstr "Hand"
+
+msgid "condition.kind.menu.label"
+msgstr "Menu"
+
+msgid "condition.kind.parameter.label"
+msgstr "Parameter"
+
+msgid "common.override.label"
+msgstr "Override"
+
+msgid "condition.or.label"
+msgstr "OR"
+
+msgid "condition.addOrGroup.label"
+msgstr "Add OR Condition Group"
+
+msgid "menu.group.none.label"
+msgstr "None"
+
+msgid "menu.group.new.label"
+msgstr "New…"
+
+msgid "menu.group.directMenuReplace.label"
+msgstr "Replace Expressions"
+
+msgid "disableEyeBlink.section.label"
+msgstr "Disable Eye Blink"
+
+msgid "disableLipSync.section.label"
+msgstr "Disable Lip Sync"
+
+msgid "lipSync.section.label"
+msgstr "Lip Sync Settings"
+
+msgid "eyeBlink.section.label"
+msgstr "Eye Blink Settings"
+
+msgid "eyeBlink.configuration.label"
+msgstr "Configuration"
+
+msgid "eyeBlink.component.label"
+msgstr "Component"
+
+msgid "eyeBlink.mode.label"
+msgstr "Mode"
+
+msgid "eyeBlinkMode.option.builtIn"
+msgstr "Avatar Settings"
+
+msgid "eyeBlinkMode.option.simpleAnimation"
+msgstr "Animation"
+
+msgid "eyeBlinkMode.option.customAnimation"
+msgstr "Custom Animation"
+
+msgid "eyeBlink.simple.durations.label"
+msgstr "Duration (Seconds)"
+
+msgid "eyeBlink.simple.duration.closing.shortLabel"
+msgstr "Close"
+
+msgid "eyeBlink.simple.duration.hold.shortLabel"
+msgstr "Hold"
+
+msgid "eyeBlink.simple.duration.opening.shortLabel"
+msgstr "Open"
+
+msgid "eyeBlink.simple.blinkBlendShapes.label"
+msgstr "Blend Shapes"
+
+msgid "eyeBlink.simple.conflictBlendShapes.label"
+msgstr "Conflict Correction"
+
+msgid "eyeBlink.animations.label"
+msgstr "Animations"
+
+msgid "eyeBlink.intervalSeconds.label"
+msgstr "Interval (Seconds)"
+
+msgid "eyeBlink.interval.minimum.shortLabel"
+msgstr "Minimum"
+
+msgid "eyeBlink.interval.maximum.shortLabel"
+msgstr "Maximum"
+
+msgid "lockFacial.section.label"
+msgstr "Lock Facial"
+
+msgid "mmdSupport.section.label"
+msgstr "MMD World Mode"
+
+msgid "settings.section.label"
+msgstr "Avatar Settings"
+
+msgid "transition.section.label"
+msgstr "Transition Settings"
+
+msgid "transition.duration.label"
+msgstr "Duration Seconds"
+
+msgid "avatarSettings.faceMesh.label"
+msgstr "Face Mesh"
+
+msgid "avatarSettings.faceMesh.option.auto"
+msgstr "Automatic"
+
+msgid "avatarSettings.faceMesh.option.manual"
+msgstr "Manual"
+
+msgid "avatarSettings.meshObject.label"
+msgstr "Mesh Object"
+
+msgid "avatarSettings.blendShapes.label"
+msgstr "Blend Shapes"
+
+msgid "avatarSettings.blendShapes.option.all"
+msgstr "All"
+
+msgid "avatarSettings.blendShapes.option.excludeSome"
+msgstr "Exclude Some"
+
+msgid "avatarSettings.excludedBlendShapes.label"
+msgstr "Excluded Blend Shapes"
+
+msgid "avatarSettings.advancedSettings.label"
+msgstr "Advanced Settings"
+
+msgid "avatarSettings.avoidEyeBlinkConflicts.label"
+msgstr "Avoid Blink Conflicts (Recommended)"
+
+msgid "avatarSettings.avoidLipSyncConflicts.label"
+msgstr "Avoid Lip Sync Conflicts (Recommended)"
+
+msgid "mmdSupport.blendShapes.label"
+msgstr "MMD Blend Shapes"
+
+msgid "mmdSupport.blendShapes.option.auto"
+msgstr "Auto"
+
+msgid "mmdSupport.blendShapes.option.specified"
+msgstr "Specified"
+
+msgid "mmdSupport.blendShapeName.label"
+msgstr "Blend Shape Name"
+
+msgid "mmdSupport.disableWhen.label"
+msgstr "Disable When"
+
+msgid "mmdSupport.disableMode.label"
+msgstr "Support Method"
+
+msgid "mmdDisableMode.option.auto"
+msgstr "Auto"
+
+msgid "mmdDisableMode.option.disableFx"
+msgstr "Disable Entire FX Layer"
+
+msgid "mmdDisableMode.option.disableLayer"
+msgstr "Disable Individual Layers"
+
+msgid "condition.hand.matches.label"
+msgstr "Matches"
+
+msgid "condition.hand.doesNotMatch.label"
+msgstr "Does Not Match"
+
+msgid "condition.bool.disabled.label"
+msgstr "Disabled"
+
+msgid "condition.bool.enabled.label"
+msgstr "Enabled"
+
+msgid "settingsReference.component.empty.message"
+msgstr "Specify the component to reference."
+
+msgid "priority.section.label"
+msgstr "Priority"
+
+msgid "priority.value.label"
+msgstr "Priority"
+
+msgid "lipSync.cancellerBlendShapes.label"
+msgstr "Conflict Correction"
+
+msgid "expressionSet.defaultSelected.label"
+msgstr "Selected by Default"
+
+msgid "settings.facial.section.label"
+msgstr "Facial Expression"
+
+msgid "settings.configureFacial.section.label"
+msgstr "Add Facial Style / Base Expression"
+
+msgid "settings.eyeBlink.section.label"
+msgstr "Change Eye Blink Settings Globally"
+
+msgid "settings.lipSync.section.label"
+msgstr "Change Lip Sync Settings Globally"
+
+msgid "settings.transition.section.label"
+msgstr "Change Transition Settings Globally"
+
+msgid "settings.priority.section.label"
+msgstr "Change Priority Globally"
+
+msgid "settings.expressionSet.section.label"
+msgstr "Make an Expression Set"
+
+msgid "settings.addCondition.section.label"
+msgstr "Add Conditions Globally"
+
+msgid "settings.add.label"
+msgstr "Add Setting"
+
+msgid "settings.add.option.select"
+msgstr "Select"
+
+msgid "settings.remove.label"
+msgstr "Remove Setting"
+
+msgid "settings.applyToRenderer.label"
+msgstr "Apply to Renderer"
+
+msgid "settings.applyToRenderer.menu"
+msgstr "Apply to Renderer Now"
+
+msgid "settings.getFromRenderer.menu"
+msgstr "Get from Renderer"
+
+msgid "avatarControl.section.label"
+msgstr "Avatar Control"
+
+msgid "avatarControl.kind.label"
+msgstr "Control"
+
+msgid "avatarControl.kind.lockFacial.label"
+msgstr "Lock Facial Expressions"
+
+msgid "avatarControl.kind.disableEyeBlink.label"
+msgstr "Disable Eye Blink"
+
+msgid "avatarControl.kind.disableLipSync.label"
+msgstr "Disable Lip Sync"
+
+msgid "avatarControl.kind.supportMmd.label"
+msgstr "Support MMD"
+
+msgid "avatarSettings.faceMesh.empty.message"
+msgstr "Select the face mesh object."
+
+msgid "mmdSupport.mode.label"
+msgstr "Support Method"
+
+msgid "mmdSupport.mode.option.auto"
+msgstr "Automatic"
+
+msgid "mmdSupport.mode.option.disableFxLayer"
+msgstr "Disable Entire FX Layer"
+
+msgid "mmdSupport.mode.option.disableLayers"
+msgstr "Disable Individual Layers"
+
+msgid "menu.kind.toggle.label"
+msgstr "Toggle"
+
+msgid "menu.kind.radial.label"
+msgstr "Radial"
+
+msgid "menu.kind.folder.label"
+msgstr "Folder"
+
+msgid "menu.binding.label"
+msgstr "Parameter"
+
+msgid "menu.binding.generate.label"
+msgstr "Generate"
+
+msgid "menu.binding.existing.label"
+msgstr "Existing"
+
+msgid "menu.selectedValue.label"
+msgstr "Selected Value"
+
+# FaceTune Window
+msgid "window.avatar.label"
+msgstr "Avatar"
+
+msgid "window.avatarMissing.message"
+msgstr "Right-click an avatar and open GameObject/FaceTune/Window again."
+
+msgid "window.home.button"
+msgstr "Home"
+
+msgid "window.home.title"
+msgstr "FaceTune"
+
+msgid "window.home.description"
+msgstr "What would you like to do with this avatar?"
+
+msgid "window.open.button"
+msgstr "Open"
+
+msgid "window.recommended.badge"
+msgstr "Recommended"
+
+msgid "window.standard.title"
+msgstr "Add Standard Setup"
+
+msgid "window.standard.description"
+msgstr "Add the recommended foundation for managing facial expressions with FaceTune."
+
+msgid "window.standard.introduction"
+msgstr "Add the standard FaceTune structure suitable for most avatars."
+
+msgid "window.standard.contents.title"
+msgstr "Included"
+
+msgid "window.standard.contents.settings"
+msgstr "• Settings for the base face and menu folder"
+
+msgid "window.standard.contents.option"
+msgstr "• Option container for controls such as Lock Facial"
+
+msgid "window.standard.contents.default"
+msgstr "• Default Expression for the normal face"
+
+msgid "window.standard.includeDefault.label"
+msgstr "Include Default Expression"
+
+msgid "window.standard.default.notice"
+msgstr "Default Expression is always active and replaces lower-priority facial controls."
+
+msgid "window.standard.noDefault.notice"
+msgstr "The foundation will be added without replacing existing facial controls."
+
+msgid "window.standard.existing.warning"
+msgstr "A standard FaceTune setup may already exist on this avatar. Adding another can create duplicate folders or defaults."
+
+msgid "window.standard.add.button"
+msgstr "Add Standard Setup"
+
+msgid "window.add.title"
+msgstr "Add Expressions and Controls"
+
+msgid "window.add.description"
+msgstr "Add only the Expression, gesture pattern, or control you need."
+
+msgid "window.add.introduction"
+msgstr "Each item can be used on its own. The standard setup is not required."
+
+msgid "window.add.button"
+msgstr "Add"
+
+msgid "window.category.expression"
+msgstr "Expression"
+
+msgid "window.category.pattern"
+msgstr "Patterns"
+
+msgid "window.category.control"
+msgstr "Controls"
+
+msgid "window.destination.label"
+msgstr "Destination"
+
+msgid "window.recipe.expression.title"
+msgstr "Expression"
+
+msgid "window.recipe.expression.description"
+msgstr "Add one empty Expression. Configure its face and activation in the Inspector."
+
+msgid "window.recipe.handSign.title"
+msgstr "Hand Sign"
+
+msgid "window.recipe.handSign.description"
+msgstr "Add Expressions for the standard hand gestures."
+
+msgid "window.recipe.leftHand.title"
+msgstr "Left Hand"
+
+msgid "window.recipe.leftHand.description"
+msgstr "Switch expressions using left-hand gestures."
+
+msgid "window.recipe.rightHand.title"
+msgstr "Right Hand"
+
+msgid "window.recipe.rightHand.description"
+msgstr "Switch expressions using right-hand gestures."
+
+msgid "window.recipe.leftHandPriority.title"
+msgstr "Left Hand Priority"
+
+msgid "window.recipe.leftHandPriority.description"
+msgstr "Prioritize the left hand when both hands have input."
+
+msgid "window.recipe.rightHandPriority.title"
+msgstr "Right Hand Priority"
+
+msgid "window.recipe.rightHandPriority.description"
+msgstr "Prioritize the right hand when both hands have input."
+
+msgid "window.recipe.blending.title"
+msgstr "Blending"
+
+msgid "window.recipe.blending.description"
+msgstr "Blend expressions from the left and right hands."
+
+msgid "window.recipe.lockFacial.title"
+msgstr "Lock Facial"
+
+msgid "window.recipe.lockFacial.description"
+msgstr "Add a menu control that locks facial expressions."
+
+msgid "window.recipe.disableEyeBlink.title"
+msgstr "Disable Eye Blink"
+
+msgid "window.recipe.disableEyeBlink.description"
+msgstr "Disable eye blinking while its condition is active."
+
+msgid "window.recipe.disableLipSync.title"
+msgstr "Disable Lip Sync"
+
+msgid "window.recipe.disableLipSync.description"
+msgstr "Disable lip sync while its condition is active."
+
+msgid "window.recipe.mmdSupport.title"
+msgstr "MMD Support"
+
+msgid "window.recipe.mmdSupport.description"
+msgstr "Add facial control for MMD worlds."
+
+msgid "window.import.title"
+msgstr "Import Existing Facial Controls"
+
+msgid "window.import.description"
+msgstr "Create FaceTune settings from an Animator Controller, AnimationClips, an older version, or another supported tool."
+
+msgid "window.import.introduction"
+msgstr "Select an available source. Source data is not changed unless explicitly stated."
+
+msgid "window.import.none.badge"
+msgstr "No sources"
+
+msgid "window.import.none.message"
+msgstr "No importer is available for this avatar."
+
+msgid "window.import.changeSource.button"
+msgstr "Choose Another Source"
+
+msgid "window.import.foundation.title"
+msgstr "FaceTune Foundation"
+
+msgid "window.import.foundation.existing"
+msgstr "Imported content will be added to the existing FaceTune standard setup."
+
+msgid "window.import.foundation.addStandard.label"
+msgstr "Add the standard setup"
+
+msgid "window.import.foundation.addStandard.description"
+msgstr "Add Settings, Option, and optionally Default Expression, then place the imported content inside."
+
+msgid "window.import.foundation.contentOnly.description"
+msgstr "Add only the imported content. This is suitable for adding FaceTune alongside existing controls."
+
+msgid "window.import.sourceUnchanged.notice"
+msgstr "The source is not removed or disabled. Check for conflicts if both the original control and FaceTune remain active."
+
+msgid "window.import.button"
+msgstr "Import"
+
+msgid "window.import.avatarInvalid.message"
+msgstr "The face renderer or face mesh could not be resolved for this avatar."
+
+msgid "window.import.vrchatAnimator.title"
+msgstr "VRChat FX Animator Controller"
+
+msgid "window.import.vrchatAnimator.description"
+msgstr "Create Expressions from facial animations and conditions in a VRChat FX Animator Controller."
+
+msgid "window.import.controller.label"
+msgstr "Controller"
+
+msgid "window.import.controller.empty"
+msgstr "Select an Animator Controller to import."
+
+msgid "window.result.title"
+msgstr "Completed"
+
+msgid "window.result.default"
+msgstr "The operation completed."
+
+msgid "window.result.standard.title"
+msgstr "The standard setup was added."
+
+msgid "window.result.standard.guide"
+msgstr "Select Default and configure the normal face in its Expression section. Add further expressions and controls from this window as needed."
+
+msgid "window.result.standardWithoutDefault.guide"
+msgstr "The foundation was added without Default Expression. Existing facial controls are not replaced by this setup alone."
+
+msgid "window.result.recipe.title"
+msgstr "The item was added."
+
+msgid "window.result.expression.guide"
+msgstr "Configure the face in the Expression section of the Inspector, then enable a condition or direct menu to activate it."
+
+msgid "window.result.pattern.guide"
+msgstr "Select each generated Expression and configure its face in the Inspector. The gesture structure is already configured."
+
+msgid "window.result.control.guide"
+msgstr "Check the activation condition and menu settings in the Inspector."
+
+msgid "window.result.import.title"
+msgstr "The content was imported."
+
+msgid "window.result.animatorImport.guide"
+msgstr "Review the imported Expressions and their conditions. The original Animator Controller was not changed, so verify that its facial controls do not conflict with FaceTune."
+
+msgid "window.result.created.label"
+msgstr "Created"
+
+msgid "window.result.select.button"
+msgstr "Select Created Object"
+
+msgid "window.result.addAnother.button"
+msgstr "Add Another"
+
+
