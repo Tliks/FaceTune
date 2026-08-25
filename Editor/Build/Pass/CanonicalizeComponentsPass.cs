@@ -89,6 +89,7 @@ internal static class MenuCanonicalizer
     private static MenuComponent CreateDirectMenu(GameObject menuObject, ExpressionComponent source)
     {
         var menu = menuObject.AddComponent<MenuComponent>();
+        menu.GeneratedFromExpression = source;
         menu.MenuKind = MenuComponent.Kind.Toggle;
         menu.Menu = source.DirectMenuSettings.Menu;
         menu.UseExistingParameter = false;
