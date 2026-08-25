@@ -292,7 +292,7 @@ internal static class VRChatAnimatorBuilder
             yield return EditorCurveBinding.FloatCurve(
                 settings.AvatarContext.BodyPath,
                 typeof(SkinnedMeshRenderer),
-                "blendShape." + name);
+                FaceTuneConstants.BlendShapePropertyPrefix + name);
         }
 
         foreach (var item in expressionPlan.Items)

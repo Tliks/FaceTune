@@ -15,7 +15,7 @@ internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendSha
     {
     }
 
-    public BlendShapeWeightSet(IEnumerable<BlendShapeWeight> blendShapes, NamedItemSetOptions options = NamedItemSetOptions.PreferLatter) : base(blendShapes, options)
+    public BlendShapeWeightSet(IEnumerable<BlendShapeWeight> blendShapes) : base(blendShapes)
     {
     }
 

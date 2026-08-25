@@ -299,7 +299,7 @@ internal sealed class FaceEmoImporter
     private bool IsFacial(EditorCurveBinding binding)
         => binding.path == _context.BodyPath
            && binding.type == typeof(SkinnedMeshRenderer)
-           && binding.propertyName.StartsWith("blendShape.", StringComparison.Ordinal);
+           && binding.propertyName.StartsWith(FaceTuneConstants.BlendShapePropertyPrefix, StringComparison.Ordinal);
 
     private GameObject? ResolveTarget(string path)
         => string.IsNullOrEmpty(path)

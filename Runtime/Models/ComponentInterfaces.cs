@@ -29,10 +29,3 @@ internal interface IReferenceableExpressionSettings<TValue>
     ReferenceableExpressionSettings<TValue> Settings { get; }
 }
 
-internal static class ReferenceableExpressionSettingsExtensions
-{
-    public static ReferenceableExpressionSettings<TValue> GetReferenceableSettings<TValue>(
-        this IReferenceableExpressionSettings<TValue> source)
-        where TValue : class
-        => source.Settings;
-}

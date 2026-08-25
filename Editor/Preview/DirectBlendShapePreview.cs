@@ -10,7 +10,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
     private static readonly Dictionary<SkinnedMeshRenderer, BlendShapePreviewNode> _currentNodes = new();
     private static readonly Dictionary<SkinnedMeshRenderer, DirectPreviewState> _directStates = new();
 
-    private static readonly PublishedValue<int> _instaciatingTrigger = new(0, $"{nameof(DirectBlendShapePreview<TFilter>)}.{nameof(_instaciatingTrigger)}");
+    private static readonly PublishedValue<int> _instantiatingTrigger = new(0, $"{nameof(DirectBlendShapePreview<TFilter>)}.{nameof(_instantiatingTrigger)}");
 
     /// <summary>
     ///  現在のNodeの内容を直接置き換える。
@@ -89,7 +89,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         if (pair.Item1 is not SkinnedMeshRenderer original) throw new Exception("SkinnedMeshRenderer not found");
         if (pair.Item2 is not SkinnedMeshRenderer proxy) throw new Exception("SkinnedMeshRenderer not found");
 
-        context.Observe(_instaciatingTrigger, _ => _instaciatingTrigger.Value, (a, b) => a == b);
+        context.Observe(_instantiatingTrigger, _ => _instantiatingTrigger.Value, (a, b) => a == b);
 
         var state = _directStates.TryGetValue(original, out var directState)
             ? directState
@@ -103,7 +103,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
 
     private static void RequestInstantiate()
     {
-        _instaciatingTrigger.Value++;
+        _instantiatingTrigger.Value++;
     }
 
     private sealed class DirectPreviewState

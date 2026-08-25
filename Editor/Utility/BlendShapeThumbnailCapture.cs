@@ -158,6 +158,10 @@ internal readonly record struct ThumbnailFraming(
 
 internal sealed class BlendShapeThumbnailCapture : IDisposable
 {
+    // プロジェクトのユーザー定義レイヤーとの重複を避けて選んだ値。
+    private const int CaptureLayer = 31;
+    private const int HiddenLayer = 30;
+
     private const int TextureSize = 128;
 
     private readonly SkinnedMeshRenderer _renderer;
@@ -240,9 +244,9 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         {
             foreach (var gameObject in _originalLayers.Keys)
             {
-                if (gameObject != null) gameObject.layer = 31;
+                if (gameObject != null) gameObject.layer = CaptureLayer;
             }
-            _renderer.gameObject.layer = 30;
+            _renderer.gameObject.layer = HiddenLayer;
         }
         catch
         {
@@ -264,7 +268,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         var sourceTransform = _renderer.transform;
         var renderObject = new GameObject($"{FaceTuneConstants.Name} Thumbnail Face")
         {
-            layer = 31
+            layer = CaptureLayer
         };
         try
         {
@@ -309,7 +313,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         transform.rotation = Quaternion.LookRotation(framing.Center - transform.position, up);
         _camera.orthographic = true;
         _camera.orthographicSize = Mathf.Max(0.01f, framing.OrthographicSize);
-        _camera.cullingMask = 1 << 31;
+        _camera.cullingMask = 1 << CaptureLayer;
         _camera.nearClipPlane = 0.01f;
         _camera.farClipPlane = 100f;
         _camera.allowHDR = false;

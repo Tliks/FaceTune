@@ -224,7 +224,7 @@ internal static class AnimatorHelper
         return clip;
     }
 
-    private const string AnimatedBlendShapePrefix = "blendShape.";
+    private const string AnimatedBlendShapePrefix = FaceTuneConstants.BlendShapePropertyPrefix;
 
     public static void AddBlendShapeAnimation(
         this VirtualClip clip,

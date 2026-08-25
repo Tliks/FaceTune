@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune;
 
 internal static partial class Utils
 {
-    private const string BlendShapePropertyName = "blendShape.";
+    private const string BlendShapePropertyName = FaceTuneConstants.BlendShapePropertyPrefix;
 
     public static void GetFirstFrameBlendShapes(this AnimationClip clip, ClipImportOption option, ICollection<BlendShapeWeight> resultToAdd, string facialPath)
     {

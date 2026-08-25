@@ -93,6 +93,8 @@ internal sealed class ExpressionItemBuilder
         var lipSync = ResolveLipSync(component);
         var transition = _resolver.Transition.Get(component);
 
+        var priority = _resolver.Priority.Get(component);
+
         yield return BuildItem(
             component,
             component.name,
@@ -102,13 +104,12 @@ internal sealed class ExpressionItemBuilder
             eyeBlink,
             lipSync,
             transition,
-            _resolver.Priority.Get(component),
+            priority,
             _conditionResolver.Resolve(component));
 
         var directCondition = component.DirectMenuSettings.GeneratedCondition;
         if (!component.DirectMenuEnabled || directCondition == null) yield break;
 
-        var priority = _resolver.Priority.Get(component);
         yield return BuildItem(
             component,
             $"{component.name} (Direct Menu)",
@@ -280,7 +281,7 @@ internal sealed class ExpressionItemBuilder
     private bool IsFacialBlendShapeBinding(EditorCurveBinding binding)
         => binding.path == _avatarContext.BodyPath
         && binding.type == typeof(SkinnedMeshRenderer)
-        && binding.propertyName.StartsWith("blendShape.", StringComparison.Ordinal);
+        && binding.propertyName.StartsWith(FaceTuneConstants.BlendShapePropertyPrefix, StringComparison.Ordinal);
 
     private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {

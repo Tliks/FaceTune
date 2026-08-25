@@ -19,9 +19,9 @@ internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IRe
 
     protected NamedItemSetBase() : this(new Dictionary<string, TItem>()) { }
 
-    protected NamedItemSetBase(IEnumerable<TItem> items, NamedItemSetOptions options = NamedItemSetOptions.PreferLatter) : this()
+    protected NamedItemSetBase(IEnumerable<TItem> items) : this()
     {
-        AddRange(items, options);
+        AddRange(items);
     }
 
     public IEnumerator<TItem> GetEnumerator() => map.Values.GetEnumerator();
@@ -39,32 +39,21 @@ internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IRe
 
     public bool TryGetValue(string key, out TItem value) => map.TryGetValue(key, out value);
 
-    public TSelf Add(TItem item, NamedItemSetOptions options = NamedItemSetOptions.PreferLatter)
+    public TSelf Add(TItem item)
     {
         var key = KeySelector(item);
         if (string.IsNullOrWhiteSpace(key)) return (TSelf)this;
 
-        switch (options)
-        {
-            case NamedItemSetOptions.PreferFormer:
-                map.TryAdd(key, item);
-                break;
-            case NamedItemSetOptions.PreferLatter:
-                map[key] = item;
-                break;
-            case NamedItemSetOptions.ThrowException:
-                map.Add(key, item);
-                break;
-        }
+        map[key] = item;
         return (TSelf)this;
     }
 
 
-    public TSelf AddRange(IEnumerable<TItem> items, NamedItemSetOptions options = NamedItemSetOptions.PreferLatter)
+    public TSelf AddRange(IEnumerable<TItem> items)
     {
         foreach (var item in items)
         {
-            Add(item, options);
+            Add(item);
         }
         return (TSelf)this;
     }
@@ -132,7 +121,7 @@ internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IRe
 
     void ICollection<TItem>.Add(TItem item)
     {
-        Add(item, NamedItemSetOptions.PreferLatter);
+        Add(item);
     }
 
     bool ICollection<TItem>.Remove(TItem item)
@@ -144,11 +133,4 @@ internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IRe
     {
         map.Values.CopyTo(array, arrayIndex);
     }
-}
-
-internal enum NamedItemSetOptions
-{
-    PreferFormer,
-    PreferLatter,
-    ThrowException
 }

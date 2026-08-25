@@ -10,15 +10,8 @@ internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
     protected override void Execute(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
-        var components = root.GetComponentsInChildren<AvatarSettingsComponent>(true);
-        if (components.Length > 1)
-        {
-            LocalizedLog.Warning(
-                "Log:warning:AvatarContext:MultipleSettingsComponent",
-                null,
-                components);
-        }
-        var settings = components.FirstOrDefault().DestroyedAsNull();
+        var settings = root.GetComponentsInChildren<AvatarSettingsComponent>(true)
+            .FirstOrDefault().DestroyedAsNull();
         var platformSupports = MetabasePlatformSupport.GetForAvatar(root.transform)
             .Append(context.PlatformSupport)
             .ToArray();

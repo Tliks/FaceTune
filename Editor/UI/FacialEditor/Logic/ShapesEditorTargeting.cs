@@ -39,7 +39,7 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
         var path = RuntimeUtil.RelativePath(root, renderer.gameObject) ?? throw new InvalidOperationException("Renderer is outside avatar root.");
         foreach (var binding in AnimationUtility.GetCurveBindings(Target))
         {
-            const string prefix = "blendShape.";
+            var prefix = FaceTuneConstants.BlendShapePropertyPrefix;
             if (binding.path != path || binding.type != typeof(SkinnedMeshRenderer)
                 || !binding.propertyName.StartsWith(prefix, StringComparison.Ordinal))
                 continue;
