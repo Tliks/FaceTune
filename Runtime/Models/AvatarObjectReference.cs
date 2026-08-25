@@ -21,15 +21,7 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
     }
 
     public GameObject? Get(Component owner)
-    {
-        if (string.IsNullOrEmpty(referencePath)) return null;
-        var avatarRoot = RuntimeUtil.FindAvatarInParents(owner.transform);
-        if (avatarRoot == null) return null;
-        if (IsValidTarget(targetObject, avatarRoot)) return targetObject;
-        if (referencePath == AvatarRootPath) return avatarRoot.gameObject;
-        var resolved = avatarRoot.Find(referencePath).DestroyedAsNull();
-        return resolved == null ? null : resolved.gameObject.DestroyedAsNull();
-    }
+        => ResolveTarget(owner.transform, referencePath, targetObject);
 
 
 #if UNITY_EDITOR
@@ -37,16 +29,10 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
     {
         var path = property.FindPropertyRelative(nameof(referencePath)).stringValue;
         if (string.IsNullOrEmpty(path)) return null;
-
         if (property.serializedObject.targetObject.DestroyedAsNull() is not Component owner) return null;
-        var avatarRoot = RuntimeUtil.FindAvatarInParents(owner.transform);
-        if (avatarRoot == null) return null;
 
         var target = property.FindPropertyRelative(nameof(targetObject)).objectReferenceValue as GameObject;
-        if (IsValidTarget(target, avatarRoot)) return target;
-        if (path == AvatarRootPath) return avatarRoot.gameObject;
-        var resolved = avatarRoot.Find(path).DestroyedAsNull();
-        return resolved == null ? null : resolved.gameObject.DestroyedAsNull();
+        return ResolveTarget(owner.transform, path, target);
     }
 
 
@@ -59,18 +45,7 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
         var targetProperty = property.FindPropertyRelative(nameof(targetObject));
         target = target.DestroyedAsNull();
         targetProperty.objectReferenceValue = target;
-        if (target == null)
-        {
-            path.stringValue = string.Empty;
-            return;
-        }
-
-        var avatarRoot = RuntimeUtil.FindAvatarInParents(target.transform);
-        path.stringValue = avatarRoot == null
-            ? string.Empty
-            : target.transform == avatarRoot
-                ? AvatarRootPath
-                : RuntimeUtil.RelativePath(avatarRoot, target.transform) ?? string.Empty;
+        path.stringValue = GetAvatarRelativePath(target);
     }
 #endif
 
@@ -78,20 +53,29 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
     {
         target = target.DestroyedAsNull();
         targetObject = target;
-        if (target == null)
-        {
-            referencePath = string.Empty;
-            return;
-        }
+        referencePath = GetAvatarRelativePath(target);
+    }
 
+    private static GameObject? ResolveTarget(
+        Transform owner,
+        string path,
+        GameObject? target)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        var avatarRoot = RuntimeUtil.FindAvatarInParents(owner);
+        if (avatarRoot == null) return null;
+        if (IsValidTarget(target, avatarRoot)) return target;
+        if (path == AvatarRootPath) return avatarRoot.gameObject;
+        var resolved = avatarRoot.Find(path).DestroyedAsNull();
+        return resolved == null ? null : resolved.gameObject.DestroyedAsNull();
+    }
+
+    private static string GetAvatarRelativePath(GameObject? target)
+    {
+        if (target == null) return string.Empty;
         var avatarRoot = RuntimeUtil.FindAvatarInParents(target.transform);
-        if (avatarRoot == null)
-        {
-            referencePath = string.Empty;
-            return;
-        }
-
-        referencePath = target.transform == avatarRoot
+        if (avatarRoot == null) return string.Empty;
+        return target.transform == avatarRoot
             ? AvatarRootPath
             : RuntimeUtil.RelativePath(avatarRoot, target.transform) ?? string.Empty;
     }

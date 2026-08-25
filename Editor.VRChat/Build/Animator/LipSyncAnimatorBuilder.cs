@@ -1,3 +1,4 @@
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
 
@@ -13,6 +14,7 @@ internal sealed class LipSyncAnimatorBuilder
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
+    private readonly MmdSupport _mmdSupport;
     private readonly AapProtocol _aap;
     private readonly DnfCondition? _disableWhen;
 
@@ -21,18 +23,19 @@ internal sealed class LipSyncAnimatorBuilder
     public LipSyncAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
+        MmdSupport mmdSupport,
         AapProtocol aap,
         DnfCondition? disableWhen)
     {
         _avatarContext = avatarContext;
         _graph = graph;
+        _mmdSupport = mmdSupport;
         _aap = aap;
         _disableWhen = disableWhen;
     }
 
     public void Build(
         VirtualAnimatorController controller,
-        DnfCondition? mmdPlaybackWhen,
         int layerPriority)
     {
         if (!ShouldBuild) return;
@@ -46,7 +49,10 @@ internal sealed class LipSyncAnimatorBuilder
         _aap.EnsureLipSyncParameters(controller);
         if (cancellers.Count > 0)
             controller.EnsureFloatParameterExists(VoiceParameterName);
-        AnimatorGraph.EnsureConditionParameters(controller, _disableWhen, mmdPlaybackWhen);
+        AnimatorGraph.EnsureConditionParameters(
+            controller,
+            _disableWhen,
+            _mmdSupport.LayerPlaybackWhen);
 
         var origin = AnimatorGraph.DefaultStatePosition;
         var xStep = AnimatorGraph.PositionXStep;
@@ -59,7 +65,9 @@ internal sealed class LipSyncAnimatorBuilder
         layer.StateMachine!.DefaultState = initial;
         _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
 
-        InstallMmdState(layer, mmdPlaybackWhen, origin, yStep);
+        _mmdSupport.AddPassThroughState(
+            layer,
+            origin - new Vector3(0, yStep * 2, 0));
         InstallDisabledState(
             layer,
             enabled.Complement(),
@@ -69,23 +77,6 @@ internal sealed class LipSyncAnimatorBuilder
             enabled,
             origin + new Vector3(0, yStep * 3, 0));
         InstallCancellers(layer, builtIn, enabled, cancellers, xStep, yStep);
-    }
-
-    private void InstallMmdState(
-        VirtualLayer layer,
-        DnfCondition? mmdPlaybackWhen,
-        Vector3 origin,
-        float yStep)
-    {
-        if (mmdPlaybackWhen is not { IsNever: false } mmdWhen) return;
-
-        var mmd = _graph.AddState(
-            layer,
-            "MMD Playback",
-            origin - new Vector3(0, yStep * 2, 0));
-        _graph.AsPassThrough(mmd);
-        _graph.SetAnyStateTransition(layer, mmd, mmdWhen, 0f);
-        _graph.SetExitTransitions(mmd, mmdWhen.Complement(), 0f);
     }
 
     private void InstallDisabledState(

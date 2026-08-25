@@ -11,4 +11,14 @@ internal record struct BuildSettings(
 {
     public bool IsBlendShapeExplicitlyExcluded(string name)
         => ExplicitlyExcludedBlendShapeNames.Contains(name);
+
+    public BlendShapeWeight[] GetManagedZeroBlendShapes()
+    {
+        var excludedBlendShapeNames = ExplicitlyExcludedBlendShapeNames;
+        return AvatarContext.FaceRenderer
+            .GetBlendShapeWeights(AvatarContext.FaceMesh)
+            .Where(shape => !excludedBlendShapeNames.Contains(shape.Name))
+            .Select(shape => shape with { Weight = 0f })
+            .ToArray();
+    }
 }

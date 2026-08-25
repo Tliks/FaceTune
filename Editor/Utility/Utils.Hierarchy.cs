@@ -20,6 +20,25 @@ internal static partial class Utils
         return result;
     }
 
+    public static TComponent? FindDirectChildComponent<TComponent>(
+        this Transform parent,
+        string name,
+        StringComparison comparison)
+        where TComponent : Component
+    {
+        for (var i = 0; i < parent.childCount; i++)
+        {
+            var child = parent.GetChild(i);
+            if (string.Equals(child.name, name, comparison)
+                && child.TryGetComponent<TComponent>(out var component))
+            {
+                return component;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>自身のGameObjectを除く親からComponentを取得する。</summary>
     public static T[] GetComponentsInParentExcludingSelf<T>(this Component component, bool includeInactive)
         where T : Component

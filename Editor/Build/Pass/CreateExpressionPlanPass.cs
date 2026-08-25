@@ -65,10 +65,7 @@ internal sealed class ExpressionItemBuilder
         _availableBlendShapeNames = avatarContext.FaceMesh.GetBlendShapeNames().ToHashSet(StringComparer.Ordinal);
         AddExternalNames(settings.ExternalEyeBlinkBlendShapeNames, _eyeBlinkOwners);
         AddExternalNames(settings.ExternalLipSyncBlendShapeNames, _lipSyncOwners);
-        _safeZeroBlendShapeAnimations = avatarContext.FaceRenderer
-            .GetBlendShapeWeights(avatarContext.FaceMesh)
-            .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name))
-            .Select(shape => shape with { Weight = 0f })
+        _safeZeroBlendShapeAnimations = settings.GetManagedZeroBlendShapes()
             .ToBlendShapeAnimations()
             .ToArray();
     }

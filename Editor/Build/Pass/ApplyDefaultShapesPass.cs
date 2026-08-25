@@ -17,10 +17,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         animations.RemoveAll(animation => settings.IsBlendShapeExplicitlyExcluded(animation.Name));
         if (animations.Count > 0)
         {
-            set.AddRange(avatarContext.FaceRenderer
-                .GetBlendShapeWeights(avatarContext.FaceMesh)
-                .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name))
-                .Select(shape => shape with { Weight = 0f }));
+            set.AddRange(settings.GetManagedZeroBlendShapes());
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
 

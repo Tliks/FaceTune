@@ -105,7 +105,7 @@ internal sealed class AnimatorGraph
             transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
             return transition;
         });
-        // Mode/MMD解除は時間遷移より先に評価する。
+        // 解除条件は時間遷移より先に評価する。
         state.Transitions = transitions.Concat(state.Transitions).ToImmutableList();
     }
 

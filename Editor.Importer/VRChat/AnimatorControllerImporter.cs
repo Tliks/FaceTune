@@ -310,19 +310,6 @@ internal class AnimatorControllerImporter
     }
 
     private static HandGesture? ToHandGesture(int platformValue)
-    {
-        return platformValue switch
-        {
-            0 => HandGesture.Neutral,
-            1 => HandGesture.Fist,
-            2 => HandGesture.HandOpen,
-            3 => HandGesture.FingerPoint,
-            4 => HandGesture.Victory,
-            5 => HandGesture.RockNRoll,
-            6 => HandGesture.HandGun,
-            7 => HandGesture.ThumbsUp,
-            _ => null
-        };
-    }
+        => VRChatGestureMap.FromPlatformValue(platformValue);
 
 }

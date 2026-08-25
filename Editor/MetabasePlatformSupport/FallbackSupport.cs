@@ -11,25 +11,10 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
 
     public SkinnedMeshRenderer? GetFaceRenderer()
     {
-        return FindRenderer("Face", StringComparison.OrdinalIgnoreCase)
-               ?? FindRenderer("Body", StringComparison.Ordinal)
-               ?? FindRenderer("body", StringComparison.Ordinal)
+        return _root.FindDirectChildComponent<SkinnedMeshRenderer>("Face", StringComparison.OrdinalIgnoreCase).DestroyedAsNull()
+               ?? _root.FindDirectChildComponent<SkinnedMeshRenderer>("Body", StringComparison.Ordinal).DestroyedAsNull()
+               ?? _root.FindDirectChildComponent<SkinnedMeshRenderer>("body", StringComparison.Ordinal).DestroyedAsNull()
                ?? _root.GetComponentInChildren<SkinnedMeshRenderer>(true).DestroyedAsNull();
-    }
-
-    private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
-    {
-        for (var i = 0; i < _root.childCount; i++)
-        {
-            var child = _root.GetChild(i);
-            if (!string.Equals(child.name, name, comparison)) continue;
-            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
-            {
-                return renderer.DestroyedAsNull();
-            }
-        }
-
-        return null;
     }
 
     public ParameterDomainRegistry CreateBuiltInParameterDomains()

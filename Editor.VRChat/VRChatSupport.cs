@@ -60,25 +60,9 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             return _descriptor.customEyeLookSettings.eyelidsSkinnedMesh;
         }
 
-        return FindRenderer("Body", StringComparison.Ordinal)
-               ?? FindRenderer("body", StringComparison.Ordinal)
-               ?? FindRenderer("Face", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private SkinnedMeshRenderer? FindRenderer(string name, StringComparison comparison)
-    {
-        var avatarRoot = _descriptor.transform;
-        for (var i = 0; i < avatarRoot.childCount; i++)
-        {
-            var child = avatarRoot.GetChild(i);
-            if (!string.Equals(child.name, name, comparison)) continue;
-            if (child.TryGetComponent<SkinnedMeshRenderer>(out var renderer))
-            {
-                return renderer;
-            }
-        }
-
-        return null;
+        return _descriptor.transform.FindDirectChildComponent<SkinnedMeshRenderer>("Body", StringComparison.Ordinal)
+               ?? _descriptor.transform.FindDirectChildComponent<SkinnedMeshRenderer>("body", StringComparison.Ordinal)
+               ?? _descriptor.transform.FindDirectChildComponent<SkinnedMeshRenderer>("Face", StringComparison.OrdinalIgnoreCase);
     }
 
     public ParameterDomainRegistry CreateBuiltInParameterDomains()
@@ -144,20 +128,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     }
 
     private static int ToPlatformGestureValue(HandGesture gesture)
-    {
-        return gesture switch
-        {
-            HandGesture.Neutral => 0,
-            HandGesture.Fist => 1,
-            HandGesture.HandOpen => 2,
-            HandGesture.FingerPoint => 3,
-            HandGesture.Victory => 4,
-            HandGesture.RockNRoll => 5,
-            HandGesture.HandGun => 6,
-            HandGesture.ThumbsUp => 7,
-            _ => throw new NotSupportedException($"Hand gesture '{gesture}' is not supported by VRChat.")
-        };
-    }
+        => VRChatGestureMap.ToPlatformValue(gesture);
 
     private IEnumerable<string> GetBlinkBlendShapes()
     {
@@ -207,130 +178,40 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         BuildSettings settings,
         AvatarControlSettings avatarControlSettings,
         BlendShapeWeightSet blendShapes)
+        => MmdSupport.PostProcessDefaultBlendShapes(
+            settings,
+            avatarControlSettings,
+            blendShapes);
+
+    public MmdPlaybackSettings ResolveMmdPlaybackSettings(
+        MMDSupportSettings? settings,
+        DnfCondition? disableWhen)
+        => MmdSupport.ResolveMmdPlaybackSettings(settings, disableWhen);
+
+}
+
+internal static class VRChatGestureMap
+{
+    private static readonly HandGesture[] Values =
     {
-        blendShapes.AddRange(avatarControlSettings.MmdPlayback.BlendShapeNames
-            .Where(name => !settings.IsBlendShapeExplicitlyExcluded(name))
-            .Select(name => new BlendShapeWeight(name, 0f)));
+        HandGesture.Neutral,
+        HandGesture.Fist,
+        HandGesture.HandOpen,
+        HandGesture.FingerPoint,
+        HandGesture.Victory,
+        HandGesture.RockNRoll,
+        HandGesture.HandGun,
+        HandGesture.ThumbsUp
+    };
+
+    public static int ToPlatformValue(HandGesture gesture)
+    {
+        var value = Array.IndexOf(Values, gesture);
+        return value >= 0
+            ? value
+            : throw new NotSupportedException($"Hand gesture '{gesture}' is not supported by VRChat.");
     }
 
-    public MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
-    {
-        return settings == null
-            ? MmdPlaybackSettings.Disabled
-            : new MmdPlaybackSettings(
-                true,
-                ResolveMmdBlendShapeNames(settings).ToHashSet(),
-                disableWhen,
-                settings.SupportMode);
-    }
-
-    private static IEnumerable<string> ResolveMmdBlendShapeNames(
-        MMDSupportSettings settings)
-    {
-        var explicitNames = settings.ExplicitBlendShapeNames
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToArray();
-        if (explicitNames.Length > 0) return explicitNames;
-
-        return MmdBlendShapeNames;
-    }
-
-#nullable disable
-    private static readonly HashSet<string> MmdBlendShapeNames = new HashSet<string>
-    {
-        // New EN by Yi MMD World
-        //  https://docs.google.com/spreadsheets/d/1mfE8s48pUfjP_rBIPN90_nNkAIBUNcqwIxAdVzPBJ-Q/edit?usp=sharing
-        // Old EN by Xoriu
-        //  https://booth.pm/ja/items/3341221
-        //  https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/0b7b5e4b-c62e-41f7-8ced-1f3e58c4f5bf/d5nbmvp-5779f5ac-d476-426c-8ee6-2111eff8e76c.png
-        // Old EN, New EN, JA,
-
-        // ===== Mouth =====
-        "a",            "Ah",               "あ",
-        "i",            "Ch",               "い",
-        "u",            "U",                "う",
-        "e",            "E",                "え",
-        "o",            "Oh",               "お",
-        "Niyari",       "Grin",             "にやり",
-        "Mouse_2",      "∧",                "∧",
-        "Wa",           "Wa",               "ワ",
-        "Omega",        "ω",                "ω",
-        "Mouse_1",      "▲",                "▲",
-        "MouseUP",      "Mouth Horn Raise", "口角上げ",
-        "MouseDW",      "Mouth Horn Lower", "口角下げ",
-        "MouseWD",      "Mouth Side Widen", "口横広げ",
-        "n",            null,               "ん",
-        "Niyari2",      null,               "にやり２",
-        // by Xoriu only
-        "a 2",          null,               "あ２",
-        "□",            null,               "□",
-        "ω□",           null,               "ω□",
-        "Smile",        null,               "にっこり",
-        "Pero",         null,               "ぺろっ",
-        "Bero-tehe",    null,               "てへぺろ",
-        "Bero-tehe2",   null,               "てへぺろ２",
-
-        // ===== Eyes =====
-        "Blink",        "Blink",            "まばたき",
-        "Smile",        "Blink Happy",      "笑い",
-        "> <",          "Close><",          "はぅ",
-        "EyeSmall",     "Pupil",            "瞳小",
-        "Wink-c",       "Wink 2 Right",     "ｳｨﾝｸ２右",
-        "Wink-b",       "Wink 2",           "ウィンク２",
-        "Wink",         "Wink",             "ウィンク",
-        "Wink-a",       "Wink Right",       "ウィンク右",
-        "Howawa",       "Calm",             "なごみ",
-        "Jito-eye",     "Stare",            "じと目",
-        "Ha!!!",        "Surprised",        "びっくり",
-        "Kiri-eye",     "Slant",            "ｷﾘｯ",
-        "EyeHeart",     "Heart",            "はぁと",
-        "EyeStar",      "Star Eye",         "星目",
-        "EyeFunky",     null,               "恐ろしい子！",
-        // by Xoriu only
-        "O O",          null,               "はちゅ目",
-        "EyeSmall-v",   null,               "瞳縦潰れ",
-        "EyeUnderli",   null,               "光下",
-        "EyHi-Off",     null,               "ハイライト消",
-        "EyeRef-off",   null,               "映り込み消",
-
-        // ===== Eyebrow =====
-        "Smily",        "Cheerful",         "にこり",
-        "Up",           "Upper",            "上",
-        "Down",         "Lower",            "下",
-        "Serious",      "Serious",          "真面目",
-        "Trouble",      "Sadness",          "困る",
-        "Get angry",    "Anger",            "怒り",
-        null,           "Front",            "前",
-
-        // ===== Eyes + Eyebrow Feeling =====
-        // by Xoriu only
-        "Joy",          null,               "喜び",
-        "Wao!?",        null,               "わぉ!?",
-        "Howawa ω",     null,               "なごみω",
-        "Wail",         null,               "悲しむ",
-        "Hostility",    null,               "敵意",
-
-        // ===== Other ======
-        null,           "Blush",            "照れ",
-        "ToothAnon",    null,               "歯無し下",
-        "ToothBnon",    null,               "歯無し上",
-        null,           null,               "涙",
-
-        // others
-
-        // https://gist.github.com/lilxyzw/80608d9b16bf3458c61dec6b090805c5
-        "しいたけ",
-
-        // https://site.nicovideo.jp/ch/userblomaga_thanks/archive/ar1471249
-        "なぬ！",
-        "はんっ！",
-        "えー",
-        "睨み",
-        "睨む",
-        "白目",
-        "瞳大",
-        "頬染め",
-        "青ざめ",
-    }.Where(x => x != null).Distinct().ToHashSet(); // removed null with Where
-#nullable restore
+    public static HandGesture? FromPlatformValue(int value)
+        => 0 <= value && value < Values.Length ? Values[value] : null;
 }

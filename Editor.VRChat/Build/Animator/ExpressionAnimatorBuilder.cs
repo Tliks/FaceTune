@@ -1,4 +1,5 @@
 using Aoyon.FaceTune.Build;
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.animator;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
@@ -11,7 +12,7 @@ internal sealed class ExpressionAnimatorBuilder
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
     private readonly DnfCondition? _lockFacialInactiveWhen;
-    private readonly DnfCondition? _mmdPlaybackWhen;
+    private readonly MmdSupport _mmdSupport;
     private readonly AapProtocol _aap;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _clips = new();
 
@@ -19,13 +20,13 @@ internal sealed class ExpressionAnimatorBuilder
         AvatarContext avatarContext,
         AnimatorGraph graph,
         AvatarControlSettings avatarControlSettings,
-        DnfCondition? mmdPlaybackWhen,
+        MmdSupport mmdSupport,
         AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
         _lockFacialInactiveWhen = avatarControlSettings.LockFacialWhen?.Complement();
-        _mmdPlaybackWhen = mmdPlaybackWhen;
+        _mmdSupport = mmdSupport;
         _aap = aap;
     }
 
@@ -40,7 +41,7 @@ internal sealed class ExpressionAnimatorBuilder
             controller,
             expressions.Select(expression => (DnfCondition?)expression.RawWhen)
                 .Append(_lockFacialInactiveWhen)
-                .Append(_mmdPlaybackWhen)
+                .Append(_mmdSupport.LayerPlaybackWhen)
                 .ToArray());
 
         var layerIndex = 0;
@@ -132,16 +133,9 @@ internal sealed class ExpressionAnimatorBuilder
         layer.StateMachine!.DefaultState = initial;
         _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
 
-        if (_mmdPlaybackWhen is { IsNever: false } mmdWhen)
-        {
-            var mmd = _graph.AddState(
-                layer,
-                "MMD Playback",
-                origin - new Vector3(0, yStep * 2, 0));
-            _graph.AsPassThrough(mmd);
-            _graph.SetAnyStateTransition(layer, mmd, mmdWhen, 0f);
-            _graph.SetExitTransitions(mmd, mmdWhen.Complement(), 0f);
-        }
+        _mmdSupport.AddPassThroughState(
+            layer,
+            origin - new Vector3(0, yStep * 2, 0));
 
         var passThroughWhen = expressionWhen.Complement();
         if (!passThroughWhen.IsNever)

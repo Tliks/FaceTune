@@ -1,3 +1,4 @@
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDKBase;
@@ -13,6 +14,7 @@ internal sealed class EyeBlinkAnimatorBuilder
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
+    private readonly MmdSupport _mmdSupport;
     private readonly AapProtocol _aap;
     private readonly DnfCondition? _disableWhen;
 
@@ -21,18 +23,19 @@ internal sealed class EyeBlinkAnimatorBuilder
     public EyeBlinkAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
+        MmdSupport mmdSupport,
         AapProtocol aap,
         DnfCondition? disableWhen)
     {
         _avatarContext = avatarContext;
         _graph = graph;
+        _mmdSupport = mmdSupport;
         _aap = aap;
         _disableWhen = disableWhen;
     }
 
     public void Build(
         VirtualAnimatorController controller,
-        DnfCondition? mmdPlaybackWhen,
         int layerPriority)
     {
         if (!ShouldBuild) return;
@@ -57,7 +60,10 @@ internal sealed class EyeBlinkAnimatorBuilder
                 SpeedParameterName(entry.Mode),
                 1f / Math.Max(maximumInterval, 0.001f));
         }
-        AnimatorGraph.EnsureConditionParameters(controller, _disableWhen, mmdPlaybackWhen);
+        AnimatorGraph.EnsureConditionParameters(
+            controller,
+            _disableWhen,
+            _mmdSupport.LayerPlaybackWhen);
 
         var origin = AnimatorGraph.DefaultStatePosition;
         var xStep = AnimatorGraph.PositionXStep;
@@ -70,7 +76,9 @@ internal sealed class EyeBlinkAnimatorBuilder
         layer.StateMachine!.DefaultState = initial;
         _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
 
-        InstallMmdState(layer, mmdPlaybackWhen, origin, yStep);
+        _mmdSupport.AddPassThroughState(
+            layer,
+            origin - new Vector3(0, yStep * 2, 0));
         InstallModeState(
             layer,
             "Disabled",
@@ -96,23 +104,6 @@ internal sealed class EyeBlinkAnimatorBuilder
                 xStep,
                 yStep);
         }
-    }
-
-    private void InstallMmdState(
-        VirtualLayer layer,
-        DnfCondition? mmdPlaybackWhen,
-        Vector3 origin,
-        float yStep)
-    {
-        if (mmdPlaybackWhen is not { IsNever: false } mmdWhen) return;
-
-        var mmd = _graph.AddState(
-            layer,
-            "MMD Playback",
-            origin - new Vector3(0, yStep * 2, 0));
-        _graph.AsPassThrough(mmd);
-        _graph.SetAnyStateTransition(layer, mmd, mmdWhen, 0f);
-        _graph.SetExitTransitions(mmd, mmdWhen.Complement(), 0f);
     }
 
     private void InstallModeState(

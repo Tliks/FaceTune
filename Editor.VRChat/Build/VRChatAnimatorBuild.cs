@@ -1,5 +1,6 @@
 using nadena.dev.modular_avatar.core;
 using Aoyon.FaceTune.Build;
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
@@ -30,11 +31,6 @@ internal static class VRChatAnimatorBuilder
         {
             analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         }
-
-        var mmdPolicy = ResolveMmdAnimatorPolicy(avatarControlSettings, analyzedWriteDefaults);
-        var layerMmdPlaybackWhen = mmdPolicy.DisableLayers
-            ? mmdPolicy.PlaybackWhen
-            : null;
 
         ISet<Transform> unitBoundaryTransforms;
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.FindUnitBoundaries"))
@@ -73,6 +69,10 @@ internal static class VRChatAnimatorBuilder
         }
 
         var graph = new AnimatorGraph(analyzedWriteDefaults ?? true);
+        var mmdSupport = new MmdSupport(
+            graph,
+            avatarControlSettings.MmdPlayback,
+            analyzedWriteDefaults);
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.BuildInitial"))
         {
             var initialController = CreateMergeAnimatorController(
@@ -84,17 +84,15 @@ internal static class VRChatAnimatorBuilder
                 initialController,
                 graph,
                 settings,
-                avatarControlSettings,
                 externalLipSyncBlendShapes,
-                mmdPolicy.PlaybackWhen,
-                mmdPolicy.DisableFxLayer);
+                mmdSupport);
         }
 
         var expressionBuilder = new ExpressionAnimatorBuilder(
             settings.AvatarContext,
             graph,
             avatarControlSettings,
-            layerMmdPlaybackWhen,
+            mmdSupport,
             aap);
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.BuildUnits"))
         {
@@ -116,11 +114,13 @@ internal static class VRChatAnimatorBuilder
         var eyeBlinkBuilder = new EyeBlinkAnimatorBuilder(
             settings.AvatarContext,
             graph,
+            mmdSupport,
             aap,
             avatarControlSettings.DisableEyeBlinkWhen);
         var lipSyncBuilder = new LipSyncAnimatorBuilder(
             settings.AvatarContext,
             graph,
+            mmdSupport,
             aap,
             avatarControlSettings.DisableLipSyncWhen);
         if (eyeBlinkBuilder.ShouldBuild || lipSyncBuilder.ShouldBuild)
@@ -136,8 +136,8 @@ internal static class VRChatAnimatorBuilder
                 controlAnchor,
                 "Tracking Controls",
                 controlPriority);
-            eyeBlinkBuilder.Build(controlController, layerMmdPlaybackWhen, controlPriority);
-            lipSyncBuilder.Build(controlController, layerMmdPlaybackWhen, controlPriority);
+            eyeBlinkBuilder.Build(controlController, controlPriority);
+            lipSyncBuilder.Build(controlController, controlPriority);
         }
     }
 
@@ -145,12 +145,10 @@ internal static class VRChatAnimatorBuilder
         VirtualAnimatorController controller,
         AnimatorGraph graph,
         BuildSettings settings,
-        AvatarControlSettings avatarControlSettings,
         ISet<string> externalLipSyncBlendShapes,
-        DnfCondition? mmdPlaybackWhen,
-        bool disableFxLayerDuringMmd)
+        MmdSupport mmdSupport)
     {
-        AnimatorGraph.EnsureConditionParameters(controller, mmdPlaybackWhen);
+        AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
         var blendShapes = settings.AvatarContext.FaceRenderer
             .GetBlendShapeWeights(settings.AvatarContext.FaceMesh)
             .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name)
@@ -162,33 +160,12 @@ internal static class VRChatAnimatorBuilder
         var defaultState = graph.AddState(layer, "Default", origin);
         layer.StateMachine!.DefaultState = defaultState;
         SetInitialClip(defaultState, "Default", blendShapes, settings.AvatarContext.BodyPath);
-        graph.SetExitTransitions(
-            defaultState,
-            mmdPlaybackWhen ?? DnfCondition.Never,
-            0f);
-
-        if (mmdPlaybackWhen is not { IsNever: false }) return;
-
-        var mmdState = graph.AddState(
+        mmdSupport.AddInitialMmdState(
             layer,
-            "MMD Playback",
-            origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0));
-        var mmdBlendShapes = blendShapes
-            .Where(shape => !avatarControlSettings.MmdPlayback
-                .BlendShapeNames.Contains(shape.Name));
-        SetInitialClip(
-            mmdState,
-            "MMD Playback",
-            mmdBlendShapes,
+            defaultState,
+            blendShapes,
+            origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
             settings.AvatarContext.BodyPath);
-        graph.AddEntryTransition(layer, mmdState, mmdPlaybackWhen);
-        graph.SetExitTransitions(mmdState, mmdPlaybackWhen.Complement(), 0f);
-
-        if (disableFxLayerDuringMmd)
-        {
-            SetFxPlayableWeight(defaultState, 1f);
-            SetFxPlayableWeight(mmdState, 0f);
-        }
     }
 
     private static void SetInitialClip(
@@ -200,14 +177,6 @@ internal static class VRChatAnimatorBuilder
         state.SetNewClip(name).AddBlendShapeAnimations(
             bodyPath,
             blendShapes.ToBlendShapeAnimations());
-    }
-
-    private static void SetFxPlayableWeight(VirtualState state, float weight)
-    {
-        var control = state.EnsureBehavior<VRCPlayableLayerControl>();
-        control.layer = VRCPlayableLayerControl.BlendableLayer.FX;
-        control.goalWeight = weight;
-        control.blendDuration = 0f;
     }
 
     private static VirtualAnimatorController CreateMergeAnimatorController(
@@ -445,32 +414,4 @@ internal static class VRChatAnimatorBuilder
             && control.trackingMouth == noChange;
     }
 
-    private static (
-        DnfCondition? PlaybackWhen,
-        bool DisableLayers,
-        bool DisableFxLayer) ResolveMmdAnimatorPolicy(
-        AvatarControlSettings avatarControlSettings,
-        bool? analyzedWriteDefaults)
-    {
-        var playback = avatarControlSettings.MmdPlayback;
-        if (!playback.Enabled) return (null, false, false);
-
-        var playbackWhen = playback.DisableWhen ?? DnfCondition.Always;
-        if (playback.DisableWhen == null) return (playbackWhen, false, false);
-
-        var mode = playback.DisableMode == MMDSupportSettings.Mode.Auto
-            ? analyzedWriteDefaults == true
-                ? MMDSupportSettings.Mode.DisableLayers
-                : MMDSupportSettings.Mode.DisableFXlayer
-            : playback.DisableMode;
-        return mode switch
-        {
-            MMDSupportSettings.Mode.DisableLayers => (playbackWhen, true, false),
-            MMDSupportSettings.Mode.DisableFXlayer => (playbackWhen, false, true),
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(playback.DisableMode),
-                playback.DisableMode,
-                null)
-        };
-    }
 }
