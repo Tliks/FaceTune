@@ -198,10 +198,10 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         var preview = property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression));
         position.SetSingleHeight();
         mode.enumValueIndex = GUIHelper.LocalizedPopup(position, mode.enumValueIndex, "menuIcon.icon.label", ModeKeys);
-        if (mode.enumValueIndex == (int)MenuIconSettings.Kind.None) return;
+        if (mode.intValue == (int)MenuIconSettings.Kind.None) return;
         position.NewLine();
 
-        if (mode.enumValueIndex == (int)MenuIconSettings.Kind.Manual)
+        if (mode.intValue == (int)MenuIconSettings.Kind.Manual)
         {
             GUIHelper.DrawPropertyWithIndentedLabel(ref position, manual, "menuIcon.manualIcon.label");
             if (manual.objectReferenceValue == null)
@@ -238,7 +238,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var mode = property.FindPropertyRelative(nameof(MenuIconSettings.Mode)).enumValueIndex;
+        var mode = property.FindPropertyRelative(nameof(MenuIconSettings.Mode)).intValue;
         if (mode == (int)MenuIconSettings.Kind.None) return GUIHelper.LineHeight;
         var height = GUIHelper.GetLinesHeight(2);
         var missing = mode == (int)MenuIconSettings.Kind.Manual
@@ -302,6 +302,6 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
     private static bool IsReplaceMode(SerializedObject serializedObject)
     {
         var mode = serializedObject.FindProperty(nameof(ExpressionComponent.WriteMode));
-        return mode != null && !mode.hasMultipleDifferentValues && mode.enumValueIndex == (int)ExpressionWriteMode.Replace;
+        return mode != null && !mode.hasMultipleDifferentValues && mode.intValue == (int)ExpressionWriteMode.Replace;
     }
 }

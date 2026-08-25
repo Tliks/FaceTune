@@ -9,7 +9,7 @@ internal sealed class ConditionSelectionDrawer : PropertyDrawer
         var mode = property.FindPropertyRelative(nameof(ConditionSelection.Mode));
         var condition = property.FindPropertyRelative(nameof(ConditionSelection.Condition));
         position.SetSingleHeight();
-        var showsCondition = mode.hasMultipleDifferentValues || mode.enumValueIndex == (int)ConditionSelection.Kind.Conditional;
+        var showsCondition = mode.hasMultipleDifferentValues || mode.intValue == (int)ConditionSelection.Kind.Conditional;
         var modeRect = position;
         if (showsCondition)
         {
@@ -33,7 +33,7 @@ internal sealed class ConditionSelectionDrawer : PropertyDrawer
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
         var mode = property.FindPropertyRelative(nameof(ConditionSelection.Mode));
-        if (!mode.hasMultipleDifferentValues && mode.enumValueIndex == (int)ConditionSelection.Kind.Always)
+        if (!mode.hasMultipleDifferentValues && mode.intValue == (int)ConditionSelection.Kind.Always)
             return GUIHelper.LineHeight;
         return GUIHelper.LineHeight
              + GUIHelper.VerticalSpacing
@@ -276,11 +276,11 @@ internal sealed class MenuConditionDrawer : PropertyDrawer
         var (beforeMode, modeRect) = position.SplitRight(modeWidth);
         var sourceRect = beforeMode;
         var thresholdRect = Rect.zero;
-        if (mode.enumValueIndex >= 2)
+        if (mode.intValue >= (int)MenuConditionMode.GreaterThan)
             (sourceRect, thresholdRect) = beforeMode.SplitRight(GUIHelper.PopupWidth(new[] { new GUIContent("0.00") }));
         EditorGUI.PropertyField(sourceRect, property.FindPropertyRelative("MenuSource"), GUIContent.none);
         GUIHelper.DrawLocalizedEnum(modeRect, mode, string.Empty, nameof(MenuConditionMode));
-        if (mode.enumValueIndex >= 2)
+        if (mode.intValue >= (int)MenuConditionMode.GreaterThan)
             EditorGUI.PropertyField(thresholdRect, property.FindPropertyRelative("Threshold"), GUIContent.none);
     }
 

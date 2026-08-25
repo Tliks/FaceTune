@@ -31,5 +31,5 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
         EditorGUI.PropertyField(position, _mmd, GUIContent.none, true);
     }
 
-    private bool ShowsMmd => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == (int)AvatarControlComponent.Kind.SupportMMD;
+    private bool ShowsMmd => _kind.hasMultipleDifferentValues || _kind.intValue == (int)AvatarControlComponent.Kind.SupportMMD;
 }

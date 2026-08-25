@@ -6,7 +6,8 @@ internal sealed record FaceTuneImporterDescriptor(
     string TitleKey,
     string DescriptionKey,
     string PostImportGuideKey,
-    bool SourceIsUnchanged);
+    bool SourceIsUnchanged,
+    bool CreatesStandaloneSetup = false);
 
 internal interface IFaceTuneImporterProvider
 {

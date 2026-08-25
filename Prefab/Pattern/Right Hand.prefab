@@ -10,11 +10,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 196839064403189976, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 580471233427694779, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -58,19 +58,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5572135474713407049, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 5725063788950102543, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7136326512871861865, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8118859454288863856, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: m_Name
@@ -78,11 +78,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8637336120474858227, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8772620051276661418, guid: 9f044864c335d38499244290e12697d3, type: 3}
       propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -5,8 +5,8 @@ internal class ConditionSelection
 {
     public enum Kind
     {
-        Always,
-        Conditional
+        Always = 0,
+        Conditional = 10
     }
 
     public Kind Mode = Kind.Conditional;
@@ -81,10 +81,10 @@ internal class ConditionCase
 
 internal enum HandGestureHand
 {
-    Left,
-    Right,
-    Any,
-    Both
+    Left = 0,
+    Right = 10,
+    Any = 20,
+    Both = 30
 }
 
 [Serializable]
@@ -103,11 +103,11 @@ internal sealed class HandGestureCondition
 internal enum MenuConditionMode
 {
     // Toggle
-    Enabled,
-    Disabled,
+    Enabled = 0,
+    Disabled = 10,
     // Radial
-    GreaterThan,
-    LessThan
+    GreaterThan = 20,
+    LessThan = 30
 }
 
 /// <summary>Menu parameterの割当後にParameterConditionへ解決するalias。</summary>

@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75722db5e20f4b628443dc4e1e6c1313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuKind: 2
+  MenuKind: 20
   Menu:
     MenuName: 
     Icon:
@@ -59,10 +59,10 @@ MonoBehaviour:
   UseExistingParameter: 0
   GenerateParameterGroup: 0
   GroupName: 
-  Name: 
+  ParameterName: 
   Synced: 1
   Saved: 1
-  InitialValue: 0
+  DefaultValue: 0
   SelectedValue: 1
 --- !u!1001 &1196762602210491745
 PrefabInstance:

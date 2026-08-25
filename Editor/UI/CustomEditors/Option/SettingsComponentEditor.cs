@@ -266,7 +266,7 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
             .ToArray();
         serializedObject.UpdateIfRequiredOrScript();
         var reference = serializedObject.FindProperty(nameof(SettingsComponent.FacialBlendShapesReference));
-        reference.FindPropertyRelative(nameof(SettingsReference.Mode)).enumValueIndex = (int)SettingsReferenceMode.Direct;
+        reference.FindPropertyRelative(nameof(SettingsReference.Mode)).intValue = (int)SettingsReferenceMode.Direct;
         var direct = serializedObject.FindProperty(nameof(SettingsComponent.FacialBlendShapes));
         direct.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
         direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)).SynchronizeArrayByKey(

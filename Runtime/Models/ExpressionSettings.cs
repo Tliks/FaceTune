@@ -3,8 +3,8 @@ namespace Aoyon.FaceTune;
 /// <summary>値を直接持つか、指定Transform上の同種設定を参照するか。</summary>
 internal enum SettingsReferenceMode
 {
-    Direct,
-    Reference
+    Direct = 0,
+    Reference = 10
 }
 
 /// <summary>設定値とは独立してシリアライズする参照情報。</summary>
@@ -30,8 +30,8 @@ internal class FacialBlendShapeData
 
 internal enum ClipImportOption
 {
-    All,
-    NonZero
+    All = 0,
+    NonZero = 10
 }
 
 /// <summary>platform標準Blinkか、FaceTune生成animationか。</summary>
@@ -40,9 +40,9 @@ internal class EyeBlinkSettings : IEquatable<EyeBlinkSettings>
 {
     public enum Kind
     {
-        BuiltIn,
-        CustomAnimation,
-        SimpleAnimation
+        BuiltIn = 0,
+        CustomAnimation = 10,
+        SimpleAnimation = 20
     }
 
     public Kind EyeBlinkMode = Kind.BuiltIn;
@@ -184,8 +184,8 @@ internal enum TrackingPermission
 
 internal enum ExpressionWriteMode
 {
-    Replace,
-    Blend
+    Replace = 0,
+    Blend = 10
 }
 
 /// <summary>表情animationの時間制御。</summary>
@@ -194,11 +194,11 @@ internal class MultiFrameSettings
 {
     public enum Kind
     {
-        Default,
-        Loop,
-        Trigger,
-        Parameter,
-        Menu
+        Default = 0,
+        Loop = 10,
+        Trigger = 20,
+        Parameter = 30,
+        Menu = 40
     }
 
     public Kind MultiFrameMode = Kind.Default;

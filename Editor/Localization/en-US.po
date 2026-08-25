@@ -1238,6 +1238,21 @@ msgstr "Controller"
 msgid "window.import.controller.empty"
 msgstr "Select an Animator Controller to import."
 
+msgid "window.import.faceEmo.title"
+msgstr "FaceEmo"
+
+msgid "window.import.faceEmo.description"
+msgstr "Create FaceTune Expression Sets, gesture conditions, and facial animations from a FaceEmo menu."
+
+msgid "window.import.faceEmo.source.label"
+msgstr "FaceEmo Source"
+
+msgid "window.import.faceEmo.outputFolder.label"
+msgstr "Generated Assets"
+
+msgid "window.import.faceEmo.outputFolder.button"
+msgstr "Select"
+
 msgid "window.result.title"
 msgstr "Completed"
 
@@ -1270,6 +1285,9 @@ msgstr "The content was imported."
 
 msgid "window.result.animatorImport.guide"
 msgstr "Review the imported Expressions and their conditions. The original Animator Controller was not changed, so verify that its facial controls do not conflict with FaceTune."
+
+msgid "window.result.faceEmoImport.guide"
+msgstr "Review the imported Expression Sets, gesture conditions, and facial animations. The original FaceEmo object was not changed, so disable one of the controls before building to avoid conflicts."
 
 msgid "window.result.created.label"
 msgstr "Created"

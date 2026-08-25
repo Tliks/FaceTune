@@ -1238,6 +1238,21 @@ msgstr "Controller"
 msgid "window.import.controller.empty"
 msgstr "取り込むAnimator Controllerを選択してください。"
 
+msgid "window.import.faceEmo.title"
+msgstr "FaceEmo"
+
+msgid "window.import.faceEmo.description"
+msgstr "FaceEmoのメニューから、FaceTuneのExpression Set、ハンドサイン条件、表情Animationを作成します。"
+
+msgid "window.import.faceEmo.source.label"
+msgstr "FaceEmoの取り込み元"
+
+msgid "window.import.faceEmo.outputFolder.label"
+msgstr "生成Assetの保存先"
+
+msgid "window.import.faceEmo.outputFolder.button"
+msgstr "選択"
+
 msgid "window.result.title"
 msgstr "完了"
 
@@ -1270,6 +1285,9 @@ msgstr "内容を取り込みました。"
 
 msgid "window.result.animatorImport.guide"
 msgstr "取り込んだExpressionと条件を確認してください。元のAnimator Controllerは変更されていないため、FaceTuneの制御と競合しないことを確認してください。"
+
+msgid "window.result.faceEmoImport.guide"
+msgstr "取り込んだExpression Set、ハンドサイン条件、表情Animationを確認してください。元のFaceEmo Objectは変更されていないため、競合を避けるためBuild前にどちらか一方の制御を無効にしてください。"
 
 msgid "window.result.created.label"
 msgstr "作成したもの"

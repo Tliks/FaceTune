@@ -8,9 +8,9 @@ namespace Aoyon.FaceTune
 
         public enum Kind
         {
-            Toggle,
-            Radial,
-            Folder
+            Toggle = 0,
+            Radial = 10,
+            Folder = 20
         }
 
         public Kind MenuKind = Kind.Toggle;

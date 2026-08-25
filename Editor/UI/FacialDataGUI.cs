@@ -90,7 +90,7 @@ internal static class FacialDataGUI
             || clip == null
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
         var animations = new List<BlendShapeWeightAnimation>();
-        clip.GetBlendShapeAnimations((ClipImportOption)data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).enumValueIndex, animations, avatar.BodyPath);
+        clip.GetBlendShapeAnimations((ClipImportOption)data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue, animations, avatar.BodyPath);
         MergeBlendShapeAnimations(data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)), animations, false);
         data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
     }
@@ -211,11 +211,11 @@ internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
             "expression.multiFrame.parameter.label",
             "expression.multiFrame.menu.label"
         });
-        if (mode.enumValueIndex is not ((int)MultiFrameSettings.Kind.Trigger
-                                     or (int)MultiFrameSettings.Kind.Parameter
-                                     or (int)MultiFrameSettings.Kind.Menu)) return;
+        if (mode.intValue is not ((int)MultiFrameSettings.Kind.Trigger
+                              or (int)MultiFrameSettings.Kind.Parameter
+                              or (int)MultiFrameSettings.Kind.Menu)) return;
         position.NewLine();
-        if (mode.enumValueIndex == (int)MultiFrameSettings.Kind.Trigger)
+        if (mode.intValue == (int)MultiFrameSettings.Kind.Trigger)
         {
             var hand = property.FindPropertyRelative(nameof(MultiFrameSettings.TriggerHand));
             var (handLabel, handValue) = GUIHelper.SplitIndentedLabel(position);
@@ -223,7 +223,7 @@ internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
             GUIHelper.LocalizedEnumPopup(handValue, hand, string.Empty, new[] { "hand.option.left", "hand.option.right" });
             return;
         }
-        if (mode.enumValueIndex == (int)MultiFrameSettings.Kind.Parameter)
+        if (mode.intValue == (int)MultiFrameSettings.Kind.Parameter)
         {
             var parameter = property.FindPropertyRelative(nameof(MultiFrameSettings.ParameterName));
             var (parameterLabel, parameterValue) = GUIHelper.SplitIndentedLabel(position);
@@ -244,7 +244,7 @@ internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var mode = property.FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode)).enumValueIndex;
+        var mode = property.FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode)).intValue;
         if (mode is not ((int)MultiFrameSettings.Kind.Trigger
                       or (int)MultiFrameSettings.Kind.Parameter
                       or (int)MultiFrameSettings.Kind.Menu)) return GUIHelper.LineHeight;

@@ -119,14 +119,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -134,7 +140,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -149,7 +155,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -233,14 +239,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -248,7 +260,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -263,7 +275,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -347,14 +359,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -362,7 +380,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -377,7 +395,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -461,14 +479,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -476,7 +500,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -491,7 +515,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -575,14 +599,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -590,7 +620,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -605,7 +635,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -689,14 +719,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -704,7 +740,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -719,7 +755,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -803,14 +839,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -818,7 +860,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -833,7 +875,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -917,14 +959,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -932,7 +980,7 @@ MonoBehaviour:
     PriorityOffset: 10
   HasCondition: 1
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions:
@@ -947,7 +995,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink

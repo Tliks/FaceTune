@@ -26,7 +26,7 @@ internal static class SettingsReferenceGUI
     private static readonly string[] ShortModeKeys = { "settingsReferenceMode.short.direct", "settingsReferenceMode.short.reference" };
 
     public static float GetHeight(SerializedReferenceableSettings settings, float directHeight)
-        => settings.Mode.enumValueIndex == (int)SettingsReferenceMode.Reference
+        => settings.Mode.intValue == (int)SettingsReferenceMode.Reference
             ? GUIHelper.LineHeight + (ShowsMissingReference(settings.Source)
                 ? GUIHelper.VerticalSpacing + MissingReferenceWarningHeight
                 : 0f)
@@ -38,7 +38,7 @@ internal static class SettingsReferenceGUI
         float directHeight,
         Action<Rect> drawDirect)
     {
-        if (settings.Mode.enumValueIndex == (int)SettingsReferenceMode.Reference)
+        if (settings.Mode.intValue == (int)SettingsReferenceMode.Reference)
         {
             position.SetSingleHeight();
             EditorGUI.PropertyField(position, settings.Source, "common.component.label".LG());

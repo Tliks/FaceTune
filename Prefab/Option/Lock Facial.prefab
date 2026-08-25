@@ -50,7 +50,7 @@ MonoBehaviour:
     ExplicitBlendShapeNames: []
     SupportMode: 0
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions: []
@@ -82,8 +82,8 @@ MonoBehaviour:
   UseExistingParameter: 0
   GenerateParameterGroup: 0
   GroupName: 
-  Name: 
+  ParameterName: 
   Synced: 1
   Saved: 1
-  InitialValue: 0
+  DefaultValue: 0
   SelectedValue: 1

@@ -5,6 +5,8 @@
         "Aoyon.FaceTune.Runtime",
         "Aoyon.FaceTune.Editor",
         "Aoyon.FaceTune.Editor.VRChat",
+        "jp.suzuryg.face-emo.components.Runtime",
+        "jp.suzuryg.face-emo.domain.Runtime",
         "nadena.dev.ndmf",
         "nadena.dev.ndmf.runtime"
     ],
@@ -30,6 +32,11 @@
             "name": "com.vrchat.avatars",
             "expression": "",
             "define": "FACETUNE_VRCHAT"
+        },
+        {
+            "name": "jp.suzuryg.face-emo",
+            "expression": "",
+            "define": "FACETUNE_FACE_EMO"
         }
     ],
     "noEngineReferences": false

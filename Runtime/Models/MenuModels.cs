@@ -5,9 +5,9 @@ internal class MenuIconSettings
 {
     public enum Kind
     {
-        None,
-        Manual,
-        ExpressionPreview
+        None = 0,
+        Manual = 10,
+        ExpressionPreview = 20
     }
 
     public Kind Mode = Kind.None;

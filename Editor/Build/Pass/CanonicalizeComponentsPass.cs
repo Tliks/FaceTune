@@ -8,8 +8,13 @@ internal sealed class CanonicalizeComponentsPass : FaceTunePass<CanonicalizeComp
 
     protected override void Execute(FaceTuneContext context)
     {
+        var root = context.AvatarContext.Root;
+        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true)
+                     .Where(component => component.gameObject.IsEditorOnlyInHierarchy()))
+            Object.DestroyImmediate(component);
+
         MenuCanonicalizer.Canonicalize(context);
-        EmptyConditionRemover.Remove(context.AvatarContext.Root);
+        EmptyConditionRemover.Remove(root);
     }
 }
 
@@ -317,9 +322,15 @@ internal static class MenuCanonicalizer
                 throw new InvalidOperationException(
                     $"Radial menu '{menu.name}' requires a radial condition.");
             }
+            var comparison = condition.Mode switch
+            {
+                MenuConditionMode.GreaterThan => ComparisonType.GreaterThan,
+                MenuConditionMode.LessThan => ComparisonType.LessThan,
+                _ => throw new ArgumentOutOfRangeException()
+            };
             return ParameterCondition.Float(
                 menu.ParameterName,
-                (ComparisonType)condition.Mode,
+                comparison,
                 condition.Threshold);
         }
 

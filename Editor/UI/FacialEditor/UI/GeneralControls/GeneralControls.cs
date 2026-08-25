@@ -187,7 +187,8 @@ internal class GeneralControls : IDisposable
             "clipImportOption.option.all".LS(),
             "clipImportOption.option.nonZero".LS()
         };
-        var clipImportOptionField = new PopupField<string>(clipImportOptions, (int)_clipImportOption);
+        var selectedClipImportOption = _clipImportOption == ClipImportOption.All ? 0 : 1;
+        var clipImportOptionField = new PopupField<string>(clipImportOptions, selectedClipImportOption);
         clipImportOptionField.AddToClassList("compact-field");
         clipImportOptionField.RegisterValueChangedCallback(evt =>
         {

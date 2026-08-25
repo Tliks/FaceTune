@@ -288,7 +288,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
                 serializedOwner,
                 referencePropertyName,
                 valuePropertyName);
-            source.Mode.enumValueIndex = (int)SettingsReferenceMode.Direct;
+            source.Mode.intValue = (int)SettingsReferenceMode.Direct;
             source.Source.objectReferenceValue = null;
         }
         serializedOwner.FindProperty(enabledPropertyName).boolValue = true;
@@ -405,7 +405,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             .FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode));
         if (mode.hasMultipleDifferentValues)
             return EditorGUIUtility.TrTextContent("—");
-        return (mode.enumValueIndex == (int)MultiFrameSettings.Kind.Default
+        return (mode.intValue == (int)MultiFrameSettings.Kind.Default
             ? "expression.settingSource.short.standard"
             : "expression.settingSource.short.setting").LG();
     }
@@ -480,7 +480,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
         {
             if (_source.Mode.hasMultipleDifferentValues)
                 return EditorGUIUtility.TrTextContent("—");
-            if (_source.Mode.enumValueIndex == (int)SettingsReferenceMode.Reference)
+            if (_source.Mode.intValue == (int)SettingsReferenceMode.Reference)
                 return "expression.settingSource.short.reference".LG();
 
             var clips = _source.Direct.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
@@ -673,7 +673,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 ? hasOwner
                     ? "expression.settingSource.short.batch"
                     : "expression.settingSource.short.standard"
-                : ReferenceMode?.enumValueIndex == (int)SettingsReferenceMode.Reference
+                : ReferenceMode?.intValue == (int)SettingsReferenceMode.Reference
                     ? "expression.settingSource.short.reference"
                     : "expression.settingSource.short.setting";
             return key.LG();

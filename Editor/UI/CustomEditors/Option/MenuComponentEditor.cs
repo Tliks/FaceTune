@@ -25,7 +25,7 @@ internal sealed class MenuComponentEditor : FaceTuneSectionEditorBase<MenuCompon
             "menu.advancedSettings.section.label",
             new MenuParameterSettingsSectionDrawer(serializedObject, Component),
             false,
-            isVisible: () => kind.hasMultipleDifferentValues || kind.enumValueIndex != (int)MenuComponent.Kind.Folder);
+            isVisible: () => kind.hasMultipleDifferentValues || kind.intValue != (int)MenuComponent.Kind.Folder);
     }
 }
 
@@ -191,7 +191,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         EditorGUI.showMixedValue = previousMixed;
     }
 
-    private bool IsToggle => _kind.hasMultipleDifferentValues || _kind.enumValueIndex == (int)MenuComponent.Kind.Toggle;
+    private bool IsToggle => _kind.hasMultipleDifferentValues || _kind.intValue == (int)MenuComponent.Kind.Toggle;
     private bool IsGroup => IsToggle
                          && !IsExisting
                          && (_generateParameterGroup.hasMultipleDifferentValues

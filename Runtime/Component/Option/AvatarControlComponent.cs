@@ -7,10 +7,10 @@ namespace Aoyon.FaceTune
 
         public enum Kind
         {
-            LockFacial,
-            DisableEyeBlink,
-            DisableLipSync,
-            SupportMMD
+            LockFacial = 0,
+            DisableEyeBlink = 10,
+            DisableLipSync = 20,
+            SupportMMD = 30
         }
 
         public Kind ControlKind = Kind.LockFacial;

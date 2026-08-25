@@ -249,31 +249,34 @@ internal sealed class FaceTuneWindow : EditorWindow
         _importSession.DrawConfiguration();
 
         var standardRoot = FaceTuneRecipeOperations.FindStandardRoot(_avatarRoot!);
-        EditorGUILayout.Space(8f);
-        GUILayout.Label("window.import.foundation.title".LS(), SectionTitleStyle);
-        if (standardRoot != null)
+        if (!selectedProvider.Descriptor.CreatesStandaloneSetup)
         {
-            EditorGUILayout.HelpBox("window.import.foundation.existing".LS(), MessageType.Info);
-        }
-        else
-        {
-            _importAddStandard = EditorGUILayout.ToggleLeft(
-                "window.import.foundation.addStandard.label".LS(),
-                _importAddStandard);
-            GUILayout.Label(
-                (_importAddStandard
-                    ? "window.import.foundation.addStandard.description"
-                    : "window.import.foundation.contentOnly.description").LS(),
-                WrappedLabel);
-            if (_importAddStandard)
+            EditorGUILayout.Space(8f);
+            GUILayout.Label("window.import.foundation.title".LS(), SectionTitleStyle);
+            if (standardRoot != null)
             {
-                EditorGUI.indentLevel++;
-                _includeDefaultExpression = EditorGUILayout.ToggleLeft(
-                    "window.standard.includeDefault.label".LS(),
-                    _includeDefaultExpression);
-                EditorGUI.indentLevel--;
-                if (_includeDefaultExpression)
-                    EditorGUILayout.HelpBox("window.standard.default.notice".LS(), MessageType.Info);
+                EditorGUILayout.HelpBox("window.import.foundation.existing".LS(), MessageType.Info);
+            }
+            else
+            {
+                _importAddStandard = EditorGUILayout.ToggleLeft(
+                    "window.import.foundation.addStandard.label".LS(),
+                    _importAddStandard);
+                GUILayout.Label(
+                    (_importAddStandard
+                        ? "window.import.foundation.addStandard.description"
+                        : "window.import.foundation.contentOnly.description").LS(),
+                    WrappedLabel);
+                if (_importAddStandard)
+                {
+                    EditorGUI.indentLevel++;
+                    _includeDefaultExpression = EditorGUILayout.ToggleLeft(
+                        "window.standard.includeDefault.label".LS(),
+                        _includeDefaultExpression);
+                    EditorGUI.indentLevel--;
+                    if (_includeDefaultExpression)
+                        EditorGUILayout.HelpBox("window.standard.default.notice".LS(), MessageType.Info);
+                }
             }
         }
 
@@ -338,10 +341,14 @@ internal sealed class FaceTuneWindow : EditorWindow
 
         RunUndo("Import to FaceTune", () =>
         {
-            var destination = standardRoot;
-            if (destination == null && _importAddStandard)
-                destination = FaceTuneRecipeOperations.AddStandardSetup(_avatarRoot!, _includeDefaultExpression);
-            destination ??= _avatarRoot!;
+            var destination = _avatarRoot!;
+            if (!provider.Descriptor.CreatesStandaloneSetup)
+            {
+                destination = standardRoot;
+                if (destination == null && _importAddStandard)
+                    destination = FaceTuneRecipeOperations.AddStandardSetup(_avatarRoot!, _includeDefaultExpression);
+                destination ??= _avatarRoot!;
+            }
 
             var created = _importSession.Import(avatarContext, destination);
             ShowResult(

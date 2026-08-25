@@ -45,12 +45,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28b747624bf54d2a9da06deb0fd9987a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ControlKind: 1
+  ControlKind: 10
   MMD:
     ExplicitBlendShapeNames: []
     SupportMode: 0
   Condition:
-    Mode: 1
+    Mode: 10
     Condition:
       Cases:
       - HandGestureConditions: []
@@ -82,8 +82,8 @@ MonoBehaviour:
   UseExistingParameter: 0
   GenerateParameterGroup: 0
   GroupName: 
-  Name: 
+  ParameterName: 
   Synced: 1
   Saved: 1
-  InitialValue: 0
+  DefaultValue: 0
   SelectedValue: 1

@@ -6,9 +6,9 @@ internal class MMDSupportSettings
 {
     public enum Mode
     {
-        Auto,
-        DisableFXlayer,
-        DisableLayers
+        Auto = 0,
+        DisableFXlayer = 10,
+        DisableLayers = 20
     }
 
     public List<string> ExplicitBlendShapeNames = new();

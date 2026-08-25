@@ -1,4 +1,5 @@
 using UnityEditor.Animations;
+using Aoyon.FaceTune.Importing;
 using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
@@ -164,11 +165,7 @@ internal class AnimatorControllerImporter
 
         var layerObj = new GameObject(layerName);
         layerObj.transform.SetParent(parent.transform, false);
-        foreach (var expression in expressions)
-        {
-            expression.transform.SetParent(layerObj.transform, false);
-        }
-
+        ExpressionHierarchyOrganizer.Organize(layerObj, expressions);
         return layerObj;
     }
 
