@@ -8,8 +8,8 @@ internal record struct AvatarControlSettings(
 
 internal record struct MmdPlaybackSettings(
     bool Enabled,
-    IReadOnlyCollection<string> BlendShapeNames,
-    DnfCondition? DisableWhen,
+    IReadOnlyCollection<string> ExplicitBlendShapeNames,
+    ConditionSelection? Condition,
     MMDSupportSettings.Mode DisableMode)
 {
     public static MmdPlaybackSettings Disabled { get; } = new(

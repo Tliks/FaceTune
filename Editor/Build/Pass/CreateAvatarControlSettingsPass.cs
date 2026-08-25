@@ -17,9 +17,13 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
         var lipSync = FindSingle(controls, AvatarControlComponent.Kind.DisableLipSync);
         var lockFacial = FindSingle(controls, AvatarControlComponent.Kind.LockFacial);
 
-        var mmdPlayback = context.PlatformSupport.ResolveMmdPlaybackSettings(
-            mmdSupport?.MMD,
-            conditionResolver.Resolve(mmdSupport?.Condition));
+        var mmdPlayback = mmdSupport == null
+            ? MmdPlaybackSettings.Disabled
+            : new MmdPlaybackSettings(
+                true,
+                mmdSupport.MMD.ExplicitBlendShapeNames.ToArray(),
+                mmdSupport.Condition,
+                mmdSupport.MMD.SupportMode);
         context.SetAvatarControlSettings(new AvatarControlSettings(
             mmdPlayback,
             conditionResolver.Resolve(eyeBlink?.Condition),

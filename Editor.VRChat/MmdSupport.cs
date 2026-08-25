@@ -17,17 +17,21 @@ internal sealed class MmdSupport
     public MmdSupport(
         AnimatorGraph graph,
         MmdPlaybackSettings settings,
+        IMetabasePlatformSupport platformSupport,
+        ParameterDomainRegistry parameterDomains,
         bool? analyzedWriteDefaults)
     {
         _graph = graph;
         _settings = settings;
 
+        var disableWhen = new ConditionResolver(platformSupport, parameterDomains)
+            .Resolve(settings.Condition);
         var playbackWhen = settings.Enabled
-            ? settings.DisableWhen ?? DnfCondition.Always
+            ? disableWhen ?? DnfCondition.Always
             : null;
         var disableLayers = false;
         var disableFxLayer = false;
-        if (settings.Enabled && settings.DisableWhen != null)
+        if (settings.Enabled && disableWhen != null)
         {
             var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
                 ? analyzedWriteDefaults == true
@@ -80,7 +84,7 @@ internal sealed class MmdSupport
 
         var state = _graph.AddState(layer, "MMD Playback", position);
         var mmdBlendShapes = blendShapes
-            .Where(shape => !_settings.BlendShapeNames.Contains(shape.Name));
+            .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
         state.SetNewClip("MMD Playback").AddBlendShapeAnimations(
             bodyPath,
             mmdBlendShapes.ToBlendShapeAnimations());
@@ -107,29 +111,20 @@ internal sealed class MmdSupport
         AvatarControlSettings avatarControlSettings,
         BlendShapeWeightSet blendShapes)
     {
-        blendShapes.AddRange(avatarControlSettings.MmdPlayback.BlendShapeNames
+        blendShapes.AddRange(ResolveMmdBlendShapeNames(avatarControlSettings.MmdPlayback)
             .Where(name => !settings.IsBlendShapeExplicitlyExcluded(name))
             .Select(name => new BlendShapeWeight(name, 0f)));
     }
 
-    public static MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
-    {
-        return settings == null
-            ? MmdPlaybackSettings.Disabled
-            : new MmdPlaybackSettings(
-                true,
-                ResolveMmdBlendShapeNames(settings).ToHashSet(),
-                disableWhen,
-                settings.SupportMode);
-    }
-
     private static IEnumerable<string> ResolveMmdBlendShapeNames(
-        MMDSupportSettings settings)
+        MmdPlaybackSettings settings)
     {
+        if (!settings.Enabled) return Array.Empty<string>();
+
         var explicitNames = settings.ExplicitBlendShapeNames
             .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToArray();
-        if (explicitNames.Length > 0) return explicitNames;
+            .ToHashSet(StringComparer.Ordinal);
+        if (explicitNames.Count > 0) return explicitNames;
 
         return MmdBlendShapeNames;
     }

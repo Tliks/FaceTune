@@ -72,6 +72,8 @@ internal static class VRChatAnimatorBuilder
         var mmdSupport = new MmdSupport(
             graph,
             avatarControlSettings.MmdPlayback,
+            MetabasePlatformSupport.GetForBuild(buildContext),
+            settings.ParameterDomains,
             analyzedWriteDefaults);
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.BuildInitial"))
         {

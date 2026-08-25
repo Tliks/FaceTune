@@ -12,11 +12,6 @@ internal interface IMetabasePlatformSupport
 
     IEnumerable<string> GetExternalLipSyncBlendShapeNames();
 
-    MmdPlaybackSettings ResolveMmdPlaybackSettings(MMDSupportSettings? settings, DnfCondition? disableWhen)
-    {
-        return MmdPlaybackSettings.Disabled;
-    }
-
     void PostProcessDefaultBlendShapes(
         BuildSettings settings,
         AvatarControlSettings avatarControlSettings,

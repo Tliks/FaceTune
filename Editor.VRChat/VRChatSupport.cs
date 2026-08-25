@@ -183,11 +183,6 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             avatarControlSettings,
             blendShapes);
 
-    public MmdPlaybackSettings ResolveMmdPlaybackSettings(
-        MMDSupportSettings? settings,
-        DnfCondition? disableWhen)
-        => MmdSupport.ResolveMmdPlaybackSettings(settings, disableWhen);
-
 }
 
 internal static class VRChatGestureMap
