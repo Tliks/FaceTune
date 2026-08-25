@@ -171,6 +171,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     private SettingsComponent? _transitionOwner;
     private SettingsComponent? _priorityOwner;
     private Transform? _batchOverrideTarget;
+    private readonly IReadOnlyDictionary<ExpressionInheritedSettingKind, SettingBinding> _bindings;
 
     public ExpressionSettingsInheritance(ExpressionComponent component, bool singleTarget)
     {
@@ -183,6 +184,37 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         _lipSync = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.LipSync));
         _transition = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.Transition));
         _priority = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.Priority));
+        _bindings = new Dictionary<ExpressionInheritedSettingKind, SettingBinding>
+        {
+            [ExpressionInheritedSettingKind.EyeBlink] = new(
+                _eyeBlink,
+                () => _eyeBlinkOwner,
+                nameof(SettingsComponent.HasEyeBlink),
+                nameof(SettingsComponent.EyeBlink),
+                nameof(SettingsComponent.EyeBlinkReference),
+                target => target.CopyFrom(_preview.EyeBlink)),
+            [ExpressionInheritedSettingKind.LipSync] = new(
+                _lipSync,
+                () => _lipSyncOwner,
+                nameof(SettingsComponent.HasLipSync),
+                nameof(SettingsComponent.LipSync),
+                nameof(SettingsComponent.LipSyncReference),
+                target => target.CopyFrom(_preview.LipSync)),
+            [ExpressionInheritedSettingKind.Transition] = new(
+                _transition,
+                () => _transitionOwner,
+                nameof(SettingsComponent.HasTransition),
+                nameof(SettingsComponent.Transition),
+                null,
+                target => target.CopyFrom(_preview.Transition)),
+            [ExpressionInheritedSettingKind.Priority] = new(
+                _priority,
+                () => _priorityOwner,
+                nameof(SettingsComponent.HasPriority),
+                nameof(SettingsComponent.Priority),
+                null,
+                target => target.CopyFrom(_preview.Priority))
+        };
     }
 
     public void Refresh()
@@ -203,44 +235,14 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         _serializedPreview.Update();
     }
 
-    public SerializedProperty GetValue(ExpressionInheritedSettingKind kind) => kind switch
-    {
-        ExpressionInheritedSettingKind.EyeBlink => _eyeBlink,
-        ExpressionInheritedSettingKind.LipSync => _lipSync,
-        ExpressionInheritedSettingKind.Transition => _transition,
-        ExpressionInheritedSettingKind.Priority => _priority,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-    };
+    public SerializedProperty GetValue(ExpressionInheritedSettingKind kind)
+        => GetBinding(kind).Value;
 
     public void InitializeOverride(SerializedProperty target, ExpressionInheritedSettingKind kind)
-    {
-        switch (kind)
-        {
-            case ExpressionInheritedSettingKind.EyeBlink:
-                target.CopyFrom(_preview.EyeBlink);
-                break;
-            case ExpressionInheritedSettingKind.LipSync:
-                target.CopyFrom(_preview.LipSync);
-                break;
-            case ExpressionInheritedSettingKind.Transition:
-                target.CopyFrom(_preview.Transition);
-                break;
-            case ExpressionInheritedSettingKind.Priority:
-                target.CopyFrom(_preview.Priority);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
-        }
-    }
+        => GetBinding(kind).CopyPreview(target);
 
-    public SettingsComponent? GetOwner(ExpressionInheritedSettingKind kind) => kind switch
-    {
-        ExpressionInheritedSettingKind.EyeBlink => _eyeBlinkOwner,
-        ExpressionInheritedSettingKind.LipSync => _lipSyncOwner,
-        ExpressionInheritedSettingKind.Transition => _transitionOwner,
-        ExpressionInheritedSettingKind.Priority => _priorityOwner,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-    };
+    public SettingsComponent? GetOwner(ExpressionInheritedSettingKind kind)
+        => GetBinding(kind).GetOwner();
 
     public bool CanCreateBatchOverride => _singleTarget && _batchOverrideTarget != null;
 
@@ -261,37 +263,18 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         owner.enabled = true;
         var serializedOwner = new SerializedObject(owner);
         serializedOwner.Update();
-        var (enabledPropertyName, valuePropertyName, referencePropertyName) = kind switch
-        {
-            ExpressionInheritedSettingKind.EyeBlink => (
-                nameof(SettingsComponent.HasEyeBlink),
-                nameof(SettingsComponent.EyeBlink),
-                nameof(SettingsComponent.EyeBlinkReference)),
-            ExpressionInheritedSettingKind.LipSync => (
-                nameof(SettingsComponent.HasLipSync),
-                nameof(SettingsComponent.LipSync),
-                nameof(SettingsComponent.LipSyncReference)),
-            ExpressionInheritedSettingKind.Transition => (
-                nameof(SettingsComponent.HasTransition),
-                nameof(SettingsComponent.Transition),
-                (string?)null),
-            ExpressionInheritedSettingKind.Priority => (
-                nameof(SettingsComponent.HasPriority),
-                nameof(SettingsComponent.Priority),
-                (string?)null),
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-        };
-        InitializeOverride(serializedOwner.FindProperty(valuePropertyName), kind);
-        if (referencePropertyName != null)
+        var binding = GetBinding(kind);
+        InitializeOverride(serializedOwner.FindProperty(binding.ValuePropertyName), kind);
+        if (binding.ReferencePropertyName != null)
         {
             var source = new SerializedReferenceableSettings(
                 serializedOwner,
-                referencePropertyName,
-                valuePropertyName);
+                binding.ReferencePropertyName,
+                binding.ValuePropertyName);
             source.Mode.intValue = (int)SettingsReferenceMode.Direct;
             source.Source.objectReferenceValue = null;
         }
-        serializedOwner.FindProperty(enabledPropertyName).boolValue = true;
+        serializedOwner.FindProperty(binding.EnabledPropertyName).boolValue = true;
         serializedOwner.ApplyModifiedProperties();
 
         EditorUtility.SetDirty(owner);
@@ -304,6 +287,11 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         if (_preview != null) Object.DestroyImmediate(_preview);
     }
 
+    private SettingBinding GetBinding(ExpressionInheritedSettingKind kind)
+        => _bindings.TryGetValue(kind, out var binding)
+            ? binding
+            : throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+
     private void ClearOwners()
     {
         (_eyeBlinkOwner, _lipSyncOwner, _transitionOwner, _priorityOwner) = (null, null, null, null);
@@ -312,6 +300,14 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
     private static Transform? FindBatchOverrideTarget(ExpressionComponent expression)
         => expression.transform.parent.DestroyedAsNull();
+
+    private sealed record SettingBinding(
+        SerializedProperty Value,
+        Func<SettingsComponent?> GetOwner,
+        string EnabledPropertyName,
+        string ValuePropertyName,
+        string? ReferencePropertyName,
+        Action<SerializedProperty> CopyPreview);
 }
 
 internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer

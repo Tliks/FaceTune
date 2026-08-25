@@ -24,14 +24,4 @@ internal record struct BlendShapeWeight
         this.weight = weight;
     }    
 
-    public readonly bool Equals(BlendShapeWeight other)
-    {
-        return name == other.name
-            && weight.Equals(other.weight);
-    }
-
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(name, weight);
-    }
 }

@@ -12,11 +12,13 @@ internal static class MenuSettingsGUI
     public static void Draw(Rect position, SerializedProperty settings, Component? owner, string menuNameLabelKey)
     {
         position.height = GUIHelper.LineHeight;
+        var menuName = settings.FindPropertyRelative(nameof(MenuSettings.MenuName));
+        var fallbackName = owner.DestroyedAsNull()?.gameObject.name ?? string.Empty;
         GUIHelper.DrawPlaceholderTextField(
             position,
-            settings.FindPropertyRelative(nameof(MenuSettings.MenuName)),
+            menuName,
             menuNameLabelKey.LG(),
-            new GUIContent(owner.DestroyedAsNull()?.gameObject.name ?? string.Empty));
+            new GUIContent(FaceTuneMenuResolver.GetDisplayName(menuName.stringValue, fallbackName)));
         position.NewLine();
         GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.Icon)), "menu.icon.label");
         GUIHelper.DrawProperty(ref position, settings.FindPropertyRelative(nameof(MenuSettings.InstallContainer)), "menu.destination.label");
@@ -44,9 +46,15 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         var owner = (property.serializedObject.targetObject as Component).DestroyedAsNull();
-        var destination = FindParentFolder(owner) is { } folder
-            ? EffectiveMenuName(folder)
-            : "menuInstallSettings.root.placeholder".LS();
+        var root = owner == null
+            ? null
+            : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
+        var resolver = root == null ? null : new FaceTuneMenuResolver(root);
+        var target = resolver?.GetInstallTarget(owner!, property.objectReferenceValue as Transform);
+        var folder = target?.GetComponent<MenuComponent>();
+        var destination = folder == null
+            ? "menuInstallSettings.root.placeholder".LS()
+            : FaceTuneMenuResolver.GetDisplayName(folder.Menu.MenuName, folder.name);
         var placeholder = $"{destination} ({"menuInstallSettings.destinationType.placeholder".LS()})";
         GUIHelper.DrawPlaceholderObjectLikeField(
             position,
@@ -58,22 +66,6 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         => GUIHelper.LineHeight;
-
-    private static MenuComponent? FindParentFolder(Component? owner)
-    {
-        owner = owner.DestroyedAsNull();
-        for (var current = owner?.transform.parent; current != null; current = current.parent)
-        {
-            var menu = current.GetComponent<MenuComponent>();
-            if (menu != null && menu.MenuKind == MenuComponent.Kind.Folder) return menu;
-        }
-        return null;
-    }
-
-    private static string EffectiveMenuName(MenuComponent folder)
-        => string.IsNullOrWhiteSpace(folder.Menu.MenuName)
-            ? folder.gameObject.name
-            : folder.Menu.MenuName;
 }
 
 internal static class MenuGUI
@@ -169,18 +161,7 @@ internal static class MenuGUI
             ? null
             : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
         if (root == null) return new();
-        return root.GetComponentsInChildren<MenuComponent>(true)
-            .Where(menu => !menu.UseExistingParameter
-                        && menu.GenerateParameterGroup
-                        && !string.IsNullOrWhiteSpace(menu.GroupName))
-            .Select(menu => menu.GroupName)
-            .Concat(root.GetComponentsInChildren<ExpressionComponent>(true)
-                .Where(expression => expression.WriteMode == ExpressionWriteMode.Blend && expression.DirectMenuEnabled)
-                .Select(expression => expression.DirectMenuSettings.GroupName))
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
+        return new FaceTuneMenuResolver(root).GetDefinedGroupNames();
     }
 }
 
@@ -213,7 +194,13 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
             return;
         }
 
-        if (preview.objectReferenceValue == null && property.serializedObject.targetObject is ExpressionComponent)
+        var previewTarget = FaceTuneMenuResolver.ResolvePreviewTarget(
+            preview.objectReferenceValue as Transform,
+            property.serializedObject.targetObject as Component);
+        var isCurrentExpressionFallback = preview.objectReferenceValue == null
+            && property.serializedObject.targetObject is ExpressionComponent
+            && previewTarget != null;
+        if (isCurrentExpressionFallback)
         {
             GUIHelper.DrawPlaceholderObjectLikeField(
                 position,
@@ -228,7 +215,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         {
             GUIHelper.DrawPropertyWithIndentedLabel(ref position, preview, "menuIcon.previewExpression.label");
         }
-        if (preview.objectReferenceValue == null && property.serializedObject.targetObject is not ExpressionComponent)
+        if (previewTarget == null && property.serializedObject.targetObject is not ExpressionComponent)
         {
             position.height = WarningHeight;
             position.Indent();
@@ -241,10 +228,13 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         var mode = property.FindPropertyRelative(nameof(MenuIconSettings.Mode)).intValue;
         if (mode == (int)MenuIconSettings.Kind.None) return GUIHelper.LineHeight;
         var height = GUIHelper.GetLinesHeight(2);
+        var preview = property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression));
+        var previewEmpty = FaceTuneMenuResolver.ResolvePreviewTarget(
+            preview.objectReferenceValue as Transform,
+            property.serializedObject.targetObject as Component) == null;
         var missing = mode == (int)MenuIconSettings.Kind.Manual
             ? property.FindPropertyRelative(nameof(MenuIconSettings.ManualIcon)).objectReferenceValue == null
-            : property.serializedObject.targetObject is not ExpressionComponent
-              && property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression)).objectReferenceValue == null;
+            : property.serializedObject.targetObject is not ExpressionComponent && previewEmpty;
         return missing ? height + GUIHelper.VerticalSpacing + WarningHeight : height;
     }
 }

@@ -10,6 +10,7 @@ internal sealed record class AnimatorConditionRule(
     AnimatorCondition Condition,
     AnimatorControllerParameterType ParameterType) : DnfRule
 {
+    private const long MaxFiniteDomainSize = 4096;
     public string ParameterName => Condition.parameter;
 
     public static AnimatorConditionRule FromParameterCondition(ParameterCondition condition)
@@ -32,7 +33,7 @@ internal sealed record class AnimatorConditionRule(
         }
         if (ParameterType == AnimatorControllerParameterType.Int &&
             parameterDomains.TryGetIntDomain(ParameterName, out var domain) &&
-            (long)domain.MaxValue - domain.MinValue < 4096)
+            (long)domain.MaxValue - domain.MinValue < MaxFiniteDomainSize)
         {
             return FiniteParameterConstraint.FromIntRule(this, domain);
         }

@@ -62,14 +62,6 @@ internal class ConditionCase
         };
     }
 
-    public static ConditionCase From(params ParameterCondition[] parameterConditions)
-    {
-        return new ConditionCase
-        {
-            ParameterConditions = parameterConditions.ToList()
-        };
-    }
-
     public static ConditionCase From(params HandGestureCondition[] handGestureConditions)
     {
         return new ConditionCase
@@ -131,34 +123,6 @@ internal sealed class MenuCondition
         };
     }
 
-    public static MenuCondition Disabled(MenuComponent menu)
-    {
-        return new MenuCondition
-        {
-            MenuSource = menu,
-            Mode = MenuConditionMode.Disabled
-        };
-    }
-
-    public static MenuCondition GreaterThan(MenuComponent menu, float threshold)
-    {
-        return new MenuCondition
-        {
-            MenuSource = menu,
-            Mode = MenuConditionMode.GreaterThan,
-            Threshold = threshold
-        };
-    }
-
-    public static MenuCondition LessThan(MenuComponent menu, float threshold)
-    {
-        return new MenuCondition
-        {
-            MenuSource = menu,
-            Mode = MenuConditionMode.LessThan,
-            Threshold = threshold
-        };
-    }
 }
 
 

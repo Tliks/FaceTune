@@ -31,26 +31,22 @@ internal sealed class FaceTuneResolver
     public FaceTuneScopedResolver<EyeBlinkSettings> EyeBlink => _eyeBlink ??= new(
         setting => SettingsReferences.TryResolve<EyeBlinkSettings>(setting, out var value) ? value : null,
         expression => SettingsReferences.TryResolve<EyeBlinkSettings>(expression, out var value) ? value : null,
-        static () => new EyeBlinkSettings(),
-        static (_, next) => next);
+        static () => new EyeBlinkSettings());
 
     public FaceTuneScopedResolver<LipSyncSettings> LipSync => _lipSync ??= new(
         setting => SettingsReferences.TryResolve<LipSyncSettings>(setting, out var value) ? value : null,
         expression => SettingsReferences.TryResolve<LipSyncSettings>(expression, out var value) ? value : null,
-        static () => new LipSyncSettings(),
-        static (_, next) => next);
+        static () => new LipSyncSettings());
 
     public FaceTuneScopedResolver<TransitionSettings> Transition => _transition ??= new(
         setting => setting.HasTransition ? setting.Transition : null,
         expression => expression.HasTransition ? expression.Transition : null,
-        static () => new TransitionSettings(),
-        static (_, next) => next);
+        static () => new TransitionSettings());
 
     public FaceTuneScopedResolver<PrioritySettings> Priority => _priority ??= new(
         setting => setting.HasPriority ? setting.Priority : null,
         expression => expression.HasPriority ? expression.Priority : null,
-        static () => new PrioritySettings(),
-        static (_, next) => next);
+        static () => new PrioritySettings());
 
     public FaceTuneMenuResolver Menus
         => _menus ??= new FaceTuneMenuResolver(_root);
@@ -175,18 +171,15 @@ internal sealed class FaceTuneScopedResolver<TValue> where TValue : class
     private readonly Func<SettingsComponent, TValue?> _getSettings;
     private readonly Func<ExpressionComponent, TValue?> _getExpression;
     private readonly Func<TValue> _getDefault;
-    private readonly Func<TValue, TValue, TValue> _merge;
 
     internal FaceTuneScopedResolver(
         Func<SettingsComponent, TValue?> getSettings,
         Func<ExpressionComponent, TValue?> getExpression,
-        Func<TValue> getDefault,
-        Func<TValue, TValue, TValue> merge)
+        Func<TValue> getDefault)
     {
         _getSettings = getSettings;
         _getExpression = getExpression;
         _getDefault = getDefault;
-        _merge = merge;
     }
 
     public IEnumerable<(SettingsComponent Owner, TValue Value)> EnumerateIncoming(Component target)
@@ -217,7 +210,7 @@ internal sealed class FaceTuneScopedResolver<TValue> where TValue : class
         foreach (var (owner, resolved) in EnumerateIncoming(target))
         {
             lastOwner = owner;
-            value = _merge(value, resolved);
+            value = resolved;
         }
         return value;
     }
@@ -231,7 +224,7 @@ internal sealed class FaceTuneScopedResolver<TValue> where TValue : class
         foreach (var (owner, resolved) in Enumerate(expression))
         {
             lastOwner = owner;
-            value = _merge(value, resolved);
+            value = resolved;
         }
         return value;
     }
@@ -307,6 +300,9 @@ internal sealed class FaceTuneMenuResolver
 
     internal FaceTuneMenuResolver(GameObject root) => _root = root.transform;
 
+    public static string GetDisplayName(string? configuredName, string fallback)
+        => string.IsNullOrWhiteSpace(configuredName) ? fallback : configuredName;
+
     public IEnumerable<MenuComponent> EnumerateFolders(Component target)
     {
         if (target.transform != _root && !target.transform.IsChildOf(_root))
@@ -321,18 +317,74 @@ internal sealed class FaceTuneMenuResolver
         }
     }
 
-    public Transform? GetInstallTarget(Component owner, MenuSettings menu)
+    public Transform? GetInstallTarget(Component owner, Transform? configured)
     {
-        if (owner.transform != _root && !owner.transform.IsChildOf(_root))
+        var validOwner = owner.DestroyedAsNull();
+        if (validOwner == null || (validOwner.transform != _root && !validOwner.transform.IsChildOf(_root)))
             return null;
-        if (menu.InstallContainer != null && (menu.InstallContainer == _root || menu.InstallContainer.IsChildOf(_root)))
-            return menu.InstallContainer;
-        if (menu.InstallContainer != null)
+        configured = configured.DestroyedAsNull();
+        if (configured != null && (configured == _root || configured.IsChildOf(_root)))
+            return configured;
+        if (configured != null)
             return null;
-        var folder = EnumerateFolders(owner)
+        var folder = EnumerateFolders(validOwner)
             .LastOrDefault()
             .DestroyedAsNull();
-        return folder == null ? null : folder.transform.DestroyedAsNull();
+        return folder == null ? _root : folder.transform.DestroyedAsNull();
     }
+
+    public void ValidateInstallTarget(Transform target, Component owner)
+    {
+        if (target != _root && !target.IsChildOf(_root))
+        {
+            throw new InvalidOperationException(
+                $"Menu install target is outside the avatar: '{owner.name}'.");
+        }
+
+        if (target == owner.transform || target.IsChildOf(owner.transform))
+        {
+            throw new InvalidOperationException(
+                $"Menu install target creates a hierarchy cycle: '{owner.name}'.");
+        }
+    }
+
+    public Transform? ResolveDestination(
+        MenuComponent menu,
+        ISet<MenuComponent> localFolders,
+        ISet<Transform> externalFolders)
+    {
+        for (var current = menu.transform.parent; current != null; current = current.parent)
+        {
+            var folder = current.GetComponent<MenuComponent>();
+            if (folder != null && localFolders.Contains(folder))
+                return folder.transform;
+            if (externalFolders.Contains(current))
+                return current;
+        }
+
+        return null;
+    }
+
+    public static Transform? ResolvePreviewTarget(Transform? explicitPreview, Component? owner)
+    {
+        var target = explicitPreview.DestroyedAsNull();
+        var expressionOwner = (owner as ExpressionComponent).DestroyedAsNull();
+        return target ?? expressionOwner?.transform.DestroyedAsNull();
+    }
+
+    public List<string> GetDefinedGroupNames()
+        => _root.GetComponentsInChildren<MenuComponent>(true)
+            .Where(menu => menu.MenuKind == MenuComponent.Kind.Toggle
+                        && !menu.UseExistingParameter
+                        && menu.GenerateParameterGroup
+                        && !string.IsNullOrWhiteSpace(menu.GroupName))
+            .Select(menu => menu.GroupName)
+            .Concat(_root.GetComponentsInChildren<ExpressionComponent>(true)
+                .Where(expression => expression.WriteMode == ExpressionWriteMode.Blend && expression.DirectMenuEnabled)
+                .Select(expression => expression.DirectMenuSettings.GroupName))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
 }
 

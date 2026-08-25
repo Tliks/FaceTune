@@ -107,12 +107,12 @@ internal sealed class AapProtocol
         if (ControlsEyeBlink && expression.AllowEyeBlink != TrackingPermission.Keep)
         {
             AddEnabledWrite(writes, EyeBlinkEnabledName, expression.AllowEyeBlink);
-            writes.Add((EyeBlinkModeName, Value(EyeBlinkModeFor(expression.EyeBlink))));
+            writes.Add((EyeBlinkModeName, AnimatorHelper.DiscreteFloatIndexToValue(EyeBlinkModeFor(expression.EyeBlink))));
         }
         if (ControlsLipSync && expression.AllowLipSync != TrackingPermission.Keep)
         {
             AddEnabledWrite(writes, LipSyncEnabledName, expression.AllowLipSync);
-            writes.Add((LipSyncModeName, Value(LipSyncModeFor(expression.LipSync))));
+            writes.Add((LipSyncModeName, AnimatorHelper.DiscreteFloatIndexToValue(LipSyncModeFor(expression.LipSync))));
         }
         return writes;
     }
@@ -161,7 +161,7 @@ internal sealed class AapProtocol
         string modeName)
     {
         controller.EnsureBoolParameterExists(enabledName, true);
-        controller.EnsureFloatParameterExists(modeName, Value(BuiltInMode));
+        controller.EnsureFloatParameterExists(modeName, AnimatorHelper.DiscreteFloatIndexToValue(BuiltInMode));
     }
 
     public DnfCondition EyeBlinkModeIs(int mode) => IndexIs(EyeBlinkModeName, mode);
@@ -199,5 +199,4 @@ internal sealed class AapProtocol
     private static DnfCondition IndexIs(string parameterName, int index)
         => AnimatorHelper.DiscreteFloatIndexCondition(parameterName, index);
 
-    private static float Value(int index) => AnimatorHelper.DiscreteFloatIndexToValue(index);
 }

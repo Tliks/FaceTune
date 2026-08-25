@@ -98,66 +98,84 @@ internal static class FacialDataGUI
     private static void OpenEditor(Component component)
     {
         if (!AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
-        IShapesEditorTargeting? targeting = component switch
-        {
-            ExpressionComponent targetExpression => new FaceTuneDataTargeting { Target = targetExpression },
-            ExpressionDataComponent data => new ExpressionDataTargeting { Target = data },
-            SettingsComponent settings => new SettingsFacialTargeting { Target = settings },
-            _ => null
-        };
-        if (targeting == null) return;
+        var source = FacialEditorSource.Create(component);
+        if (source == null) return;
         var resolver = new FaceTuneResolver(avatar.Root);
         var facialAnimations = new List<BlendShapeWeightAnimation>();
         resolver.FacialData.AddIncoming(component, facialAnimations, avatar.BodyPath);
-        var baseAnimations = ResolveEditorBaseAnimations(component, resolver, avatar.BodyPath);
-        var direct = component switch
-        {
-            ExpressionComponent expression => expression.FacialBlendShapes,
-            ExpressionDataComponent data => data.FacialBlendShapes,
-            SettingsComponent settings => settings.FacialBlendShapes,
-            _ => null
-        };
-        var targetValues = direct == null
-            ? new BlendShapeWeightSet()
-            : new BlendShapeWeightSet(direct.BlendShapeAnimations.ToFirstFrameBlendShapes());
+        var baseAnimations = source.ResolveBaseAnimations(resolver, avatar.BodyPath);
+        var targetValues = new BlendShapeWeightSet(
+            source.Direct.BlendShapeAnimations.ToFirstFrameBlendShapes());
         FacialShapesEditor.TryOpenEditor(
             avatar.FaceRenderer,
-            targeting,
+            source.Targeting,
             new BlendShapeWeightSet(facialAnimations.ToFirstFrameBlendShapes()),
             new BlendShapeWeightSet(baseAnimations.ToFirstFrameBlendShapes()),
             targetValues);
     }
 
-    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveEditorBaseAnimations(
-        Component component,
+    private sealed record FacialEditorSource(
+        IShapesEditorTargeting Targeting,
+        FacialBlendShapeData Direct,
+        Func<FaceTuneResolver, string, IReadOnlyList<BlendShapeWeightAnimation>> ResolveBaseAnimations)
+    {
+        public static FacialEditorSource? Create(Component component)
+            => component switch
+            {
+                ExpressionComponent expression => new(
+                    new FaceTuneDataTargeting { Target = expression },
+                    expression.FacialBlendShapes,
+                    (resolver, bodyPath) => ResolveExpressionBaseAnimations(expression, resolver, bodyPath)),
+                ExpressionDataComponent data => new(
+                    new ExpressionDataTargeting { Target = data },
+                    data.FacialBlendShapes,
+                    (resolver, bodyPath) => ResolveExpressionDataBaseAnimations(data, resolver, bodyPath)),
+                SettingsComponent settings => new(
+                    new SettingsFacialTargeting { Target = settings },
+                    settings.FacialBlendShapes,
+                    (resolver, bodyPath) => ResolveSettingsBaseAnimations(settings, resolver, bodyPath)),
+                _ => null
+            };
+    }
+
+    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveExpressionBaseAnimations(
+        ExpressionComponent expression,
         FaceTuneResolver resolver,
         string bodyPath)
     {
         var result = new List<BlendShapeWeightAnimation>();
-        switch (component)
+        var expressionData = resolver.FacialData.EnumerateLocal(expression)
+            .FirstOrDefault().Value;
+        AddClipAnimations(expressionData, result, bodyPath);
+        return result;
+    }
+
+    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveExpressionDataBaseAnimations(
+        ExpressionDataComponent targetData,
+        FaceTuneResolver resolver,
+        string bodyPath)
+    {
+        var result = new List<BlendShapeWeightAnimation>();
+        var owner = targetData.GetComponentInParent<ExpressionComponent>(true);
+        if (owner == null) return result;
+
+        foreach (var (source, data) in resolver.FacialData.EnumerateLocal(owner))
         {
-            case ExpressionComponent expression:
-                var expressionData = resolver.FacialData.EnumerateLocal(expression)
-                    .FirstOrDefault().Value;
-                AddClipAnimations(expressionData, result, bodyPath);
-                break;
-            case ExpressionDataComponent targetData:
-                var owner = targetData.GetComponentInParent<ExpressionComponent>(true);
-                if (owner == null) break;
-                foreach (var (source, data) in resolver.FacialData.EnumerateLocal(owner))
-                {
-                    AddClipAnimations(data, result, bodyPath);
-                    if (source == targetData) break;
-                    foreach (var animation in data.BlendShapeAnimations) result.Add(animation);
-                }
-                break;
-            case SettingsComponent settings:
-                if (resolver.SettingsReferences.TryResolve<FacialBlendShapeData>(
-                        settings,
-                        out var settingsData))
-                    AddClipAnimations(settingsData, result, bodyPath);
-                break;
+            AddClipAnimations(data, result, bodyPath);
+            if (source == targetData) break;
+            foreach (var animation in data.BlendShapeAnimations) result.Add(animation);
         }
+        return result;
+    }
+
+    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveSettingsBaseAnimations(
+        SettingsComponent settings,
+        FaceTuneResolver resolver,
+        string bodyPath)
+    {
+        var result = new List<BlendShapeWeightAnimation>();
+        if (resolver.SettingsReferences.TryResolve<FacialBlendShapeData>(settings, out var settingsData))
+            AddClipAnimations(settingsData, result, bodyPath);
         return result;
     }
 

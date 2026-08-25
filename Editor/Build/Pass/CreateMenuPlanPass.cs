@@ -28,6 +28,7 @@ internal static class MenuPlanBuilder
             .SkipDestroyed()
             .Select(folder => folder.transform)
             .ToHashSet();
+        var menuResolver = new FaceTuneMenuResolver(context.AvatarContext.Root);
         var root = new NodeCollection();
         var existingFolderChildren = new Dictionary<Transform, NodeCollection>();
 
@@ -38,7 +39,8 @@ internal static class MenuPlanBuilder
                 folders,
                 existingFolders,
                 existingFolderChildren,
-                root);
+                root,
+                menuResolver);
             destination.Folders.Add(folder);
         }
 
@@ -49,33 +51,35 @@ internal static class MenuPlanBuilder
                 folders,
                 existingFolders,
                 existingFolderChildren,
-                root);
+                root,
+                menuResolver);
             destination.Controls.Add(menu);
         }
 
         var builtExistingFolderChildren = new Dictionary<Transform, IReadOnlyList<MenuNodePlan>>();
         foreach (var (folder, children) in existingFolderChildren)
         {
-            var nodes = BuildChildren(children, expressionByTransform);
+            var nodes = BuildChildren(children, expressionByTransform, menuResolver);
             if (nodes.Count != 0)
             {
                 builtExistingFolderChildren.Add(folder, nodes);
             }
         }
 
-        var rootNodes = BuildChildren(root, expressionByTransform);
+        var rootNodes = BuildChildren(root, expressionByTransform, menuResolver);
         return new MenuPlan(rootNodes, builtExistingFolderChildren);
     }
 
     private static IReadOnlyList<MenuNodePlan> BuildChildren(
         NodeCollection children,
-        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
+        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform,
+        FaceTuneMenuResolver menuResolver)
     {
         var nodes = new List<MenuNodePlan>();
 
         foreach (var folder in children.Folders)
         {
-            var built = BuildFolder(folder, expressionByTransform);
+            var built = BuildFolder(folder, expressionByTransform, menuResolver);
             if (built != null)
             {
                 nodes.Add(built);
@@ -92,16 +96,17 @@ internal static class MenuPlanBuilder
 
     private static MenuFolderPlan? BuildFolder(
         FolderNode folder,
-        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
+        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform,
+        FaceTuneMenuResolver menuResolver)
     {
-        var children = BuildChildren(folder.Children, expressionByTransform);
+        var children = BuildChildren(folder.Children, expressionByTransform, menuResolver);
         if (children.Count == 0)
         {
             return null;
         }
 
         return new MenuFolderPlan(
-            GetDisplayName(folder.Source),
+            FaceTuneMenuResolver.GetDisplayName(folder.Source.Menu.MenuName, folder.Source.name),
             BuildIcon(folder.Source.Menu.Icon, folder.Source, expressionByTransform),
             children);
     }
@@ -111,7 +116,7 @@ internal static class MenuPlanBuilder
         IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
     {
         return new MenuControlPlan(
-            GetDisplayName(menu),
+            FaceTuneMenuResolver.GetDisplayName(menu.Menu.MenuName, menu.name),
             BuildIcon(menu.Menu.Icon, menu, expressionByTransform),
             menu.MenuKind,
             menu.ParameterName,
@@ -133,12 +138,7 @@ internal static class MenuPlanBuilder
             return new MenuIconPlan.Manual(settings.ManualIcon.DestroyedAsNull());
         }
 
-        var target = settings.PreviewExpression.DestroyedAsNull();
-        var expressionOwner = (owner as ExpressionComponent).DestroyedAsNull();
-        if (target == null && expressionOwner != null)
-        {
-            target = expressionOwner.transform.DestroyedAsNull();
-        }
+        var target = FaceTuneMenuResolver.ResolvePreviewTarget(settings.PreviewExpression, owner);
 
         if (target == null)
         {
@@ -154,30 +154,19 @@ internal static class MenuPlanBuilder
         IReadOnlyDictionary<MenuComponent, FolderNode> folders,
         ISet<Transform> existingFolders,
         IDictionary<Transform, NodeCollection> existingFolderChildren,
-        NodeCollection root)
+        NodeCollection root,
+        FaceTuneMenuResolver menuResolver)
     {
-        for (var current = menu.transform.parent; current != null; current = current.parent)
-        {
-            var folder = current.GetComponent<MenuComponent>();
-            if (folder != null && folders.TryGetValue(folder, out var parent))
-            {
-                return parent.Children;
-            }
-
-            if (existingFolders.Contains(current))
-            {
-                return existingFolderChildren.GetOrAdd(current, _ => new NodeCollection());
-            }
-        }
-
-        return root;
-    }
-
-    private static string GetDisplayName(MenuComponent menu)
-    {
-        return string.IsNullOrWhiteSpace(menu.Menu.MenuName)
-            ? menu.name
-            : menu.Menu.MenuName;
+        var destination = menuResolver.ResolveDestination(
+            menu,
+            folders.Keys.ToHashSet(),
+            existingFolders);
+        if (destination == null)
+            return root;
+        var folder = destination.GetComponent<MenuComponent>();
+        if (folder != null && folders.TryGetValue(folder, out var parent))
+            return parent.Children;
+        return existingFolderChildren.GetOrAdd(destination, _ => new NodeCollection());
     }
 
     private sealed class NodeCollection

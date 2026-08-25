@@ -6,6 +6,8 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal class AnimatorControllerImporter
 {
+    private const int MaxZeroBlendShapesForBlending = 5;
+
     private readonly AvatarContext _context;
     private readonly AnimatorController _animatorController;
     private readonly IMetabasePlatformSupport _platformSupport;
@@ -204,7 +206,7 @@ internal class AnimatorControllerImporter
         var zeroCount = facialAnimations.Count(a => a.IsZero);
         var nonZeroCount = count - zeroCount;
 
-        return !(nonZeroCount > 0 && zeroCount > 5);
+        return !(nonZeroCount > 0 && zeroCount > MaxZeroBlendShapesForBlending);
     }
 
     private GameObject CreateExpression(AnimatorState state, AnimationClip clip, DnfCondition dnf, bool isBlending)

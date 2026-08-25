@@ -242,23 +242,13 @@ internal static class MenuCanonicalizer
 
     private static void ApplyInstallOverrides(GameObject root)
     {
+        var menuResolver = new FaceTuneMenuResolver(root);
         foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
         {
             var target = menu.Menu.InstallContainer;
             if (target == null) continue;
 
-            if (target != root.transform && !target.IsChildOf(root.transform))
-            {
-                throw new InvalidOperationException(
-                    $"Menu install target is outside the avatar: '{menu.name}'.");
-            }
-
-            if (target == menu.transform || target.IsChildOf(menu.transform))
-            {
-                throw new InvalidOperationException(
-                    $"Menu install target creates a hierarchy cycle: '{menu.name}'.");
-            }
-
+            menuResolver.ValidateInstallTarget(target, menu);
             menu.transform.SetParent(target, false);
             menu.Menu.InstallContainer = null;
         }

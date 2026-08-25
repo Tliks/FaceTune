@@ -1,3 +1,4 @@
+using nadena.dev.ndmf.runtime;
 using UnityEngine.SceneManagement;
 
 namespace Aoyon.FaceTune;
@@ -180,7 +181,8 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         _mesh = renderer.sharedMesh.DestroyedAsNull()
             ?? throw new ArgumentException("Renderer has no mesh.", nameof(renderer));
         _initialWeights = new BlendShapeWeightSet(renderer.GetBlendShapeWeights(_mesh));
-        var avatarRoot = Utils.FindAvatarInParents(renderer.transform) ?? renderer.transform.root;
+        var avatarRoot = RuntimeUtil.FindAvatarInParents(renderer.transform).DestroyedAsNull()
+            ?? renderer.transform.root;
         _originalLayers = avatarRoot.GetComponentsInChildren<Renderer>(true)
             .Select(component => component.gameObject)
             .Distinct()
@@ -244,9 +246,8 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         {
             foreach (var gameObject in _originalLayers.Keys)
             {
-                if (gameObject != null) gameObject.layer = CaptureLayer;
+                if (gameObject != null) gameObject.layer = HiddenLayer;
             }
-            _renderer.gameObject.layer = HiddenLayer;
         }
         catch
         {
