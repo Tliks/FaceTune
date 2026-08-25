@@ -39,7 +39,5 @@ namespace Aoyon.FaceTune
         // Groupでは自動割り当てする。
         public float SelectedValue = 1f;
 
-        [NonSerialized]
-        internal ExpressionComponent? GeneratedFromExpression;
     }
 }

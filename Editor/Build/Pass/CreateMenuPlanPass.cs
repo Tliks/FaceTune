@@ -115,10 +115,9 @@ internal static class MenuPlanBuilder
         MenuComponent menu,
         IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
     {
-        var iconOwner = menu.GeneratedFromExpression ?? menu;
         return new MenuControlPlan(
             FaceTuneMenuResolver.GetDisplayName(menu.Menu.MenuName, menu.name),
-            BuildIcon(menu.Menu.Icon, iconOwner, expressionByTransform),
+            BuildIcon(menu.Menu.Icon, menu, expressionByTransform),
             menu.MenuKind,
             menu.ParameterName,
             menu.MenuKind == MenuComponent.Kind.Toggle ? menu.SelectedValue : 1f);
