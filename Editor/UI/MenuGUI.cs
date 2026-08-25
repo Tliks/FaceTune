@@ -49,7 +49,7 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
         var root = owner == null
             ? null
             : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
-        var resolver = root == null ? null : new FaceTuneMenuResolver(root);
+        var resolver = root == null ? null : new FaceTuneMenuResolver(root.gameObject);
         var target = resolver?.GetInstallTarget(owner!, property.objectReferenceValue as Transform);
         var folder = target?.GetComponent<MenuComponent>();
         var destination = folder == null
@@ -161,7 +161,7 @@ internal static class MenuGUI
             ? null
             : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
         if (root == null) return new();
-        return new FaceTuneMenuResolver(root).GetDefinedGroupNames();
+        return new FaceTuneMenuResolver(root.gameObject).GetDefinedGroupNames();
     }
 }
 
