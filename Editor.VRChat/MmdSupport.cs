@@ -31,7 +31,7 @@ internal sealed class MmdSupport
             : null;
         var disableLayers = false;
         var disableFxLayer = false;
-        if (settings.Enabled && disableWhen != null)
+        if (settings.Enabled && settings.Condition != null)
         {
             var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
                 ? analyzedWriteDefaults == true
