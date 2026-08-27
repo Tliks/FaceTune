@@ -12,10 +12,7 @@ internal sealed class VRChatAnimatorImporterProvider : IFaceTuneImporterProvider
     public FaceTuneImporterDescriptor Descriptor { get; } = new(
         "vrchat-animator-controller",
         100,
-        "window.import.vrchatAnimator.title",
-        "window.import.vrchatAnimator.description",
-        "window.result.animatorImport.guide",
-        true);
+        "window.import.vrchatAnimator.title");
 
     [InitializeOnLoadMethod]
     private static void Register()

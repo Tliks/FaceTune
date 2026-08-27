@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3277205705960719544}
   - component: {fileID: 5560728207041491697}
   m_Layer: 0
-  m_Name: FaceTune Template
+  m_Name: FaceTune
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -53,7 +53,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
   ApplyToRenderer: 0
   ExpressionSetEnabled: 0
@@ -78,7 +78,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -203,7 +203,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 1
+  AllowEyeBlink: 0
   AllowLipSync: 0
   WriteMode: 0
   MultiFrame:

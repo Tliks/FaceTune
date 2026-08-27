@@ -20,12 +20,41 @@ internal sealed class SettingsReference
 /// 後の同名BlendShapeが前を置き換え、0も明示値として扱う。
 /// </summary>
 [Serializable]
-internal class FacialBlendShapeData
+internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
 {
     public AnimationClip? Clip = null;
     public ClipImportOption ClipOption = ClipImportOption.NonZero;
 
     public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+
+    internal FacialBlendShapeData Clone()
+        => new()
+        {
+            Clip = Clip,
+            ClipOption = ClipOption,
+            BlendShapeAnimations = BlendShapeAnimations
+                .Select(animation => new BlendShapeWeightAnimation(animation.Name, animation.Curve))
+                .ToList()
+        };
+
+    public bool Equals(FacialBlendShapeData? other)
+        => other is not null
+        && Clip == other.Clip
+        && ClipOption == other.ClipOption
+        && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations);
+
+    public override bool Equals(object? obj)
+        => obj is FacialBlendShapeData other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Clip);
+        hash.Add(ClipOption);
+        foreach (var animation in BlendShapeAnimations)
+            hash.Add(animation);
+        return hash.ToHashCode();
+    }
 }
 
 internal enum ClipImportOption
@@ -174,12 +203,12 @@ internal class ExpressionSetSettings
     public bool DefaultSelected;
 }
 
-/// <summary>Serialized tracking permission shared by current and legacy data.</summary>
+/// <summary>Serialized tracking permission for current data.</summary>
 internal enum TrackingPermission
 {
-    Allow,
-    Disallow,
-    Keep
+    Allow = 0,
+    Disallow = 10,
+    Keep = 20
 }
 
 internal enum ExpressionWriteMode

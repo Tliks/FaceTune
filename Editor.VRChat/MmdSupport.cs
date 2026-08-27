@@ -15,6 +15,7 @@ internal sealed class MmdSupport
     public bool DisableFxLayer { get; }
 
     public MmdSupport(
+        GameObject root,
         AnimatorGraph graph,
         MmdPlaybackSettings settings,
         IMetabasePlatformSupport platformSupport,
@@ -24,7 +25,7 @@ internal sealed class MmdSupport
         _graph = graph;
         _settings = settings;
 
-        var disableWhen = new ConditionResolver(platformSupport, parameterDomains)
+        var disableWhen = new ConditionResolver(root, platformSupport, parameterDomains)
             .Resolve(settings.Condition);
         var playbackWhen = settings.Enabled
             ? disableWhen ?? DnfCondition.Always
@@ -59,14 +60,15 @@ internal sealed class MmdSupport
         DisableFxLayer = disableFxLayer;
     }
 
-    public void AddPassThroughState(VirtualLayer layer, Vector3 position)
+    public VirtualState? AddPassThroughState(VirtualLayer layer, Vector3 position)
     {
-        if (LayerPlaybackWhen is not { IsNever: false } playbackWhen) return;
+        if (LayerPlaybackWhen is not { IsNever: false } playbackWhen) return null;
 
         var state = _graph.AddState(layer, "MMD Playback", position);
         _graph.AsPassThrough(state);
         _graph.SetAnyStateTransition(layer, state, playbackWhen, 0f);
         _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
+        return state;
     }
 
     public void AddInitialMmdState(

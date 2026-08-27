@@ -9,10 +9,6 @@ internal sealed class CanonicalizeComponentsPass : FaceTunePass<CanonicalizeComp
     protected override void Execute(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
-        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true)
-                     .Where(component => component.gameObject.IsEditorOnlyInHierarchy()))
-            Object.DestroyImmediate(component);
-
         MenuCanonicalizer.Canonicalize(context);
         EmptyConditionRemover.Remove(root);
     }
@@ -32,7 +28,6 @@ internal static class MenuCanonicalizer
         context.SetSettings(settings with { ParameterDomains = parameterDomains });
 
         LowerMenuReferences(root, directMenus);
-        ApplyInstallOverrides(root);
     }
 
     private static void ExpandExpressionSets(GameObject root)
@@ -242,20 +237,6 @@ internal static class MenuCanonicalizer
         {
             throw new InvalidOperationException(
                 $"Menu parameter name is invalid: '{menu.name}'.");
-        }
-    }
-
-    private static void ApplyInstallOverrides(GameObject root)
-    {
-        var menuResolver = new FaceTuneMenuResolver(root);
-        foreach (var menu in root.GetComponentsInChildren<MenuComponent>(true))
-        {
-            var target = menu.Menu.InstallContainer;
-            if (target == null) continue;
-
-            menuResolver.ValidateInstallTarget(target, menu);
-            menu.transform.SetParent(target, false);
-            menu.Menu.InstallContainer = null;
         }
     }
 

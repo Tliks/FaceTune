@@ -4,13 +4,16 @@ namespace Aoyon.FaceTune.Build;
 
 internal sealed class ConditionResolver
 {
+    private readonly GameObject _root;
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly ParameterDomainRegistry _parameterDomains;
 
     public ConditionResolver(
+        GameObject root,
         IMetabasePlatformSupport platformSupport,
         ParameterDomainRegistry parameterDomains)
     {
+        _root = root;
         _platformSupport = platformSupport;
         _parameterDomains = parameterDomains;
     }
@@ -31,8 +34,7 @@ internal sealed class ConditionResolver
     {
         if (!expression.HasCondition) return DnfCondition.Never;
 
-        var conditions = expression.GetComponentsInParentExcludingSelf<SettingsComponent>(true)
-            .Reverse()
+        var conditions = _root.GetComponentsInParentExcludingSelf<SettingsComponent>(expression, true)
             .Where(settings => settings.HasCondition)
             .Select(settings => settings.Condition);
         if (expression.Condition.Mode == ConditionSelection.Kind.Conditional)

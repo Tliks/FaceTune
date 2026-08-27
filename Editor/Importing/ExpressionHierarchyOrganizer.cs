@@ -1,7 +1,7 @@
 namespace Aoyon.FaceTune.Importing;
 
 /// <summary>
-/// Preserves expression order while grouping consecutive expressions by shared condition structure.
+/// Groups consecutive expressions by shared condition structure while preserving their order.
 /// Exact conditions required by every expression in a group are lifted to a parent Settings component.
 /// </summary>
 internal static class ExpressionHierarchyOrganizer
@@ -11,10 +11,64 @@ internal static class ExpressionHierarchyOrganizer
 
     public static void Organize(GameObject parent, IReadOnlyList<GameObject> expressions)
     {
-        foreach (var expression in expressions)
+        for (var index = 0; index < expressions.Count; index++)
+        {
+            var expression = expressions[index];
             expression.transform.SetParent(parent.transform, false);
+            expression.transform.SetSiblingIndex(index);
+        }
 
         Organize(parent, expressions, 0, new HashSet<GroupKey>());
+    }
+
+    /// <summary>
+    /// Reorders only contiguous runs whose conditions are pairwise exclusive.
+    /// </summary>
+    public static IReadOnlyList<T> NormalizeExclusiveRuns<T>(
+        IReadOnlyList<T> items,
+        Func<T, DnfCondition> getCondition,
+        Func<T, bool> canNormalize,
+        IComparer<T> comparer)
+    {
+        var result = items.ToList();
+        var start = 0;
+        while (start + 1 < result.Count)
+        {
+            var end = start + 1;
+            while (end < result.Count && IsExclusiveWithRun(result, start, end, getCondition))
+                end++;
+
+            var count = end - start;
+            if (count > 1 && result.GetRange(start, count).All(canNormalize))
+            {
+                var ordered = result
+                    .Skip(start)
+                    .Take(count)
+                    .OrderBy(item => item, comparer)
+                    .ToArray();
+                for (var index = 0; index < ordered.Length; index++)
+                    result[start + index] = ordered[index];
+            }
+
+            start = end;
+        }
+
+        return result;
+    }
+
+    private static bool IsExclusiveWithRun<T>(
+        IReadOnlyList<T> items,
+        int start,
+        int candidate,
+        Func<T, DnfCondition> getCondition)
+    {
+        var condition = getCondition(items[candidate]);
+        for (var index = start; index < candidate; index++)
+        {
+            if (!getCondition(items[index]).And(condition).IsNever)
+                return false;
+        }
+        return true;
     }
 
     private static void Organize(

@@ -26,24 +26,26 @@ internal static class LegacyModelSupport
         }
     }
 
-    internal static EqualityComparison Negate(this EqualityComparison value)
-        => value == EqualityComparison.Equal ? EqualityComparison.NotEqual : EqualityComparison.Equal;
+    internal static LegacyEqualityComparison Negate(this LegacyEqualityComparison value)
+        => value == LegacyEqualityComparison.Equal
+            ? LegacyEqualityComparison.NotEqual
+            : LegacyEqualityComparison.Equal;
 
-    internal static (ComparisonType, int) Negate(this ComparisonType value, int current)
+    internal static (LegacyComparisonType, int) Negate(this LegacyComparisonType value, int current)
         => value switch
         {
-            ComparisonType.Equal => (ComparisonType.NotEqual, current),
-            ComparisonType.NotEqual => (ComparisonType.Equal, current),
-            ComparisonType.GreaterThan => (ComparisonType.LessThan, current + 1),
-            ComparisonType.LessThan => (ComparisonType.GreaterThan, current - 1),
+            LegacyComparisonType.Equal => (LegacyComparisonType.NotEqual, current),
+            LegacyComparisonType.NotEqual => (LegacyComparisonType.Equal, current),
+            LegacyComparisonType.GreaterThan => (LegacyComparisonType.LessThan, current + 1),
+            LegacyComparisonType.LessThan => (LegacyComparisonType.GreaterThan, current - 1),
             _ => (value, current)
         };
 
-    internal static (ComparisonType, float) Negate(this ComparisonType value, float current)
+    internal static (LegacyComparisonType, float) Negate(this LegacyComparisonType value, float current)
         => value switch
         {
-            ComparisonType.GreaterThan => (ComparisonType.LessThan, current + 0.00001f),
-            ComparisonType.LessThan => (ComparisonType.GreaterThan, current - 0.00001f),
+            LegacyComparisonType.GreaterThan => (LegacyComparisonType.LessThan, current + 0.00001f),
+            LegacyComparisonType.LessThan => (LegacyComparisonType.GreaterThan, current - 0.00001f),
             _ => (value, current)
         };
 }

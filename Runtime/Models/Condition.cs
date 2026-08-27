@@ -102,7 +102,6 @@ internal enum MenuConditionMode
     LessThan = 30
 }
 
-/// <summary>Menu parameterの割当後にParameterConditionへ解決するalias。</summary>
 [Serializable]
 internal sealed class MenuCondition
 {
@@ -201,19 +200,17 @@ internal enum HandGesture
     ThumbsUp = 70
 }
 
-/// <summary>Serialized parameter type shared by current and legacy data.</summary>
 internal enum ParameterType
 {
-    Int,
-    Float,
-    Bool
+    Int = 0,
+    Float = 10,
+    Bool = 20
 }
 
-/// <summary>Serialized comparison shared by current and legacy data.</summary>
 internal enum ComparisonType
 {
-    Equal,
-    NotEqual,
-    GreaterThan,
-    LessThan
+    Equal = 0,
+    NotEqual = 10,
+    GreaterThan = 20,
+    LessThan = 30
 }

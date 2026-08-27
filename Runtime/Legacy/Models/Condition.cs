@@ -17,8 +17,8 @@ internal record class LegacyHandGestureCondition : LegacyCondition // Immutable
     public LegacyHand Hand { get => hand; init => hand = value; }
     public const string HandPropName = nameof(hand);
 
-    [SerializeField] private EqualityComparison equalityComparison;
-    public EqualityComparison EqualityComparison { get => equalityComparison; init => equalityComparison = value; }
+    [SerializeField] private LegacyEqualityComparison equalityComparison;
+    public LegacyEqualityComparison EqualityComparison { get => equalityComparison; init => equalityComparison = value; }
     public const string EqualityComparisonPropName = nameof(equalityComparison);
     
     [SerializeField] private LegacyHandGesture handGesture;
@@ -28,11 +28,11 @@ internal record class LegacyHandGestureCondition : LegacyCondition // Immutable
     public LegacyHandGestureCondition()
     {
         hand = LegacyHand.Left;
-        equalityComparison = EqualityComparison.Equal;
+        equalityComparison = LegacyEqualityComparison.Equal;
         handGesture = LegacyHandGesture.Fist;
     }
 
-    public LegacyHandGestureCondition(LegacyHand hand, EqualityComparison equalityComparison, LegacyHandGesture handGesture)
+    public LegacyHandGestureCondition(LegacyHand hand, LegacyEqualityComparison equalityComparison, LegacyHandGesture handGesture)
     {
         this.hand = hand;
         this.equalityComparison = equalityComparison;
@@ -67,12 +67,12 @@ internal record class LegacyParameterCondition : LegacyCondition // Immutable
     public string ParameterName { get => parameterName; init => parameterName = value; }
     public const string ParameterNamePropName = nameof(parameterName);
 
-    [SerializeField] private ParameterType parameterType;
-    public ParameterType ParameterType { get => parameterType; init => parameterType = value; }
+    [SerializeField] private LegacyParameterType parameterType;
+    public LegacyParameterType ParameterType { get => parameterType; init => parameterType = value; }
     public const string ParameterTypePropName = nameof(parameterType);
 
-    [SerializeField] private ComparisonType comparisonType;
-    public ComparisonType ComparisonType { get => comparisonType; init => comparisonType = value; }
+    [SerializeField] private LegacyComparisonType comparisonType;
+    public LegacyComparisonType ComparisonType { get => comparisonType; init => comparisonType = value; }
     public const string ComparisonTypePropName = nameof(comparisonType);
 
     [SerializeField] private float floatValue;
@@ -90,14 +90,14 @@ internal record class LegacyParameterCondition : LegacyCondition // Immutable
     public LegacyParameterCondition()
     {
         parameterName = string.Empty;
-        parameterType = ParameterType.Int;
-        comparisonType = ComparisonType.Equal;
+        parameterType = LegacyParameterType.Int;
+        comparisonType = LegacyComparisonType.Equal;
         floatValue = 0;
         intValue = 0;
         boolValue = false;
     }
 
-    public LegacyParameterCondition(string parameterName, ParameterType parameterType, ComparisonType comparisonType, float floatValue, int intValue, bool boolValue)
+    public LegacyParameterCondition(string parameterName, LegacyParameterType parameterType, LegacyComparisonType comparisonType, float floatValue, int intValue, bool boolValue)
     {
         this.parameterName = parameterName;
         this.parameterType = parameterType;
@@ -107,27 +107,27 @@ internal record class LegacyParameterCondition : LegacyCondition // Immutable
         this.boolValue = boolValue;
     }
 
-    public static LegacyParameterCondition Float(string parameterName, ComparisonType comparisonType, float floatValue)
+    public static LegacyParameterCondition Float(string parameterName, LegacyComparisonType comparisonType, float floatValue)
     {
-        if (comparisonType != ComparisonType.GreaterThan && comparisonType != ComparisonType.LessThan)
+        if (comparisonType != LegacyComparisonType.GreaterThan && comparisonType != LegacyComparisonType.LessThan)
         {
             throw new ArgumentException("Comparison type must be GreaterThan or LessThan for float parameters");
         }
         return new LegacyParameterCondition()
         {
             parameterName = parameterName,
-            parameterType = ParameterType.Float,
+            parameterType = LegacyParameterType.Float,
             comparisonType = comparisonType,
             floatValue = floatValue
         };
     }
 
-    public static LegacyParameterCondition Int(string parameterName, ComparisonType comparisonType, int intValue)
+    public static LegacyParameterCondition Int(string parameterName, LegacyComparisonType comparisonType, int intValue)
     {
         return new LegacyParameterCondition()
         {
             parameterName = parameterName,
-            parameterType = ParameterType.Int,
+            parameterType = LegacyParameterType.Int,
             comparisonType = comparisonType,
             intValue = intValue
         };
@@ -138,7 +138,7 @@ internal record class LegacyParameterCondition : LegacyCondition // Immutable
         return new LegacyParameterCondition()
         {
             parameterName = parameterName,
-            parameterType = ParameterType.Bool,
+            parameterType = LegacyParameterType.Bool,
             boolValue = boolValue
         };
     }
@@ -147,19 +147,19 @@ internal record class LegacyParameterCondition : LegacyCondition // Immutable
     {
         switch (parameterType)
         {
-            case ParameterType.Float:
+            case LegacyParameterType.Float:
                 var (newType_float, newValue_float) = comparisonType.Negate(floatValue);
                 return this with { 
                     comparisonType = newType_float, 
                     floatValue = newValue_float 
                 };
-            case ParameterType.Int:
+            case LegacyParameterType.Int:
                 var (newType_int, newValue_int) = comparisonType.Negate(intValue);
                 return this with { 
                     comparisonType = newType_int, 
                     intValue = newValue_int 
                 };
-            case ParameterType.Bool:
+            case LegacyParameterType.Bool:
                 return this with { boolValue = !boolValue };
             default:
                 throw new InvalidOperationException($"Invalid parameter type: {parameterType}");

@@ -26,7 +26,7 @@ internal static class ExpressionPlanBuilder
     {
         var components = context.Root.GetComponentsInChildren<ExpressionComponent>(true);
         
-        var conditionResolver = new ConditionResolver(platformSupport, settings.ParameterDomains);
+        var conditionResolver = new ConditionResolver(context.Root, platformSupport, settings.ParameterDomains);
         var expressionBuilder = new ExpressionItemBuilder(context, platformSupport, settings, conditionResolver);
 
         var items = components

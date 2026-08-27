@@ -1,6 +1,7 @@
 #if FACETUNE_FACE_EMO
 
 using Aoyon.FaceTune.Importing;
+using Aoyon.FaceTune.Platforms;
 using Suzuryg.FaceEmo.Components;
 using Suzuryg.FaceEmo.Components.Data;
 
@@ -11,11 +12,7 @@ internal sealed class FaceEmoImporterProvider : IFaceTuneImporterProvider
     public FaceTuneImporterDescriptor Descriptor { get; } = new(
         "face-emo",
         50,
-        "window.import.faceEmo.title",
-        "window.import.faceEmo.description",
-        "window.result.faceEmoImport.guide",
-        true,
-        true);
+        "window.import.faceEmo.title");
 
     [InitializeOnLoadMethod]
     private static void Register()
@@ -94,17 +91,22 @@ internal sealed class FaceEmoImporterProvider : IFaceTuneImporterProvider
             var source = _sources[_selectedSource];
             var menu = source.GetComponent<MenuRepositoryComponent>().SerializableMenu;
             var transitionSeconds = (float)(source.AV3Setting?.TransitionDurationSeconds ?? 0d);
+            var platformSupport = MetabasePlatformSupport.GetForAvatar(context.Root.transform).FirstOrDefault()
+                                  ?? throw new InvalidOperationException("FaceTune platform support is unavailable.");
             EnsureFolder(_outputFolder);
-            var root = new GameObject("FaceTune (Imported from FaceEmo)");
-            Undo.RegisterCreatedObjectUndo(root, "Import FaceEmo");
-            root.transform.SetParent(context.Root.transform, false);
 
-            new FaceEmoImporter(context, source, menu, transitionSeconds, _outputFolder).Import(root);
+            var result = new FaceEmoImporter(
+                context,
+                source,
+                menu,
+                transitionSeconds,
+                _outputFolder,
+                platformSupport).Import(destination);
             AssetDatabase.SaveAssets();
 
-            Selection.activeObject = root;
-            EditorGUIUtility.PingObject(root);
-            return root;
+            Selection.activeObject = result;
+            EditorGUIUtility.PingObject(result);
+            return result;
         }
 
         private static void EnsureFolder(string path)

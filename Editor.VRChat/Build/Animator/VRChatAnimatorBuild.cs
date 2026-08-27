@@ -10,6 +10,7 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 internal static class VRChatAnimatorBuilder
 {
     private const int InitialLayerPriority = -1;
+    private const int TrackingControlLayerPriority = int.MaxValue;
 
     public static void Build(
         BuildContext buildContext,
@@ -56,6 +57,13 @@ internal static class VRChatAnimatorBuilder
                 Expressions: (IReadOnlyList<ExpressionItem>)group.ToArray()))
             .ToArray();
 
+        var nonFacialDefaults = AnimatorHelper.GetDefaultValueAnimations(
+            settings.AvatarContext.Root,
+            expressionPlan.Items
+                .SelectMany(item => item.NonFacialAnimations.FloatCurves
+                    .Select(entry => entry.Key)
+                    .Concat(item.NonFacialAnimations.ObjectCurves.Select(entry => entry.Key))));
+
         var aap = AapProtocol.From(expressionPlan.Items);
         if (settings.AvoidEyeBlinkConflicts && aap.ControlsEyeBlink
             || settings.AvoidLipSyncConflicts && aap.ControlsLipSync)
@@ -70,6 +78,7 @@ internal static class VRChatAnimatorBuilder
 
         var graph = new AnimatorGraph(analyzedWriteDefaults ?? true);
         var mmdSupport = new MmdSupport(
+            settings.AvatarContext.Root,
             graph,
             avatarControlSettings.MmdPlayback,
             MetabasePlatformSupport.GetForBuild(buildContext),
@@ -87,6 +96,7 @@ internal static class VRChatAnimatorBuilder
                 graph,
                 settings,
                 externalLipSyncBlendShapes,
+                nonFacialDefaults,
                 mmdSupport);
         }
 
@@ -129,17 +139,15 @@ internal static class VRChatAnimatorBuilder
         {
             using var _ = new Utils.ProfilingSampleScope(
                 "FaceTune.Build.Animator.BuildTrackingControls");
-            var controlPriority = units.Max(unit => unit.Priority);
-            var controlAnchor = expressionPlan.Items
-                .Last(item => item.Priority.Priority == controlPriority)
-                .SourceTransform;
+            var controlAnchor = new GameObject($"{FaceTuneConstants.Name} Tracking Controls");
+            controlAnchor.transform.SetParent(buildContext.AvatarRootTransform, false);
             var controlController = CreateMergeAnimatorController(
                 controllerContext,
-                controlAnchor,
+                controlAnchor.transform,
                 "Tracking Controls",
-                controlPriority);
-            eyeBlinkBuilder.Build(controlController, controlPriority);
-            lipSyncBuilder.Build(controlController, controlPriority);
+                TrackingControlLayerPriority);
+            eyeBlinkBuilder.Build(controlController, TrackingControlLayerPriority);
+            lipSyncBuilder.Build(controlController, TrackingControlLayerPriority);
         }
     }
 
@@ -148,6 +156,7 @@ internal static class VRChatAnimatorBuilder
         AnimatorGraph graph,
         BuildSettings settings,
         ISet<string> externalLipSyncBlendShapes,
+        ResolvedNonFacialAnimationSet nonFacialDefaults,
         MmdSupport mmdSupport)
     {
         AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
@@ -161,7 +170,12 @@ internal static class VRChatAnimatorBuilder
         var layer = graph.AddLayer(controller, "Initial", InitialLayerPriority);
         var defaultState = graph.AddState(layer, "Default", origin);
         layer.StateMachine!.DefaultState = defaultState;
-        SetInitialClip(defaultState, "Default", blendShapes, settings.AvatarContext.BodyPath);
+        SetInitialClip(
+            defaultState,
+            "Default",
+            blendShapes,
+            settings.AvatarContext.BodyPath,
+            nonFacialDefaults);
         mmdSupport.AddInitialMmdState(
             layer,
             defaultState,
@@ -174,11 +188,18 @@ internal static class VRChatAnimatorBuilder
         VirtualState state,
         string name,
         IEnumerable<BlendShapeWeight> blendShapes,
-        string bodyPath)
+        string bodyPath,
+        ResolvedNonFacialAnimationSet? nonFacialAnimations = null)
     {
-        state.SetNewClip(name).AddBlendShapeAnimations(
-            bodyPath,
-            blendShapes.ToBlendShapeAnimations());
+        var clip = state.SetNewClip(name);
+        if (nonFacialAnimations != null)
+        {
+            foreach (var (binding, curve) in nonFacialAnimations.FloatCurves)
+                clip.SetFloatCurve(binding, curve);
+            foreach (var (binding, curve) in nonFacialAnimations.ObjectCurves)
+                clip.SetObjectCurve(binding, curve);
+        }
+        clip.AddBlendShapeAnimations(bodyPath, blendShapes.ToBlendShapeAnimations());
     }
 
     private static VirtualAnimatorController CreateMergeAnimatorController(

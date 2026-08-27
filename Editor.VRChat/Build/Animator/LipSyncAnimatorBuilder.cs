@@ -65,9 +65,10 @@ internal sealed class LipSyncAnimatorBuilder
         layer.StateMachine!.DefaultState = initial;
         _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
 
-        _mmdSupport.AddPassThroughState(
+        var mmdState = _mmdSupport.AddPassThroughState(
             layer,
             origin - new Vector3(0, yStep * 2, 0));
+        if (mmdState != null) SetLipSyncTracking(mmdState, false);
         InstallDisabledState(
             layer,
             enabled.Complement(),

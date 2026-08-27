@@ -53,8 +53,7 @@ internal static class GameObjectMenu
     [M(MenuItems.WindowPath, true)]
     private static bool ValidateOpenWindow()
     {
-        var avatarRoot = GetSelectedAvatarRoot();
-        return avatarRoot != null && Selection.activeGameObject == avatarRoot;
+        return GetSelectedAvatarRoot() != null;
     }
 
     private static GameObject? GetSelectedAvatarRoot()

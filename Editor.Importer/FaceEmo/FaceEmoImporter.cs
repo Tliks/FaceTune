@@ -2,7 +2,9 @@
 
 
 using System.IO;
+using Aoyon.FaceTune.Build;
 using Aoyon.FaceTune.Importing;
+using Aoyon.FaceTune.Platforms;
 using Suzuryg.FaceEmo.Components;
 using Suzuryg.FaceEmo.Components.Data;
 using Suzuryg.FaceEmo.Domain;
@@ -15,13 +17,12 @@ namespace Aoyon.FaceTune.Importers.FaceEmo;
 
 internal sealed class FaceEmoImporter
 {
-    private const string OptionPrefabGuid = "bd8741136293c7c43b955a2d1b5f4a37";
-
     private readonly AvatarContext _context;
     private readonly FaceEmoLauncherComponent _source;
     private readonly SerializableMenu _menu;
     private readonly float _transitionSeconds;
     private readonly string _outputFolder;
+    private readonly ConditionResolver _conditionResolver;
     private readonly Dictionary<AnimationClip, AnimationClip?> _nonFacialClips = new();
 
     public FaceEmoImporter(
@@ -29,19 +30,23 @@ internal sealed class FaceEmoImporter
         FaceEmoLauncherComponent source,
         SerializableMenu menu,
         float transitionSeconds,
-        string outputFolder)
+        string outputFolder,
+        IMetabasePlatformSupport platformSupport)
     {
         _context = context;
         _source = source;
         _menu = menu;
         _transitionSeconds = transitionSeconds;
         _outputFolder = outputFolder;
+        _conditionResolver = new ConditionResolver(
+            context.Root,
+            platformSupport,
+            platformSupport.CreateBuiltInParameterDomains());
     }
 
-    public void Import(GameObject root)
+    public GameObject Import(GameObject root)
     {
-        CreateFoundation(root);
-        AddOption(root);
+        ApplyRootSettings(root);
         ImportItems(_menu.Registered, root);
 
         if (_menu.Unregistered.Types.Count > 0)
@@ -50,16 +55,17 @@ internal sealed class FaceEmoImporter
             archive.tag = "EditorOnly";
             ImportItems(_menu.Unregistered, archive);
         }
+
+        return root;
     }
 
-    private void CreateFoundation(GameObject root)
+    private void ApplyRootSettings(GameObject root)
     {
-        var settings = root.AddComponent<SettingsComponent>();
-        settings.HasFacialBlendShapes = true;
-
-        var folder = root.AddComponent<MenuComponent>();
-        folder.MenuKind = MenuComponent.Kind.Folder;
-        folder.Menu.MenuName = "FaceTune";
+        var settings = root.GetComponent<SettingsComponent>();
+        if (settings == null)
+            settings = Undo.AddComponent<SettingsComponent>(root);
+        else
+            Undo.RecordObject(settings, "Import FaceEmo Settings");
 
         var excludedBlendShapes = _source.AV3Setting.ExcludedBlendShapes
             .Where(shape => shape != null)
@@ -68,7 +74,11 @@ internal sealed class FaceEmoImporter
             .ToList();
         if (excludedBlendShapes.Count > 0 || !_source.AV3Setting.DisableTrackingControls)
         {
-            var avatarSettings = root.AddComponent<AvatarSettingsComponent>();
+            var avatarSettings = root.GetComponent<AvatarSettingsComponent>();
+            if (avatarSettings == null)
+                avatarSettings = Undo.AddComponent<AvatarSettingsComponent>(root);
+            else
+                Undo.RecordObject(avatarSettings, "Import FaceEmo Avatar Settings");
             avatarSettings.ExcludedBlendShapeNames = excludedBlendShapes;
             avatarSettings.AvoidEyeBlinkConflicts = _source.AV3Setting.DisableTrackingControls;
             avatarSettings.AvoidLipSyncConflicts = _source.AV3Setting.DisableTrackingControls;
@@ -96,14 +106,6 @@ internal sealed class FaceEmoImporter
         }
     }
 
-    private void AddOption(GameObject root)
-    {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(OptionPrefabGuid));
-        var option = (GameObject)PrefabUtility.InstantiatePrefab(prefab, root.transform);
-        Undo.RegisterCreatedObjectUndo(option, "Import FaceEmo Option");
-        PrefabUtility.UnpackPrefabInstance(option, PrefabUnpackMode.Completely, InteractionMode.UserAction);
-    }
-
     private void ImportItems(SerializableMenuItemListBase items, GameObject parent)
     {
         var modeIndex = 0;
@@ -127,7 +129,7 @@ internal sealed class FaceEmoImporter
     private void ImportMode(SerializableMode mode, string id, GameObject parent)
     {
         var name = GetModeName(mode, id);
-        var obj = CreateMenuFolder(name, parent);
+        var obj = CreateObject(name, parent);
         var settings = obj.AddComponent<SettingsComponent>();
         settings.ExpressionSetEnabled = true;
         settings.ExpressionSet.DefaultSelected = id == _menu.DefaultSelection;
@@ -150,15 +152,23 @@ internal sealed class FaceEmoImporter
                 mode.MouthMorphCancelerEnabled,
                 true).gameObject);
 
+        var branches = new List<ImportedBranch>();
         for (var index = 0; index < mode.Branches.Count; index++)
         {
-            var expression = ImportBranch(mode.Branches[index], index, obj);
-            if (expression != null) expressions.Add(expression.gameObject);
+            var branch = ImportBranch(mode.Branches[index], index, obj);
+            if (branch != null) branches.Add(branch);
         }
+
+        var orderedBranches = ExpressionHierarchyOrganizer.NormalizeExclusiveRuns(
+            branches.AsEnumerable().Reverse().ToArray(),
+            branch => branch.Condition,
+            branch => branch.NaturalOrder.HasValue,
+            ImportedBranchComparer.Instance);
+        expressions.AddRange(orderedBranches.Select(branch => branch.Expression.gameObject));
         ExpressionHierarchyOrganizer.Organize(obj, expressions);
     }
 
-    private ExpressionComponent? ImportBranch(
+    private ImportedBranch? ImportBranch(
         SerializableBranch branch,
         int index,
         GameObject parent)
@@ -167,26 +177,62 @@ internal sealed class FaceEmoImporter
         if (baseClip == null) return null;
 
         var name = GetBranchName(baseClip, index);
+        var condition = ToCondition(branch.Conditions);
         var hasTrigger = branch.IsLeftTriggerUsed && LoadClip(branch.LeftHandAnimation) != null
                          || branch.IsRightTriggerUsed && LoadClip(branch.RightHandAnimation) != null;
         var expression = CreateExpression(
             parent,
             name,
             baseClip,
-            ToCondition(branch.Conditions),
+            condition,
             branch.BlinkEnabled,
             branch.EyeTrackingControl,
             branch.MouthTrackingControl,
             branch.MouthMorphCancelerEnabled,
             !hasTrigger);
         ApplyTriggerAnimation(expression, branch, baseClip);
-        return expression;
+        return new ImportedBranch(
+            expression,
+            _conditionResolver.Resolve(condition) ?? DnfCondition.Never,
+            GetNaturalOrder(branch));
     }
 
     private static string GetBranchName(AnimationClip clip, int index)
     {
         var name = RemoveFaceEmoRoleSuffix(clip.name);
         return string.IsNullOrWhiteSpace(name) ? $"Branch {index + 1}" : name;
+    }
+
+    private static (int Hand, int Gesture)? GetNaturalOrder(SerializableBranch branch)
+    {
+        if (branch.Conditions is not { Count: 1 } conditions)
+            return null;
+
+        var condition = conditions[0];
+        return condition.ComparisonOperator == ComparisonOperator.Equals
+            ? ((int)condition.Hand, (int)ToGesture(condition.HandGesture))
+            : null;
+    }
+
+    private sealed record ImportedBranch(
+        ExpressionComponent Expression,
+        DnfCondition Condition,
+        (int Hand, int Gesture)? NaturalOrder);
+
+    private sealed class ImportedBranchComparer : IComparer<ImportedBranch>
+    {
+        public static ImportedBranchComparer Instance { get; } = new();
+
+        public int Compare(ImportedBranch? left, ImportedBranch? right)
+        {
+            if (left == null || right == null)
+                return left == right ? 0 : left == null ? -1 : 1;
+
+            var leftOrder = left.NaturalOrder!.Value;
+            var rightOrder = right.NaturalOrder!.Value;
+            var hand = leftOrder.Hand.CompareTo(rightOrder.Hand);
+            return hand != 0 ? hand : leftOrder.Gesture.CompareTo(rightOrder.Gesture);
+        }
     }
 
     private static string RemoveFaceEmoRoleSuffix(string name)
@@ -502,6 +548,7 @@ internal sealed class FaceEmoImporter
     {
         var obj = new GameObject(name);
         obj.transform.SetParent(parent.transform, false);
+        Undo.RegisterCreatedObjectUndo(obj, "Import FaceEmo");
         return obj;
     }
 }

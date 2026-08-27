@@ -1,6 +1,7 @@
 using UnityEditor.Animations;
 using Aoyon.FaceTune.Importing;
 using Aoyon.FaceTune.Platforms;
+using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
@@ -248,8 +249,15 @@ internal class AnimatorControllerImporter
             },
             _ => new MultiFrameSettings()
         };
-        expression.AllowEyeBlink = TrackingPermission.Disallow;
-        expression.AllowLipSync = TrackingPermission.Allow;
+        var trackingControl = state.behaviours.OfType<VRCAnimatorTrackingControl>().FirstOrDefault();
+        expression.AllowEyeBlink = trackingControl?.trackingEyes
+            == VRCAnimatorTrackingControl.TrackingType.Animation
+            ? TrackingPermission.Disallow
+            : TrackingPermission.Allow;
+        expression.AllowLipSync = trackingControl?.trackingMouth
+            == VRCAnimatorTrackingControl.TrackingType.Animation
+            ? TrackingPermission.Disallow
+            : TrackingPermission.Allow;
         expression.WriteMode = isBlending ? ExpressionWriteMode.Blend : ExpressionWriteMode.Replace;
 
         return obj;

@@ -9,7 +9,7 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
     {
         var settings = context.RequireSettings();
         var root = context.AvatarContext.Root;
-        var conditionResolver = new ConditionResolver(context.PlatformSupport, settings.ParameterDomains);
+        var conditionResolver = new ConditionResolver(root, context.PlatformSupport, settings.ParameterDomains);
 
         var controls = root.GetComponentsInChildren<AvatarControlComponent>(true);
         var mmdSupport = FindSingle(controls, AvatarControlComponent.Kind.SupportMMD);

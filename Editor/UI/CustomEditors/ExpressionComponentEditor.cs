@@ -250,9 +250,9 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     {
         if (_batchOverrideTarget == null) return;
 
-        var owner = _component
-            .GetComponentsInParentExcludingSelf<SettingsComponent>(true)
-            .FirstOrDefault();
+        var owner = _component.transform.root.gameObject
+            .GetComponentsInParentExcludingSelf<SettingsComponent>(_component, true)
+            .LastOrDefault();
         if (owner == null)
         {
             owner = Undo.AddComponent<SettingsComponent>(_batchOverrideTarget.gameObject);

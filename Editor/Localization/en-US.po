@@ -1037,212 +1037,134 @@ msgid "menu.selectedValue.label"
 msgstr "Selected Value"
 
 # FaceTune Window
-msgid "window.avatar.label"
-msgstr "Avatar"
-
 msgid "window.avatarMissing.message"
 msgstr "Right-click an avatar and open GameObject/FaceTune/Window again."
 
-msgid "window.home.button"
-msgstr "Home"
+msgid "window.configure.title"
+msgstr "Add New Facial Controls"
 
-msgid "window.home.title"
-msgstr "FaceTune"
+msgid "window.configure.foundation.title"
+msgstr "Foundation"
 
-msgid "window.home.description"
-msgstr "What would you like to do with this avatar?"
+msgid "window.configure.foundation.add.label"
+msgstr "Add the FaceTune foundation (Recommended)"
 
-msgid "window.open.button"
-msgstr "Open"
+msgid "window.configure.foundation.existing"
+msgstr "The FaceTune foundation has already been added."
 
-msgid "window.recommended.badge"
-msgstr "Recommended"
+msgid "window.configure.default.label"
+msgstr "Enable the Default Expression"
 
-msgid "window.standard.title"
-msgstr "Add Standard Setup"
+msgid "window.configure.default.description"
+msgstr "The Default Expression always plays during normal use and disables avatar-integrated or lower-priority facial controls from other tools, as well as facial tracking. Turn this off when FaceTune should play only while its conditions are met."
 
-msgid "window.standard.description"
-msgstr "Add the recommended foundation for managing facial expressions with FaceTune."
+msgid "window.configure.parts.title"
+msgstr "Parts to Add"
 
-msgid "window.standard.introduction"
-msgstr "Add the standard FaceTune structure suitable for most avatars."
+msgid "window.configure.add.button"
+msgstr "Add Selected Configuration"
 
-msgid "window.standard.contents.title"
-msgstr "Included"
+msgid "window.configure.addParts.button"
+msgstr "Add Selected Parts"
 
-msgid "window.standard.contents.settings"
-msgstr "• Settings for the base face and menu folder"
+msgid "window.configure.completed.message"
+msgstr "The configuration was added.\nClose this window and configure the face in the Expression section of each FaceTune component."
 
-msgid "window.standard.contents.option"
-msgstr "• Option container for controls such as Lock Facial"
+msgid "window.recipeGroup.standardHands.title"
+msgstr "Standard Hand Gestures (14 Patterns)"
 
-msgid "window.standard.contents.default"
-msgstr "• Default Expression for the normal face"
+msgid "window.recipeVariant.priority.label"
+msgstr "Preferred Hand"
 
-msgid "window.standard.includeDefault.label"
-msgstr "Include Default Expression"
+msgid "window.recipeVariant.hand.label"
+msgstr "Hand"
 
-msgid "window.standard.default.notice"
-msgstr "Default Expression is always active and replaces lower-priority facial controls."
+msgid "window.recipeGroup.standardHands.description"
+msgstr "Switch expressions using both hands across 14 patterns."
 
-msgid "window.standard.noDefault.notice"
-msgstr "The foundation will be added without replacing existing facial controls."
+msgid "window.recipeGroup.oneHand.title"
+msgstr "One-Hand Gestures (7 Patterns)"
 
-msgid "window.standard.existing.warning"
-msgstr "A standard FaceTune setup may already exist on this avatar. Adding another can create duplicate folders or defaults."
+msgid "window.recipeGroup.oneHand.description"
+msgstr "Switch expressions using gestures from one hand across 7 patterns."
 
-msgid "window.standard.add.button"
-msgstr "Add Standard Setup"
+msgid "window.recipeGroup.bothHands.title"
+msgstr "Both-Hand Combinations (64 Patterns)"
 
-msgid "window.add.title"
-msgstr "Add Expressions and Controls"
+msgid "window.recipeGroup.bothHands.description"
+msgstr "Switch expressions using combinations of both hands across 64 patterns."
 
-msgid "window.add.description"
-msgstr "Add only the Expression, gesture pattern, or control you need."
+msgid "window.recipeGroup.advancedBlend.title"
+msgstr "Advanced Blending"
 
-msgid "window.add.introduction"
-msgstr "Each item can be used on its own. The standard setup is not required."
+msgid "window.recipeGroup.advancedBlend.description"
+msgstr "Blend and control the expressions for each hand's gestures. For example, you can switch the eyes with the left hand and the mouth with the right hand."
 
-msgid "window.add.button"
-msgstr "Add"
+msgid "window.recipeGroup.expression.title"
+msgstr "Single Expression"
 
-msgid "window.category.expression"
-msgstr "Expression"
-
-msgid "window.category.pattern"
-msgstr "Patterns"
-
-msgid "window.category.control"
-msgstr "Controls"
-
-msgid "window.destination.label"
-msgstr "Destination"
-
-msgid "window.recipe.expression.title"
-msgstr "Expression"
-
-msgid "window.recipe.expression.description"
-msgstr "Add one empty Expression. Configure its face and activation in the Inspector."
-
-msgid "window.recipe.handSign.title"
-msgstr "Hand Sign"
-
-msgid "window.recipe.handSign.description"
-msgstr "Add Expressions for the standard hand gestures."
-
-msgid "window.recipe.leftHand.title"
-msgstr "Left Hand"
-
-msgid "window.recipe.leftHand.description"
-msgstr "Switch expressions using left-hand gestures."
-
-msgid "window.recipe.rightHand.title"
-msgstr "Right Hand"
-
-msgid "window.recipe.rightHand.description"
-msgstr "Switch expressions using right-hand gestures."
+msgid "window.recipeGroup.expression.description"
+msgstr "Adds one empty expression."
 
 msgid "window.recipe.leftHandPriority.title"
 msgstr "Left Hand Priority"
 
-msgid "window.recipe.leftHandPriority.description"
-msgstr "Prioritize the left hand when both hands have input."
-
 msgid "window.recipe.rightHandPriority.title"
 msgstr "Right Hand Priority"
 
-msgid "window.recipe.rightHandPriority.description"
-msgstr "Prioritize the right hand when both hands have input."
+msgid "window.recipe.leftHand.title"
+msgstr "Left Hand"
+
+msgid "window.recipe.rightHand.title"
+msgstr "Right Hand"
+
+msgid "window.recipe.bothHands.title"
+msgstr "Both Hands"
 
 msgid "window.recipe.blending.title"
-msgstr "Blending"
+msgstr "Blend Setup"
 
-msgid "window.recipe.blending.description"
-msgstr "Blend expressions from the left and right hands."
+msgid "window.recipe.expression.title"
+msgstr "Add an Expression"
 
-msgid "window.recipe.lockFacial.title"
-msgstr "Lock Facial"
+msgid "window.configure.parts.type.label"
+msgstr "Part Type"
 
-msgid "window.recipe.lockFacial.description"
-msgstr "Add a menu control that locks facial expressions."
-
-msgid "window.recipe.disableEyeBlink.title"
-msgstr "Disable Eye Blink"
-
-msgid "window.recipe.disableEyeBlink.description"
-msgstr "Disable eye blinking while its condition is active."
-
-msgid "window.recipe.disableLipSync.title"
-msgstr "Disable Lip Sync"
-
-msgid "window.recipe.disableLipSync.description"
-msgstr "Disable lip sync while its condition is active."
-
-msgid "window.recipe.mmdSupport.title"
-msgstr "MMD Support"
-
-msgid "window.recipe.mmdSupport.description"
-msgstr "Add facial control for MMD worlds."
+msgid "window.configure.parts.none"
+msgstr "Do not add"
 
 msgid "window.import.title"
-msgstr "Import Existing Facial Controls"
-
-msgid "window.import.description"
-msgstr "Create FaceTune settings from an Animator Controller, AnimationClips, an older version, or another supported tool."
-
-msgid "window.import.introduction"
-msgstr "Select an available source. Source data is not changed unless explicitly stated."
-
-msgid "window.import.none.badge"
-msgstr "No sources"
+msgstr "Add Existing Facial Controls"
 
 msgid "window.import.none.message"
-msgstr "No importer is available for this avatar."
+msgstr "No import source is available for this avatar."
 
-msgid "window.import.changeSource.button"
-msgstr "Choose Another Source"
-
-msgid "window.import.foundation.title"
-msgstr "FaceTune Foundation"
-
-msgid "window.import.foundation.existing"
-msgstr "Imported content will be added to the existing FaceTune standard setup."
-
-msgid "window.import.foundation.addStandard.label"
-msgstr "Add the standard setup"
-
-msgid "window.import.foundation.addStandard.description"
-msgstr "Add Settings, Option, and optionally Default Expression, then place the imported content inside."
-
-msgid "window.import.foundation.contentOnly.description"
-msgstr "Add only the imported content. This is suitable for adding FaceTune alongside existing controls."
-
-msgid "window.import.sourceUnchanged.notice"
-msgstr "The source is not removed or disabled. Check for conflicts if both the original control and FaceTune remain active."
+msgid "window.import.source.label"
+msgstr "Import Source"
 
 msgid "window.import.button"
 msgstr "Import"
+
+msgid "window.import.completed.message"
+msgstr "Facial controls were imported."
+
+msgid "window.import.completed.warning"
+msgstr "The original facial controls remain in place.\nIf they overlap with FaceTune, remove or disable the original controls as needed."
 
 msgid "window.import.avatarInvalid.message"
 msgstr "The face renderer or face mesh could not be resolved for this avatar."
 
 msgid "window.import.vrchatAnimator.title"
-msgstr "VRChat FX Animator Controller"
-
-msgid "window.import.vrchatAnimator.description"
-msgstr "Create Expressions from facial animations and conditions in a VRChat FX Animator Controller."
+msgstr "VRChat Avatar-Integrated Facial Controls"
 
 msgid "window.import.controller.label"
-msgstr "Controller"
+msgstr "Animator Controller"
 
 msgid "window.import.controller.empty"
 msgstr "Select an Animator Controller to import."
 
 msgid "window.import.faceEmo.title"
 msgstr "FaceEmo"
-
-msgid "window.import.faceEmo.description"
-msgstr "Create FaceTune Expression Sets, gesture conditions, and facial animations from a FaceEmo menu."
 
 msgid "window.import.faceEmo.source.label"
 msgstr "FaceEmo Source"
@@ -1252,50 +1174,3 @@ msgstr "Generated Assets"
 
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "Select"
-
-msgid "window.result.title"
-msgstr "Completed"
-
-msgid "window.result.default"
-msgstr "The operation completed."
-
-msgid "window.result.standard.title"
-msgstr "The standard setup was added."
-
-msgid "window.result.standard.guide"
-msgstr "Select Default and configure the normal face in its Expression section. Add further expressions and controls from this window as needed."
-
-msgid "window.result.standardWithoutDefault.guide"
-msgstr "The foundation was added without Default Expression. Existing facial controls are not replaced by this setup alone."
-
-msgid "window.result.recipe.title"
-msgstr "The item was added."
-
-msgid "window.result.expression.guide"
-msgstr "Configure the face in the Expression section of the Inspector, then enable a condition or direct menu to activate it."
-
-msgid "window.result.pattern.guide"
-msgstr "Select each generated Expression and configure its face in the Inspector. The gesture structure is already configured."
-
-msgid "window.result.control.guide"
-msgstr "Check the activation condition and menu settings in the Inspector."
-
-msgid "window.result.import.title"
-msgstr "The content was imported."
-
-msgid "window.result.animatorImport.guide"
-msgstr "Review the imported Expressions and their conditions. The original Animator Controller was not changed, so verify that its facial controls do not conflict with FaceTune."
-
-msgid "window.result.faceEmoImport.guide"
-msgstr "Review the imported Expression Sets, gesture conditions, and facial animations. The original FaceEmo object was not changed, so disable one of the controls before building to avoid conflicts."
-
-msgid "window.result.created.label"
-msgstr "Created"
-
-msgid "window.result.select.button"
-msgstr "Select Created Object"
-
-msgid "window.result.addAnother.button"
-msgstr "Add Another"
-
-

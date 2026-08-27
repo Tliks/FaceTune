@@ -1,3 +1,4 @@
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune.Gui;
@@ -50,12 +51,17 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
         var root = owner == null
             ? null
             : RuntimeUtil.FindAvatarInParents(owner.transform);
-        var resolver = root == null ? null : new FaceTuneMenuResolver(root.gameObject);
-        var target = resolver?.GetInstallTarget(owner!, property.objectReferenceValue as Transform);
+        var resolver = root == null
+            ? null
+            : new FaceTuneMenuResolver(root.gameObject, GetEditorExternalFolders(root));
+        var target = resolver?.ResolveDestination(owner!, property.objectReferenceValue as Transform);
         var folder = target?.GetComponent<MenuComponent>();
-        var destination = folder == null
-            ? "menuInstallSettings.root.placeholder".LS()
-            : FaceTuneMenuResolver.GetDisplayName(folder.Menu.MenuName, folder.name);
+        var destination = folder != null
+            ? FaceTuneMenuResolver.GetDisplayName(folder.Menu.MenuName, folder.name)
+            : target == null || target == root
+                ? "menuInstallSettings.root.placeholder".LS()
+                : target.name;
+
         var placeholder = $"{destination} ({"menuInstallSettings.destinationType.placeholder".LS()})";
         GUIHelper.DrawPlaceholderObjectLikeField(
             position,
@@ -67,6 +73,15 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         => GUIHelper.LineHeight;
+
+    private static IEnumerable<Transform> GetEditorExternalFolders(Transform root)
+    {
+        // The inspector has no active build platform, so include folders from all applicable platform supports.
+        return MetabasePlatformSupport.GetForAvatar(root)
+            .SelectMany(support => support.GetMenuFolderObjects())
+            .SkipDestroyed()
+            .Select(folder => folder.transform);
+    }
 }
 
 internal static class MenuGUI

@@ -68,9 +68,7 @@ internal class UnselectedPanel
         {
             _blendShapeManager.AddShapesWithWeight(_currentSource
                 .Where(item => !_blendShapeManager.IsInTarget(item.KeyIndex))
-                .Select(item => (
-                    item.KeyIndex,
-                    _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex))));
+                .Select(item => (item.KeyIndex, 100f)));
             RebuildListViewSlow();
         };
     }
@@ -102,9 +100,7 @@ internal class UnselectedPanel
             {
                 if (element.userData is ListViewItem data)
                 {
-                    _blendShapeManager.AddShapeWithWeight(
-                        data.KeyIndex,
-                        _blendShapeManager.GetEffectiveShapeWeight(data.KeyIndex));
+                    _blendShapeManager.AddShapeWithWeight(data.KeyIndex, 100f);
                 }
             });
             

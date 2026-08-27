@@ -28,13 +28,13 @@ internal static class MenuPlanBuilder
             .SkipDestroyed()
             .Select(folder => folder.transform)
             .ToHashSet();
-        var menuResolver = new FaceTuneMenuResolver(context.AvatarContext.Root);
+        var menuResolver = new FaceTuneMenuResolver(context.AvatarContext.Root, existingFolders);
         var root = new NodeCollection();
         var existingFolderChildren = new Dictionary<Transform, NodeCollection>();
 
         foreach (var folder in folders.Values)
         {
-            var destination = ResolveDestination(
+            var destination = GetDestinationCollection(
                 folder.Source,
                 folders,
                 existingFolders,
@@ -46,7 +46,7 @@ internal static class MenuPlanBuilder
 
         foreach (var menu in menus.Where(menu => menu.MenuKind != MenuComponent.Kind.Folder))
         {
-            var destination = ResolveDestination(
+            var destination = GetDestinationCollection(
                 menu,
                 folders,
                 existingFolders,
@@ -149,7 +149,7 @@ internal static class MenuPlanBuilder
         return new MenuIconPlan.ExpressionPreview(expression);
     }
 
-    private static NodeCollection ResolveDestination(
+    private static NodeCollection GetDestinationCollection(
         MenuComponent menu,
         IReadOnlyDictionary<MenuComponent, FolderNode> folders,
         ISet<Transform> existingFolders,
@@ -157,15 +157,19 @@ internal static class MenuPlanBuilder
         NodeCollection root,
         FaceTuneMenuResolver menuResolver)
     {
-        var destination = menuResolver.ResolveDestination(
-            menu,
-            folders.Keys.ToHashSet(),
-            existingFolders);
+        var configuredTarget = menu.Menu.InstallContainer.DestroyedAsNull();
+        if (configuredTarget != null)
+            menuResolver.ValidateInstallTarget(configuredTarget, menu);
+
+        var destination = menuResolver.ResolveDestination(menu, configuredTarget);
         if (destination == null)
             return root;
+
         var folder = destination.GetComponent<MenuComponent>();
         if (folder != null && folders.TryGetValue(folder, out var parent))
             return parent.Children;
+        if (destination == menuResolver.Root && !existingFolders.Contains(destination))
+            return root;
         return existingFolderChildren.GetOrAdd(destination, _ => new NodeCollection());
     }
 

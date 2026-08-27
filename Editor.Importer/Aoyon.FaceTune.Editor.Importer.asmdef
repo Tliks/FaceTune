@@ -24,9 +24,7 @@
         "VRCSDK3A-Editor.dll"
     ],
     "autoReferenced": false,
-    "defineConstraints": [
-        "FACETUNE_VRCHAT"
-    ],
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.vrchat.avatars",

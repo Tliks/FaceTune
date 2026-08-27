@@ -299,7 +299,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
         var value = GetValue(property, type);
 
         position.SetSingleHeight();
-        if (type.enumValueIndex == (int)ParameterType.Bool)
+        if (type.intValue == (int)ParameterType.Bool)
         {
             var boolOptions = new[] { "condition.bool.enabled.label".LG(), "condition.bool.disabled.label".LG() };
             var (beforeBoolValue, boolValueRect) = position.SplitRight(GUIHelper.PopupWidth(boolOptions));
@@ -317,10 +317,10 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
         GUIHelper.DrawLocalizedEnum(parameterTypeRect, type, string.Empty, nameof(ParameterType));
         position.NewLine();
 
-        if (type.enumValueIndex == (int)ParameterType.Float
-            && comparison.enumValueIndex != (int)ComparisonType.GreaterThan
-            && comparison.enumValueIndex != (int)ComparisonType.LessThan)
-            comparison.enumValueIndex = (int)ComparisonType.GreaterThan;
+        if (type.intValue == (int)ParameterType.Float
+            && comparison.intValue != (int)ComparisonType.GreaterThan
+            && comparison.intValue != (int)ComparisonType.LessThan)
+            comparison.intValue = (int)ComparisonType.GreaterThan;
 
         var (valueRect, comparisonRect) = position.SplitRight(
             GUIHelper.LocalizedEnumPopupWidth(comparison, nameof(ComparisonType)));
@@ -329,7 +329,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
     }
 
     private static SerializedProperty GetValue(SerializedProperty property, SerializedProperty type)
-        => type.enumValueIndex switch
+        => type.intValue switch
         {
             (int)ParameterType.Float => property.FindPropertyRelative("FloatValue"),
             (int)ParameterType.Bool => property.FindPropertyRelative("BoolValue"),
@@ -337,7 +337,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
         };
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => property.FindPropertyRelative("ParameterType").enumValueIndex == (int)ParameterType.Bool
+        => property.FindPropertyRelative("ParameterType").intValue == (int)ParameterType.Bool
             ? GUIHelper.LineHeight
             : GUIHelper.LineHeight * 2f + GUIHelper.VerticalSpacing;
 }

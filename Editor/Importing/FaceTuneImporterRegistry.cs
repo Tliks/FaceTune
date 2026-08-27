@@ -3,11 +3,7 @@ namespace Aoyon.FaceTune.Importing;
 internal sealed record FaceTuneImporterDescriptor(
     string Id,
     int Priority,
-    string TitleKey,
-    string DescriptionKey,
-    string PostImportGuideKey,
-    bool SourceIsUnchanged,
-    bool CreatesStandaloneSetup = false);
+    string TitleKey);
 
 internal interface IFaceTuneImporterProvider
 {

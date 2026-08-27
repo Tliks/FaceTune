@@ -1,3 +1,4 @@
+using nadena.dev.ndmf.preview;
 using nadena.dev.ndmf.runtime;
 
 namespace Aoyon.FaceTune;
@@ -39,14 +40,42 @@ internal static partial class Utils
         return null;
     }
 
-    /// <summary>自身のGameObjectを除く親からComponentを取得する。</summary>
-    public static T[] GetComponentsInParentExcludingSelf<T>(this Component component, bool includeInactive)
+    /// <summary>
+    /// rootからtargetまでのComponentをroot側から取得し、target自身は除外する。
+    /// rootの子孫構成と取得順はComputeContext経由で監視する。
+    /// </summary>
+    public static T[] GetComponentsInParentExcludingSelf<T>(
+        this ComputeContext context,
+        GameObject root,
+        Component target,
+        bool includeInactive)
+        where T : Component
+        => FilterComponentsInParentExcludingSelf(
+            context.GetComponentsInChildren<T>(root, includeInactive),
+            target);
+
+    /// <summary>
+    /// rootからtargetまでのComponentをroot側から取得し、target自身は除外する。
+    /// </summary>
+    public static T[] GetComponentsInParentExcludingSelf<T>(
+        this GameObject root,
+        Component target,
+        bool includeInactive)
+        where T : Component
+        => FilterComponentsInParentExcludingSelf(
+            root.GetComponentsInChildren<T>(includeInactive),
+            target);
+
+    private static T[] FilterComponentsInParentExcludingSelf<T>(
+        IEnumerable<T> components,
+        Component target)
         where T : Component
     {
-        var parent = component.transform.parent;
-        return parent != null
-            ? parent.GetComponentsInParent<T>(includeInactive)
-            : Array.Empty<T>();
+        var targetTransform = target.transform;
+        return components
+            .Where(component => component.transform != targetTransform
+                                && targetTransform.IsChildOf(component.transform))
+            .ToArray();
     }
 
     public static TComponent EnsureComponent<TComponent>(this GameObject gameObject) where TComponent : Component
@@ -57,21 +86,6 @@ internal static partial class Utils
             component = gameObject.AddComponent<TComponent>();
         }
         return component;
-    }
-
-    public static bool IsEditorOnlyInHierarchy(this GameObject gameObject)
-    {
-        var current = gameObject;
-        while (current != null)
-        {
-            if (current.CompareTag("EditorOnly"))
-            {
-                return true;
-            }
-            var parent = current.transform.parent;
-            current = parent != null ? parent.gameObject : null;
-        }
-        return false;
     }
 }
 

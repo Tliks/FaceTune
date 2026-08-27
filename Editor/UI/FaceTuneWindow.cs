@@ -4,34 +4,123 @@ namespace Aoyon.FaceTune.Gui;
 
 internal sealed class FaceTuneWindow : EditorWindow
 {
-    private enum Page
+    private enum Mode
     {
-        Home,
-        StandardSetup,
-        Add,
-        Import,
-        Result
+        Configure,
+        Import
     }
 
-    [SerializeField] private GameObject? _avatarRoot;
-    [SerializeField] private Page _page;
-    [SerializeField] private bool _includeDefaultExpression = true;
-    [SerializeField] private bool _importAddStandard = true;
-    [SerializeField] private Vector2 _scroll;
+    private enum RecipeGroup
+    {
+        None,
+        StandardHands,
+        OneHand,
+        BothHands,
+        AdvancedBlend,
+        Expression
+    }
 
-    [NonSerialized] private FaceTuneRecipe? _selectedRecipe;
-    [NonSerialized] private string? _selectedImporterId;
-    [NonSerialized] private IFaceTuneImportSession? _importSession;
-    [NonSerialized] private GameObject? _resultObject;
-    [NonSerialized] private string? _resultTitleKey;
-    [NonSerialized] private string? _resultGuideKey;
+    private sealed record RecipeOption(FaceTunePatternKey Pattern, RecipeGroup Group);
+
+    private static class RecipeCatalog
+    {
+        public static readonly RecipeGroup[] Groups =
+        {
+            RecipeGroup.None,
+            RecipeGroup.StandardHands,
+            RecipeGroup.OneHand,
+            RecipeGroup.BothHands,
+            RecipeGroup.AdvancedBlend,
+            RecipeGroup.Expression
+        };
+
+        public static readonly RecipeOption[] All =
+        {
+            new(FaceTunePatternKey.LeftHandPriority, RecipeGroup.StandardHands),
+            new(FaceTunePatternKey.RightHandPriority, RecipeGroup.StandardHands),
+            new(FaceTunePatternKey.LeftHand, RecipeGroup.OneHand),
+            new(FaceTunePatternKey.RightHand, RecipeGroup.OneHand),
+            new(FaceTunePatternKey.BothHands, RecipeGroup.BothHands),
+            new(FaceTunePatternKey.Blending, RecipeGroup.AdvancedBlend),
+            new(FaceTunePatternKey.Expression, RecipeGroup.Expression)
+        };
+
+        public static readonly RecipeOption Default = All.Single(
+            recipe => recipe.Pattern == FaceTunePatternKey.RightHandPriority);
+
+        public static RecipeOption[] GetRecipes(RecipeGroup group)
+            => All.Where(recipe => recipe.Group == group).ToArray();
+    }
+
+    private static class RecipeText
+    {
+        public static string GroupTitleKey(RecipeGroup group)
+            => group switch
+            {
+                RecipeGroup.None => "window.configure.parts.none",
+                RecipeGroup.StandardHands => "window.recipeGroup.standardHands.title",
+                RecipeGroup.OneHand => "window.recipeGroup.oneHand.title",
+                RecipeGroup.BothHands => "window.recipeGroup.bothHands.title",
+                RecipeGroup.AdvancedBlend => "window.recipeGroup.advancedBlend.title",
+                RecipeGroup.Expression => "window.recipeGroup.expression.title",
+                _ => throw new ArgumentOutOfRangeException(nameof(group), group, null)
+            };
+
+        public static string GroupDescriptionKey(RecipeGroup group)
+            => group switch
+            {
+                RecipeGroup.StandardHands => "window.recipeGroup.standardHands.description",
+                RecipeGroup.OneHand => "window.recipeGroup.oneHand.description",
+                RecipeGroup.BothHands => "window.recipeGroup.bothHands.description",
+                RecipeGroup.AdvancedBlend => "window.recipeGroup.advancedBlend.description",
+                RecipeGroup.Expression => "window.recipeGroup.expression.description",
+                _ => throw new ArgumentOutOfRangeException(nameof(group), group, null)
+            };
+
+        public static string RecipeLabelKey(FaceTunePatternKey pattern)
+            => pattern switch
+            {
+                FaceTunePatternKey.LeftHandPriority => "window.recipe.leftHandPriority.title",
+                FaceTunePatternKey.RightHandPriority => "window.recipe.rightHandPriority.title",
+                FaceTunePatternKey.LeftHand => "window.recipe.leftHand.title",
+                FaceTunePatternKey.RightHand => "window.recipe.rightHand.title",
+                FaceTunePatternKey.BothHands => "window.recipe.bothHands.title",
+                FaceTunePatternKey.Blending => "window.recipe.blending.title",
+                FaceTunePatternKey.Expression => "window.recipe.expression.title",
+                _ => throw new ArgumentOutOfRangeException(nameof(pattern), pattern, null)
+            };
+
+        public static string VariantLabelKey(RecipeGroup group)
+            => group == RecipeGroup.StandardHands
+                ? "window.recipeVariant.priority.label"
+                : "window.recipeVariant.hand.label";
+    }
+
+    private static readonly Vector2 WindowSize = new(420f, 450f);
+
+    [SerializeField] private GameObject? _avatarRoot;
+    private Mode _mode;
+    private RecipeGroup _selectedRecipeGroup = RecipeGroup.StandardHands;
+    private bool _addStandardSetup = true;
+    private bool _enableDefaultExpression = true;
+    private Vector2 _scroll;
+
+    private RecipeOption? _selectedRecipe;
+    private string? _selectedImporterId;
+    private IFaceTuneImportSession? _importSession;
+    private string? _statusKey;
+    private string? _warningKey;
+
+
 
     public static void Open(GameObject avatarRoot)
     {
         var window = GetWindow<FaceTuneWindow>();
         window.titleContent = new GUIContent(FaceTuneConstants.Name);
-        window.minSize = new Vector2(460f, 420f);
+        window.minSize = WindowSize;
+        window.maxSize = WindowSize;
         window.SetAvatar(avatarRoot);
+        window.OpenMode(Mode.Configure);
         window.Show();
         window.Focus();
     }
@@ -39,8 +128,10 @@ internal sealed class FaceTuneWindow : EditorWindow
     private void OnEnable()
     {
         titleContent = new GUIContent(FaceTuneConstants.Name);
-        minSize = new Vector2(460f, 420f);
+        minSize = WindowSize;
+        maxSize = WindowSize;
         Localization.OnLanguageChanged += Repaint;
+        SelectDefaultRecipe();
     }
 
     private void OnDisable()
@@ -49,11 +140,19 @@ internal sealed class FaceTuneWindow : EditorWindow
         DisposeImportSession();
     }
 
-    private void SetAvatar(GameObject avatarRoot)
+    private void SetAvatar(GameObject? avatarRoot)
     {
         if (_avatarRoot == avatarRoot) return;
+
         _avatarRoot = avatarRoot;
-        Navigate(Page.Home);
+        _mode = Mode.Configure;
+        SelectDefaultRecipe();
+        _addStandardSetup = true;
+        _enableDefaultExpression = true;
+        _selectedImporterId = null;
+        _statusKey = null;
+        _warningKey = null;
+        DisposeImportSession();
     }
 
     private void OnGUI()
@@ -66,18 +165,23 @@ internal sealed class FaceTuneWindow : EditorWindow
             return;
         }
 
-        DrawNavigation();
         _scroll = EditorGUILayout.BeginScrollView(_scroll);
         EditorGUILayout.Space(8f);
-        switch (_page)
+
+        if (_mode == Mode.Configure)
+            DrawConfigure();
+        else
+            DrawImport();
+
+        if (_statusKey != null || _warningKey != null)
         {
-            case Page.Home: DrawHome(); break;
-            case Page.StandardSetup: DrawStandardSetup(); break;
-            case Page.Add: DrawAdd(); break;
-            case Page.Import: DrawImport(); break;
-            case Page.Result: DrawResult(); break;
-            default: throw new ArgumentOutOfRangeException();
+            EditorGUILayout.Space(8f);
+            if (_statusKey != null)
+                EditorGUILayout.HelpBox(_statusKey.LS(), MessageType.Info);
+            if (_warningKey != null)
+                EditorGUILayout.HelpBox(_warningKey.LS(), MessageType.Warning);
         }
+
         EditorGUILayout.Space(12f);
         EditorGUILayout.EndScrollView();
         DrawFooter();
@@ -86,251 +190,180 @@ internal sealed class FaceTuneWindow : EditorWindow
     private void DrawHeader()
     {
         EditorGUILayout.Space(8f);
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            GUILayout.Space(10f);
-            GUILayout.Label(FaceTuneConstants.Name, HeaderStyle);
-            GUILayout.FlexibleSpace();
-            GUILayout.Label("window.avatar.label".LS(), EditorStyles.miniLabel);
-            GUILayout.Label(_avatarRoot == null ? "—" : _avatarRoot.name, EditorStyles.boldLabel);
-            GUILayout.Space(10f);
-        }
-        EditorGUILayout.Space(5f);
+        GUILayout.Label(FaceTuneConstants.Name, HeaderStyle, GUILayout.ExpandWidth(true));
         DrawLine();
     }
 
-    private void DrawNavigation()
+    private void DrawConfigure()
     {
-        using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-        {
-            using (new EditorGUI.DisabledScope(_page == Page.Home))
-            {
-                if (GUILayout.Button("window.home.button".LS(), EditorStyles.toolbarButton, GUILayout.Width(64f)))
-                    Navigate(Page.Home);
-            }
-            GUILayout.Label(GetPageTitleKey().LS(), EditorStyles.miniLabel);
-            GUILayout.FlexibleSpace();
-        }
-    }
+        if (DrawOperationSelector()) return;
+        var standardRoot = FaceTunePrefabOperations.FindStandardRoot(_avatarRoot!);
 
-    private void DrawHome()
-    {
-        DrawPageTitle("window.home.title", "window.home.description");
-        var hasStandard = FaceTuneRecipeOperations.FindStandardRoot(_avatarRoot!) != null;
-        DrawActionCard(
-            "window.standard.title",
-            "window.standard.description",
-            !hasStandard ? "window.recommended.badge" : null,
-            () => Navigate(Page.StandardSetup));
-        DrawActionCard(
-            "window.add.title",
-            "window.add.description",
-            null,
-            () => Navigate(Page.Add));
-
-        var providers = FaceTuneImporterRegistry.GetAvailable(_avatarRoot!);
-        DrawActionCard(
-            "window.import.title",
-            "window.import.description",
-            providers.Count == 0 ? "window.import.none.badge" : null,
-            () => Navigate(Page.Import));
-    }
-
-    private void DrawStandardSetup()
-    {
-        DrawPageTitle("window.standard.title", "window.standard.introduction");
         using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-        {
-            GUILayout.Label("window.standard.contents.title".LS(), EditorStyles.boldLabel);
-            GUILayout.Label("window.standard.contents.settings".LS(), WrappedLabel);
-            GUILayout.Label("window.standard.contents.option".LS(), WrappedLabel);
-            GUILayout.Label("window.standard.contents.default".LS(), WrappedLabel);
-        }
+            DrawFoundation(standardRoot);
 
-        EditorGUILayout.Space(6f);
-        _includeDefaultExpression = EditorGUILayout.ToggleLeft(
-            "window.standard.includeDefault.label".LS(),
-            _includeDefaultExpression);
-        if (_includeDefaultExpression)
-            EditorGUILayout.HelpBox("window.standard.default.notice".LS(), MessageType.Info);
-        else
-            EditorGUILayout.HelpBox("window.standard.noDefault.notice".LS(), MessageType.Info);
-
-        if (FaceTuneRecipeOperations.FindStandardRoot(_avatarRoot!) != null)
-            EditorGUILayout.HelpBox("window.standard.existing.warning".LS(), MessageType.Warning);
-
-        DrawPrimaryButton("window.standard.add.button", AddStandardSetup);
-    }
-
-    private void DrawAdd()
-    {
-        DrawPageTitle("window.add.title", "window.add.introduction");
-        DrawRecipeCategory(FaceTuneRecipeCategory.Expression, "window.category.expression");
-        DrawRecipeCategory(FaceTuneRecipeCategory.Pattern, "window.category.pattern");
-        DrawRecipeCategory(FaceTuneRecipeCategory.Control, "window.category.control");
-
-        if (_selectedRecipe == null) return;
         EditorGUILayout.Space(8f);
         using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            DrawRecipeSelection();
+
+        var addAction = CanAddConfiguration(standardRoot) ? (Action)AddConfiguration : null;
+        DrawPrimaryButton(
+            standardRoot == null && _addStandardSetup
+                ? "window.configure.add.button"
+                : "window.configure.addParts.button",
+            addAction);
+    }
+
+    private void DrawFoundation(GameObject? standardRoot)
+    {
+        DrawSectionHeader("window.configure.foundation.title");
+
+        if (standardRoot != null)
         {
-            GUILayout.Label(_selectedRecipe.TitleKey.LS(), EditorStyles.boldLabel);
-            GUILayout.Label(_selectedRecipe.DescriptionKey.LS(), WrappedLabel);
-            var destination = GetRecipeDestinationDescription(_selectedRecipe);
-            EditorGUILayout.Space(3f);
-            GUILayout.Label($"{"window.destination.label".LS()}: {destination}", EditorStyles.miniLabel);
-            if (GUILayout.Button("window.add.button".LS(), GUILayout.Height(28f))) AddSelectedRecipe();
+            GUILayout.Label("window.configure.foundation.existing".LS(), EditorStyles.miniLabel);
+            return;
+        }
+
+        _addStandardSetup = EditorGUILayout.ToggleLeft(
+            "window.configure.foundation.add.label".LS(),
+            _addStandardSetup);
+
+        if (_addStandardSetup)
+        {
+            _enableDefaultExpression = EditorGUILayout.ToggleLeft(
+                "window.configure.default.label".LS(),
+                _enableDefaultExpression);
+            EditorGUILayout.HelpBox(
+                "window.configure.default.description".LS(),
+                MessageType.Info);
         }
     }
 
-    private void DrawRecipeCategory(FaceTuneRecipeCategory category, string titleKey)
+    private void DrawRecipeSelection()
     {
-        GUILayout.Label(titleKey.LS(), SectionTitleStyle);
-        var recipes = FaceTuneRecipes.All.Where(recipe => recipe.Category == category).ToArray();
-        const int columns = 2;
-        for (var i = 0; i < recipes.Length; i += columns)
+        DrawSectionHeader("window.configure.parts.title");
+
+        var selectedIndex = Array.IndexOf(RecipeCatalog.Groups, _selectedRecipeGroup);
+        var options = RecipeCatalog.Groups
+            .Select(RecipeText.GroupTitleKey)
+            .Select(key => key.LS())
+            .ToArray();
+        var nextIndex = EditorGUILayout.Popup(
+            "window.configure.parts.type.label".LS(),
+            selectedIndex,
+            options);
+        if (nextIndex != selectedIndex)
         {
-            using var row = new EditorGUILayout.HorizontalScope();
-            for (var column = 0; column < columns; column++)
-            {
-                var index = i + column;
-                if (index >= recipes.Length)
-                {
-                    GUILayout.FlexibleSpace();
-                    continue;
-                }
-                var recipe = recipes[index];
-                var selected = recipe == _selectedRecipe;
-                var label = selected ? $"✓ {recipe.TitleKey.LS()}" : recipe.TitleKey.LS();
-                if (GUILayout.Button(label, GUILayout.MinHeight(30f))) _selectedRecipe = recipe;
-            }
+            _selectedRecipeGroup = RecipeCatalog.Groups[nextIndex];
+            _selectedRecipe = RecipeCatalog.GetRecipes(_selectedRecipeGroup).FirstOrDefault();
         }
-        EditorGUILayout.Space(5f);
+
+        if (_selectedRecipeGroup == RecipeGroup.None)
+            return;
+
+        var recipes = RecipeCatalog.GetRecipes(_selectedRecipeGroup);
+        if (recipes.Length > 1)
+        {
+            var variantIndex = Array.IndexOf(recipes, _selectedRecipe);
+            if (variantIndex < 0) variantIndex = 0;
+            var nextVariant = variantIndex;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.PrefixLabel(
+                    RecipeText.VariantLabelKey(_selectedRecipeGroup).LS(),
+                    EditorStyles.label);
+                nextVariant = GUILayout.Toolbar(
+                    variantIndex,
+                    recipes.Select(recipe => RecipeText.RecipeLabelKey(recipe.Pattern).LS()).ToArray(),
+                    GUILayout.ExpandWidth(true));
+            }
+            _selectedRecipe = recipes[nextVariant];
+        }
+
+        EditorGUILayout.HelpBox(
+            RecipeText.GroupDescriptionKey(_selectedRecipeGroup).LS(),
+            MessageType.Info);
+    }
+
+    private void SelectDefaultRecipe()
+    {
+        _selectedRecipeGroup = RecipeGroup.StandardHands;
+        _selectedRecipe = RecipeCatalog.Default;
+    }
+
+    private bool CanAddConfiguration(GameObject? standardRoot)
+        => _selectedRecipe != null || standardRoot == null && _addStandardSetup;
+
+    private void AddConfiguration()
+    {
+        if (_avatarRoot == null) return;
+
+        var existingStandardRoot = FaceTunePrefabOperations.FindStandardRoot(_avatarRoot);
+        var addStandard = existingStandardRoot == null && _addStandardSetup;
+        var recipe = _selectedRecipe;
+        if (!addStandard && recipe == null) return;
+
+        GameObject? lastCreated = null;
+        RunUndo("Add FaceTune Configuration", () =>
+        {
+            var standardRoot = existingStandardRoot;
+            if (addStandard)
+                standardRoot = FaceTunePrefabOperations.AddStandardSetup(
+                    _avatarRoot,
+                    _enableDefaultExpression);
+
+            if (recipe != null)
+                lastCreated = FaceTunePrefabOperations.AddPattern(_avatarRoot, recipe.Pattern, standardRoot);
+
+            var selected = lastCreated ?? standardRoot ?? _avatarRoot;
+            Selection.activeObject = selected;
+            EditorGUIUtility.PingObject(selected);
+        });
+
+        SelectDefaultRecipe();
+        _statusKey = "window.configure.completed.message";
+        _warningKey = null;
+        Repaint();
     }
 
     private void DrawImport()
     {
-        DrawPageTitle("window.import.title", "window.import.introduction");
-        var providers = FaceTuneImporterRegistry.GetAvailable(_avatarRoot!);
-        if (providers.Count == 0)
+        if (DrawOperationSelector()) return;
+        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
         {
-            EditorGUILayout.HelpBox("window.import.none.message".LS(), MessageType.Info);
-            return;
-        }
-
-        if (_selectedImporterId == null)
-        {
-            foreach (var provider in providers)
+            var providers = FaceTuneImporterRegistry.GetAvailable(_avatarRoot!);
+            if (providers.Count == 0)
             {
-                DrawActionCard(
-                    provider.Descriptor.TitleKey,
-                    provider.Descriptor.DescriptionKey,
-                    null,
-                    () => SelectImporter(provider));
+                EditorGUILayout.HelpBox("window.import.none.message".LS(), MessageType.Info);
+                return;
             }
-            return;
-        }
 
-        var selectedProvider = providers.FirstOrDefault(provider => provider.Descriptor.Id == _selectedImporterId);
-        if (selectedProvider == null)
-        {
-            SelectImporter(null);
-            return;
-        }
+            var selectedProvider = providers.FirstOrDefault(
+                provider => provider.Descriptor.Id == _selectedImporterId) ?? providers[0];
+            if (_selectedImporterId != selectedProvider.Descriptor.Id)
+                SelectImporter(selectedProvider);
 
-        if (GUILayout.Button("window.import.changeSource.button".LS(), GUILayout.Width(150f)))
-        {
-            SelectImporter(null);
-            return;
-        }
-
-        EditorGUILayout.Space(5f);
-        GUILayout.Label(selectedProvider.Descriptor.TitleKey.LS(), SectionTitleStyle);
-        _importSession ??= selectedProvider.CreateSession(_avatarRoot!);
-        _importSession.DrawConfiguration();
-
-        var standardRoot = FaceTuneRecipeOperations.FindStandardRoot(_avatarRoot!);
-        if (!selectedProvider.Descriptor.CreatesStandaloneSetup)
-        {
-            EditorGUILayout.Space(8f);
-            GUILayout.Label("window.import.foundation.title".LS(), SectionTitleStyle);
-            if (standardRoot != null)
+            var selectedIndex = Enumerable.Range(0, providers.Count)
+                .First(index => providers[index] == selectedProvider);
+            var nextIndex = EditorGUILayout.Popup(
+                "window.import.source.label".LS(),
+                selectedIndex,
+                providers.Select(provider => provider.Descriptor.TitleKey.LS()).ToArray());
+            if (nextIndex != selectedIndex)
             {
-                EditorGUILayout.HelpBox("window.import.foundation.existing".LS(), MessageType.Info);
+                SelectImporter(providers[nextIndex]);
+                return;
             }
-            else
-            {
-                _importAddStandard = EditorGUILayout.ToggleLeft(
-                    "window.import.foundation.addStandard.label".LS(),
-                    _importAddStandard);
-                GUILayout.Label(
-                    (_importAddStandard
-                        ? "window.import.foundation.addStandard.description"
-                        : "window.import.foundation.contentOnly.description").LS(),
-                    WrappedLabel);
-                if (_importAddStandard)
-                {
-                    EditorGUI.indentLevel++;
-                    _includeDefaultExpression = EditorGUILayout.ToggleLeft(
-                        "window.standard.includeDefault.label".LS(),
-                        _includeDefaultExpression);
-                    EditorGUI.indentLevel--;
-                    if (_includeDefaultExpression)
-                        EditorGUILayout.HelpBox("window.standard.default.notice".LS(), MessageType.Info);
-                }
-            }
-        }
 
-        if (selectedProvider.Descriptor.SourceIsUnchanged)
-            EditorGUILayout.HelpBox("window.import.sourceUnchanged.notice".LS(), MessageType.Warning);
+            _importSession ??= selectedProvider.CreateSession(_avatarRoot!);
+            _importSession.DrawConfiguration();
 
-        using (new EditorGUI.DisabledScope(!_importSession.CanImport))
-            DrawPrimaryButton("window.import.button", () => RunImport(selectedProvider, standardRoot));
-    }
-
-    private void DrawResult()
-    {
-        DrawPageTitle("window.result.title", _resultTitleKey ?? "window.result.default");
-        EditorGUILayout.HelpBox((_resultGuideKey ?? "window.result.default").LS(), MessageType.Info);
-        if (_resultObject != null)
-        {
-            GUILayout.Label($"{"window.result.created.label".LS()}: {_resultObject.name}", EditorStyles.boldLabel);
-            if (GUILayout.Button("window.result.select.button".LS(), GUILayout.Height(26f)))
-            {
-                Selection.activeObject = _resultObject;
-                EditorGUIUtility.PingObject(_resultObject);
-            }
-        }
-
-        EditorGUILayout.Space(8f);
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            if (GUILayout.Button("window.result.addAnother.button".LS())) Navigate(Page.Add);
-            if (GUILayout.Button("window.home.button".LS())) Navigate(Page.Home);
+            using (new EditorGUI.DisabledScope(!_importSession.CanImport))
+                DrawPrimaryButton("window.import.button", RunImport);
         }
     }
 
-    private void AddStandardSetup()
-    {
-        RunUndo("Add FaceTune Standard Setup", () =>
-        {
-            var created = FaceTuneRecipeOperations.AddStandardSetup(_avatarRoot!, _includeDefaultExpression);
-            ShowResult(created, "window.result.standard.title", _includeDefaultExpression
-                ? "window.result.standard.guide"
-                : "window.result.standardWithoutDefault.guide");
-        });
-    }
-
-    private void AddSelectedRecipe()
-    {
-        if (_selectedRecipe == null) return;
-        RunUndo("Add FaceTune Part", () =>
-        {
-            var created = FaceTuneRecipeOperations.AddRecipe(_avatarRoot!, _selectedRecipe);
-            ShowResult(created, "window.result.recipe.title", _selectedRecipe.GuideKey);
-        });
-    }
-
-    private void RunImport(IFaceTuneImporterProvider provider, GameObject? standardRoot)
+    private void RunImport()
     {
         if (_importSession == null
             || !AvatarContext.TryGet(_avatarRoot!, out var avatarContext, out _))
@@ -339,104 +372,80 @@ internal sealed class FaceTuneWindow : EditorWindow
             return;
         }
 
+        GameObject? created = null;
         RunUndo("Import to FaceTune", () =>
         {
-            var destination = _avatarRoot!;
-            if (!provider.Descriptor.CreatesStandaloneSetup)
-            {
-                destination = standardRoot;
-                if (destination == null && _importAddStandard)
-                    destination = FaceTuneRecipeOperations.AddStandardSetup(_avatarRoot!, _includeDefaultExpression);
-                destination ??= _avatarRoot!;
-            }
-
-            var created = _importSession.Import(avatarContext, destination);
-            ShowResult(
-                created ?? destination,
-                "window.result.import.title",
-                provider.Descriptor.PostImportGuideKey);
+            var templateRoot = FaceTunePrefabOperations.AddStandardSetup(_avatarRoot!, true);
+            created = _importSession.Import(avatarContext, templateRoot) ?? templateRoot;
         });
+
+        if (created != null)
+        {
+            Selection.activeObject = created;
+            EditorGUIUtility.PingObject(created);
+        }
+
+        _statusKey = "window.import.completed.message";
+        _warningKey = "window.import.completed.warning";
+        Repaint();
     }
 
-    private void SelectImporter(IFaceTuneImporterProvider? provider)
+    private void OpenMode(Mode mode)
+    {
+        if (_mode == mode)
+        {
+            _statusKey = null;
+            _warningKey = null;
+            return;
+        }
+
+        DisposeImportSession();
+        _selectedImporterId = null;
+        _mode = mode;
+        _scroll = Vector2.zero;
+        _statusKey = null;
+        _warningKey = null;
+        Repaint();
+    }
+
+    private void SelectImporter(IFaceTuneImporterProvider provider)
     {
         DisposeImportSession();
-        _selectedImporterId = provider?.Descriptor.Id;
-        if (provider != null) _importSession = provider.CreateSession(_avatarRoot!);
-    }
-
-    private void ShowResult(GameObject created, string titleKey, string guideKey)
-    {
-        _resultObject = created;
-        _resultTitleKey = titleKey;
-        _resultGuideKey = guideKey;
-        Selection.activeObject = created;
-        EditorGUIUtility.PingObject(created);
-        Navigate(Page.Result, preserveResult: true);
-    }
-
-    private void Navigate(Page page, bool preserveResult = false)
-    {
-        if (page != Page.Import) DisposeImportSession();
-        _page = page;
-        _scroll = Vector2.zero;
-        if (!preserveResult && page != Page.Result)
-        {
-            _resultObject = null;
-            _resultTitleKey = null;
-            _resultGuideKey = null;
-        }
-        Repaint();
+        _selectedImporterId = provider.Descriptor.Id;
+        _importSession = provider.CreateSession(_avatarRoot!);
     }
 
     private void DisposeImportSession()
     {
         _importSession?.Dispose();
         _importSession = null;
-        if (_page != Page.Import) _selectedImporterId = null;
     }
 
-    private string GetRecipeDestinationDescription(FaceTuneRecipe recipe)
+    private bool DrawOperationSelector()
     {
-        var standardRoot = FaceTuneRecipeOperations.FindStandardRoot(_avatarRoot!);
-        if (standardRoot == null) return _avatarRoot!.name;
-        if (recipe.Category != FaceTuneRecipeCategory.Control) return standardRoot.name;
-        var option = standardRoot.GetComponentsInChildren<MenuComponent>(true)
-            .FirstOrDefault(menu => menu.MenuKind == MenuComponent.Kind.Folder
-                                 && menu.gameObject.name == "Option");
-        return option == null ? standardRoot.name : $"{standardRoot.name}/{option.name}";
-    }
-
-    private void DrawActionCard(
-        string titleKey,
-        string descriptionKey,
-        string? badgeKey,
-        Action action)
-    {
-        using var box = new EditorGUILayout.VerticalScope(EditorStyles.helpBox);
-        using (new EditorGUILayout.HorizontalScope())
+        var options = new[]
         {
-            GUILayout.Label(titleKey.LS(), SectionTitleStyle);
-            GUILayout.FlexibleSpace();
-            if (badgeKey != null) GUILayout.Label(badgeKey.LS(), EditorStyles.miniLabel);
-        }
-        GUILayout.Label(descriptionKey.LS(), WrappedLabel);
-        if (GUILayout.Button("window.open.button".LS(), GUILayout.Height(24f))) action();
-    }
-
-    private static void DrawPageTitle(string titleKey, string descriptionKey)
-    {
-        GUILayout.Label(titleKey.LS(), PageTitleStyle);
-        GUILayout.Label(descriptionKey.LS(), WrappedLabel);
+            "window.configure.title".LS(),
+            "window.import.title".LS()
+        };
+        var nextMode = EditorGUILayout.Popup(GUIContent.none, (int)_mode, options);
         EditorGUILayout.Space(8f);
+        if (nextMode == (int)_mode) return false;
+
+        OpenMode((Mode)nextMode);
+        return true;
     }
 
-    private static void DrawPrimaryButton(string key, Action action)
+    private static void DrawPrimaryButton(string key, Action? action)
     {
         EditorGUILayout.Space(8f);
         using var row = new EditorGUILayout.HorizontalScope();
         GUILayout.FlexibleSpace();
-        if (GUILayout.Button(key.LS(), GUILayout.MinWidth(180f), GUILayout.Height(30f))) action();
+        using (new EditorGUI.DisabledScope(action == null))
+        {
+            if (GUILayout.Button(key.LS(), GUILayout.MinWidth(220f), GUILayout.Height(30f)))
+                action?.Invoke();
+        }
     }
 
     private static void RunUndo(string name, Action action)
@@ -454,33 +463,28 @@ internal sealed class FaceTuneWindow : EditorWindow
         }
     }
 
+    private static void DrawSectionHeader(string titleKey)
+    {
+        var rect = EditorGUILayout.GetControlRect(false, GUIHelper.ShurikenHeaderHeight);
+        GUI.Box(rect, titleKey.LG(), GUIStyles.SectionHeader);
+    }
+
     private static void DrawLine()
     {
         var rect = EditorGUILayout.GetControlRect(false, 1f);
-        EditorGUI.DrawRect(rect, new Color(0f, 0f, 0f, 0.25f));
+        EditorGUI.DrawRect(rect, new Color(1f, 1f, 1f, 0.3f));
     }
 
     private static void DrawFooter()
     {
-        DrawLine();
         using var row = new EditorGUILayout.HorizontalScope();
-        GUILayout.FlexibleSpace();
         Localization.DrawLanguageSwitcher();
         GUILayout.Space(8f);
     }
 
-    private string GetPageTitleKey() => _page switch
+    private static GUIStyle HeaderStyle => new(EditorStyles.boldLabel)
     {
-        Page.Home => "window.home.title",
-        Page.StandardSetup => "window.standard.title",
-        Page.Add => "window.add.title",
-        Page.Import => "window.import.title",
-        Page.Result => "window.result.title",
-        _ => "window.home.title"
+        alignment = TextAnchor.MiddleCenter,
+        fontSize = 18
     };
-
-    private static GUIStyle HeaderStyle => new(EditorStyles.boldLabel) { fontSize = 15 };
-    private static GUIStyle PageTitleStyle => new(EditorStyles.boldLabel) { fontSize = 18 };
-    private static GUIStyle SectionTitleStyle => new(EditorStyles.boldLabel) { fontSize = 13 };
-    private static GUIStyle WrappedLabel => new(EditorStyles.label) { wordWrap = true };
 }

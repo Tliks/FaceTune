@@ -161,7 +161,6 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
 {
     // プロジェクトのユーザー定義レイヤーとの重複を避けて選んだ値。
     private const int CaptureLayer = 31;
-    private const int HiddenLayer = 30;
 
     private const int TextureSize = 128;
 
@@ -246,7 +245,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         {
             foreach (var gameObject in _originalLayers.Keys)
             {
-                if (gameObject != null) gameObject.layer = HiddenLayer;
+                if (gameObject != null) gameObject.layer = CaptureLayer;
             }
         }
         catch
@@ -264,6 +263,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         }
     }
 
+    // UnityのSkinnedMeshRendererは元Rendererへ設定したBlendShapeが撮影用描画へ反映されないことがあるため、顔だけ複製して撮影する。
     private GameObject CreateRenderObject(IReadOnlyBlendShapeSet blendShapes)
     {
         var sourceTransform = _renderer.transform;

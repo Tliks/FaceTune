@@ -67,7 +67,7 @@ internal sealed class AvatarObjectReference : IEquatable<AvatarObjectReference>
         if (IsValidTarget(target, avatarRoot)) return target;
         if (path == AvatarRootPath) return avatarRoot.gameObject;
         var resolved = avatarRoot.Find(path);
-        return resolved == null ? null : resolved.gameObject.DestroyedAsNull();
+        return resolved == null ? null : resolved.gameObject;
     }
 
     private static string GetAvatarRelativePath(GameObject? target)

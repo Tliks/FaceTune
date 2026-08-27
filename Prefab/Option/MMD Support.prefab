@@ -60,13 +60,13 @@ MonoBehaviour:
           Threshold: 0.5
         ParameterConditions:
         - ParameterName: InStation
-          ParameterType: 2
+          ParameterType: 20
           ComparisonType: 0
           FloatValue: 0
           IntValue: 0
           BoolValue: 1
         - ParameterName: Seated
-          ParameterType: 2
+          ParameterType: 20
           ComparisonType: 0
           FloatValue: 0
           IntValue: 0
