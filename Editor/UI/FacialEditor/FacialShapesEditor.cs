@@ -76,7 +76,6 @@ internal class FacialShapesEditor : EditorWindow
     {
         EndContext();
 
-        renderer = renderer.DestroyedAsNull();
         targeting ??= new AnimationClipTargeting();
 
         var serializedObject = new SerializedObject(this);
@@ -86,7 +85,7 @@ internal class FacialShapesEditor : EditorWindow
         serializedObject.Update();
         var avatarRoot = renderer == null
             ? null
-            : RuntimeUtil.FindAvatarInParents(renderer.transform).DestroyedAsNull();
+            : RuntimeUtil.FindAvatarInParents(renderer.transform);
         var explicitlyExcluded = avatarRoot == null
             ? ImmutableHashSet.Create<string>(StringComparer.Ordinal)
             : AvatarContext.GetExplicitlyExcludedBlendShapeNames(avatarRoot.gameObject);
@@ -136,7 +135,6 @@ internal class FacialShapesEditor : EditorWindow
 
     private bool TryChangeRenderer(SkinnedMeshRenderer? renderer)
     {
-        renderer = renderer.DestroyedAsNull();
         if (_context == null || !_context.CanChangeRenderer) return false;
         if (_context.Renderer == renderer) return false;
         if (!CanDiscardCurrentContext()) return false;

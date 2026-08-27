@@ -150,6 +150,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
         var mode = property.FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode));
         position.SetSingleHeight();
         DrawMode(position, mode);
@@ -344,6 +345,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
         var blendShapes = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
         position.height = GUIHelper.GetOptionalListHeight(blendShapes, BlendShapesOptions);
         GUIHelper.DrawLocalizedOptionalList(
@@ -366,7 +368,13 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 internal sealed class TransitionSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        => EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(TransitionSettings.DurationSeconds)), "transition.duration.label".LG());
+    {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        EditorGUI.PropertyField(
+            position,
+            property.FindPropertyRelative(nameof(TransitionSettings.DurationSeconds)),
+            "transition.duration.label".LG());
+    }
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => GUIHelper.LineHeight;
 }
 
@@ -374,7 +382,13 @@ internal sealed class TransitionSettingsDrawer : PropertyDrawer
 internal sealed class PrioritySettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        => EditorGUI.PropertyField(position, property.FindPropertyRelative(nameof(PrioritySettings.Priority)), "priority.value.label".LG());
+    {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        EditorGUI.PropertyField(
+            position,
+            property.FindPropertyRelative(nameof(PrioritySettings.Priority)),
+            "priority.value.label".LG());
+    }
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => GUIHelper.LineHeight;
 }
 
@@ -383,6 +397,7 @@ internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
         position.SetSingleHeight();
         EditorGUI.PropertyField(
             position,
@@ -441,6 +456,7 @@ internal sealed class MMDSupportSettingsDrawer : PropertyDrawer
         ElementHeight: GUIHelper.LineHeight);
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        using var _ = new EditorGUI.PropertyScope(position, label, property);
         var supportMode = property.FindPropertyRelative(nameof(MMDSupportSettings.SupportMode));
         position.SetSingleHeight();
         GUIHelper.LocalizedEnumPopup(position, supportMode, "mmdSupport.mode.label", SupportModeKeys);

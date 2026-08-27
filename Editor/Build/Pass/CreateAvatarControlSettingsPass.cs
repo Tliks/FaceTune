@@ -42,6 +42,6 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
                 $"Multiple FaceTune Avatar Controls of kind '{kind}' were found. Using the first.",
                 matches[0]);
         }
-        return matches.FirstOrDefault().DestroyedAsNull();
+        return matches.FirstOrDefault();
     }
 }

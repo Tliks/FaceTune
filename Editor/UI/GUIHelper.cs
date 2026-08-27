@@ -446,9 +446,10 @@ internal static partial class GUIHelper
         bool isEmpty,
         bool indentLabel = false)
     {
+        using var scope = new EditorGUI.PropertyScope(position, label, property);
         var (labelPosition, valuePosition) = SplitIndentedLabel(position);
-        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, label, EditorStyles.label);
-        if (indentLabel) EditorGUI.LabelField(labelPosition, label);
+        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, scope.content, EditorStyles.label);
+        if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
         EditorGUI.PropertyField(field, property, GUIContent.none, true);
         if (!isEmpty) return;
         DrawObjectPlaceholder(field, placeholder);
@@ -696,8 +697,9 @@ internal static partial class GUIHelper
         bool includeChildren = true)
     {
         position.height = EditorGUI.GetPropertyHeight(property, GUIContent.none, includeChildren);
+        using var scope = new EditorGUI.PropertyScope(position, labelKey.LG(), property);
         var (label, value) = SplitIndentedLabel(position);
-        EditorGUI.LabelField(label, labelKey.LG());
+        EditorGUI.LabelField(label, scope.content);
         EditorGUI.PropertyField(value, property, GUIContent.none, includeChildren);
         position.NewLine();
     }

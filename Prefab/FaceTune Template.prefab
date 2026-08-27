@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75722db5e20f4b628443dc4e1e6c1313, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MenuKind: 2
+  MenuKind: 20
   Menu:
     MenuName: 
     Icon:
@@ -154,10 +154,10 @@ MonoBehaviour:
   UseExistingParameter: 0
   GenerateParameterGroup: 0
   GroupName: 
-  Name: 
+  ParameterName: 
   Synced: 1
   Saved: 1
-  InitialValue: 0
+  DefaultValue: 0
   SelectedValue: 1
 --- !u!1 &8691778744146666929
 GameObject:
@@ -216,14 +216,20 @@ MonoBehaviour:
     Source: {fileID: 0}
   FacialBlendShapes:
     Clip: {fileID: 0}
-    ClipOption: 1
+    ClipOption: 10
     BlendShapeAnimations: []
+  NonFacialAnimationsReference:
+    Mode: 0
+    Source: {fileID: 0}
+  NonFacialAnimations:
+    AnimationClips: []
+    TransformAnimations: []
   DirectMenuEnabled: 0
   DirectMenuSettings:
     Menu:
       MenuName: 
       Icon:
-        Mode: 2
+        Mode: 20
         ManualIcon: {fileID: 0}
         PreviewExpression: {fileID: 0}
       InstallContainer: {fileID: 0}
@@ -246,7 +252,7 @@ MonoBehaviour:
     Source: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
-    IntervalSeconds: {x: 3, y: 7}
+    IntervalSeconds: {x: 4, y: 20}
     SimpleDurationsSeconds: {x: 0.07, y: 0, z: 0.07}
     SimpleBlinkBlendShapes:
     - name: vrc.blink
@@ -299,7 +305,7 @@ MonoBehaviour:
   HasPriority: 0
   Priority:
     Priority: 0
-  AlwaysOnPreviewEnabled: 0
+  AlwaysOnPreviewEnabled: 1
 --- !u!1001 &9026705834737667022
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -301,7 +301,7 @@ internal sealed class FaceTuneMenuResolver
     internal FaceTuneMenuResolver(GameObject root) => _root = root.transform;
 
     public static string GetDisplayName(string? configuredName, string fallback)
-        => string.IsNullOrWhiteSpace(configuredName) ? fallback : configuredName;
+        => string.IsNullOrWhiteSpace(configuredName) ? fallback : configuredName!;
 
     public IEnumerable<MenuComponent> EnumerateFolders(Component target)
     {
@@ -319,18 +319,16 @@ internal sealed class FaceTuneMenuResolver
 
     public Transform? GetInstallTarget(Component owner, Transform? configured)
     {
-        var validOwner = owner.DestroyedAsNull();
+        var validOwner = owner;
         if (validOwner == null || (validOwner.transform != _root && !validOwner.transform.IsChildOf(_root)))
             return null;
-        configured = configured.DestroyedAsNull();
         if (configured != null && (configured == _root || configured.IsChildOf(_root)))
             return configured;
         if (configured != null)
             return null;
         var folder = EnumerateFolders(validOwner)
-            .LastOrDefault()
-            .DestroyedAsNull();
-        return folder == null ? _root : folder.transform.DestroyedAsNull();
+            .LastOrDefault();
+        return folder == null ? _root : folder.transform;
     }
 
     public void ValidateInstallTarget(Transform target, Component owner)

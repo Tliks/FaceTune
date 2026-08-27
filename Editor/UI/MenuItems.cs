@@ -61,7 +61,7 @@ internal static class GameObjectMenu
     {
         var selected = Selection.activeGameObject;
         if (selected == null) return null;
-        var root = RuntimeUtil.FindAvatarInParents(selected.transform).DestroyedAsNull();
+        var root = RuntimeUtil.FindAvatarInParents(selected.transform);
         return root == null ? null : root.gameObject;
     }
 }

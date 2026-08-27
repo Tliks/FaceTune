@@ -41,7 +41,7 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
         foreach (var target in targets)
         {
             if (target.DestroyedAsNull() is not Component component) return null;
-            var root = RuntimeUtil.FindAvatarInParents(component.transform).DestroyedAsNull();
+            var root = RuntimeUtil.FindAvatarInParents(component.transform);
             if (root == null || result != null && result != root) return null;
             result = root;
         }

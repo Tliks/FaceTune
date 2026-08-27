@@ -1,3 +1,5 @@
+#if FACETUNE_VRCHAT
+
 using Aoyon.FaceTune.Importing;
 using Aoyon.FaceTune.Platforms;
 using UnityEditor.Animations;
@@ -69,3 +71,5 @@ internal sealed class VRChatAnimatorImporterProvider : IFaceTuneImporterProvider
         }
     }
 }
+
+#endif

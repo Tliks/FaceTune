@@ -252,8 +252,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
         var owner = _component
             .GetComponentsInParentExcludingSelf<SettingsComponent>(true)
-            .FirstOrDefault()
-            .DestroyedAsNull();
+            .FirstOrDefault();
         if (owner == null)
         {
             owner = Undo.AddComponent<SettingsComponent>(_batchOverrideTarget.gameObject);
@@ -299,7 +298,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     }
 
     private static Transform? FindBatchOverrideTarget(ExpressionComponent expression)
-        => expression.transform.parent.DestroyedAsNull();
+        => expression.transform.parent;
 
     private sealed record SettingBinding(
         SerializedProperty Value,

@@ -11,6 +11,7 @@ internal static class MenuSettingsGUI
 
     public static void Draw(Rect position, SerializedProperty settings, Component? owner, string menuNameLabelKey)
     {
+        using var _ = new EditorGUI.PropertyScope(position, menuNameLabelKey.LG(), settings);
         position.height = GUIHelper.LineHeight;
         var menuName = settings.FindPropertyRelative(nameof(MenuSettings.MenuName));
         var fallbackName = owner.DestroyedAsNull()?.gameObject.name ?? string.Empty;
@@ -45,10 +46,10 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        var owner = (property.serializedObject.targetObject as Component).DestroyedAsNull();
+        var owner = property.serializedObject.targetObject as Component;
         var root = owner == null
             ? null
-            : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
+            : RuntimeUtil.FindAvatarInParents(owner.transform);
         var resolver = root == null ? null : new FaceTuneMenuResolver(root.gameObject);
         var target = resolver?.GetInstallTarget(owner!, property.objectReferenceValue as Transform);
         var folder = target?.GetComponent<MenuComponent>();
@@ -156,10 +157,9 @@ internal static class MenuGUI
 
     private static List<string> GetDefinedGroupNames(Component? owner)
     {
-        owner = owner.DestroyedAsNull();
         var root = owner == null
             ? null
-            : RuntimeUtil.FindAvatarInParents(owner.transform).DestroyedAsNull();
+            : RuntimeUtil.FindAvatarInParents(owner.transform);
         if (root == null) return new();
         return new FaceTuneMenuResolver(root.gameObject).GetDefinedGroupNames();
     }
