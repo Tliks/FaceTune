@@ -12,8 +12,6 @@ internal class FacialShapesEditor : EditorWindow
     private const int MIN_WINDOW_WIDTH = 500;
     private const int MIN_WINDOW_HEIGHT = 700;
 
-    private int _initialUndoGroup = -1;
-
     public static FacialShapesEditor? TryOpenEditor()
     {
         FacialShapesEditor? editableWindow = null;
@@ -52,19 +50,12 @@ internal class FacialShapesEditor : EditorWindow
 
     private void OnEnable()
     {
-        Undo.IncrementCurrentGroup();
-        Undo.SetCurrentGroupName("Facial Shapes Editor: Window Opened");
-        Undo.RecordObject(this, "Facial Shapes Editor: Window Opened");
-        Undo.IncrementCurrentGroup();
-        _initialUndoGroup = Undo.GetCurrentGroup();
-
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
         titleContent = "facialEditor.title".LG();
         saveChangesMessage = "facialEditor.unsavedChanges.message".LS();
 
         hasUnsavedChanges = false;
         SetupKeyboardShortcuts();
-        Undo.undoRedoPerformed += OnUndoRedoPerformed;
     }
 
     private void StartContext(
@@ -108,7 +99,6 @@ internal class FacialShapesEditor : EditorWindow
             SaveChanges);
 
         hasUnsavedChanges = false;
-        Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");
     }
 
     private void EndContext()
@@ -210,18 +200,8 @@ internal class FacialShapesEditor : EditorWindow
         SyncUnsavedChangesFromData();
     }
 
-    private void OnUndoRedoPerformed()
-    {
-        if (_context == null) return;
-
-        _context.DataManager.OnUndoRedo();
-        SyncUnsavedChangesFromData();
-    }
-
     private void OnDisable()
     {
         EndContext();
-        Undo.undoRedoPerformed -= OnUndoRedoPerformed;
-        Undo.CollapseUndoOperations(_initialUndoGroup);
     }
 }

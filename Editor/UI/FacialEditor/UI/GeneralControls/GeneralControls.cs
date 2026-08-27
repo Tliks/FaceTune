@@ -30,7 +30,6 @@ internal class GeneralControls : IDisposable
     private Button _redoButton = null!;
     private Button _restoreInitialOverridesButton = null!;
     private Button _restoreEditedOverridesButton = null!;
-    private readonly EditorApplication.CallbackFunction _undoStateUpdateCallback;
 
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
 
@@ -51,7 +50,6 @@ internal class GeneralControls : IDisposable
         _save = save;
         _blendShapeManager = context.DataManager;
         _groupManager = context.GroupManager;
-        _undoStateUpdateCallback = UpdateUndoRedoState;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "d76d3f47e63003541b2f77817315d701");
@@ -60,45 +58,15 @@ internal class GeneralControls : IDisposable
         _element.styleSheets.Add(uss);
         Localization.LocalizeUIElements(_element);
 
-        Undo.undoRedoPerformed += QueueUndoStateUpdate;
-
         SetupControls();
-    }
-
-    private void QueueUndoStateUpdate()
-    {
-        EditorApplication.delayCall -= _undoStateUpdateCallback;
-        EditorApplication.delayCall += _undoStateUpdateCallback;
     }
 
     private void UpdateUndoRedoState()
     {
         if (_undoButton == null || _redoButton == null) return;
 
-        _undoButton.SetEnabled(CanUndoForThisWindow());
-        _redoButton.SetEnabled(CanRedoPolicy());
-    }
-
-    private static bool CanUndoForThisWindow()
-    {
-        if (Utils.TryHasUndo(out var canUndoFromUndo))
-        {
-            if (!canUndoFromUndo) return false;
-            return Undo.GetCurrentGroupName() != "Facial Shapes Editor: Window Opened";
-        }
-
-        var fallbackName = Undo.GetCurrentGroupName();
-        return !string.IsNullOrEmpty(fallbackName) && fallbackName != "Facial Shapes Editor: Window Opened";
-    }
-
-    private static bool CanRedoPolicy()
-    {
-        if (Utils.TryHasRedo(out var canRedoFromUndo))
-        {
-            return canRedoFromUndo;
-        }
-
-        return true;
+        _undoButton.SetEnabled(_blendShapeManager.CanUndo);
+        _redoButton.SetEnabled(_blendShapeManager.CanRedo);
     }
 
     private void SetupControls()
@@ -141,11 +109,11 @@ internal class GeneralControls : IDisposable
 
         _undoButton = _element.Q<Button>("undo-button");
         _undoButton.Add(CreateStepIcon(_undoIcon));
-        _undoButton.clicked += () => Undo.PerformUndo();
+        _undoButton.clicked += () => _blendShapeManager.TryUndo();
 
         _redoButton = _element.Q<Button>("redo-button");
         _redoButton.Add(CreateStepIcon(_redoIcon));
-        _redoButton.clicked += () => Undo.PerformRedo();
+        _redoButton.clicked += () => _blendShapeManager.TryRedo();
 
         _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
         _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
@@ -166,8 +134,8 @@ internal class GeneralControls : IDisposable
         UpdateUndoRedoState();
         UpdateActionButtonStates();
 
+        _blendShapeManager.OnAnyDataChange += UpdateUndoRedoState;
         _blendShapeManager.OnAnyDataChange += UpdateActionButtonStates;
-        _blendShapeManager.OnAnyDataChange += QueueUndoStateUpdate;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
         clipField.AddToClassList("compact-field");
@@ -256,10 +224,8 @@ internal class GeneralControls : IDisposable
 
     public void Dispose()
     {
-        Undo.undoRedoPerformed -= QueueUndoStateUpdate;
-        EditorApplication.delayCall -= _undoStateUpdateCallback;
+        _blendShapeManager.OnAnyDataChange -= UpdateUndoRedoState;
         _blendShapeManager.OnAnyDataChange -= UpdateActionButtonStates;
-        _blendShapeManager.OnAnyDataChange -= QueueUndoStateUpdate;
     }
 
     private void RebuildGroupToggles()
