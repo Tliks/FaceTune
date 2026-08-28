@@ -6,8 +6,6 @@
 ### Added
 
 ### Changed
-- テンプレート作成時、OptionのみUnpackの対象から除外するように。
-- 表情エディタを調整。
 
 ### Deprecated
 
@@ -17,7 +15,22 @@
 
 ### Security
 
-## [0.1.0-beta.14] - 2025-01-09
+## [0.1.0-beta.15] - 2026-08-28
+### 新しいコンポーネントが追加され、以前のコンポーネントは完全に機能が無効化されます。データは保持されているため、インスペクターの指示に従って移行してください。
+
+### Added
+- 以下6種のコンポーネントを追加
+  - FaceTune
+  - FaceTune Settings
+  - FaceTune Avatar Settings
+  - FaceTune Avatar Control
+  - FaceTune Menu
+  - FaceTune Expression Data
+
+### Deprecated
+- 以前のバージョンに存在していた全コンポーネント
+
+## [0.1.0-beta.14] - 2026-01-09
 ### Added
 - 表情固定機能を追加しました。
  - 今後新規作成されるテンプレートには表情固定用のメニューが追加されます。
@@ -26,7 +39,7 @@
 - 表情エディタにおいて、同一のExpression内かつ自分より優先度が低いExpression Dataの内容がベースとして表示されるようになりました。
 - UIを調整
 
-## [0.1.0-beta.13] - 2025-01-04
+## [0.1.0-beta.13] - 2026-01-04
 ### Changed
 - NDMFの対応バージョンが>=1.9.0に変更
 
