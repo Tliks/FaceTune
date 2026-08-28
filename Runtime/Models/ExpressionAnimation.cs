@@ -7,7 +7,6 @@ internal sealed class NonFacialAnimationData
     public List<TransformAnimation> TransformAnimations = new();
 }
 
-/// <summary>An object activation curve resolved relative to the avatar at build time.</summary>
 [Serializable]
 internal sealed class TransformAnimation
 {

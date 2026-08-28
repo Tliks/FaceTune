@@ -1166,6 +1166,9 @@ msgstr "取り込むAnimator Controllerを選択してください。"
 msgid "window.import.faceEmo.title"
 msgstr "FaceEmo"
 
+msgid "window.import.legacyFaceTune.title"
+msgstr "旧FaceTune"
+
 msgid "window.import.faceEmo.source.label"
 msgstr "FaceEmoの取り込み元"
 

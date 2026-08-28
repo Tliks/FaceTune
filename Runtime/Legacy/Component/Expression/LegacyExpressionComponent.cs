@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune;
 
 [DisallowMultipleComponent]
 [Obsolete("Legacy serialized data retained only for migration.")]
-internal class LegacyExpressionComponent : FaceTuneTagComponent
+internal class LegacyExpressionComponent : LegacyFaceTuneTagComponent
 {
     public ExpressionSettings ExpressionSettings = new();
     public FacialSettings FacialSettings = new();

@@ -85,7 +85,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MenuKind: 0
   Menu:
-    MenuName: 
+    MenuName: MMD Mode
     Icon:
       Mode: 0
       ManualIcon: {fileID: 0}

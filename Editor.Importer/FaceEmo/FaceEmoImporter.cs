@@ -165,7 +165,10 @@ internal sealed class FaceEmoImporter
             branch => branch.NaturalOrder.HasValue,
             ImportedBranchComparer.Instance);
         expressions.AddRange(orderedBranches.Select(branch => branch.Expression.gameObject));
-        ExpressionHierarchyOrganizer.Organize(obj, expressions);
+        ExpressionHierarchyOrganizer.Organize(
+            obj,
+            expressions,
+            parentAlreadyGroupsExpressions: true);
     }
 
     private ImportedBranch? ImportBranch(

@@ -4,7 +4,7 @@ namespace Aoyon.FaceTune;
 
 [DisallowMultipleComponent]
 [Obsolete("Legacy serialized data retained only for migration.")]
-internal class LegacyAdvancedEyeBlinkComponent : FaceTuneTagComponent
+internal class LegacyAdvancedEyeBlinkComponent : LegacyFaceTuneTagComponent
 {
     public AdvancedEyeBlinkSettings AdvancedEyeBlinkSettings = new();
 }

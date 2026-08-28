@@ -35,9 +35,7 @@ internal sealed class MmdSupport
         if (settings.Enabled && settings.Condition != null)
         {
             var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
-                ? analyzedWriteDefaults == true
-                    ? MMDSupportSettings.Mode.DisableLayers
-                    : MMDSupportSettings.Mode.DisableFXlayer
+                ? MMDSupportSettings.Mode.DisableFXlayer // 解析が膨大なので一旦FX無効化にfallback
                 : settings.DisableMode;
             switch (mode)
             {

@@ -1166,6 +1166,9 @@ msgstr "Select an Animator Controller to import."
 msgid "window.import.faceEmo.title"
 msgstr "FaceEmo"
 
+msgid "window.import.legacyFaceTune.title"
+msgstr "Legacy FaceTune"
+
 msgid "window.import.faceEmo.source.label"
 msgstr "FaceEmo Source"
 

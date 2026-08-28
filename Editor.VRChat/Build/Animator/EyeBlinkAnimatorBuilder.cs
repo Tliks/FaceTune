@@ -206,7 +206,8 @@ internal sealed class EyeBlinkAnimatorBuilder
             position + new Vector3(xStep, yStep, 0));
         _graph.AsPassThrough(entry);
         _graph.AsPassThrough(exit);
-        SetCloseClip(close, settings);
+        var holdDuration = Math.Max(0f, settings.SimpleDurationsSeconds.y);
+        SetCloseClip(close, settings, holdDuration);
 
         var continueWhen = DnfCondition.Always;
         _graph.AddExitTimeTransition(stare, entry, continueWhen, 1f, 0f);
@@ -215,12 +216,16 @@ internal sealed class EyeBlinkAnimatorBuilder
             close,
             continueWhen,
             Math.Max(0f, settings.SimpleDurationsSeconds.x));
-        _graph.AddExitTimeTransition(
-            close,
-            exit,
-            continueWhen,
-            1f,
-            Math.Max(0f, settings.SimpleDurationsSeconds.z));
+        var openingDuration = Math.Max(0f, settings.SimpleDurationsSeconds.z);
+        if (holdDuration == 0f)
+        {
+            // Unity cannot satisfy an exit-time transition on a zero-length clip.
+            _graph.AddStateTransition(close, exit, continueWhen, openingDuration);
+        }
+        else
+        {
+            _graph.AddExitTimeTransition(close, exit, continueWhen, 1f, openingDuration);
+        }
         _graph.AddStateTransition(exit, stare, continueWhen, 0f);
 
         foreach (var state in new[] { stare, entry, close, exit })
@@ -280,9 +285,11 @@ internal sealed class EyeBlinkAnimatorBuilder
         return state;
     }
 
-    private void SetCloseClip(VirtualState state, EyeBlinkSettings settings)
+    private void SetCloseClip(
+        VirtualState state,
+        EyeBlinkSettings settings,
+        float holdDuration)
     {
-        var holdDuration = Math.Max(0f, settings.SimpleDurationsSeconds.y);
         var closeShapes = new BlendShapeWeightSet(settings.SimpleBlinkBlendShapes);
         closeShapes.AddRange(settings.SimpleConflictPreventionBlendShapes);
         if (closeShapes.Count == 0)

@@ -9,7 +9,14 @@ internal static class ExpressionHierarchyOrganizer
     private const int MinimumGroupSize = 3;
     private const int MaximumNestingDepth = 2;
 
-    public static void Organize(GameObject parent, IReadOnlyList<GameObject> expressions)
+    /// <param name="parentAlreadyGroupsExpressions">
+    ///     Set to true when the caller already created a group for this complete expression set.
+    ///     Sub-groups for partial runs are still created.
+    /// </param>
+    public static void Organize(
+        GameObject parent,
+        IReadOnlyList<GameObject> expressions,
+        bool parentAlreadyGroupsExpressions = false)
     {
         for (var index = 0; index < expressions.Count; index++)
         {
@@ -18,7 +25,12 @@ internal static class ExpressionHierarchyOrganizer
             expression.transform.SetSiblingIndex(index);
         }
 
-        Organize(parent, expressions, 0, new HashSet<GroupKey>());
+        Organize(
+            parent,
+            expressions,
+            0,
+            new HashSet<GroupKey>(),
+            parentAlreadyGroupsExpressions);
     }
 
     /// <summary>
@@ -75,7 +87,8 @@ internal static class ExpressionHierarchyOrganizer
         GameObject parent,
         IReadOnlyList<GameObject> expressions,
         int depth,
-        ISet<GroupKey> inheritedKeys)
+        ISet<GroupKey> inheritedKeys,
+        bool parentAlreadyGroupsExpressions)
     {
         if (depth >= MaximumNestingDepth || expressions.Count < MinimumGroupSize) return;
 
@@ -90,6 +103,12 @@ internal static class ExpressionHierarchyOrganizer
             }
 
             var (key, count) = candidate.Value;
+            if (parentAlreadyGroupsExpressions && index == 0 && count == expressions.Count)
+            {
+                inheritedKeys.Add(key);
+                continue;
+            }
+
             var members = expressions.Skip(index).Take(count).ToArray();
             var group = new GameObject(key.Name);
             group.transform.SetParent(parent.transform, false);
@@ -100,7 +119,7 @@ internal static class ExpressionHierarchyOrganizer
             LiftCommonConditions(group, members);
 
             var nestedInheritedKeys = inheritedKeys.Concat(key.CoveredKeys()).ToHashSet();
-            Organize(group, members, depth + 1, nestedInheritedKeys);
+            Organize(group, members, depth + 1, nestedInheritedKeys, false);
             index += count;
         }
     }

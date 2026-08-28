@@ -203,7 +203,6 @@ internal class ExpressionSetSettings
     public bool DefaultSelected;
 }
 
-/// <summary>Serialized tracking permission for current data.</summary>
 internal enum TrackingPermission
 {
     Allow = 0,

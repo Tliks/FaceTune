@@ -3,7 +3,7 @@
 namespace Aoyon.FaceTune;
 
 [Obsolete("Legacy serialized data retained only for migration.")]
-internal class LegacyHilightBlendShape : FaceTuneTagComponent
+internal class LegacyHilightBlendShape : LegacyFaceTuneTagComponent
 {
     public Mesh Mesh = null!;
     public Vector3 Position;

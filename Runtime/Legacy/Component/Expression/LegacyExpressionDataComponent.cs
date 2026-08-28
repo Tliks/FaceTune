@@ -3,7 +3,7 @@
 namespace Aoyon.FaceTune;
 
 [Obsolete("Legacy serialized data retained only for migration.")]
-internal class LegacyExpressionDataComponent : FaceTuneTagComponent
+internal class LegacyExpressionDataComponent : LegacyFaceTuneTagComponent
 {
     public AnimationClip? Clip;
     public LegacyClipImportOption ClipOption = LegacyClipImportOption.NonZero;

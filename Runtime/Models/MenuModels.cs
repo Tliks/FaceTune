@@ -17,7 +17,6 @@ internal class MenuIconSettings
 }
 
 
-/// <summary>Menu表示とinstall先。parameterや値はMenuComponent側で持つ。</summary>
 [Serializable]
 internal class MenuSettings
 {

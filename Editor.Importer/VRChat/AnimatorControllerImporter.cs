@@ -168,7 +168,10 @@ internal class AnimatorControllerImporter
 
         var layerObj = new GameObject(layerName);
         layerObj.transform.SetParent(parent.transform, false);
-        ExpressionHierarchyOrganizer.Organize(layerObj, expressions);
+        ExpressionHierarchyOrganizer.Organize(
+            layerObj,
+            expressions,
+            parentAlreadyGroupsExpressions: true);
         return layerObj;
     }
 
