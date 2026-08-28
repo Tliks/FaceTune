@@ -22,10 +22,7 @@ internal sealed class FallbackSupport : IMetabasePlatformSupport
         return ParameterDomainRegistry.Empty;
     }
 
-    public IEnumerable<string> GetExternalEyeBlinkBlendShapeNames()
-        => Array.Empty<string>();
-
-    public IEnumerable<string> GetExternalLipSyncBlendShapeNames()
+    public IEnumerable<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind)
         => Array.Empty<string>();
 
     public DnfCondition? ResolveHandGestureCondition(

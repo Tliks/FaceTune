@@ -1,5 +1,6 @@
-using UnityEngine.UIElements;
+using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.runtime;
+using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
@@ -77,15 +78,17 @@ internal class FacialShapesEditor : EditorWindow
         var avatarRoot = renderer == null
             ? null
             : RuntimeUtil.FindAvatarInParents(renderer.transform);
-        var explicitlyExcluded = avatarRoot == null
+        var unavailableBlendShapes = avatarRoot == null
             ? ImmutableHashSet.Create<string>(StringComparer.Ordinal)
-            : AvatarContext.GetExplicitlyExcludedBlendShapeNames(avatarRoot.gameObject);
+            : AvatarContext.GetUnavailableBlendShapeNames(
+                avatarRoot.gameObject,
+                FaceTuneWriteKind.FacialData);
         _dataManager.SetInitialState(
             renderer,
             facialSet,
             baseSet,
             targetSet,
-            explicitlyExcluded);
+            unavailableBlendShapes);
         _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(

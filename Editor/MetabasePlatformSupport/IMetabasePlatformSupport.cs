@@ -2,15 +2,20 @@ using Aoyon.FaceTune.Build;
 
 namespace Aoyon.FaceTune.Platforms;
 
+internal enum FaceTuneWriteKind
+{
+    FacialData,
+    EyeBlinkAnimation,
+    LipSyncAnimation
+}
+
 internal interface IMetabasePlatformSupport
 {
     IPlatformBuildBackend? BuildBackend => null;
 
     SkinnedMeshRenderer? GetFaceRenderer();
 
-    IEnumerable<string> GetExternalEyeBlinkBlendShapeNames();
-
-    IEnumerable<string> GetExternalLipSyncBlendShapeNames();
+    IEnumerable<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind);
 
     void PostProcessDefaultBlendShapes(
         BuildSettings settings,

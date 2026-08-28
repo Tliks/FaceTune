@@ -110,6 +110,19 @@ internal record AvatarContext(
         return new FallbackSupport(root).GetFaceRenderer();
     }
 
+    public static ImmutableHashSet<string> GetUnavailableBlendShapeNames(
+        GameObject root,
+        FaceTuneWriteKind writeKind,
+        ComputeContext? context = null)
+    {
+        var prohibited = MetabasePlatformSupport.GetForAvatar(root.transform)
+            .SelectMany(support => support.GetProhibitedBlendShapeNames(writeKind));
+        return prohibited
+            .Concat(GetExplicitlyExcludedBlendShapeNames(root, context))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToImmutableHashSet(StringComparer.Ordinal);
+    }
+
     public static ImmutableHashSet<string> GetExplicitlyExcludedBlendShapeNames(
         GameObject root,
         ComputeContext? context = null)

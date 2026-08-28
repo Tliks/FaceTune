@@ -1,4 +1,5 @@
 using Aoyon.FaceTune.Gui.ShapesEditor;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -90,8 +91,18 @@ internal static class FacialDataGUI
             || clip == null
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
         var animations = new List<BlendShapeWeightAnimation>();
-        clip.GetBlendShapeAnimations((ClipImportOption)data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue, animations, avatar.BodyPath);
-        MergeBlendShapeAnimations(data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)), animations, false);
+        var option = (ClipImportOption)data
+            .FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption))
+            .intValue;
+        clip.GetBlendShapeAnimations(option, animations, avatar.BodyPath);
+        var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
+            avatar.Root,
+            FaceTuneWriteKind.FacialData);
+        animations.RemoveAll(animation => unavailable.Contains(animation.Name));
+        MergeBlendShapeAnimations(
+            data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)),
+            animations,
+            false);
         data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
     }
 
