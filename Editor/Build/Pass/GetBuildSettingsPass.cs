@@ -15,23 +15,26 @@ internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
         var platformSupports = MetabasePlatformSupport.GetForAvatar(root.transform)
             .Append(context.PlatformSupport)
             .ToArray();
-        var externalEyeBlink = platformSupports
-            .SelectMany(support => support.GetExternalEyeBlinkBlendShapeNames())
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToImmutableHashSet(StringComparer.Ordinal);
-        var externalLipSync = platformSupports
-            .SelectMany(support => support.GetExternalLipSyncBlendShapeNames())
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .ToImmutableHashSet(StringComparer.Ordinal);
         var explicitlyExcluded = AvatarContext.GetExplicitlyExcludedBlendShapeNames(root);
 
         context.SetSettings(new BuildSettings(
             context.AvatarContext,
-            externalEyeBlink,
-            externalLipSync,
+            GetProhibited(platformSupports, FaceTuneWriteKind.FacialData),
+            GetProhibited(platformSupports, FaceTuneWriteKind.EyeBlinkAnimation),
+            GetProhibited(platformSupports, FaceTuneWriteKind.LipSyncAnimation),
             explicitlyExcluded,
             settings?.AvoidEyeBlinkConflicts ?? true,
             settings?.AvoidLipSyncConflicts ?? true,
             context.PlatformSupport.CreateBuiltInParameterDomains()));
+    }
+
+    private static ImmutableHashSet<string> GetProhibited(
+        IEnumerable<IMetabasePlatformSupport> platformSupports,
+        FaceTuneWriteKind writeKind)
+    {
+        return platformSupports
+            .SelectMany(support => support.GetProhibitedBlendShapeNames(writeKind))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToImmutableHashSet(StringComparer.Ordinal);
     }
 }

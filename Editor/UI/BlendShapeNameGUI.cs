@@ -1,4 +1,5 @@
 using Aoyon.FaceTune.Gui.ShapesEditor;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -23,11 +24,12 @@ internal static class BlendShapeNameGUI
         Rect position,
         SerializedProperty list,
         Func<SerializedProperty, SerializedProperty> getName,
-        Action<SerializedProperty, string> initialize)
+        Action<SerializedProperty, string> initialize,
+        FaceTuneWriteKind? writeKind = null)
     {
         var label = "expression.editor.button".LG();
         if (!GUI.Button(position, label, GUIStyles.ListButton)
-            || !TryGetNames(list, out var names)) return;
+            || !TryGetNames(list, writeKind, out var names)) return;
         OpenMultiPicker(position, list, names, getName, initialize);
     }
 
@@ -82,6 +84,12 @@ internal static class BlendShapeNameGUI
     }
 
     private static bool TryGetNames(SerializedProperty property, out IReadOnlyList<string> names)
+        => TryGetNames(property, null, out names);
+
+    private static bool TryGetNames(
+        SerializedProperty property,
+        FaceTuneWriteKind? writeKind,
+        out IReadOnlyList<string> names)
     {
         names = Array.Empty<string>();
         if (property.serializedObject.targetObjects.Length != 1
@@ -89,8 +97,17 @@ internal static class BlendShapeNameGUI
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return false;
 
         var mesh = avatar.FaceMesh;
-        var values = new string[mesh.blendShapeCount];
-        for (var i = 0; i < values.Length; i++) values[i] = mesh.GetBlendShapeName(i);
+        IEnumerable<string> candidates = Enumerable.Range(0, mesh.blendShapeCount)
+            .Select(mesh.GetBlendShapeName);
+        if (writeKind.HasValue)
+        {
+            var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
+                avatar.Root,
+                writeKind.Value);
+            candidates = candidates.Where(name => !unavailable.Contains(name));
+        }
+
+        var values = candidates.ToArray();
         names = values;
         return values.Length > 0;
     }

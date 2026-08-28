@@ -1,3 +1,5 @@
+using Aoyon.FaceTune.Platforms;
+
 namespace Aoyon.FaceTune.Build;
 
 internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
@@ -13,8 +15,11 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         var set = new BlendShapeWeightSet();
 
         var animations = new List<BlendShapeWeightAnimation>();
-        new FaceTuneResolver(avatarContext.Root).FacialData.AddRenderer(animations, avatarContext.BodyPath);
-        animations.RemoveAll(animation => settings.IsBlendShapeExplicitlyExcluded(animation.Name));
+        new FaceTuneResolver(avatarContext.Root).FacialData.AddRenderer(
+            animations,
+            avatarContext.BodyPath);
+        animations.RemoveAll(animation =>
+            !settings.CanWriteBlendShape(FaceTuneWriteKind.FacialData, animation.Name));
         if (animations.Count > 0)
         {
             set.AddRange(settings.GetManagedZeroBlendShapes());
@@ -26,6 +31,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             context.RequireAvatarControlSettings(),
             set);
         set.RemoveRange(settings.ExplicitlyExcludedBlendShapeNames);
+        set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
         if (set.Count == 0) return;
         
         avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);

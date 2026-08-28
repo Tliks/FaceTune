@@ -105,11 +105,17 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             parameterDomains);
     }
 
-    public IEnumerable<string> GetExternalEyeBlinkBlendShapeNames()
-        => GetBlinkBlendShapes();
-
-    public IEnumerable<string> GetExternalLipSyncBlendShapeNames()
-        => GetLipSyncBlendShapes();
+    public IEnumerable<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind)
+    {
+        return writeKind switch
+        {
+            FaceTuneWriteKind.FacialData => GetBlinkBlendShapes()
+                .Concat(GetLipSyncBlendShapes()),
+            FaceTuneWriteKind.EyeBlinkAnimation => GetLipSyncBlendShapes(),
+            FaceTuneWriteKind.LipSyncAnimation => GetBlinkBlendShapes(),
+            _ => throw new ArgumentOutOfRangeException(nameof(writeKind), writeKind, null)
+        };
+    }
 
     private static DnfCondition HandRule(
         string parameterName,

@@ -1,3 +1,5 @@
+using Aoyon.FaceTune.Platforms;
+
 namespace Aoyon.FaceTune.Gui;
 
 internal sealed class SerializedReferenceableSettings
@@ -130,12 +132,20 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     private static readonly ReorderableListOptions BlinkBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
         InitializeElement: element => element.CopyFrom(EyeBlinkSettings.CreateDefaultBlinkBlendShape()),
-        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(position, list, 100f),
+        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(
+            position,
+            list,
+            100f,
+            FaceTuneWriteKind.EyeBlinkAnimation),
         ElementHeight: GUIHelper.LineHeight);
     private static readonly ReorderableListOptions ConflictBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
         InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
-        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(position, list, 0f),
+        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(
+            position,
+            list,
+            0f,
+            FaceTuneWriteKind.FacialData),
         ElementHeight: GUIHelper.LineHeight);
     private static GUIStyle? _columnLabelStyle;
     private static GUIStyle ColumnLabelStyle => _columnLabelStyle ??= new GUIStyle(EditorStyles.label)
@@ -311,12 +321,17 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     private static void InitializeAnimation(SerializedProperty property)
         => property.CopyFrom(EyeBlinkSettings.CreateDefaultAnimation());
 
-    private static void DrawBlendShapeWeightPicker(Rect position, SerializedProperty list, float weight)
+    private static void DrawBlendShapeWeightPicker(
+        Rect position,
+        SerializedProperty list,
+        float weight,
+        FaceTuneWriteKind writeKind)
         => BlendShapeNameGUI.DrawListPicker(
             position,
             list,
             element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
-            (element, name) => element.CopyFrom(new BlendShapeWeight(name, weight)));
+            (element, name) => element.CopyFrom(new BlendShapeWeight(name, weight)),
+            writeKind);
 
     private static void DrawClipImport(Rect position, SerializedProperty animations)
     {
@@ -326,6 +341,10 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
         var values = new List<BlendShapeWeightAnimation>();
         clip.GetBlendShapeAnimations(ClipImportOption.All, values, context.BodyPath);
+        var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
+            context.Root,
+            FaceTuneWriteKind.EyeBlinkAnimation);
+        values.RemoveAll(animation => unavailable.Contains(animation.Name));
         FacialDataGUI.SetBlendShapeAnimations(animations, values);
     }
 }
@@ -340,7 +359,8 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             position,
             list,
             element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
-            (element, name) => element.CopyFrom(new BlendShapeWeight(name, 0f))),
+            (element, name) => element.CopyFrom(new BlendShapeWeight(name, 0f)),
+            FaceTuneWriteKind.FacialData),
         ElementHeight: GUIHelper.LineHeight);
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

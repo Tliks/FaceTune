@@ -33,8 +33,6 @@ internal static class ExpressionPlanBuilder
             .SelectMany(expressionBuilder.Build)
             .Where(item => !item.RawWhen.IsNever)
             .ToList();
-        expressionBuilder.ValidateBlendShapeUsage();
-
         return new ExpressionPlan(items);
     }
 }
@@ -45,11 +43,8 @@ internal sealed class ExpressionItemBuilder
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly ConditionResolver _conditionResolver;
     private readonly FaceTuneResolver _resolver;
-    private readonly ImmutableHashSet<string> _explicitlyExcluded;
-    private readonly ISet<string> _availableBlendShapeNames;
+    private readonly BuildSettings _settings;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _safeZeroBlendShapeAnimations;
-    private readonly Dictionary<string, Component?> _eyeBlinkOwners = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Component?> _lipSyncOwners = new(StringComparer.Ordinal);
 
     public ExpressionItemBuilder(
         AvatarContext avatarContext,
@@ -61,10 +56,7 @@ internal sealed class ExpressionItemBuilder
         _platformSupport = platformSupport;
         _conditionResolver = conditionResolver;
         _resolver = new FaceTuneResolver(avatarContext.Root);
-        _explicitlyExcluded = settings.ExplicitlyExcludedBlendShapeNames;
-        _availableBlendShapeNames = avatarContext.FaceMesh.GetBlendShapeNames().ToHashSet(StringComparer.Ordinal);
-        AddExternalNames(settings.ExternalEyeBlinkBlendShapeNames, _eyeBlinkOwners);
-        AddExternalNames(settings.ExternalLipSyncBlendShapeNames, _lipSyncOwners);
+        _settings = settings;
         _safeZeroBlendShapeAnimations = settings.GetManagedZeroBlendShapes()
             .ToBlendShapeAnimations()
             .ToArray();
@@ -74,10 +66,10 @@ internal sealed class ExpressionItemBuilder
     {
         var incomingAnimations = new BlendShapeWeightAnimationSet();
         _resolver.FacialData.AddIncoming(component, incomingAnimations, _avatarContext.BodyPath);
-        incomingAnimations.RemoveRange(_explicitlyExcluded);
+        RemoveProhibitedAnimations(incomingAnimations, FaceTuneWriteKind.FacialData);
         var localAnimations = new BlendShapeWeightAnimationSet();
         _resolver.FacialData.AddLocal(component, localAnimations, _avatarContext.BodyPath);
-        localAnimations.RemoveRange(_explicitlyExcluded);
+        RemoveProhibitedAnimations(localAnimations, FaceTuneWriteKind.FacialData);
         var animations = new BlendShapeWeightAnimationSet();
         if (component.WriteMode == ExpressionWriteMode.Replace)
         {
@@ -150,59 +142,30 @@ internal sealed class ExpressionItemBuilder
             priority,
             when);
 
-    public void ValidateBlendShapeUsage()
-    {
-        var conflicts = _eyeBlinkOwners.Keys
-            .Intersect(_lipSyncOwners.Keys, StringComparer.Ordinal)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray();
-        if (conflicts.Length == 0) return;
-
-        var details = conflicts.Select(name =>
-        {
-            var eyeOwner = DescribeOwner(_eyeBlinkOwners[name]);
-            var lipOwner = DescribeOwner(_lipSyncOwners[name]);
-            return $"'{name}' (EyeBlink: {eyeOwner}, LipSync: {lipOwner})";
-        });
-        throw new InvalidOperationException(
-            "BlendShapes cannot be controlled by both EyeBlink and LipSync: "
-            + string.Join(", ", details));
-    }
-
     private EyeBlinkSettings ResolveEyeBlink(ExpressionComponent component)
     {
-        var source = _resolver.EyeBlink.Get(component, out var owner);
+        var source = _resolver.EyeBlink.Get(component);
         var result = new EyeBlinkSettings
         {
             EyeBlinkMode = source.EyeBlinkMode,
             IntervalSeconds = source.IntervalSeconds,
             SimpleDurationsSeconds = source.SimpleDurationsSeconds,
             SimpleBlinkBlendShapes = source.SimpleBlinkBlendShapes
-                .Where(shape => !IsExplicitlyExcluded(shape.Name))
+                .Where(shape => CanWrite(
+                    FaceTuneWriteKind.EyeBlinkAnimation,
+                    shape.Name))
                 .ToList(),
             SimpleConflictPreventionBlendShapes = source.SimpleConflictPreventionBlendShapes
-                .Where(shape => !IsExplicitlyExcluded(shape.Name))
+                .Where(shape => CanWrite(
+                    FaceTuneWriteKind.FacialData,
+                    shape.Name))
                 .ToList(),
             Animations = source.Animations
-                .Where(animation => !IsExplicitlyExcluded(animation.Name))
+                .Where(animation => CanWrite(
+                    FaceTuneWriteKind.EyeBlinkAnimation,
+                    animation.Name))
                 .ToList()
         };
-
-        IEnumerable<string> names = result.EyeBlinkMode switch
-        {
-            EyeBlinkSettings.Kind.BuiltIn => Array.Empty<string>(),
-            EyeBlinkSettings.Kind.SimpleAnimation => result.SimpleBlinkBlendShapes
-                .Select(shape => shape.Name),
-            EyeBlinkSettings.Kind.CustomAnimation => result.Animations
-                .Select(animation => animation.Name),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        foreach (var name in names)
-        {
-            if (!_availableBlendShapeNames.Contains(name)) continue;
-            if (owner != null || !_eyeBlinkOwners.ContainsKey(name))
-                _eyeBlinkOwners[name] = owner;
-        }
         return result;
     }
 
@@ -212,27 +175,24 @@ internal sealed class ExpressionItemBuilder
         return new LipSyncSettings
         {
             CancellerBlendShapes = source.CancellerBlendShapes
-                .Where(shape => !IsExplicitlyExcluded(shape.Name))
+                .Where(shape => CanWrite(FaceTuneWriteKind.FacialData, shape.Name))
                 .ToList()
         };
     }
 
-    private void AddExternalNames(
-        IEnumerable<string> names,
-        IDictionary<string, Component?> owners)
+    private bool CanWrite(FaceTuneWriteKind writeKind, string name)
+        => _settings.CanWriteBlendShape(writeKind, name);
+
+    private void RemoveProhibitedAnimations(
+        BlendShapeWeightAnimationSet animations,
+        FaceTuneWriteKind writeKind)
     {
-        foreach (var name in names)
-        {
-            if (!IsExplicitlyExcluded(name) && _availableBlendShapeNames.Contains(name))
-                owners.TryAdd(name, (Component?)null);
-        }
+        var prohibited = animations
+            .Where(animation => !CanWrite(writeKind, animation.Name))
+            .Select(animation => animation.Name)
+            .ToArray();
+        animations.RemoveRange(prohibited);
     }
-
-    private bool IsExplicitlyExcluded(string name)
-        => _explicitlyExcluded.Contains(name);
-
-    private static string DescribeOwner(Component? owner)
-        => owner == null ? "external platform control" : owner.ToString();
 
     private ResolvedNonFacialAnimationSet ResolveNonFacialAnimations(ExpressionComponent component)
     {
