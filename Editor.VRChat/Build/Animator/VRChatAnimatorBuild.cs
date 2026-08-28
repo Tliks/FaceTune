@@ -18,7 +18,9 @@ internal static class VRChatAnimatorBuilder
         AvatarControlSettings avatarControlSettings,
         ExpressionPlan expressionPlan)
     {
-        if (expressionPlan.IsEmpty) return;
+        var controlsTracking = avatarControlSettings.DisableEyeBlinkWhen != null
+            || avatarControlSettings.DisableLipSyncWhen != null;
+        if (expressionPlan.IsEmpty && !controlsTracking) return;
 
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
@@ -64,7 +66,7 @@ internal static class VRChatAnimatorBuilder
                     .Select(entry => entry.Key)
                     .Concat(item.NonFacialAnimations.ObjectCurves.Select(entry => entry.Key))));
 
-        var aap = AapProtocol.From(expressionPlan.Items);
+        var aap = AapProtocol.From(expressionPlan.Items, avatarControlSettings);
         if (settings.AvoidEyeBlinkConflicts && aap.ControlsEyeBlink
             || settings.AvoidLipSyncConflicts && aap.ControlsLipSync)
         {
@@ -84,8 +86,10 @@ internal static class VRChatAnimatorBuilder
             MetabasePlatformSupport.GetForBuild(buildContext),
             settings.ParameterDomains,
             analyzedWriteDefaults);
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.BuildInitial"))
+        if (units.Length > 0)
         {
+            using var _ = new Utils.ProfilingSampleScope(
+                "FaceTune.Build.Animator.BuildInitial");
             var initialController = CreateMergeAnimatorController(
                 controllerContext,
                 units[0].Anchor,
@@ -101,7 +105,7 @@ internal static class VRChatAnimatorBuilder
         }
 
         var expressionBuilder = new ExpressionAnimatorBuilder(
-            settings.AvatarContext,
+            settings,
             graph,
             avatarControlSettings,
             mmdSupport,

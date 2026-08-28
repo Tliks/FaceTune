@@ -16,8 +16,8 @@ internal sealed class ExpressionPlan
 internal sealed record class ExpressionItem(
     Transform SourceTransform,
     string Name,
-    BlendShapeWeightAnimationSet FacialAnimationSet,
-    BlendShapeWeightAnimationSet AnimationSet,
+    BlendShapeWeightAnimationSet IncomingFacialAnimations,
+    BlendShapeWeightAnimationSet LocalFacialAnimations,
     ResolvedNonFacialAnimationSet NonFacialAnimations,
     ExpressionWriteMode WriteMode,
     MultiFrameSettings MultiFrame,

@@ -603,20 +603,25 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
         public float GetContentHeight()
         {
-            var value = GetDisplayedValue();
-            if (!ShowsLocalValue || !IsReferenceable)
-                return EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
-            return SettingsReferenceGUI.GetHeight(
-                _source!,
-                EditorGUI.GetPropertyHeight(_local, GUIContent.none, true));
+            var height = GetValueHeight();
+            if (ShowsInheritedValue)
+                height += GUIHelper.LineHeight + GUIHelper.VerticalSpacing;
+            return height;
         }
 
         public void Draw(Rect position)
         {
+            if (ShowsInheritedValue)
+            {
+                DrawSource(position.SetSingleHeight(), _inheritance.GetOwner(_kind));
+                position.NewLine();
+            }
+
             var value = GetDisplayedValue();
             using var disabled = new EditorGUI.DisabledScope(!ShowsLocalValue);
             if (!ShowsLocalValue || !IsReferenceable)
             {
+                position.height = EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
                 EditorGUI.PropertyField(position, value, GUIContent.none, true);
                 return;
             }
@@ -626,6 +631,30 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 _source!,
                 EditorGUI.GetPropertyHeight(_local, GUIContent.none, true),
                 rect => EditorGUI.PropertyField(rect, _local, GUIContent.none, true));
+        }
+
+        private float GetValueHeight()
+        {
+            var value = GetDisplayedValue();
+            if (!ShowsLocalValue || !IsReferenceable)
+                return EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
+            return SettingsReferenceGUI.GetHeight(
+                _source!,
+                EditorGUI.GetPropertyHeight(_local, GUIContent.none, true));
+        }
+
+        private bool ShowsInheritedValue
+            => !ShowsLocalValue && _inheritance.GetOwner(_kind) != null;
+
+        private static void DrawSource(Rect position, SettingsComponent? source)
+        {
+            using var disabled = new EditorGUI.DisabledScope(true);
+            EditorGUI.ObjectField(
+                position,
+                "expression.settingSource.label".LG(),
+                source,
+                typeof(SettingsComponent),
+                true);
         }
 
         public float GetHeaderWidth()

@@ -151,7 +151,7 @@ internal static partial class GUIHelper
     // Heuristic optical correction for the standard Toggle drawn inside a Shuriken header.
     // IMGUI does not expose the visual bounds of the Toggle glyph within its control Rect.
     private static readonly Vector2 HeaderToggleVisualOffset = Vector2.zero;
-    private const float HeaderMenuIconVisualOffsetY = 0f;
+    private const float HeaderMenuIconVisualOffsetY = -1f;
     internal static GUIStyle ShurikenLayoutStyle => GUIStyles.SectionLayout;
     internal static GUIStyle ShurikenStyle => GUIStyles.SectionHeader;
 
@@ -342,11 +342,17 @@ internal static partial class GUIHelper
         var content = EditorGUIUtility.IconContent("_Menu");
         content.tooltip = "common.menu.tooltip".LS();
         var image = content.image;
+        var pixelsPerPoint = Mathf.Max(1f, EditorGUIUtility.pixelsPerPoint);
+        var iconSize = new Vector2(
+            image.width / pixelsPerPoint,
+            image.height / pixelsPerPoint);
+        var scale = Mathf.Min(1f, LineHeight / Mathf.Max(iconSize.x, iconSize.y));
+        iconSize *= scale;
         var icon = new Rect(
-            button.center.x - image.width * .5f,
-            button.center.y - image.height * .5f + HeaderMenuIconVisualOffsetY,
-            image.width,
-            image.height);
+            button.center.x - iconSize.x * .5f,
+            button.center.y - iconSize.y * .5f + HeaderMenuIconVisualOffsetY,
+            iconSize.x,
+            iconSize.y);
         if (GUI.Button(button, GUIContent.none, GUIStyle.none)) createHeaderMenu().DropDown(button);
         GUI.DrawTexture(icon, image);
         return button;

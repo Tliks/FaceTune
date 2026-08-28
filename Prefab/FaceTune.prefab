@@ -55,7 +55,7 @@ MonoBehaviour:
     Clip: {fileID: 0}
     ClipOption: 10
     BlendShapeAnimations: []
-  ApplyToRenderer: 0
+  ApplyToRenderer: 1
   ExpressionSetEnabled: 0
   ExpressionSet:
     Menu:

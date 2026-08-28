@@ -13,6 +13,7 @@ internal sealed class LegacyFaceTuneImporter
     private readonly IReadOnlyList<LegacyExpressionComponent> _sourceExpressions;
     private readonly HashSet<Transform> _scopeTransforms;
     private readonly HashSet<LegacyPresetComponent> _defaultPresets;
+    private readonly Transform? _templateScope;
     private GameObject _destination = null!;
     private string _outputFolder = string.Empty;
 
@@ -26,12 +27,20 @@ internal sealed class LegacyFaceTuneImporter
             .Where(preset => HasExpressionUnder(preset.transform))
             .Take(1)
             .ToHashSet();
+        _templateScope = FindTemplateScope();
     }
 
     public GameObject Import(GameObject destination)
     {
         _destination = destination;
         _outputFolder = $"Assets/FaceTune/Legacy Import/{SanitizeFileName(_sourceRoot.name)}";
+
+        if (_templateScope.DestroyedAsNull() is { } templateScope)
+        {
+            _scopeObjects[templateScope] = destination;
+            ApplyScopeSettings(templateScope, destination);
+            CopyEditorOnlyTag(templateScope, destination);
+        }
 
         ImportOverrideFaceRenderer();
         foreach (var sourceTransform in _sourceRoot.GetComponentsInChildren<Transform>(true))
@@ -47,13 +56,17 @@ internal sealed class LegacyFaceTuneImporter
         return destination;
     }
 
+    private static void CopyEditorOnlyTag(Transform source, GameObject target)
+    {
+        if (source.CompareTag("EditorOnly")) target.tag = "EditorOnly";
+    }
+
     private HashSet<Transform> CollectScopeTransforms()
     {
         var result = new HashSet<Transform>();
         foreach (var transform in _sourceRoot.GetComponentsInChildren<Transform>(true))
         {
-            var expression = transform.GetComponent<LegacyExpressionComponent>();
-            var hasExpression = expression != null;
+            var hasExpression = transform.TryGetComponent<LegacyExpressionComponent>(out _);
             var hasScopeComponent = transform.GetComponents<LegacyFaceTuneTagComponent>()
                 .Any(component => component switch
                 {
@@ -67,8 +80,9 @@ internal sealed class LegacyFaceTuneImporter
                 });
             if (!hasScopeComponent) continue;
 
-            var style = transform.GetComponent<LegacyFacialStyleComponent>();
-            if (HasExpressionUnder(transform) || style?.ApplyToRenderer == true)
+            var appliesToRenderer = transform.TryGetComponent<LegacyFacialStyleComponent>(out var style)
+                && style.ApplyToRenderer;
+            if (HasExpressionUnder(transform) || appliesToRenderer)
                 result.Add(transform);
         }
 
@@ -77,6 +91,34 @@ internal sealed class LegacyFaceTuneImporter
 
     private IEnumerable<LegacyPresetComponent> CollectPresets()
         => _sourceRoot.GetComponentsInChildren<LegacyPresetComponent>(true);
+
+    private Transform? FindTemplateScope()
+    {
+        var rootScopes = _scopeTransforms
+            .Where(scope => FindParentScope(scope.parent) == null)
+            .ToArray();
+        var rendererScopes = rootScopes
+            .Where(scope => scope.TryGetComponent<LegacyFacialStyleComponent>(out var style)
+                            && style.ApplyToRenderer)
+            .ToArray();
+        return rendererScopes.Length == 1
+            ? rendererScopes[0]
+            : rootScopes.Length == 1
+                ? rootScopes[0]
+                : null;
+    }
+
+    private Transform? FindParentScope(Transform? source)
+    {
+        var current = source.DestroyedAsNull();
+        while (current is not null)
+        {
+            if (_scopeTransforms.Contains(current)) return current;
+            if (current == _sourceRoot.transform) break;
+            current = current.parent.DestroyedAsNull();
+        }
+        return null;
+    }
 
     private bool HasExpressionUnder(Transform parent)
         => _sourceExpressions.Any(expression => expression.transform == parent
@@ -87,14 +129,14 @@ internal sealed class LegacyFaceTuneImporter
         if (_scopeObjects.TryGetValue(source, out var existing))
             return existing;
 
-        var parentSource = source.parent;
-        while (parentSource != null && !_scopeTransforms.Contains(parentSource))
-            parentSource = parentSource.parent;
-
-        var parent = parentSource == null ? _destination : GetOrCreateScope(parentSource);
+        var parentSource = FindParentScope(source.parent);
+        var parent = parentSource.DestroyedAsNull() is { } scope
+            ? GetOrCreateScope(scope)
+            : _destination;
         var result = new GameObject(source.name);
         result.transform.SetParent(parent.transform, false);
         Undo.RegisterCreatedObjectUndo(result, "Import Legacy FaceTune Scope");
+        CopyEditorOnlyTag(source, result);
         _scopeObjects[source] = result;
         ApplyScopeSettings(source, result);
         return result;
@@ -102,8 +144,9 @@ internal sealed class LegacyFaceTuneImporter
 
     private void ApplyScopeSettings(Transform source, GameObject target)
     {
-        var expression = source.GetComponent<LegacyExpressionComponent>();
-        var settings = target.AddComponent<SettingsComponent>();
+        var hasExpression = source.TryGetComponent<LegacyExpressionComponent>(out _);
+        var created = !target.TryGetComponent<SettingsComponent>(out var settings);
+        if (created) settings = Undo.AddComponent<SettingsComponent>(target);
 
         var presets = source.GetComponents<LegacyPresetComponent>();
         if (presets.Length > 0)
@@ -112,7 +155,7 @@ internal sealed class LegacyFaceTuneImporter
             settings.ExpressionSet.DefaultSelected = presets.Any(_defaultPresets.Contains);
         }
 
-        if (expression == null)
+        if (!hasExpression)
         {
             var conditionComponents = source.GetComponents<LegacyConditionComponent>();
             ApplyScopeConditions(settings, conditionComponents);
@@ -137,7 +180,8 @@ internal sealed class LegacyFaceTuneImporter
             settings.LipSync = ConvertLipSyncSettings(lipSync.AdvancedLipSyncSettings);
         }
 
-        if (presets.Length == 0
+        if (created
+            && presets.Length == 0
             && !settings.HasFacialBlendShapes
             && !settings.HasEyeBlink
             && !settings.HasLipSync
@@ -163,22 +207,29 @@ internal sealed class LegacyFaceTuneImporter
 
     private void ImportOverrideFaceRenderer()
     {
-        var source = _sourceRoot.GetComponentsInChildren<LegacyOverrideFaceRendererComponent>(true)
-            .LastOrDefault();
-        if (source == null) return;
+        var source = _sourceRoot
+            .GetComponentsInChildren<LegacyOverrideFaceRendererComponent>(true)
+            .LastOrDefault()
+            .DestroyedAsNull();
+        if (source is null) return;
 
-        var target = _destination.GetComponent<AvatarSettingsComponent>()
-                     ?? Undo.AddComponent<AvatarSettingsComponent>(_destination);
+        if (!_destination.TryGetComponent<AvatarSettingsComponent>(out var target))
+            target = Undo.AddComponent<AvatarSettingsComponent>(_destination);
         target.FaceObjectReference.Set(source.m_faceObjectReference.Get(source));
     }
 
     private void ImportExpression(LegacyExpressionComponent source)
     {
+        if (IsAlwaysPlaying(source) && !HasExpressionData(source)) return;
+
         var parentSource = FindNearestScope(source.transform);
-        var parent = parentSource == null ? _destination : GetOrCreateScope(parentSource);
+        var parent = parentSource.DestroyedAsNull() is { } scope
+            ? GetOrCreateScope(scope)
+            : _destination;
         var targetObject = new GameObject(source.gameObject.name);
         targetObject.transform.SetParent(parent.transform, false);
         Undo.RegisterCreatedObjectUndo(targetObject, "Import Legacy FaceTune Expression");
+        CopyEditorOnlyTag(source.transform, targetObject);
 
         var target = targetObject.AddComponent<ExpressionComponent>();
         ConfigureExpression(source, target);
@@ -186,14 +237,32 @@ internal sealed class LegacyFaceTuneImporter
     }
 
     private Transform? FindNearestScope(Transform source)
-    {
-        for (var current = source; current != null; current = current.parent)
-        {
-            if (_scopeTransforms.Contains(current)) return current;
-            if (current == _sourceRoot.transform) break;
-        }
+        => _scopeTransforms.Contains(source)
+            ? source
+            : FindParentScope(source.parent);
 
-        return null;
+    private bool IsAlwaysPlaying(LegacyExpressionComponent expression)
+    {
+        var current = expression.transform;
+        while (current is not null)
+        {
+            if (current.TryGetComponent<LegacyPresetComponent>(out _)) return false;
+
+            var conditions = current.GetComponents<LegacyConditionComponent>();
+            if (conditions.Length > 0 && conditions.All(condition => !IsEmpty(condition)))
+                return false;
+
+            if (current == _sourceRoot.transform) break;
+            current = current.parent.DestroyedAsNull();
+        }
+        return true;
+    }
+
+    private bool HasExpressionData(LegacyExpressionComponent expression)
+    {
+        return expression.GetComponentsInChildren<LegacyExpressionDataComponent>(true)
+            .Any(data => data.Clip.DestroyedAsNull() is not null
+                         || data.BlendShapeAnimations.Count > 0);
     }
 
     private static void ConfigureExpression(
@@ -241,32 +310,50 @@ internal sealed class LegacyFaceTuneImporter
     {
         foreach (var sourceData in source.GetComponentsInChildren<LegacyExpressionDataComponent>(true))
         {
-            var data = target.gameObject.AddComponent<ExpressionDataComponent>();
-            var clip = sourceData.Clip;
-            if (clip != null)
+            if (sourceData.transform == source.transform)
             {
-                var keepClip = CanKeepClip(sourceData);
-                if (keepClip)
-                {
-                    data.FacialBlendShapes.Clip = clip;
-                    data.FacialBlendShapes.ClipOption = ConvertClipImportOption(sourceData.ClipOption);
-                }
-                else
-                {
-                    data.FacialBlendShapes.BlendShapeAnimations.AddRange(
-                        ExtractFacialAnimations(sourceData));
-                }
-
-                var nonFacialClip = GetOrCreateNonFacialClip(
-                    clip,
-                    sourceData.AllBlendShapeAnimationAsFacial);
-                if (nonFacialClip != null)
-                    data.NonFacialAnimations.AnimationClips.Add(nonFacialClip);
+                ImportExpressionData(
+                    sourceData,
+                    target.FacialBlendShapes,
+                    target.NonFacialAnimations);
+                continue;
             }
 
-            data.FacialBlendShapes.BlendShapeAnimations.AddRange(
-                CloneAnimations(sourceData.BlendShapeAnimations));
+            var data = target.gameObject.AddComponent<ExpressionDataComponent>();
+            ImportExpressionData(
+                sourceData,
+                data.FacialBlendShapes,
+                data.NonFacialAnimations);
         }
+    }
+
+    private void ImportExpressionData(
+        LegacyExpressionDataComponent source,
+        FacialBlendShapeData facialData,
+        NonFacialAnimationData nonFacialData)
+    {
+        if (source.Clip.DestroyedAsNull() is { } clip)
+        {
+            if (CanKeepClip(source))
+            {
+                facialData.Clip = clip;
+                facialData.ClipOption = ConvertClipImportOption(source.ClipOption);
+            }
+            else
+            {
+                facialData.BlendShapeAnimations.AddRange(
+                    ExtractFacialAnimations(source));
+            }
+
+            var nonFacialClip = GetOrCreateNonFacialClip(
+                clip,
+                source.AllBlendShapeAnimationAsFacial);
+            if (nonFacialClip.DestroyedAsNull() is { } animationClip)
+                nonFacialData.AnimationClips.Add(animationClip);
+        }
+
+        facialData.BlendShapeAnimations.AddRange(
+            CloneAnimations(source.BlendShapeAnimations));
     }
 
     private bool CanKeepClip(LegacyExpressionDataComponent source)

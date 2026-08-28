@@ -10,6 +10,7 @@ internal sealed class ExpressionAnimatorBuilder
     private const float InitialRetryDurationSeconds = 0.1f;
 
     private readonly AvatarContext _avatarContext;
+    private readonly IReadOnlyList<BlendShapeWeightAnimation> _managedZeroAnimations;
     private readonly AnimatorGraph _graph;
     private readonly DnfCondition? _lockFacialInactiveWhen;
     private readonly MmdSupport _mmdSupport;
@@ -17,13 +18,16 @@ internal sealed class ExpressionAnimatorBuilder
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _clips = new();
 
     public ExpressionAnimatorBuilder(
-        AvatarContext avatarContext,
+        BuildSettings settings,
         AnimatorGraph graph,
         AvatarControlSettings avatarControlSettings,
         MmdSupport mmdSupport,
         AapProtocol aap)
     {
-        _avatarContext = avatarContext;
+        _avatarContext = settings.AvatarContext;
+        _managedZeroAnimations = settings.GetManagedZeroBlendShapes()
+            .ToBlendShapeAnimations()
+            .ToArray();
         _graph = graph;
         _lockFacialInactiveWhen = avatarControlSettings.LockFacialWhen?.Complement();
         _mmdSupport = mmdSupport;
@@ -176,7 +180,8 @@ internal sealed class ExpressionAnimatorBuilder
         if (enterWhen.IsNever) return;
 
         // Splitting DNF cases keeps exit conditions small, but switching cases restarts time-dependent motions.
-        var canSplitWithoutResettingMotion = expression.AnimationSet.All(animation => !animation.IsMultiFrame)
+        var canSplitWithoutResettingMotion = GetOutputAnimations(expression)
+            .All(animation => !animation.IsMultiFrame)
             && !expression.NonFacialAnimations.IsTimeDependent;
         var stateConditions = canSplitWithoutResettingMotion && enterWhen.Cases.Count > 1
             ? enterWhen.Cases.Select(DnfCondition.FromCase).ToArray()
@@ -235,12 +240,15 @@ internal sealed class ExpressionAnimatorBuilder
         ExpressionItem expression,
         IReadOnlyList<(string ParameterName, float Value)> aapWrites)
     {
+        var outputAnimations = GetOutputAnimations(expression);
         var key = new ExpressionClipKey(
-            expression.AnimationSet,
+            outputAnimations,
             expression.NonFacialAnimations,
             expression.MultiFrame,
             aapWrites);
-        state.Motion = _clips.GetOrAdd(key, _ => CreateClip(state.Name, expression, aapWrites));
+        state.Motion = _clips.GetOrAdd(
+            key,
+            _ => CreateClip(state.Name, expression, outputAnimations, aapWrites));
         if (expression.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Parameter
             && !string.IsNullOrEmpty(expression.MultiFrame.ParameterName))
         {
@@ -251,6 +259,7 @@ internal sealed class ExpressionAnimatorBuilder
     private VirtualClip CreateClip(
         string name,
         ExpressionItem expression,
+        BlendShapeWeightAnimationSet outputAnimations,
         IReadOnlyList<(string ParameterName, float Value)> aapWrites)
     {
         var clip = VirtualClip.Create(name);
@@ -258,7 +267,7 @@ internal sealed class ExpressionAnimatorBuilder
             clip.SetFloatCurve(binding, curve);
         foreach (var (binding, curve) in expression.NonFacialAnimations.ObjectCurves)
             clip.SetObjectCurve(binding, curve);
-        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, expression.AnimationSet);
+        clip.AddBlendShapeAnimations(_avatarContext.BodyPath, outputAnimations);
         foreach (var write in aapWrites)
         {
             var curve = new AnimationCurve(new Keyframe(0f, write.Value));
@@ -271,6 +280,18 @@ internal sealed class ExpressionAnimatorBuilder
             clip.Settings = settings;
         }
         return clip;
+    }
+
+    private BlendShapeWeightAnimationSet GetOutputAnimations(ExpressionItem expression)
+    {
+        var animations = new BlendShapeWeightAnimationSet();
+        if (expression.WriteMode == ExpressionWriteMode.Replace)
+        {
+            animations.AddRange(_managedZeroAnimations);
+            animations.AddRange(expression.IncomingFacialAnimations);
+        }
+        animations.AddRange(expression.LocalFacialAnimations);
+        return animations;
     }
 
     private sealed class ExpressionClipKey : IEquatable<ExpressionClipKey>

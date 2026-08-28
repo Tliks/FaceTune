@@ -44,7 +44,6 @@ internal sealed class ExpressionItemBuilder
     private readonly ConditionResolver _conditionResolver;
     private readonly FaceTuneResolver _resolver;
     private readonly BuildSettings _settings;
-    private readonly IReadOnlyList<BlendShapeWeightAnimation> _safeZeroBlendShapeAnimations;
 
     public ExpressionItemBuilder(
         AvatarContext avatarContext,
@@ -57,26 +56,28 @@ internal sealed class ExpressionItemBuilder
         _conditionResolver = conditionResolver;
         _resolver = new FaceTuneResolver(avatarContext.Root);
         _settings = settings;
-        _safeZeroBlendShapeAnimations = settings.GetManagedZeroBlendShapes()
-            .ToBlendShapeAnimations()
-            .ToArray();
     }
 
     public IEnumerable<ExpressionItem> Build(ExpressionComponent component)
     {
-        var incomingAnimations = new BlendShapeWeightAnimationSet();
-        _resolver.FacialData.AddIncoming(component, incomingAnimations, _avatarContext.BodyPath);
-        RemoveProhibitedAnimations(incomingAnimations, FaceTuneWriteKind.FacialData);
-        var localAnimations = new BlendShapeWeightAnimationSet();
-        _resolver.FacialData.AddLocal(component, localAnimations, _avatarContext.BodyPath);
-        RemoveProhibitedAnimations(localAnimations, FaceTuneWriteKind.FacialData);
-        var animations = new BlendShapeWeightAnimationSet();
-        if (component.WriteMode == ExpressionWriteMode.Replace)
-        {
-            animations.AddRange(_safeZeroBlendShapeAnimations);
-            animations.AddRange(incomingAnimations);
-        }
-        animations.AddRange(localAnimations);
+        var incomingFacialAnimations = new BlendShapeWeightAnimationSet();
+        _resolver.FacialData.AddIncoming(
+            component,
+            incomingFacialAnimations,
+            _avatarContext.BodyPath);
+        RemoveProhibitedAnimations(
+            incomingFacialAnimations,
+            FaceTuneWriteKind.FacialData);
+
+        var localFacialAnimations = new BlendShapeWeightAnimationSet();
+        _resolver.FacialData.AddLocal(
+            component,
+            localFacialAnimations,
+            _avatarContext.BodyPath);
+        RemoveProhibitedAnimations(
+            localFacialAnimations,
+            FaceTuneWriteKind.FacialData);
+
         var nonFacialAnimations = ResolveNonFacialAnimations(component);
         var eyeBlink = ResolveEyeBlink(component);
         var lipSync = ResolveLipSync(component);
@@ -87,8 +88,8 @@ internal sealed class ExpressionItemBuilder
         yield return BuildItem(
             component,
             component.name,
-            incomingAnimations,
-            animations,
+            incomingFacialAnimations,
+            localFacialAnimations,
             nonFacialAnimations,
             eyeBlink,
             lipSync,
@@ -102,8 +103,8 @@ internal sealed class ExpressionItemBuilder
         yield return BuildItem(
             component,
             $"{component.name} (Direct Menu)",
-            incomingAnimations,
-            animations,
+            incomingFacialAnimations,
+            localFacialAnimations,
             nonFacialAnimations,
             eyeBlink,
             lipSync,
@@ -118,8 +119,8 @@ internal sealed class ExpressionItemBuilder
     private ExpressionItem BuildItem(
         ExpressionComponent component,
         string name,
-        BlendShapeWeightAnimationSet incomingAnimations,
-        BlendShapeWeightAnimationSet animations,
+        BlendShapeWeightAnimationSet incomingFacialAnimations,
+        BlendShapeWeightAnimationSet localFacialAnimations,
         ResolvedNonFacialAnimationSet nonFacialAnimations,
         EyeBlinkSettings eyeBlink,
         LipSyncSettings lipSync,
@@ -129,8 +130,8 @@ internal sealed class ExpressionItemBuilder
         => new(
             component.transform,
             name,
-            incomingAnimations,
-            animations,
+            incomingFacialAnimations,
+            localFacialAnimations,
             nonFacialAnimations,
             component.WriteMode,
             ResolveMultiFrame(component.MultiFrame),

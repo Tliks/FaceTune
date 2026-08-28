@@ -50,8 +50,10 @@ internal static class VRChatMenuThumbnailFeature
             {
                 using var _ = BlendShapeSetPool.Get(out var blendShapes);
                 blendShapes.AddRange(managedZeroes);
-                blendShapes.AddRange(request.Expression.FacialAnimationSet.ToFirstFrameBlendShapes());
-                blendShapes.AddRange(request.Expression.AnimationSet.ToFirstFrameBlendShapes());
+                blendShapes.AddRange(
+                    request.Expression.IncomingFacialAnimations.ToFirstFrameBlendShapes());
+                blendShapes.AddRange(
+                    request.Expression.LocalFacialAnimations.ToFirstFrameBlendShapes());
 
                 var cacheKey = new BlendShapeWeightSet(blendShapes);
                 control.icon = textureCache.GetOrAdd(cacheKey, _ =>

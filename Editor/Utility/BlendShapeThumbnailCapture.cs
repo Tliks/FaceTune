@@ -166,7 +166,6 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
 
     private readonly SkinnedMeshRenderer _renderer;
     private readonly Mesh _mesh;
-    private readonly BlendShapeWeightSet _initialWeights;
     private readonly IReadOnlyDictionary<GameObject, int> _originalLayers;
     private readonly GameObject _cameraRoot;
     private readonly Camera _camera;
@@ -179,7 +178,6 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         _renderer = renderer;
         _mesh = renderer.sharedMesh.DestroyedAsNull()
             ?? throw new ArgumentException("Renderer has no mesh.", nameof(renderer));
-        _initialWeights = new BlendShapeWeightSet(renderer.GetBlendShapeWeights(_mesh));
         var avatarRoot = RuntimeUtil.FindAvatarInParents(renderer.transform).DestroyedAsNull()
             ?? renderer.transform.root;
         _originalLayers = avatarRoot.GetComponentsInChildren<Renderer>(true)
@@ -217,14 +215,17 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Capture");
         ThrowIfDisposed();
         GameObject? renderObject = null;
+        var sourceWasForcedOff = _renderer.forceRenderingOff;
         try
         {
             renderObject = CreateRenderObject(blendShapes);
+            _renderer.forceRenderingOff = true;
             _camera.Render();
             return ReadTexture();
         }
         finally
         {
+            if (_renderer != null) _renderer.forceRenderingOff = sourceWasForcedOff;
             if (renderObject != null) Object.DestroyImmediate(renderObject);
         }
     }
@@ -285,14 +286,13 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
             renderRenderer.rootBone = _renderer.rootBone;
             renderRenderer.sharedMaterials = _renderer.sharedMaterials;
             renderRenderer.quality = _renderer.quality;
-            renderRenderer.updateWhenOffscreen = _renderer.updateWhenOffscreen;
+            renderRenderer.updateWhenOffscreen = true;
             renderRenderer.localBounds = _renderer.localBounds;
             renderRenderer.shadowCastingMode = _renderer.shadowCastingMode;
             renderRenderer.receiveShadows = _renderer.receiveShadows;
             renderRenderer.lightProbeUsage = _renderer.lightProbeUsage;
             renderRenderer.reflectionProbeUsage = _renderer.reflectionProbeUsage;
             renderRenderer.probeAnchor = _renderer.probeAnchor;
-            renderRenderer.ApplyBlendShapes(_mesh, _initialWeights);
             renderRenderer.ApplyBlendShapes(_mesh, blendShapes);
             return renderObject;
         }

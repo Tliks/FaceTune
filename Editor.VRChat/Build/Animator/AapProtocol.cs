@@ -32,9 +32,12 @@ internal sealed class AapProtocol
             .Select((settings, index) => (settings, FirstCustomMode + index))
             .ToArray();
 
-    private AapProtocol(IReadOnlyList<ExpressionItem> items)
+    private AapProtocol(
+        IReadOnlyList<ExpressionItem> items,
+        bool hasEyeBlinkAvatarControl,
+        bool hasLipSyncAvatarControl)
     {
-        var animations = new List<EyeBlinkSettings>();
+        var eyeBlinkAnimations = new List<EyeBlinkSettings>();
         var animationKinds = new[]
         {
             EyeBlinkSettings.Kind.SimpleAnimation,
@@ -47,27 +50,39 @@ internal sealed class AapProtocol
                 .Where(settings => settings.EyeBlinkMode == kind);
             foreach (var settings in settingsForKind)
             {
-                if (!animations.Contains(settings)) animations.Add(settings);
+                if (!eyeBlinkAnimations.Contains(settings))
+                    eyeBlinkAnimations.Add(settings);
             }
         }
 
-        _eyeBlinkAnimations = animations;
-        ControlsEyeBlink = animations.Count > 0
+        _eyeBlinkAnimations = eyeBlinkAnimations;
+        ControlsEyeBlink = hasEyeBlinkAvatarControl
+            || eyeBlinkAnimations.Count > 0
             || items.Any(item => item.AllowEyeBlink == TrackingPermission.Disallow);
 
-        var cancellers = new List<LipSyncSettings>();
+        var lipSyncCancellers = new List<LipSyncSettings>();
         foreach (var settings in items
                      .Select(item => item.LipSync)
                      .Where(settings => settings.CancellerBlendShapes.Count > 0))
         {
-            if (!cancellers.Contains(settings)) cancellers.Add(settings);
+            if (!lipSyncCancellers.Contains(settings))
+                lipSyncCancellers.Add(settings);
         }
-        _lipSyncCancellers = cancellers;
-        ControlsLipSync = cancellers.Count > 0
+        _lipSyncCancellers = lipSyncCancellers;
+        ControlsLipSync = hasLipSyncAvatarControl
+            || lipSyncCancellers.Count > 0
             || items.Any(item => item.AllowLipSync == TrackingPermission.Disallow);
     }
 
-    public static AapProtocol From(IReadOnlyList<ExpressionItem> items) => new(items);
+    public static AapProtocol From(
+        IReadOnlyList<ExpressionItem> items,
+        AvatarControlSettings avatarControlSettings)
+    {
+        return new AapProtocol(
+            items,
+            avatarControlSettings.DisableEyeBlinkWhen != null,
+            avatarControlSettings.DisableLipSyncWhen != null);
+    }
 
     /// <summary>
     /// 外部VRCAnimatorTrackingControlをAAP書込へ置き換えるための書き込み列を生成する。

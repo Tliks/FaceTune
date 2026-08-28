@@ -1,12 +1,13 @@
 #pragma warning disable CS0618
 
-namespace Aoyon.FaceTune;
-
-[DisallowMultipleComponent]
-[Obsolete("Legacy serialized data retained only for migration.")]
-internal class LegacyOverrideFaceRendererComponent : LegacyFaceTuneTagComponent
+namespace Aoyon.FaceTune
 {
-    [SerializeField] internal AvatarObjectReference m_faceObjectReference = new();
+    [DisallowMultipleComponent]
+    [Obsolete("Legacy serialized data retained only for migration.")]
+    internal class LegacyOverrideFaceRendererComponent : LegacyFaceTuneTagComponent
+    {
+        [SerializeField] internal AvatarObjectReference m_faceObjectReference = new();
+    }
 }
 
 #pragma warning restore CS0618

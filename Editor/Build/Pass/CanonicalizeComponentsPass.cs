@@ -72,7 +72,7 @@ internal static class MenuCanonicalizer
 
         foreach (var source in sources)
         {
-            var menuObject = new GameObject($"{source.name} (Direct Menu)");
+            var menuObject = new GameObject(source.name);
             var parent = source.transform.parent.DestroyedAsNull() ?? root.transform;
             menuObject.transform.SetParent(parent, false);
             result.Add((source.DirectMenuSettings, CreateDirectMenu(menuObject, source)));
