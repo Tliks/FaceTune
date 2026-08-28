@@ -1,30 +1,45 @@
 namespace Aoyon.FaceTune.Platforms;
 
-internal class FallbackSupport : IMetabasePlatformSupport
-{     
-    public bool IsTarget(Transform root)
-    {
-        return true;
-    }
+internal sealed class FallbackSupport : IMetabasePlatformSupport
+{
+    private readonly Transform _root;
 
-    private Transform _root = null!;
-    public void Initialize(Transform root)
+    public FallbackSupport(Transform root)
     {
         _root = root;
     }
 
     public SkinnedMeshRenderer? GetFaceRenderer()
     {
-        SkinnedMeshRenderer? faceRenderer = null;
-        for (int i = 0; i < _root.childCount; i++)
-        {
-            var child = _root.GetChild(i);
-            if (child.name == "Body")
-            {
-                faceRenderer = child.TryGetComponent<SkinnedMeshRenderer>(out var renderer) ? renderer : null;
-                if (faceRenderer != null) { break; }
-            }
-        }
-        return faceRenderer;
+        return _root.FindDirectChildComponent<SkinnedMeshRenderer>("Face", StringComparison.OrdinalIgnoreCase).DestroyedAsNull()
+               ?? _root.FindDirectChildComponent<SkinnedMeshRenderer>("Body", StringComparison.Ordinal).DestroyedAsNull()
+               ?? _root.FindDirectChildComponent<SkinnedMeshRenderer>("body", StringComparison.Ordinal).DestroyedAsNull()
+               ?? _root.GetComponentInChildren<SkinnedMeshRenderer>(true).DestroyedAsNull();
     }
+
+    public ParameterDomainRegistry CreateBuiltInParameterDomains()
+    {
+        return ParameterDomainRegistry.Empty;
+    }
+
+    public IEnumerable<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind)
+        => Array.Empty<string>();
+
+    public DnfCondition? ResolveHandGestureCondition(
+        HandGestureCondition condition,
+        ParameterDomainRegistry parameterDomains)
+    {
+        return null;
+    }
+
+    public DnfCondition? ResolveParameterCondition(
+        ParameterCondition condition,
+        ParameterDomainRegistry parameterDomains)
+    {
+        return null;
+    }
+
+    public string? ResolveGestureParameter(Hand hand) => null;
+
+    public string? ResolveGestureWeightParameter(Hand hand) => null;
 }

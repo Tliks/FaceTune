@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &3377657601431670862
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 196839064403189976, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 580471233427694779, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4040018329951932949, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5572135474713407049, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5725063788950102543, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7136326512871861865, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8118859454288863856, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8285661403366438539, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: m_Name
+      value: Right Hand
+      objectReference: {fileID: 0}
+    - target: {fileID: 8637336120474858227, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8772620051276661418, guid: 9f044864c335d38499244290e12697d3, type: 3}
+      propertyPath: Condition.Condition.Cases.Array.data[0].HandGestureConditions.Array.data[0].Hand
+      value: 10
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9f044864c335d38499244290e12697d3, type: 3}

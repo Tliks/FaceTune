@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5420753836183382454
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9002329379433223577}
+  - component: {fileID: 7503753967363087338}
+  - component: {fileID: 1310508850619475407}
+  m_Layer: 0
+  m_Name: Disable LipSync
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9002329379433223577
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420753836183382454}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7503753967363087338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420753836183382454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b747624bf54d2a9da06deb0fd9987a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ControlKind: 20
+  MMD:
+    ExplicitBlendShapeNames: []
+    SupportMode: 0
+  Condition:
+    Mode: 10
+    Condition:
+      Cases:
+      - HandGestureConditions: []
+        MenuConditions:
+        - MenuSource: {fileID: 1310508850619475407}
+          Mode: 0
+          Threshold: 0.5
+        ParameterConditions: []
+--- !u!114 &1310508850619475407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5420753836183382454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75722db5e20f4b628443dc4e1e6c1313, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MenuKind: 0
+  Menu:
+    MenuName: 
+    Icon:
+      Mode: 0
+      ManualIcon: {fileID: 0}
+      PreviewExpression: {fileID: 0}
+    InstallContainer: {fileID: 0}
+  UseExistingParameter: 0
+  GenerateParameterGroup: 0
+  GroupName: 
+  ParameterName: 
+  Synced: 1
+  Saved: 1
+  DefaultValue: 0
+  SelectedValue: 1

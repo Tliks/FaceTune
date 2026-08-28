@@ -1,48 +1,34 @@
-using nadena.dev.ndmf.runtime;
+using nadena.dev.ndmf;
 
 namespace Aoyon.FaceTune.Platforms;
 
 internal static class MetabasePlatformSupport
 {
-    private static readonly List<IMetabasePlatformSupport> s_supports = new();
-    private static readonly IMetabasePlatformSupport s_fallback = new FallbackSupport();
-    
-    public static void Register(IMetabasePlatformSupport support)
+    internal delegate IMetabasePlatformSupport? Factory(Transform root);
+
+    private static readonly Dictionary<string, Factory> s_factories = new();
+
+    public static void Register(string platformId, Factory factory)
     {
-        s_supports.Add(support);
+        s_factories[platformId] = factory;
     }
 
-    public static Transform? FindAvatarInParents(Transform transform)
+    public static IMetabasePlatformSupport GetForBuild(BuildContext context)
     {
-        return RuntimeUtil.FindAvatarInParents(transform); // NDMFが対応する範囲が上限
-    }
-
-    public static IMetabasePlatformSupport GetSupportInParents(Transform transform)
-    {
-        var avatar = FindAvatarInParents(transform);
-        if (avatar == null)
+        if (s_factories.TryGetValue(context.PlatformProvider.QualifiedName, out var factory))
         {
-            throw new Exception("Avatar not found");
+            var support = factory(context.AvatarRootTransform);
+            if (support != null) return support;
         }
-        return GetSupport(avatar);
+
+        return new FallbackSupport(context.AvatarRootTransform);
     }
 
-    public static IMetabasePlatformSupport GetSupport(Transform root)
+    public static IReadOnlyList<IMetabasePlatformSupport> GetForAvatar(Transform root)
     {
-        return GetSupports(root).First();
-    }
-
-    public static IEnumerable<IMetabasePlatformSupport> GetSupports(Transform root)
-    {
-        foreach (var support in s_supports)
-        {
-            if (support.IsTarget(root))
-            {
-                support.Initialize(root);
-                yield return support;
-            }
-        }
-        s_fallback.Initialize(root);
-        yield return s_fallback;
+        return s_factories.Values
+            .Select(factory => factory(root))
+            .OfType<IMetabasePlatformSupport>()
+            .ToArray();
     }
 }

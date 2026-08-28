@@ -1,0 +1,44 @@
+#target-renderer-field,
+#targeting-object-field {
+    flex: 1 1 50%;
+}
+
+.top-action-button {
+    flex: 1;
+}
+
+
+.icon-action-button {
+    align-items: center;
+    justify-content: center;
+}
+
+.step-action-icon {
+    width: 14px;
+    height: 14px;
+}
+
+#save-button {
+    flex: 3;
+}
+
+#clip-field-container {
+    flex: 1 1 auto;
+}
+
+.clip-import-field .unity-object-field-display__label {
+    font-size: 11px;
+}
+
+#import-option-field-container {
+    flex: 0 0 auto;
+}
+
+#group-toggles-container {
+    flex-wrap: wrap;
+}
+
+.group-toggle {
+    margin: 0px var(--space) var(--space) 0px;
+    font-size: 11px;
+}

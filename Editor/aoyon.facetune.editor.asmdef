@@ -2,11 +2,9 @@
     "name": "Aoyon.FaceTune.Editor",
     "rootNamespace": "",
     "references": [
-        "Aoyon.FaceTune.Common",
         "Aoyon.FaceTune.Runtime",
         "nadena.dev.ndmf",
-        "nadena.dev.ndmf.runtime",
-        "nadena.dev.modular-avatar.core"
+        "nadena.dev.ndmf.runtime"
     ],
     "includePlatforms": [
         "Editor"
@@ -15,7 +13,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "System.Collections.Immutable.dll"
+        "System.Collections.Immutable.dll",
+        "VRCSDKBase.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

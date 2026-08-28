@@ -10,7 +10,8 @@ internal class ResolveReferencesPass : Pass<ResolveReferencesPass>
     protected override void Execute(BuildContext context)
     {
         var interfaces = context.AvatarRootObject
-            .GetInterfacesInChildFaceTuneComponents<IHasObjectReferences>(true);
+            .GetComponentsInChildren<FaceTuneTagComponent>(true)
+            .OfType<IHasObjectReferences>();
 
         foreach (var hasObjectReferences in interfaces)
         {

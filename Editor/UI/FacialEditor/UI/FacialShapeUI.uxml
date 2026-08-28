@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:engine="UnityEngine.UIElements" xmlns:components="Aoyon.FaceTune.Gui.Components">
+    <components:HorizontalElement name="root">
+        <components:VerticalElement name="left-panel">
+            <ui:VisualElement name="general-controls-container" class="section-frame" />
+            <ui:VisualElement class="frame-layout-gap" />
+            <ui:VisualElement name="selected-content-container" class="section-frame" />
+        </components:VerticalElement>
+
+        <ui:VisualElement class="frame-layout-gap" />
+
+        <ui:VisualElement name="right-panel">
+            <ui:VisualElement name="unselected-content-container" class="section-frame" />
+        </ui:VisualElement>
+    </components:HorizontalElement>
+</ui:UXML>

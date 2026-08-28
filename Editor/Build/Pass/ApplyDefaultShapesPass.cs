@@ -1,43 +1,39 @@
-using nadena.dev.ndmf;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Build;
 
-internal class ApplyDefaultShapesPass : Pass<ApplyDefaultShapesPass>
+internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
 {
     public override string QualifiedName => $"{FaceTuneConstants.QualifiedName}.apply-default-shapes";
     public override string DisplayName => "Apply Default Shapes";
 
-    protected override void Execute(BuildContext context)
+    protected override void Execute(FaceTuneContext context)
     {
-        if (context.GetState<BuildPassState>().TryGetBuildPassContext(out var buildPassContext) is false) return;
-
-        var avatarContext = buildPassContext.AvatarContext;
-        
-        var facialStyleComponents = avatarContext.Root
-            .GetComponentsInChildren<FacialStyleComponent>(true)
-            .Where(x => x.ApplyToRenderer);
-
-        var componentCount = facialStyleComponents.Count();
-        if (componentCount == 0) return;
-        FacialStyleComponent target;
-        if (componentCount > 1)
-        {
-            LocalizedLog.Warning("Log:warning:ApplyDefaultShapesPass:MultipleFacialStyleComponentWithApplyToRenderer");
-            target = facialStyleComponents.Last();
-        }
-        else
-        {
-            target = facialStyleComponents.First();
-        }
-
-        // 未知のブレンドシェイプを上書きせず、既知のブレンドシェイプのみ0で上書きする
+        var avatarContext = context.AvatarContext;
+        var settings = context.RequireSettings();
 
         var set = new BlendShapeWeightSet();
-        set.AddRange(avatarContext.ZeroBlendShapes);
-        target.GetBlendShapes(set);
 
-        var renderer = avatarContext.FaceRenderer;
-        var mesh = avatarContext.FaceMesh;
-        renderer.ApplyBlendShapes(mesh, set, -1); 
+        var animations = new List<BlendShapeWeightAnimation>();
+        new FaceTuneResolver(avatarContext.Root).FacialData.AddRenderer(
+            animations,
+            avatarContext.BodyPath);
+        animations.RemoveAll(animation =>
+            !settings.CanWriteBlendShape(FaceTuneWriteKind.FacialData, animation.Name));
+        if (animations.Count > 0)
+        {
+            set.AddRange(settings.GetManagedZeroBlendShapes());
+            set.AddRange(animations.ToFirstFrameBlendShapes());
+        }
+
+        context.PlatformSupport.PostProcessDefaultBlendShapes(
+            settings,
+            context.RequireAvatarControlSettings(),
+            set);
+        set.RemoveRange(settings.ExplicitlyExcludedBlendShapeNames);
+        set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
+        if (set.Count == 0) return;
+        
+        avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);
     }
 }
