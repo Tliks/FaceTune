@@ -9,12 +9,13 @@ namespace Aoyon.FaceTune
         IReferenceableExpressionSettings<LipSyncSettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
+        internal const bool DefaultApplyToRenderer = false;
 
         // このGameObjectより下のExpressionへ、親側から順に重ねる。
         public bool HasFacialBlendShapes = false;
         public SettingsReference FacialBlendShapesReference = new();
         public FacialBlendShapeData FacialBlendShapes = new();
-        public bool ApplyToRenderer = false;
+        public bool ApplyToRenderer = DefaultApplyToRenderer;
 
         // Menuと、選択中だけこのGameObjectより下を有効にする条件の組。
         public bool ExpressionSetEnabled = false;

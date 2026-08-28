@@ -225,6 +225,15 @@ msgstr "Icon"
 msgid "common.menu.tooltip"
 msgstr "Menu"
 
+msgid "section.reset.label"
+msgstr "Reset"
+
+msgid "section.copy.label"
+msgstr "Copy"
+
+msgid "section.paste.label"
+msgstr "Paste"
+
 msgid "common.component.label"
 msgstr "Component"
 

@@ -12,7 +12,10 @@ internal sealed class AvatarControlComponentEditor : FaceTuneSectionEditorBase<A
 
     private FaceTuneSection CreateConditionSection()
         => CreateSection("expression.condition.section.label", new PropertiesSectionDrawer(
-            new PropertiesSectionDrawer.Entry(serializedObject.FindProperty(nameof(AvatarControlComponent.Condition)), null)), false);
+            new PropertiesSectionDrawer.Entry(
+                serializedObject.FindProperty(nameof(AvatarControlComponent.Condition)),
+                null,
+                AvatarControlComponent.CreateDefaultCondition)), false);
 }
 
 internal sealed class AvatarControlSectionDrawer : ISectionDrawer
@@ -24,7 +27,16 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
     {
         _kind = serializedObject.FindProperty(nameof(AvatarControlComponent.ControlKind));
         _mmd = serializedObject.FindProperty(nameof(AvatarControlComponent.MMD));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_kind, () => AvatarControlComponent.DefaultControlKind),
+                SectionActionField.From(_mmd, () => new MMDSupportSettings())
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
         => GUIHelper.LineHeight

@@ -10,12 +10,17 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
+        internal const TrackingPermission DefaultAllowEyeBlink = TrackingPermission.Disallow;
+        internal const TrackingPermission DefaultAllowLipSync = TrackingPermission.Allow;
+        internal const ExpressionWriteMode DefaultWriteMode = ExpressionWriteMode.Replace;
+        internal const bool DefaultAlwaysOnPreviewEnabled = false;
+
         // この表情再生中におけるまばたき/リップシンクの扱い。
-        public TrackingPermission AllowEyeBlink = TrackingPermission.Disallow;
-        public TrackingPermission AllowLipSync = TrackingPermission.Allow;
+        public TrackingPermission AllowEyeBlink = DefaultAllowEyeBlink;
+        public TrackingPermission AllowLipSync = DefaultAllowLipSync;
 
         // 下位の表情に対し、Replaceは上書し、Blendは同時に重ねる。
-        public ExpressionWriteMode WriteMode = ExpressionWriteMode.Replace;
+        public ExpressionWriteMode WriteMode = DefaultWriteMode;
 
         public MultiFrameSettings MultiFrame = new();
 
@@ -51,7 +56,7 @@ namespace Aoyon.FaceTune
         public PrioritySettings Priority = new();
 
         [ToggleLeft]
-        public bool AlwaysOnPreviewEnabled = false;
+        public bool AlwaysOnPreviewEnabled = DefaultAlwaysOnPreviewEnabled;
 
 
         internal static DirectMenuSettings CreateDefaultDirectMenuSettings()

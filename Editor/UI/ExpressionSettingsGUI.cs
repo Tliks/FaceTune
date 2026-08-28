@@ -19,6 +19,15 @@ internal sealed class SerializedReferenceableSettings
         Source = Reference.FindPropertyRelative(nameof(SettingsReference.Source));
         Direct = serializedObject.FindProperty(directPropertyName);
     }
+
+    internal SectionActionSet CreateActionSet(Func<object?> createDefaultValue)
+        => new(
+            Direct.serializedObject,
+            new[]
+            {
+                SectionActionField.From(Reference, () => new SettingsReference()),
+                SectionActionField.From(Direct, createDefaultValue)
+            });
 }
 
 internal static class SettingsReferenceGUI
@@ -85,7 +94,15 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
 {
     private readonly SerializedReferenceableSettings _settings;
 
-    public ReferenceableSettingsSectionDrawer(SerializedReferenceableSettings settings) => _settings = settings;
+    public ReferenceableSettingsSectionDrawer(
+        SerializedReferenceableSettings settings,
+        Func<object?> createDefaultValue)
+    {
+        _settings = settings;
+        Actions = settings.CreateActionSet(createDefaultValue);
+    }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
         => SettingsReferenceGUI.GetHeight(
