@@ -38,6 +38,9 @@ internal static class MenuItems
     public const string WindowPath = GameObjectPath + "Window";
     public const int WindowPriority = 100;
 
+    public const string ExpressionDataPath = GameObjectPath + "Expression Data";
+    public const int ExpressionDataPriority = 200;
+
 }
 
 
@@ -54,6 +57,25 @@ internal static class GameObjectMenu
     private static bool ValidateOpenWindow()
     {
         return GetSelectedAvatarRoot() != null;
+    }
+
+    [M(MenuItems.ExpressionDataPath, false, MenuItems.ExpressionDataPriority)]
+    private static void AddExpressionData()
+    {
+        var parent = Selection.activeGameObject;
+        if (parent == null) return;
+
+        var expressionData = new GameObject("Expression Data");
+        Undo.RegisterCreatedObjectUndo(expressionData, "Add FaceTune Expression Data");
+        Undo.SetTransformParent(expressionData.transform, parent.transform, "Place FaceTune Expression Data");
+        Undo.AddComponent<ExpressionDataComponent>(expressionData);
+        Selection.activeGameObject = expressionData;
+    }
+
+    [M(MenuItems.ExpressionDataPath, true)]
+    private static bool ValidateAddExpressionData()
+    {
+        return Selection.activeGameObject != null;
     }
 
     private static GameObject? GetSelectedAvatarRoot()
