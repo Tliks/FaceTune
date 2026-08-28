@@ -16,7 +16,7 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             sections[i] = CreateSection(
                 setting.LabelKey,
                 setting.Drawer,
-                false,
+                setting.DefaultExpanded,
                 populateHeaderMenu: menu => PopulateHeaderMenu(menu, setting),
                 isVisible: () => IsEnabled(setting.Enabled),
                 spacingGroup: setting.SpacingGroup);
@@ -65,7 +65,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             () => new FacialBlendShapeData(),
             "settings.configureFacial.section.label",
             new SettingsFacialSectionDrawer(serializedObject),
-            0),
+            0,
+            defaultExpanded: true),
         CreateReferenceableSetting(
             nameof(SettingsComponent.HasEyeBlink),
             nameof(SettingsComponent.EyeBlinkReference),
@@ -145,7 +146,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         Func<object> createDefault,
         string labelKey,
         ISectionDrawer drawer,
-        int spacingGroup)
+        int spacingGroup,
+        bool defaultExpanded = false)
     {
         var source = new SerializedReferenceableSettings(
             serializedObject,
@@ -160,7 +162,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             },
             labelKey,
             drawer,
-            spacingGroup);
+            spacingGroup,
+            defaultExpanded);
     }
 
     private void PopulateHeaderMenu(GenericMenu menu, SettingEntry setting)
@@ -188,7 +191,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         Action Initialize,
         string LabelKey,
         ISectionDrawer Drawer,
-        int SpacingGroup);
+        int SpacingGroup,
+        bool DefaultExpanded = false);
 }
 
 internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHeaderDrawer, ISectionHeaderMenuDrawer
