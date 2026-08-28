@@ -36,7 +36,16 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
     {
         _faceObject = serializedObject.FindProperty(nameof(AvatarSettingsComponent.FaceObjectReference));
         _excludedBlendShapes = serializedObject.FindProperty(nameof(AvatarSettingsComponent.ExcludedBlendShapeNames));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_faceObject, () => new AvatarObjectReference()),
+                SectionActionField.From(_excludedBlendShapes, () => new List<string>())
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
     {
@@ -113,7 +122,16 @@ internal sealed class AvatarAdvancedSettingsSectionDrawer : ISectionDrawer
     {
         _eyeBlink = serializedObject.FindProperty(nameof(AvatarSettingsComponent.AvoidEyeBlinkConflicts));
         _lipSync = serializedObject.FindProperty(nameof(AvatarSettingsComponent.AvoidLipSyncConflicts));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_eyeBlink, () => AvatarSettingsComponent.DefaultAvoidEyeBlinkConflicts),
+                SectionActionField.From(_lipSync, () => AvatarSettingsComponent.DefaultAvoidLipSyncConflicts)
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight() => GUIHelper.GetLinesHeight(2);
 

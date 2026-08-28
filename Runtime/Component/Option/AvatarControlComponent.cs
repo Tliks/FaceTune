@@ -4,6 +4,7 @@ namespace Aoyon.FaceTune
     internal class AvatarControlComponent : FaceTuneTagComponent, IHasConditions
     {
         internal const string ComponentName = ComponentNamePrefix + "Avatar Control";
+        internal const Kind DefaultControlKind = Kind.LockFacial;
 
         public enum Kind
         {
@@ -13,7 +14,7 @@ namespace Aoyon.FaceTune
             SupportMMD = 30
         }
 
-        public Kind ControlKind = Kind.LockFacial;
+        public Kind ControlKind = DefaultControlKind;
 
         // SupportMMD
         public MMDSupportSettings MMD = new();

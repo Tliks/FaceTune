@@ -13,7 +13,10 @@ internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDr
         string directPropertyName)
     {
         _source = new SerializedReferenceableSettings(serializedObject, referencePropertyName, directPropertyName);
+        Actions = _source.CreateActionSet(() => new FacialBlendShapeData());
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight() => FacialDataGUI.GetContentHeight(_source);
     public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source);

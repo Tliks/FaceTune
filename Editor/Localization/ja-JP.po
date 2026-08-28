@@ -225,6 +225,15 @@ msgstr "アイコン"
 msgid "common.menu.tooltip"
 msgstr "メニュー"
 
+msgid "section.reset.label"
+msgstr "リセット"
+
+msgid "section.copy.label"
+msgstr "コピー"
+
+msgid "section.paste.label"
+msgstr "ペースト"
+
 msgid "common.component.label"
 msgstr "コンポーネント"
 
