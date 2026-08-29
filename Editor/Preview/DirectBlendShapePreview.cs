@@ -23,6 +23,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         if (TryGetNode(apply.Renderer, out var node))
         {
             node.SetDirectly(applied);
+            RequestRepaint();
         }
         else
         {
@@ -37,6 +38,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
         if (TryGetNode(renderer, out var node))
         {
             node.SetDirectly(new BlendShapeApply(renderer, new BlendShapeWeightSet()));
+            RequestRepaint();
         }
         else
         {
@@ -102,6 +104,11 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
     private static void RequestInstantiate()
     {
         _instantiatingTrigger.Value++;
+    }
+
+    private static void RequestRepaint()
+    {
+        SceneView.RepaintAll();
     }
 
     private sealed class DirectPreviewState
