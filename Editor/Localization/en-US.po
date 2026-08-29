@@ -138,6 +138,18 @@ msgstr "Conditions"
 msgid "facialEditor.title"
 msgstr "Expression Editor"
 
+msgid "facialEditor.rendererRequired.message"
+msgstr "Select a target renderer to edit the expression."
+
+msgid "facialEditor.clipOptions.label"
+msgstr "Clip Options"
+
+msgid "facialEditor.zeroUnspecifiedBlendShapes.option"
+msgstr "Set unspecified blend shapes to zero"
+
+msgid "facialEditor.zeroUnavailableBlendShapes.option"
+msgstr "Set unavailable blend shapes to zero"
+
 msgid "facialEditor.save.button"
 msgstr "Save"
 

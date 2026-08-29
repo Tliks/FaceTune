@@ -11,6 +11,7 @@ internal class FacialShapesEditor : EditorWindow
     private FacialShapesEditorContext? _context;
     private bool _unsavedStateSyncPending;
     private int _initialUndoGroup = -1;
+    private Func<SkinnedMeshRenderer, ISet<string>?>? _resolveUnavailableBlendShapeNames;
 
     private const int MIN_WINDOW_WIDTH = 500;
     private const int MIN_WINDOW_HEIGHT = 700;
@@ -44,10 +45,19 @@ internal class FacialShapesEditor : EditorWindow
         IShapesEditorTargeting? targeting = null,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null,
         IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations = null,
-        IReadOnlyList<BlendShapeWeightAnimation>? targetAnimations = null)
+        IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations = null,
+        ISet<string>? unavailableBlendShapeNames = null,
+        Func<SkinnedMeshRenderer, ISet<string>?>? resolveUnavailableBlendShapeNames = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
-        window.StartContext(renderer, targeting, facialAnimations, baseAnimations, targetAnimations);
+        window._resolveUnavailableBlendShapeNames = resolveUnavailableBlendShapeNames;
+        window.StartContext(
+            renderer,
+            targeting,
+            facialAnimations,
+            baseAnimations,
+            initialOverrideAnimations,
+            unavailableBlendShapeNames);
         return window;
     }
 
@@ -72,32 +82,29 @@ internal class FacialShapesEditor : EditorWindow
         IShapesEditorTargeting? targeting,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations,
         IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations,
-        IReadOnlyList<BlendShapeWeightAnimation>? targetAnimations)
+        IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations,
+        ISet<string>? unavailableBlendShapeNames)
     {
         EndContext();
 
         targeting ??= new AnimationClipTargeting();
+        initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, targeting);
 
         var serializedObject = new SerializedObject(this);
         _dataManager = new BlendShapeOverrideManager(
             serializedObject,
             serializedObject.FindProperty(nameof(_dataManager)));
         serializedObject.Update();
-        var avatarRoot = renderer == null
+        unavailableBlendShapeNames ??= renderer == null
             ? null
-            : RuntimeUtil.FindAvatarInParents(renderer.transform);
-        var unavailableBlendShapes = avatarRoot == null
-            ? ImmutableHashSet.Create<string>(StringComparer.Ordinal)
-            : AvatarContext.GetUnavailableBlendShapeNames(
-                avatarRoot.gameObject,
-                FaceTuneWriteKind.FacialData);
+            : _resolveUnavailableBlendShapeNames?.Invoke(renderer);
         _dataManager.SetInitialState(
             renderer,
             ToFirstFrameSet(facialAnimations),
             ToFirstFrameSet(baseAnimations),
-            ToFirstFrameSet(targetAnimations, excludeMultiFrame: true),
-            unavailableBlendShapes,
-            GetMultiFrameNames(targetAnimations));
+            ToFirstFrameSet(initialOverrideAnimations, excludeMultiFrame: true),
+            unavailableBlendShapeNames ?? ImmutableHashSet<string>.Empty,
+            GetMultiFrameNames(initialOverrideAnimations));
         _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
@@ -113,6 +120,19 @@ internal class FacialShapesEditor : EditorWindow
         _unsavedStateSyncPending = false;
         hasUnsavedChanges = false;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");
+    }
+
+    private static IReadOnlyList<BlendShapeWeightAnimation>? GetClipInitialOverrideAnimations(
+        SkinnedMeshRenderer? renderer,
+        IShapesEditorTargeting targeting)
+    {
+        if (renderer == null
+            || targeting is not AnimationClipTargeting { Target: { } clip })
+            return null;
+
+        var animations = new List<BlendShapeWeightAnimation>();
+        clip.GetBlendShapeAnimations(ClipImportOption.NonZero, animations, string.Empty);
+        return animations;
     }
 
     private static IReadOnlyBlendShapeSet? ToFirstFrameSet(
@@ -185,7 +205,8 @@ internal class FacialShapesEditor : EditorWindow
         {
             var nextWindow = CreateInstance<FacialShapesEditor>();
             nextWindow.Show();
-            nextWindow.StartContext(renderer, targeting, null, null, null);
+            nextWindow._resolveUnavailableBlendShapeNames = _resolveUnavailableBlendShapeNames;
+            nextWindow.StartContext(renderer, targeting, null, null, null, null);
             Close();
         };
         return true;

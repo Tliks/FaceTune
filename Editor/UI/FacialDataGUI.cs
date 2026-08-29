@@ -181,7 +181,10 @@ internal static class FacialDataGUI
             source.Targeting,
             facialAnimations,
             baseAnimations,
-            source.Direct.BlendShapeAnimations);
+            source.Direct.BlendShapeAnimations,
+            AvatarContext.GetUnavailableBlendShapeNames(
+                avatar.Root,
+                FaceTuneWriteKind.FacialData));
     }
 
     private sealed record FacialEditorSource(
