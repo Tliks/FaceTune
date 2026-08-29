@@ -51,7 +51,7 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
     private void EnableSetting(SettingEntry setting)
     {
         serializedObject.UpdateIfRequiredOrScript();
-        setting.Initialize();
+        SectionOperations.ResetValues(setting.Drawer.Actions);
         setting.Enabled.boolValue = true;
         serializedObject.ApplyModifiedProperties();
     }
@@ -60,111 +60,83 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
     {
         CreateReferenceableSetting(
             nameof(SettingsComponent.HasFacialBlendShapes),
-            nameof(SettingsComponent.FacialBlendShapesReference),
-            nameof(SettingsComponent.FacialBlendShapes),
-            () => new FacialBlendShapeData(),
             "settings.configureFacial.section.label",
             new SettingsFacialSectionDrawer(serializedObject),
             0,
             defaultExpanded: true),
         CreateReferenceableSetting(
             nameof(SettingsComponent.HasEyeBlink),
-            nameof(SettingsComponent.EyeBlinkReference),
-            nameof(SettingsComponent.EyeBlink),
-            () => new EyeBlinkSettings(),
             "settings.eyeBlink.section.label",
-            new ReferenceableSettingsSectionDrawer(new SerializedReferenceableSettings(
-                serializedObject,
-                nameof(SettingsComponent.EyeBlinkReference),
-                nameof(SettingsComponent.EyeBlink))),
+            new ReferenceableSettingsSectionDrawer(
+                new SerializedReferenceableSettings(
+                    serializedObject,
+                    nameof(SettingsComponent.EyeBlinkReference),
+                    nameof(SettingsComponent.EyeBlink)),
+                () => new EyeBlinkSettings()),
             1),
         CreateReferenceableSetting(
             nameof(SettingsComponent.HasLipSync),
-            nameof(SettingsComponent.LipSyncReference),
-            nameof(SettingsComponent.LipSync),
-            () => new LipSyncSettings(),
             "settings.lipSync.section.label",
-            new ReferenceableSettingsSectionDrawer(new SerializedReferenceableSettings(
-                serializedObject,
-                nameof(SettingsComponent.LipSyncReference),
-                nameof(SettingsComponent.LipSync))),
+            new ReferenceableSettingsSectionDrawer(
+                new SerializedReferenceableSettings(
+                    serializedObject,
+                    nameof(SettingsComponent.LipSyncReference),
+                    nameof(SettingsComponent.LipSync)),
+                () => new LipSyncSettings()),
             1),
         CreateSetting(
             nameof(SettingsComponent.ExpressionSetEnabled),
-            nameof(SettingsComponent.ExpressionSet),
-            () => new ExpressionSetSettings(),
             "settings.expressionSet.section.label",
-            Property(nameof(SettingsComponent.ExpressionSet)),
+            Property(nameof(SettingsComponent.ExpressionSet), () => new ExpressionSetSettings()),
             2),
         CreateSetting(
             nameof(SettingsComponent.HasCondition),
-            nameof(SettingsComponent.Condition),
-            SettingsComponent.CreateDefaultCondition,
             "settings.addCondition.section.label",
-            Property(nameof(SettingsComponent.Condition)),
+            Property(nameof(SettingsComponent.Condition), SettingsComponent.CreateDefaultCondition),
             2),
         CreateSetting(
             nameof(SettingsComponent.HasTransition),
-            nameof(SettingsComponent.Transition),
-            () => new TransitionSettings(),
             "settings.transition.section.label",
-            Property(nameof(SettingsComponent.Transition)),
+            Property(nameof(SettingsComponent.Transition), () => new TransitionSettings()),
             3),
         CreateSetting(
             nameof(SettingsComponent.HasPriority),
-            nameof(SettingsComponent.Priority),
-            () => new PrioritySettings(),
             "settings.priority.section.label",
-            Property(nameof(SettingsComponent.Priority)),
+            Property(nameof(SettingsComponent.Priority), () => new PrioritySettings()),
             3)
     };
 
-    private PropertiesSectionDrawer Property(string propertyName)
-        => new(new PropertiesSectionDrawer.Entry(serializedObject.FindProperty(propertyName), null));
+    private PropertiesSectionDrawer Property(
+        string propertyName,
+        Func<object?> createDefault)
+        => new(new PropertiesSectionDrawer.Entry(
+            serializedObject.FindProperty(propertyName),
+            null,
+            createDefault));
 
     private SettingEntry CreateSetting(
         string enabledPropertyName,
-        string valuePropertyName,
-        Func<object> createDefault,
         string labelKey,
         ISectionDrawer drawer,
         int spacingGroup)
-    {
-        var value = serializedObject.FindProperty(valuePropertyName);
-        return new(
+        => new(
             serializedObject.FindProperty(enabledPropertyName),
-            () => value.CopyFrom(createDefault()),
             labelKey,
             drawer,
             spacingGroup);
-    }
 
     private SettingEntry CreateReferenceableSetting(
         string enabledPropertyName,
-        string referencePropertyName,
-        string valuePropertyName,
-        Func<object> createDefault,
         string labelKey,
         ISectionDrawer drawer,
         int spacingGroup,
         bool defaultExpanded = false)
-    {
-        var source = new SerializedReferenceableSettings(
-            serializedObject,
-            referencePropertyName,
-            valuePropertyName);
-        return new(
+        => new(
             serializedObject.FindProperty(enabledPropertyName),
-            () =>
-            {
-                source.Reference.CopyFrom(new SettingsReference());
-                source.Direct.CopyFrom(createDefault());
-            },
             labelKey,
             drawer,
             spacingGroup,
             defaultExpanded);
-    }
 
     private void PopulateHeaderMenu(GenericMenu menu, SettingEntry setting)
     {
@@ -188,7 +160,6 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
 
     private sealed record SettingEntry(
         SerializedProperty Enabled,
-        Action Initialize,
         string LabelKey,
         ISectionDrawer Drawer,
         int SpacingGroup,
@@ -207,7 +178,17 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
             nameof(SettingsComponent.FacialBlendShapesReference),
             nameof(SettingsComponent.FacialBlendShapes));
         _applyToRenderer = serializedObject.FindProperty(nameof(SettingsComponent.ApplyToRenderer));
+        Actions = new SectionActionSet(
+            serializedObject,
+            _expression.Actions.Fields.Concat(new[]
+            {
+                SectionActionField.From(
+                    _applyToRenderer,
+                    () => SettingsComponent.DefaultApplyToRenderer)
+            }));
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
         => _expression.GetHeight()
@@ -223,11 +204,15 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         {
             menu.AddDisabledItem("settings.applyToRenderer.menu".LG());
             menu.AddDisabledItem("settings.getFromRenderer.menu".LG());
-            return;
+        }
+        else
+        {
+            menu.AddItem("settings.applyToRenderer.menu".LG(), false, ApplyToRenderer);
+            menu.AddItem("settings.getFromRenderer.menu".LG(), false, GetFromRenderer);
         }
 
-        menu.AddItem("settings.applyToRenderer.menu".LG(), false, ApplyToRenderer);
-        menu.AddItem("settings.getFromRenderer.menu".LG(), false, GetFromRenderer);
+        menu.AddSeparator(string.Empty);
+        _expression.PopulateHeaderMenu(menu);
     }
 
     public void Draw(Rect position)
@@ -252,8 +237,10 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         foreach (var animation in data.BlendShapeAnimations) animations.Add(animation);
 
         var values = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(context.Root);
         Undo.RecordObject(context.FaceRenderer, "Apply Blend Shapes");
-        context.FaceRenderer.ApplyBlendShapes(context.FaceMesh, values, 0f);
+        new BlendShapeApply(context.FaceRenderer, values, 0f, ignoredNames)
+            .ApplyBlendShapes(context.FaceMesh);
         Selection.activeGameObject = context.FaceRenderer.gameObject;
         EditorGUIUtility.PingObject(context.FaceRenderer);
     }

@@ -1,6 +1,11 @@
 namespace Aoyon.FaceTune.Gui;
 
-internal interface ISectionDrawer
+internal interface ISectionActionProvider
+{
+    SectionActionSet Actions { get; }
+}
+
+internal interface ISectionDrawer : ISectionActionProvider
 {
     float GetHeight();
     void Draw(Rect position);
@@ -36,20 +41,27 @@ internal static class SectionHeaderGUI
 
 internal sealed class PropertiesSectionDrawer : ISectionDrawer
 {
-    internal readonly record struct Entry(SerializedProperty Property, string? LabelKey = null);
+    internal readonly record struct Entry(
+        SerializedProperty Property,
+        string? LabelKey,
+        Func<object?> CreateDefaultValue);
 
     private readonly Entry[] _entries;
 
-    public PropertiesSectionDrawer()
-        : this(Array.Empty<Entry>())
-    {
-    }
-
-
     public PropertiesSectionDrawer(params Entry[] entries)
     {
+        if (entries.Length == 0)
+            throw new ArgumentException("At least one property is required.", nameof(entries));
+
         _entries = entries;
+        Actions = new SectionActionSet(
+            entries[0].Property.serializedObject,
+            entries.Select(entry => SectionActionField.From(
+                entry.Property,
+                entry.CreateDefaultValue)));
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
         => _entries.Length == 0
@@ -83,8 +95,9 @@ internal sealed record FaceTuneSection(
     Func<float> GetContentHeight,
     Action<Rect> DrawContent,
     bool DefaultExpanded,
+    SectionActionSet Actions,
+    Func<GenericMenu> CreateHeaderMenu,
     SerializedProperty? EnabledProperty = null,
-    Func<GenericMenu>? CreateHeaderMenu = null,
     ISectionHeaderDrawer? HeaderDrawer = null,
     Func<bool>? IsVisible = null,
     int SpacingGroup = 0)
@@ -114,16 +127,24 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         Action<GenericMenu>? populateHeaderMenu = null,
         Func<bool>? isVisible = null,
         int spacingGroup = 0)
-        => new(
+    {
+        var actions = drawer.Actions.WithKey(labelKey);
+        var populateMenu = populateHeaderMenu;
+        if (populateMenu == null && drawer is ISectionHeaderMenuDrawer menuDrawer)
+            populateMenu = menuDrawer.PopulateHeaderMenu;
+
+        return new(
             () => labelKey.LG(),
             drawer.GetHeight,
             drawer.Draw,
             defaultExpanded,
+            actions,
+            () => SectionHeaderMenu.Create(actions, populateMenu),
             enabledProperty,
-            populateHeaderMenu == null ? null : () => CreateHeaderMenu(populateHeaderMenu),
             drawer as ISectionHeaderDrawer,
             isVisible,
             spacingGroup);
+    }
 
     protected sealed override float GetInspectorHeight()
     {
@@ -197,7 +218,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                     out content,
                     section.CreateHeaderMenu,
                     drawHeader,
-                    headerWidth);
+                    headerWidth,
+                    section.Actions.ScopeProperty);
             }
             else
             {
@@ -210,7 +232,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                     out content,
                     section.CreateHeaderMenu,
                     drawHeader,
-                    headerWidth);
+                    headerWidth,
+                    section.Actions.ScopeProperty);
             }
             if (drawn)
             {
@@ -229,13 +252,6 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         if (previous != null) position.y += SectionGroupSpacing;
         position.height = footerHeight;
         DrawFooter(position);
-    }
-
-    private static GenericMenu CreateHeaderMenu(Action<GenericMenu> populateHeaderMenu)
-    {
-        var menu = new GenericMenu();
-        populateHeaderMenu(menu);
-        return menu;
     }
 
     private const float HeaderSpacing = 3f;

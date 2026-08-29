@@ -14,10 +14,10 @@ internal class EditingShapesPreview : DirectBlendShapePreview<EditingShapesPrevi
         SelectedShapesPreview.Disable();
     }
 
-    public static void Refresh(IReadOnlyBlendShapeSet set, float defaultValue)
+    public static void Refresh(BlendShapeApply apply)
     {
         if (_target.Value == null) return;
-        SetCurrentNodeDirectly(_target.Value, set, defaultValue);
+        SetCurrentNodeDirectly(apply);
     }
 
     public static void Stop()

@@ -96,7 +96,10 @@ internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer, ISec
             serializedObject,
             referencePropertyName,
             directPropertyName);
+        Actions = _source.CreateActionSet(() => new NonFacialAnimationData());
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
         => SettingsReferenceGUI.GetHeight(_source, GetDirectHeight());
@@ -324,7 +327,9 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             new SummaryEntry(
                 "expression.animationSettings.section.label",
                 new PropertiesSectionDrawer(new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)), null)),
+                    serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)),
+                    null,
+                    () => new MultiFrameSettings())),
                 new[] { "expression.settingSource.short.standard", "expression.settingSource.short.setting" },
                 () => GetMultiFrameSummary(serializedObject)),
             new Entry(
@@ -352,7 +357,12 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 ExpressionInheritedSettingKind.Priority,
                 inheritance)
         };
+        Actions = new SectionActionSet(
+            serializedObject,
+            _entries.SelectMany(entry => entry.Actions.Fields));
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
     {
@@ -383,8 +393,10 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                     entry.LabelKey.LG(),
                     contentHeight,
                     out var content,
+                    createHeaderMenu: () => SectionHeaderMenu.Create(entry.Actions),
                     drawHeader: drawHeader,
-                    headerWidth: headerWidth))
+                    headerWidth: headerWidth,
+                    propertyScope: entry.Actions.ScopeProperty))
             {
                 content.height = contentHeight;
                 entry.Draw(content);
@@ -405,7 +417,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
             : "expression.settingSource.short.setting").LG();
     }
 
-    private interface IOptionEntry : ICollapsedSectionHeaderDrawer
+    private interface IOptionEntry : ICollapsedSectionHeaderDrawer, ISectionActionProvider
     {
         string LabelKey { get; }
         FoldoutState Foldout { get; }
@@ -432,6 +444,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
         public string LabelKey => "expression.additionalAnimations.section.label";
         public FoldoutState Foldout { get; } = new(false);
+        public SectionActionSet Actions { get; }
 
         public NonFacialAnimationEntry(SerializedObject serializedObject)
         {
@@ -443,6 +456,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                 serializedObject,
                 nameof(ExpressionComponent.NonFacialAnimationsReference),
                 nameof(ExpressionComponent.NonFacialAnimations));
+            Actions = _drawer.Actions.WithKey(LabelKey);
         }
 
         public float GetContentHeight() => _drawer.GetHeight();
@@ -503,14 +517,18 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
         public string LabelKey { get; }
         public FoldoutState Foldout { get; } = new(false);
+        public SectionActionSet Actions { get; }
 
         public SummaryEntry(
             string labelKey,
             ISectionDrawer drawer,
             string[] summaryKeys,
             Func<GUIContent> getSummary)
-            => (LabelKey, _drawer, _summaryKeys, _getSummary) =
+        {
+            (LabelKey, _drawer, _summaryKeys, _getSummary) =
                 (labelKey, drawer, summaryKeys, getSummary);
+            Actions = drawer.Actions.WithKey(labelKey);
+        }
 
         public float GetContentHeight() => _drawer.GetHeight();
         public void Draw(Rect position) => _drawer.Draw(position);
@@ -569,6 +587,7 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
 
         public string LabelKey { get; }
         public FoldoutState Foldout { get; } = new(false);
+        public SectionActionSet Actions { get; }
 
         public Entry(
             SerializedProperty enabled,
@@ -592,7 +611,26 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                     referencePropertyName,
                     local.name);
             }
+
+            Actions = (_source == null
+                ? new SectionActionSet(
+                    local.serializedObject,
+                    new[] { SectionActionField.From(
+                        _local,
+                        () => CreateDefaultLocalValue(kind)) })
+                : _source.CreateActionSet(() => CreateDefaultLocalValue(kind)))
+                .WithKey(labelKey);
         }
+
+        private static object CreateDefaultLocalValue(ExpressionInheritedSettingKind kind)
+            => kind switch
+            {
+                ExpressionInheritedSettingKind.EyeBlink => new EyeBlinkSettings(),
+                ExpressionInheritedSettingKind.LipSync => new LipSyncSettings(),
+                ExpressionInheritedSettingKind.Transition => new TransitionSettings(),
+                ExpressionInheritedSettingKind.Priority => new PrioritySettings(),
+                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+            };
 
         private bool IsReferenceable
             => _kind is ExpressionInheritedSettingKind.EyeBlink or ExpressionInheritedSettingKind.LipSync;
@@ -769,7 +807,17 @@ internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer
         _eyeBlink = serializedObject.FindProperty(nameof(ExpressionComponent.AllowEyeBlink));
         _lipSync = serializedObject.FindProperty(nameof(ExpressionComponent.AllowLipSync));
         _writeMode = serializedObject.FindProperty(nameof(ExpressionComponent.WriteMode));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_eyeBlink, () => ExpressionComponent.DefaultAllowEyeBlink),
+                SectionActionField.From(_lipSync, () => ExpressionComponent.DefaultAllowLipSync),
+                SectionActionField.From(_writeMode, () => ExpressionComponent.DefaultWriteMode)
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight() => GUIHelper.GetLinesHeight(3);
 
@@ -785,7 +833,17 @@ internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer
 internal sealed class ConditionSectionDrawer : ISectionDrawer
 {
     private readonly SerializedProperty _condition;
-    public ConditionSectionDrawer(SerializedProperty condition) => _condition = condition;
+    public ConditionSectionDrawer(SerializedProperty condition)
+    {
+        _condition = condition;
+        Actions = new SectionActionSet(
+            condition.serializedObject,
+            new[] { SectionActionField.From(
+                condition,
+                () => ExpressionComponent.CreateDefaultCondition()) });
+    }
+
+    public SectionActionSet Actions { get; }
     public float GetHeight() => EditorGUI.GetPropertyHeight(_condition, GUIContent.none, true);
     public void Draw(Rect position)
     {
@@ -797,7 +855,17 @@ internal sealed class ConditionSectionDrawer : ISectionDrawer
 internal sealed class DirectMenuSectionDrawer : ISectionDrawer
 {
     private readonly SerializedProperty _settings;
-    public DirectMenuSectionDrawer(SerializedProperty settings) => _settings = settings;
+    public DirectMenuSectionDrawer(SerializedProperty settings)
+    {
+        _settings = settings;
+        Actions = new SectionActionSet(
+            settings.serializedObject,
+            new[] { SectionActionField.From(
+                settings,
+                () => ExpressionComponent.CreateDefaultDirectMenuSettings()) });
+    }
+
+    public SectionActionSet Actions { get; }
     public float GetHeight() => EditorGUI.GetPropertyHeight(_settings, GUIContent.none, true);
     public void Draw(Rect position)
     {
@@ -809,7 +877,17 @@ internal sealed class DirectMenuSectionDrawer : ISectionDrawer
 internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
 {
     private readonly SerializedProperty _enabled;
-    public PreviewSettingsSectionDrawer(SerializedObject serializedObject) => _enabled = serializedObject.FindProperty(nameof(ExpressionComponent.AlwaysOnPreviewEnabled));
+    public PreviewSettingsSectionDrawer(SerializedObject serializedObject)
+    {
+        _enabled = serializedObject.FindProperty(nameof(ExpressionComponent.AlwaysOnPreviewEnabled));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[] { SectionActionField.From(
+                _enabled,
+                () => ExpressionComponent.DefaultAlwaysOnPreviewEnabled) });
+    }
+
+    public SectionActionSet Actions { get; }
     public float GetHeight() => GUIHelper.GetLinesHeight(3);
     public void Draw(Rect position)
     {

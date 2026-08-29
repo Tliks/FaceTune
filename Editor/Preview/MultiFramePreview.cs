@@ -70,20 +70,20 @@ abstract class MultiFramePreviewBase : IDisposable
 
 sealed class BlendShapeMultiFramePreview : MultiFramePreviewBase
 {
-    private readonly SkinnedMeshRenderer _renderer;
+    private readonly BlendShapeApply _baseApply;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _animations;
-    private readonly Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> _editAction;
+    private readonly Action<BlendShapeApply> _apply;
 
     public BlendShapeMultiFramePreview(
-        SkinnedMeshRenderer renderer,
+        BlendShapeApply baseApply,
         IReadOnlyList<BlendShapeWeightAnimation> animations,
         bool isLooping,
-        Action<SkinnedMeshRenderer, IReadOnlyBlendShapeSet> editAction)
+        Action<BlendShapeApply> apply)
         : base(GetDuration(animations), isLooping)
     {
-        _renderer = renderer;
+        _baseApply = baseApply;
         _animations = animations;
-        _editAction = editAction;
+        _apply = apply;
     }
 
     private static float GetDuration(IReadOnlyList<BlendShapeWeightAnimation> animations)
@@ -99,6 +99,6 @@ sealed class BlendShapeMultiFramePreview : MultiFramePreviewBase
             frameSet.Add(new BlendShapeWeight(animation.Name, animation.Weight(time)));
         }
 
-        _editAction(_renderer, frameSet);
+        _apply(_baseApply with { Set = frameSet });
     }
 }

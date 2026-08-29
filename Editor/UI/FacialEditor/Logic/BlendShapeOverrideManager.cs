@@ -19,21 +19,43 @@ internal class BlendShapeOverrideManager : IDisposable
     private SerializedObject _serializedObject;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
+    // Keep the change marker serialized so Unity Undo restores it with the edited values.
+    [SerializeField] private int _stateVersion;
     private SerializedProperty _overrideFlagsProperty;
     private SerializedProperty _overrideWeightsProperty;
+    private SerializedProperty _stateVersionProperty;
 
     private OverrideStateSnapshot? _initialSnapshot;
     private OverrideStateSnapshot? _editedSnapshotBeforeRestoreInitial;
-    private readonly Stack<OverrideStateSnapshot> _undoHistory = new();
-    private readonly Stack<OverrideStateSnapshot> _redoHistory = new();
-    private int _modificationRevision;
-    private int? _restoreEditedRevision;
-    public bool IsChangedFromInitialState => _initialSnapshot.HasValue && !IsSameAsSnapshot(_initialSnapshot.Value);
-    public bool CanUndo => _undoHistory.Count > 0;
-    public bool CanRedo => _redoHistory.Count > 0;
-    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue &&
-                                            _restoreEditedRevision.HasValue &&
-                                            _restoreEditedRevision.Value == _modificationRevision;
+    private int? _restoreStateVersion;
+    private int _initialStateVersion;
+    private int _maximumStateVersion;
+    private int _lastObservedStateVersion;
+    private bool _canRedo;
+    private int _changedStateVersion;
+    private bool _hasChangedStateCache;
+    private bool _changedFromInitialState;
+
+    public bool IsChangedFromInitialState
+    {
+        get
+        {
+            var currentVersion = _stateVersionProperty.intValue;
+            if (!_hasChangedStateCache || _changedStateVersion != currentVersion)
+            {
+                _changedStateVersion = currentVersion;
+                _changedFromInitialState = _initialSnapshot.HasValue
+                    && !IsSameAsSnapshot(_initialSnapshot.Value);
+                _hasChangedStateCache = true;
+            }
+            return _changedFromInitialState;
+        }
+    }
+
+    public bool CanUndo => _stateVersionProperty.intValue > _initialStateVersion;
+    public bool CanRedo => _canRedo;
+    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue
+                                            && _restoreStateVersion == _stateVersionProperty.intValue;
 
     private string[] _allKeysArray = new string[0];
     private IReadOnlyBlendShapeSet _facialSet = new BlendShapeWeightSet();
@@ -46,7 +68,7 @@ internal class BlendShapeOverrideManager : IDisposable
     public IReadOnlyBlendShapeSet FacialSet => _facialSet;
     public IReadOnlyBlendShapeSet BaseSet => _baseSet;
     public IReadOnlyBlendShapeSet EffectiveBaseSet => _effectiveBaseSet;
-    public IEnumerable<string> ExplicitlyExcluded => _explicitlyExcluded;
+    public ISet<string> ExplicitlyExcluded => _explicitlyExcluded;
     public bool IsExplicitlyExcluded(string name) => _explicitlyExcluded.Contains(name);
 
     private void RebuildEffectiveBaseSet()
@@ -70,6 +92,7 @@ internal class BlendShapeOverrideManager : IDisposable
         _serializedObject = serializedObject;
         _overrideFlagsProperty = baseProperty.FindPropertyRelative(nameof(_overrideFlags));
         _overrideWeightsProperty = baseProperty.FindPropertyRelative(nameof(_overrideWeights));
+        _stateVersionProperty = baseProperty.FindPropertyRelative(nameof(_stateVersion));
         OnAnyDataChange += () =>
         {
             ValidateData();
@@ -82,21 +105,25 @@ internal class BlendShapeOverrideManager : IDisposable
         IReadOnlyBlendShapeSet? facialSet,
         IReadOnlyBlendShapeSet? baseSet,
         IReadOnlyBlendShapeSet? targetSet,
-        ISet<string> explicitlyExcluded)
+        ISet<string> explicitlyExcluded,
+        ISet<string>? nonEditableBlendShapeNames = null)
     {
         _explicitlyExcluded = explicitlyExcluded;
-        InitializeTargetRenderer(targetRenderer, explicitlyExcluded);
+        InitializeTargetRenderer(targetRenderer, explicitlyExcluded, nonEditableBlendShapeNames);
         InitializeSourceSets(facialSet, baseSet, targetSet);
     }
 
     private void InitializeTargetRenderer(
         SkinnedMeshRenderer? targetRenderer,
-        ISet<string> explicitlyExcluded)
+        ISet<string> explicitlyExcluded,
+        ISet<string>? nonEditableBlendShapeNames)
     {
         var allBlendShapes = targetRenderer == null
             ? Array.Empty<BlendShapeWeight>()
             : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh)
-                .Where(shape => !explicitlyExcluded.Contains(shape.Name))
+                .Where(shape => !explicitlyExcluded.Contains(shape.Name)
+                             && (nonEditableBlendShapeNames == null
+                                 || !nonEditableBlendShapeNames.Contains(shape.Name)))
                 .ToArray();
         _allKeysArray = allBlendShapes.Select(x => x.Name).ToArray();
         _shapeNameToIndexMap = _allKeysArray.Select((x, i) => (x, i)).ToDictionary(x => x.x, x => x.i);
@@ -115,8 +142,6 @@ internal class BlendShapeOverrideManager : IDisposable
         _baseSet = baseSet ?? new BlendShapeWeightSet();
         var initialTargetSet = targetSet ?? new BlendShapeWeightSet();
         RebuildEffectiveBaseSet();
-        _undoHistory.Clear();
-        _redoHistory.Clear();
         ExecuteModification(() =>
         {
             for (int i = 0; i < _allKeysArray.Length; i++)
@@ -136,11 +161,19 @@ internal class BlendShapeOverrideManager : IDisposable
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = defaultShape.Weight;
                 }
             }
-        }, recordHistory: false);
+        }, registerUndo: false);
 
+        _stateVersionProperty.intValue = 0;
+        _serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        _serializedObject.UpdateIfRequiredOrScript();
+        _initialStateVersion = _stateVersionProperty.intValue;
+        _maximumStateVersion = _initialStateVersion;
+        _lastObservedStateVersion = _stateVersionProperty.intValue;
+        _canRedo = false;
         _initialSnapshot = CaptureCurrentSnapshot();
         _editedSnapshotBeforeRestoreInitial = null;
-        _restoreEditedRevision = null;
+        _restoreStateVersion = null;
+        _hasChangedStateCache = false;
 
         OnAnyDataChange?.Invoke();
     }
@@ -176,9 +209,9 @@ internal class BlendShapeOverrideManager : IDisposable
         return true;
     }
 
-    private void ApplySnapshot(OverrideStateSnapshot snapshot, bool recordHistory = true)
+    private void ApplySnapshot(OverrideStateSnapshot snapshot, bool registerUndo = true)
     {
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             _overrideFlagsProperty.arraySize = snapshot.Flags.Length;
             _overrideWeightsProperty.arraySize = snapshot.Weights.Length;
@@ -188,7 +221,7 @@ internal class BlendShapeOverrideManager : IDisposable
                 _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = snapshot.Flags[i];
                 _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = snapshot.Weights[i];
             }
-        }, recordHistory);
+        }, registerUndo)) return;
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
@@ -199,7 +232,7 @@ internal class BlendShapeOverrideManager : IDisposable
         if (!IsChangedFromInitialState) return false;
         _editedSnapshotBeforeRestoreInitial = CaptureCurrentSnapshot();
         ApplySnapshot(_initialSnapshot.Value);
-        _restoreEditedRevision = _modificationRevision;
+        _restoreStateVersion = _stateVersionProperty.intValue;
         return true;
     }
 
@@ -207,10 +240,15 @@ internal class BlendShapeOverrideManager : IDisposable
     {
         if (!_initialSnapshot.HasValue) return false;
         _editedSnapshotBeforeRestoreInitial = null;
-        _restoreEditedRevision = null;
-        _undoHistory.Clear();
-        _redoHistory.Clear();
-        ApplySnapshot(_initialSnapshot.Value, recordHistory: false);
+        _restoreStateVersion = null;
+        Undo.ClearUndo(_serializedObject.targetObject);
+        _stateVersionProperty.intValue = _initialStateVersion;
+        _serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        _serializedObject.UpdateIfRequiredOrScript();
+        _lastObservedStateVersion = _initialStateVersion;
+        _maximumStateVersion = _initialStateVersion;
+        _canRedo = false;
+        ApplySnapshot(_initialSnapshot.Value, registerUndo: false);
         return true;
     }
 
@@ -218,7 +256,8 @@ internal class BlendShapeOverrideManager : IDisposable
     {
         _initialSnapshot = CaptureCurrentSnapshot();
         _editedSnapshotBeforeRestoreInitial = null;
-        _restoreEditedRevision = null;
+        _restoreStateVersion = null;
+        _hasChangedStateCache = false;
         OnAnyDataChange?.Invoke();
     }
 
@@ -227,27 +266,25 @@ internal class BlendShapeOverrideManager : IDisposable
         if (!CanRestoreEditedOverrides) return false;
         ApplySnapshot(_editedSnapshotBeforeRestoreInitial!.Value);
         _editedSnapshotBeforeRestoreInitial = null;
-        _restoreEditedRevision = null;
+        _restoreStateVersion = null;
         return true;
     }
 
-    public bool TryUndo()
+    public bool SynchronizeSerializedState()
     {
-        if (_undoHistory.Count == 0) return false;
-        var current = CaptureCurrentSnapshot();
-        var previous = _undoHistory.Pop();
-        _redoHistory.Push(current);
-        ApplySnapshot(previous, recordHistory: false);
-        return true;
-    }
+        _serializedObject.UpdateIfRequiredOrScript();
+        var currentVersion = _stateVersionProperty.intValue;
+        if (currentVersion == _lastObservedStateVersion) return false;
 
-    public bool TryRedo()
-    {
-        if (_redoHistory.Count == 0) return false;
-        var current = CaptureCurrentSnapshot();
-        var next = _redoHistory.Pop();
-        _undoHistory.Push(current);
-        ApplySnapshot(next, recordHistory: false);
+        if (currentVersion < _lastObservedStateVersion)
+            _canRedo = true;
+        else if (currentVersion > _lastObservedStateVersion)
+            _canRedo = currentVersion < _maximumStateVersion;
+
+        _lastObservedStateVersion = currentVersion;
+        _hasChangedStateCache = false;
+        OnUnknownChange?.Invoke();
+        OnAnyDataChange?.Invoke();
         return true;
     }
 
@@ -318,22 +355,31 @@ internal class BlendShapeOverrideManager : IDisposable
         }
     }
 
-    private void ExecuteModification(Action action, bool recordHistory = true)
+    private bool ExecuteModification(Action action, bool registerUndo = true)
     {
-        _serializedObject.Update();
+        _serializedObject.UpdateIfRequiredOrScript();
         ValidateData();
-        OverrideStateSnapshot? previous = recordHistory ? CaptureCurrentSnapshot() : null;
-        _modificationRevision++;
         action();
-        // This transient buffer has a local history; do not notify unrelated global Undo listeners.
-        _serializedObject.ApplyModifiedPropertiesWithoutUndo();
-        _serializedObject.Update();
-
-        if (previous.HasValue && !IsSameAsSnapshot(previous.Value))
+        if (!_serializedObject.hasModifiedProperties)
         {
-            _undoHistory.Push(previous.Value);
-            _redoHistory.Clear();
+            _serializedObject.UpdateIfRequiredOrScript();
+            return false;
         }
+
+        if (registerUndo)
+        {
+            _stateVersionProperty.intValue++;
+            _serializedObject.ApplyModifiedProperties();
+            _lastObservedStateVersion = _stateVersionProperty.intValue;
+            _maximumStateVersion = _lastObservedStateVersion;
+            _canRedo = false;
+        }
+        else
+        {
+            _serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+        _hasChangedStateCache = false;
+        return true;
     }
     
     public void AddShapeWithWeightWithoutApply(int index, float weight)
@@ -343,17 +389,17 @@ internal class BlendShapeOverrideManager : IDisposable
     }
     public void AddShapeWithWeight(int index, float weight)
     {
-        ExecuteModification(() => AddShapeWithWeightWithoutApply(index, weight));
+        if (!ExecuteModification(() => AddShapeWithWeightWithoutApply(index, weight))) return;
         OnSingleShapeAdded?.Invoke(index);
         OnAnyDataChange?.Invoke();
     }
     public void AddShapesWithWeight(IEnumerable<int> indices, float weight)
     {
         var indicesList = indices as IReadOnlyList<int> ?? indices.ToList();
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             foreach (var index in indicesList) AddShapeWithWeightWithoutApply(index, weight);
-        });
+        })) return;
         OnMultipleShapesAdded?.Invoke(indicesList);
         OnAnyDataChange?.Invoke();
     }
@@ -366,10 +412,10 @@ internal class BlendShapeOverrideManager : IDisposable
             if ((uint)index < (uint)_allKeysArray.Length) values[index] = weight;
         }
         var list = values.ToArray();
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             foreach (var (index, weight) in list) AddShapeWithWeightWithoutApply(index, weight);
-        });
+        })) return;
         OnMultipleShapesAdded?.Invoke(list.Select(x => x.Key).ToArray());
         OnAnyDataChange?.Invoke();
     }
@@ -386,17 +432,17 @@ internal class BlendShapeOverrideManager : IDisposable
     }
     public void RemoveShape(int index)
     {
-        ExecuteModification(() => RemoveShapeWithoutApply(index));
+        if (!ExecuteModification(() => RemoveShapeWithoutApply(index))) return;
         OnSingleShapeRemoved?.Invoke(index);
         OnAnyDataChange?.Invoke();
     }
     public void RemoveShapes(IEnumerable<int> indices)
     {
         var list = indices.Distinct().ToArray();
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             foreach (var index in list) RemoveShapeWithoutApply(index);
-        });
+        })) return;
         OnMultipleShapesRemoved?.Invoke(list);
         OnAnyDataChange?.Invoke();
     }
@@ -408,27 +454,27 @@ internal class BlendShapeOverrideManager : IDisposable
     }
     public void SetShapeWeight(int index, float weight)
     {
-        ExecuteModification(() => SetShapeWeightWithoutApply(index, weight));
+        if (!ExecuteModification(() => SetShapeWeightWithoutApply(index, weight))) return;
         OnSingleShapeWeightChanged?.Invoke(index);
         OnAnyDataChange?.Invoke();
     }
     public void SetShapesWeight(IEnumerable<int> indices, float weight)
     {
         var list = indices.Distinct().ToArray();
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             foreach (var index in list) SetShapeWeightWithoutApply(index, weight);
-        });
+        })) return;
         OnMultipleShapeWeightChanged?.Invoke(list);
         OnAnyDataChange?.Invoke();
     }
     public void SetShapesWeight(IEnumerable<(int, float)> indicesAndWeights)
     {
         var list = indicesAndWeights.ToArray();
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             foreach (var (index, weight) in list) SetShapeWeightWithoutApply(index, weight);
-        });
+        })) return;
         OnMultipleShapeWeightChanged?.Invoke(list.Select(x => x.Item1).ToArray());
         OnAnyDataChange?.Invoke();
     }

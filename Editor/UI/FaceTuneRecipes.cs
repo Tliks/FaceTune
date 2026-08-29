@@ -61,6 +61,23 @@ internal static class FaceTunePrefabOperations
         return root;
     }
 
+    public static ExpressionComponent AddExpression(GameObject parent)
+    {
+        var expressionObject = new GameObject("Expression");
+        Undo.RegisterCreatedObjectUndo(expressionObject, "Add FaceTune Expression");
+        Undo.SetTransformParent(expressionObject.transform, parent.transform, "Place FaceTune Expression");
+        return Undo.AddComponent<ExpressionComponent>(expressionObject);
+    }
+
+    public static ExpressionDataComponent AddExpressionData(Transform? parent)
+    {
+        var expressionDataObject = new GameObject("Expression Data");
+        Undo.RegisterCreatedObjectUndo(expressionDataObject, "Add FaceTune Expression Data");
+        if (parent != null)
+            Undo.SetTransformParent(expressionDataObject.transform, parent, "Place FaceTune Expression Data");
+        return Undo.AddComponent<ExpressionDataComponent>(expressionDataObject);
+    }
+
     public static GameObject AddPattern(
         GameObject avatarRoot,
         FaceTunePatternKey pattern,
@@ -77,11 +94,7 @@ internal static class FaceTunePrefabOperations
             return FindLastExpression(instance) ?? instance;
         }
 
-        var expressionObject = new GameObject("Expression");
-        Undo.RegisterCreatedObjectUndo(expressionObject, "Add FaceTune Expression");
-        Undo.SetTransformParent(expressionObject.transform, parent.transform, "Place FaceTune Expression");
-        Undo.AddComponent<ExpressionComponent>(expressionObject);
-        return expressionObject;
+        return AddExpression(parent).gameObject;
     }
 
     public static GameObject? FindStandardRoot(GameObject avatarRoot)

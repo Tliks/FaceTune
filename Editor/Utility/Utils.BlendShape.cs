@@ -1,5 +1,37 @@
 namespace Aoyon.FaceTune;
 
+internal readonly record struct BlendShapeApply(
+    SkinnedMeshRenderer Renderer,
+    IReadOnlyBlendShapeSet Set,
+    float? DefaultValue = null,
+    ISet<string>? IgnoredNames = null)
+{
+    // false means that the current renderer value must be preserved.
+    internal bool TryGetWeight(string name, out float weight)
+    {
+        if (IgnoredNames?.Contains(name) == true)
+        {
+            weight = default;
+            return false;
+        }
+
+        if (Set.TryGetValue(name, out var blendShape))
+        {
+            weight = blendShape.Weight;
+            return true;
+        }
+
+        if (DefaultValue is { } defaultValue)
+        {
+            weight = defaultValue;
+            return true;
+        }
+
+        weight = default;
+        return false;
+    }
+}
+
 internal static partial class Utils
 {
     public static BlendShapeWeight[] GetBlendShapeWeights(this SkinnedMeshRenderer renderer, Mesh mesh)
@@ -25,25 +57,14 @@ internal static partial class Utils
         return blendShapes;
     }
 
-    /// <summary>
-    /// ブレンドシェイプを適用する
-    /// defaultValueはblendShapeSetに含まれないブレンドシェイプのハンドリング
-    /// -1のとき維持し、それ以外の場合は指定された値で上書き
-    /// </summary>
-    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, Mesh mesh, IReadOnlyBlendShapeSet blendShapeSet, float defaultValue = -1)
+    public static void ApplyBlendShapes(this BlendShapeApply apply, Mesh mesh)
     {
         var blendShapeCount = mesh.blendShapeCount;
         for (var i = 0; i < blendShapeCount; i++)
         {
             var name = mesh.GetBlendShapeName(i);
-            if (blendShapeSet.TryGetValue(name, out var blendShape))
-            {
-                renderer.SetBlendShapeWeight(i, blendShape.Weight);
-            }
-            else if (defaultValue != -1)
-            {
-                renderer.SetBlendShapeWeight(i, defaultValue);
-            }
+            if (apply.TryGetWeight(name, out var weight))
+                apply.Renderer.SetBlendShapeWeight(i, weight);
         }
     }
     

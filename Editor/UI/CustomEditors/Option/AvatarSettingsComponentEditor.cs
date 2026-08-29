@@ -36,7 +36,16 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
     {
         _faceObject = serializedObject.FindProperty(nameof(AvatarSettingsComponent.FaceObjectReference));
         _excludedBlendShapes = serializedObject.FindProperty(nameof(AvatarSettingsComponent.ExcludedBlendShapeNames));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_faceObject, () => new AvatarObjectReference()),
+                SectionActionField.From(_excludedBlendShapes, () => new List<string>())
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
     {
@@ -56,7 +65,12 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
     {
         position.SetSingleHeight();
         var faceMode = IsManualFaceSelection ? 1 : 0;
-        var nextFaceMode = GUIHelper.LocalizedPopup(position, faceMode, "avatarSettings.faceMesh.label", new[] { "avatarSettings.faceMesh.option.auto", "avatarSettings.faceMesh.option.manual" });
+        int nextFaceMode;
+        using (new EditorGUI.PropertyScope(position, "avatarSettings.faceMesh.label".LG(), _faceObject))
+        using (new GUIHelper.RightClickPassthroughScope(position))
+        {
+            nextFaceMode = GUIHelper.LocalizedPopup(position, faceMode, "avatarSettings.faceMesh.label", new[] { "avatarSettings.faceMesh.option.auto", "avatarSettings.faceMesh.option.manual" });
+        }
         if (nextFaceMode != faceMode)
         {
             if (nextFaceMode == 0)
@@ -113,7 +127,16 @@ internal sealed class AvatarAdvancedSettingsSectionDrawer : ISectionDrawer
     {
         _eyeBlink = serializedObject.FindProperty(nameof(AvatarSettingsComponent.AvoidEyeBlinkConflicts));
         _lipSync = serializedObject.FindProperty(nameof(AvatarSettingsComponent.AvoidLipSyncConflicts));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_eyeBlink, () => AvatarSettingsComponent.DefaultAvoidEyeBlinkConflicts),
+                SectionActionField.From(_lipSync, () => AvatarSettingsComponent.DefaultAvoidLipSyncConflicts)
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight() => GUIHelper.GetLinesHeight(2);
 

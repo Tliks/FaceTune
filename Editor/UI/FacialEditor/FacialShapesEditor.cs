@@ -9,6 +9,8 @@ internal class FacialShapesEditor : EditorWindow
     [SerializeField] private BlendShapeOverrideManager _dataManager = null!;
 
     private FacialShapesEditorContext? _context;
+    private bool _unsavedStateSyncPending;
+    private int _initialUndoGroup = -1;
 
     private const int MIN_WINDOW_WIDTH = 500;
     private const int MIN_WINDOW_HEIGHT = 700;
@@ -40,17 +42,23 @@ internal class FacialShapesEditor : EditorWindow
     public static FacialShapesEditor? TryOpenEditor(
         SkinnedMeshRenderer? renderer = null,
         IShapesEditorTargeting? targeting = null,
-        IReadOnlyBlendShapeSet? facialSet = null,
-        IReadOnlyBlendShapeSet? baseSet = null,
-        IReadOnlyBlendShapeSet? targetSet = null)
+        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null,
+        IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations = null,
+        IReadOnlyList<BlendShapeWeightAnimation>? targetAnimations = null)
     {
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
-        window.StartContext(renderer, targeting, facialSet, baseSet, targetSet);
+        window.StartContext(renderer, targeting, facialAnimations, baseAnimations, targetAnimations);
         return window;
     }
 
     private void OnEnable()
     {
+        Undo.IncrementCurrentGroup();
+        Undo.SetCurrentGroupName("Facial Shapes Editor: Window Opened");
+        Undo.RecordObject(this, "Facial Shapes Editor: Window Opened");
+        Undo.IncrementCurrentGroup();
+        _initialUndoGroup = Undo.GetCurrentGroup();
+
         minSize = new Vector2(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
         titleContent = "facialEditor.title".LG();
         saveChangesMessage = "facialEditor.unsavedChanges.message".LS();
@@ -62,9 +70,9 @@ internal class FacialShapesEditor : EditorWindow
     private void StartContext(
         SkinnedMeshRenderer? renderer,
         IShapesEditorTargeting? targeting,
-        IReadOnlyBlendShapeSet? facialSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? targetSet)
+        IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations,
+        IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations,
+        IReadOnlyList<BlendShapeWeightAnimation>? targetAnimations)
     {
         EndContext();
 
@@ -85,10 +93,11 @@ internal class FacialShapesEditor : EditorWindow
                 FaceTuneWriteKind.FacialData);
         _dataManager.SetInitialState(
             renderer,
-            facialSet,
-            baseSet,
-            targetSet,
-            unavailableBlendShapes);
+            ToFirstFrameSet(facialAnimations),
+            ToFirstFrameSet(baseAnimations),
+            ToFirstFrameSet(targetAnimations, excludeMultiFrame: true),
+            unavailableBlendShapes,
+            GetMultiFrameNames(targetAnimations));
         _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
@@ -101,8 +110,28 @@ internal class FacialShapesEditor : EditorWindow
             TryChangeRenderer,
             SaveChanges);
 
+        _unsavedStateSyncPending = false;
         hasUnsavedChanges = false;
+        Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");
     }
+
+    private static IReadOnlyBlendShapeSet? ToFirstFrameSet(
+        IReadOnlyList<BlendShapeWeightAnimation>? animations,
+        bool excludeMultiFrame = false)
+    {
+        if (animations == null) return null;
+        return new BlendShapeWeightSet(
+            animations
+                .Where(animation => !excludeMultiFrame || !animation.IsMultiFrame)
+                .Select(animation => animation.ToFirstFrameBlendShape()));
+    }
+
+    private static ISet<string>? GetMultiFrameNames(
+        IReadOnlyList<BlendShapeWeightAnimation>? animations)
+        => animations?
+            .Where(animation => animation.IsMultiFrame)
+            .Select(animation => animation.Name)
+            .ToHashSet(StringComparer.Ordinal);
 
     private void EndContext()
     {
@@ -113,15 +142,34 @@ internal class FacialShapesEditor : EditorWindow
             _context = null;
             _dataManager = null!;
         }
+        _unsavedStateSyncPending = false;
     }
 
     private void SyncUnsavedChangesFromData()
     {
+        if (_context == null) return;
+
+        // Keep close handling safe immediately, while the exact comparison is coalesced.
+        hasUnsavedChanges = true;
+        if (_unsavedStateSyncPending) return;
+
+        _unsavedStateSyncPending = true;
+        rootVisualElement.schedule.Execute(() =>
+        {
+            _unsavedStateSyncPending = false;
+            SyncUnsavedChangesNow();
+        });
+    }
+
+    private void SyncUnsavedChangesNow()
+    {
+        _unsavedStateSyncPending = false;
         hasUnsavedChanges = _context?.DataManager.IsChangedFromInitialState == true;
     }
 
     private bool CanDiscardCurrentContext()
     {
+        SyncUnsavedChangesNow();
         if (!hasUnsavedChanges) return true;
         return ProcessUnsavedChanges(this);
     }
@@ -145,6 +193,9 @@ internal class FacialShapesEditor : EditorWindow
 
     private bool ProcessUnsavedChanges(FacialShapesEditor window)
     {
+        window.SyncUnsavedChangesNow();
+        if (!window.hasUnsavedChanges) return true;
+
         var result = EditorUtility.DisplayDialogComplex(
             "facialEditor.unsavedChanges.title".LS(),
             "facialEditor.unsavedChanges.message".LS(),
@@ -200,11 +251,18 @@ internal class FacialShapesEditor : EditorWindow
 
         _context.Targeting.Save(targetRoot.gameObject, _context.Renderer, _context.DataManager);
         _context.DataManager.MarkCurrentAsInitialState();
-        SyncUnsavedChangesFromData();
+        SyncUnsavedChangesNow();
+    }
+
+    private void OnInspectorUpdate()
+    {
+        _context?.DataManager.SynchronizeSerializedState();
     }
 
     private void OnDisable()
     {
         EndContext();
+        if (_initialUndoGroup >= 0)
+            Undo.CollapseUndoOperations(_initialUndoGroup);
     }
 }

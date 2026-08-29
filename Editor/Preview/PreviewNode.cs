@@ -10,12 +10,13 @@ internal class BlendShapePreviewNode : IRenderFilterNode
     private readonly int _blendShapeCount;
     private readonly PooledObject<List<string>> _blendShapeNames;
     private readonly PooledObject<List<float>> _blendShapeWeights;
+    private readonly PooledObject<List<bool>> _shouldApply;
 
     private SkinnedMeshRenderer? _latestProxy;
 
     public bool Disposed { get; private set; }
 
-    public BlendShapePreviewNode(SkinnedMeshRenderer smr, IReadOnlyBlendShapeSet set, float defaultValue = -1)
+    public BlendShapePreviewNode(SkinnedMeshRenderer smr, BlendShapeApply apply)
     {
         var mesh = smr.sharedMesh.DestroyedAsNull()
             ?? throw new ArgumentException("Renderer has no mesh.", nameof(smr));
@@ -26,26 +27,29 @@ internal class BlendShapePreviewNode : IRenderFilterNode
             names.Add(mesh.GetBlendShapeName(i));
         }
         _blendShapeWeights = ListPool<float>.Get(out _);
-        SetInternal(set, defaultValue);
+        _shouldApply = ListPool<bool>.Get(out _);
+        SetInternal(apply);
     }
 
-    /// defaultValueはsetになかった場合のハンドリング
-    /// プレビューしない場合は-1
-    private void SetInternal(IReadOnlyBlendShapeSet set, float defaultValue)
+    private void SetInternal(BlendShapeApply apply)
     {
         if (Disposed) return;
         var names = _blendShapeNames.Value;
         var current = _blendShapeWeights.Value;
+        var shouldApply = _shouldApply.Value;
         current.Clear();
+        shouldApply.Clear();
         for (int i = 0; i < _blendShapeCount; i++)
         {
-            if (set.TryGetValue(names[i], out var blendShape))
+            if (apply.TryGetWeight(names[i], out var weight))
             {
-                current.Add(blendShape.Weight);
+                current.Add(weight);
+                shouldApply.Add(true);
             }
             else
             {
-                current.Add(defaultValue);
+                current.Add(default);
+                shouldApply.Add(false);
             }
         }
     }
@@ -54,9 +58,9 @@ internal class BlendShapePreviewNode : IRenderFilterNode
     // 他のNodeの更新を必要しない下流かつ一時的な、また高頻度な更新を必要とするプレビュー用(EditingShapesPreview)
     // パフォーマンスは良いものの、NDMF Previewの設計から外れてていると思われ、将来の動作は保証されない
     // Todo: 今後のAPI変更に伴って書き換える
-    public void SetDirectly(IReadOnlyBlendShapeSet set, float defaultValue)
+    public void SetDirectly(BlendShapeApply apply)
     {
-        SetInternal(set, defaultValue);
+        SetInternal(apply);
         if (_latestProxy != null)
         {
             // OnFrameがCamera.onPreCullを購読しているため、GUI等の一部の操作で発火しない
@@ -82,10 +86,11 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         var weights = _blendShapeWeights.Value;
         var count = weights.Count;
 
+        var shouldApply = _shouldApply.Value;
         for (int i = 0; i < count; i++)
         {
+            if (!shouldApply[i]) continue;
             var weight = weights[i];
-            if (weight == -1) continue; // 対象外
             // if (proxy.GetBlendShapeWeight(i) == weight) continue;
             proxy.SetBlendShapeWeight(i, weight);
         }
@@ -104,6 +109,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
     {
         _blendShapeNames.Dispose();
         _blendShapeWeights.Dispose();
+        _shouldApply.Dispose();
         Disposed = true;
     }
 }

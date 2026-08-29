@@ -258,7 +258,11 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
         var matchesRect = fields[2];
         GUIHelper.DrawLocalizedEnum(handRect, hand, string.Empty, nameof(HandGestureHand));
         GUIHelper.DrawLocalizedEnum(gestureRect, gesture, string.Empty, nameof(HandGesture));
-        matches.boolValue = EditorGUI.Popup(matchesRect, matches.boolValue ? 0 : 1, matchOptions) == 0;
+        using (new EditorGUI.PropertyScope(matchesRect, GUIContent.none, matches))
+        using (new GUIHelper.RightClickPassthroughScope(matchesRect))
+        {
+            matches.boolValue = EditorGUI.Popup(matchesRect, matches.boolValue ? 0 : 1, matchOptions) == 0;
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => GUIHelper.LineHeight;
@@ -307,7 +311,11 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
                 GUIHelper.LocalizedEnumPopupWidth(type, nameof(ParameterType)));
             EditorGUI.PropertyField(nameRect, name, GUIContent.none);
             GUIHelper.DrawLocalizedEnum(typeRect, type, string.Empty, nameof(ParameterType));
-            value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 0 : 1, boolOptions) == 0;
+            using (new EditorGUI.PropertyScope(boolValueRect, GUIContent.none, value))
+            using (new GUIHelper.RightClickPassthroughScope(boolValueRect))
+            {
+                value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 0 : 1, boolOptions) == 0;
+            }
             return;
         }
 

@@ -30,6 +30,7 @@ internal class GeneralControls : IDisposable
     private Button _redoButton = null!;
     private Button _restoreInitialOverridesButton = null!;
     private Button _restoreEditedOverridesButton = null!;
+    private bool _actionStateRefreshPending;
 
     private ClipImportOption _clipImportOption = ClipImportOption.NonZero;
 
@@ -63,10 +64,8 @@ internal class GeneralControls : IDisposable
 
     private void UpdateUndoRedoState()
     {
-        if (_undoButton == null || _redoButton == null) return;
-
-        _undoButton.SetEnabled(_blendShapeManager.CanUndo);
-        _redoButton.SetEnabled(_blendShapeManager.CanRedo);
+        _undoButton?.SetEnabled(_blendShapeManager.CanUndo);
+        _redoButton?.SetEnabled(_blendShapeManager.CanRedo);
     }
 
     private void SetupControls()
@@ -109,11 +108,11 @@ internal class GeneralControls : IDisposable
 
         _undoButton = _element.Q<Button>("undo-button");
         _undoButton.Add(CreateStepIcon(_undoIcon));
-        _undoButton.clicked += () => _blendShapeManager.TryUndo();
+        _undoButton.clicked += Undo.PerformUndo;
 
         _redoButton = _element.Q<Button>("redo-button");
         _redoButton.Add(CreateStepIcon(_redoIcon));
-        _redoButton.clicked += () => _blendShapeManager.TryRedo();
+        _redoButton.clicked += Undo.PerformRedo;
 
         _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
         _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
@@ -135,7 +134,7 @@ internal class GeneralControls : IDisposable
         UpdateActionButtonStates();
 
         _blendShapeManager.OnAnyDataChange += UpdateUndoRedoState;
-        _blendShapeManager.OnAnyDataChange += UpdateActionButtonStates;
+        _blendShapeManager.OnAnyDataChange += RequestActionButtonStateUpdate;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
         clipField.AddToClassList("compact-field");
@@ -209,9 +208,28 @@ internal class GeneralControls : IDisposable
 
     private void ImportClip(AnimationClip clip)
     {
-        var result = new BlendShapeWeightSet();
-        clip.GetFirstFrameBlendShapes(_clipImportOption, result, string.Empty);
-        _blendShapeManager.AddShapesWithWeight(result.Select(x => (_blendShapeManager.GetIndexForShape(x.Name), x.Weight)));
+        var animations = new List<BlendShapeWeightAnimation>();
+        clip.GetBlendShapeAnimations(_clipImportOption, animations, string.Empty);
+        _blendShapeManager.AddShapesWithWeight(
+            animations
+                .Where(animation => !animation.IsMultiFrame)
+                .Select(animation =>
+                (
+                    _blendShapeManager.GetIndexForShape(animation.Name),
+                    animation.ToFirstFrameBlendShape().Weight
+                )));
+    }
+
+    private void RequestActionButtonStateUpdate()
+    {
+        if (_actionStateRefreshPending) return;
+
+        _actionStateRefreshPending = true;
+        _element.schedule.Execute(() =>
+        {
+            _actionStateRefreshPending = false;
+            UpdateActionButtonStates();
+        });
     }
 
     private void UpdateActionButtonStates()
@@ -225,7 +243,7 @@ internal class GeneralControls : IDisposable
     public void Dispose()
     {
         _blendShapeManager.OnAnyDataChange -= UpdateUndoRedoState;
-        _blendShapeManager.OnAnyDataChange -= UpdateActionButtonStates;
+        _blendShapeManager.OnAnyDataChange -= RequestActionButtonStateUpdate;
     }
 
     private void RebuildGroupToggles()

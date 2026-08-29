@@ -12,20 +12,17 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
 
     private static readonly PublishedValue<int> _instantiatingTrigger = new(0, $"{nameof(DirectBlendShapePreview<TFilter>)}.{nameof(_instantiatingTrigger)}");
 
-    /// <summary>
-    ///  現在のNodeの内容を直接置き換える。
-    /// </summary>
-    /// <param name="set">置き換えるBlendShapeSet</param>
-    /// <param name="defaultValue">BlendShapeSetに含まれていない場合の扱い。-1の場合はプレビューしない</param>
-    protected internal static void SetCurrentNodeDirectly(SkinnedMeshRenderer renderer, IReadOnlyBlendShapeSet set, float defaultValue = -1)
+    /// <summary>現在のNodeの内容を直接置き換える。</summary>
+    protected internal static void SetCurrentNodeDirectly(BlendShapeApply apply)
     {
-        var state = GetOrCreateState(renderer);
-        set.CloneTo(state.Set);
-        state.DefaultValue = defaultValue;
+        var state = GetOrCreateState(apply.Renderer);
+        apply.Set.CloneTo(state.Set);
+        var applied = apply with { Set = state.Set };
+        state.Apply = applied;
 
-        if (TryGetNode(renderer, out var node))
+        if (TryGetNode(apply.Renderer, out var node))
         {
-            node.SetDirectly(state.Set, state.DefaultValue);
+            node.SetDirectly(applied);
         }
         else
         {
@@ -39,7 +36,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
 
         if (TryGetNode(renderer, out var node))
         {
-            node.SetDirectly(DirectPreviewState.Empty.Set, DirectPreviewState.Empty.DefaultValue);
+            node.SetDirectly(new BlendShapeApply(renderer, new BlendShapeWeightSet()));
         }
         else
         {
@@ -91,11 +88,12 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
 
         context.Observe(_instantiatingTrigger, _ => _instantiatingTrigger.Value, (a, b) => a == b);
 
-        var state = _directStates.TryGetValue(original, out var directState)
-            ? directState
-            : DirectPreviewState.Empty;
+        var apply = new BlendShapeApply(original, new BlendShapeWeightSet());
+        if (_directStates.TryGetValue(original, out var directState)
+            && directState.Apply is { } storedApply)
+            apply = storedApply;
 
-        var node = new BlendShapePreviewNode(proxy, state.Set, state.DefaultValue);
+        var node = new BlendShapePreviewNode(proxy, apply);
         _currentNodes[original] = node;
 
         return Task.FromResult<IRenderFilterNode>(node);
@@ -108,9 +106,7 @@ internal abstract class DirectBlendShapePreview<TFilter> : IRenderFilter where T
 
     private sealed class DirectPreviewState
     {
-        public static readonly DirectPreviewState Empty = new();
-
+        public BlendShapeApply? Apply { get; set; }
         public BlendShapeWeightSet Set { get; } = new();
-        public float DefaultValue { get; set; } = -1;
     }
 }

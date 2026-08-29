@@ -19,6 +19,15 @@ internal sealed class SerializedReferenceableSettings
         Source = Reference.FindPropertyRelative(nameof(SettingsReference.Source));
         Direct = serializedObject.FindProperty(directPropertyName);
     }
+
+    internal SectionActionSet CreateActionSet(Func<object?> createDefaultValue)
+        => new(
+            Direct.serializedObject,
+            new[]
+            {
+                SectionActionField.From(Reference, () => new SettingsReference()),
+                SectionActionField.From(Direct, createDefaultValue)
+            });
 }
 
 internal static class SettingsReferenceGUI
@@ -85,7 +94,15 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
 {
     private readonly SerializedReferenceableSettings _settings;
 
-    public ReferenceableSettingsSectionDrawer(SerializedReferenceableSettings settings) => _settings = settings;
+    public ReferenceableSettingsSectionDrawer(
+        SerializedReferenceableSettings settings,
+        Func<object?> createDefaultValue)
+    {
+        _settings = settings;
+        Actions = settings.CreateActionSet(createDefaultValue);
+    }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
         => SettingsReferenceGUI.GetHeight(
@@ -199,6 +216,8 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     private static void DrawMode(Rect position, SerializedProperty mode)
     {
+        using var _ = new EditorGUI.PropertyScope(position, "eyeBlink.mode.label".LG(), mode);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var selected = Array.IndexOf(ModeValues, (EyeBlinkSettings.Kind)mode.intValue);
         if (selected < 0) selected = 0;
         var previousMixed = EditorGUI.showMixedValue;
@@ -295,6 +314,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         float[] values)
     {
         using var scope = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var header = new Rect(position.x, position.y, position.width, GUIHelper.LineHeight);
         var fields = EditorGUI.PrefixLabel(header, scope.content);
         var preferredWidths = Enumerable.Repeat(1f, values.Length).ToArray();

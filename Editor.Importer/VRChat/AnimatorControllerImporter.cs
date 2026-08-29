@@ -30,6 +30,8 @@ internal class AnimatorControllerImporter
 
     public GameObject? Import(GameObject parent)
     {
+        FaceTuneImporterUtility.ImportFaceRendererAsSettings(_context, parent);
+
         GameObject? firstLayerObject = null;
         foreach (var layer in _animatorController.layers)
         {

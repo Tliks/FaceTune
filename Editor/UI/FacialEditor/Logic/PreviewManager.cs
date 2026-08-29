@@ -8,6 +8,7 @@ internal class PreviewManager : IDisposable
     private readonly BlendShapeOverrideManager _blendShapeOverrideManager;
     
     private readonly VisualElement _rootElement;
+    private readonly SkinnedMeshRenderer? _renderer;
     private IVisualElementScheduledItem _updateScheduler;
     private const int UpdateIntervalMs = 33; // 約30fps
     private readonly BlendShapeWeightSet _previewSet;
@@ -60,6 +61,7 @@ internal class PreviewManager : IDisposable
     {
         _blendShapeOverrideManager = blendShapeOverrideManager;
         _rootElement = rootElement;
+        _renderer = renderer;
         _previewSet = new();
         SetBlendShapeTo100OnHover = true;
         HighlightBlendShapeVerticesOnHover = false;
@@ -89,7 +91,7 @@ internal class PreviewManager : IDisposable
             _isEnabled = true;
             EditingShapesPreview.Start(renderer);
             GetCurrentSet(_previewSet);
-            EditingShapesPreview.Refresh(_previewSet, 0);
+            RefreshPreview();
             RequestShapeRefresh();
         }
     }
@@ -123,7 +125,7 @@ internal class PreviewManager : IDisposable
                 var key = _blendShapeOverrideManager.AllKeys[index];
                 _previewSet.Add(new BlendShapeWeight(key, 100));
             }
-            EditingShapesPreview.Refresh(_previewSet, 0);
+            RefreshPreview();
         }
         catch (Exception e)
         {
@@ -131,13 +133,21 @@ internal class PreviewManager : IDisposable
         }
     }
 
+    private void RefreshPreview()
+    {
+        if (_renderer == null) return;
+        EditingShapesPreview.Refresh(new BlendShapeApply(
+            _renderer,
+            _previewSet,
+            0f,
+            _blendShapeOverrideManager.ExplicitlyExcluded));
+    }
+
     private void GetCurrentSet(BlendShapeWeightSet result)
     {
         result.Clear();
         result.AddRange(_blendShapeOverrideManager.EffectiveBaseSet);
         _blendShapeOverrideManager.GetTargetValues(result);
-        result.AddRange(_blendShapeOverrideManager.ExplicitlyExcluded
-            .Select(name => new BlendShapeWeight(name, -1f)));
     }
 
     public void Dispose()

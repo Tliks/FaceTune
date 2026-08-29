@@ -34,7 +34,16 @@ internal sealed class MenuModeSectionDrawer : ISectionDrawer
     private readonly SerializedProperty _kind;
 
     public MenuModeSectionDrawer(SerializedObject serializedObject)
-        => _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
+    {
+        _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[] { SectionActionField.From(
+                _kind,
+                () => MenuComponent.DefaultMenuKind) });
+    }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight() => GUIHelper.LineHeight;
 
@@ -55,7 +64,12 @@ internal sealed class MenuBasicSettingsSectionDrawer : ISectionDrawer
     {
         _menu = serializedObject.FindProperty(nameof(MenuComponent.Menu));
         _owner = owner;
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[] { SectionActionField.From(_menu, () => new MenuSettings()) });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight() => MenuSettingsGUI.GetHeight(_menu);
 
@@ -88,7 +102,22 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         _saved = serializedObject.FindProperty(nameof(MenuComponent.Saved));
         _initialValue = serializedObject.FindProperty(nameof(MenuComponent.DefaultValue));
         _selectedValue = serializedObject.FindProperty(nameof(MenuComponent.SelectedValue));
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[]
+            {
+                SectionActionField.From(_useExistingParameter, () => MenuComponent.DefaultUseExistingParameter),
+                SectionActionField.From(_generateParameterGroup, () => MenuComponent.DefaultGenerateParameterGroup),
+                SectionActionField.From(_parameterName, () => MenuComponent.DefaultParameterName),
+                SectionActionField.From(_groupName, () => MenuComponent.DefaultGroupName),
+                SectionActionField.From(_synced, () => MenuComponent.DefaultSynced),
+                SectionActionField.From(_saved, () => MenuComponent.DefaultSaved),
+                SectionActionField.From(_initialValue, () => MenuComponent.DefaultParameterValue),
+                SectionActionField.From(_selectedValue, () => MenuComponent.DefaultSelectedValue)
+            });
     }
+
+    public SectionActionSet Actions { get; }
 
     public float GetHeight()
     {
@@ -161,6 +190,8 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
 
     private bool DrawBinding(Rect position)
     {
+        using var _ = new EditorGUI.PropertyScope(position, "menu.binding.label".LG(), _useExistingParameter);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = _useExistingParameter.hasMultipleDifferentValues;
         var selected = _useExistingParameter.boolValue ? 1 : 0;
@@ -182,6 +213,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     private static void DrawFloatToggle(Rect position, SerializedProperty property, string labelKey)
     {
         using var scope = new EditorGUI.PropertyScope(position, labelKey.LG(), property);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
         var value = !Mathf.Approximately(property.floatValue, 0f);
