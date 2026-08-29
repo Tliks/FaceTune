@@ -1,7 +1,5 @@
 # Changelog
 
-## [English](./CHANGELOG.md)
-
 ## [Unreleased]
 ### Added
 
