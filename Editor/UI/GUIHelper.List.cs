@@ -96,6 +96,8 @@ internal static partial class GUIHelper
         else if (options.Controls == ReorderableListOptions.ControlsPlacement.Header)
         {
             var controls = new Rect(position.x, bodyY, position.width, HeaderHeight);
+            using var scope = new EditorGUI.PropertyScope(controls, GUIContent.none, property);
+            using var rightClick = new RightClickPassthroughScope(controls);
             DrawControls(controls, _ => { }, property, list, options);
             bodyY = controls.yMax + GUIHelper.VerticalSpacing;
         }
@@ -104,6 +106,8 @@ internal static partial class GUIHelper
         {
             var headerContent = new Rect(position.x, bodyY, position.width, options.HeaderContentHeight);
             if (options.NestContent) headerContent.Indent();
+            using var headerScope = new EditorGUI.PropertyScope(headerContent, GUIContent.none, property);
+            using var rightClick = new RightClickPassthroughScope(headerContent);
             options.DrawHeaderContent(headerContent, property);
             bodyY = headerContent.yMax + GUIHelper.VerticalSpacing;
         }
@@ -114,6 +118,8 @@ internal static partial class GUIHelper
             {
                 var empty = new Rect(position.x, bodyY, position.width, emptyHeight);
                 if (options.NestContent) empty.Indent();
+                using var emptyScope = new EditorGUI.PropertyScope(empty, GUIContent.none, property);
+                using var rightClick = new RightClickPassthroughScope(empty);
                 if (options.DrawEmptyOverride != null)
                     options.DrawEmptyOverride(empty, property);
                 else
@@ -155,6 +161,8 @@ internal static partial class GUIHelper
     {
         if (options.Controls != ReorderableListOptions.ControlsPlacement.Footer) return;
         var footer = new Rect(right - ListControlsWidth, y, ListControlsWidth, HeaderHeight);
+        using var scope = new EditorGUI.PropertyScope(footer, GUIContent.none, property);
+        using var rightClick = new RightClickPassthroughScope(footer);
         DrawControls(footer, _ => { }, property, list, options);
     }
 
@@ -247,7 +255,11 @@ internal static partial class GUIHelper
             rect.height = options.ElementHeight
                        ?? EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
             if (options.DrawElementOverride != null)
+            {
+                using var elementScope = new EditorGUI.PropertyScope(rect, GUIContent.none, element);
+                using var rightClick = new RightClickPassthroughScope(rect);
                 options.DrawElementOverride(rect, element);
+            }
             else
                 EditorGUI.PropertyField(rect, element, GUIContent.none, true);
         };
@@ -388,13 +400,18 @@ internal static partial class GUIHelper
         Action add,
         bool canRemove,
         Action remove)
-        => DrawHeader(position, rect => EditorGUI.LabelField(rect, label), add, canRemove, remove);
+    {
+        using var rightClick = new RightClickPassthroughScope(position);
+        DrawHeader(position, rect => EditorGUI.LabelField(rect, label), add, canRemove, remove);
+    }
 
     public static void DrawListControls(Rect position, SerializedProperty property, ReorderableListOptions? options = null)
     {
         options ??= new ReorderableListOptions();
         var state = GetState(property);
         var list = GetList(property, state, options);
+        using var scope = new EditorGUI.PropertyScope(position, GUIContent.none, property);
+        using var rightClick = new RightClickPassthroughScope(position);
         DrawControls(position, _ => { }, property, list, options);
     }
 
@@ -406,9 +423,13 @@ internal static partial class GUIHelper
         ReorderableList list,
         State state)
     {
+        // The built-in ReorderableList header is disabled, so reproduce its list-level scope here.
+        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new RightClickPassthroughScope(position);
+        var headerLabel = scope.content;
         Action<Rect> drawLabel = options.Header == ReorderableListOptions.HeaderMode.Foldout
-            ? rect => state.Foldout.Expanded = GUIHelper.DrawFoldout(rect, state.Foldout.Expanded, label)
-            : rect => EditorGUI.LabelField(rect, label);
+            ? rect => state.Foldout.Expanded = GUIHelper.DrawFoldout(rect, state.Foldout.Expanded, headerLabel)
+            : rect => EditorGUI.LabelField(rect, headerLabel);
         var showHeaderControls = options.Controls == ReorderableListOptions.ControlsPlacement.Header
             && (options.Header != ReorderableListOptions.HeaderMode.Foldout || state.Foldout.Expanded);
         if (showHeaderControls)

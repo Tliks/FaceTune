@@ -30,10 +30,13 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             settings,
             context.RequireAvatarControlSettings(),
             set);
-        set.RemoveRange(settings.ExplicitlyExcludedBlendShapeNames);
         set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
         if (set.Count == 0) return;
-        
-        avatarContext.FaceRenderer.ApplyBlendShapes(avatarContext.FaceMesh, set, -1);
+
+        new BlendShapeApply(
+            avatarContext.FaceRenderer,
+            set,
+            IgnoredNames: settings.ExplicitlyExcludedBlendShapeNames)
+            .ApplyBlendShapes(avatarContext.FaceMesh);
     }
 }

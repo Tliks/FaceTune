@@ -23,8 +23,13 @@ internal sealed class SectionActionSet
     {
         SerializedObject = serializedObject;
         Fields = fields.ToArray();
+        ScopeProperty = Fields.Count == 0
+            ? null
+            : serializedObject.FindProperty(Fields[0].PropertyPath);
         Key = key;
     }
+
+    public SerializedProperty? ScopeProperty { get; }
 
     internal SectionActionSet WithKey(string key)
         => new(SerializedObject, Fields, key);
@@ -67,7 +72,7 @@ internal static class SectionOperations
     internal static void Paste(SectionActionSet section)
         => RunUndo("section.paste.label".LS(), () => SectionClipboard.Paste(section));
 
-    private static void RunUndo(string name, Action action)
+    internal static void RunUndo(string name, Action action)
     {
         Undo.IncrementCurrentGroup();
         var group = Undo.GetCurrentGroup();

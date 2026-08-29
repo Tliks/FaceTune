@@ -395,7 +395,8 @@ internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
                     out var content,
                     createHeaderMenu: () => SectionHeaderMenu.Create(entry.Actions),
                     drawHeader: drawHeader,
-                    headerWidth: headerWidth))
+                    headerWidth: headerWidth,
+                    propertyScope: entry.Actions.ScopeProperty))
             {
                 content.height = contentHeight;
                 entry.Draw(content);

@@ -204,11 +204,15 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         {
             menu.AddDisabledItem("settings.applyToRenderer.menu".LG());
             menu.AddDisabledItem("settings.getFromRenderer.menu".LG());
-            return;
+        }
+        else
+        {
+            menu.AddItem("settings.applyToRenderer.menu".LG(), false, ApplyToRenderer);
+            menu.AddItem("settings.getFromRenderer.menu".LG(), false, GetFromRenderer);
         }
 
-        menu.AddItem("settings.applyToRenderer.menu".LG(), false, ApplyToRenderer);
-        menu.AddItem("settings.getFromRenderer.menu".LG(), false, GetFromRenderer);
+        menu.AddSeparator(string.Empty);
+        _expression.PopulateHeaderMenu(menu);
     }
 
     public void Draw(Rect position)
@@ -233,8 +237,10 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         foreach (var animation in data.BlendShapeAnimations) animations.Add(animation);
 
         var values = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(context.Root);
         Undo.RecordObject(context.FaceRenderer, "Apply Blend Shapes");
-        context.FaceRenderer.ApplyBlendShapes(context.FaceMesh, values, 0f);
+        new BlendShapeApply(context.FaceRenderer, values, 0f, ignoredNames)
+            .ApplyBlendShapes(context.FaceMesh);
         Selection.activeGameObject = context.FaceRenderer.gameObject;
         EditorGUIUtility.PingObject(context.FaceRenderer);
     }

@@ -234,6 +234,9 @@ msgstr "Copy"
 msgid "section.paste.label"
 msgstr "Paste"
 
+msgid "expression.separate.menu"
+msgstr "Separate"
+
 msgid "common.component.label"
 msgstr "Component"
 

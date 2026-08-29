@@ -27,6 +27,7 @@ internal class SelectedPanel
     private ListView _selectedListView = null!;
     
     private Button _selectedRemoveAll0Button = null!;
+    private bool _zeroControlsRefreshPending;
     private readonly Dictionary<int, double> _flashExpiryByKeyIndex = new();
     private IVisualElementScheduledItem? _flashCleanupSchedule;
     
@@ -79,7 +80,7 @@ internal class SelectedPanel
         // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => RebuildListViewsSlow();
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => RebuildListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => RebuildListViewsSlow();
-        _blendShapeManager.OnAnyDataChange += () => UpdateSelectedRemoveAll0ButtonVisibility();
+        _blendShapeManager.OnAnyDataChange += RequestZeroControlsVisibilityUpdate;
     }
 
     private bool _selectedZero = true;
@@ -104,12 +105,11 @@ internal class SelectedPanel
         _zeroToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
 
         _selectedRemoveAll0Button = _control.Q<Button>("selected-remove-all-0-button");
-        UpdateSelectedRemoveAll0ButtonVisibility();
         _selectedRemoveAll0Button.clicked += () =>
         {
-            // 現在表示しているものに限らず、target listの明示的な0値をすべて削除。
-            var indices = _blendShapeManager.GetTargetIndices(
-                index => Mathf.Approximately(_blendShapeManager.GetShapeWeight(index), 0f));
+            var indices = _currentSource
+                .Where(item => IsExplicitZeroTarget(item.KeyIndex))
+                .Select(item => item.KeyIndex);
             _blendShapeManager.RemoveShapes(indices);
         };
 
@@ -290,8 +290,6 @@ internal class SelectedPanel
 
     private void InitializeListSource()
     {
-        UpdateSourceToggleVisibility();
-
         var allSource = new List<ElementData>();
         var allKeys = _blendShapeManager.AllKeys;
         for (int i = 0; i < allKeys.Count; i++)
@@ -305,6 +303,7 @@ internal class SelectedPanel
         _allSource = allSource.AsReadOnly();
         _currentSource = new();
         BuildCurrentSource();
+        UpdateSourceToggleVisibility();
 
         _selectedListView.itemsSource = _currentSource;
 
@@ -315,21 +314,49 @@ internal class SelectedPanel
     {
         _styleToggle.SetVisible(_blendShapeManager.FacialSet.Count > 0);
         _baseToggle.SetVisible(_blendShapeManager.BaseSet.Count > 0);
+        UpdateZeroControlsVisibility();
     }
 
-    private void UpdateSelectedRemoveAll0ButtonVisibility()
+    private void RequestZeroControlsVisibilityUpdate()
     {
-        var anyZero = _blendShapeManager.GetTargetIndices(
-            index => Mathf.Approximately(_blendShapeManager.GetShapeWeight(index), 0f)).Any();
-        _selectedRemoveAll0Button.SetVisible(anyZero);
+        if (_zeroControlsRefreshPending) return;
+
+        _zeroControlsRefreshPending = true;
+        _element.schedule.Execute(() =>
+        {
+            _zeroControlsRefreshPending = false;
+            UpdateZeroControlsVisibility();
+        });
     }
+
+    private void UpdateZeroControlsVisibility()
+    {
+        if (_allSource == null) return;
+
+        var hasVisibleZero = EnumerateCurrentSource(applyZeroFilter: false)
+            .Any(item => Mathf.Approximately(
+                _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex),
+                0f));
+        _zeroToggle.SetVisible(hasVisibleZero);
+
+        var hasExplicitZeroTarget = _currentSource.Any(item => IsExplicitZeroTarget(item.KeyIndex));
+        _selectedRemoveAll0Button.SetVisible(hasExplicitZeroTarget);
+    }
+
+    private bool IsExplicitZeroTarget(int index)
+        => _blendShapeManager.IsInTarget(index)
+           && Mathf.Approximately(_blendShapeManager.GetShapeWeight(index), 0f);
 
     private void BuildCurrentSource()
     {
         using var _ = new Utils.ProfilingSampleScope("SelectedPanel.BuildCurrentSource");
 
         _currentSource.Clear();
+        _currentSource.AddRange(EnumerateCurrentSource(applyZeroFilter: true));
+    }
 
+    private IEnumerable<ElementData> EnumerateCurrentSource(bool applyZeroFilter)
+    {
         var searchText = _searchField.value ?? string.Empty;
         var hasSearchText = searchText.Length > 0;
 
@@ -352,10 +379,12 @@ internal class SelectedPanel
             if (!isVisibleSource && !isInTarget)
                 continue;
 
-            if (!_zeroToggle.value && _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex) == 0f)
+            if (applyZeroFilter
+                && !_zeroToggle.value
+                && _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex) == 0f)
                 continue;
 
-            _currentSource.Add(item);
+            yield return item;
         }
     }
 
@@ -363,6 +392,7 @@ internal class SelectedPanel
     private void RebuildListViewsSlow()
     {
         BuildCurrentSource();
+        UpdateZeroControlsVisibility();
         _selectedListView.RefreshItems();
     }
 }

@@ -65,7 +65,12 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
     {
         position.SetSingleHeight();
         var faceMode = IsManualFaceSelection ? 1 : 0;
-        var nextFaceMode = GUIHelper.LocalizedPopup(position, faceMode, "avatarSettings.faceMesh.label", new[] { "avatarSettings.faceMesh.option.auto", "avatarSettings.faceMesh.option.manual" });
+        int nextFaceMode;
+        using (new EditorGUI.PropertyScope(position, "avatarSettings.faceMesh.label".LG(), _faceObject))
+        using (new GUIHelper.RightClickPassthroughScope(position))
+        {
+            nextFaceMode = GUIHelper.LocalizedPopup(position, faceMode, "avatarSettings.faceMesh.label", new[] { "avatarSettings.faceMesh.option.auto", "avatarSettings.faceMesh.option.manual" });
+        }
         if (nextFaceMode != faceMode)
         {
             if (nextFaceMode == 0)

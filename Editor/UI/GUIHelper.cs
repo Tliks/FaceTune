@@ -46,6 +46,34 @@ internal static partial class GUIHelper
         return rect;
     }
 
+    // Unity's IMGUI buttons and sliders consume right-button MouseDown events.
+    // Keep their control IDs, but let the following ContextClick reach PropertyScope.
+    internal readonly struct RightClickPassthroughScope : IDisposable
+    {
+        private readonly Event _event;
+        private readonly EventType _originalType;
+        private readonly bool _changed;
+
+        internal RightClickPassthroughScope(Rect position)
+        {
+            _event = Event.current;
+            _originalType = _event.type;
+            _changed = _event.type == EventType.MouseDown
+                       && (_event.button == 1
+                           || (Application.platform == RuntimePlatform.OSXEditor
+                               && _event.button == 0
+                               && _event.control))
+                       && position.Contains(_event.mousePosition);
+            if (_changed) _event.type = EventType.Ignore;
+        }
+
+        public void Dispose()
+        {
+            if (_changed && _event.type == EventType.Ignore)
+                _event.type = _originalType;
+        }
+    }
+
     public static Rect Back(this ref Rect rect, int count = 1)
     {
         var offset = IndentWidth * count;
@@ -187,8 +215,9 @@ internal static partial class GUIHelper
         out Rect content,
         Func<GenericMenu>? createHeaderMenu = null,
         Action<Rect>? drawHeader = null,
-        float headerWidth = 0f)
-        => DrawShurikenSection(position, ref state.Expanded, label, contentHeight, out content, createHeaderMenu, drawHeader, headerWidth);
+        float headerWidth = 0f,
+        SerializedProperty? propertyScope = null)
+        => DrawShurikenSection(position, ref state.Expanded, label, contentHeight, out content, createHeaderMenu, drawHeader, headerWidth, propertyScope);
 
     public static bool DrawShurikenSection(
         Rect position,
@@ -198,12 +227,20 @@ internal static partial class GUIHelper
         out Rect content,
         Func<GenericMenu>? createHeaderMenu = null,
         Action<Rect>? drawHeader = null,
-        float headerWidth = 0f)
+        float headerWidth = 0f,
+        SerializedProperty? propertyScope = null)
     {
         var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
-        GUI.Box(header, label, ShurikenStyle);
-        var menuButton = DrawHeaderMenu(header, createHeaderMenu);
-        var headerControl = DrawHeaderControl(header, menuButton, drawHeader, headerWidth);
+        DrawShurikenHeader(
+            header,
+            label,
+            ShurikenStyle,
+            createHeaderMenu,
+            drawHeader,
+            headerWidth,
+            propertyScope,
+            out var menuButton,
+            out var headerControl);
         expanded = HandleFoldout(header, expanded, menuButton, headerControl);
         return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
     }
@@ -217,7 +254,8 @@ internal static partial class GUIHelper
         out Rect content,
         Func<GenericMenu>? createHeaderMenu = null,
         Action<Rect>? drawHeader = null,
-        float headerWidth = 0f)
+        float headerWidth = 0f,
+        SerializedProperty? propertyScope = null)
         => DrawShurikenToggleSection(
             position,
             ref state.Expanded,
@@ -227,7 +265,8 @@ internal static partial class GUIHelper
             out content,
             createHeaderMenu,
             drawHeader,
-            headerWidth);
+            headerWidth,
+            propertyScope);
 
     internal static bool DrawShurikenToggleSection(
         Rect position,
@@ -238,10 +277,19 @@ internal static partial class GUIHelper
         out Rect content,
         Func<GenericMenu>? createHeaderMenu = null,
         Action<Rect>? drawHeader = null,
-        float headerWidth = 0f)
+        float headerWidth = 0f,
+        SerializedProperty? propertyScope = null)
     {
         var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
-        expanded = DrawShurikenToggleAndFold(header, expanded, enabled, label, createHeaderMenu, drawHeader, headerWidth);
+        expanded = DrawShurikenToggleAndFold(
+            header,
+            expanded,
+            enabled,
+            label,
+            createHeaderMenu,
+            drawHeader,
+            headerWidth,
+            propertyScope);
         return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
     }
 
@@ -280,11 +328,19 @@ internal static partial class GUIHelper
         GUIContent label,
         Func<GenericMenu>? createHeaderMenu = null,
         Action<Rect>? drawHeader = null,
-        float headerWidth = 0f)
+        float headerWidth = 0f,
+        SerializedProperty? propertyScope = null)
     {
-        GUI.Box(position, label, GUIStyles.ToggleSectionHeader);
-        var menuButton = DrawHeaderMenu(position, createHeaderMenu);
-        var headerControl = DrawHeaderControl(position, menuButton, drawHeader, headerWidth);
+        DrawShurikenHeader(
+            position,
+            label,
+            GUIStyles.ToggleSectionHeader,
+            createHeaderMenu,
+            drawHeader,
+            headerWidth,
+            propertyScope,
+            out var menuButton,
+            out var headerControl);
 
         var toggleRect = new Rect(
             position.x + SectionHeaderContentOffsetX + HeaderToggleVisualOffset.x,
@@ -292,6 +348,7 @@ internal static partial class GUIHelper
             LineHeight,
             LineHeight);
         using (new EditorGUI.PropertyScope(position, label, enabled))
+        using (new RightClickPassthroughScope(position))
         {
             var previousMixed = EditorGUI.showMixedValue;
             EditorGUI.showMixedValue = enabled.hasMultipleDifferentValues;
@@ -313,6 +370,7 @@ internal static partial class GUIHelper
             LineHeight);
 
         using (new EditorGUI.PropertyScope(position, label, enabled))
+        using (new RightClickPassthroughScope(position))
         {
             var previousMixed = EditorGUI.showMixedValue;
             EditorGUI.showMixedValue = enabled.hasMultipleDifferentValues;
@@ -334,6 +392,59 @@ internal static partial class GUIHelper
         return enabled.boolValue || enabled.hasMultipleDifferentValues;
     }
 
+
+    private static void DrawShurikenHeader(
+        Rect position,
+        GUIContent label,
+        GUIStyle style,
+        Func<GenericMenu>? createHeaderMenu,
+        Action<Rect>? drawHeader,
+        float headerWidth,
+        SerializedProperty? propertyScope,
+        out Rect menuButton,
+        out Rect headerControl)
+    {
+        if (propertyScope == null)
+        {
+            DrawShurikenHeaderContent(
+                position,
+                label,
+                style,
+                createHeaderMenu,
+                drawHeader,
+                headerWidth,
+                out menuButton,
+                out headerControl);
+            return;
+        }
+
+        using var scope = new EditorGUI.PropertyScope(position, label, propertyScope);
+        DrawShurikenHeaderContent(
+            position,
+            scope.content,
+            style,
+            createHeaderMenu,
+            drawHeader,
+            headerWidth,
+            out menuButton,
+            out headerControl);
+    }
+
+    private static void DrawShurikenHeaderContent(
+        Rect position,
+        GUIContent label,
+        GUIStyle style,
+        Func<GenericMenu>? createHeaderMenu,
+        Action<Rect>? drawHeader,
+        float headerWidth,
+        out Rect menuButton,
+        out Rect headerControl)
+    {
+        using var rightClick = new RightClickPassthroughScope(position);
+        GUI.Box(position, label, style);
+        menuButton = DrawHeaderMenu(position, createHeaderMenu);
+        headerControl = DrawHeaderControl(position, menuButton, drawHeader, headerWidth);
+    }
 
     private static Rect DrawHeaderMenu(Rect header, Func<GenericMenu>? createHeaderMenu)
     {
@@ -423,6 +534,7 @@ internal static partial class GUIHelper
         bool indentLabel = false)
     {
         using var scope = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new RightClickPassthroughScope(position);
         var (labelPosition, valuePosition) = SplitIndentedLabel(position);
         var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, scope.content);
         if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
@@ -438,6 +550,7 @@ internal static partial class GUIHelper
         GUIContent placeholder)
     {
         using var scope = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new RightClickPassthroughScope(position);
         var field = EditorGUI.PrefixLabel(position, scope.content);
         EditorGUI.PropertyField(field, property, GUIContent.none);
         if (property.objectReferenceValue != null) return;
@@ -453,6 +566,7 @@ internal static partial class GUIHelper
         bool indentLabel = false)
     {
         using var scope = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new RightClickPassthroughScope(position);
         var (labelPosition, valuePosition) = SplitIndentedLabel(position);
         var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, scope.content, EditorStyles.label);
         if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
@@ -480,6 +594,7 @@ internal static partial class GUIHelper
     public static void DrawToggleLeft(Rect position, SerializedProperty property, GUIContent label)
     {
         using var scope = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new RightClickPassthroughScope(position);
         var previousMixedValue = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
         EditorGUI.BeginChangeCheck();
@@ -554,13 +669,15 @@ internal static partial class GUIHelper
         string enabledOptionKey,
         Action<SerializedProperty> initializeElement)
     {
+        using var scope = new EditorGUI.PropertyScope(position, label, list);
+        using var rightClick = new RightClickPassthroughScope(position);
         var enabled = OptionalListEnabled(list);
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = list.hasMultipleDifferentValues;
         EditorGUI.BeginChangeCheck();
         var next = EditorGUI.Popup(
             position,
-            label,
+            scope.content,
             enabled ? 1 : 0,
             new[] { disabledOptionKey.LG(), enabledOptionKey.LG() });
         var changed = EditorGUI.EndChangeCheck();
@@ -655,6 +772,7 @@ internal static partial class GUIHelper
     {
         position.height = EditorGUI.GetPropertyHeight(property, includeChildren);
         using (new EditorGUI.PropertyScope(position, labelKey.LG(), property))
+        using (new RightClickPassthroughScope(position))
         {
             LocalizedPropertyField(position, property, labelKey, includeChildren);
         }
@@ -704,6 +822,7 @@ internal static partial class GUIHelper
     {
         position.height = EditorGUI.GetPropertyHeight(property, GUIContent.none, includeChildren);
         using var scope = new EditorGUI.PropertyScope(position, labelKey.LG(), property);
+        using var rightClick = new RightClickPassthroughScope(position);
         var (label, value) = SplitIndentedLabel(position);
         EditorGUI.LabelField(label, scope.content);
         EditorGUI.PropertyField(value, property, GUIContent.none, includeChildren);
@@ -718,6 +837,7 @@ internal static partial class GUIHelper
     {
         var label = string.IsNullOrEmpty(labelKey) ? GUIContent.none : labelKey.LG();
         using var _ = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new RightClickPassthroughScope(position);
         var previousMixedValue = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
         var next = LocalizedPopup(position, property.enumValueIndex, string.IsNullOrEmpty(labelKey) ? null : labelKey, optionKeys);

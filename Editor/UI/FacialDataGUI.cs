@@ -3,7 +3,7 @@ using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Gui;
 
-internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
+internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer, ISectionHeaderMenuDrawer
 {
     private readonly SerializedReferenceableSettings _source;
 
@@ -22,6 +22,8 @@ internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDr
     public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source);
     public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _source);
+    public void PopulateHeaderMenu(GenericMenu menu)
+        => FacialDataGUI.PopulateHeaderMenu(menu, _source, Actions);
 }
 
 internal static class FacialDataGUI
@@ -45,6 +47,53 @@ internal static class FacialDataGUI
             source,
             GetDirectHeight(source),
             rect => DrawDirect(rect, source));
+
+    internal static void PopulateHeaderMenu(
+        GenericMenu menu,
+        SerializedReferenceableSettings source,
+        SectionActionSet actions)
+    {
+        var label = "expression.separate.menu".LG();
+        if (CanSeparate(source))
+            menu.AddItem(label, false, () => Separate(source, actions));
+        else
+            menu.AddDisabledItem(label);
+    }
+
+    private static bool CanSeparate(SerializedReferenceableSettings source)
+    {
+        var serializedObject = source.Reference.serializedObject;
+        return serializedObject.targetObjects.Length == 1
+               && !source.Mode.hasMultipleDifferentValues
+               && source.Mode.intValue == (int)SettingsReferenceMode.Direct
+               && serializedObject.targetObject is Component component
+               && !EditorUtility.IsPersistent(component.gameObject);
+    }
+
+    private static void Separate(
+        SerializedReferenceableSettings source,
+        SectionActionSet actions)
+    {
+        if (!CanSeparate(source)) return;
+
+        var serializedObject = source.Reference.serializedObject;
+        serializedObject.UpdateIfRequiredOrScript();
+        if (serializedObject.targetObject is not Component owner) return;
+
+        SectionOperations.RunUndo("expression.separate.menu".LS(), () =>
+        {
+            var expressionData = FaceTunePrefabOperations.AddExpressionData(owner.transform.parent);
+            using var expressionDataSerializedObject = new SerializedObject(expressionData);
+            expressionDataSerializedObject.UpdateIfRequiredOrScript();
+            expressionDataSerializedObject.CopyFromSerializedProperty(source.Direct);
+            expressionDataSerializedObject.ApplyModifiedProperties();
+
+            SectionOperations.ResetValues(actions);
+            source.Mode.intValue = (int)SettingsReferenceMode.Reference;
+            source.Source.objectReferenceValue = expressionData.transform;
+            serializedObject.ApplyModifiedProperties();
+        });
+    }
 
     private static float GetDirectHeight(SerializedReferenceableSettings source)
     {
@@ -82,8 +131,12 @@ internal static class FacialDataGUI
         var (fields, button) = valueRect.SplitRight(GUI.skin.button.CalcSize(importLabel).x);
         var (clipRect, optionRect) = fields.SplitRight(GUIHelper.PopupWidth(new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() }));
         EditorGUI.PropertyField(clipRect, clip, GUIContent.none);
+        using (new EditorGUI.PropertyScope(optionRect, GUIContent.none, option))
+        using (new GUIHelper.RightClickPassthroughScope(optionRect))
         using (new EditorGUI.DisabledScope(clip.objectReferenceValue == null))
+        {
             option.enumValueIndex = EditorGUI.Popup(optionRect, option.enumValueIndex, new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() });
+        }
         using (new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1 || clip.objectReferenceValue == null))
             if (GUI.Button(button, importLabel)) ImportClip(component, direct);
     }
@@ -118,14 +171,12 @@ internal static class FacialDataGUI
         var facialAnimations = new List<BlendShapeWeightAnimation>();
         resolver.FacialData.AddIncoming(component, facialAnimations, avatar.BodyPath);
         var baseAnimations = source.ResolveBaseAnimations(resolver, avatar.BodyPath);
-        var targetValues = new BlendShapeWeightSet(
-            source.Direct.BlendShapeAnimations.ToFirstFrameBlendShapes());
         FacialShapesEditor.TryOpenEditor(
             avatar.FaceRenderer,
             source.Targeting,
-            new BlendShapeWeightSet(facialAnimations.ToFirstFrameBlendShapes()),
-            new BlendShapeWeightSet(baseAnimations.ToFirstFrameBlendShapes()),
-            targetValues);
+            facialAnimations,
+            baseAnimations,
+            source.Direct.BlendShapeAnimations);
     }
 
     private sealed record FacialEditorSource(
@@ -320,6 +371,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         position.SetSingleHeight();
         var contentWidth = Mathf.Max(0f, position.width - ModeToggleWidth);
         var nameWidth = contentWidth * PreferredNameRatio;

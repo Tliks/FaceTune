@@ -234,6 +234,9 @@ msgstr "コピー"
 msgid "section.paste.label"
 msgstr "ペースト"
 
+msgid "expression.separate.menu"
+msgstr "分離"
+
 msgid "common.component.label"
 msgstr "コンポーネント"
 

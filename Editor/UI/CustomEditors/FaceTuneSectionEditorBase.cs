@@ -129,13 +129,17 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         int spacingGroup = 0)
     {
         var actions = drawer.Actions.WithKey(labelKey);
+        var populateMenu = populateHeaderMenu;
+        if (populateMenu == null && drawer is ISectionHeaderMenuDrawer menuDrawer)
+            populateMenu = menuDrawer.PopulateHeaderMenu;
+
         return new(
             () => labelKey.LG(),
             drawer.GetHeight,
             drawer.Draw,
             defaultExpanded,
             actions,
-            () => SectionHeaderMenu.Create(actions, populateHeaderMenu),
+            () => SectionHeaderMenu.Create(actions, populateMenu),
             enabledProperty,
             drawer as ISectionHeaderDrawer,
             isVisible,
@@ -214,7 +218,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                     out content,
                     section.CreateHeaderMenu,
                     drawHeader,
-                    headerWidth);
+                    headerWidth,
+                    section.Actions.ScopeProperty);
             }
             else
             {
@@ -227,7 +232,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                     out content,
                     section.CreateHeaderMenu,
                     drawHeader,
-                    headerWidth);
+                    headerWidth,
+                    section.Actions.ScopeProperty);
             }
             if (drawn)
             {

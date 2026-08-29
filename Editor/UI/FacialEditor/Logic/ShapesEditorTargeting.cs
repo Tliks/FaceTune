@@ -1,3 +1,4 @@
+using Aoyon.FaceTune.Gui;
 using nadena.dev.ndmf.runtime;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -37,6 +38,7 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
         var targetValues = new BlendShapeWeightSet();
         dataManager.GetTargetValues(targetValues);
         var path = RuntimeUtil.RelativePath(root, renderer.gameObject) ?? throw new InvalidOperationException("Renderer is outside avatar root.");
+        var multiFrameNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var binding in AnimationUtility.GetCurveBindings(Target))
         {
             var prefix = FaceTuneConstants.BlendShapePropertyPrefix;
@@ -44,10 +46,20 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
                 || !binding.propertyName.StartsWith(prefix, StringComparison.Ordinal))
                 continue;
             var name = binding.propertyName[prefix.Length..];
+            var curve = AnimationUtility.GetEditorCurve(Target, binding);
+            if (curve != null && curve.keys.Length > 1)
+            {
+                multiFrameNames.Add(name);
+                continue;
+            }
             if (!dataManager.IsExplicitlyExcluded(name))
                 AnimationUtility.SetEditorCurve(Target, binding, null);
         }
-        Target.AddBlendShapeAnimations(path, targetValues.ToBlendShapeAnimations());
+        Target.AddBlendShapeAnimations(
+            path,
+            targetValues
+                .Where(value => !multiFrameNames.Contains(value.Name))
+                .ToBlendShapeAnimations());
         Target.SaveChanges();
     }
 }
@@ -58,26 +70,53 @@ internal abstract class FacialSourceTargeting<T> : IShapesEditorTargeting<T> whe
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new InvalidOperationException("Target is not set.");
-        var targetValues = new BlendShapeWeightSet();
-        dataManager.GetTargetValues(targetValues);
         var serialized = new SerializedObject(Target);
         serialized.Update();
         var animations = serialized.FindProperty(SourcePropertyName)
             .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        var values = new List<BlendShapeWeightAnimation>();
-        for (var index = 0; index < animations.arraySize; index++)
-        {
-            var element = animations.GetArrayElementAtIndex(index);
-            var name = element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue;
-            if (!dataManager.IsExplicitlyExcluded(name)) continue;
-            values.Add(new BlendShapeWeightAnimation(
-                name,
-                element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName)
-                    .animationCurveValue));
-        }
-        values.AddRange(targetValues.ToBlendShapeAnimations());
-        FacialDataGUI.SetBlendShapeAnimations(animations, values);
+        FacialShapeAnimationSaver.Save(animations, dataManager);
         serialized.ApplyModifiedProperties();
+    }
+}
+
+internal static class FacialShapeAnimationSaver
+{
+    internal static void Save(
+        SerializedProperty animations,
+        BlendShapeOverrideManager dataManager)
+    {
+        var originalAnimations = ReadAnimations(animations).ToArray();
+        var targetValues = new BlendShapeWeightSet();
+        dataManager.GetTargetValues(targetValues);
+
+        var preservedAnimations = originalAnimations
+            .Where(animation => animation.IsMultiFrame
+                             || dataManager.IsExplicitlyExcluded(animation.Name))
+            .ToArray();
+        var preservedNames = preservedAnimations
+            .Select(animation => animation.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        animations.SynchronizeArrayByKey(
+            preservedAnimations.Concat(targetValues
+                .Where(value => !preservedNames.Contains(value.Name))
+                .ToBlendShapeAnimations()),
+            element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
+            animation => animation.Name,
+            (element, animation) => element.CopyFrom(animation),
+            overwrite: true);
+    }
+
+    private static IEnumerable<BlendShapeWeightAnimation> ReadAnimations(SerializedProperty property)
+    {
+        for (var index = 0; index < property.arraySize; index++)
+        {
+            var element = property.GetArrayElementAtIndex(index);
+            yield return new BlendShapeWeightAnimation(
+                element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
+                element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName)
+                    .animationCurveValue);
+        }
     }
 }
 

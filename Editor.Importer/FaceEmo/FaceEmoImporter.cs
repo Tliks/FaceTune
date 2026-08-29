@@ -61,11 +61,7 @@ internal sealed class FaceEmoImporter
 
     private void ApplyRootSettings(GameObject root)
     {
-        var settings = root.GetComponent<SettingsComponent>();
-        if (settings == null)
-            settings = Undo.AddComponent<SettingsComponent>(root);
-        else
-            Undo.RecordObject(settings, "Import FaceEmo Settings");
+        var settings = FaceTuneImporterUtility.ImportFaceRendererAsSettings(_context, root);
 
         var excludedBlendShapes = _source.AV3Setting.ExcludedBlendShapes
             .Where(shape => shape != null)

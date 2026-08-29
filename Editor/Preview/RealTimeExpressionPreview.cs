@@ -54,16 +54,19 @@ internal class RealTimeExpressionPreview : IRenderFilter
         try
         {
             var pair = proxyPairs.First();
-            if (pair.Item2 is not SkinnedMeshRenderer proxy) throw new Exception("SkinnedMeshRenderer not found");
+            if (pair.Item1 is not SkinnedMeshRenderer renderer
+                || pair.Item2 is not SkinnedMeshRenderer proxy)
+                throw new Exception("SkinnedMeshRenderer not found");
 
             var data = group.GetData<PassingData>();
 
             using var _set = BlendShapeSetPool.Get(out var set);
 
-            var defaultValue = 0f; // 明示されないブレンドシェイプは0で初期化し、他の影響を打ち消す
+            var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);
             GetBlendShapes(context, set, data.Component, data.Root, data.FacePath);
 
-            var node = new BlendShapePreviewNode(proxy, set.AsReadOnly(), defaultValue);
+            var apply = new BlendShapeApply(renderer, set.AsReadOnly(), 0f, ignoredNames);
+            var node = new BlendShapePreviewNode(proxy, apply);
             return Task.FromResult<IRenderFilterNode>(node);
         }
         catch (Exception e)
@@ -77,10 +80,6 @@ internal class RealTimeExpressionPreview : IRenderFilter
     {
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
         new FaceTuneResolver(root, context).FacialData.Add(target, animations, bodyPath);
-        var excluded = AvatarContext.GetExplicitlyExcludedBlendShapeNames(root, context);
-        result.AddRange(animations
-            .Where(animation => !excluded.Contains(animation.Name))
-            .ToFirstFrameBlendShapes());
-        result.AddRange(excluded.Select(name => new BlendShapeWeight(name, -1f)));
+        result.AddRange(animations.ToFirstFrameBlendShapes());
     }
 }

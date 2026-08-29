@@ -65,11 +65,8 @@ internal static class GameObjectMenu
         var parent = Selection.activeGameObject;
         if (parent == null) return;
 
-        var expressionData = new GameObject("Expression Data");
-        Undo.RegisterCreatedObjectUndo(expressionData, "Add FaceTune Expression Data");
-        Undo.SetTransformParent(expressionData.transform, parent.transform, "Place FaceTune Expression Data");
-        Undo.AddComponent<ExpressionDataComponent>(expressionData);
-        Selection.activeGameObject = expressionData;
+        var expressionData = FaceTunePrefabOperations.AddExpressionData(parent.transform);
+        Selection.activeGameObject = expressionData.gameObject;
     }
 
     [M(MenuItems.ExpressionDataPath, true)]

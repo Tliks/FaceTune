@@ -93,6 +93,9 @@ internal sealed class FaceTuneFacialDataResolver
         }
     }
 
+    public IEnumerable<(SettingsComponent Owner, FacialBlendShapeData Value)> EnumerateIncoming(GameObject target)
+        => EnumerateIncoming(target.transform);
+
     public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
         => _expressionData.EnumerateLocal(expression, ExtractFacialSettings);
 
@@ -108,10 +111,27 @@ internal sealed class FaceTuneFacialDataResolver
             AddAnimations(value, result, bodyPath);
     }
 
+    public void AddIncoming(GameObject target, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+        => AddIncoming(target.transform, result, bodyPath);
+
     public void AddLocal(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
     {
         foreach (var (_, value) in EnumerateLocal(expression))
             AddAnimations(value, result, bodyPath);
+    }
+
+    public bool AddLocalData(
+        GameObject scope,
+        ICollection<BlendShapeWeightAnimation> result,
+        string bodyPath)
+    {
+        var added = false;
+        foreach (var (_, value) in _expressionData.EnumerateData(scope, ExtractFacialSettings))
+        {
+            added = true;
+            AddAnimations(value, result, bodyPath);
+        }
+        return added;
     }
 
     public void Add(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
@@ -222,7 +242,16 @@ internal sealed class FaceTuneExpressionDataResolver
         if (_references.TryResolve<TValue>(expression, extract, out var value))
             yield return (expression, value);
 
-        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(expression.gameObject, true))
+        foreach (var item in EnumerateData(expression.gameObject, extract))
+            yield return item;
+    }
+
+    public IEnumerable<(Component Owner, TValue Value)> EnumerateData<TValue>(
+        GameObject scope,
+        Func<Component, ReferenceableExpressionSettings<TValue>> extract)
+        where TValue : class
+    {
+        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(scope, true))
         {
             if (_references.TryResolve<TValue>(data, extract, out var dataValue))
                 yield return (data, dataValue);

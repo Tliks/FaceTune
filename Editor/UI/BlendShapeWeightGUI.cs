@@ -8,6 +8,7 @@ internal sealed class BlendShapeWeightDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         using var _ = new EditorGUI.PropertyScope(position, label, property);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         position.SetSingleHeight();
         var (nameRect, weightRect) = position.SplitRatio(NameRatio);
         BlendShapeNameGUI.Draw(nameRect, property.FindPropertyRelative(BlendShapeWeight.NamePropName));

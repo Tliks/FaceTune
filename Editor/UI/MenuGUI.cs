@@ -102,11 +102,13 @@ internal static class MenuGUI
             return true;
         }
 
+        using var scope = new EditorGUI.PropertyScope(position, label, groupName);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var state = GetGroupState(groupName);
         if (state.IsCreating)
         {
             GUI.SetNextControlName(state.ControlName);
-            groupName.stringValue = EditorGUI.DelayedTextField(position, label, groupName.stringValue);
+            groupName.stringValue = EditorGUI.DelayedTextField(position, scope.content, groupName.stringValue);
             if (!string.IsNullOrWhiteSpace(groupName.stringValue)) state.IsCreating = false;
 
             var current = Event.current;
@@ -143,7 +145,7 @@ internal static class MenuGUI
         for (var i = 0; i < groups.Count; i++) options[i + 1] = new GUIContent(groups[i]);
         options[^1] = "menu.group.new.label".LG();
         var selectedIndex = currentIndex < 0 ? 0 : currentIndex + 1;
-        var nextIndex = EditorGUI.Popup(position, label, selectedIndex, options);
+        var nextIndex = EditorGUI.Popup(position, scope.content, selectedIndex, options);
         if (nextIndex == selectedIndex) return !string.IsNullOrWhiteSpace(groupName.stringValue);
         if (nextIndex == options.Length - 1)
         {
@@ -193,7 +195,11 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         var manual = property.FindPropertyRelative(nameof(MenuIconSettings.ManualIcon));
         var preview = property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression));
         position.SetSingleHeight();
-        mode.enumValueIndex = GUIHelper.LocalizedPopup(position, mode.enumValueIndex, "menuIcon.icon.label", ModeKeys);
+        using (new EditorGUI.PropertyScope(position, "menuIcon.icon.label".LG(), mode))
+        using (new GUIHelper.RightClickPassthroughScope(position))
+        {
+            mode.enumValueIndex = GUIHelper.LocalizedPopup(position, mode.enumValueIndex, "menuIcon.icon.label", ModeKeys);
+        }
         if (mode.intValue == (int)MenuIconSettings.Kind.None) return;
         position.NewLine();
 
