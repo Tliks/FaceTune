@@ -8,6 +8,7 @@ internal sealed class FaceTuneResolver
     private readonly ComputeContext? _context;
     private FaceTuneFacialDataResolver? _facialData;
     private FaceTuneExpressionDataResolver? _expressionData;
+    private FaceTuneNonFacialAnimationResolver? _nonFacialAnimations;
     private FaceTuneScopedResolver<EyeBlinkSettings>? _eyeBlink;
     private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
     private FaceTuneScopedResolver<TransitionSettings>? _transition;
@@ -22,8 +23,11 @@ internal sealed class FaceTuneResolver
             ExpressionData,
             _context);
 
-    public FaceTuneExpressionDataResolver ExpressionData
-        => _expressionData ??= new FaceTuneExpressionDataResolver(SettingsReferences, _context);
+    private FaceTuneExpressionDataResolver ExpressionData
+        => _expressionData ??= new FaceTuneExpressionDataResolver(_root, SettingsReferences, _context);
+
+    public FaceTuneNonFacialAnimationResolver NonFacialAnimations
+        => _nonFacialAnimations ??= new FaceTuneNonFacialAnimationResolver(_root, ExpressionData);
 
     public FaceTuneSettingsReferenceResolver SettingsReferences
         => _settingsReferences ??= new FaceTuneSettingsReferenceResolver(_context);
@@ -81,9 +85,53 @@ internal sealed class FaceTuneFacialDataResolver
         _context = context ?? ComputeContext.NullContext;
     }
 
-    public IEnumerable<(SettingsComponent Owner, FacialBlendShapeData Value)> EnumerateIncoming(Component target)
+    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateIncoming(Transform target)
+        => _expressionData.EnumerateIncoming<FacialBlendShapeData>(target, ExtractFacialSettings);
+
+    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
+        => _expressionData.EnumerateLocal(expression, ExtractFacialSettings);
+
+    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocalData(Transform scope)
+        => _expressionData.EnumerateLocalData(scope, ExtractFacialSettings);
+
+    public void AddIncoming(Transform target, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+        => AddResolved(EnumerateIncoming(target), result, bodyPath);
+
+    public void AddLocal(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+        => AddResolved(EnumerateLocal(expression), result, bodyPath);
+
+    public bool AddLocalData(
+        Transform scope,
+        ICollection<BlendShapeWeightAnimation> result,
+        string bodyPath)
+        => AddResolved(EnumerateLocalData(scope), result, bodyPath);
+
+    public void Add(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
     {
-        foreach (var owner in _context.GetComponentsInParentExcludingSelf<SettingsComponent>(_root, target, true))
+        AddIncoming(expression.transform, result, bodyPath);
+        AddLocal(expression, result, bodyPath);
+        AddLocalData(expression.transform, result, bodyPath);
+    }
+
+    public void AddRenderer(ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+        => AddResolved(Resolve(EnumerateRendererOwners()), result, bodyPath);
+
+    private IEnumerable<Component> EnumerateRendererOwners()
+    {
+        foreach (var owner in _context.GetComponentsInChildren<SettingsComponent>(_root, true))
+        {
+            var applyToRenderer = _context.Observe(
+                owner,
+                value => value.ApplyToRenderer,
+                (left, right) => left == right);
+            if (applyToRenderer)
+                yield return owner;
+        }
+    }
+
+    private IEnumerable<(Component Owner, FacialBlendShapeData Value)> Resolve(IEnumerable<Component> owners)
+    {
+        foreach (var owner in owners)
         {
             if (_references.TryResolve(
                     owner,
@@ -93,69 +141,18 @@ internal sealed class FaceTuneFacialDataResolver
         }
     }
 
-    public IEnumerable<(SettingsComponent Owner, FacialBlendShapeData Value)> EnumerateIncoming(GameObject target)
-        => EnumerateIncoming(target.transform);
-
-    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
-        => _expressionData.EnumerateLocal(expression, ExtractFacialSettings);
-
-    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var item in EnumerateIncoming(expression)) yield return item;
-        foreach (var item in EnumerateLocal(expression)) yield return item;
-    }
-
-    public void AddIncoming(Component target, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-    {
-        foreach (var (_, value) in EnumerateIncoming(target))
-            AddAnimations(value, result, bodyPath);
-    }
-
-    public void AddIncoming(GameObject target, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-        => AddIncoming(target.transform, result, bodyPath);
-
-    public void AddLocal(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-    {
-        foreach (var (_, value) in EnumerateLocal(expression))
-            AddAnimations(value, result, bodyPath);
-    }
-
-    public bool AddLocalData(
-        GameObject scope,
+    private bool AddResolved(
+        IEnumerable<(Component Owner, FacialBlendShapeData Value)> values,
         ICollection<BlendShapeWeightAnimation> result,
         string bodyPath)
     {
         var added = false;
-        foreach (var (_, value) in _expressionData.EnumerateData(scope, ExtractFacialSettings))
+        foreach (var (_, value) in values)
         {
             added = true;
             AddAnimations(value, result, bodyPath);
         }
         return added;
-    }
-
-    public void Add(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-    {
-        foreach (var (_, value) in Enumerate(expression))
-            AddAnimations(value, result, bodyPath);
-    }
-
-    public void AddRenderer(ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-    {
-        foreach (var settings in _context.GetComponentsInChildren<SettingsComponent>(_root, true))
-        {
-            var owner = settings;
-            var applyToRenderer = _context.Observe(
-                owner,
-                value => value.ApplyToRenderer,
-                (left, right) => left == right);
-            if (applyToRenderer
-                && _references.TryResolve(
-                    owner,
-                    ExtractFacialSettings,
-                    out FacialBlendShapeData? value))
-                AddAnimations(value, result, bodyPath);
-        }
     }
 
     private ReferenceableExpressionSettings<FacialBlendShapeData> ExtractFacialSettings(Component component)
@@ -214,25 +211,99 @@ internal sealed class FaceTuneFacialDataResolver
     }
 }
 
+internal sealed class FaceTuneNonFacialAnimationResolver
+{
+    private readonly GameObject _root;
+    private readonly FaceTuneExpressionDataResolver _expressionData;
+
+    internal FaceTuneNonFacialAnimationResolver(
+        GameObject root,
+        FaceTuneExpressionDataResolver expressionData)
+    {
+        _root = root;
+        _expressionData = expressionData;
+    }
+
+    public ResolvedNonFacialAnimationSet Resolve(ExpressionComponent expression, string bodyPath)
+    {
+        var result = new ResolvedNonFacialAnimationSet();
+        AddResolved(_expressionData.EnumerateLocal(expression, ExtractSettings), result, bodyPath);
+        AddResolved(_expressionData.EnumerateLocalData(expression.transform, ExtractSettings), result, bodyPath);
+        return result;
+    }
+
+    private void AddResolved(
+        IEnumerable<(Component Owner, NonFacialAnimationData Value)> values,
+        ResolvedNonFacialAnimationSet result,
+        string bodyPath)
+    {
+        foreach (var (owner, data) in values)
+        {
+            foreach (var clip in data.AnimationClips.Where(clip => clip != null))
+            {
+                foreach (var binding in AnimationUtility.GetCurveBindings(clip))
+                {
+                    if (IsFacialBlendShapeBinding(binding, bodyPath)) continue;
+                    result.AddFloatCurve(binding, AnimationUtility.GetEditorCurve(clip, binding));
+                }
+                foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
+                {
+                    result.AddObjectCurve(
+                        binding,
+                        AnimationUtility.GetObjectReferenceCurve(clip, binding));
+                }
+            }
+
+            foreach (var animation in data.TransformAnimations)
+            {
+                if (animation == null) continue;
+                var target = animation.Target.Get(owner);
+                if (target == null) continue;
+                var path = Utils.GetRelativePath(_root, target);
+                if (path == null) continue;
+                result.AddFloatCurve(
+                    EditorCurveBinding.FloatCurve(path, typeof(GameObject), "m_IsActive"),
+                    animation.Curve ?? AnimationCurve.Constant(0f, 1f, 1f));
+            }
+        }
+    }
+
+    private static bool IsFacialBlendShapeBinding(EditorCurveBinding binding, string bodyPath)
+        => binding.path == bodyPath
+        && binding.type == typeof(SkinnedMeshRenderer)
+        && binding.propertyName.StartsWith(FaceTuneConstants.BlendShapePropertyPrefix, StringComparison.Ordinal);
+
+    private static ReferenceableExpressionSettings<NonFacialAnimationData> ExtractSettings(Component component)
+        => ((IReferenceableExpressionSettings<NonFacialAnimationData>)component).Settings;
+}
+
 internal sealed class FaceTuneExpressionDataResolver
 {
+    private readonly GameObject _root;
     private readonly FaceTuneSettingsReferenceResolver _references;
     private readonly ComputeContext _context;
 
     internal FaceTuneExpressionDataResolver(
+        GameObject root,
         FaceTuneSettingsReferenceResolver references,
         ComputeContext? context)
     {
+        _root = root;
         _references = references;
         _context = context ?? ComputeContext.NullContext;
     }
 
-    public IEnumerable<(Component Owner, TValue Value)> EnumerateLocal<TValue>(
-        ExpressionComponent expression)
+    public IEnumerable<(Component Owner, TValue Value)> EnumerateIncoming<TValue>(
+        Transform target,
+        Func<Component, ReferenceableExpressionSettings<TValue>> extract)
         where TValue : class
-        => EnumerateLocal(
-            expression,
-            static component => ((IReferenceableExpressionSettings<TValue>)component).Settings);
+    {
+        foreach (var owner in _context.GetComponentsInParentExcludingSelf<SettingsComponent>(_root, target, true))
+        {
+            if (_references.TryResolve<TValue>(owner, extract, out var value))
+                yield return (owner, value);
+        }
+    }
 
     public IEnumerable<(Component Owner, TValue Value)> EnumerateLocal<TValue>(
         ExpressionComponent expression,
@@ -241,20 +312,17 @@ internal sealed class FaceTuneExpressionDataResolver
     {
         if (_references.TryResolve<TValue>(expression, extract, out var value))
             yield return (expression, value);
-
-        foreach (var item in EnumerateData(expression.gameObject, extract))
-            yield return item;
     }
 
-    public IEnumerable<(Component Owner, TValue Value)> EnumerateData<TValue>(
-        GameObject scope,
+    public IEnumerable<(Component Owner, TValue Value)> EnumerateLocalData<TValue>(
+        Transform scope,
         Func<Component, ReferenceableExpressionSettings<TValue>> extract)
         where TValue : class
     {
-        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(scope, true))
+        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(scope.gameObject, true))
         {
-            if (_references.TryResolve<TValue>(data, extract, out var dataValue))
-                yield return (data, dataValue);
+            if (_references.TryResolve<TValue>(data, extract, out var value))
+                yield return (data, value);
         }
     }
 }

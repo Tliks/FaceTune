@@ -80,9 +80,11 @@ internal static class FacialDataGUI
         serializedObject.UpdateIfRequiredOrScript();
         if (serializedObject.targetObject is not Component owner) return;
 
+        ExpressionDataComponent? separatedData = null;
         SectionOperations.RunUndo("expression.separate.menu".LS(), () =>
         {
             var expressionData = FaceTunePrefabOperations.AddExpressionData(owner.transform.parent);
+            separatedData = expressionData;
             using var expressionDataSerializedObject = new SerializedObject(expressionData);
             expressionDataSerializedObject.UpdateIfRequiredOrScript();
             expressionDataSerializedObject.CopyFromSerializedProperty(source.Direct);
@@ -93,6 +95,9 @@ internal static class FacialDataGUI
             source.Source.objectReferenceValue = expressionData.transform;
             serializedObject.ApplyModifiedProperties();
         });
+
+        if (separatedData != null)
+            EditorGUIUtility.PingObject(separatedData);
     }
 
     private static float GetDirectHeight(SerializedReferenceableSettings source)
@@ -169,7 +174,7 @@ internal static class FacialDataGUI
         if (source == null) return;
         var resolver = new FaceTuneResolver(avatar.Root);
         var facialAnimations = new List<BlendShapeWeightAnimation>();
-        resolver.FacialData.AddIncoming(component, facialAnimations, avatar.BodyPath);
+        resolver.FacialData.AddIncoming(component.transform, facialAnimations, avatar.BodyPath);
         var baseAnimations = source.ResolveBaseAnimations(resolver, avatar.BodyPath);
         FacialShapesEditor.TryOpenEditor(
             avatar.FaceRenderer,
@@ -210,6 +215,7 @@ internal static class FacialDataGUI
     {
         var result = new List<BlendShapeWeightAnimation>();
         var expressionData = resolver.FacialData.EnumerateLocal(expression)
+            .Concat(resolver.FacialData.EnumerateLocalData(expression.transform))
             .FirstOrDefault().Value;
         AddClipAnimations(expressionData, result, bodyPath);
         return result;
@@ -224,7 +230,9 @@ internal static class FacialDataGUI
         var owner = targetData.GetComponentInParent<ExpressionComponent>(true);
         if (owner == null) return result;
 
-        foreach (var (source, data) in resolver.FacialData.EnumerateLocal(owner))
+        var sources = resolver.FacialData.EnumerateLocal(owner)
+            .Concat(resolver.FacialData.EnumerateLocalData(owner.transform));
+        foreach (var (source, data) in sources)
         {
             AddClipAnimations(data, result, bodyPath);
             if (source == targetData) break;

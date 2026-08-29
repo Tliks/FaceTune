@@ -41,10 +41,19 @@ internal static class FaceTunePrefabOperations
 {
     private const string TemplateGuid = "e643b160cc0f24a4fa8e33fb4df1fe7e";
 
-    public static GameObject AddStandardSetup(GameObject avatarRoot, bool enableDefaultExpression)
+    public static GameObject AddStandardSetup(
+        GameObject avatarRoot,
+        bool enableDefaultExpression,
+        bool applyFaceRendererSettings = true)
     {
         var root = Instantiate(TemplateGuid, avatarRoot, false);
         PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.Completely, InteractionMode.UserAction);
+
+        if (applyFaceRendererSettings
+            && AvatarContext.TryGet(avatarRoot, out var context, out _))
+        {
+            ApplyFaceRendererSettings(context, root);
+        }
 
         if (!enableDefaultExpression)
         {
@@ -59,6 +68,25 @@ internal static class FaceTunePrefabOperations
             }
         }
         return root;
+    }
+
+    private static void ApplyFaceRendererSettings(AvatarContext context, GameObject destination)
+    {
+        var settings = destination.GetComponent<SettingsComponent>();
+        if (settings == null)
+            settings = Undo.AddComponent<SettingsComponent>(destination);
+        else
+            Undo.RecordObject(settings, "Apply FaceRenderer Settings");
+
+        settings.HasFacialBlendShapes = true;
+        settings.FacialBlendShapesReference.Mode = SettingsReferenceMode.Direct;
+        settings.FacialBlendShapesReference.Source = null;
+        settings.FacialBlendShapes.Clip = null;
+        settings.FacialBlendShapes.BlendShapeAnimations = context.FaceRenderer
+            .GetBlendShapeWeights(context.FaceMesh)
+            .ToBlendShapeAnimations()
+            .ToList();
+        settings.ApplyToRenderer = true;
     }
 
     public static ExpressionComponent AddExpression(GameObject parent)

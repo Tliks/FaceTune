@@ -62,7 +62,7 @@ internal sealed class ExpressionItemBuilder
     {
         var incomingFacialAnimations = new BlendShapeWeightAnimationSet();
         _resolver.FacialData.AddIncoming(
-            component,
+            component.transform,
             incomingFacialAnimations,
             _avatarContext.BodyPath);
         RemoveProhibitedAnimations(
@@ -72,6 +72,10 @@ internal sealed class ExpressionItemBuilder
         var localFacialAnimations = new BlendShapeWeightAnimationSet();
         _resolver.FacialData.AddLocal(
             component,
+            localFacialAnimations,
+            _avatarContext.BodyPath);
+        _resolver.FacialData.AddLocalData(
+            component.transform,
             localFacialAnimations,
             _avatarContext.BodyPath);
         RemoveProhibitedAnimations(
@@ -196,50 +200,7 @@ internal sealed class ExpressionItemBuilder
     }
 
     private ResolvedNonFacialAnimationSet ResolveNonFacialAnimations(ExpressionComponent component)
-    {
-        var result = new ResolvedNonFacialAnimationSet();
-        foreach (var (owner, data) in _resolver.ExpressionData
-                     .EnumerateLocal<NonFacialAnimationData>(component))
-            AddNonFacialAnimations(result, owner, data);
-        return result;
-    }
-
-    private void AddNonFacialAnimations(
-        ResolvedNonFacialAnimationSet result,
-        Component owner,
-        NonFacialAnimationData data)
-    {
-        foreach (var clip in data.AnimationClips.Where(clip => clip != null))
-        {
-            foreach (var binding in AnimationUtility.GetCurveBindings(clip))
-            {
-                if (IsFacialBlendShapeBinding(binding)) continue;
-                result.AddFloatCurve(binding, AnimationUtility.GetEditorCurve(clip, binding));
-            }
-            foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
-            {
-                result.AddObjectCurve(
-                    binding,
-                    AnimationUtility.GetObjectReferenceCurve(clip, binding));
-            }
-        }
-
-        foreach (var animation in data.TransformAnimations)
-        {
-            var target = animation?.Target.Get(owner);
-            if (target == null) continue;
-            var path = Utils.GetRelativePath(_avatarContext.Root.gameObject, target);
-            if (path == null) continue;
-            result.AddFloatCurve(
-                EditorCurveBinding.FloatCurve(path, typeof(GameObject), "m_IsActive"),
-                animation.Curve ?? AnimationCurve.Constant(0f, 1f, 1f));
-        }
-    }
-
-    private bool IsFacialBlendShapeBinding(EditorCurveBinding binding)
-        => binding.path == _avatarContext.BodyPath
-        && binding.type == typeof(SkinnedMeshRenderer)
-        && binding.propertyName.StartsWith(FaceTuneConstants.BlendShapePropertyPrefix, StringComparison.Ordinal);
+        => _resolver.NonFacialAnimations.Resolve(component, _avatarContext.BodyPath);
 
     private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {

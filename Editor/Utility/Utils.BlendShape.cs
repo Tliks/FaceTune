@@ -6,6 +6,39 @@ internal readonly record struct BlendShapeApply(
     float? DefaultValue = null,
     ISet<string>? IgnoredNames = null)
 {
+    public bool Equals(BlendShapeApply other)
+    {
+        if (!EqualityComparer<SkinnedMeshRenderer>.Default.Equals(Renderer, other.Renderer)
+            || DefaultValue != other.DefaultValue
+            || !Set.Equals(other.Set))
+            return false;
+
+        if (ReferenceEquals(IgnoredNames, other.IgnoredNames)) return true;
+
+        var leftCount = IgnoredNames?.Count ?? 0;
+        var rightCount = other.IgnoredNames?.Count ?? 0;
+        if (leftCount != rightCount) return false;
+        if (leftCount == 0) return true;
+
+        foreach (var name in IgnoredNames!)
+        {
+            if (!other.IgnoredNames!.Contains(name)) return false;
+        }
+        return true;
+    }
+
+    public override int GetHashCode()
+    {
+        var ignoredNamesHash = 0;
+        if (IgnoredNames != null)
+        {
+            foreach (var name in IgnoredNames)
+                ignoredNamesHash ^= StringComparer.Ordinal.GetHashCode(name);
+        }
+
+        return HashCode.Combine(Renderer, Set, DefaultValue, ignoredNamesHash);
+    }
+
     // false means that the current renderer value must be preserved.
     internal bool TryGetWeight(string name, out float weight)
     {
