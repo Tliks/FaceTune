@@ -198,9 +198,10 @@ internal class SelectedShapesPreviewSession : IDisposable
     private static bool TryGetGameObjectAnimations(ComputeContext context, GameObject target, GameObject root, string bodyPath, List<BlendShapeWeightAnimation> resultToAdd, out bool isLooping)
     {
         using var _ = ListPool<ExpressionComponent>.Get(out var expressions);
-        context.GetComponents<ExpressionComponent>(target, expressions);
+        context.GetComponentsInChildren<ExpressionComponent>(target, true, expressions);
         var expressionCount = expressions.Count;
 
+        // 配下に複数Expressionがある場合は境界が推定不能なので無効化
         if (expressionCount > 1)
         {
             isLooping = false;
