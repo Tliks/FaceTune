@@ -49,6 +49,8 @@ internal sealed class FaceEmoImporterProvider : IFaceTuneImporterProvider
                                  && (_outputFolder == "Assets"
                                      || _outputFolder.StartsWith("Assets/", StringComparison.Ordinal));
 
+        public bool ApplyFaceRendererSettings => true;
+
         public void DrawConfiguration()
         {
             if (_sources.Count == 1)

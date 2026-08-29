@@ -16,6 +16,7 @@ internal interface IFaceTuneImportSession : IDisposable
 {
     void DrawConfiguration();
     bool CanImport { get; }
+    bool ApplyFaceRendererSettings { get; }
     GameObject? Import(AvatarContext context, GameObject destination);
 }
 

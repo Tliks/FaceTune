@@ -138,6 +138,18 @@ msgstr "条件"
 msgid "facialEditor.title"
 msgstr "表情編集画面"
 
+msgid "facialEditor.rendererRequired.message"
+msgstr "表情を編集する対象Rendererを設定してください。"
+
+msgid "facialEditor.clipOptions.label"
+msgstr "Clip保存オプション"
+
+msgid "facialEditor.zeroUnspecifiedBlendShapes.option"
+msgstr "指定されていないブレンドシェイプを0にする"
+
+msgid "facialEditor.zeroUnavailableBlendShapes.option"
+msgstr "使用できないブレンドシェイプを0にする"
+
 msgid "facialEditor.save.button"
 msgstr "保存"
 

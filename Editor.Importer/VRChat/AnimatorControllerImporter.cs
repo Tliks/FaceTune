@@ -1,7 +1,7 @@
 using UnityEditor.Animations;
-using Aoyon.FaceTune.Importing;
 using Aoyon.FaceTune.Platforms;
 using VRC.SDK3.Avatars.Components;
+using Aoyon.FaceTune.Importing;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
@@ -30,8 +30,6 @@ internal class AnimatorControllerImporter
 
     public GameObject? Import(GameObject parent)
     {
-        FaceTuneImporterUtility.ImportFaceRendererAsSettings(_context, parent);
-
         GameObject? firstLayerObject = null;
         foreach (var layer in _animatorController.layers)
         {

@@ -96,7 +96,16 @@ internal static class VRChatMenuThumbnailFeature
         {
             AssetDatabase.StartAssetEditing();
             var firstTexture = textures[0];
-            assetSaver.SaveAsset(firstTexture);
+            var textureName = firstTexture.name;
+            try
+            {
+                firstTexture.name = Guid.NewGuid().ToString("N");
+                assetSaver.SaveAsset(firstTexture);
+            }
+            finally
+            {
+                firstTexture.name = textureName;
+            }
             var containerPath = AssetDatabase.GetAssetPath(firstTexture);
             for (var index = 1; index < textures.Count; index++)
             {

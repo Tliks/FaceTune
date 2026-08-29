@@ -365,7 +365,8 @@ internal sealed class FaceTuneWindow : EditorWindow
 
     private void RunImport()
     {
-        if (_importSession == null
+        var importSession = _importSession;
+        if (importSession == null
             || !AvatarContext.TryGet(_avatarRoot!, out var avatarContext, out _))
         {
             EditorUtility.DisplayDialog(FaceTuneConstants.Name, "window.import.avatarInvalid.message".LS(), "OK");
@@ -375,8 +376,11 @@ internal sealed class FaceTuneWindow : EditorWindow
         GameObject? created = null;
         RunUndo("Import to FaceTune", () =>
         {
-            var templateRoot = FaceTunePrefabOperations.AddStandardSetup(_avatarRoot!, true);
-            created = _importSession.Import(avatarContext, templateRoot) ?? templateRoot;
+            var templateRoot = FaceTunePrefabOperations.AddStandardSetup(
+                _avatarRoot!,
+                true,
+                importSession.ApplyFaceRendererSettings);
+            created = importSession.Import(avatarContext, templateRoot) ?? templateRoot;
         });
 
         if (created != null)

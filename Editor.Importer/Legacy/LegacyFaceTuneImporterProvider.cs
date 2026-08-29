@@ -33,6 +33,8 @@ internal sealed class LegacyFaceTuneImporterProvider : IFaceTuneImporterProvider
         public bool CanImport
             => _avatarRoot.GetComponentsInChildren<LegacyFaceTuneTagComponent>(true).Length > 0;
 
+        public bool ApplyFaceRendererSettings => false;
+
         public void DrawConfiguration()
         {
         }

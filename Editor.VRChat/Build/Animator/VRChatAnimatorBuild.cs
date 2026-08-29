@@ -10,7 +10,7 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 internal static class VRChatAnimatorBuilder
 {
     private const int InitialLayerPriority = -1;
-    private const int TrackingControlLayerPriority = int.MaxValue;
+    private const int TrackingControlLayerPriority = int.MaxValue - 1;
 
     public static void Build(
         BuildContext buildContext,

@@ -82,6 +82,13 @@ internal class GeneralControls : IDisposable
             }
         });
 
+        if (_context.Renderer == null)
+        {
+            _element.Q<VisualElement>("targeting-content").Insert(1, new HelpBox(
+                "facialEditor.rendererRequired.message".LS(),
+                HelpBoxMessageType.Warning));
+        }
+
         var targetingField = _element.Q<ObjectField>("targeting-object-field");
         targetingField.objectType = _context.Targeting.GetObjectType();
         targetingField.SetValueWithoutNotify(_context.Targeting.GetTarget());

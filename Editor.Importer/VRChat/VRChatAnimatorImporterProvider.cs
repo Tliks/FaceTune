@@ -41,6 +41,8 @@ internal sealed class VRChatAnimatorImporterProvider : IFaceTuneImporterProvider
 
         public bool CanImport => _controller != null;
 
+        public bool ApplyFaceRendererSettings => true;
+
         public void DrawConfiguration()
         {
             _controller = (AnimatorController?)EditorGUILayout.ObjectField(

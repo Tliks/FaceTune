@@ -3,6 +3,7 @@ using UnityEditorInternal;
 using Aoyon.FaceTune.Settings;
 using Aoyon.FaceTune.Gui.ShapesEditor;
 using nadena.dev.ndmf.runtime;
+using Aoyon.FaceTune.Platforms;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -11,9 +12,6 @@ internal static class MenuItems
     // Tools
     private const string ToolsPath = "Tools/" + FaceTuneConstants.Name + "/";
     
-    public const string FacialShapesEditorPath = ToolsPath + "Facial Shapes Editor";
-    public const int FacialShapesEditorPriority = 1000;
-
     private const string ToolsSettingsPath = ToolsPath + "Settings/";
     public const string SelectedExpressionPreviewPath = ToolsSettingsPath + "Selected Expression Preview";
     public const int SelectedExpressionPreviewPriority = 1100;
@@ -26,9 +24,7 @@ internal static class MenuItems
     public const int ReloadLocalizationPriority = 1200;
 
     // Assets
-    private const string AssetsPath = "Assets/" + FaceTuneConstants.Name + "/";
-
-    public const string EditAnimationClipMenuPath = AssetsPath + "Edit Animation Clip";
+    public const string EditAnimationClipMenuPath = "Assets/Edit Animation Clip by FaceTune";
     public const int EditAnimationClipMenuPriority = 1000;
 
 
@@ -43,6 +39,29 @@ internal static class MenuItems
 
 }
 
+
+internal static class AssetsMenu
+{
+    [M(MenuItems.EditAnimationClipMenuPath, false, MenuItems.EditAnimationClipMenuPriority)]
+    private static void EditAnimationClip()
+    {
+        if (Selection.activeObject is not AnimationClip clip) return;
+        FacialShapesEditor.TryOpenEditor(
+            targeting: new AnimationClipTargeting { Target = clip },
+            resolveUnavailableBlendShapeNames: ResolveUnavailableBlendShapeNames);
+    }
+
+    [M(MenuItems.EditAnimationClipMenuPath, true)]
+    private static bool ValidateEditAnimationClip()
+        => Selection.activeObject is AnimationClip;
+
+    private static ISet<string>? ResolveUnavailableBlendShapeNames(SkinnedMeshRenderer renderer)
+        => AvatarContext.TryGet(renderer.gameObject, out var avatar, out _)
+            ? AvatarContext.GetUnavailableBlendShapeNames(
+                avatar.Root,
+                FaceTuneWriteKind.FacialData)
+            : null;
+}
 
 internal static class GameObjectMenu
 {
@@ -86,12 +105,6 @@ internal static class GameObjectMenu
 
 internal static class ToolsMenu
 {
-    [MenuItem(MenuItems.FacialShapesEditorPath, false, MenuItems.FacialShapesEditorPriority)]
-    private static void OpenFacialShapesEditor()
-    {
-        FacialShapesEditor.TryOpenEditor(targeting: new AnimationClipTargeting());
-    }
-
     [MenuItem(MenuItems.SelectedExpressionPreviewPath, true)]
     private static bool ValidateSelectedExpressionPreview()
     {

@@ -219,8 +219,8 @@ internal class SelectedShapesPreviewSession : IDisposable
         }
         else
         {
-            resolver.FacialData.AddIncoming(target, resultToAdd, bodyPath);
-            if (!resolver.FacialData.AddLocalData(target, resultToAdd, bodyPath))
+            resolver.FacialData.AddIncoming(target.transform, resultToAdd, bodyPath);
+            if (!resolver.FacialData.AddLocalData(target.transform, resultToAdd, bodyPath))
             {
                 isLooping = false;
                 return false;

@@ -32,35 +32,84 @@ internal abstract class IShapesEditorTargeting<T> : IShapesEditorTargeting where
 internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationClip>
 {
     public override AnimationClip? Target { get; set; }
+    public bool ZeroUnspecifiedBlendShapes { get; set; } = true;
+    public bool ZeroUnavailableBlendShapes { get; set; } = true;
+
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new InvalidOperationException("Target is not set.");
-        var targetValues = new BlendShapeWeightSet();
-        dataManager.GetTargetValues(targetValues);
-        var path = RuntimeUtil.RelativePath(root, renderer.gameObject) ?? throw new InvalidOperationException("Renderer is outside avatar root.");
+        var path = RuntimeUtil.RelativePath(root, renderer.gameObject)
+            ?? throw new InvalidOperationException("Renderer is outside avatar root.");
+        var prefix = FaceTuneConstants.BlendShapePropertyPrefix;
+        var originalNames = new HashSet<string>(StringComparer.Ordinal);
         var multiFrameNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var binding in AnimationUtility.GetCurveBindings(Target))
         {
-            var prefix = FaceTuneConstants.BlendShapePropertyPrefix;
             if (binding.path != path || binding.type != typeof(SkinnedMeshRenderer)
                 || !binding.propertyName.StartsWith(prefix, StringComparison.Ordinal))
                 continue;
+
             var name = binding.propertyName[prefix.Length..];
+            originalNames.Add(name);
             var curve = AnimationUtility.GetEditorCurve(Target, binding);
             if (curve != null && curve.keys.Length > 1)
             {
                 multiFrameNames.Add(name);
                 continue;
             }
-            if (!dataManager.IsExplicitlyExcluded(name))
+            if (!dataManager.IsExplicitlyExcluded(name) || ZeroUnavailableBlendShapes)
                 AnimationUtility.SetEditorCurve(Target, binding, null);
         }
+
+        var targetValues = new BlendShapeWeightSet();
+        dataManager.GetTargetValues(targetValues);
+        var rendererNames = renderer.sharedMesh.GetBlendShapeNames().ToHashSet(StringComparer.Ordinal);
+        if (ZeroUnspecifiedBlendShapes)
+        {
+            var zeroNames = originalNames.Count != 0 ? originalNames : rendererNames;
+            foreach (var name in zeroNames)
+            {
+                if (!targetValues.ContainsKey(name)
+                    && !multiFrameNames.Contains(name)
+                    && (!dataManager.IsExplicitlyExcluded(name) || ZeroUnavailableBlendShapes))
+                    targetValues.Add(new BlendShapeWeight(name, 0f));
+            }
+        }
+        if (ZeroUnavailableBlendShapes)
+        {
+            foreach (var name in dataManager.ExplicitlyExcluded)
+            {
+                if (rendererNames.Contains(name)
+                    && !multiFrameNames.Contains(name)
+                    && !targetValues.ContainsKey(name))
+                    targetValues.Add(new BlendShapeWeight(name, 0f));
+            }
+        }
+
         Target.AddBlendShapeAnimations(
             path,
             targetValues
                 .Where(value => !multiFrameNames.Contains(value.Name))
                 .ToBlendShapeAnimations());
         Target.SaveChanges();
+    }
+
+    public override VisualElement DrawOptions()
+    {
+        var menu = new ToolbarMenu { text = "facialEditor.clipOptions.label".LS() };
+        menu.menu.AppendAction(
+            "facialEditor.zeroUnspecifiedBlendShapes.option".LS(),
+            _ => ZeroUnspecifiedBlendShapes = !ZeroUnspecifiedBlendShapes,
+            _ => ZeroUnspecifiedBlendShapes
+                ? DropdownMenuAction.Status.Checked
+                : DropdownMenuAction.Status.Normal);
+        menu.menu.AppendAction(
+            "facialEditor.zeroUnavailableBlendShapes.option".LS(),
+            _ => ZeroUnavailableBlendShapes = !ZeroUnavailableBlendShapes,
+            _ => ZeroUnavailableBlendShapes
+                ? DropdownMenuAction.Status.Checked
+                : DropdownMenuAction.Status.Normal);
+        return menu;
     }
 }
 

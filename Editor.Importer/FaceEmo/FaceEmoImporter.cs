@@ -3,7 +3,6 @@
 
 using System.IO;
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Importing;
 using Aoyon.FaceTune.Platforms;
 using Suzuryg.FaceEmo.Components;
 using Suzuryg.FaceEmo.Components.Data;
@@ -12,6 +11,7 @@ using FaceEmoHand = Suzuryg.FaceEmo.Domain.Hand;
 using FaceEmoGesture = Suzuryg.FaceEmo.Domain.HandGesture;
 using FaceTuneHand = Aoyon.FaceTune.Hand;
 using FaceTuneGesture = Aoyon.FaceTune.HandGesture;
+using Aoyon.FaceTune.Importing;
 
 namespace Aoyon.FaceTune.Importers.FaceEmo;
 
@@ -61,7 +61,8 @@ internal sealed class FaceEmoImporter
 
     private void ApplyRootSettings(GameObject root)
     {
-        var settings = FaceTuneImporterUtility.ImportFaceRendererAsSettings(_context, root);
+        if (!root.TryGetComponent<SettingsComponent>(out var settings))
+            throw new InvalidOperationException("FaceTune standard settings are missing.");
 
         var excludedBlendShapes = _source.AV3Setting.ExcludedBlendShapes
             .Where(shape => shape != null)
