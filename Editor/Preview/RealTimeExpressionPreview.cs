@@ -59,14 +59,9 @@ internal class RealTimeExpressionPreview : IRenderFilter
                 throw new Exception("SkinnedMeshRenderer not found");
 
             var data = group.GetData<PassingData>();
-
-            using var _set = BlendShapeSetPool.Get(out var set);
-
-            var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);
-            GetBlendShapes(context, set, data.Component, data.Root, data.FacePath);
-
-            var apply = new BlendShapeApply(renderer, set.AsReadOnly(), 0f, ignoredNames);
+            var apply = _blendShapeApply.Get(context, (renderer, data));
             var node = new BlendShapePreviewNode(proxy, apply);
+            
             return Task.FromResult<IRenderFilterNode>(node);
         }
         catch (Exception e)
@@ -76,10 +71,23 @@ internal class RealTimeExpressionPreview : IRenderFilter
         }
     }
 
-    private void GetBlendShapes(ComputeContext context, BlendShapeWeightSet result, ExpressionComponent target, GameObject root, string bodyPath)
+    // 再計算の範囲を縮小するためのPropCache
+    private static readonly PropCache<(SkinnedMeshRenderer, PassingData), BlendShapeApply> _blendShapeApply = new(
+        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetBlendShapeApply, (a, b) => a.Equals(b)
+    );
+
+    private static BlendShapeApply GetBlendShapeApply(
+        ComputeContext context,
+        (SkinnedMeshRenderer Renderer, PassingData Data) input)
     {
+        var (renderer, data) = input;
+
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
-        new FaceTuneResolver(root, context).FacialData.Add(target, animations, bodyPath);
-        result.AddRange(animations.ToFirstFrameBlendShapes());
+        new FaceTuneResolver(data.Root, context).FacialData.Add(data.Component, animations, data.FacePath);
+        var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+
+        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);
+
+        return new BlendShapeApply(renderer, set.AsReadOnly(), 0f, ignoredNames);
     }
 }
