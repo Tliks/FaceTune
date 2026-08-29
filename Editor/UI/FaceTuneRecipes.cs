@@ -83,8 +83,7 @@ internal static class FaceTunePrefabOperations
         settings.FacialBlendShapesReference.Source = null;
         settings.FacialBlendShapes.Clip = null;
         settings.FacialBlendShapes.BlendShapeAnimations = context.FaceRenderer
-            .GetBlendShapeWeights(context.FaceMesh)
-            .ToBlendShapeAnimations()
+            .GetNonZeroBlendShapeAnimations(context.FaceMesh)
             .ToList();
         settings.ApplyToRenderer = true;
     }

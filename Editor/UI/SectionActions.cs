@@ -95,11 +95,6 @@ internal static class SectionHeaderMenu
         Action<GenericMenu>? populate = null)
     {
         var menu = new GenericMenu();
-        menu.AddItem(
-            "section.reset.label".LG(),
-            false,
-            () => SectionOperations.Reset(actions));
-
         if (SectionOperations.CanCopy(actions))
             menu.AddItem(
                 "section.copy.label".LG(),
@@ -115,6 +110,11 @@ internal static class SectionHeaderMenu
                 () => SectionOperations.Paste(actions));
         else
             menu.AddDisabledItem("section.paste.label".LG());
+
+        menu.AddItem(
+            "section.reset.label".LG(),
+            false,
+            () => SectionOperations.Reset(actions));
 
         if (populate == null) return menu;
         menu.AddSeparator(string.Empty);

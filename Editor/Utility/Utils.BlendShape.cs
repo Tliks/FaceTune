@@ -79,6 +79,13 @@ internal static partial class Utils
         return blendShapes;
     }
 
+    public static IEnumerable<BlendShapeWeightAnimation> GetNonZeroBlendShapeAnimations(
+        this SkinnedMeshRenderer renderer,
+        Mesh mesh)
+        => renderer.GetBlendShapeWeights(mesh)
+            .Where(value => value.Weight != 0f)
+            .ToBlendShapeAnimations();
+
     public static string[] GetBlendShapeNames(this Mesh mesh)
     {
         var blendShapes = new string[mesh.blendShapeCount];

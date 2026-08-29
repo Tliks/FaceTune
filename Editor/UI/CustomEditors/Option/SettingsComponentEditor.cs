@@ -252,8 +252,7 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
             || !AvatarContext.TryGet(settings.gameObject, out var context, out _)) return;
 
         var values = context.FaceRenderer
-            .GetBlendShapeWeights(context.FaceMesh)
-            .ToBlendShapeAnimations()
+            .GetNonZeroBlendShapeAnimations(context.FaceMesh)
             .ToArray();
         serializedObject.UpdateIfRequiredOrScript();
         var reference = serializedObject.FindProperty(nameof(SettingsComponent.FacialBlendShapesReference));
