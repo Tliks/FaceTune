@@ -1,6 +1,7 @@
 #pragma warning disable CS0618
 
 using System.IO;
+using nadena.dev.modular_avatar.core;
 
 namespace Aoyon.FaceTune.Importers.Legacy;
 
@@ -289,9 +290,22 @@ internal sealed class LegacyFaceTuneImporter
         target.AlwaysOnPreviewEnabled = source.EnableRealTimePreview;
 
         var localConditions = source.GetComponents<LegacyConditionComponent>();
+        var hasLocalConditions = localConditions.Length > 0 && localConditions.All(condition => !IsEmpty(condition));
+        var legacyMenuItem = source.GetComponent<ModularAvatarMenuItem>();
+
+        if (!hasLocalConditions && legacyMenuItem is { PortableControl.Type: PortableControlType.Toggle })
+        {
+            target.DirectMenuEnabled = true;
+            if (legacyMenuItem.PortableControl.Icon != null)
+            {
+                target.DirectMenuSettings.Menu.Icon.Mode = MenuIconSettings.Kind.Manual;
+                target.DirectMenuSettings.Menu.Icon.ManualIcon = legacyMenuItem.PortableControl.Icon;
+            }
+            return;
+        }
+
         target.HasCondition = true;
-        if (localConditions.Length == 0
-            || localConditions.Any(condition => IsEmpty(condition)))
+        if (!hasLocalConditions)
         {
             target.Condition.Mode = ConditionSelection.Kind.Always;
             target.Condition.Condition = new Condition();

@@ -8,7 +8,8 @@
         "jp.suzuryg.face-emo.components.Runtime",
         "jp.suzuryg.face-emo.domain.Runtime",
         "nadena.dev.ndmf",
-        "nadena.dev.ndmf.runtime"
+        "nadena.dev.ndmf.runtime",
+        "nadena.dev.modular-avatar.core"
     ],
     "includePlatforms": [
         "Editor"
