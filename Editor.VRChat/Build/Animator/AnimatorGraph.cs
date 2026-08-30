@@ -12,6 +12,7 @@ internal sealed class AnimatorGraph
     public static readonly Vector3 DefaultStatePosition = new(300, 0, 0);
     public const float PositionXStep = 250f;
     public const float PositionYStep = 50f;
+    private const float DefaultStateDelaySeconds = 0.5f;
 
     private readonly bool _useWriteDefaults;
     private readonly VirtualClip _emptyClip;
@@ -35,6 +36,21 @@ internal sealed class AnimatorGraph
     public void AsPassThrough(VirtualState state)
     {
         state.Motion = _useWriteDefaults ? null : _emptyClip;
+    }
+
+    public VirtualState AddDefaultState(VirtualLayer layer, Vector3 position)
+    {
+        var state = AddState(layer, "Defualt", position);
+        state.Motion = AnimatorHelper.CreateDelayClip(
+            DefaultStateDelaySeconds,
+            "Defualt Delay");
+        layer.StateMachine!.DefaultState = state;
+
+        // 初期評価を遅延させるとともに、条件不成立時の再評価頻度を制限する。
+        var transition = AnimatorHelper.CreateTransitionWithExitTime();
+        transition.SetExitDestination();
+        state.Transitions = state.Transitions.Add(transition);
+        return state;
     }
 
     public static void EnsureAlwaysParameter(VirtualAnimatorController controller)

@@ -7,8 +7,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 /// <summary>FaceTune表情の優先順位と書込方式を解決し、Expression layerを構築する。</summary>
 internal sealed class ExpressionAnimatorBuilder
 {
-    private const float InitialRetryDurationSeconds = 0.1f;
-
     private readonly AvatarContext _avatarContext;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _managedZeroAnimations;
     private readonly AnimatorGraph _graph;
@@ -132,10 +130,7 @@ internal sealed class ExpressionAnimatorBuilder
         var yStep = AnimatorGraph.PositionYStep;
         var layer = _graph.AddLayer(controller, name, layerPriority);
 
-        var initial = _graph.AddState(layer, "Initial", origin);
-        _graph.AsPassThrough(initial);
-        layer.StateMachine!.DefaultState = initial;
-        _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
+        _graph.AddDefaultState(layer, origin);
 
         _mmdSupport.AddPassThroughState(
             layer,

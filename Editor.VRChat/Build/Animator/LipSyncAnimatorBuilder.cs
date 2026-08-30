@@ -7,7 +7,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 /// <summary>FaceTuneのtracking設定から単一のglobal LipSync layerを構築する。</summary>
 internal sealed class LipSyncAnimatorBuilder
 {
-    private const float InitialRetryDurationSeconds = 0.1f;
     private const float CancellerTransitionDurationSeconds = 0.05f;
     private const string VoiceParameterName = "Voice";
     private const float VoiceThreshold = 0.01f;
@@ -60,10 +59,7 @@ internal sealed class LipSyncAnimatorBuilder
         var layer = _graph.AddLayer(controller, "Lip Sync", layerPriority);
         layer.StateMachine!.ExitPosition += new Vector3(xStep, 0, 0);
 
-        var initial = _graph.AddState(layer, "Initial", origin);
-        _graph.AsPassThrough(initial);
-        layer.StateMachine!.DefaultState = initial;
-        _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
+        _graph.AddDefaultState(layer, origin);
 
         var mmdState = _mmdSupport.AddPassThroughState(
             layer,

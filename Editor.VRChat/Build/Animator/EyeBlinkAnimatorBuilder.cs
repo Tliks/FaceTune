@@ -8,7 +8,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 /// <summary>FaceTuneのtracking設定から単一のglobal EyeBlink layerを構築する。</summary>
 internal sealed class EyeBlinkAnimatorBuilder
 {
-    private const float InitialRetryDurationSeconds = 0.1f;
     private const string SpeedParameterPrefix =
         FaceTuneConstants.GeneratedParameterPrefix + "/Blink/Speed/";
 
@@ -71,10 +70,7 @@ internal sealed class EyeBlinkAnimatorBuilder
         var layer = _graph.AddLayer(controller, "Eye Blink", layerPriority);
         layer.StateMachine!.ExitPosition += new Vector3(xStep, 0, 0);
 
-        var initial = _graph.AddState(layer, "Initial", origin);
-        _graph.AsPassThrough(initial);
-        layer.StateMachine!.DefaultState = initial;
-        _graph.SetExitTransitions(initial, DnfCondition.Always, InitialRetryDurationSeconds);
+        _graph.AddDefaultState(layer, origin);
 
         var mmdState = _mmdSupport.AddPassThroughState(
             layer,
