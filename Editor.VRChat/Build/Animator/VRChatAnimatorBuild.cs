@@ -9,6 +9,7 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static class VRChatAnimatorBuilder
 {
+    private static readonly Vector3 InitialDefaultStatePosition = new(300, 0, 0);
     private const int InitialLayerPriority = -1;
     private const int TrackingControlLayerPriority = int.MaxValue - 1;
 
@@ -18,9 +19,11 @@ internal static class VRChatAnimatorBuilder
         AvatarControlSettings avatarControlSettings,
         ExpressionPlan expressionPlan)
     {
-        var controlsTracking = avatarControlSettings.DisableEyeBlinkWhen != null
-            || avatarControlSettings.DisableLipSyncWhen != null;
-        if (expressionPlan.IsEmpty && !controlsTracking) return;
+        var trackingPlan = VRChatTrackingPlan.Build(
+            expressionPlan.Items,
+            avatarControlSettings);
+        if (expressionPlan.IsEmpty && !trackingPlan.ShouldBuildAnyLayer) return;
+        var aap = new AapProtocol(trackingPlan);
 
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
@@ -66,16 +69,16 @@ internal static class VRChatAnimatorBuilder
                     .Select(entry => entry.Key)
                     .Concat(item.NonFacialAnimations.ObjectCurves.Select(entry => entry.Key))));
 
-        var aap = AapProtocol.From(expressionPlan.Items, avatarControlSettings);
-        if (settings.AvoidEyeBlinkConflicts && aap.ControlsEyeBlink
-            || settings.AvoidLipSyncConflicts && aap.ControlsLipSync)
+        if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
+            || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
                 "FaceTune.Build.Animator.ReplaceExternalTrackingControls");
             ReplaceExternalTrackingControls(
                 controllerContext,
-                settings.AvoidEyeBlinkConflicts && aap.ControlsEyeBlink,
-                settings.AvoidLipSyncConflicts && aap.ControlsLipSync);
+                aap,
+                settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer,
+                settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
         }
 
         var graph = new AnimatorGraph(analyzedWriteDefaults ?? true);
@@ -131,15 +134,15 @@ internal static class VRChatAnimatorBuilder
             settings.AvatarContext,
             graph,
             mmdSupport,
-            aap,
-            avatarControlSettings.DisableEyeBlinkWhen);
+            trackingPlan,
+            aap);
         var lipSyncBuilder = new LipSyncAnimatorBuilder(
             settings.AvatarContext,
             graph,
             mmdSupport,
-            aap,
-            avatarControlSettings.DisableLipSyncWhen);
-        if (eyeBlinkBuilder.ShouldBuild || lipSyncBuilder.ShouldBuild)
+            trackingPlan,
+            aap);
+        if (trackingPlan.ShouldBuildAnyLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
                 "FaceTune.Build.Animator.BuildTrackingControls");
@@ -150,8 +153,10 @@ internal static class VRChatAnimatorBuilder
                 controlAnchor.transform,
                 "Tracking Controls",
                 TrackingControlLayerPriority);
-            eyeBlinkBuilder.Build(controlController, TrackingControlLayerPriority);
-            lipSyncBuilder.Build(controlController, TrackingControlLayerPriority);
+            if (trackingPlan.ShouldBuildEyeBlinkLayer)
+                eyeBlinkBuilder.Build(controlController, TrackingControlLayerPriority);
+            if (trackingPlan.ShouldBuildLipSyncLayer)
+                lipSyncBuilder.Build(controlController, TrackingControlLayerPriority);
         }
     }
 
@@ -170,7 +175,7 @@ internal static class VRChatAnimatorBuilder
                 && !externalLipSyncBlendShapes.Contains(shape.Name))
             .ToArray();
 
-        var origin = AnimatorGraph.DefaultStatePosition;
+        var origin = InitialDefaultStatePosition;
         var layer = graph.AddLayer(controller, "Initial", InitialLayerPriority);
         var defaultState = graph.AddState(layer, "Default", origin);
         layer.StateMachine!.DefaultState = defaultState;
@@ -322,6 +327,7 @@ internal static class VRChatAnimatorBuilder
 
     private static void ReplaceExternalTrackingControls(
         VirtualControllerContext controllerContext,
+        AapProtocol aap,
         bool replaceEyeBlink,
         bool replaceLipSync)
     {
@@ -335,13 +341,18 @@ internal static class VRChatAnimatorBuilder
             {
                 if (layer.StateMachine == null) continue;
                 foreach (var state in layer.StateMachine.AllStates())
-                    ReplaceExternalTrackingControls(state, replaceEyeBlink, replaceLipSync);
+                    ReplaceExternalTrackingControls(
+                        state,
+                        aap,
+                        replaceEyeBlink,
+                        replaceLipSync);
             }
         }
     }
 
     private static void ReplaceExternalTrackingControls(
         VirtualState state,
+        AapProtocol aap,
         bool replaceEyeBlink,
         bool replaceLipSync)
     {
@@ -358,7 +369,7 @@ internal static class VRChatAnimatorBuilder
             var mouthTracking = replaceLipSync
                 ? control.trackingMouth
                 : VRCAnimatorTrackingControl.TrackingType.NoChange;
-            writes.AddRange(AapProtocol.BuildTrackingReplacementWrites(eyeTracking, mouthTracking));
+            writes.AddRange(aap.BuildTrackingReplacementWrites(eyeTracking, mouthTracking));
             if (replaceEyeBlink)
                 control.trackingEyes = VRCAnimatorTrackingControl.TrackingType.NoChange;
             if (replaceLipSync)

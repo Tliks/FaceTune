@@ -8,47 +8,44 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 /// <summary>FaceTuneのtracking設定から単一のglobal EyeBlink layerを構築する。</summary>
 internal sealed class EyeBlinkAnimatorBuilder
 {
+    private static readonly Vector3 LayoutOrigin = new(300, 0, 0);
     private const string SpeedParameterPrefix =
         FaceTuneConstants.GeneratedParameterPrefix + "/Blink/Speed/";
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
     private readonly MmdSupport _mmdSupport;
+    private readonly VRChatTrackingPlan _plan;
     private readonly AapProtocol _aap;
-    private readonly DnfCondition? _disableWhen;
-
-    public bool ShouldBuild => _aap.ControlsEyeBlink || _disableWhen != null;
 
     public EyeBlinkAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
         MmdSupport mmdSupport,
-        AapProtocol aap,
-        DnfCondition? disableWhen)
+        VRChatTrackingPlan plan,
+        AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
         _mmdSupport = mmdSupport;
+        _plan = plan;
         _aap = aap;
-        _disableWhen = disableWhen;
     }
 
     public void Build(
         VirtualAnimatorController controller,
         int layerPriority)
     {
-        if (!ShouldBuild) return;
-
-        var enabled = _aap.ControlsEyeBlink
-            ? _aap.EyeBlinkEnabledWhen
-            : DnfCondition.Always;
-        if (_disableWhen != null) enabled = enabled.And(_disableWhen.Complement());
-
-        var animationModes = _aap.EyeBlinkAnimationModes;
+        var animationModes = _plan.EyeBlinkAnimations
+            .Select((settings, index) => (
+                Settings: settings,
+                Mode: VRChatTrackingPlan.FirstCustomMode + index))
+            .ToImmutableList();
         var animationConditions = animationModes
-            .Select(entry => enabled.And(_aap.EyeBlinkModeIs(entry.Mode)))
-            .ToArray();
-
+            .Select(entry => _aap.EyeBlinkModeIs(entry.Mode))
+            .ToImmutableList();
+        var disabledWhen = _aap.EyeBlinkModeIs(VRChatTrackingPlan.DisabledMode);
+        var builtInWhen = _aap.EyeBlinkModeIs(VRChatTrackingPlan.BuiltInMode);
         _aap.EnsureEyeBlinkParameters(controller);
         foreach (var entry in animationModes)
         {
@@ -61,35 +58,47 @@ internal sealed class EyeBlinkAnimatorBuilder
         }
         AnimatorGraph.EnsureConditionParameters(
             controller,
-            _disableWhen,
-            _mmdSupport.LayerPlaybackWhen);
+            animationConditions
+                .Append(disabledWhen)
+                .Append(builtInWhen)
+                .Append(_mmdSupport.LayerPlaybackWhen)
+                .ToArray());
 
-        var origin = AnimatorGraph.DefaultStatePosition;
+        var origin = LayoutOrigin;
         var xStep = AnimatorGraph.PositionXStep;
         var yStep = AnimatorGraph.PositionYStep;
         var layer = _graph.AddLayer(controller, "Eye Blink", layerPriority);
         layer.StateMachine!.ExitPosition += new Vector3(xStep, 0, 0);
 
-        _graph.AddDefaultState(layer, origin);
+        var evaluationState = _graph.AddState(layer, "Mode Evaluation", origin);
+        _graph.AsPassThrough(evaluationState);
+        SetEyeBlinkTracking(evaluationState, false);
+
+        var defaultState = _graph.AddInitialDelayState(
+            layer,
+            origin + new Vector3(0, yStep * 2, 0));
+        SetEyeBlinkTracking(defaultState, false);
+        _graph.AddExitTimeTransition(defaultState, evaluationState);
 
         var mmdState = _mmdSupport.AddPassThroughState(
             layer,
-            origin - new Vector3(0, yStep * 2, 0));
+            origin - new Vector3(0, yStep * 2, 0),
+            evaluationState);
         if (mmdState != null) SetEyeBlinkTracking(mmdState, false);
         InstallModeState(
             layer,
             "Disabled",
-            enabled.Complement(),
+            disabledWhen,
             false,
-            origin + new Vector3(0, yStep * 2, 0));
+            evaluationState,
+            origin + new Vector3(xStep, 0, 0));
         InstallModeState(
             layer,
             "Built-in",
-            _aap.ControlsEyeBlink
-                ? enabled.And(_aap.BuiltInEyeBlinkModeWhen)
-                : enabled,
+            builtInWhen,
             true,
-            origin + new Vector3(0, yStep * 3, 0));
+            evaluationState,
+            origin + new Vector3(xStep, yStep, 0));
 
         if (animationModes.Count > 0)
         {
@@ -97,8 +106,8 @@ internal sealed class EyeBlinkAnimatorBuilder
                 layer,
                 animationModes,
                 animationConditions,
-                origin + new Vector3(0, yStep * 4, 0),
-                xStep,
+                evaluationState,
+                origin + new Vector3(xStep, yStep * 2, 0),
                 yStep);
         }
     }
@@ -108,6 +117,7 @@ internal sealed class EyeBlinkAnimatorBuilder
         string name,
         DnfCondition when,
         bool tracking,
+        VirtualState evaluationState,
         Vector3 position)
     {
         if (when.IsNever) return;
@@ -115,27 +125,20 @@ internal sealed class EyeBlinkAnimatorBuilder
         var state = _graph.AddState(layer, name, position);
         _graph.AsPassThrough(state);
         SetEyeBlinkTracking(state, tracking);
-        _graph.AddEntryTransition(layer, state, when);
-        _graph.SetExitTransitions(state, when.Complement(), 0f);
+        _graph.AddStateTransition(evaluationState, state, when, 0f);
+        _graph.AddStateTransition(state, evaluationState, when.Complement(), 0f);
     }
 
     private void InstallAnimations(
         VirtualLayer layer,
-        IReadOnlyList<(EyeBlinkSettings Settings, int Mode)> animationModes,
-        IReadOnlyList<DnfCondition> animationConditions,
-        Vector3 gatePosition,
-        float xStep,
+        ImmutableList<(EyeBlinkSettings Settings, int Mode)> animationModes,
+        ImmutableList<DnfCondition> animationConditions,
+        VirtualState evaluationState,
+        Vector3 position,
         float yStep)
     {
-        var animationWhen = DnfCondition.Any(animationConditions);
-        var gate = _graph.AddState(layer, "Animation", gatePosition);
-        _graph.AsPassThrough(gate);
-        SetEyeBlinkTracking(gate, false);
-        _graph.AddEntryTransition(layer, gate, animationWhen);
-
         var simpleNumber = 0;
         var customNumber = 0;
-        var position = gatePosition + new Vector3(xStep, 0, 0);
         for (var index = 0; index < animationModes.Count; index++)
         {
             var entry = animationModes[index];
@@ -149,27 +152,32 @@ internal sealed class EyeBlinkAnimatorBuilder
                     name,
                     entry.Settings,
                     animationConditions[index],
+                    evaluationState,
                     SpeedParameterName(entry.Mode),
                     position,
-                    xStep,
                     yStep),
                 EyeBlinkSettings.Kind.CustomAnimation => InstallCustom(
                     layer,
                     name,
                     entry.Settings,
                     animationConditions[index],
+                    evaluationState,
                     SpeedParameterName(entry.Mode),
                     position,
-                    xStep),
+                    yStep),
                 _ => throw new InvalidOperationException(
                     $"Unsupported generated eye blink mode: {entry.Settings.EyeBlinkMode}")
             };
-            _graph.AddStateTransition(gate, stare, animationConditions[index], 0f);
+            SetEyeBlinkTracking(stare, false);
+            _graph.AddStateTransition(
+                evaluationState,
+                stare,
+                animationConditions[index],
+                0f);
             position.y += entry.Settings.EyeBlinkMode == EyeBlinkSettings.Kind.SimpleAnimation
-                ? yStep * 3
+                ? yStep * 4
                 : yStep * 2;
         }
-        _graph.AddExitTransitions(gate, animationWhen.Complement(), 0f);
     }
 
     private VirtualState InstallSimple(
@@ -177,9 +185,9 @@ internal sealed class EyeBlinkAnimatorBuilder
         string name,
         EyeBlinkSettings settings,
         DnfCondition when,
+        VirtualState evaluationState,
         string speedParameterName,
         Vector3 position,
-        float xStep,
         float yStep)
     {
         var stare = AddWaitingState(
@@ -191,21 +199,24 @@ internal sealed class EyeBlinkAnimatorBuilder
         var entry = _graph.AddState(
             layer,
             $"{name} Entry",
-            position + new Vector3(xStep, 0, 0));
-        var exit = _graph.AddState(
-            layer,
-            $"{name} Exit",
             position + new Vector3(0, yStep, 0));
         var close = _graph.AddState(
             layer,
             $"{name} Close",
-            position + new Vector3(xStep, yStep, 0));
+            position + new Vector3(0, yStep * 2, 0));
+        var exit = _graph.AddState(
+            layer,
+            $"{name} Exit",
+            position + new Vector3(0, yStep * 3, 0));
         _graph.AsPassThrough(entry);
         _graph.AsPassThrough(exit);
         var holdDuration = Math.Max(0f, settings.SimpleDurationsSeconds.y);
         SetCloseClip(close, settings, holdDuration);
 
         var continueWhen = DnfCondition.Always;
+        foreach (var state in new[] { stare, entry, close, exit })
+            _graph.AddStateTransition(state, evaluationState, when.Complement(), 0f);
+
         _graph.AddExitTimeTransition(stare, entry, continueWhen, 1f, 0f);
         _graph.AddStateTransition(
             entry,
@@ -223,9 +234,6 @@ internal sealed class EyeBlinkAnimatorBuilder
             _graph.AddExitTimeTransition(close, exit, continueWhen, 1f, openingDuration);
         }
         _graph.AddStateTransition(exit, stare, continueWhen, 0f);
-
-        foreach (var state in new[] { stare, entry, close, exit })
-            _graph.AddExitTransitions(state, when.Complement(), 0f);
         return stare;
     }
 
@@ -234,9 +242,10 @@ internal sealed class EyeBlinkAnimatorBuilder
         string name,
         EyeBlinkSettings settings,
         DnfCondition when,
+        VirtualState evaluationState,
         string speedParameterName,
         Vector3 position,
-        float xStep)
+        float yStep)
     {
         var stare = AddWaitingState(
             layer,
@@ -247,16 +256,16 @@ internal sealed class EyeBlinkAnimatorBuilder
         var blink = _graph.AddState(
             layer,
             $"{name} Blink",
-            position + new Vector3(xStep, 0, 0));
+            position + new Vector3(0, yStep, 0));
         blink.SetNewClip(blink.Name).AddBlendShapeAnimations(
             _avatarContext.BodyPath,
             settings.Animations);
 
         var continueWhen = DnfCondition.Always;
+        _graph.AddStateTransition(stare, evaluationState, when.Complement(), 0f);
+        _graph.AddStateTransition(blink, evaluationState, when.Complement(), 0f);
         _graph.AddExitTimeTransition(stare, blink, continueWhen, 1f, 0f);
         _graph.AddExitTimeTransition(blink, stare, continueWhen, 1f, 0f);
-        _graph.AddExitTransitions(stare, when.Complement(), 0f);
-        _graph.AddExitTransitions(blink, when.Complement(), 0f);
         return stare;
     }
 

@@ -9,18 +9,21 @@ internal sealed class AnimatorGraph
     private const string AlwaysParameterName =
         FaceTuneConstants.GeneratedParameterPrefix + "/Always";
 
-    public static readonly Vector3 DefaultStatePosition = new(300, 0, 0);
     public const float PositionXStep = 250f;
     public const float PositionYStep = 50f;
-    private const float DefaultStateDelaySeconds = 0.5f;
+    private const float InitialEvaluationDelaySeconds = 0.5f;
 
     private readonly bool _useWriteDefaults;
     private readonly VirtualClip _emptyClip;
+    private readonly VirtualClip _defaultDelayClip;
 
     public AnimatorGraph(bool useWriteDefaults)
     {
         _useWriteDefaults = useWriteDefaults;
         _emptyClip = AnimatorHelper.CreateCustomEmptyClip();
+        _defaultDelayClip = AnimatorHelper.CreateDelayClip(
+            InitialEvaluationDelaySeconds,
+            "Initial Delay");
     }
 
     public VirtualLayer AddLayer(VirtualAnimatorController controller, string name, int priority)
@@ -38,19 +41,20 @@ internal sealed class AnimatorGraph
         state.Motion = _useWriteDefaults ? null : _emptyClip;
     }
 
-    public VirtualState AddDefaultState(VirtualLayer layer, Vector3 position)
+    public VirtualState AddInitialDelayState(VirtualLayer layer, Vector3 position)
     {
-        var state = AddState(layer, "Defualt", position);
-        state.Motion = AnimatorHelper.CreateDelayClip(
-            DefaultStateDelaySeconds,
-            "Defualt Delay");
+        var state = AddState(layer, "Initial Delay", position);
+        state.Motion = _defaultDelayClip;
         layer.StateMachine!.DefaultState = state;
 
-        // 初期評価を遅延させるとともに、条件不成立時の再評価頻度を制限する。
+        return state;
+    }
+
+    public void AddExitTimeExitTransition(VirtualState state)
+    {
         var transition = AnimatorHelper.CreateTransitionWithExitTime();
         transition.SetExitDestination();
         state.Transitions = state.Transitions.Add(transition);
-        return state;
     }
 
     public static void EnsureAlwaysParameter(VirtualAnimatorController controller)
@@ -81,13 +85,19 @@ internal sealed class AnimatorGraph
         DnfCondition when,
         float duration)
     {
-        var transitions = TransitionCases(when).Select(conditionCase =>
-        {
-            var transition = CreateStateTransition(destination, duration);
-            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
-            return transition;
-        });
+        var transitions = CreateStateTransitions(destination, when, duration);
         source.Transitions = source.Transitions.AddRange(transitions);
+    }
+
+    public void AddExitTimeTransition(
+        VirtualState source,
+        VirtualState destination,
+        float exitTime = 1f,
+        float duration = 0f)
+    {
+        var transition = AnimatorHelper.CreateTransitionWithExitTime(exitTime, duration);
+        transition.SetDestination(destination);
+        source.Transitions = source.Transitions.Add(transition);
     }
 
     public void AddExitTimeTransition(
@@ -151,6 +161,17 @@ internal sealed class AnimatorGraph
         layer.StateMachine!.EntryTransitions =
             layer.StateMachine.EntryTransitions.AddRange(transitions);
     }
+
+    private static IEnumerable<VirtualStateTransition> CreateStateTransitions(
+        VirtualState destination,
+        DnfCondition when,
+        float duration)
+        => TransitionCases(when).Select(conditionCase =>
+        {
+            var transition = CreateStateTransition(destination, duration);
+            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
+            return transition;
+        });
 
     private static IEnumerable<DnfCase> TransitionCases(DnfCondition condition)
     {

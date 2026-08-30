@@ -3,13 +3,13 @@ namespace Aoyon.FaceTune.Build;
 /// <summary>Component hierarchy interpreted as FaceTune expressions for build backends.</summary>
 internal sealed class ExpressionPlan
 {
-    public IReadOnlyList<ExpressionItem> Items { get; }
+    public ImmutableList<ExpressionItem> Items { get; }
 
     public bool IsEmpty => Items.Count == 0;
 
     public ExpressionPlan(IEnumerable<ExpressionItem> items)
     {
-        Items = items.ToArray();
+        Items = items.ToImmutableList();
     }
 }
 

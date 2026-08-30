@@ -4,152 +4,65 @@ using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
-/// <summary>表情のTrackingPermissionとBlink/LipSync設定をAAPパラメータへ変換する。</summary>
+/// <summary>Tracking計画をAnimator Parameter上のAAP表現へ変換する。</summary>
 internal sealed class AapProtocol
 {
-    private const int BuiltInMode = 1;
-    private const int FirstCustomMode = 2;
+    private const float ActiveThreshold = 0.999f;
     private const string AapParameterPrefix = FaceTuneConstants.GeneratedParameterPrefix + "/AAP/";
-    private const string EyeBlinkEnabledName = AapParameterPrefix + "Blink/Enabled";
-    private const string EyeBlinkModeName = AapParameterPrefix + "Blink/Mode";
-    private const string LipSyncEnabledName = AapParameterPrefix + "LipSync/Enabled";
-    private const string LipSyncModeName = AapParameterPrefix + "LipSync/Mode";
+    private const string EyeBlinkModePrefix = AapParameterPrefix + "Blink/";
+    private const string LipSyncModePrefix = AapParameterPrefix + "LipSync/";
 
-    private readonly IReadOnlyList<EyeBlinkSettings> _eyeBlinkAnimations;
-    private readonly IReadOnlyList<LipSyncSettings> _lipSyncCancellers;
+    private readonly VRChatTrackingPlan _plan;
+    private readonly ImmutableList<string> _eyeBlinkModeNames;
+    private readonly ImmutableList<string> _lipSyncModeNames;
 
-    public bool ControlsEyeBlink { get; }
-    public bool ControlsLipSync { get; }
-    public DnfCondition EyeBlinkEnabledWhen => ParameterBool(EyeBlinkEnabledName, true);
-    public DnfCondition BuiltInEyeBlinkModeWhen => EyeBlinkModeIs(BuiltInMode);
-    public DnfCondition LipSyncEnabledWhen => ParameterBool(LipSyncEnabledName, true);
-    public IReadOnlyList<(EyeBlinkSettings Settings, int Mode)> EyeBlinkAnimationModes
-        => _eyeBlinkAnimations
-            .Select((settings, index) => (settings, FirstCustomMode + index))
-            .ToArray();
-    public IReadOnlyList<(LipSyncSettings Settings, int Mode)> LipSyncCancellerModes
-        => _lipSyncCancellers
-            .Select((settings, index) => (settings, FirstCustomMode + index))
-            .ToArray();
-
-    private AapProtocol(
-        IReadOnlyList<ExpressionItem> items,
-        bool hasEyeBlinkAvatarControl,
-        bool hasLipSyncAvatarControl)
+    public AapProtocol(VRChatTrackingPlan plan)
     {
-        var eyeBlinkAnimations = new List<EyeBlinkSettings>();
-        var animationKinds = new[]
-        {
-            EyeBlinkSettings.Kind.SimpleAnimation,
-            EyeBlinkSettings.Kind.CustomAnimation
-        };
-        foreach (var kind in animationKinds)
-        {
-            var settingsForKind = items
-                .Select(item => item.EyeBlink)
-                .Where(settings => settings.EyeBlinkMode == kind);
-            foreach (var settings in settingsForKind)
-            {
-                if (!eyeBlinkAnimations.Contains(settings))
-                    eyeBlinkAnimations.Add(settings);
-            }
-        }
-
-        _eyeBlinkAnimations = eyeBlinkAnimations;
-        ControlsEyeBlink = hasEyeBlinkAvatarControl
-            || eyeBlinkAnimations.Count > 0
-            || items.Any(item => item.AllowEyeBlink == TrackingPermission.Disallow);
-
-        var lipSyncCancellers = new List<LipSyncSettings>();
-        foreach (var settings in items
-                     .Select(item => item.LipSync)
-                     .Where(settings => settings.CancellerBlendShapes.Count > 0))
-        {
-            if (!lipSyncCancellers.Contains(settings))
-                lipSyncCancellers.Add(settings);
-        }
-        _lipSyncCancellers = lipSyncCancellers;
-        ControlsLipSync = hasLipSyncAvatarControl
-            || lipSyncCancellers.Count > 0
-            || items.Any(item => item.AllowLipSync == TrackingPermission.Disallow);
+        _plan = plan;
+        _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
+        _lipSyncModeNames = CreateModeNames(plan.LipSyncCancellers.Count, LipSyncModeName);
     }
 
-    public static AapProtocol From(
-        IReadOnlyList<ExpressionItem> items,
-        AvatarControlSettings avatarControlSettings)
-    {
-        return new AapProtocol(
-            items,
-            avatarControlSettings.DisableEyeBlinkWhen != null,
-            avatarControlSettings.DisableLipSyncWhen != null);
-    }
-
-    /// <summary>
-    /// 外部VRCAnimatorTrackingControlをAAP書込へ置き換えるための書き込み列を生成する。
-    /// NoChangeは置換対象外なので何も書かない。
-    /// </summary>
-    public static IReadOnlyList<(string ParameterName, float Value)> BuildTrackingReplacementWrites(
+    public ImmutableList<(string ParameterName, float Value)> BuildTrackingReplacementWrites(
         VRCAnimatorTrackingControl.TrackingType eyeTracking,
         VRCAnimatorTrackingControl.TrackingType mouthTracking)
     {
-        var writes = new List<(string ParameterName, float Value)>();
+        var writes = ImmutableList.CreateBuilder<(string ParameterName, float Value)>();
         switch (eyeTracking)
         {
             case VRCAnimatorTrackingControl.TrackingType.Tracking:
-                writes.Add((EyeBlinkEnabledName, 1f));
-                writes.Add((EyeBlinkModeName, BuiltInMode));
+                AddModeWrites(writes, _eyeBlinkModeNames, VRChatTrackingPlan.BuiltInMode);
                 break;
             case VRCAnimatorTrackingControl.TrackingType.Animation:
-                writes.Add((EyeBlinkEnabledName, 0f));
+                AddModeWrites(writes, _eyeBlinkModeNames, VRChatTrackingPlan.DisabledMode);
                 break;
         }
         switch (mouthTracking)
         {
             case VRCAnimatorTrackingControl.TrackingType.Tracking:
-                writes.Add((LipSyncEnabledName, 1f));
-                writes.Add((LipSyncModeName, BuiltInMode));
+                AddModeWrites(writes, _lipSyncModeNames, VRChatTrackingPlan.BuiltInMode);
                 break;
             case VRCAnimatorTrackingControl.TrackingType.Animation:
-                writes.Add((LipSyncEnabledName, 0f));
+                AddModeWrites(writes, _lipSyncModeNames, VRChatTrackingPlan.DisabledMode);
                 break;
         }
-        return writes;
+        return writes.ToImmutable();
     }
 
-    public IReadOnlyList<(string ParameterName, float Value)> BuildWrites(ExpressionItem expression)
+    public ImmutableList<(string ParameterName, float Value)> BuildWrites(ExpressionItem expression)
     {
-        var writes = new List<(string ParameterName, float Value)>();
-        if (ControlsEyeBlink && expression.AllowEyeBlink != TrackingPermission.Keep)
+        var writes = ImmutableList.CreateBuilder<(string ParameterName, float Value)>();
+        if (_plan.ShouldBuildEyeBlinkLayer
+            && _plan.EyeBlinkModeFor(expression) is { } eyeBlinkMode)
         {
-            AddEnabledWrite(writes, EyeBlinkEnabledName, expression.AllowEyeBlink);
-            writes.Add((EyeBlinkModeName, AnimatorHelper.DiscreteFloatIndexToValue(EyeBlinkModeFor(expression.EyeBlink))));
+            AddModeWrites(writes, _eyeBlinkModeNames, eyeBlinkMode);
         }
-        if (ControlsLipSync && expression.AllowLipSync != TrackingPermission.Keep)
+        if (_plan.ShouldBuildLipSyncLayer
+            && _plan.LipSyncModeFor(expression) is { } lipSyncMode)
         {
-            AddEnabledWrite(writes, LipSyncEnabledName, expression.AllowLipSync);
-            writes.Add((LipSyncModeName, AnimatorHelper.DiscreteFloatIndexToValue(LipSyncModeFor(expression.LipSync))));
+            AddModeWrites(writes, _lipSyncModeNames, lipSyncMode);
         }
-        return writes;
-    }
-
-    private static void AddEnabledWrite(
-        ICollection<(string ParameterName, float Value)> writes,
-        string parameterName,
-        TrackingPermission permission)
-    {
-        switch (permission)
-        {
-            case TrackingPermission.Allow:
-                writes.Add((parameterName, 1f));
-                break;
-            case TrackingPermission.Disallow:
-                writes.Add((parameterName, 0f));
-                break;
-            case TrackingPermission.Keep:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(permission));
-        }
+        return writes.ToImmutable();
     }
 
     public void EnsureExpressionParameters(VirtualAnimatorController controller)
@@ -160,58 +73,82 @@ internal sealed class AapProtocol
 
     public void EnsureEyeBlinkParameters(VirtualAnimatorController controller)
     {
-        if (ControlsEyeBlink)
-            EnsureParameters(controller, EyeBlinkEnabledName, EyeBlinkModeName);
+        if (_plan.ShouldBuildEyeBlinkLayer)
+            EnsureModeParameters(controller, _eyeBlinkModeNames);
     }
 
     public void EnsureLipSyncParameters(VirtualAnimatorController controller)
     {
-        if (ControlsLipSync)
-            EnsureParameters(controller, LipSyncEnabledName, LipSyncModeName);
+        if (_plan.ShouldBuildLipSyncLayer)
+            EnsureModeParameters(controller, _lipSyncModeNames);
     }
 
-    private static void EnsureParameters(
+    public DnfCondition EyeBlinkModeIs(int mode)
+        => ApplyForceDisable(
+            ModeIs(EyeBlinkModeName(mode)),
+            mode,
+            _plan.ForceDisableEyeBlinkWhen);
+
+    public DnfCondition LipSyncModeIs(int mode)
+        => ApplyForceDisable(
+            ModeIs(LipSyncModeName(mode)),
+            mode,
+            _plan.ForceDisableLipSyncWhen);
+
+    private static ImmutableList<string> CreateModeNames(
+        int customModeCount,
+        Func<int, string> getName)
+        => Enumerable.Range(
+                VRChatTrackingPlan.DisabledMode,
+                customModeCount + VRChatTrackingPlan.FirstCustomMode)
+            .Select(getName)
+            .ToImmutableList();
+
+    private static string EyeBlinkModeName(int mode) => EyeBlinkModePrefix + mode;
+
+    private static string LipSyncModeName(int mode) => LipSyncModePrefix + mode;
+
+    private static DnfCondition ApplyForceDisable(
+        DnfCondition modeWhen,
+        int mode,
+        DnfCondition? forceDisableWhen)
+    {
+        if (forceDisableWhen == null) return modeWhen;
+        return mode == VRChatTrackingPlan.DisabledMode
+            ? modeWhen.Or(forceDisableWhen)
+            : modeWhen.And(forceDisableWhen.Complement());
+    }
+
+    private static void AddModeWrites(
+        ICollection<(string ParameterName, float Value)> writes,
+        ImmutableList<string> modeNames,
+        int activeMode)
+    {
+        for (var mode = 0; mode < modeNames.Count; mode++)
+            writes.Add((modeNames[mode], mode == activeMode ? 1f : 0f));
+    }
+
+    private static void EnsureModeParameters(
         VirtualAnimatorController controller,
-        string enabledName,
-        string modeName)
+        ImmutableList<string> modeNames)
     {
-        controller.EnsureBoolParameterExists(enabledName, true);
-        controller.EnsureFloatParameterExists(modeName, AnimatorHelper.DiscreteFloatIndexToValue(BuiltInMode));
-    }
-
-    public DnfCondition EyeBlinkModeIs(int mode) => IndexIs(EyeBlinkModeName, mode);
-
-    public DnfCondition LipSyncModeIs(int mode) => IndexIs(LipSyncModeName, mode);
-
-    private int EyeBlinkModeFor(EyeBlinkSettings settings)
-    {
-        if (settings.EyeBlinkMode == EyeBlinkSettings.Kind.BuiltIn) return BuiltInMode;
-        for (var index = 0; index < _eyeBlinkAnimations.Count; index++)
+        for (var mode = 0; mode < modeNames.Count; mode++)
         {
-            if (_eyeBlinkAnimations[index].Equals(settings)) return FirstCustomMode + index;
+            var isDefaultMode = mode == VRChatTrackingPlan.BuiltInMode;
+            controller.EnsureFloatParameterExists(
+                modeNames[mode],
+                isDefaultMode ? 1f : 0f);
         }
-        throw new InvalidOperationException("Eye blink animation mode was not registered.");
     }
 
-    private int LipSyncModeFor(LipSyncSettings settings)
+    private static DnfCondition ModeIs(string parameterName)
     {
-        if (settings.CancellerBlendShapes.Count == 0) return BuiltInMode;
-        for (var index = 0; index < _lipSyncCancellers.Count; index++)
-        {
-            if (_lipSyncCancellers[index].Equals(settings)) return FirstCustomMode + index;
-        }
-        throw new InvalidOperationException("Lip sync canceller mode was not registered.");
-    }
-
-    private static DnfCondition ParameterBool(string parameterName, bool value)
-    {
-        var condition = ParameterCondition.Bool(parameterName, value);
+        var condition = ParameterCondition.Float(
+            parameterName,
+            ComparisonType.GreaterThan,
+            ActiveThreshold);
         return DnfCondition.Single(
             AnimatorConditionRule.FromParameterCondition(condition),
             ParameterDomainRegistry.Empty);
     }
-
-    private static DnfCondition IndexIs(string parameterName, int index)
-        => AnimatorHelper.DiscreteFloatIndexCondition(parameterName, index);
-
 }
