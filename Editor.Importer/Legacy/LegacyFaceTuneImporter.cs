@@ -291,31 +291,35 @@ internal sealed class LegacyFaceTuneImporter
 
         var localConditions = source.GetComponents<LegacyConditionComponent>();
         var hasLocalConditions = localConditions.Length > 0 && localConditions.All(condition => !IsEmpty(condition));
-        var legacyMenuItem = source.GetComponent<ModularAvatarMenuItem>();
 
-        if (!hasLocalConditions && legacyMenuItem is { PortableControl.Type: PortableControlType.Toggle })
-        {
-            target.DirectMenuEnabled = true;
-            if (legacyMenuItem.PortableControl.Icon != null)
-            {
-                target.DirectMenuSettings.Menu.Icon.Mode = MenuIconSettings.Kind.Manual;
-                target.DirectMenuSettings.Menu.Icon.ManualIcon = legacyMenuItem.PortableControl.Icon;
-            }
-            return;
-        }
+        var isMenuItemImported = TryImportLegacyMenuItem(source, target);
 
         target.HasCondition = true;
-        if (!hasLocalConditions)
-        {
-            target.Condition.Mode = ConditionSelection.Kind.Always;
-            target.Condition.Condition = new Condition();
-        }
-        else
+        if (hasLocalConditions)
         {
             target.Condition.Mode = ConditionSelection.Kind.Conditional;
             target.Condition.Condition = new Condition(
                 localConditions.Select(ToConditionCase).ToArray());
         }
+        else if (!isMenuItemImported)
+        {
+            target.Condition.Mode = ConditionSelection.Kind.Always;
+            target.Condition.Condition = new Condition();
+        }
+    }
+    private static bool TryImportLegacyMenuItem(LegacyExpressionComponent source, ExpressionComponent target)
+    {
+        if (!source.TryGetComponent<ModularAvatarMenuItem>(out var legacyMenuItem)) return false;
+        if (legacyMenuItem.PortableControl.Type != PortableControlType.Toggle) return false;
+
+        target.DirectMenuEnabled = true;
+        if (legacyMenuItem.PortableControl.Icon != null)
+        {
+            target.DirectMenuSettings.Menu.Icon.Mode = MenuIconSettings.Kind.Manual;
+            target.DirectMenuSettings.Menu.Icon.ManualIcon = legacyMenuItem.PortableControl.Icon;
+        }
+
+        return true;
     }
 
     private void ImportExpressionData(
