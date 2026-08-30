@@ -289,8 +289,10 @@ internal sealed class LegacyFaceTuneImporter
                 };
         target.AlwaysOnPreviewEnabled = source.EnableRealTimePreview;
 
-        var localConditions = source.GetComponents<LegacyConditionComponent>();
-        var hasLocalConditions = localConditions.Length > 0 && localConditions.All(condition => !IsEmpty(condition));
+        var localConditions = source.GetComponents<LegacyConditionComponent>()
+            .Where(condition => !IsEmpty(condition))
+            .ToArray();
+        var hasLocalConditions = localConditions.Length > 0;
 
         var isMenuItemImported = TryImportLegacyMenuItem(source, target);
 
