@@ -197,7 +197,7 @@ internal sealed class FaceTuneWindow : EditorWindow
     private void DrawConfigure()
     {
         if (DrawOperationSelector()) return;
-        var standardRoot = FaceTunePrefabOperations.FindStandardRoot(_avatarRoot!);
+        var standardRoot = FaceTuneRecipes.FindStandardRoot(_avatarRoot!);
 
         using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             DrawFoundation(standardRoot);
@@ -298,7 +298,7 @@ internal sealed class FaceTuneWindow : EditorWindow
     {
         if (_avatarRoot == null) return;
 
-        var existingStandardRoot = FaceTunePrefabOperations.FindStandardRoot(_avatarRoot);
+        var existingStandardRoot = FaceTuneRecipes.FindStandardRoot(_avatarRoot);
         var addStandard = existingStandardRoot == null && _addStandardSetup;
         var recipe = _selectedRecipe;
         if (!addStandard && recipe == null) return;
@@ -308,12 +308,12 @@ internal sealed class FaceTuneWindow : EditorWindow
         {
             var standardRoot = existingStandardRoot;
             if (addStandard)
-                standardRoot = FaceTunePrefabOperations.AddStandardSetup(
+                standardRoot = FaceTuneRecipes.AddStandardSetup(
                     _avatarRoot,
                     _enableDefaultExpression);
 
             if (recipe != null)
-                lastCreated = FaceTunePrefabOperations.AddPattern(_avatarRoot, recipe.Pattern, standardRoot);
+                lastCreated = FaceTuneRecipes.AddPattern(_avatarRoot, recipe.Pattern, standardRoot);
 
             var selected = lastCreated ?? standardRoot ?? _avatarRoot;
             Selection.activeObject = selected;
@@ -376,7 +376,7 @@ internal sealed class FaceTuneWindow : EditorWindow
         GameObject? created = null;
         RunUndo("Import to FaceTune", () =>
         {
-            var templateRoot = FaceTunePrefabOperations.AddStandardSetup(
+            var templateRoot = FaceTuneRecipes.AddStandardSetup(
                 _avatarRoot!,
                 true,
                 importSession.ApplyFaceRendererSettings);

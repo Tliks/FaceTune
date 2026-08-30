@@ -37,7 +37,7 @@ internal static class FaceTunePatternPrefabCatalog
         };
 }
 
-internal static class FaceTunePrefabOperations
+internal static class FaceTuneRecipes
 {
     private const string TemplateGuid = "e643b160cc0f24a4fa8e33fb4df1fe7e";
 
