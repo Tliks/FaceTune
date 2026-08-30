@@ -83,7 +83,7 @@ internal static class FacialDataGUI
         ExpressionDataComponent? separatedData = null;
         SectionOperations.RunUndo("expression.separate.menu".LS(), () =>
         {
-            var expressionData = FaceTunePrefabOperations.AddExpressionData(owner.transform.parent);
+            var expressionData = FaceTuneRecipes.AddExpressionData(owner.transform.parent);
             separatedData = expressionData;
             using var expressionDataSerializedObject = new SerializedObject(expressionData);
             expressionDataSerializedObject.UpdateIfRequiredOrScript();

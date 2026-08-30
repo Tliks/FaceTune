@@ -58,14 +58,20 @@ internal sealed class MmdSupport
         DisableFxLayer = disableFxLayer;
     }
 
-    public VirtualState? AddPassThroughState(VirtualLayer layer, Vector3 position)
+    public VirtualState? AddPassThroughState(
+        VirtualLayer layer,
+        Vector3 position,
+        VirtualState? returnState = null)
     {
         if (LayerPlaybackWhen is not { IsNever: false } playbackWhen) return null;
 
         var state = _graph.AddState(layer, "MMD Playback", position);
         _graph.AsPassThrough(state);
         _graph.SetAnyStateTransition(layer, state, playbackWhen, 0f);
-        _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
+        if (returnState == null)
+            _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
+        else
+            _graph.AddStateTransition(state, returnState, playbackWhen.Complement(), 0f);
         return state;
     }
 

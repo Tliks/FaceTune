@@ -148,50 +148,6 @@ internal static class AnimatorHelper
         }
     }
 
-    public static float DiscreteFloatIndexToValue(int index)
-    {
-        if (index < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index));
-        }
-        return index;
-    }
-
-    public static DnfCondition DiscreteFloatIndexCondition(string parameter, int index)
-    {
-        if (index < 0 || index == int.MaxValue)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index));
-        }
-
-        var conditions = new List<DnfCondition>();
-        if (index > 0)
-        {
-            conditions.Add(DnfCondition.Single(
-                new AnimatorConditionRule(
-                    new AnimatorCondition
-                    {
-                        parameter = parameter,
-                        mode = AnimatorConditionMode.Greater,
-                        threshold = DiscreteFloatIndexToValue(index - 1)
-                    },
-                    AnimatorControllerParameterType.Float),
-                ParameterDomainRegistry.Empty));
-        }
-
-        conditions.Add(DnfCondition.Single(
-            new AnimatorConditionRule(
-                new AnimatorCondition
-                {
-                    parameter = parameter,
-                    mode = AnimatorConditionMode.Less,
-                    threshold = DiscreteFloatIndexToValue(index + 1)
-                },
-                AnimatorControllerParameterType.Float),
-            ParameterDomainRegistry.Empty));
-        return DnfCondition.All(conditions);
-    }
-
     public static VirtualClip SetNewClip(this VirtualState state, string name)
     {
         var clip = VirtualClip.Create(name);
