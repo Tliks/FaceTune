@@ -220,6 +220,14 @@ internal sealed class ExpressionItemBuilder
         {
             if (settings.MenuSource == null)
                 result.MultiFrameMode = MultiFrameSettings.Kind.Default;
+            else if (settings.MenuSource.MenuKind != MenuComponent.Kind.Radial)
+            {
+                // Motion Time はパラメータへ書き込むため、Float の Radial 以外では選択値を破壊する。
+                Debug.LogWarning(
+                    $"Multi frame menu source '{settings.MenuSource.name}' must be a radial menu. Falling back to default.",
+                    settings.MenuSource);
+                result.MultiFrameMode = MultiFrameSettings.Kind.Default;
+            }
             else
             {
                 result.MultiFrameMode = MultiFrameSettings.Kind.Parameter;
