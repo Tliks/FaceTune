@@ -15,23 +15,50 @@ internal sealed class SettingsReference
     public Transform? Source;
 }
 
+[Serializable]
+internal sealed class FacialClipBlendShapeData : IEquatable<FacialClipBlendShapeData>
+{
+    public AnimationClip? Clip = null;
+    public ClipImportOption ClipOption = ClipImportOption.NonZero;
+
+    internal FacialClipBlendShapeData Clone()
+        => new()
+        {
+            Clip = Clip,
+            ClipOption = ClipOption
+        };
+
+    public bool Equals(FacialClipBlendShapeData? other)
+        => other is not null
+        && Clip == other.Clip
+        && ClipOption == other.ClipOption;
+
+    public override bool Equals(object? obj)
+        => obj is FacialClipBlendShapeData other && Equals(other);
+
+    public override int GetHashCode()
+        => HashCode.Combine(Clip, ClipOption);
+}
+
 /// <summary>
-/// 顔のBlendShape data。Clipの後に手入力を重ねる。
+/// 顔のBlendShape data。参照の後にClip、その後に手動入力を重ねる。
 /// 後の同名BlendShapeが前を置き換え、0も明示値として扱う。
 /// </summary>
 [Serializable]
 internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
 {
-    public AnimationClip? Clip = null;
-    public ClipImportOption ClipOption = ClipImportOption.NonZero;
-
+    public List<Transform> ReferenceAnimations = new();
+    public List<FacialClipBlendShapeData> ClipAnimations = new();
     public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
 
     internal FacialBlendShapeData Clone()
         => new()
         {
-            Clip = Clip,
-            ClipOption = ClipOption,
+            ReferenceAnimations = ReferenceAnimations.ToList(),
+            ClipAnimations = ClipAnimations
+                .Where(animation => animation != null)
+                .Select(animation => animation.Clone())
+                .ToList(),
             BlendShapeAnimations = BlendShapeAnimations
                 .Select(animation => new BlendShapeWeightAnimation(animation.Name, animation.Curve))
                 .ToList()
@@ -39,8 +66,8 @@ internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
 
     public bool Equals(FacialBlendShapeData? other)
         => other is not null
-        && Clip == other.Clip
-        && ClipOption == other.ClipOption
+        && ReferenceAnimations.SequenceEqual(other.ReferenceAnimations)
+        && ClipAnimations.SequenceEqual(other.ClipAnimations)
         && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations);
 
     public override bool Equals(object? obj)
@@ -49,8 +76,10 @@ internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        hash.Add(Clip);
-        hash.Add(ClipOption);
+        foreach (var reference in ReferenceAnimations)
+            hash.Add(reference);
+        foreach (var animation in ClipAnimations)
+            hash.Add(animation);
         foreach (var animation in BlendShapeAnimations)
             hash.Add(animation);
         return hash.ToHashCode();
@@ -61,6 +90,70 @@ internal enum ClipImportOption
 {
     All = 0,
     NonZero = 10
+}
+
+[Serializable]
+internal sealed class NonFacialAnimationData : IEquatable<NonFacialAnimationData>
+{
+    public List<Transform> ReferenceAnimations = new();
+    public List<AnimationClip> AnimationClips = new();
+    public List<TransformAnimation> TransformAnimations = new();
+
+    internal NonFacialAnimationData Clone(Component owner)
+        => new()
+        {
+            ReferenceAnimations = ReferenceAnimations.ToList(),
+            AnimationClips = AnimationClips.ToList(),
+            TransformAnimations = TransformAnimations
+                .Where(animation => animation != null)
+                .Select(animation => animation.Clone(owner))
+                .ToList()
+        };
+
+    public bool Equals(NonFacialAnimationData? other)
+        => other != null
+        && ReferenceAnimations.SequenceEqual(other.ReferenceAnimations)
+        && AnimationClips.SequenceEqual(other.AnimationClips)
+        && TransformAnimations.SequenceEqual(other.TransformAnimations);
+
+    public override bool Equals(object? obj)
+        => obj is NonFacialAnimationData other && Equals(other);
+
+    public override int GetHashCode()
+        => HashCode.Combine(ReferenceAnimations.Count, AnimationClips.Count, TransformAnimations.Count);
+}
+
+[Serializable]
+internal sealed class TransformAnimation : IEquatable<TransformAnimation>
+{
+    public AvatarObjectReference Target = new();
+    public AnimationCurve Curve = AnimationCurve.Constant(0f, 1f, 1f);
+
+    internal TransformAnimation Clone(Component owner)
+    {
+        var curve = Curve ?? AnimationCurve.Constant(0f, 1f, 1f);
+        return new TransformAnimation
+        {
+            Target = new AvatarObjectReference(Target.Get(owner)),
+            Curve = new AnimationCurve(curve.keys)
+            {
+                preWrapMode = curve.preWrapMode,
+                postWrapMode = curve.postWrapMode
+            }
+        };
+    }
+
+    public bool Equals(TransformAnimation? other)
+        => other != null
+        && Target.Equals(other.Target)
+        && Curve.preWrapMode == other.Curve.preWrapMode
+        && Curve.postWrapMode == other.Curve.postWrapMode
+        && Curve.keys.SequenceEqual(other.Curve.keys);
+
+    public override bool Equals(object? obj)
+        => obj is TransformAnimation other && Equals(other);
+
+    public override int GetHashCode() => HashCode.Combine(Target, Curve);
 }
 
 /// <summary>platform標準Blinkか、FaceTune生成animationか。</summary>
@@ -149,6 +242,19 @@ internal class EyeBlinkSettings : IEquatable<EyeBlinkSettings>
             hash.Add(item);
         }
     }
+
+    internal EyeBlinkSettings Clone()
+        => new()
+        {
+            EyeBlinkMode = EyeBlinkMode,
+            IntervalSeconds = IntervalSeconds,
+            SimpleDurationsSeconds = SimpleDurationsSeconds,
+            SimpleBlinkBlendShapes = SimpleBlinkBlendShapes.ToList(),
+            SimpleConflictPreventionBlendShapes = SimpleConflictPreventionBlendShapes.ToList(),
+            Animations = Animations
+                .Select(animation => new BlendShapeWeightAnimation(animation.Name, animation.Curve))
+                .ToList()
+        };
 }
 
 /// <summary>LipSyncと競合するBlendShapeの打ち消し設定。</summary>
@@ -176,6 +282,9 @@ internal class LipSyncSettings : IEquatable<LipSyncSettings>
         }
         return hash.ToHashCode();
     }
+
+    internal LipSyncSettings Clone()
+        => new() { CancellerBlendShapes = CancellerBlendShapes.ToList() };
 }
 
 /// <summary>表情の遷移時間。</summary>
@@ -218,7 +327,7 @@ internal enum ExpressionWriteMode
 
 /// <summary>表情animationの時間制御。</summary>
 [Serializable]
-internal class MultiFrameSettings
+internal class MultiFrameSettings : IEquatable<MultiFrameSettings>
 {
     public enum Kind
     {
@@ -234,4 +343,26 @@ internal class MultiFrameSettings
     public Hand TriggerHand = Hand.Left; // For Kind.Trigger
     public string ParameterName = string.Empty; // For Kind.Parameter
     public MenuComponent? MenuSource = null; // For Kind.Menu
+
+    internal MultiFrameSettings Clone()
+        => new()
+        {
+            MultiFrameMode = MultiFrameMode,
+            TriggerHand = TriggerHand,
+            ParameterName = ParameterName,
+            MenuSource = MenuSource
+        };
+
+    public bool Equals(MultiFrameSettings? other)
+        => other != null
+        && MultiFrameMode == other.MultiFrameMode
+        && TriggerHand == other.TriggerHand
+        && ParameterName == other.ParameterName
+        && MenuSource == other.MenuSource;
+
+    public override bool Equals(object? obj)
+        => obj is MultiFrameSettings other && Equals(other);
+
+    public override int GetHashCode()
+        => HashCode.Combine(MultiFrameMode, TriggerHand, ParameterName, MenuSource);
 }

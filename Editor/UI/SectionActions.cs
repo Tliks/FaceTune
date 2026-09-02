@@ -90,11 +90,24 @@ internal static class SectionOperations
 
 internal static class SectionHeaderMenu
 {
+    internal static bool ActionsEnabled(ISectionActionProvider provider)
+        => provider is not ISectionActionAvailability availability
+           || availability.ActionsEnabled;
+
     internal static GenericMenu Create(
         SectionActionSet actions,
-        Action<GenericMenu>? populate = null)
+        Action<GenericMenu>? populate = null,
+        bool enabled = true)
     {
         var menu = new GenericMenu();
+        if (!enabled)
+        {
+            menu.AddDisabledItem("section.copy.label".LG());
+            menu.AddDisabledItem("section.paste.label".LG());
+            menu.AddDisabledItem("section.reset.label".LG());
+            return menu;
+        }
+
         if (SectionOperations.CanCopy(actions))
             menu.AddItem(
                 "section.copy.label".LG(),

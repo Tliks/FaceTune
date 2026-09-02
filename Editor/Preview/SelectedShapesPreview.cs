@@ -208,24 +208,28 @@ internal class SelectedShapesPreviewSession : IDisposable
             return false;
         }
 
-        var resolver = new FaceTuneResolver(root, context);
+        var resolver = new ExpressionResolver(root, context);
         if (expressionCount == 1)
         {
-            var expression = expressions[0];
-            resolver.FacialData.Add(expression, resultToAdd, bodyPath);
-            isLooping = context.Observe(
-                expression,
-                e => e.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop,
-                (a, b) => a == b);
+            var expression = resolver.Resolve(expressions[0], bodyPath);
+            resultToAdd.AddRange(expression.Facial);
+            isLooping = expression.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop;
         }
         else
         {
-            resolver.FacialData.AddIncoming(target.transform, resultToAdd, bodyPath);
-            if (!resolver.FacialData.AddLocalData(target.transform, resultToAdd, bodyPath))
+            // Dataの配置はExpressionへ影響しないが、Data自身を選択した場合は編集用にpreviewする。
+            var dataComponents = context.GetComponents<ExpressionDataComponent>(target).ToList();
+            var facial = new FacialAnimationResolver(root, context);
+            if (dataComponents.Count != 1
+                || !facial.TryResolve(dataComponents[0], bodyPath, out var dataAnimations))
             {
                 isLooping = false;
                 return false;
             }
+
+            resultToAdd.AddRange(facial.ResolveIncoming(target.transform, bodyPath));
+            foreach (var animation in dataAnimations)
+                resultToAdd.Add(animation);
             isLooping = false;
         }
 

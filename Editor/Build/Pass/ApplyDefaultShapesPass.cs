@@ -15,7 +15,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         var set = new BlendShapeWeightSet();
 
         var animations = new List<BlendShapeWeightAnimation>();
-        new FaceTuneResolver(avatarContext.Root).FacialData.AddRenderer(
+        new FacialAnimationResolver(avatarContext.Root).AddRenderer(
             animations,
             avatarContext.BodyPath);
         animations.RemoveAll(animation =>

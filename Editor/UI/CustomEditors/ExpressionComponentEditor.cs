@@ -22,23 +22,19 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
         => new[]
         {
-            CreateExpressionSection(),
-            CreateBehaviorSection(),
+            CreateDefinitionSection(),
             CreateConditionSection(),
             CreateDirectMenuSection(),
             CreateAdditionalSettingsSection(),
             CreatePreviewSection()
         };
 
-    private FaceTuneSection CreateExpressionSection()
-        => CreateSection("expression.section.label", new FacialDataSectionDrawer(
-            serializedObject,
-            nameof(ExpressionComponent.FacialBlendShapesReference),
-            nameof(ExpressionComponent.FacialBlendShapes)), true);
-
-    private FaceTuneSection CreateBehaviorSection()
-        => CreateSection("expression.behavior.section.label", new ExpressionBehaviorSectionDrawer(serializedObject), true,
-            spacingGroup: 1);
+    private FaceTuneSection CreateDefinitionSection()
+        => CreateSection(
+            "expression.content.section.label",
+            new ExpressionDefinitionSectionDrawer(serializedObject, Inheritance),
+            defaultExpanded: true,
+            spacingGroup: 0);
 
     private FaceTuneSection CreateConditionSection()
     {
@@ -48,7 +44,7 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             new ConditionSectionDrawer(serializedObject.FindProperty(nameof(ExpressionComponent.Condition))),
             enabled.boolValue,
             enabled,
-            spacingGroup: 2);
+            spacingGroup: 1);
     }
 
     private FaceTuneSection CreateDirectMenuSection()
@@ -59,744 +55,448 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             new DirectMenuSectionDrawer(serializedObject.FindProperty(nameof(ExpressionComponent.DirectMenuSettings))),
             false,
             enabled,
-            spacingGroup: 2);
+            spacingGroup: 1);
     }
 
     private FaceTuneSection CreateAdditionalSettingsSection()
         => CreateSection(
             "common.options.section.label",
-            new ExpressionOverrideSettingsGroupDrawer(serializedObject, Inheritance),
+            new ExpressionScopedSettingsGroupDrawer(serializedObject, Inheritance),
             false,
-            spacingGroup: 3);
+            spacingGroup: 2);
+
+    private ExpressionSettingsInheritance Inheritance
+        => _inheritance ??= new ExpressionSettingsInheritance(Component, targets.Length == 1);
 
     private FaceTuneSection CreatePreviewSection()
         => CreateSection(
             "expression.previewSettings.section.label",
             new PreviewSettingsSectionDrawer(serializedObject),
             serializedObject.FindProperty(nameof(ExpressionComponent.AlwaysOnPreviewEnabled)).boolValue,
-            spacingGroup: 3);
-
-    private ExpressionSettingsInheritance Inheritance
-        => _inheritance ??= new ExpressionSettingsInheritance(Component, targets.Length == 1);
+            spacingGroup: 2);
 }
 
-internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
+internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer, ISectionHeaderMenuDrawer
 {
-    private static readonly ReorderableListOptions ListOptions = new(
-        Header: ReorderableListOptions.HeaderMode.Label);
+    private readonly SerializedObject _serializedObject;
+    private readonly SerializedProperty _reference;
+    private readonly SerializedProperty _mode;
+    private readonly SerializedProperty _source;
+    private readonly SerializedObject _preview;
+    private readonly DefinitionChild[] _children;
 
-    private readonly SerializedReferenceableSettings _source;
-
-    public NonFacialAnimationDataSectionDrawer(
-        SerializedObject serializedObject,
-        string referencePropertyName,
-        string directPropertyName)
+    private static readonly string[] CopiedProperties =
     {
-        _source = new SerializedReferenceableSettings(
-            serializedObject,
-            referencePropertyName,
-            directPropertyName);
-        Actions = _source.CreateActionSet(() => new NonFacialAnimationData());
-    }
+        nameof(ExpressionComponent.FacialBlendShapes),
+        nameof(ExpressionComponent.NonFacialAnimations),
+        nameof(ExpressionComponent.WriteMode),
+        nameof(ExpressionComponent.MultiFrame),
+        nameof(ExpressionComponent.AllowEyeBlink),
+        nameof(ExpressionComponent.AllowLipSync),
+        nameof(ExpressionComponent.HasEyeBlink),
+        nameof(ExpressionComponent.EyeBlinkReference),
+        nameof(ExpressionComponent.EyeBlink),
+        nameof(ExpressionComponent.HasLipSync),
+        nameof(ExpressionComponent.LipSyncReference),
+        nameof(ExpressionComponent.LipSync)
+    };
 
-    public SectionActionSet Actions { get; }
-
-    public float GetHeight()
-        => SettingsReferenceGUI.GetHeight(_source, GetDirectHeight());
-
-    public void Draw(Rect position)
-        => SettingsReferenceGUI.Draw(position, _source, GetDirectHeight(), DrawDirect);
-
-    public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
-    public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _source);
-
-    private float GetDirectHeight()
-    {
-        var animationClips = _source.Direct.FindPropertyRelative(
-            nameof(NonFacialAnimationData.AnimationClips));
-        var transformAnimations = _source.Direct.FindPropertyRelative(
-            nameof(NonFacialAnimationData.TransformAnimations));
-        return GUIHelper.GetListHeight(animationClips, ListOptions)
-             + GUIHelper.VerticalSpacing
-             + GUIHelper.GetListHeight(transformAnimations, ListOptions);
-    }
-
-    private void DrawDirect(Rect position)
-    {
-        var animationClips = _source.Direct.FindPropertyRelative(
-            nameof(NonFacialAnimationData.AnimationClips));
-        var transformAnimations = _source.Direct.FindPropertyRelative(
-            nameof(NonFacialAnimationData.TransformAnimations));
-        position.height = GUIHelper.GetListHeight(animationClips, ListOptions);
-        GUIHelper.DrawList(
-            position,
-            animationClips,
-            "expression.additionalAnimations.clips.label".LG(),
-            ListOptions);
-        position.NewLine();
-        position.height = GUIHelper.GetListHeight(transformAnimations, ListOptions);
-        GUIHelper.DrawList(
-            position,
-            transformAnimations,
-            "expression.additionalAnimations.transforms.label".LG(),
-            ListOptions);
-    }
-}
-
-internal enum ExpressionInheritedSettingKind
-{
-    EyeBlink,
-    LipSync,
-    Transition,
-    Priority
-}
-
-internal sealed class ExpressionSettingsPreviewState : ScriptableObject
-{
-    public EyeBlinkSettings EyeBlink = new();
-    public LipSyncSettings LipSync = new();
-    public TransitionSettings Transition = new();
-    public PrioritySettings Priority = new();
-}
-
-internal sealed class ExpressionSettingsInheritance : IDisposable
-{
-    private readonly ExpressionComponent _component;
-    private readonly bool _singleTarget;
-    private readonly ExpressionSettingsPreviewState _preview;
-    private readonly SerializedObject _serializedPreview;
-    private readonly SerializedProperty _eyeBlink;
-    private readonly SerializedProperty _lipSync;
-    private readonly SerializedProperty _transition;
-    private readonly SerializedProperty _priority;
-    private SettingsComponent? _eyeBlinkOwner;
-    private SettingsComponent? _lipSyncOwner;
-    private SettingsComponent? _transitionOwner;
-    private SettingsComponent? _priorityOwner;
-    private Transform? _batchOverrideTarget;
-    private readonly IReadOnlyDictionary<ExpressionInheritedSettingKind, SettingBinding> _bindings;
-
-    public ExpressionSettingsInheritance(ExpressionComponent component, bool singleTarget)
-    {
-        _component = component;
-        _singleTarget = singleTarget;
-        _preview = ScriptableObject.CreateInstance<ExpressionSettingsPreviewState>();
-        _preview.hideFlags = HideFlags.HideAndDontSave;
-        _serializedPreview = new SerializedObject(_preview);
-        _eyeBlink = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.EyeBlink));
-        _lipSync = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.LipSync));
-        _transition = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.Transition));
-        _priority = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.Priority));
-        _bindings = new Dictionary<ExpressionInheritedSettingKind, SettingBinding>
-        {
-            [ExpressionInheritedSettingKind.EyeBlink] = new(
-                _eyeBlink,
-                () => _eyeBlinkOwner,
-                nameof(SettingsComponent.HasEyeBlink),
-                nameof(SettingsComponent.EyeBlink),
-                nameof(SettingsComponent.EyeBlinkReference),
-                target => target.CopyFrom(_preview.EyeBlink)),
-            [ExpressionInheritedSettingKind.LipSync] = new(
-                _lipSync,
-                () => _lipSyncOwner,
-                nameof(SettingsComponent.HasLipSync),
-                nameof(SettingsComponent.LipSync),
-                nameof(SettingsComponent.LipSyncReference),
-                target => target.CopyFrom(_preview.LipSync)),
-            [ExpressionInheritedSettingKind.Transition] = new(
-                _transition,
-                () => _transitionOwner,
-                nameof(SettingsComponent.HasTransition),
-                nameof(SettingsComponent.Transition),
-                null,
-                target => target.CopyFrom(_preview.Transition)),
-            [ExpressionInheritedSettingKind.Priority] = new(
-                _priority,
-                () => _priorityOwner,
-                nameof(SettingsComponent.HasPriority),
-                nameof(SettingsComponent.Priority),
-                null,
-                target => target.CopyFrom(_preview.Priority))
-        };
-    }
-
-    public void Refresh()
-    {
-        if (!_singleTarget || _component == null)
-        {
-            ClearOwners();
-            _serializedPreview.Update();
-            return;
-        }
-
-        var resolver = new FaceTuneResolver(_component.transform.root.gameObject);
-        _preview.EyeBlink = resolver.EyeBlink.GetIncoming(_component, out _eyeBlinkOwner);
-        _preview.LipSync = resolver.LipSync.GetIncoming(_component, out _lipSyncOwner);
-        _preview.Transition = resolver.Transition.GetIncoming(_component, out _transitionOwner);
-        _preview.Priority = resolver.Priority.GetIncoming(_component, out _priorityOwner);
-        _batchOverrideTarget = FindBatchOverrideTarget(_component);
-        _serializedPreview.Update();
-    }
-
-    public SerializedProperty GetValue(ExpressionInheritedSettingKind kind)
-        => GetBinding(kind).Value;
-
-    public void InitializeOverride(SerializedProperty target, ExpressionInheritedSettingKind kind)
-        => GetBinding(kind).CopyPreview(target);
-
-    public SettingsComponent? GetOwner(ExpressionInheritedSettingKind kind)
-        => GetBinding(kind).GetOwner();
-
-    public bool CanCreateBatchOverride => _singleTarget && _batchOverrideTarget != null;
-
-    public void CreateBatchOverride(ExpressionInheritedSettingKind kind)
-    {
-        if (_batchOverrideTarget == null) return;
-
-        var owner = _component.transform.root.gameObject
-            .GetComponentsInParentExcludingSelf<SettingsComponent>(_component, true)
-            .LastOrDefault();
-        if (owner == null)
-        {
-            owner = Undo.AddComponent<SettingsComponent>(_batchOverrideTarget.gameObject);
-        }
-        Undo.RecordObject(owner, "expression.batchOverride.undo".LS());
-
-        owner.enabled = true;
-        var serializedOwner = new SerializedObject(owner);
-        serializedOwner.Update();
-        var binding = GetBinding(kind);
-        InitializeOverride(serializedOwner.FindProperty(binding.ValuePropertyName), kind);
-        if (binding.ReferencePropertyName != null)
-        {
-            var source = new SerializedReferenceableSettings(
-                serializedOwner,
-                binding.ReferencePropertyName,
-                binding.ValuePropertyName);
-            source.Mode.intValue = (int)SettingsReferenceMode.Direct;
-            source.Source.objectReferenceValue = null;
-        }
-        serializedOwner.FindProperty(binding.EnabledPropertyName).boolValue = true;
-        serializedOwner.ApplyModifiedProperties();
-
-        EditorUtility.SetDirty(owner);
-        Selection.activeObject = owner;
-        EditorGUIUtility.PingObject(owner);
-    }
-
-    public void Dispose()
-    {
-        if (_preview != null) Object.DestroyImmediate(_preview);
-    }
-
-    private SettingBinding GetBinding(ExpressionInheritedSettingKind kind)
-        => _bindings.TryGetValue(kind, out var binding)
-            ? binding
-            : throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
-
-    private void ClearOwners()
-    {
-        (_eyeBlinkOwner, _lipSyncOwner, _transitionOwner, _priorityOwner) = (null, null, null, null);
-        _batchOverrideTarget = null;
-    }
-
-    private static Transform? FindBatchOverrideTarget(ExpressionComponent expression)
-        => expression.transform.parent;
-
-    private sealed record SettingBinding(
-        SerializedProperty Value,
-        Func<SettingsComponent?> GetOwner,
-        string EnabledPropertyName,
-        string ValuePropertyName,
-        string? ReferencePropertyName,
-        Action<SerializedProperty> CopyPreview);
-}
-
-internal sealed class ExpressionOverrideSettingsGroupDrawer : ISectionDrawer
-{
-    private const float EntryGroupSpacing = 6f;
-    private readonly IOptionEntry[] _entries;
-
-    public ExpressionOverrideSettingsGroupDrawer(
+    public ExpressionDefinitionSectionDrawer(
         SerializedObject serializedObject,
         ExpressionSettingsInheritance inheritance)
     {
-        _entries = new IOptionEntry[]
+        _serializedObject = serializedObject;
+        _reference = serializedObject.FindProperty(nameof(ExpressionComponent.ExpressionDataReference));
+        _mode = _reference.FindPropertyRelative(nameof(SettingsReference.Mode));
+        _source = _reference.FindPropertyRelative(nameof(SettingsReference.Source));
+
+        _preview = inheritance.DefinitionPreview;
+        var preview = _preview;
+        _children = new[]
         {
-            new NonFacialAnimationEntry(serializedObject),
-            new SummaryEntry(
-                "expression.animationSettings.section.label",
-                new PropertiesSectionDrawer(new PropertiesSectionDrawer.Entry(
-                    serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)),
-                    null,
-                    () => new MultiFrameSettings())),
-                new[] { "expression.settingSource.short.standard", "expression.settingSource.short.setting" },
-                () => GetMultiFrameSummary(serializedObject)),
-            new Entry(
-                serializedObject.FindProperty(nameof(ExpressionComponent.HasEyeBlink)),
-                serializedObject.FindProperty(nameof(ExpressionComponent.EyeBlink)),
-                "eyeBlink.section.label",
-                ExpressionInheritedSettingKind.EyeBlink,
-                inheritance),
-            new Entry(
-                serializedObject.FindProperty(nameof(ExpressionComponent.HasLipSync)),
-                serializedObject.FindProperty(nameof(ExpressionComponent.LipSync)),
-                "lipSync.section.label",
-                ExpressionInheritedSettingKind.LipSync,
-                inheritance),
-            new Entry(
-                serializedObject.FindProperty(nameof(ExpressionComponent.HasTransition)),
-                serializedObject.FindProperty(nameof(ExpressionComponent.Transition)),
-                "transition.section.label",
-                ExpressionInheritedSettingKind.Transition,
-                inheritance),
-            new Entry(
-                serializedObject.FindProperty(nameof(ExpressionComponent.HasPriority)),
-                serializedObject.FindProperty(nameof(ExpressionComponent.Priority)),
-                "priority.section.label",
-                ExpressionInheritedSettingKind.Priority,
-                inheritance)
+            new DefinitionChild(
+                "expression.section.label",
+                new FacialDataSectionDrawer(serializedObject, nameof(ExpressionComponent.FacialBlendShapes)),
+                new FacialDataSectionDrawer(preview, nameof(ExpressionDefinitionPreviewState.FacialBlendShapes)),
+                true,
+                false),
+            new DefinitionChild(
+                "expression.behavior.section.label",
+                new ExpressionBehaviorSectionDrawer(serializedObject),
+                new ExpressionBehaviorSectionDrawer(preview),
+                true,
+                false),
+            new DefinitionChild(
+                "common.options.section.label",
+                CreateOptionsDrawer(serializedObject, inheritance, readOnly: false),
+                CreateOptionsDrawer(preview, inheritance, readOnly: true),
+                false,
+                true)
         };
+
         Actions = new SectionActionSet(
             serializedObject,
-            _entries.SelectMany(entry => entry.Actions.Fields));
+            new[] { SectionActionField.From(_reference, () => new SettingsReference()) }
+                .Concat(_children.SelectMany(child => child.Direct.Actions.Fields)));
     }
+
+    private static ISectionDrawer CreateOptionsDrawer(
+        SerializedObject serializedObject,
+        ExpressionSettingsInheritance inheritance,
+        bool readOnly)
+    {
+        return new NestedSectionGroupDrawer(
+            serializedObject,
+            new[]
+            {
+                new NestedSection(
+                    "expression.multiFrame.section.label",
+                    new MultiFrameDefinitionSectionDrawer(
+                        serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)))),
+                new NestedSection(
+                    "eyeBlink.section.label",
+                    new ExpressionScopedSettingSectionDrawer(
+                        serializedObject,
+                        nameof(ExpressionComponent.HasEyeBlink),
+                        nameof(ExpressionComponent.EyeBlink),
+                        nameof(ExpressionComponent.EyeBlinkReference),
+                        ExpressionInheritedSettingKind.EyeBlink,
+                        inheritance,
+                        () => new EyeBlinkSettings())),
+                new NestedSection(
+                    "lipSync.section.label",
+                    new ExpressionScopedSettingSectionDrawer(
+                        serializedObject,
+                        nameof(ExpressionComponent.HasLipSync),
+                        nameof(ExpressionComponent.LipSync),
+                        nameof(ExpressionComponent.LipSyncReference),
+                        ExpressionInheritedSettingKind.LipSync,
+                        inheritance,
+                        () => new LipSyncSettings())),
+                new NestedSection(
+                    "expression.additionalAnimations.section.label",
+                    new NonFacialAnimationDataSectionDrawer(
+                        serializedObject,
+                        nameof(ExpressionComponent.NonFacialAnimations)),
+                    ShowHeader: false)
+            },
+            ChildHeaderWidth,
+            readOnly);
+    }
+
+    internal static float ChildHeaderWidth
+        => GUIHelper.CompactPopupWidth(new[]
+        {
+            "expression.settingSource.short.standard".LG(),
+            "expression.settingSource.short.batch".LG(),
+            "expression.settingSource.short.setting".LG(),
+            "expression.settingSource.short.reference".LG()
+        });
 
     public SectionActionSet Actions { get; }
 
     public float GetHeight()
     {
-        var height = EntryGroupSpacing * 2f;
-        foreach (var entry in _entries)
-            height += GUIHelper.GetShurikenSectionHeight(entry.Foldout, entry.GetContentHeight());
+        var height = 0f;
+        if (_mode.intValue == (int)SettingsReferenceMode.Reference)
+            height += GUIHelper.LineHeight + GUIHelper.VerticalSpacing;
+        if (_children.Length == 0)
+            return height;
+
+        for (var i = 0; i < _children.Length; i++)
+        {
+            height += GUIHelper.GetShurikenSectionHeight(
+                _children[i].Foldout,
+                _children[i].GetDrawer(IsReference).GetHeight());
+            if (i + 1 < _children.Length)
+                height += GUIHelper.VerticalSpacing;
+        }
         return height;
+    }
+
+    public float GetHeaderWidth()
+        => SettingsReferenceGUI.GetHeaderWidth();
+
+    public void DrawHeader(Rect position)
+    {
+        var selected = _mode.enumValueIndex;
+        GUIHelper.CompactPopup(
+            position,
+            _mode.hasMultipleDifferentValues
+                ? EditorGUIUtility.TrTextContent("—")
+                : (selected == 0
+                    ? "settingsReferenceMode.short.direct"
+                    : "settingsReferenceMode.short.reference").LG(),
+            new[]
+            {
+                "settingsReferenceMode.option.direct".LG(),
+                "settingsReferenceMode.option.reference".LG()
+            },
+            selected,
+            SetMode,
+            _mode.hasMultipleDifferentValues,
+            centered: true);
+    }
+
+    public void DrawCollapsedHeader(Rect position) => DrawHeader(position);
+
+    private void SetMode(int mode)
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        if (mode == (int)SettingsReferenceMode.Direct)
+        {
+            if (_mode.intValue == (int)SettingsReferenceMode.Reference
+                && _serializedObject.targetObjects.Length == 1)
+            {
+                _preview.UpdateIfRequiredOrScript();
+                foreach (var propertyName in CopiedProperties)
+                {
+                    var source = _preview.FindProperty(propertyName);
+                    if (source != null)
+                        _serializedObject.CopyFromSerializedProperty(source);
+                }
+            }
+            _source.objectReferenceValue = null;
+        }
+        _mode.enumValueIndex = mode;
+        _serializedObject.ApplyModifiedProperties();
     }
 
     public void Draw(Rect position)
     {
-        position.Indent(.5f);
-        var sharedHeaderWidth = _entries.Max(entry => entry.GetHeaderWidth());
-        for (var i = 0; i < _entries.Length; i++)
+        var isReference = IsReference;
+        if (isReference)
         {
-            var entry = _entries[i];
-            var contentHeight = entry.GetContentHeight();
+            position.height = GUIHelper.LineHeight;
+            EditorGUI.PropertyField(position, _source, "common.component.label".LG());
+            position.NewLine();
+        }
+
+        if (_children.Length == 0)
+            return;
+
+        position.Indent(GUIHelper.NestedSectionIndent);
+        position.width += GUIHelper.ContentPadding;
+        var sharedHeaderWidth = ChildHeaderWidth;
+        for (var i = 0; i < _children.Length; i++)
+        {
+            var child = _children[i];
+            var drawer = child.GetDrawer(isReference);
+            var contentHeight = drawer.GetHeight();
             var section = new Rect(
                 position.x,
                 position.y,
                 position.width,
-                GUIHelper.GetShurikenSectionHeight(entry.Foldout, contentHeight));
-            var drawHeader = SectionHeaderGUI.GetDrawAction(entry, entry.Foldout.Expanded);
+                GUIHelper.GetShurikenSectionHeight(child.Foldout, contentHeight));
+            var headerDrawer = child.ShowHeader ? drawer as ISectionHeaderDrawer : null;
+            var drawHeader = isReference && headerDrawer is ICollapsedSectionHeaderDrawer collapsed
+                ? collapsed.DrawCollapsedHeader
+                : SectionHeaderGUI.GetDrawAction(headerDrawer, child.Foldout.Expanded);
             var headerWidth = drawHeader == null ? 0f : sharedHeaderWidth;
-            if (GUIHelper.DrawShurikenSection(
-                    section,
-                    entry.Foldout,
-                    entry.LabelKey.LG(),
-                    contentHeight,
-                    out var content,
-                    createHeaderMenu: () => SectionHeaderMenu.Create(entry.Actions),
-                    drawHeader: drawHeader,
-                    headerWidth: headerWidth,
-                    propertyScope: entry.Actions.ScopeProperty))
+            Func<GenericMenu>? createMenu = isReference
+                ? null
+                : () => SectionHeaderMenu.Create(drawer.Actions);
+            var drawn = GUIHelper.DrawShurikenSection(
+                section,
+                child.Foldout,
+                child.LabelKey.LG(),
+                contentHeight,
+                out var content,
+                createMenu,
+                drawHeader,
+                headerWidth,
+                drawer.Actions.ScopeProperty);
+            if (drawn)
             {
-                content.height = contentHeight;
-                entry.Draw(content);
+                content.height = GUIHelper.LineHeight;
+                var disabledValue = isReference && drawer is not NestedSectionGroupDrawer;
+                using var disabled = new EditorGUI.DisabledScope(disabledValue);
+                drawer.Draw(content);
             }
             position.y = section.yMax;
-            if (i is 1 or 3) position.y += EntryGroupSpacing;
+            if (i + 1 < _children.Length)
+                position.y += GUIHelper.VerticalSpacing;
         }
     }
 
-    private static GUIContent GetMultiFrameSummary(SerializedObject serializedObject)
+    private bool IsReference
+        => _mode.intValue == (int)SettingsReferenceMode.Reference;
+
+    public void PopulateHeaderMenu(GenericMenu menu)
     {
-        var mode = serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame))
-            .FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode));
-        if (mode.hasMultipleDifferentValues)
-            return EditorGUIUtility.TrTextContent("—");
-        return (mode.intValue == (int)MultiFrameSettings.Kind.Default
-            ? "expression.settingSource.short.standard"
-            : "expression.settingSource.short.setting").LG();
+        var canSeparate = _serializedObject.targetObjects.Length == 1
+                          && _mode.intValue == (int)SettingsReferenceMode.Direct
+                          && _serializedObject.targetObject is ExpressionComponent expression
+                          && !EditorUtility.IsPersistent(expression.gameObject);
+        if (canSeparate)
+            menu.AddItem("expression.separate.menu".LG(), false, Separate);
+        else
+            menu.AddDisabledItem("expression.separate.menu".LG());
     }
 
-    private interface IOptionEntry : ICollapsedSectionHeaderDrawer, ISectionActionProvider
+    private void Separate()
     {
-        string LabelKey { get; }
-        FoldoutState Foldout { get; }
-        float GetContentHeight();
-        void Draw(Rect position);
+        if (_serializedObject.targetObject is not ExpressionComponent expression)
+            return;
+
+        ExpressionDataComponent? data = null;
+        SectionOperations.RunUndo("expression.separate.menu".LS(), () =>
+        {
+            data = FaceTuneRecipes.AddExpressionData(expression.transform.parent);
+            using var dataObject = new SerializedObject(data);
+            _serializedObject.UpdateIfRequiredOrScript();
+            dataObject.UpdateIfRequiredOrScript();
+            foreach (var propertyName in CopiedProperties)
+            {
+                var source = _serializedObject.FindProperty(propertyName);
+                var target = dataObject.FindProperty(propertyName);
+                if (source != null && target != null)
+                    dataObject.CopyFromSerializedProperty(source);
+            }
+            dataObject.FindProperty(nameof(ExpressionDataComponent.HasFacialBlendShapes)).boolValue = true;
+            dataObject.FindProperty(nameof(ExpressionDataComponent.HasNonFacialAnimations)).boolValue = true;
+            dataObject.FindProperty(nameof(ExpressionDataComponent.HasFacialBehavior)).boolValue = true;
+            dataObject.FindProperty(nameof(ExpressionDataComponent.HasMultiFrame)).boolValue = true;
+            dataObject.ApplyModifiedProperties();
+
+            var reference = _serializedObject.FindProperty(nameof(ExpressionComponent.ExpressionDataReference));
+            reference.FindPropertyRelative(nameof(SettingsReference.Mode)).intValue =
+                (int)SettingsReferenceMode.Reference;
+            reference.FindPropertyRelative(nameof(SettingsReference.Source)).objectReferenceValue = data.transform;
+            _serializedObject.ApplyModifiedProperties();
+        });
+
+        if (data != null)
+            EditorGUIUtility.PingObject(data);
     }
 
-    private sealed class NonFacialAnimationEntry : IOptionEntry
+    private sealed record DefinitionChild(
+        string LabelKey,
+        ISectionDrawer Direct,
+        ISectionDrawer Preview,
+        bool Expanded,
+        bool ShowHeader)
     {
-        private static readonly string[] SummaryKeys =
-        {
-            "expression.settingSource.short.standard",
-            "expression.settingSource.short.setting",
-            "expression.settingSource.short.reference"
-        };
-        private static readonly string[] ModeKeys =
-        {
-            "expression.settingSource.option.direct",
-            "expression.settingSource.option.reference"
-        };
-
-        private readonly NonFacialAnimationDataSectionDrawer _drawer;
-        private readonly SerializedReferenceableSettings _source;
-
-        public string LabelKey => "expression.additionalAnimations.section.label";
-        public FoldoutState Foldout { get; } = new(false);
-        public SectionActionSet Actions { get; }
-
-        public NonFacialAnimationEntry(SerializedObject serializedObject)
-        {
-            _drawer = new NonFacialAnimationDataSectionDrawer(
-                serializedObject,
-                nameof(ExpressionComponent.NonFacialAnimationsReference),
-                nameof(ExpressionComponent.NonFacialAnimations));
-            _source = new SerializedReferenceableSettings(
-                serializedObject,
-                nameof(ExpressionComponent.NonFacialAnimationsReference),
-                nameof(ExpressionComponent.NonFacialAnimations));
-            Actions = _drawer.Actions.WithKey(LabelKey);
-        }
-
-        public float GetContentHeight() => _drawer.GetHeight();
-        public void Draw(Rect position) => _drawer.Draw(position);
-        public float GetHeaderWidth()
-            => GUIHelper.CompactPopupWidth(SummaryKeys.Select(key => key.LG()));
-
-        public void DrawHeader(Rect position)
-        {
-            var selected = _source.Mode.enumValueIndex;
-            GUIHelper.CompactPopup(
-                position,
-                GetSummary(),
-                ModeKeys.Select(key => key.LG()).ToArray(),
-                selected,
-                SetMode,
-                _source.Mode.hasMultipleDifferentValues,
-                separatorBefore: 1,
-                centered: true);
-        }
-
-        public void DrawCollapsedHeader(Rect position)
-            => GUIHelper.CompactHeaderValue(
-                position,
-                GetSummary(),
-                _source.Mode.hasMultipleDifferentValues,
-                centered: true);
-
-        private GUIContent GetSummary()
-        {
-            if (_source.Mode.hasMultipleDifferentValues)
-                return EditorGUIUtility.TrTextContent("—");
-            if (_source.Mode.intValue == (int)SettingsReferenceMode.Reference)
-                return "expression.settingSource.short.reference".LG();
-
-            var clips = _source.Direct.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
-            var transforms = _source.Direct.FindPropertyRelative(nameof(NonFacialAnimationData.TransformAnimations));
-            if (clips.hasMultipleDifferentValues || transforms.hasMultipleDifferentValues)
-                return EditorGUIUtility.TrTextContent("—");
-            return (clips.arraySize > 0 || transforms.arraySize > 0
-                ? "expression.settingSource.short.setting"
-                : "expression.settingSource.short.standard").LG();
-        }
-
-        private void SetMode(int mode)
-        {
-            _source.Mode.serializedObject.UpdateIfRequiredOrScript();
-            _source.Mode.enumValueIndex = mode;
-            _source.Mode.serializedObject.ApplyModifiedProperties();
-        }
-    }
-
-    private sealed class SummaryEntry : IOptionEntry
-    {
-        private readonly ISectionDrawer _drawer;
-        private readonly string[] _summaryKeys;
-        private readonly Func<GUIContent> _getSummary;
-
-        public string LabelKey { get; }
-        public FoldoutState Foldout { get; } = new(false);
-        public SectionActionSet Actions { get; }
-
-        public SummaryEntry(
-            string labelKey,
-            ISectionDrawer drawer,
-            string[] summaryKeys,
-            Func<GUIContent> getSummary)
-        {
-            (LabelKey, _drawer, _summaryKeys, _getSummary) =
-                (labelKey, drawer, summaryKeys, getSummary);
-            Actions = drawer.Actions.WithKey(labelKey);
-        }
-
-        public float GetContentHeight() => _drawer.GetHeight();
-        public void Draw(Rect position) => _drawer.Draw(position);
-        public float GetHeaderWidth()
-            => GUIHelper.CompactPopupWidth(_summaryKeys.Select(key => key.LG()));
-        public void DrawHeader(Rect position)
-            => GUIHelper.CompactHeaderValue(position, _getSummary(), centered: true);
-        public void DrawCollapsedHeader(Rect position) => DrawHeader(position);
-    }
-
-    private sealed class Entry : IOptionEntry
-    {
-        private static readonly string[] ReferenceableShortModeKeys =
-        {
-            "expression.settingSource.short.standard",
-            "expression.settingSource.short.batch",
-            "expression.settingSource.short.setting",
-            "expression.settingSource.short.reference"
-        };
-        private static readonly string[] DirectShortModeKeys =
-        {
-            "expression.settingSource.short.standard",
-            "expression.settingSource.short.batch",
-            "expression.settingSource.short.setting"
-        };
-        private static readonly string[] InheritedReferenceableModeKeys =
-        {
-            "expression.settingSource.option.batch",
-            "expression.settingSource.option.direct",
-            "expression.settingSource.option.reference"
-        };
-        private static readonly string[] DefaultReferenceableModeKeys =
-        {
-            "expression.settingSource.option.standard",
-            "expression.settingSource.option.batch",
-            "expression.settingSource.option.direct",
-            "expression.settingSource.option.reference"
-        };
-        private static readonly string[] InheritedDirectModeKeys =
-        {
-            "expression.settingSource.option.batch",
-            "expression.settingSource.option.direct"
-        };
-        private static readonly string[] DefaultDirectModeKeys =
-        {
-            "expression.settingSource.option.standard",
-            "expression.settingSource.option.batch",
-            "expression.settingSource.option.direct"
-        };
-
-        private readonly SerializedProperty _enabled;
-        private readonly SerializedProperty _local;
-        private readonly SerializedReferenceableSettings? _source;
-        private readonly ExpressionInheritedSettingKind _kind;
-        private readonly ExpressionSettingsInheritance _inheritance;
-
-        public string LabelKey { get; }
-        public FoldoutState Foldout { get; } = new(false);
-        public SectionActionSet Actions { get; }
-
-        public Entry(
-            SerializedProperty enabled,
-            SerializedProperty local,
-            string labelKey,
-            ExpressionInheritedSettingKind kind,
-            ExpressionSettingsInheritance inheritance)
-        {
-            (_enabled, _local, LabelKey, _kind, _inheritance) =
-                (enabled, local, labelKey, kind, inheritance);
-            if (IsReferenceable)
-            {
-                var referencePropertyName = kind switch
-                {
-                    ExpressionInheritedSettingKind.EyeBlink => nameof(ExpressionComponent.EyeBlinkReference),
-                    ExpressionInheritedSettingKind.LipSync => nameof(ExpressionComponent.LipSyncReference),
-                    _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-                };
-                _source = new SerializedReferenceableSettings(
-                    local.serializedObject,
-                    referencePropertyName,
-                    local.name);
-            }
-
-            Actions = (_source == null
-                ? new SectionActionSet(
-                    local.serializedObject,
-                    new[] { SectionActionField.From(
-                        _local,
-                        () => CreateDefaultLocalValue(kind)) })
-                : _source.CreateActionSet(() => CreateDefaultLocalValue(kind)))
-                .WithKey(labelKey);
-        }
-
-        private static object CreateDefaultLocalValue(ExpressionInheritedSettingKind kind)
-            => kind switch
-            {
-                ExpressionInheritedSettingKind.EyeBlink => new EyeBlinkSettings(),
-                ExpressionInheritedSettingKind.LipSync => new LipSyncSettings(),
-                ExpressionInheritedSettingKind.Transition => new TransitionSettings(),
-                ExpressionInheritedSettingKind.Priority => new PrioritySettings(),
-                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
-            };
-
-        private bool IsReferenceable
-            => _kind is ExpressionInheritedSettingKind.EyeBlink or ExpressionInheritedSettingKind.LipSync;
-
-        private bool ShowsLocalValue => _enabled.boolValue && !_enabled.hasMultipleDifferentValues;
-
-        private SerializedProperty? ReferenceMode => _source?.Mode;
-
-        public float GetContentHeight()
-        {
-            var height = GetValueHeight();
-            if (ShowsInheritedValue)
-                height += GUIHelper.LineHeight + GUIHelper.VerticalSpacing;
-            return height;
-        }
-
-        public void Draw(Rect position)
-        {
-            if (ShowsInheritedValue)
-            {
-                DrawSource(position.SetSingleHeight(), _inheritance.GetOwner(_kind));
-                position.NewLine();
-            }
-
-            var value = GetDisplayedValue();
-            using var disabled = new EditorGUI.DisabledScope(!ShowsLocalValue);
-            if (!ShowsLocalValue || !IsReferenceable)
-            {
-                position.height = EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
-                EditorGUI.PropertyField(position, value, GUIContent.none, true);
-                return;
-            }
-
-            SettingsReferenceGUI.Draw(
-                position,
-                _source!,
-                EditorGUI.GetPropertyHeight(_local, GUIContent.none, true),
-                rect => EditorGUI.PropertyField(rect, _local, GUIContent.none, true));
-        }
-
-        private float GetValueHeight()
-        {
-            var value = GetDisplayedValue();
-            if (!ShowsLocalValue || !IsReferenceable)
-                return EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
-            return SettingsReferenceGUI.GetHeight(
-                _source!,
-                EditorGUI.GetPropertyHeight(_local, GUIContent.none, true));
-        }
-
-        private bool ShowsInheritedValue
-            => !ShowsLocalValue && _inheritance.GetOwner(_kind) != null;
-
-        private static void DrawSource(Rect position, SettingsComponent? source)
-        {
-            using var disabled = new EditorGUI.DisabledScope(true);
-            EditorGUI.ObjectField(
-                position,
-                "expression.settingSource.label".LG(),
-                source,
-                typeof(SettingsComponent),
-                true);
-        }
-
-        public float GetHeaderWidth()
-            => GUIHelper.CompactPopupWidth(
-                (IsReferenceable ? ReferenceableShortModeKeys : DirectShortModeKeys)
-                .Select(key => key.LG()));
-
-        public void DrawHeader(Rect position)
-        {
-            var keys = GetModeKeys();
-            var hasOwner = _inheritance.GetOwner(_kind) != null;
-            var localOffset = hasOwner ? 1 : 2;
-            var selected = !ShowsLocalValue ? 0 : localOffset + (ReferenceMode?.enumValueIndex ?? 0);
-            GUIHelper.CompactPopup(
-                position,
-                GetCurrentModeLabel(hasOwner),
-                keys.Select(key => key.LG()).ToArray(),
-                selected,
-                index => SetMode(index, hasOwner),
-                _enabled.hasMultipleDifferentValues,
-                separatorBefore: IsReferenceable ? keys.Length - 1 : -1,
-                centered: true);
-        }
-
-        public void DrawCollapsedHeader(Rect position)
-        {
-            var hasOwner = _inheritance.GetOwner(_kind) != null;
-            GUIHelper.CompactHeaderValue(
-                position,
-                GetCurrentModeLabel(hasOwner),
-                _enabled.hasMultipleDifferentValues,
-                centered: true);
-        }
-
-        private GUIContent GetCurrentModeLabel(bool hasOwner)
-        {
-            if (_enabled.hasMultipleDifferentValues)
-                return EditorGUIUtility.TrTextContent("—");
-            var key = !ShowsLocalValue
-                ? hasOwner
-                    ? "expression.settingSource.short.batch"
-                    : "expression.settingSource.short.standard"
-                : ReferenceMode?.intValue == (int)SettingsReferenceMode.Reference
-                    ? "expression.settingSource.short.reference"
-                    : "expression.settingSource.short.setting";
-            return key.LG();
-        }
-
-        private string[] GetModeKeys()
-            => (_inheritance.GetOwner(_kind) != null, IsReferenceable) switch
-            {
-                (true, true) => InheritedReferenceableModeKeys,
-                (false, true) => DefaultReferenceableModeKeys,
-                (true, false) => InheritedDirectModeKeys,
-                (false, false) => DefaultDirectModeKeys
-            };
-
-        private void SetMode(int mode, bool hasOwner)
-        {
-            if (mode == 0)
-            {
-                SetLocalOverride(false);
-                return;
-            }
-            if (!hasOwner && mode == 1)
-            {
-                if (_inheritance.CanCreateBatchOverride)
-                {
-                    _inheritance.CreateBatchOverride(_kind);
-                    SetLocalOverride(false);
-                }
-                return;
-            }
-
-            if (!ShowsLocalValue) SetLocalOverride(true);
-            if (ReferenceMode != null)
-            {
-                _enabled.serializedObject.UpdateIfRequiredOrScript();
-                ReferenceMode.enumValueIndex = mode - (hasOwner ? 1 : 2);
-                _enabled.serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        private void SetLocalOverride(bool enabled)
-        {
-            _enabled.serializedObject.UpdateIfRequiredOrScript();
-            if (enabled)
-            {
-                _inheritance.InitializeOverride(_local, _kind);
-                if (_source != null)
-                    _source.Reference.CopyFrom(new SettingsReference());
-            }
-            _enabled.boolValue = enabled;
-            _enabled.serializedObject.ApplyModifiedProperties();
-        }
-
-        private SerializedProperty GetDisplayedValue()
-            => _enabled.boolValue && !_enabled.hasMultipleDifferentValues
-                ? _local
-                : _inheritance.GetValue(_kind);
+        public FoldoutState Foldout { get; } = new(Expanded);
+        public ISectionDrawer GetDrawer(bool preview) => preview ? Preview : Direct;
     }
 }
 
-internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer
+internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer
+{
+    private static readonly ReorderableListOptions ReferenceAnimationsOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        InitializeElement: property => property.objectReferenceValue = null,
+        ElementHeight: GUIHelper.LineHeight,
+        SingleLineWhenEmpty: true);
+    private static readonly ReorderableListOptions AnimationClipsOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        InitializeElement: property => property.objectReferenceValue = null,
+        ElementHeight: GUIHelper.LineHeight,
+        SingleLineWhenEmpty: true);
+    private static readonly ReorderableListOptions TransformAnimationsOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        InitializeElement: property => property.CopyFrom(new TransformAnimation()),
+        SingleLineWhenEmpty: true);
+
+    private readonly SerializedProperty _data;
+
+    public NonFacialAnimationDataSectionDrawer(
+        SerializedObject serializedObject,
+        string directPropertyName)
+    {
+        _data = serializedObject.FindProperty(directPropertyName);
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[] { SectionActionField.From(_data, () => new NonFacialAnimationData()) });
+    }
+
+    public SectionActionSet Actions { get; }
+
+    public float GetHeight()
+    {
+        var references = _data.FindPropertyRelative(nameof(NonFacialAnimationData.ReferenceAnimations));
+        var clips = _data.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
+        var transforms = _data.FindPropertyRelative(nameof(NonFacialAnimationData.TransformAnimations));
+        return GUIHelper.GetListHeight(references, ReferenceAnimationsOptions)
+             + GUIHelper.VerticalSpacing
+             + GUIHelper.GetListHeight(clips, AnimationClipsOptions)
+             + GUIHelper.VerticalSpacing
+             + GUIHelper.GetListHeight(transforms, TransformAnimationsOptions);
+    }
+
+    public void Draw(Rect position)
+    {
+        var references = _data.FindPropertyRelative(nameof(NonFacialAnimationData.ReferenceAnimations));
+        var clips = _data.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
+        var transforms = _data.FindPropertyRelative(nameof(NonFacialAnimationData.TransformAnimations));
+
+        position.height = GUIHelper.GetListHeight(references, ReferenceAnimationsOptions);
+        GUIHelper.DrawList(
+            position,
+            references,
+            "expression.additionalAnimations.references.label".LG(),
+            ReferenceAnimationsOptions);
+        position.NewLine();
+        position.height = GUIHelper.GetListHeight(clips, AnimationClipsOptions);
+        GUIHelper.DrawList(
+            position,
+            clips,
+            "expression.additionalAnimations.clips.label".LG(),
+            AnimationClipsOptions);
+        position.NewLine();
+        position.height = GUIHelper.GetListHeight(transforms, TransformAnimationsOptions);
+        GUIHelper.DrawList(
+            position,
+            transforms,
+            "expression.additionalAnimations.transforms.label".LG(),
+            TransformAnimationsOptions);
+    }
+}
+
+internal sealed class MultiFrameDefinitionSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer
+{
+    private readonly SerializedProperty _multiFrame;
+
+    public MultiFrameDefinitionSectionDrawer(SerializedProperty multiFrame)
+    {
+        _multiFrame = multiFrame;
+        Actions = new SectionActionSet(
+            multiFrame.serializedObject,
+            new[] { SectionActionField.From(multiFrame, () => new MultiFrameSettings()) });
+    }
+
+    public SectionActionSet Actions { get; }
+    public float GetHeight() => EditorGUI.GetPropertyHeight(_multiFrame, GUIContent.none, true);
+
+    public void Draw(Rect position)
+    {
+        position.height = GetHeight();
+        EditorGUI.PropertyField(position, _multiFrame, true);
+    }
+
+    public float GetHeaderWidth()
+        => GUIHelper.CompactPopupWidth(new[]
+        {
+            "expression.settingSource.short.standard".LG(),
+            "expression.settingSource.short.setting".LG()
+        });
+
+    public void DrawHeader(Rect position)
+    {
+        var mode = _multiFrame.FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode));
+        var label = mode.hasMultipleDifferentValues
+            ? EditorGUIUtility.TrTextContent("—")
+            : (mode.intValue == (int)MultiFrameSettings.Kind.Default
+                ? "expression.settingSource.short.standard"
+                : "expression.settingSource.short.setting").LG();
+        GUIHelper.CompactHeaderValue(position, label, mode.hasMultipleDifferentValues, centered: true);
+    }
+
+    public void DrawCollapsedHeader(Rect position) => DrawHeader(position);
+}
+
+internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer
 {
     private readonly SerializedProperty _eyeBlink;
     private readonly SerializedProperty _lipSync;
@@ -821,12 +521,66 @@ internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer
 
     public float GetHeight() => GUIHelper.GetLinesHeight(3);
 
-    public void Draw(Rect position)
+    public float GetHeaderWidth()
+        => GUIHelper.CompactPopupWidth(new[]
+        {
+            "expression.settingSource.short.standard".LG(),
+            "expression.settingSource.short.setting".LG()
+        });
+
+    public void DrawHeader(Rect position) => DrawCollapsedHeader(position);
+
+    public void DrawCollapsedHeader(Rect position)
     {
-        GUIHelper.LocalizedEnumPopup(position, _writeMode, "expression.application.label", new[] { "expression.application.replace.label", "expression.application.blend.label" });
+        var hasMixedValues = _writeMode.hasMultipleDifferentValues
+                             || _eyeBlink.hasMultipleDifferentValues
+                             || _lipSync.hasMultipleDifferentValues;
+        var isDefault = _writeMode.intValue == (int)ExpressionComponent.DefaultWriteMode
+                        && _eyeBlink.intValue == (int)ExpressionComponent.DefaultAllowEyeBlink
+                        && _lipSync.intValue == (int)ExpressionComponent.DefaultAllowLipSync;
+        var label = hasMixedValues
+            ? EditorGUIUtility.TrTextContent("—")
+            : (isDefault
+                ? "expression.settingSource.short.standard"
+                : "expression.settingSource.short.setting").LG();
+        GUIHelper.CompactHeaderValue(position, label, hasMixedValues, centered: true);
+    }
+
+    public void Draw(Rect position)
+        => ExpressionBehaviorGUI.Draw(position, _writeMode, _eyeBlink, _lipSync);
+}
+
+internal static class ExpressionBehaviorGUI
+{
+    private static readonly string[] WriteModeKeys =
+    {
+        "expression.application.replace.label",
+        "expression.application.blend.label"
+    };
+
+    public static void Draw(
+        Rect position,
+        SerializedProperty writeMode,
+        SerializedProperty eyeBlink,
+        SerializedProperty lipSync)
+    {
+        position.height = GUIHelper.LineHeight;
+        GUIHelper.LocalizedEnumPopup(
+            position,
+            writeMode,
+            "expression.application.label",
+            WriteModeKeys);
         position.NewLine();
-        GUIHelper.DrawLocalizedEnum(ref position, _eyeBlink, "facialSettings.allowEyeBlink.label", nameof(TrackingPermission));
-        GUIHelper.DrawLocalizedEnum(ref position, _lipSync, "facialSettings.allowLipSync.label", nameof(TrackingPermission));
+        GUIHelper.DrawLocalizedEnum(
+            ref position,
+            eyeBlink,
+            "facialSettings.allowEyeBlink.label",
+            nameof(TrackingPermission));
+        GUIHelper.DrawLocalizedEnum(
+            ref position,
+            lipSync,
+            "facialSettings.allowLipSync.label",
+            nameof(TrackingPermission));
     }
 }
 

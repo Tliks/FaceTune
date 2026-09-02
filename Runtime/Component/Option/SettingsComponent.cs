@@ -9,11 +9,9 @@ namespace Aoyon.FaceTune
         IReferenceableExpressionSettings<LipSyncSettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
-        internal const bool DefaultApplyToRenderer = false;
 
         // このGameObjectより下のExpressionへ、親側から順に重ねる。
         public bool HasFacialBlendShapes = false;
-        public SettingsReference FacialBlendShapesReference = new();
         public FacialBlendShapeData FacialBlendShapes = new();
         public bool ApplyToRenderer = DefaultApplyToRenderer;
 
@@ -41,6 +39,10 @@ namespace Aoyon.FaceTune
         public PrioritySettings Priority = new();
 
 
+#region Defaults
+
+        internal const bool DefaultApplyToRenderer = false;
+
         internal static Condition CreateDefaultCondition()
             => new(new ConditionCase());
 
@@ -49,14 +51,20 @@ namespace Aoyon.FaceTune
                 ? new[] { Condition }
                 : Array.Empty<Condition>();
 
+#endregion
+
+#region Interfaces
+
         ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
-            => new(HasFacialBlendShapes, FacialBlendShapesReference.Mode, FacialBlendShapesReference.Source, FacialBlendShapes);
+            => new(HasFacialBlendShapes, SettingsReferenceMode.Direct, null, FacialBlendShapes);
 
         ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
             => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
 
         ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
             => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
+
+#endregion
 
     }
 }

@@ -2,492 +2,260 @@ using nadena.dev.ndmf.preview;
 
 namespace Aoyon.FaceTune;
 
-internal sealed class FaceTuneResolver
+internal readonly record struct ScopedValue<T>(T Value, SettingsComponent? Owner);
+internal readonly record struct ExpressionBehavior(ExpressionWriteMode WriteMode, TrackingPermission AllowEyeBlink, TrackingPermission AllowLipSync);
+
+internal sealed class ResolvedExpression
 {
-    private readonly GameObject _root;
-    private readonly ComputeContext? _context;
-    private FaceTuneFacialDataResolver? _facialData;
-    private FaceTuneExpressionDataResolver? _expressionData;
-    private FaceTuneNonFacialAnimationResolver? _nonFacialAnimations;
-    private FaceTuneScopedResolver<EyeBlinkSettings>? _eyeBlink;
-    private FaceTuneScopedResolver<LipSyncSettings>? _lipSync;
-    private FaceTuneScopedResolver<TransitionSettings>? _transition;
-    private FaceTuneScopedResolver<PrioritySettings>? _priority;
-    private FaceTuneSettingsReferenceResolver? _settingsReferences;
-    private FaceTuneMenuResolver? _menus;
+    private readonly ExpressionResolver resolver;
+    private BlendShapeWeightAnimationSet? incomingFacial, definitionFacial, facial;
+    private ResolvedNonFacialAnimationSet? nonFacial;
+    private ExpressionBehavior? behavior;
+    private MultiFrameSettings? multiFrame;
+    private EyeBlinkSettings? definitionEyeBlink, eyeBlink;
+    private LipSyncSettings? definitionLipSync, lipSync;
+    private TransitionSettings? transition;
+    private PrioritySettings? priority;
+    private ScopedValue<EyeBlinkSettings>? inheritedEyeBlink;
+    private ScopedValue<LipSyncSettings>? inheritedLipSync;
+    private ScopedValue<TransitionSettings>? inheritedTransition;
+    private ScopedValue<PrioritySettings>? inheritedPriority;
+    private bool behaviorResolved, eyeBlinkResolved, lipSyncResolved;
 
-    public FaceTuneFacialDataResolver FacialData
-        => _facialData ??= new FaceTuneFacialDataResolver(
-            _root,
-            SettingsReferences,
-            ExpressionData,
-            _context);
-
-    private FaceTuneExpressionDataResolver ExpressionData
-        => _expressionData ??= new FaceTuneExpressionDataResolver(_root, SettingsReferences, _context);
-
-    public FaceTuneNonFacialAnimationResolver NonFacialAnimations
-        => _nonFacialAnimations ??= new FaceTuneNonFacialAnimationResolver(_root, ExpressionData);
-
-    public FaceTuneSettingsReferenceResolver SettingsReferences
-        => _settingsReferences ??= new FaceTuneSettingsReferenceResolver(_context);
-
-    public FaceTuneScopedResolver<EyeBlinkSettings> EyeBlink => _eyeBlink ??= new(
-        _root,
-        setting => SettingsReferences.TryResolve<EyeBlinkSettings>(setting, out var value) ? value : null,
-        expression => SettingsReferences.TryResolve<EyeBlinkSettings>(expression, out var value) ? value : null,
-        static () => new EyeBlinkSettings());
-
-    public FaceTuneScopedResolver<LipSyncSettings> LipSync => _lipSync ??= new(
-        _root,
-        setting => SettingsReferences.TryResolve<LipSyncSettings>(setting, out var value) ? value : null,
-        expression => SettingsReferences.TryResolve<LipSyncSettings>(expression, out var value) ? value : null,
-        static () => new LipSyncSettings());
-
-    public FaceTuneScopedResolver<TransitionSettings> Transition => _transition ??= new(
-        _root,
-        setting => setting.HasTransition ? setting.Transition : null,
-        expression => expression.HasTransition ? expression.Transition : null,
-        static () => new TransitionSettings());
-
-    public FaceTuneScopedResolver<PrioritySettings> Priority => _priority ??= new(
-        _root,
-        setting => setting.HasPriority ? setting.Priority : null,
-        expression => expression.HasPriority ? expression.Priority : null,
-        static () => new PrioritySettings());
-
-    public FaceTuneMenuResolver Menus
-        => _menus ??= new FaceTuneMenuResolver(_root);
-
-    public FaceTuneResolver(GameObject root, ComputeContext? context = null)
-    {
-        _root = root;
-        _context = context;
-    }
-}
-
-internal sealed class FaceTuneFacialDataResolver
-{
-    private readonly GameObject _root;
-    private readonly FaceTuneSettingsReferenceResolver _references;
-    private readonly FaceTuneExpressionDataResolver _expressionData;
-    private readonly ComputeContext _context;
-
-    internal FaceTuneFacialDataResolver(
-        GameObject root,
-        FaceTuneSettingsReferenceResolver references,
-        FaceTuneExpressionDataResolver expressionData,
-        ComputeContext? context)
-    {
-        _root = root;
-        _references = references;
-        _expressionData = expressionData;
-        _context = context ?? ComputeContext.NullContext;
-    }
-
-    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateIncoming(Transform target)
-        => _expressionData.EnumerateIncoming<FacialBlendShapeData>(target, ExtractFacialSettings);
-
-    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocal(ExpressionComponent expression)
-        => _expressionData.EnumerateLocal(expression, ExtractFacialSettings);
-
-    public IEnumerable<(Component Owner, FacialBlendShapeData Value)> EnumerateLocalData(Transform scope)
-        => _expressionData.EnumerateLocalData(scope, ExtractFacialSettings);
-
-    public void AddIncoming(Transform target, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-        => AddResolved(EnumerateIncoming(target), result, bodyPath);
-
-    public void AddLocal(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-        => AddResolved(EnumerateLocal(expression), result, bodyPath);
-
-    public bool AddLocalData(
-        Transform scope,
-        ICollection<BlendShapeWeightAnimation> result,
-        string bodyPath)
-        => AddResolved(EnumerateLocalData(scope), result, bodyPath);
-
-    public void Add(ExpressionComponent expression, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-    {
-        AddIncoming(expression.transform, result, bodyPath);
-        AddLocal(expression, result, bodyPath);
-        AddLocalData(expression.transform, result, bodyPath);
-    }
-
-    public void AddRenderer(ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-        => AddResolved(Resolve(EnumerateRendererOwners()), result, bodyPath);
-
-    private IEnumerable<Component> EnumerateRendererOwners()
-    {
-        foreach (var owner in _context.GetComponentsInChildren<SettingsComponent>(_root, true))
-        {
-            var applyToRenderer = _context.Observe(
-                owner,
-                value => value.ApplyToRenderer,
-                (left, right) => left == right);
-            if (applyToRenderer)
-                yield return owner;
-        }
-    }
-
-    private IEnumerable<(Component Owner, FacialBlendShapeData Value)> Resolve(IEnumerable<Component> owners)
-    {
-        foreach (var owner in owners)
-        {
-            if (_references.TryResolve(
-                    owner,
-                    ExtractFacialSettings,
-                    out FacialBlendShapeData? value))
-                yield return (owner, value);
-        }
-    }
-
-    private bool AddResolved(
-        IEnumerable<(Component Owner, FacialBlendShapeData Value)> values,
-        ICollection<BlendShapeWeightAnimation> result,
-        string bodyPath)
-    {
-        var added = false;
-        foreach (var (_, value) in values)
-        {
-            added = true;
-            AddAnimations(value, result, bodyPath);
-        }
-        return added;
-    }
-
-    private ReferenceableExpressionSettings<FacialBlendShapeData> ExtractFacialSettings(Component component)
-    {
-        return component switch
-        {
-            SettingsComponent settings => ExtractFacialSettings(
-                settings,
-                value => value.HasFacialBlendShapes,
-                value => value.FacialBlendShapesReference,
-                value => value.FacialBlendShapes),
-            ExpressionComponent expression => ExtractFacialSettings(
-                expression,
-                static _ => true,
-                value => value.FacialBlendShapesReference,
-                value => value.FacialBlendShapes),
-            ExpressionDataComponent data => ExtractFacialSettings(
-                data,
-                static _ => true,
-                value => value.FacialBlendShapesReference,
-                value => value.FacialBlendShapes),
-            _ => throw new ArgumentException(
-                $"Component does not provide facial data: {component.GetType().Name}",
-                nameof(component))
-        };
-    }
-
-    private ReferenceableExpressionSettings<FacialBlendShapeData> ExtractFacialSettings<TComponent>(
-        TComponent owner,
-        Func<TComponent, bool> getEnabled,
-        Func<TComponent, SettingsReference> getReference,
-        Func<TComponent, FacialBlendShapeData> getData)
-        where TComponent : Component
-    {
-        var settings = _context.Observe(
-            owner,
-            component => new ReferenceableExpressionSettings<FacialBlendShapeData>(
-                getEnabled(component),
-                getReference(component).Mode,
-                getReference(component).Source,
-                getData(component).Clone()),
-            (left, right) => left.Equals(right));
-        return settings;
-    }
-
-    private void AddAnimations(FacialBlendShapeData data, ICollection<BlendShapeWeightAnimation> result, string bodyPath)
-    {
-        if (data.Clip != null)
-        {
-            var clip = _context.Observe(data.Clip);
-            clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
-        }
-
-        foreach (var animation in data.BlendShapeAnimations)
-            result.Add(animation);
-    }
-}
-
-internal sealed class FaceTuneNonFacialAnimationResolver
-{
-    private readonly GameObject _root;
-    private readonly FaceTuneExpressionDataResolver _expressionData;
-
-    internal FaceTuneNonFacialAnimationResolver(
-        GameObject root,
-        FaceTuneExpressionDataResolver expressionData)
-    {
-        _root = root;
-        _expressionData = expressionData;
-    }
-
-    public ResolvedNonFacialAnimationSet Resolve(ExpressionComponent expression, string bodyPath)
-    {
-        var result = new ResolvedNonFacialAnimationSet();
-        AddResolved(_expressionData.EnumerateLocal(expression, ExtractSettings), result, bodyPath);
-        AddResolved(_expressionData.EnumerateLocalData(expression.transform, ExtractSettings), result, bodyPath);
-        return result;
-    }
-
-    private void AddResolved(
-        IEnumerable<(Component Owner, NonFacialAnimationData Value)> values,
-        ResolvedNonFacialAnimationSet result,
-        string bodyPath)
-    {
-        foreach (var (owner, data) in values)
-        {
-            foreach (var clip in data.AnimationClips.Where(clip => clip != null))
-            {
-                foreach (var binding in AnimationUtility.GetCurveBindings(clip))
-                {
-                    if (IsFacialBlendShapeBinding(binding, bodyPath)) continue;
-                    result.AddFloatCurve(binding, AnimationUtility.GetEditorCurve(clip, binding));
-                }
-                foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
-                {
-                    result.AddObjectCurve(
-                        binding,
-                        AnimationUtility.GetObjectReferenceCurve(clip, binding));
-                }
-            }
-
-            foreach (var animation in data.TransformAnimations)
-            {
-                if (animation == null) continue;
-                var target = animation.Target.Get(owner);
-                if (target == null) continue;
-                var path = Utils.GetRelativePath(_root, target);
-                if (path == null) continue;
-                result.AddFloatCurve(
-                    EditorCurveBinding.FloatCurve(path, typeof(GameObject), "m_IsActive"),
-                    animation.Curve ?? AnimationCurve.Constant(0f, 1f, 1f));
-            }
-        }
-    }
-
-    private static bool IsFacialBlendShapeBinding(EditorCurveBinding binding, string bodyPath)
-        => binding.path == bodyPath
-        && binding.type == typeof(SkinnedMeshRenderer)
-        && binding.propertyName.StartsWith(FaceTuneConstants.BlendShapePropertyPrefix, StringComparison.Ordinal);
-
-    private static ReferenceableExpressionSettings<NonFacialAnimationData> ExtractSettings(Component component)
-        => ((IReferenceableExpressionSettings<NonFacialAnimationData>)component).Settings;
-}
-
-internal sealed class FaceTuneExpressionDataResolver
-{
-    private readonly GameObject _root;
-    private readonly FaceTuneSettingsReferenceResolver _references;
-    private readonly ComputeContext _context;
-
-    internal FaceTuneExpressionDataResolver(
-        GameObject root,
-        FaceTuneSettingsReferenceResolver references,
-        ComputeContext? context)
-    {
-        _root = root;
-        _references = references;
-        _context = context ?? ComputeContext.NullContext;
-    }
-
-    public IEnumerable<(Component Owner, TValue Value)> EnumerateIncoming<TValue>(
-        Transform target,
-        Func<Component, ReferenceableExpressionSettings<TValue>> extract)
-        where TValue : class
-    {
-        foreach (var owner in _context.GetComponentsInParentExcludingSelf<SettingsComponent>(_root, target, true))
-        {
-            if (_references.TryResolve<TValue>(owner, extract, out var value))
-                yield return (owner, value);
-        }
-    }
-
-    public IEnumerable<(Component Owner, TValue Value)> EnumerateLocal<TValue>(
+    internal ResolvedExpression(
+        ExpressionResolver resolver,
         ExpressionComponent expression,
-        Func<Component, ReferenceableExpressionSettings<TValue>> extract)
-        where TValue : class
+        Component? source,
+        string bodyPath)
     {
-        if (_references.TryResolve<TValue>(expression, extract, out var value))
-            yield return (expression, value);
+        this.resolver = resolver;
+        Expression = expression;
+        DefinitionSource = source;
+        BodyPath = bodyPath;
     }
 
-    public IEnumerable<(Component Owner, TValue Value)> EnumerateLocalData<TValue>(
-        Transform scope,
-        Func<Component, ReferenceableExpressionSettings<TValue>> extract)
-        where TValue : class
+    public ExpressionComponent Expression { get; }
+    public Component? DefinitionSource { get; }
+    public string BodyPath { get; }
+    public BlendShapeWeightAnimationSet IncomingFacial => incomingFacial ??= resolver.Facial.ResolveIncoming(Expression.transform, BodyPath);
+    public BlendShapeWeightAnimationSet DefinitionFacial => definitionFacial ??= resolver.ResolveDefinitionFacial(DefinitionSource, BodyPath);
+    public BlendShapeWeightAnimationSet Facial
     {
-        foreach (var data in _context.GetComponentsInChildren<ExpressionDataComponent>(scope.gameObject, true))
+        get
         {
-            if (_references.TryResolve<TValue>(data, extract, out var value))
-                yield return (data, value);
+            if (facial != null) return facial;
+            facial = IncomingFacial.Clone();
+            facial.AddRange(DefinitionFacial);
+            return facial;
         }
+    }
+    public ResolvedNonFacialAnimationSet NonFacial => nonFacial ??= resolver.NonFacial.ResolveDefinition(DefinitionSource, BodyPath);
+    private ExpressionBehavior? Behavior
+    {
+        get
+        {
+            if (!behaviorResolved)
+            {
+                behavior = resolver.ResolveBehavior(DefinitionSource);
+                behaviorResolved = true;
+            }
+            return behavior;
+        }
+    }
+    public ExpressionWriteMode WriteMode => Behavior?.WriteMode ?? ExpressionComponent.DefaultWriteMode;
+    public MultiFrameSettings MultiFrame => multiFrame ??= resolver.ResolveMultiFrame(DefinitionSource) ?? new MultiFrameSettings();
+    public TrackingPermission AllowEyeBlink => Behavior?.AllowEyeBlink ?? ExpressionComponent.DefaultAllowEyeBlink;
+    public TrackingPermission AllowLipSync => Behavior?.AllowLipSync ?? ExpressionComponent.DefaultAllowLipSync;
+
+    public EyeBlinkSettings? DefinitionEyeBlink
+    {
+        get
+        {
+            if (!eyeBlinkResolved)
+            {
+                definitionEyeBlink = resolver.ResolveDefinitionEyeBlink(DefinitionSource);
+                eyeBlinkResolved = true;
+            }
+            return definitionEyeBlink;
+        }
+    }
+    public ScopedValue<EyeBlinkSettings> InheritedEyeBlink
+        => inheritedEyeBlink ??= resolver.EyeBlinkScope.GetIncoming(Expression);
+    public EyeBlinkSettings EyeBlink => eyeBlink ??= DefinitionEyeBlink ?? InheritedEyeBlink.Value;
+
+    public LipSyncSettings? DefinitionLipSync
+    {
+        get
+        {
+            if (!lipSyncResolved)
+            {
+                definitionLipSync = resolver.ResolveDefinitionLipSync(DefinitionSource);
+                lipSyncResolved = true;
+            }
+            return definitionLipSync;
+        }
+    }
+    public ScopedValue<LipSyncSettings> InheritedLipSync
+        => inheritedLipSync ??= resolver.LipSyncScope.GetIncoming(Expression);
+    public LipSyncSettings LipSync => lipSync ??= DefinitionLipSync ?? InheritedLipSync.Value;
+    public ScopedValue<TransitionSettings> InheritedTransition
+        => inheritedTransition ??= resolver.TransitionScope.GetIncoming(Expression);
+    public TransitionSettings Transition => transition ??= resolver.ResolveTransition(Expression, InheritedTransition.Value);
+    public ScopedValue<PrioritySettings> InheritedPriority
+        => inheritedPriority ??= resolver.PriorityScope.GetIncoming(Expression);
+    public PrioritySettings Priority => priority ??= resolver.ResolvePriority(Expression, InheritedPriority.Value);
+}
+
+internal sealed class ExpressionResolver
+{
+    private readonly ComputeContext context;
+    private readonly ExpressionDefinitionSourceResolver sources;
+    private readonly ReferenceableSettingResolver<EyeBlinkSettings> eyeBlink;
+    private readonly ReferenceableSettingResolver<LipSyncSettings> lipSync;
+
+    internal FacialAnimationResolver Facial { get; }
+    internal NonFacialAnimationResolver NonFacial { get; }
+    internal ScopedValueResolver<EyeBlinkSettings> EyeBlinkScope { get; }
+    internal ScopedValueResolver<LipSyncSettings> LipSyncScope { get; }
+    internal ScopedValueResolver<TransitionSettings> TransitionScope { get; }
+    internal ScopedValueResolver<PrioritySettings> PriorityScope { get; }
+
+    public ExpressionResolver(GameObject root, ComputeContext? context = null)
+    {
+        this.context = context ?? ComputeContext.NullContext;
+        sources = new ExpressionDefinitionSourceResolver(context);
+        Facial = new FacialAnimationResolver(root, context);
+        NonFacial = new NonFacialAnimationResolver(root, context);
+        eyeBlink = new ReferenceableSettingResolver<EyeBlinkSettings>(value => value.Clone(), context);
+        lipSync = new ReferenceableSettingResolver<LipSyncSettings>(value => value.Clone(), context);
+        EyeBlinkScope = new ScopedValueResolver<EyeBlinkSettings>(root, settings => eyeBlink.Resolve(settings), static () => new EyeBlinkSettings(), context);
+        LipSyncScope = new ScopedValueResolver<LipSyncSettings>(root, settings => lipSync.Resolve(settings), static () => new LipSyncSettings(), context);
+        TransitionScope = new ScopedValueResolver<TransitionSettings>(root, ReadTransition, static () => new TransitionSettings(), context);
+        PriorityScope = new ScopedValueResolver<PrioritySettings>(root, ReadPriority, static () => new PrioritySettings(), context);
+    }
+
+    public ResolvedExpression Resolve(ExpressionComponent expression, string bodyPath)
+        => new(this, expression, sources.Find(expression), bodyPath);
+
+    internal BlendShapeWeightAnimationSet ResolveDefinitionFacial(Component? source, string bodyPath)
+        => source != null && Facial.TryResolve(source, bodyPath, out var value) ? value : new BlendShapeWeightAnimationSet();
+
+    internal ExpressionBehavior? ResolveBehavior(Component? source)
+        => source switch
+        {
+            ExpressionComponent expression => context.Observe(
+                expression,
+                value => new ExpressionBehavior(
+                    value.WriteMode,
+                    value.AllowEyeBlink,
+                    value.AllowLipSync),
+                (a, b) => a == b),
+            ExpressionDataComponent data => ReadBehavior(data),
+            _ => null
+        };
+
+    private ExpressionBehavior? ReadBehavior(ExpressionDataComponent owner)
+    {
+        var value = context.Observe(
+            owner,
+            current => (
+                current.HasFacialBehavior,
+                new ExpressionBehavior(
+                    current.WriteMode,
+                    current.AllowEyeBlink,
+                    current.AllowLipSync)),
+            (a, b) => a == b);
+        return value.HasFacialBehavior ? value.Item2 : null;
+    }
+
+    internal MultiFrameSettings? ResolveMultiFrame(Component? source)
+        => source switch
+        {
+            ExpressionComponent expression => ObserveMultiFrame(expression, value => value.MultiFrame),
+            ExpressionDataComponent data when context.Observe(data, value => value.HasMultiFrame, (a, b) => a == b) => ObserveMultiFrame(data, value => value.MultiFrame),
+            _ => null
+        };
+
+    internal EyeBlinkSettings? ResolveDefinitionEyeBlink(Component? source) => source == null ? null : eyeBlink.Resolve(source);
+    internal LipSyncSettings? ResolveDefinitionLipSync(Component? source) => source == null ? null : lipSync.Resolve(source);
+    internal TransitionSettings ResolveTransition(ExpressionComponent expression, TransitionSettings inherited) => ReadTransition(expression) ?? inherited;
+    internal PrioritySettings ResolvePriority(ExpressionComponent expression, PrioritySettings inherited) => ReadPriority(expression) ?? inherited;
+
+    private MultiFrameSettings ObserveMultiFrame<T>(T owner, Func<T, MultiFrameSettings> getValue) where T : Component
+        => context.Observe(owner, value => getValue(value).Clone(), (a, b) => a.Equals(b));
+
+    private TransitionSettings? ReadTransition(SettingsComponent owner)
+    {
+        var value = context.Observe(
+            owner,
+            current => (current.HasTransition, current.Transition.DurationSeconds),
+            (a, b) => a == b);
+        return value.HasTransition
+            ? new TransitionSettings { DurationSeconds = value.DurationSeconds }
+            : null;
+    }
+
+    private TransitionSettings? ReadTransition(ExpressionComponent owner)
+    {
+        var value = context.Observe(
+            owner,
+            current => (current.HasTransition, current.Transition.DurationSeconds),
+            (a, b) => a == b);
+        return value.HasTransition
+            ? new TransitionSettings { DurationSeconds = value.DurationSeconds }
+            : null;
+    }
+
+    private PrioritySettings? ReadPriority(SettingsComponent owner)
+    {
+        var value = context.Observe(
+            owner,
+            current => (current.HasPriority, current.Priority.Priority),
+            (a, b) => a == b);
+        return value.HasPriority ? new PrioritySettings { Priority = value.Priority } : null;
+    }
+
+    private PrioritySettings? ReadPriority(ExpressionComponent owner)
+    {
+        var value = context.Observe(
+            owner,
+            current => (current.HasPriority, current.Priority.Priority),
+            (a, b) => a == b);
+        return value.HasPriority ? new PrioritySettings { Priority = value.Priority } : null;
     }
 }
 
-internal sealed class FaceTuneScopedResolver<TValue> where TValue : class
+internal sealed class ScopedValueResolver<T> where T : class
 {
-    private readonly GameObject _root;
-    private readonly Func<SettingsComponent, TValue?> _getSettings;
-    private readonly Func<ExpressionComponent, TValue?> _getExpression;
-    private readonly Func<TValue> _getDefault;
+    private readonly GameObject root;
+    private readonly Func<SettingsComponent, T?> getSettings;
+    private readonly Func<T> getDefault;
+    private readonly ComputeContext context;
 
-    internal FaceTuneScopedResolver(
+    public ScopedValueResolver(
         GameObject root,
-        Func<SettingsComponent, TValue?> getSettings,
-        Func<ExpressionComponent, TValue?> getExpression,
-        Func<TValue> getDefault)
+        Func<SettingsComponent, T?> getSettings,
+        Func<T> getDefault,
+        ComputeContext? context)
     {
-        _root = root;
-        _getSettings = getSettings;
-        _getExpression = getExpression;
-        _getDefault = getDefault;
+        this.root = root;
+        this.getSettings = getSettings;
+        this.getDefault = getDefault;
+        this.context = context ?? ComputeContext.NullContext;
     }
 
-    public IEnumerable<(SettingsComponent Owner, TValue Value)> EnumerateIncoming(Component target)
+    public ScopedValue<T> GetIncoming(Component target)
     {
-        foreach (var owner in _root.GetComponentsInParentExcludingSelf<SettingsComponent>(target, true))
+        var value = getDefault();
+        SettingsComponent? owner = null;
+        foreach (var settings in context.GetComponentsInParentExcludingSelf<SettingsComponent>(root, target, true))
         {
-            if (_getSettings(owner) is { } value)
-                yield return (owner, value);
-        }
-    }
-
-    public IEnumerable<(Component Owner, TValue Value)> Enumerate(ExpressionComponent expression)
-    {
-        foreach (var (owner, incomingValue) in EnumerateIncoming(expression))
-            yield return (owner, incomingValue);
-        if (_getExpression(expression) is { } value)
-            yield return (expression, value);
-    }
-
-    public TValue GetIncoming(Component target) => GetIncoming(target, out _);
-
-    public TValue GetIncoming(Component target, out SettingsComponent? lastOwner)
-    {
-        var value = _getDefault();
-        lastOwner = null;
-        foreach (var (owner, resolved) in EnumerateIncoming(target))
-        {
-            lastOwner = owner;
+            if (getSettings(settings) is not { } resolved) continue;
             value = resolved;
+            owner = settings;
         }
-        return value;
+        return new ScopedValue<T>(value, owner);
     }
-
-    public TValue Get(ExpressionComponent expression) => Get(expression, out _);
-
-    public TValue Get(ExpressionComponent expression, out Component? lastOwner)
-    {
-        var value = _getDefault();
-        lastOwner = null;
-        foreach (var (owner, resolved) in Enumerate(expression))
-        {
-            lastOwner = owner;
-            value = resolved;
-        }
-        return value;
-    }
-}
-
-
-internal sealed class FaceTuneSettingsReferenceResolver
-{
-    private readonly ComputeContext _context;
-
-    internal FaceTuneSettingsReferenceResolver(ComputeContext? context = null)
-    {
-        _context = context ?? ComputeContext.NullContext;
-    }
-
-    public bool TryResolve<TValue>(
-        Component owner,
-        [NotNullWhen(true)] out TValue? value)
-        where TValue : class
-        => TryResolve(owner, GetSettings<TValue>, out value);
-
-    public bool TryResolve<TValue>(
-        Component owner,
-        Func<Component, ReferenceableExpressionSettings<TValue>> extract,
-        [NotNullWhen(true)] out TValue? value)
-        where TValue : class
-        => TryResolve(owner, new HashSet<Component>(), extract, out value);
-
-    private bool TryResolve<TValue>(
-        Component owner,
-        HashSet<Component> visited,
-        Func<Component, ReferenceableExpressionSettings<TValue>> extract,
-        [NotNullWhen(true)] out TValue? value)
-        where TValue : class
-    {
-        if (!visited.Add(owner)
-            || owner is not IReferenceableExpressionSettings<TValue>)
-        {
-            value = null;
-            return false;
-        }
-
-        var source = extract(owner);
-        if (!source.Enabled)
-        {
-            value = null;
-            return false;
-        }
-
-        return TryResolve(source, visited, extract, out value);
-    }
-
-    private bool TryResolve<TValue>(
-        ReferenceableExpressionSettings<TValue> source,
-        HashSet<Component> visited,
-        Func<Component, ReferenceableExpressionSettings<TValue>> extract,
-        [NotNullWhen(true)] out TValue? value)
-        where TValue : class
-    {
-        if (source.Mode == SettingsReferenceMode.Direct)
-        {
-            value = source.Direct;
-            return true;
-        }
-
-        if (source.Source == null)
-        {
-            value = null;
-            return false;
-        }
-
-        Component? referencedOwner = null;
-        ReferenceableExpressionSettings<TValue>? referencedValue = null;
-        foreach (var component in _context.GetComponents<FaceTuneTagComponent>(source.Source.gameObject))
-        {
-            if (component is not IReferenceableExpressionSettings<TValue>)
-                continue;
-
-            var candidate = extract(component);
-            if (!candidate.Enabled)
-                continue;
-
-            // 同じGameObjectではInspector上で下にあるComponentを使う。
-            referencedOwner = component;
-            referencedValue = candidate;
-        }
-
-        if (referencedOwner == null
-            || referencedValue == null
-            || !visited.Add(referencedOwner))
-        {
-            value = null;
-            return false;
-        }
-
-        return TryResolve(referencedValue.Value, visited, extract, out value);
-    }
-
-    private static ReferenceableExpressionSettings<TValue> GetSettings<TValue>(Component component)
-        where TValue : class
-        => ((IReferenceableExpressionSettings<TValue>)component).Settings;
 }
 
 internal sealed class FaceTuneMenuResolver
@@ -563,18 +331,23 @@ internal sealed class FaceTuneMenuResolver
     }
 
     public List<string> GetDefinedGroupNames()
-        => _root.GetComponentsInChildren<MenuComponent>(true)
+    {
+        var expressions = new ExpressionResolver(_root.gameObject);
+        return _root.GetComponentsInChildren<MenuComponent>(true)
             .Where(menu => menu.MenuKind == MenuComponent.Kind.Toggle
                         && !menu.UseExistingParameter
                         && menu.GenerateParameterGroup
                         && !string.IsNullOrWhiteSpace(menu.GroupName))
             .Select(menu => menu.GroupName)
             .Concat(_root.GetComponentsInChildren<ExpressionComponent>(true)
-                .Where(expression => expression.WriteMode == ExpressionWriteMode.Blend && expression.DirectMenuEnabled)
+                .Where(expression => expressions.Resolve(expression, string.Empty).WriteMode
+                                     == ExpressionWriteMode.Blend
+                                  && expression.DirectMenuEnabled)
                 .Select(expression => expression.DirectMenuSettings.GroupName))
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
+    }
 }
 

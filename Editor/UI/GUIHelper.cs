@@ -5,6 +5,7 @@ internal static partial class GUIHelper
 {
     public const float ContentPadding = 4f;
     public const float IndentWidth = 15f;
+    public const float NestedSectionIndent = 0.25f;
     public static float LineHeight => EditorGUIUtility.singleLineHeight;
     public static float HorizontalSpacing => EditorGUIUtility.standardVerticalSpacing;
     public static float VerticalSpacing => EditorGUIUtility.standardVerticalSpacing;
@@ -170,7 +171,6 @@ internal static partial class GUIHelper
     internal const float ShurikenHeaderHeight = 22f;
     internal const int SectionHeaderVerticalMargin = 0;
     internal const float SectionHeaderContentOffsetX = 20f;
-    private const float SectionHeaderToggleInset = 4f;
     private const float SectionHeaderArrowSize = 13f;
     private const float SectionHeaderArrowInsetX = 4f;
     private const float SectionHeaderArrowInsetY = 2f;
@@ -248,30 +248,7 @@ internal static partial class GUIHelper
     internal static bool DrawShurikenToggleSection(
         Rect position,
         FoldoutState state,
-        SerializedProperty enabled,
-        GUIContent label,
-        float contentHeight,
-        out Rect content,
-        Func<GenericMenu>? createHeaderMenu = null,
-        Action<Rect>? drawHeader = null,
-        float headerWidth = 0f,
-        SerializedProperty? propertyScope = null)
-        => DrawShurikenToggleSection(
-            position,
-            ref state.Expanded,
-            enabled,
-            label,
-            contentHeight,
-            out content,
-            createHeaderMenu,
-            drawHeader,
-            headerWidth,
-            propertyScope);
-
-    internal static bool DrawShurikenToggleSection(
-        Rect position,
-        ref bool expanded,
-        SerializedProperty enabled,
+        SectionToggle toggle,
         GUIContent label,
         float contentHeight,
         out Rect content,
@@ -281,16 +258,21 @@ internal static partial class GUIHelper
         SerializedProperty? propertyScope = null)
     {
         var header = new Rect(position.x, position.y, position.width, ShurikenHeaderHeight);
-        expanded = DrawShurikenToggleAndFold(
+        state.Expanded = DrawShurikenToggleAndFold(
             header,
-            expanded,
-            enabled,
+            state.Expanded,
+            toggle,
             label,
             createHeaderMenu,
             drawHeader,
             headerWidth,
             propertyScope);
-        return DrawShurikenSectionContent(position, header, expanded, contentHeight, out content);
+        return DrawShurikenSectionContent(
+            position,
+            header,
+            state.Expanded,
+            contentHeight,
+            out content);
     }
 
     private static bool DrawShurikenSectionContent(
@@ -321,15 +303,15 @@ internal static partial class GUIHelper
     }
 
 
-    public static bool DrawShurikenToggleAndFold(
+    private static bool DrawShurikenToggleAndFold(
         Rect position,
         bool expanded,
-        SerializedProperty enabled,
+        SectionToggle toggle,
         GUIContent label,
-        Func<GenericMenu>? createHeaderMenu = null,
-        Action<Rect>? drawHeader = null,
-        float headerWidth = 0f,
-        SerializedProperty? propertyScope = null)
+        Func<GenericMenu>? createHeaderMenu,
+        Action<Rect>? drawHeader,
+        float headerWidth,
+        SerializedProperty? propertyScope)
     {
         DrawShurikenHeader(
             position,
@@ -347,49 +329,17 @@ internal static partial class GUIHelper
             position.center.y - LineHeight * .5f + HeaderToggleVisualOffset.y,
             LineHeight,
             LineHeight);
-        using (new EditorGUI.PropertyScope(position, label, enabled))
-        using (new RightClickPassthroughScope(position))
+        var state = toggle.GetState();
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = state.Mixed;
+        using (new EditorGUI.DisabledScope(!toggle.Editable))
         {
-            var previousMixed = EditorGUI.showMixedValue;
-            EditorGUI.showMixedValue = enabled.hasMultipleDifferentValues;
-            enabled.boolValue = EditorGUI.Toggle(toggleRect, enabled.boolValue);
-            EditorGUI.showMixedValue = previousMixed;
+            EditorGUI.BeginChangeCheck();
+            var enabled = EditorGUI.Toggle(toggleRect, state.Enabled);
+            if (EditorGUI.EndChangeCheck()) toggle.SetEnabled(enabled);
         }
+        EditorGUI.showMixedValue = previousMixed;
         return HandleFoldout(position, expanded, toggleRect, menuButton, headerControl);
-    }
-
-    public static bool DrawShurikenToggle(Rect position, SerializedProperty enabled, GUIContent label)
-    {
-        // Use the exact same style and content offset as the foldout header.
-        GUI.Box(position, label, ShurikenStyle);
-
-        var toggleRect = new Rect(
-            position.x + SectionHeaderToggleInset + HeaderToggleVisualOffset.x,
-            position.center.y - LineHeight * .5f + HeaderToggleVisualOffset.y,
-            LineHeight,
-            LineHeight);
-
-        using (new EditorGUI.PropertyScope(position, label, enabled))
-        using (new RightClickPassthroughScope(position))
-        {
-            var previousMixed = EditorGUI.showMixedValue;
-            EditorGUI.showMixedValue = enabled.hasMultipleDifferentValues;
-            enabled.boolValue = EditorGUI.Toggle(toggleRect, enabled.boolValue);
-            EditorGUI.showMixedValue = previousMixed;
-        }
-
-        var current = Event.current;
-        if (current.type == EventType.MouseDown
-            && current.button == 0
-            && position.Contains(current.mousePosition)
-            && !toggleRect.Contains(current.mousePosition))
-        {
-            enabled.boolValue = !enabled.boolValue;
-            current.Use();
-            GUI.changed = true;
-        }
-
-        return enabled.boolValue || enabled.hasMultipleDifferentValues;
     }
 
 

@@ -83,7 +83,10 @@ internal class RealTimeExpressionPreview : IRenderFilter
         var (renderer, data) = input;
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
-        new FaceTuneResolver(data.Root, context).FacialData.Add(data.Component, animations, data.FacePath);
+        var facial = new ExpressionResolver(data.Root, context)
+            .Resolve(data.Component, data.FacePath)
+            .Facial;
+        animations.AddRange(facial);
         var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
 
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);

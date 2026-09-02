@@ -18,7 +18,8 @@ internal sealed record ReorderableListOptions(
     Action<Rect, SerializedProperty>? DrawHeaderAction = null,
     float HeaderActionWidth = 60f,
     float? ElementHeight = null,
-    bool Reorderable = true)
+    bool Reorderable = true,
+    bool SingleLineWhenEmpty = false)
 {
     internal enum HeaderMode
     {
@@ -168,6 +169,7 @@ internal static partial class GUIHelper
 
     private static float GetEmptyContentHeight(ReorderableList list, ReorderableListOptions options)
     {
+        if (options.SingleLineWhenEmpty) return 0f;
         var height = options.DrawEmptyOverride == null
             ? list.GetHeight()
             : Mathf.Max(0f, options.EmptyContentHeight);

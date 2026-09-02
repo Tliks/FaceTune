@@ -356,8 +356,11 @@ internal sealed class LegacyFaceTuneImporter
         {
             if (CanKeepClip(source))
             {
-                facialData.Clip = clip;
-                facialData.ClipOption = ConvertClipImportOption(source.ClipOption);
+                facialData.ClipAnimations.Add(new FacialClipBlendShapeData
+                {
+                    Clip = clip,
+                    ClipOption = ConvertClipImportOption(source.ClipOption)
+                });
             }
             else
             {

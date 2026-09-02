@@ -42,7 +42,7 @@ internal sealed class ExpressionItemBuilder
     private readonly AvatarContext _avatarContext;
     private readonly IMetabasePlatformSupport _platformSupport;
     private readonly ConditionResolver _conditionResolver;
-    private readonly FaceTuneResolver _resolver;
+    private readonly ExpressionResolver _resolver;
     private readonly BuildSettings _settings;
 
     public ExpressionItemBuilder(
@@ -54,40 +54,29 @@ internal sealed class ExpressionItemBuilder
         _avatarContext = avatarContext;
         _platformSupport = platformSupport;
         _conditionResolver = conditionResolver;
-        _resolver = new FaceTuneResolver(avatarContext.Root);
+        _resolver = new ExpressionResolver(avatarContext.Root);
         _settings = settings;
     }
 
     public IEnumerable<ExpressionItem> Build(ExpressionComponent component)
     {
-        var incomingFacialAnimations = new BlendShapeWeightAnimationSet();
-        _resolver.FacialData.AddIncoming(
-            component.transform,
-            incomingFacialAnimations,
-            _avatarContext.BodyPath);
+        var expression = _resolver.Resolve(component, _avatarContext.BodyPath);
+
+        var incomingFacialAnimations = expression.IncomingFacial.Clone();
         RemoveProhibitedAnimations(
             incomingFacialAnimations,
             FaceTuneWriteKind.FacialData);
 
-        var localFacialAnimations = new BlendShapeWeightAnimationSet();
-        _resolver.FacialData.AddLocal(
-            component,
-            localFacialAnimations,
-            _avatarContext.BodyPath);
-        _resolver.FacialData.AddLocalData(
-            component.transform,
-            localFacialAnimations,
-            _avatarContext.BodyPath);
+        var localFacialAnimations = expression.DefinitionFacial.Clone();
         RemoveProhibitedAnimations(
             localFacialAnimations,
             FaceTuneWriteKind.FacialData);
 
-        var nonFacialAnimations = ResolveNonFacialAnimations(component);
-        var eyeBlink = ResolveEyeBlink(component);
-        var lipSync = ResolveLipSync(component);
-        var transition = _resolver.Transition.Get(component);
-
-        var priority = _resolver.Priority.Get(component);
+        var nonFacialAnimations = expression.NonFacial;
+        var eyeBlink = ResolveEyeBlink(expression.EyeBlink);
+        var lipSync = ResolveLipSync(expression.LipSync);
+        var transition = expression.Transition;
+        var priority = expression.Priority;
 
         yield return BuildItem(
             component,
@@ -99,6 +88,7 @@ internal sealed class ExpressionItemBuilder
             lipSync,
             transition,
             priority,
+            expression,
             _conditionResolver.Resolve(component));
 
         var directCondition = component.DirectMenuSettings.GeneratedCondition;
@@ -117,6 +107,7 @@ internal sealed class ExpressionItemBuilder
             {
                 Priority = priority.Priority + component.DirectMenuSettings.PriorityOffset
             },
+            expression,
             _conditionResolver.Resolve(directCondition) ?? DnfCondition.Never);
     }
 
@@ -130,6 +121,7 @@ internal sealed class ExpressionItemBuilder
         LipSyncSettings lipSync,
         TransitionSettings transition,
         PrioritySettings priority,
+        ResolvedExpression expression,
         DnfCondition when)
         => new(
             component.transform,
@@ -137,19 +129,18 @@ internal sealed class ExpressionItemBuilder
             incomingFacialAnimations,
             localFacialAnimations,
             nonFacialAnimations,
-            component.WriteMode,
-            ResolveMultiFrame(component.MultiFrame),
-            component.AllowEyeBlink,
-            component.AllowLipSync,
+            expression.WriteMode,
+            ResolveMultiFrame(expression.MultiFrame),
+            expression.AllowEyeBlink,
+            expression.AllowLipSync,
             eyeBlink,
             lipSync,
             transition,
             priority,
             when);
 
-    private EyeBlinkSettings ResolveEyeBlink(ExpressionComponent component)
+    private EyeBlinkSettings ResolveEyeBlink(EyeBlinkSettings source)
     {
-        var source = _resolver.EyeBlink.Get(component);
         var result = new EyeBlinkSettings
         {
             EyeBlinkMode = source.EyeBlinkMode,
@@ -174,9 +165,8 @@ internal sealed class ExpressionItemBuilder
         return result;
     }
 
-    private LipSyncSettings ResolveLipSync(ExpressionComponent component)
+    private LipSyncSettings ResolveLipSync(LipSyncSettings source)
     {
-        var source = _resolver.LipSync.Get(component);
         return new LipSyncSettings
         {
             CancellerBlendShapes = source.CancellerBlendShapes
@@ -199,9 +189,6 @@ internal sealed class ExpressionItemBuilder
         animations.RemoveRange(prohibited);
     }
 
-    private ResolvedNonFacialAnimationSet ResolveNonFacialAnimations(ExpressionComponent component)
-        => _resolver.NonFacialAnimations.Resolve(component, _avatarContext.BodyPath);
-
     private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {
         var result = new MultiFrameSettings
@@ -210,6 +197,18 @@ internal sealed class ExpressionItemBuilder
             TriggerHand = settings.TriggerHand,
             ParameterName = settings.ParameterName
         };
+        if (result.MultiFrameMode == MultiFrameSettings.Kind.Menu)
+        {
+            if (settings.MenuSource == null)
+                result.MultiFrameMode = MultiFrameSettings.Kind.Default;
+            else
+            {
+                result.MultiFrameMode = MultiFrameSettings.Kind.Parameter;
+                result.ParameterName = settings.MenuSource.ParameterName;
+            }
+            return result;
+        }
+
         if (result.MultiFrameMode != MultiFrameSettings.Kind.Trigger)
             return result;
 

@@ -312,7 +312,13 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
 
     private static bool IsReplaceMode(SerializedObject serializedObject)
     {
-        var mode = serializedObject.FindProperty(nameof(ExpressionComponent.WriteMode));
-        return mode != null && !mode.hasMultipleDifferentValues && mode.intValue == (int)ExpressionWriteMode.Replace;
+        if (serializedObject.targetObjects.Length != 1
+            || serializedObject.targetObject is not ExpressionComponent expression)
+            return false;
+
+        var mode = new ExpressionResolver(expression.transform.root.gameObject)
+            .Resolve(expression, string.Empty)
+            .WriteMode;
+        return mode == ExpressionWriteMode.Replace;
     }
 }

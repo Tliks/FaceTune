@@ -180,11 +180,35 @@ msgstr "メニューから直接再生"
 msgid "expression.section.label"
 msgstr "表情"
 
+msgid "expression.content.section.label"
+msgstr "表情内容"
+
+msgid "expression.facials.section.label"
+msgstr "顔アニメーション"
+
+msgid "expression.facials.otherExpressions.label"
+msgstr "他の表情を使用"
+
+msgid "expression.facials.references.label"
+msgstr "他の設定"
+
+msgid "expression.facials.clips.label"
+msgstr "アニメーションクリップ"
+
+msgid "expression.multiFrame.section.label"
+msgstr "マルチフレーム設定"
+
+msgid "expression.behavior.enabled.label"
+msgstr "表情設定を指定"
+
 msgid "blendShapeAnimation.multiFrame.label"
 msgstr "マルチフレーム"
 
 msgid "expression.additionalAnimations.section.label"
 msgstr "表情外アニメーション"
+
+msgid "expression.additionalAnimations.references.label"
+msgstr "他の設定"
 
 msgid "expression.additionalAnimations.clips.label"
 msgstr "アニメーションクリップ"

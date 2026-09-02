@@ -21,7 +21,8 @@ internal static class MenuCanonicalizer
         var root = context.AvatarContext.Root;
 
         ExpandExpressionSets(root);
-        var directMenus = ExpandDirectMenus(root);
+        var expressions = new ExpressionResolver(root);
+        var directMenus = ExpandDirectMenus(root, expressions);
 
         var settings = context.RequireSettings();
         var parameterDomains = BindParameters(root, settings.ParameterDomains);
@@ -63,7 +64,8 @@ internal static class MenuCanonicalizer
     }
 
     private static IReadOnlyList<(DirectMenuSettings Settings, MenuComponent Menu)> ExpandDirectMenus(
-        GameObject root)
+        GameObject root,
+        ExpressionResolver expressions)
     {
         var sources = root.GetComponentsInChildren<ExpressionComponent>(true)
             .Where(expression => expression.DirectMenuEnabled)
@@ -75,13 +77,19 @@ internal static class MenuCanonicalizer
             var menuObject = new GameObject(source.name);
             var parent = source.transform.parent.DestroyedAsNull() ?? root.transform;
             menuObject.transform.SetParent(parent, false);
-            result.Add((source.DirectMenuSettings, CreateDirectMenu(menuObject, source)));
+            result.Add((source.DirectMenuSettings, CreateDirectMenu(
+                menuObject,
+                source,
+                expressions.Resolve(source, string.Empty))));
         }
 
         return result;
     }
 
-    private static MenuComponent CreateDirectMenu(GameObject menuObject, ExpressionComponent source)
+    private static MenuComponent CreateDirectMenu(
+        GameObject menuObject,
+        ExpressionComponent source,
+        ResolvedExpression expression)
     {
         var menu = menuObject.AddComponent<MenuComponent>();
         menu.MenuKind = MenuComponent.Kind.Toggle;
@@ -92,9 +100,10 @@ internal static class MenuCanonicalizer
             menu.Menu.Icon.PreviewExpression = source.transform;
         }
         menu.UseExistingParameter = false;
-        menu.GenerateParameterGroup = source.WriteMode == ExpressionWriteMode.Replace
+        var writeMode = expression.WriteMode;
+        menu.GenerateParameterGroup = writeMode == ExpressionWriteMode.Replace
             || !string.IsNullOrWhiteSpace(source.DirectMenuSettings.GroupName);
-        menu.GroupName = source.WriteMode == ExpressionWriteMode.Replace
+        menu.GroupName = writeMode == ExpressionWriteMode.Replace
             ? BuiltInMenuGroups.DirectMenuReplace
             : source.DirectMenuSettings.GroupName;
         menu.Synced = true;
@@ -244,28 +253,9 @@ internal static class MenuCanonicalizer
         GameObject root,
         IEnumerable<(DirectMenuSettings Settings, MenuComponent Menu)> directMenus)
     {
-        LowerMultiFrameMenuReferences(root);
         LowerMenuConditions(root);
         foreach (var (settings, menu) in directMenus)
             settings.GeneratedCondition = LowerMenuCondition(MenuCondition.Enabled(menu));
-    }
-
-    private static void LowerMultiFrameMenuReferences(GameObject root)
-    {
-        foreach (var expression in root.GetComponentsInChildren<ExpressionComponent>(true))
-        {
-            var settings = expression.MultiFrame;
-            if (settings.MultiFrameMode != MultiFrameSettings.Kind.Menu) continue;
-            if (settings.MenuSource == null)
-            {
-                settings.MultiFrameMode = MultiFrameSettings.Kind.Default;
-                continue;
-            }
-
-            settings.MultiFrameMode = MultiFrameSettings.Kind.Parameter;
-            settings.ParameterName = settings.MenuSource.ParameterName;
-            settings.MenuSource = null;
-        }
     }
 
     private static void LowerMenuConditions(GameObject root)

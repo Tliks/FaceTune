@@ -180,11 +180,35 @@ msgstr "Play Directly from Menu"
 msgid "expression.section.label"
 msgstr "Expression"
 
+msgid "expression.content.section.label"
+msgstr "Expression Content"
+
+msgid "expression.facials.section.label"
+msgstr "Facial Animations"
+
+msgid "expression.facials.otherExpressions.label"
+msgstr "Use Other Expressions"
+
+msgid "expression.facials.references.label"
+msgstr "Other Settings"
+
+msgid "expression.facials.clips.label"
+msgstr "Animation Clips"
+
+msgid "expression.multiFrame.section.label"
+msgstr "Multi-Frame Settings"
+
+msgid "expression.behavior.enabled.label"
+msgstr "Specify Expression Behavior"
+
 msgid "blendShapeAnimation.multiFrame.label"
 msgstr "Multi-Frame"
 
 msgid "expression.additionalAnimations.section.label"
 msgstr "Non-Facial Animations"
+
+msgid "expression.additionalAnimations.references.label"
+msgstr "Other Settings"
 
 msgid "expression.additionalAnimations.clips.label"
 msgstr "Animation Clips"
