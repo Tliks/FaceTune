@@ -3,11 +3,13 @@ namespace Aoyon.FaceTune
 {
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal class ExpressionDataComponent : FaceTuneTagComponent,
-        IReferenceableExpressionSettings<FacialBlendShapeData>,
-        IReferenceableExpressionSettings<NonFacialAnimationData>,
-        IReferenceableExpressionSettings<EyeBlinkSettings>,
-        IReferenceableExpressionSettings<LipSyncSettings>,
-        IReferenceableExpression
+        IExpressionDefinitionProvider,
+        ISettingProvider<ExpressionBehavior>,
+        ISettingProvider<MultiFrameSettings>,
+        ISettingProvider<FacialBlendShapeData>,
+        ISettingProvider<NonFacialAnimationData>,
+        ISettingProviderWithReference<EyeBlinkSettings>,
+        ISettingProviderWithReference<LipSyncSettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Expression Data";
 
@@ -33,22 +35,14 @@ namespace Aoyon.FaceTune
         public bool HasNonFacialAnimations = false;
         public NonFacialAnimationData NonFacialAnimations = new();
 
-        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
-            => new(HasFacialBlendShapes, SettingsReferenceMode.Direct, null, FacialBlendShapes);
-
-        ReferenceableExpressionSettings<NonFacialAnimationData> IReferenceableExpressionSettings<NonFacialAnimationData>.Settings
-            => new(HasNonFacialAnimations, SettingsReferenceMode.Direct, null, NonFacialAnimations);
-
-        ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
-            => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
-
-        ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
-            => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
-        
-        ExpressionWriteMode IReferenceableExpression.WriteMode => WriteMode;
-        TrackingPermission IReferenceableExpression.AllowEyeBlink => AllowEyeBlink;
-        TrackingPermission IReferenceableExpression.AllowLipSync => AllowLipSync;
-        MultiFrameSettings IReferenceableExpression.MultiFrame => MultiFrame;
+        (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (HasFacialBlendShapes, FacialBlendShapes);
+        (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (HasNonFacialAnimations, NonFacialAnimations);
+        (bool Enabled, EyeBlinkSettings Value) ISettingProvider<EyeBlinkSettings>.Setting => (HasEyeBlink, EyeBlink);
+        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<EyeBlinkSettings>.Reference => (EyeBlinkReference.Mode, EyeBlinkReference.Source);
+        (bool Enabled, LipSyncSettings Value) ISettingProvider<LipSyncSettings>.Setting => (HasLipSync, LipSync);
+        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.Source);
+        (bool Enabled, ExpressionBehavior Value) ISettingProvider<ExpressionBehavior>.Setting => (HasFacialBehavior, new(WriteMode, AllowEyeBlink, AllowLipSync));
+        (bool Enabled, MultiFrameSettings Value) ISettingProvider<MultiFrameSettings>.Setting => (HasMultiFrame, MultiFrame);
 
     }
 }

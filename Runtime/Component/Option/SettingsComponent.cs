@@ -4,9 +4,11 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal sealed class SettingsComponent : FaceTuneTagComponent,
         IHasConditions,
-        IReferenceableExpressionSettings<FacialBlendShapeData>,
-        IReferenceableExpressionSettings<EyeBlinkSettings>,
-        IReferenceableExpressionSettings<LipSyncSettings>
+        ISettingProvider<FacialBlendShapeData>,
+        ISettingProviderWithReference<EyeBlinkSettings>,
+        ISettingProviderWithReference<LipSyncSettings>,
+        ISettingProvider<TransitionSettings>,
+        ISettingProvider<PrioritySettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
 
@@ -55,14 +57,13 @@ namespace Aoyon.FaceTune
 
 #region Interfaces
 
-        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
-            => new(HasFacialBlendShapes, SettingsReferenceMode.Direct, null, FacialBlendShapes);
-
-        ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
-            => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
-
-        ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
-            => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
+        (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (HasFacialBlendShapes, FacialBlendShapes);
+        (bool Enabled, EyeBlinkSettings Value) ISettingProvider<EyeBlinkSettings>.Setting => (HasEyeBlink, EyeBlink);
+        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<EyeBlinkSettings>.Reference => (EyeBlinkReference.Mode, EyeBlinkReference.Source);
+        (bool Enabled, LipSyncSettings Value) ISettingProvider<LipSyncSettings>.Setting => (HasLipSync, LipSync);
+        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.Source);
+        (bool Enabled, TransitionSettings Value) ISettingProvider<TransitionSettings>.Setting => (HasTransition, Transition);
+        (bool Enabled, PrioritySettings Value) ISettingProvider<PrioritySettings>.Setting => (HasPriority, Priority);
 
 #endregion
 

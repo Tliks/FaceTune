@@ -21,8 +21,8 @@ internal static class MenuCanonicalizer
         var root = context.AvatarContext.Root;
 
         ExpandExpressionSets(root);
-        var expressions = new ExpressionResolver(root);
-        var directMenus = ExpandDirectMenus(root, expressions);
+        var behavior = new ExpressionBehaviorResolver();
+        var directMenus = ExpandDirectMenus(root, behavior);
 
         var settings = context.RequireSettings();
         var parameterDomains = BindParameters(root, settings.ParameterDomains);
@@ -65,7 +65,7 @@ internal static class MenuCanonicalizer
 
     private static IReadOnlyList<(DirectMenuSettings Settings, MenuComponent Menu)> ExpandDirectMenus(
         GameObject root,
-        ExpressionResolver expressions)
+        ExpressionBehaviorResolver behavior)
     {
         var sources = root.GetComponentsInChildren<ExpressionComponent>(true)
             .Where(expression => expression.DirectMenuEnabled)
@@ -80,7 +80,7 @@ internal static class MenuCanonicalizer
             result.Add((source.DirectMenuSettings, CreateDirectMenu(
                 menuObject,
                 source,
-                expressions.Resolve(source, string.Empty))));
+                behavior.Resolve(source))));
         }
 
         return result;
@@ -89,7 +89,7 @@ internal static class MenuCanonicalizer
     private static MenuComponent CreateDirectMenu(
         GameObject menuObject,
         ExpressionComponent source,
-        ResolvedExpression expression)
+        ExpressionBehavior behavior)
     {
         var menu = menuObject.AddComponent<MenuComponent>();
         menu.MenuKind = MenuComponent.Kind.Toggle;
@@ -100,7 +100,7 @@ internal static class MenuCanonicalizer
             menu.Menu.Icon.PreviewExpression = source.transform;
         }
         menu.UseExistingParameter = false;
-        var writeMode = expression.WriteMode;
+        var writeMode = behavior.WriteMode;
         menu.GenerateParameterGroup = writeMode == ExpressionWriteMode.Replace
             || !string.IsNullOrWhiteSpace(source.DirectMenuSettings.GroupName);
         menu.GroupName = writeMode == ExpressionWriteMode.Replace

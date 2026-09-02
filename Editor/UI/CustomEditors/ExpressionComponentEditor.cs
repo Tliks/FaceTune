@@ -537,9 +537,9 @@ internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer, ICollaps
             serializedObject,
             new[]
             {
-                SectionActionField.From(_eyeBlink, () => ExpressionComponent.DefaultAllowEyeBlink),
-                SectionActionField.From(_lipSync, () => ExpressionComponent.DefaultAllowLipSync),
-                SectionActionField.From(_writeMode, () => ExpressionComponent.DefaultWriteMode)
+                SectionActionField.From(_eyeBlink, () => ExpressionBehavior.Default.AllowEyeBlink),
+                SectionActionField.From(_lipSync, () => ExpressionBehavior.Default.AllowLipSync),
+                SectionActionField.From(_writeMode, () => ExpressionBehavior.Default.WriteMode)
             });
     }
 
@@ -561,9 +561,9 @@ internal sealed class ExpressionBehaviorSectionDrawer : ISectionDrawer, ICollaps
         var hasMixedValues = _writeMode.hasMultipleDifferentValues
                              || _eyeBlink.hasMultipleDifferentValues
                              || _lipSync.hasMultipleDifferentValues;
-        var isDefault = _writeMode.intValue == (int)ExpressionComponent.DefaultWriteMode
-                        && _eyeBlink.intValue == (int)ExpressionComponent.DefaultAllowEyeBlink
-                        && _lipSync.intValue == (int)ExpressionComponent.DefaultAllowLipSync;
+        var isDefault = _writeMode.intValue == (int)ExpressionBehavior.Default.WriteMode
+                        && _eyeBlink.intValue == (int)ExpressionBehavior.Default.AllowEyeBlink
+                        && _lipSync.intValue == (int)ExpressionBehavior.Default.AllowLipSync;
         var label = hasMixedValues
             ? EditorGUIUtility.TrTextContent("—")
             : (isDefault

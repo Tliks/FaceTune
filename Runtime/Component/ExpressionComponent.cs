@@ -3,11 +3,15 @@ namespace Aoyon.FaceTune
     [AddComponentMenu(MenuPathPrefix + ComponentName)]
     internal class ExpressionComponent : FaceTuneTagComponent,
         IHasConditions,
-        IReferenceableExpressionSettings<FacialBlendShapeData>,
-        IReferenceableExpressionSettings<NonFacialAnimationData>,
-        IReferenceableExpressionSettings<EyeBlinkSettings>,
-        IReferenceableExpressionSettings<LipSyncSettings>,
-        IReferenceableExpression
+        IExpressionDefinitionProviderWithReference,
+        ISettingProvider<ExpressionBehavior>,
+        ISettingProvider<MultiFrameSettings>,
+        ISettingProvider<FacialBlendShapeData>,
+        ISettingProvider<NonFacialAnimationData>,
+        ISettingProviderWithReference<EyeBlinkSettings>,
+        ISettingProviderWithReference<LipSyncSettings>,
+        ISettingProvider<TransitionSettings>,
+        ISettingProvider<PrioritySettings>
     {
         internal const string ComponentName = FaceTuneConstants.Name;
 
@@ -32,11 +36,11 @@ namespace Aoyon.FaceTune
         public FacialBlendShapeData FacialBlendShapes = new();
 
         // 下位の表情に対し、Replaceは上書し、Blendは同時に重ねる。
-        public ExpressionWriteMode WriteMode = DefaultWriteMode;
+        public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
         public MultiFrameSettings MultiFrame = new();
         // この表情再生中におけるまばたき/リップシンクの扱い。
-        public TrackingPermission AllowEyeBlink = DefaultAllowEyeBlink;
-        public TrackingPermission AllowLipSync = DefaultAllowLipSync;
+        public TrackingPermission AllowEyeBlink = ExpressionBehavior.Default.AllowEyeBlink;
+        public TrackingPermission AllowLipSync = ExpressionBehavior.Default.AllowLipSync;
 
         // trueなら、このExpressionの値を親のSettingsより優先する。
         public bool HasEyeBlink = false;
@@ -66,9 +70,6 @@ namespace Aoyon.FaceTune
 
 #region Defaults
 
-        internal const TrackingPermission DefaultAllowEyeBlink = TrackingPermission.Disallow;
-        internal const TrackingPermission DefaultAllowLipSync = TrackingPermission.Allow;
-        internal const ExpressionWriteMode DefaultWriteMode = ExpressionWriteMode.Replace;
         internal const bool DefaultAlwaysOnPreviewEnabled = false;
 
         internal static DirectMenuSettings CreateDefaultDirectMenuSettings()
@@ -89,27 +90,24 @@ namespace Aoyon.FaceTune
 
 # region Interfaces
 
+        SettingsReferenceMode IExpressionDefinitionProviderWithReference.DefinitionMode => ExpressionDataReference.Mode;
+        Transform? IExpressionDefinitionProviderWithReference.DefinitionSource => ExpressionDataReference.Source;
+
         IEnumerable<Condition> IHasConditions.Conditions
             => HasCondition && Condition.Mode == ConditionSelection.Kind.Conditional
                 ? new[] { Condition.Condition }
                 : Array.Empty<Condition>();
 
-        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
-            => new(true, SettingsReferenceMode.Direct, null, FacialBlendShapes);
-
-        ReferenceableExpressionSettings<NonFacialAnimationData> IReferenceableExpressionSettings<NonFacialAnimationData>.Settings
-            => new(true, SettingsReferenceMode.Direct, null, NonFacialAnimations);
-
-        ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
-            => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
-
-        ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
-            => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
-
-        ExpressionWriteMode IReferenceableExpression.WriteMode => WriteMode;
-        TrackingPermission IReferenceableExpression.AllowEyeBlink => AllowEyeBlink;
-        TrackingPermission IReferenceableExpression.AllowLipSync => AllowLipSync;
-        MultiFrameSettings IReferenceableExpression.MultiFrame => MultiFrame;
+        (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (true, FacialBlendShapes);
+        (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (true, NonFacialAnimations);
+        (bool Enabled, EyeBlinkSettings Value) ISettingProvider<EyeBlinkSettings>.Setting => (HasEyeBlink, EyeBlink);
+        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<EyeBlinkSettings>.Reference => (EyeBlinkReference.Mode, EyeBlinkReference.Source);
+        (bool Enabled, LipSyncSettings Value) ISettingProvider<LipSyncSettings>.Setting => (HasLipSync, LipSync);
+        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.Source);
+        (bool Enabled, ExpressionBehavior Value) ISettingProvider<ExpressionBehavior>.Setting => (true, new(WriteMode, AllowEyeBlink, AllowLipSync));
+        (bool Enabled, MultiFrameSettings Value) ISettingProvider<MultiFrameSettings>.Setting => (true, MultiFrame);
+        (bool Enabled, TransitionSettings Value) ISettingProvider<TransitionSettings>.Setting => (HasTransition, Transition);
+        (bool Enabled, PrioritySettings Value) ISettingProvider<PrioritySettings>.Setting => (HasPriority, Priority);
 
 #endregion
 

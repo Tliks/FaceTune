@@ -1,5 +1,17 @@
 namespace Aoyon.FaceTune;
 
+// 現状個別でシリアラウズしているのでそれをまとめているだけ
+internal sealed record ExpressionBehavior(
+    ExpressionWriteMode WriteMode,
+    TrackingPermission AllowEyeBlink,
+    TrackingPermission AllowLipSync)
+{
+    internal static readonly ExpressionBehavior Default = new(
+        ExpressionWriteMode.Replace,
+        TrackingPermission.Disallow,
+        TrackingPermission.Allow);
+}
+
 /// <summary>値を直接持つか、指定Transform上の同種設定を参照するか。</summary>
 internal enum SettingsReferenceMode
 {

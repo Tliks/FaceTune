@@ -11,32 +11,22 @@ internal interface IHasConditions
     IEnumerable<Condition> Conditions { get; }
 }
 
-/// <summary>シリアライズ構造から独立した、参照可能な設定の読み取りモデル。</summary>
-internal readonly record struct ReferenceableExpressionSettings<TValue>(
-    bool Enabled,
-    SettingsReferenceMode Mode,
-    Transform? Source,
-    TValue Direct)
-    where TValue : class;
-
-/// <summary>
-/// Transformから参照できるExpression設定。
-/// Scoped / Unscopedの収集規則は設定種別ごとのResolverが担う。
-/// </summary>
-internal interface IReferenceableExpressionSettings<TValue>
-    where TValue : class
+internal interface ISettingProvider<T> where T : class
 {
-    ReferenceableExpressionSettings<TValue> Settings { get; }
+    (bool Enabled, T Value) Setting { get; }
 }
 
-internal interface IReferenceableExpression :
-    IReferenceableExpressionSettings<FacialBlendShapeData>,
-    IReferenceableExpressionSettings<NonFacialAnimationData>,
-    IReferenceableExpressionSettings<EyeBlinkSettings>,
-    IReferenceableExpressionSettings<LipSyncSettings>
+internal interface ISettingProviderWithReference<T> : ISettingProvider<T> where T : class
 {
-    ExpressionWriteMode WriteMode { get; }
-    TrackingPermission AllowEyeBlink { get; }
-    TrackingPermission AllowLipSync { get; }
-    MultiFrameSettings MultiFrame { get; }
+    (SettingsReferenceMode Mode, Transform? Source) Reference { get; }
+}
+
+internal interface IExpressionDefinitionProvider
+{
+}
+
+internal interface IExpressionDefinitionProviderWithReference : IExpressionDefinitionProvider
+{
+    SettingsReferenceMode DefinitionMode { get; }
+    Transform? DefinitionSource { get; }
 }

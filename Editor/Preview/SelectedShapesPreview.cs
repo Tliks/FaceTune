@@ -208,12 +208,15 @@ internal class SelectedShapesPreviewSession : IDisposable
             return false;
         }
 
-        var resolver = new ExpressionResolver(root, context);
         if (expressionCount == 1)
         {
-            var expression = resolver.Resolve(expressions[0], bodyPath);
-            resultToAdd.AddRange(expression.Facial);
-            isLooping = expression.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop;
+            var expression = expressions[0];
+            var facial = new FacialAnimationResolver(root, context);
+            resultToAdd.AddRange(facial.ResolveIncoming(expression.transform, bodyPath));
+            if (facial.TryResolve(expression, bodyPath, out var definition))
+                resultToAdd.AddRange(definition);
+            isLooping = new MultiFrameResolver(context).Resolve(expression).MultiFrameMode
+                        == MultiFrameSettings.Kind.Loop;
         }
         else
         {

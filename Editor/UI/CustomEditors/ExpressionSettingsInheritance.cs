@@ -20,10 +20,10 @@ internal sealed class ExpressionDefinitionPreviewState : ScriptableObject
 {
     public FacialBlendShapeData FacialBlendShapes = new();
     public NonFacialAnimationData NonFacialAnimations = new();
-    public ExpressionWriteMode WriteMode = ExpressionComponent.DefaultWriteMode;
+    public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
     public MultiFrameSettings MultiFrame = new();
-    public TrackingPermission AllowEyeBlink = ExpressionComponent.DefaultAllowEyeBlink;
-    public TrackingPermission AllowLipSync = ExpressionComponent.DefaultAllowLipSync;
+    public TrackingPermission AllowEyeBlink = ExpressionBehavior.Default.AllowEyeBlink;
+    public TrackingPermission AllowLipSync = ExpressionBehavior.Default.AllowLipSync;
     public bool HasEyeBlink = true;
     public SettingsReference EyeBlinkReference = new();
     public EyeBlinkSettings EyeBlink = new();
@@ -108,13 +108,24 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
             return;
         }
 
-        var resolved = new ExpressionResolver(_component.transform.root.gameObject)
-            .Resolve(_component, string.Empty);
-        RefreshDefinitionPreview(resolved);
-        (_preview.EyeBlink, _eyeBlinkOwner) = resolved.InheritedEyeBlink;
-        (_preview.LipSync, _lipSyncOwner) = resolved.InheritedLipSync;
-        (_preview.Transition, _transitionOwner) = resolved.InheritedTransition;
-        (_preview.Priority, _priorityOwner) = resolved.InheritedPriority;
+        var root = _component.transform.root.gameObject;
+        var eyeBlink = new EyeBlinkResolver(root);
+        var lipSync = new LipSyncResolver(root);
+        var transition = new TransitionResolver(root);
+        var priority = new PriorityResolver(root);
+        var definition = new ExpressionDefinitionResolver().Resolve(_component);
+        RefreshDefinitionPreview(
+            definition,
+            new ExpressionBehaviorResolver().Resolve(_component),
+            new MultiFrameResolver().Resolve(_component),
+            eyeBlink.ResolveDefinition(_component),
+            lipSync.ResolveDefinition(_component),
+            eyeBlink.Resolve(_component),
+            lipSync.Resolve(_component));
+        (_preview.EyeBlink, _eyeBlinkOwner) = eyeBlink.ResolveInherited(_component);
+        (_preview.LipSync, _lipSyncOwner) = lipSync.ResolveInherited(_component);
+        (_preview.Transition, _transitionOwner) = transition.ResolveInherited(_component);
+        (_preview.Priority, _priorityOwner) = priority.ResolveInherited(_component);
         _batchOverrideTarget = _component.transform.parent;
         _serializedPreview.Update();
         _serializedDefinitionPreview.Update();
@@ -122,20 +133,27 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
     public SerializedObject DefinitionPreview => _serializedDefinitionPreview;
 
-    private void RefreshDefinitionPreview(ResolvedExpression resolved)
+    private void RefreshDefinitionPreview(
+        IExpressionDefinitionProvider? definition,
+        ExpressionBehavior behavior,
+        MultiFrameSettings multiFrame,
+        EyeBlinkSettings? definitionEyeBlink,
+        LipSyncSettings? definitionLipSync,
+        EyeBlinkSettings eyeBlink,
+        LipSyncSettings lipSync)
     {
-        _definitionPreview.WriteMode = resolved.WriteMode;
-        _definitionPreview.MultiFrame = resolved.MultiFrame;
-        _definitionPreview.AllowEyeBlink = resolved.AllowEyeBlink;
-        _definitionPreview.AllowLipSync = resolved.AllowLipSync;
-        _definitionPreview.HasEyeBlink = resolved.DefinitionEyeBlink != null;
+        _definitionPreview.WriteMode = behavior.WriteMode;
+        _definitionPreview.MultiFrame = multiFrame;
+        _definitionPreview.AllowEyeBlink = behavior.AllowEyeBlink;
+        _definitionPreview.AllowLipSync = behavior.AllowLipSync;
+        _definitionPreview.HasEyeBlink = definitionEyeBlink != null;
         _definitionPreview.EyeBlinkReference = new SettingsReference();
-        _definitionPreview.EyeBlink = resolved.EyeBlink;
-        _definitionPreview.HasLipSync = resolved.DefinitionLipSync != null;
+        _definitionPreview.EyeBlink = eyeBlink;
+        _definitionPreview.HasLipSync = definitionLipSync != null;
         _definitionPreview.LipSyncReference = new SettingsReference();
-        _definitionPreview.LipSync = resolved.LipSync;
+        _definitionPreview.LipSync = lipSync;
 
-        switch (resolved.DefinitionSource)
+        switch (definition)
         {
             case ExpressionComponent expression:
                 _definitionPreview.FacialBlendShapes = expression.FacialBlendShapes;
