@@ -199,7 +199,15 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
     {
         var height = 0f;
         if (_mode.intValue == (int)SettingsReferenceMode.Reference)
+        {
             height += GUIHelper.LineHeight + GUIHelper.VerticalSpacing;
+            if (ShowsMissingReference)
+            {
+                var warning = "settingsReference.component.empty.message".LS();
+                height += GUIHelper.VerticalSpacing
+                       + GUIHelper.GetHelpBoxHeight(warning, MessageType.Warning);
+            }
+        }
         if (_children.Length == 0)
             return height;
 
@@ -270,6 +278,11 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
             position.height = GUIHelper.LineHeight;
             EditorGUI.PropertyField(position, _source, "common.component.label".LG());
             position.NewLine();
+            if (ShowsMissingReference)
+                position = GUIHelper.HelpBox(
+                    position,
+                    "settingsReference.component.empty.message".LS(),
+                    MessageType.Warning);
         }
 
         if (_children.Length == 0)
@@ -322,6 +335,11 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
     private bool IsReference
         => _mode.intValue == (int)SettingsReferenceMode.Reference;
 
+    private bool ShowsMissingReference
+        => IsReference
+           && !_source.hasMultipleDifferentValues
+           && _source.objectReferenceValue == null;
+
     public void PopulateHeaderMenu(GenericMenu menu)
     {
         var canSeparate = _serializedObject.targetObjects.Length == 1
@@ -354,7 +372,15 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                     dataObject.CopyFromSerializedProperty(source);
             }
             dataObject.FindProperty(nameof(ExpressionDataComponent.HasFacialBlendShapes)).boolValue = true;
-            dataObject.FindProperty(nameof(ExpressionDataComponent.HasNonFacialAnimations)).boolValue = true;
+            var nonFacialAnimations = dataObject.FindProperty(
+                nameof(ExpressionDataComponent.NonFacialAnimations));
+            dataObject.FindProperty(nameof(ExpressionDataComponent.HasNonFacialAnimations)).boolValue =
+                nonFacialAnimations.FindPropertyRelative(
+                    nameof(NonFacialAnimationData.ReferenceAnimations)).arraySize > 0
+                || nonFacialAnimations.FindPropertyRelative(
+                    nameof(NonFacialAnimationData.AnimationClips)).arraySize > 0
+                || nonFacialAnimations.FindPropertyRelative(
+                    nameof(NonFacialAnimationData.TransformAnimations)).arraySize > 0;
             dataObject.FindProperty(nameof(ExpressionDataComponent.HasFacialBehavior)).boolValue = true;
             dataObject.FindProperty(nameof(ExpressionDataComponent.HasMultiFrame)).boolValue = true;
             dataObject.ApplyModifiedProperties();

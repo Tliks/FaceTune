@@ -29,3 +29,14 @@ internal interface IReferenceableExpressionSettings<TValue>
     ReferenceableExpressionSettings<TValue> Settings { get; }
 }
 
+internal interface IReferenceableExpression :
+    IReferenceableExpressionSettings<FacialBlendShapeData>,
+    IReferenceableExpressionSettings<NonFacialAnimationData>,
+    IReferenceableExpressionSettings<EyeBlinkSettings>,
+    IReferenceableExpressionSettings<LipSyncSettings>
+{
+    ExpressionWriteMode WriteMode { get; }
+    TrackingPermission AllowEyeBlink { get; }
+    TrackingPermission AllowLipSync { get; }
+    MultiFrameSettings MultiFrame { get; }
+}

@@ -138,6 +138,9 @@ msgstr "Conditions"
 msgid "facialEditor.title"
 msgstr "Expression Editor"
 
+msgid "facialEditor.open.button"
+msgstr "Open"
+
 msgid "facialEditor.rendererRequired.message"
 msgstr "Select a target renderer to edit the expression."
 
@@ -185,9 +188,6 @@ msgstr "Expression Content"
 
 msgid "expression.facials.section.label"
 msgstr "Facial Animations"
-
-msgid "expression.facials.otherExpressions.label"
-msgstr "Use Other Expressions"
 
 msgid "expression.facials.references.label"
 msgstr "Other Settings"

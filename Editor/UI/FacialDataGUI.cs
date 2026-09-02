@@ -7,23 +7,18 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class FacialDataSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer
 {
     private readonly SerializedProperty _data;
-    private readonly FoldoutState _otherExpressions;
 
     public FacialDataSectionDrawer(SerializedObject serializedObject, string directPropertyName)
     {
         _data = serializedObject.FindProperty(directPropertyName);
-        _otherExpressions = GUIState.Get(
-            _data,
-            "otherExpressions",
-            () => new FoldoutState(FacialDataGUI.HasOtherExpressions(_data)));
         Actions = new SectionActionSet(
             serializedObject,
             new[] { SectionActionField.From(_data, () => new FacialBlendShapeData()) });
     }
 
     public SectionActionSet Actions { get; }
-    public float GetHeight() => FacialDataGUI.GetContentHeight(_data, _otherExpressions);
-    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _data, _otherExpressions);
+    public float GetHeight() => FacialDataGUI.GetContentHeight(_data);
+    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _data);
 
     public float GetHeaderWidth()
         => GUIHelper.CompactPopupWidth(new[]
@@ -73,82 +68,53 @@ internal static class FacialDataGUI
         Header: ReorderableListOptions.HeaderMode.Label,
         NestContent: false,
         InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()),
-        DrawHeaderAction: DrawEditorButton,
         ElementHeight: GUIHelper.LineHeight,
-        Reorderable: false);
+        Reorderable: false,
+        SingleLineWhenEmpty: true);
 
-    internal static bool HasOtherExpressions(SerializedProperty data)
+    internal static float GetContentHeight(SerializedProperty data)
     {
         var references = data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceAnimations));
         var clips = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipAnimations));
-        return references.arraySize > 0
-               || clips.arraySize > 0
-               || references.hasMultipleDifferentValues
-               || clips.hasMultipleDifferentValues;
-    }
-
-    internal static float GetContentHeight(
-        SerializedProperty data,
-        FoldoutState otherExpressions)
-    {
-        var height = GUIHelper.LineHeight;
-        if (otherExpressions.Expanded)
-        {
-            var references = data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceAnimations));
-            var clips = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipAnimations));
-            height += GUIHelper.VerticalSpacing
-                      + GUIHelper.GetListHeight(references, ReferenceAnimationsOptions)
-                      + GUIHelper.VerticalSpacing
-                      + GUIHelper.GetListHeight(clips, ClipAnimationsOptions);
-        }
         var animations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        return height
+        return GUIHelper.GetListHeight(references, ReferenceAnimationsOptions)
              + GUIHelper.VerticalSpacing
-             + GUIHelper.GetListHeight(animations, BlendShapeAnimationsOptions);
+             + GUIHelper.GetListHeight(clips, ClipAnimationsOptions)
+             + GUIHelper.VerticalSpacing
+             + GUIHelper.GetListHeight(animations, BlendShapeAnimationsOptions)
+             + GUIHelper.VerticalSpacing
+             + GUIHelper.LineHeight;
     }
 
-    internal static void DrawContent(
-        Rect position,
-        SerializedProperty data,
-        FoldoutState otherExpressions)
+    internal static void DrawContent(Rect position, SerializedProperty data)
     {
-        position.height = GUIHelper.LineHeight;
-        otherExpressions.Expanded = GUIHelper.DrawFoldout(
-            position,
-            otherExpressions.Expanded,
-            "expression.facials.otherExpressions.label".LG());
-        position.NewLine();
-
-        if (otherExpressions.Expanded)
-        {
-            var references = data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceAnimations));
-            var clips = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipAnimations));
-            var nested = position;
-            nested.Indent();
-            nested.height = GUIHelper.GetListHeight(references, ReferenceAnimationsOptions);
-            GUIHelper.DrawList(
-                nested,
-                references,
-                "expression.facials.references.label".LG(),
-                ReferenceAnimationsOptions);
-            nested.NewLine();
-            nested.height = GUIHelper.GetListHeight(clips, ClipAnimationsOptions);
-            GUIHelper.DrawList(
-                nested,
-                clips,
-                "expression.facials.clips.label".LG(),
-                ClipAnimationsOptions);
-            nested.NewLine();
-            position.y = nested.y;
-        }
-
+        var references = data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceAnimations));
+        var clips = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipAnimations));
         var animations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+
+        position.height = GUIHelper.GetListHeight(references, ReferenceAnimationsOptions);
+        GUIHelper.DrawList(
+            position,
+            references,
+            "expression.facials.references.label".LG(),
+            ReferenceAnimationsOptions);
+        position.NewLine();
+        position.height = GUIHelper.GetListHeight(clips, ClipAnimationsOptions);
+        GUIHelper.DrawList(
+            position,
+            clips,
+            "expression.facials.clips.label".LG(),
+            ClipAnimationsOptions);
+        position.NewLine();
         position.height = GUIHelper.GetListHeight(animations, BlendShapeAnimationsOptions);
         GUIHelper.DrawList(
             position,
             animations,
             "expression.blendShapes.label".LG(),
             BlendShapeAnimationsOptions);
+        position.NewLine();
+        position.height = GUIHelper.LineHeight;
+        DrawEditorRow(position, animations);
     }
 
     internal static void SetBlendShapeAnimations(
@@ -164,10 +130,11 @@ internal static class FacialDataGUI
         }
     }
 
-    private static void DrawEditorButton(Rect position, SerializedProperty animations)
+    private static void DrawEditorRow(Rect position, SerializedProperty animations)
     {
+        var button = EditorGUI.PrefixLabel(position, "facialEditor.title".LG());
         using var disabled = new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1);
-        if (GUI.Button(position, "expression.editor.button".LG(), GUIStyles.ListButton)
+        if (GUI.Button(button, "facialEditor.open.button".LG())
             && animations.serializedObject.targetObject is Component component)
             OpenEditor(component);
     }
@@ -229,8 +196,19 @@ internal static class FacialDataGUI
             data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)),
             animations,
             overwrite: false);
-        clipData.FindPropertyRelative(nameof(FacialClipBlendShapeData.Clip)).objectReferenceValue = null;
-        clipData.serializedObject.ApplyModifiedProperties();
+        RemoveClipData(data, clipData);
+        data.serializedObject.ApplyModifiedProperties();
+    }
+
+    private static void RemoveClipData(SerializedProperty data, SerializedProperty clipData)
+    {
+        var clips = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipAnimations));
+        for (var index = 0; index < clips.arraySize; index++)
+        {
+            if (clips.GetArrayElementAtIndex(index).propertyPath != clipData.propertyPath) continue;
+            clips.DeleteArrayElementAtIndex(index);
+            return;
+        }
     }
 
     private static SerializedProperty? FindOwningData(SerializedProperty clipData)

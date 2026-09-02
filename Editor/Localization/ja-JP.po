@@ -138,6 +138,9 @@ msgstr "条件"
 msgid "facialEditor.title"
 msgstr "表情編集画面"
 
+msgid "facialEditor.open.button"
+msgstr "開く"
+
 msgid "facialEditor.rendererRequired.message"
 msgstr "表情を編集する対象Rendererを設定してください。"
 
@@ -185,9 +188,6 @@ msgstr "表情内容"
 
 msgid "expression.facials.section.label"
 msgstr "顔アニメーション"
-
-msgid "expression.facials.otherExpressions.label"
-msgstr "他の表情を使用"
 
 msgid "expression.facials.references.label"
 msgstr "他の設定"

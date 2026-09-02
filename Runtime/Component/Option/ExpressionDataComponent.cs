@@ -6,7 +6,8 @@ namespace Aoyon.FaceTune
         IReferenceableExpressionSettings<FacialBlendShapeData>,
         IReferenceableExpressionSettings<NonFacialAnimationData>,
         IReferenceableExpressionSettings<EyeBlinkSettings>,
-        IReferenceableExpressionSettings<LipSyncSettings>
+        IReferenceableExpressionSettings<LipSyncSettings>,
+        IReferenceableExpression
     {
         internal const string ComponentName = ComponentNamePrefix + "Expression Data";
 
@@ -43,6 +44,11 @@ namespace Aoyon.FaceTune
 
         ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
             => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
+        
+        ExpressionWriteMode IReferenceableExpression.WriteMode => WriteMode;
+        TrackingPermission IReferenceableExpression.AllowEyeBlink => AllowEyeBlink;
+        TrackingPermission IReferenceableExpression.AllowLipSync => AllowLipSync;
+        MultiFrameSettings IReferenceableExpression.MultiFrame => MultiFrame;
 
     }
 }

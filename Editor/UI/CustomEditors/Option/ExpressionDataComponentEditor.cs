@@ -4,67 +4,124 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(ExpressionDataComponent))]
 internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<ExpressionDataComponent>
 {
+    private SettingEntry[]? _settings;
+
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
     {
-        var facialEnabled = serializedObject.FindProperty(
-            nameof(ExpressionDataComponent.HasFacialBlendShapes));
-        var behaviorEnabled = serializedObject.FindProperty(
-            nameof(ExpressionDataComponent.HasFacialBehavior));
-        var multiFrameEnabled = serializedObject.FindProperty(
-            nameof(ExpressionDataComponent.HasMultiFrame));
-        var eyeBlinkEnabled = serializedObject.FindProperty(
-            nameof(ExpressionDataComponent.HasEyeBlink));
-        var lipSyncEnabled = serializedObject.FindProperty(
-            nameof(ExpressionDataComponent.HasLipSync));
-        var nonFacialEnabled = serializedObject.FindProperty(
-            nameof(ExpressionDataComponent.HasNonFacialAnimations));
-        return new[]
+        var settings = Settings;
+        var sections = new FaceTuneSection[settings.Length];
+        for (var i = 0; i < settings.Length; i++)
         {
-            CreateSection(
-                "expression.section.label",
-                new ExpressionDataFacialSectionDrawer(serializedObject),
-                defaultExpanded: true,
-                enabledProperty: facialEnabled),
-            CreateSection(
-                "expression.behavior.section.label",
-                new ExpressionDataBehaviorSectionDrawer(serializedObject),
-                defaultExpanded: true,
-                enabledProperty: behaviorEnabled),
-            CreateSection(
-                "expression.multiFrame.section.label",
-                new OptionalPropertySectionDrawer(
-                    multiFrameEnabled,
-                    serializedObject.FindProperty(nameof(ExpressionDataComponent.MultiFrame)),
-                    () => new MultiFrameSettings()),
-                defaultExpanded: false,
-                enabledProperty: multiFrameEnabled),
-            CreateSection(
-                "eyeBlink.section.label",
-                new OptionalReferenceableSettingsSectionDrawer(
-                    serializedObject,
-                    nameof(ExpressionDataComponent.HasEyeBlink),
-                    nameof(ExpressionDataComponent.EyeBlinkReference),
-                    nameof(ExpressionDataComponent.EyeBlink),
-                    () => new EyeBlinkSettings()),
-                defaultExpanded: false,
-                enabledProperty: eyeBlinkEnabled),
-            CreateSection(
-                "lipSync.section.label",
-                new OptionalReferenceableSettingsSectionDrawer(
-                    serializedObject,
-                    nameof(ExpressionDataComponent.HasLipSync),
-                    nameof(ExpressionDataComponent.LipSyncReference),
-                    nameof(ExpressionDataComponent.LipSync),
-                    () => new LipSyncSettings()),
-                defaultExpanded: false,
-                enabledProperty: lipSyncEnabled),
-            CreateSection(
-                "expression.additionalAnimations.section.label",
-                new ExpressionDataNonFacialSectionDrawer(serializedObject),
-                defaultExpanded: false,
-                enabledProperty: nonFacialEnabled)
-        };
+            var setting = settings[i];
+            sections[i] = CreateSection(
+                setting.LabelKey,
+                setting.Drawer,
+                setting.DefaultExpanded,
+                populateHeaderMenu: menu => PopulateHeaderMenu(menu, setting),
+                isVisible: () => IsEnabled(setting.Enabled));
+        }
+        return sections;
     }
+
+    protected override float GetFooterHeight() => GUIHelper.LineHeight;
+
+    protected override void DrawFooter(Rect position)
+    {
+        position.SetSingleHeight();
+        using var availableSettings = ListPool<SettingEntry>.Get(out var available);
+        foreach (var setting in Settings)
+        {
+            if (!IsEnabled(setting.Enabled)) available.Add(setting);
+        }
+
+        var button = EditorGUI.PrefixLabel(position, "settings.add.label".LG());
+        using var disabled = new EditorGUI.DisabledScope(available.Count == 0);
+        if (!EditorGUI.DropdownButton(
+                button,
+                "settings.add.option.select".LG(),
+                FocusType.Keyboard,
+                EditorStyles.popup)) return;
+
+        var menu = new GenericMenu();
+        foreach (var setting in available)
+        {
+            var selectedSetting = setting;
+            menu.AddItem(setting.LabelKey.LG(), false, () => EnableSetting(selectedSetting));
+        }
+        menu.DropDown(button);
+    }
+
+    private void EnableSetting(SettingEntry setting)
+    {
+        serializedObject.UpdateIfRequiredOrScript();
+        SectionOperations.ResetValues(setting.Drawer.Actions);
+        setting.Enabled.boolValue = true;
+        serializedObject.ApplyModifiedProperties();
+    }
+
+    private void PopulateHeaderMenu(GenericMenu menu, SettingEntry setting)
+        => menu.AddItem("settings.remove.label".LG(), false, () =>
+        {
+            serializedObject.UpdateIfRequiredOrScript();
+            setting.Enabled.boolValue = false;
+            serializedObject.ApplyModifiedProperties();
+        });
+
+    private static bool IsEnabled(SerializedProperty property)
+        => property.boolValue || property.hasMultipleDifferentValues;
+
+    private SettingEntry[] Settings => _settings ??= new[]
+    {
+        new SettingEntry(
+            serializedObject.FindProperty(nameof(ExpressionDataComponent.HasFacialBlendShapes)),
+            "expression.section.label",
+            new ExpressionDataFacialSectionDrawer(serializedObject),
+            true),
+        new SettingEntry(
+            serializedObject.FindProperty(nameof(ExpressionDataComponent.HasFacialBehavior)),
+            "expression.behavior.section.label",
+            new ExpressionDataBehaviorSectionDrawer(serializedObject),
+            true),
+        new SettingEntry(
+            serializedObject.FindProperty(nameof(ExpressionDataComponent.HasMultiFrame)),
+            "expression.multiFrame.section.label",
+            new OptionalPropertySectionDrawer(
+                serializedObject.FindProperty(nameof(ExpressionDataComponent.HasMultiFrame)),
+                serializedObject.FindProperty(nameof(ExpressionDataComponent.MultiFrame)),
+                () => new MultiFrameSettings()),
+            false),
+        new SettingEntry(
+            serializedObject.FindProperty(nameof(ExpressionDataComponent.HasEyeBlink)),
+            "eyeBlink.section.label",
+            new OptionalReferenceableSettingsSectionDrawer(
+                serializedObject,
+                nameof(ExpressionDataComponent.HasEyeBlink),
+                nameof(ExpressionDataComponent.EyeBlinkReference),
+                nameof(ExpressionDataComponent.EyeBlink),
+                () => new EyeBlinkSettings()),
+            false),
+        new SettingEntry(
+            serializedObject.FindProperty(nameof(ExpressionDataComponent.HasLipSync)),
+            "lipSync.section.label",
+            new OptionalReferenceableSettingsSectionDrawer(
+                serializedObject,
+                nameof(ExpressionDataComponent.HasLipSync),
+                nameof(ExpressionDataComponent.LipSyncReference),
+                nameof(ExpressionDataComponent.LipSync),
+                () => new LipSyncSettings()),
+            false),
+        new SettingEntry(
+            serializedObject.FindProperty(nameof(ExpressionDataComponent.HasNonFacialAnimations)),
+            "expression.additionalAnimations.section.label",
+            new ExpressionDataNonFacialSectionDrawer(serializedObject),
+            false)
+    };
+
+    private sealed record SettingEntry(
+        SerializedProperty Enabled,
+        string LabelKey,
+        ISectionDrawer Drawer,
+        bool DefaultExpanded);
 }
 
 internal sealed class ExpressionDataFacialSectionDrawer : ISectionDrawer
