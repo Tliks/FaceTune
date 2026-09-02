@@ -5,12 +5,6 @@ internal interface IHasObjectReferences
     void ResolveReferences();
 }
 
-/// <summary>このComponentで有効になっている条件。</summary>
-internal interface IHasConditions
-{
-    IEnumerable<Condition> Conditions { get; }
-}
-
 internal interface ISettingProvider<T> where T : class
 {
     (bool Enabled, T Value) Setting { get; }

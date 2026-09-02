@@ -5,8 +5,6 @@ namespace Aoyon.FaceTune
     internal class AvatarSettingsComponent : FaceTuneTagComponent, IHasObjectReferences
     {
         internal const string ComponentName = ComponentNamePrefix + "Avatar Settings";
-        internal const bool DefaultAvoidEyeBlinkConflicts = true;
-        internal const bool DefaultAvoidLipSyncConflicts = true;
 
         // 空なら自動推定
         public AvatarObjectReference FaceObjectReference = new();
@@ -21,6 +19,17 @@ namespace Aoyon.FaceTune
         [ToggleLeft]
         public bool AvoidLipSyncConflicts = DefaultAvoidLipSyncConflicts;
 
+#region Defaults
+
+        internal const bool DefaultAvoidEyeBlinkConflicts = true;
+        internal const bool DefaultAvoidLipSyncConflicts = true;
+
+#endregion
+
+#region Interfaces
+
         void IHasObjectReferences.ResolveReferences() => FaceObjectReference.Get(this);
+
+#endregion
     }
 }

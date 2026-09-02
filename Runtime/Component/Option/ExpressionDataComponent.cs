@@ -11,17 +11,17 @@ namespace Aoyon.FaceTune
         ISettingProviderWithReference<EyeBlinkSettings>,
         ISettingProviderWithReference<LipSyncSettings>
     {
-        internal const string ComponentName = ComponentNamePrefix + "Expression Data";
+        internal const string ComponentName = ComponentNamePrefix + "Data";
 
-        public bool HasFacialBlendShapes = true;
+        public bool HasFacialBlendShapes = DefaultHasFacialBlendShapes;
         public FacialBlendShapeData FacialBlendShapes = new();
 
-        public bool HasFacialBehavior = true;
-        public ExpressionWriteMode WriteMode = ExpressionWriteMode.Replace;
-        public TrackingPermission AllowEyeBlink = TrackingPermission.Allow;
-        public TrackingPermission AllowLipSync = TrackingPermission.Allow;
+        public bool HasFacialBehavior = DefaultHasFacialBehavior;
+        public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
+        public TrackingPermission AllowEyeBlink = ExpressionBehavior.Default.AllowEyeBlink;
+        public TrackingPermission AllowLipSync = ExpressionBehavior.Default.AllowLipSync;
 
-        public bool HasMultiFrame = true;
+        public bool HasMultiFrame = DefaultHasMultiFrame;
         public MultiFrameSettings MultiFrame = new();
 
         public bool HasEyeBlink = false;
@@ -35,6 +35,16 @@ namespace Aoyon.FaceTune
         public bool HasNonFacialAnimations = false;
         public NonFacialAnimationData NonFacialAnimations = new();
 
+#region Defaults
+
+        internal const bool DefaultHasFacialBlendShapes = true;
+        internal const bool DefaultHasFacialBehavior = true;
+        internal const bool DefaultHasMultiFrame = true;
+
+#endregion
+
+#region Interfaces
+
         (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (HasFacialBlendShapes, FacialBlendShapes);
         (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (HasNonFacialAnimations, NonFacialAnimations);
         (bool Enabled, EyeBlinkSettings Value) ISettingProvider<EyeBlinkSettings>.Setting => (HasEyeBlink, EyeBlink);
@@ -43,6 +53,8 @@ namespace Aoyon.FaceTune
         (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.Source);
         (bool Enabled, ExpressionBehavior Value) ISettingProvider<ExpressionBehavior>.Setting => (HasFacialBehavior, new(WriteMode, AllowEyeBlink, AllowLipSync));
         (bool Enabled, MultiFrameSettings Value) ISettingProvider<MultiFrameSettings>.Setting => (HasMultiFrame, MultiFrame);
+
+#endregion
 
     }
 }

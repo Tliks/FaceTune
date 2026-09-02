@@ -2,7 +2,6 @@ namespace Aoyon.FaceTune
 {
     [AddComponentMenu(MenuPathPrefix + ComponentName)]
     internal class ExpressionComponent : FaceTuneTagComponent,
-        IHasConditions,
         IExpressionDefinitionProviderWithReference,
         ISettingProvider<ExpressionBehavior>,
         ISettingProvider<MultiFrameSettings>,
@@ -55,7 +54,7 @@ namespace Aoyon.FaceTune
 
 #endregion
 
-# region Other Expression Settings
+#region Other Expression Settings
 
         public bool HasTransition = false;
         public TransitionSettings Transition = new();
@@ -88,15 +87,10 @@ namespace Aoyon.FaceTune
 
 #endregion
 
-# region Interfaces
+#region Interfaces
 
         SettingsReferenceMode IExpressionDefinitionProviderWithReference.DefinitionMode => ExpressionDataReference.Mode;
         Transform? IExpressionDefinitionProviderWithReference.DefinitionSource => ExpressionDataReference.Source;
-
-        IEnumerable<Condition> IHasConditions.Conditions
-            => HasCondition && Condition.Mode == ConditionSelection.Kind.Conditional
-                ? new[] { Condition.Condition }
-                : Array.Empty<Condition>();
 
         (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (true, FacialBlendShapes);
         (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (true, NonFacialAnimations);

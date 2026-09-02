@@ -3,7 +3,6 @@ namespace Aoyon.FaceTune
     [DisallowMultipleComponent]
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal sealed class SettingsComponent : FaceTuneTagComponent,
-        IHasConditions,
         ISettingProvider<FacialBlendShapeData>,
         ISettingProviderWithReference<EyeBlinkSettings>,
         ISettingProviderWithReference<LipSyncSettings>,
@@ -47,11 +46,6 @@ namespace Aoyon.FaceTune
 
         internal static Condition CreateDefaultCondition()
             => new(new ConditionCase());
-
-        IEnumerable<Condition> IHasConditions.Conditions
-            => HasCondition
-                ? new[] { Condition }
-                : Array.Empty<Condition>();
 
 #endregion
 

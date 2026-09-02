@@ -247,40 +247,36 @@ internal static class EmptyConditionRemover
 {
     public static void Remove(GameObject root)
     {
-        var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
-            .OfType<IHasConditions>();
-
-        foreach (var source in sources)
+        foreach (var expression in root.GetComponentsInChildren<ExpressionComponent>(true))
         {
-            foreach (var condition in source.Conditions)
-                condition.Cases.RemoveAll(conditionCase => conditionCase.IsEmpty);
-
-            switch (source)
+            if (!expression.HasCondition
+                || expression.Condition.Mode != ConditionSelection.Kind.Conditional)
             {
-                case ExpressionComponent expression when HasEmptyCondition(expression):
-                    expression.HasCondition = false;
-                    break;
-
-                case SettingsComponent settings when HasEmptyCondition(settings):
-                    settings.HasCondition = false;
-                    break;
-
-                case AvatarControlComponent control when HasEmptyCondition(control):
-                    Object.DestroyImmediate(control);
-                    break;
+                continue;
             }
+
+            RemoveEmptyCases(expression.Condition.Condition);
+            expression.HasCondition = !expression.Condition.Condition.IsEmpty;
+        }
+
+        foreach (var settings in root.GetComponentsInChildren<SettingsComponent>(true))
+        {
+            if (!settings.HasCondition) continue;
+
+            RemoveEmptyCases(settings.Condition);
+            settings.HasCondition = !settings.Condition.IsEmpty;
+        }
+
+        foreach (var control in root.GetComponentsInChildren<AvatarControlComponent>(true))
+        {
+            if (control.Condition.Mode != ConditionSelection.Kind.Conditional) continue;
+
+            RemoveEmptyCases(control.Condition.Condition);
+            if (control.Condition.Condition.IsEmpty)
+                Object.DestroyImmediate(control);
         }
     }
 
-    private static bool HasEmptyCondition(ExpressionComponent expression)
-        => expression.HasCondition
-           && expression.Condition.Mode == ConditionSelection.Kind.Conditional
-           && expression.Condition.Condition.IsEmpty;
-
-    private static bool HasEmptyCondition(SettingsComponent settings)
-        => settings.HasCondition && settings.Condition.IsEmpty;
-
-    private static bool HasEmptyCondition(AvatarControlComponent control)
-        => control.Condition.Mode == ConditionSelection.Kind.Conditional
-           && control.Condition.Condition.IsEmpty;
+    private static void RemoveEmptyCases(Condition condition)
+        => condition.Cases.RemoveAll(conditionCase => conditionCase.IsEmpty);
 }
