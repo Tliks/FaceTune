@@ -42,7 +42,7 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
             ?? throw new InvalidOperationException("Renderer is outside avatar root.");
         var prefix = FaceTuneConstants.BlendShapePropertyPrefix;
         var originalNames = new HashSet<string>(StringComparer.Ordinal);
-        var multiFrameNames = new HashSet<string>(StringComparer.Ordinal);
+        var protectedMultiFrame = new HashSet<string>(StringComparer.Ordinal);
         foreach (var binding in AnimationUtility.GetCurveBindings(Target))
         {
             if (binding.path != path || binding.type != typeof(SkinnedMeshRenderer)
@@ -51,28 +51,38 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
 
             var name = binding.propertyName[prefix.Length..];
             originalNames.Add(name);
+            if (dataManager.Manages(name))
+            {
+                // 編集対象行はmanagerの状態から書き直す。
+                AnimationUtility.SetEditorCurve(Target, binding, null);
+                continue;
+            }
+
             var curve = AnimationUtility.GetEditorCurve(Target, binding);
             if (curve != null && curve.keys.Length > 1)
             {
-                multiFrameNames.Add(name);
+                protectedMultiFrame.Add(name);
                 continue;
             }
             if (!dataManager.IsExplicitlyExcluded(name) || ZeroUnavailableBlendShapes)
                 AnimationUtility.SetEditorCurve(Target, binding, null);
         }
 
-        var targetValues = new BlendShapeWeightSet();
-        dataManager.GetTargetValues(targetValues);
+        var targetAnimations = new List<BlendShapeWeightAnimation>();
+        dataManager.GetTargetAnimations(targetAnimations);
+        var targetNames = targetAnimations
+            .Select(animation => animation.Name)
+            .ToHashSet(StringComparer.Ordinal);
         var rendererNames = renderer.sharedMesh.GetBlendShapeNames().ToHashSet(StringComparer.Ordinal);
         if (ZeroUnspecifiedBlendShapes)
         {
             var zeroNames = originalNames.Count != 0 ? originalNames : rendererNames;
             foreach (var name in zeroNames)
             {
-                if (!targetValues.ContainsKey(name)
-                    && !multiFrameNames.Contains(name)
+                if (!targetNames.Contains(name)
+                    && !protectedMultiFrame.Contains(name)
                     && (!dataManager.IsExplicitlyExcluded(name) || ZeroUnavailableBlendShapes))
-                    targetValues.Add(new BlendShapeWeight(name, 0f));
+                    targetAnimations.Add(BlendShapeWeightAnimation.SingleFrame(name, 0f));
             }
         }
         if (ZeroUnavailableBlendShapes)
@@ -80,17 +90,13 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
             foreach (var name in dataManager.ExplicitlyExcluded)
             {
                 if (rendererNames.Contains(name)
-                    && !multiFrameNames.Contains(name)
-                    && !targetValues.ContainsKey(name))
-                    targetValues.Add(new BlendShapeWeight(name, 0f));
+                    && !targetNames.Contains(name)
+                    && !protectedMultiFrame.Contains(name))
+                    targetAnimations.Add(BlendShapeWeightAnimation.SingleFrame(name, 0f));
             }
         }
 
-        Target.AddBlendShapeAnimations(
-            path,
-            targetValues
-                .Where(value => !multiFrameNames.Contains(value.Name))
-                .ToBlendShapeAnimations());
+        Target.AddBlendShapeAnimations(path, targetAnimations);
         Target.SaveChanges();
     }
 
@@ -135,21 +141,15 @@ internal static class FacialShapeAnimationSaver
         BlendShapeOverrideManager dataManager)
     {
         var originalAnimations = ReadAnimations(animations).ToArray();
-        var targetValues = new BlendShapeWeightSet();
-        dataManager.GetTargetValues(targetValues);
+        var targetAnimations = new List<BlendShapeWeightAnimation>();
+        dataManager.GetTargetAnimations(targetAnimations);
 
+        // editorが管理しないname（他renderer向け等）はオリジナルを保持する。
         var preservedAnimations = originalAnimations
-            .Where(animation => animation.IsMultiFrame
-                             || dataManager.IsExplicitlyExcluded(animation.Name))
-            .ToArray();
-        var preservedNames = preservedAnimations
-            .Select(animation => animation.Name)
-            .ToHashSet(StringComparer.Ordinal);
+            .Where(animation => !dataManager.Manages(animation.Name));
 
         animations.SynchronizeArrayByKey(
-            preservedAnimations.Concat(targetValues
-                .Where(value => !preservedNames.Contains(value.Name))
-                .ToBlendShapeAnimations()),
+            preservedAnimations.Concat(targetAnimations),
             element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
             animation => animation.Name,
             (element, animation) => element.CopyFrom(animation),

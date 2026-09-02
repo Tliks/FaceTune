@@ -158,6 +158,8 @@ internal class SelectedPanel
 
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
+            var curveField = element.Q<IMGUIContainer>("curve-field");
+            var curveToggle = element.Q<Button>("curve-toggle");
             var toggleButton = element.Q<Button>("toggle-button");
             var actionButton = element.Q<Button>("action");
 
@@ -189,6 +191,33 @@ internal class SelectedPanel
             toggleButton.Add(new Image { image = _toggleIcon });
             actionButton.text = "";
             actionButton.Add(new Image { image = _removeIcon });
+
+            curveToggle.text = "M";
+            curveToggle.tooltip = "blendShapeAnimation.multiFrame.label".LS();
+            curveToggle.clicked += () =>
+            {
+                if (element.userData is ElementData item)
+                {
+                    _blendShapeManager.ToggleCurveMode(item.KeyIndex);
+                }
+            };
+
+            curveField.onGUIHandler = () =>
+            {
+                if (element.userData is not ElementData item) return;
+                if (!_blendShapeManager.IsCurveMode(item.KeyIndex)) return;
+
+                var curveProperty = _blendShapeManager.GetCurveProperty(item.KeyIndex);
+                EditorGUI.BeginChangeCheck();
+                EditorGUI.PropertyField(
+                    new Rect(0f, 0f, curveField.worldBound.width, curveField.worldBound.height),
+                    curveProperty,
+                    GUIContent.none);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _blendShapeManager.CommitCurveEdit(item.KeyIndex, curveProperty.animationCurveValue);
+                }
+            };
 
             toggleButton.clicked += () =>
             {
@@ -227,8 +256,19 @@ internal class SelectedPanel
              
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
+            var curveField = element.Q<IMGUIContainer>("curve-field");
+            var curveToggle = element.Q<Button>("curve-toggle");
+            var toggleButton = element.Q<Button>("toggle-button");
             var actionButton = element.Q<Button>("action");
-            
+
+            var isInTarget = _blendShapeManager.IsInTarget(item.KeyIndex);
+            var isCurveMode = _blendShapeManager.IsCurveMode(item.KeyIndex);
+            sliderFloatField.SetVisible(!isCurveMode);
+            curveField.SetVisible(isCurveMode);
+            curveToggle.SetEnabled(isInTarget);
+            curveToggle.style.unityFontStyleAndWeight = isCurveMode ? FontStyle.Bold : FontStyle.Normal;
+            toggleButton.SetEnabled(isInTarget && !isCurveMode);
+
             nameLabel.text = item.ShapeName;
             var currentWeight = _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex);
             sliderFloatField.SetValueWithoutNotify(currentWeight);

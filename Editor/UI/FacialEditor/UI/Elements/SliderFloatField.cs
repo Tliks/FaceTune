@@ -85,7 +85,7 @@ internal partial class SliderFloatField : SpacedHorizontalElement
         _floatField = new FloatField();
         _floatField.style.flexGrow = 0;
         _floatField.style.flexShrink = 0;
-        _floatField.style.flexBasis = new StyleLength(40);
+        _floatField.style.flexBasis = new StyleLength(32);
         _floatField.style.alignSelf = Align.Stretch;
         _floatField.style.marginLeft = 0;
         _floatField.style.marginRight = 0;

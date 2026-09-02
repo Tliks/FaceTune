@@ -102,9 +102,9 @@ internal class FacialShapesEditor : EditorWindow
             renderer,
             ToFirstFrameSet(facialAnimations),
             ToFirstFrameSet(baseAnimations),
-            ToFirstFrameSet(initialOverrideAnimations, excludeMultiFrame: true),
+            ToFirstFrameSet(initialOverrideAnimations),
             unavailableBlendShapeNames ?? ImmutableHashSet<string>.Empty,
-            GetMultiFrameNames(initialOverrideAnimations));
+            GetInitialCurves(initialOverrideAnimations));
         _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
@@ -136,22 +136,26 @@ internal class FacialShapesEditor : EditorWindow
     }
 
     private static IReadOnlyBlendShapeSet? ToFirstFrameSet(
-        IReadOnlyList<BlendShapeWeightAnimation>? animations,
-        bool excludeMultiFrame = false)
+        IReadOnlyList<BlendShapeWeightAnimation>? animations)
     {
         if (animations == null) return null;
         return new BlendShapeWeightSet(
-            animations
-                .Where(animation => !excludeMultiFrame || !animation.IsMultiFrame)
-                .Select(animation => animation.ToFirstFrameBlendShape()));
+            animations.Select(animation => animation.ToFirstFrameBlendShape()));
     }
 
-    private static ISet<string>? GetMultiFrameNames(
+    // MultiFrameのカーブは編集対象行として取り込むため、構造をそのままシードとして渡す。
+    private static Dictionary<string, AnimationCurve>? GetInitialCurves(
         IReadOnlyList<BlendShapeWeightAnimation>? animations)
-        => animations?
-            .Where(animation => animation.IsMultiFrame)
-            .Select(animation => animation.Name)
-            .ToHashSet(StringComparer.Ordinal);
+    {
+        if (animations == null) return null;
+        var curves = new Dictionary<string, AnimationCurve>(StringComparer.Ordinal);
+        foreach (var animation in animations)
+        {
+            if (animation.IsMultiFrame)
+                curves[animation.Name] = animation.Curve;
+        }
+        return curves.Count == 0 ? null : curves;
+    }
 
     private void EndContext()
     {

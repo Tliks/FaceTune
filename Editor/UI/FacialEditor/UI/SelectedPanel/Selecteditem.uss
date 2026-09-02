@@ -12,6 +12,15 @@
     padding: 0px;
 }
 
+#curve-field {
+    flex: 2 1 100px;
+    padding: 0px;
+}
+
+#curve-toggle {
+    flex: 0 0 24px;
+}
+
 #toggle-button,
 #action {
     flex: 0 0 35px;

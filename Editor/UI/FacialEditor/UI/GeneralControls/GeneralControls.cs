@@ -217,14 +217,7 @@ internal class GeneralControls : IDisposable
     {
         var animations = new List<BlendShapeWeightAnimation>();
         clip.GetBlendShapeAnimations(_clipImportOption, animations, string.Empty);
-        _blendShapeManager.AddShapesWithWeight(
-            animations
-                .Where(animation => !animation.IsMultiFrame)
-                .Select(animation =>
-                (
-                    _blendShapeManager.GetIndexForShape(animation.Name),
-                    animation.ToFirstFrameBlendShape().Weight
-                )));
+        _blendShapeManager.AddShapesWithAnimations(animations);
     }
 
     private void RequestActionButtonStateUpdate()
