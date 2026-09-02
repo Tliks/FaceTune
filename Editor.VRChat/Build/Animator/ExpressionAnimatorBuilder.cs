@@ -96,6 +96,15 @@ internal sealed class ExpressionAnimatorBuilder
                 .Append(_lockFacialInactiveWhen)
                 .Append(_mmdSupport.LayerPlaybackWhen)
                 .ToArray());
+        foreach (var expression in expressions)
+        {
+            var multiFrame = expression.MultiFrame;
+            if (multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Parameter
+                && !string.IsNullOrEmpty(multiFrame.ParameterName))
+            {
+                controller.EnsureFloatParameterExists(multiFrame.ParameterName);
+            }
+        }
     }
 
     private void BuildReplaceLayer(

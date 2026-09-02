@@ -95,6 +95,15 @@ internal sealed class AapProtocol
             mode,
             _plan.ForceDisableLipSyncWhen);
 
+    public void EnsureParameters(
+        VirtualAnimatorController controller,
+        IReadOnlyList<(string ParameterName, float Value)> writes)
+    {
+        var names = writes.Select(write => write.ParameterName).ToHashSet(StringComparer.Ordinal);
+        if (names.Overlaps(_eyeBlinkModeNames)) EnsureEyeBlinkParameters(controller);
+        if (names.Overlaps(_lipSyncModeNames)) EnsureLipSyncParameters(controller);
+    }
+
     private static ImmutableList<string> CreateModeNames(
         int customModeCount,
         Func<int, string> getName)

@@ -342,6 +342,7 @@ internal static class VRChatAnimatorBuilder
                 if (layer.StateMachine == null) continue;
                 foreach (var state in layer.StateMachine.AllStates())
                     ReplaceExternalTrackingControls(
+                        controller,
                         state,
                         aap,
                         replaceEyeBlink,
@@ -351,6 +352,7 @@ internal static class VRChatAnimatorBuilder
     }
 
     private static void ReplaceExternalTrackingControls(
+        VirtualAnimatorController controller,
         VirtualState state,
         AapProtocol aap,
         bool replaceEyeBlink,
@@ -376,7 +378,11 @@ internal static class VRChatAnimatorBuilder
                 control.trackingMouth = VRCAnimatorTrackingControl.TrackingType.NoChange;
         }
 
-        if (writes.Count > 0) AddAapWritesToClip(state, writes);
+        if (writes.Count > 0)
+        {
+            aap.EnsureParameters(controller, writes);
+            AddAapWritesToClip(state, writes);
+        }
 
         state.Behaviours = behaviours
             .Where(behavior => !IsNoOpTrackingControl(behavior))
