@@ -22,13 +22,11 @@ internal static class MenuCanonicalizer
 
         ExpandExpressionSets(root);
         var behavior = new ExpressionBehaviorResolver();
-        var directMenus = ExpandDirectMenus(root, behavior);
+        ExpandDirectMenus(root, behavior);
 
         var settings = context.RequireSettings();
         var parameterDomains = BindParameters(root, settings.ParameterDomains);
         context.SetSettings(settings with { ParameterDomains = parameterDomains });
-
-        LowerMenuReferences(root, directMenus);
     }
 
     private static void ExpandExpressionSets(GameObject root)
@@ -63,27 +61,22 @@ internal static class MenuCanonicalizer
         }
     }
 
-    private static IReadOnlyList<(DirectMenuSettings Settings, MenuComponent Menu)> ExpandDirectMenus(
+    private static void ExpandDirectMenus(
         GameObject root,
         ExpressionBehaviorResolver behavior)
     {
         var sources = root.GetComponentsInChildren<ExpressionComponent>(true)
             .Where(expression => expression.DirectMenuEnabled)
             .ToArray();
-        var result = new List<(DirectMenuSettings Settings, MenuComponent Menu)>();
 
         foreach (var source in sources)
         {
             var menuObject = new GameObject(source.name);
             var parent = source.transform.parent.DestroyedAsNull() ?? root.transform;
             menuObject.transform.SetParent(parent, false);
-            result.Add((source.DirectMenuSettings, CreateDirectMenu(
-                menuObject,
-                source,
-                behavior.Resolve(source))));
+            source.DirectMenuSettings.GeneratedCondition = MenuCondition.Enabled(
+                CreateDirectMenu(menuObject, source, behavior.Resolve(source)));
         }
-
-        return result;
     }
 
     private static MenuComponent CreateDirectMenu(
@@ -247,74 +240,6 @@ internal static class MenuCanonicalizer
             throw new InvalidOperationException(
                 $"Menu parameter name is invalid: '{menu.name}'.");
         }
-    }
-
-    private static void LowerMenuReferences(
-        GameObject root,
-        IEnumerable<(DirectMenuSettings Settings, MenuComponent Menu)> directMenus)
-    {
-        LowerMenuConditions(root);
-        foreach (var (settings, menu) in directMenus)
-            settings.GeneratedCondition = LowerMenuCondition(MenuCondition.Enabled(menu));
-    }
-
-    private static void LowerMenuConditions(GameObject root)
-    {
-        var sources = root.GetComponentsInChildren<FaceTuneTagComponent>(true)
-            .OfType<IHasConditions>();
-        foreach (var source in sources)
-        {
-            foreach (var condition in source.Conditions)
-            {
-                foreach (var conditionCase in condition.Cases)
-                {
-                    var parameterConditions = conditionCase.MenuConditions
-                        .Where(menuCondition => menuCondition.MenuSource != null)
-                        .Select(LowerMenuCondition);
-                    conditionCase.ParameterConditions.AddRange(parameterConditions);
-                    conditionCase.MenuConditions.Clear();
-                }
-            }
-        }
-    }
-
-    private static ParameterCondition LowerMenuCondition(MenuCondition condition)
-    {
-        var menu = condition.MenuSource!;
-        if (menu.MenuKind == MenuComponent.Kind.Radial)
-        {
-            if (condition.Mode is not (MenuConditionMode.LessThan or MenuConditionMode.GreaterThan))
-            {
-                throw new InvalidOperationException(
-                    $"Radial menu '{menu.name}' requires a radial condition.");
-            }
-            var comparison = condition.Mode switch
-            {
-                MenuConditionMode.GreaterThan => ComparisonType.GreaterThan,
-                MenuConditionMode.LessThan => ComparisonType.LessThan,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            return ParameterCondition.Float(
-                menu.ParameterName,
-                comparison,
-                condition.Threshold);
-        }
-
-        if (menu.MenuKind != MenuComponent.Kind.Toggle
-            || condition.Mode is not (MenuConditionMode.Enabled or MenuConditionMode.Disabled))
-        {
-            throw new InvalidOperationException(
-                $"Menu '{menu.name}' has an incompatible condition.");
-        }
-        var isEnabled = condition.Mode == MenuConditionMode.Enabled;
-        return !menu.UseExistingParameter && menu.GenerateParameterGroup
-            ? ParameterCondition.Int(
-                menu.ParameterName,
-                isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual,
-                (int)menu.SelectedValue)
-            : ParameterCondition.Bool(
-                menu.ParameterName,
-                isEnabled == (menu.SelectedValue != 0f));
     }
 }
 

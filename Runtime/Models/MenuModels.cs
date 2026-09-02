@@ -36,7 +36,7 @@ internal class DirectMenuSettings
     public int PriorityOffset = 10;
 
     [NonSerialized]
-    internal ParameterCondition? GeneratedCondition;
+    internal MenuCondition? GeneratedCondition;
 }
 
 internal static class BuiltInMenuGroups

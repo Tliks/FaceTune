@@ -65,9 +65,54 @@ internal sealed class ConditionResolver
                 _platformSupport.ResolveHandGestureCondition(handGesture, _parameterDomains),
             ParameterCondition parameter =>
                 _platformSupport.ResolveParameterCondition(parameter, _parameterDomains),
+            MenuCondition menuCondition when menuCondition.MenuSource != null =>
+                _platformSupport.ResolveParameterCondition(
+                    ToParameterCondition(menuCondition),
+                    _parameterDomains),
+            // 参照が切れたMenuConditionは条件自体を無かったこととして扱う。
+            MenuCondition => null,
             _ => throw new InvalidOperationException(
                 $"Unsupported condition type: {condition?.GetType().FullName ?? "null"}")
         };
+    }
+
+    private static ParameterCondition ToParameterCondition(MenuCondition condition)
+    {
+        var menu = condition.MenuSource!;
+        if (menu.MenuKind == MenuComponent.Kind.Radial)
+        {
+            if (condition.Mode is not (MenuConditionMode.LessThan or MenuConditionMode.GreaterThan))
+            {
+                throw new InvalidOperationException(
+                    $"Radial menu '{menu.name}' requires a radial condition.");
+            }
+            var comparison = condition.Mode switch
+            {
+                MenuConditionMode.GreaterThan => ComparisonType.GreaterThan,
+                MenuConditionMode.LessThan => ComparisonType.LessThan,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            return ParameterCondition.Float(
+                menu.ParameterName,
+                comparison,
+                condition.Threshold);
+        }
+
+        if (menu.MenuKind != MenuComponent.Kind.Toggle
+            || condition.Mode is not (MenuConditionMode.Enabled or MenuConditionMode.Disabled))
+        {
+            throw new InvalidOperationException(
+                $"Menu '{menu.name}' has an incompatible condition.");
+        }
+        var isEnabled = condition.Mode == MenuConditionMode.Enabled;
+        return !menu.UseExistingParameter && menu.GenerateParameterGroup
+            ? ParameterCondition.Int(
+                menu.ParameterName,
+                isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual,
+                (int)menu.SelectedValue)
+            : ParameterCondition.Bool(
+                menu.ParameterName,
+                isEnabled == (menu.SelectedValue != 0f));
     }
 
     private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)
