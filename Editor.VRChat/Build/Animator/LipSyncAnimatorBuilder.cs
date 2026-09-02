@@ -46,16 +46,7 @@ internal sealed class LipSyncAnimatorBuilder
             .ToImmutableList();
         var disabledWhen = _aap.LipSyncModeIs(VRChatTrackingPlan.DisabledMode);
         var builtInWhen = _aap.LipSyncModeIs(VRChatTrackingPlan.BuiltInMode);
-        _aap.EnsureLipSyncParameters(controller);
-        if (cancellers.Count > 0)
-            controller.EnsureFloatParameterExists(VoiceParameterName);
-        AnimatorGraph.EnsureConditionParameters(
-            controller,
-            cancellerConditions
-                .Append(disabledWhen)
-                .Append(builtInWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
-                .ToArray());
+        EnsureParameters(controller, cancellers.Count > 0, cancellerConditions, disabledWhen, builtInWhen);
 
         var origin = LayoutOrigin;
         var xStep = AnimatorGraph.PositionXStep;
@@ -94,6 +85,25 @@ internal sealed class LipSyncAnimatorBuilder
             cancellers,
             xStep,
             yStep);
+    }
+
+    private void EnsureParameters(
+        VirtualAnimatorController controller,
+        bool hasCancellers,
+        ImmutableList<DnfCondition> cancellerConditions,
+        DnfCondition disabledWhen,
+        DnfCondition builtInWhen)
+    {
+        _aap.EnsureLipSyncParameters(controller);
+        if (hasCancellers)
+            controller.EnsureFloatParameterExists(VoiceParameterName);
+        AnimatorGraph.EnsureConditionParameters(
+            controller,
+            cancellerConditions
+                .Append(disabledWhen)
+                .Append(builtInWhen)
+                .Append(_mmdSupport.LayerPlaybackWhen)
+                .ToArray());
     }
 
     private void InstallDisabledState(

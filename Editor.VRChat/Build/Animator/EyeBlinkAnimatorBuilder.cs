@@ -46,23 +46,7 @@ internal sealed class EyeBlinkAnimatorBuilder
             .ToImmutableList();
         var disabledWhen = _aap.EyeBlinkModeIs(VRChatTrackingPlan.DisabledMode);
         var builtInWhen = _aap.EyeBlinkModeIs(VRChatTrackingPlan.BuiltInMode);
-        _aap.EnsureEyeBlinkParameters(controller);
-        foreach (var entry in animationModes)
-        {
-            var maximumInterval = Math.Max(
-                entry.Settings.IntervalSeconds.x,
-                entry.Settings.IntervalSeconds.y);
-            controller.EnsureFloatParameterExists(
-                SpeedParameterName(entry.Mode),
-                1f / Math.Max(maximumInterval, 0.001f));
-        }
-        AnimatorGraph.EnsureConditionParameters(
-            controller,
-            animationConditions
-                .Append(disabledWhen)
-                .Append(builtInWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
-                .ToArray());
+        EnsureParameters(controller, animationModes, animationConditions, disabledWhen, builtInWhen);
 
         var origin = LayoutOrigin;
         var xStep = AnimatorGraph.PositionXStep;
@@ -110,6 +94,32 @@ internal sealed class EyeBlinkAnimatorBuilder
                 origin + new Vector3(xStep, yStep * 2, 0),
                 yStep);
         }
+    }
+
+    private void EnsureParameters(
+        VirtualAnimatorController controller,
+        ImmutableList<(EyeBlinkSettings Settings, int Mode)> animationModes,
+        ImmutableList<DnfCondition> animationConditions,
+        DnfCondition disabledWhen,
+        DnfCondition builtInWhen)
+    {
+        _aap.EnsureEyeBlinkParameters(controller);
+        foreach (var entry in animationModes)
+        {
+            var maximumInterval = Math.Max(
+                entry.Settings.IntervalSeconds.x,
+                entry.Settings.IntervalSeconds.y);
+            controller.EnsureFloatParameterExists(
+                SpeedParameterName(entry.Mode),
+                1f / Math.Max(maximumInterval, 0.001f));
+        }
+        AnimatorGraph.EnsureConditionParameters(
+            controller,
+            animationConditions
+                .Append(disabledWhen)
+                .Append(builtInWhen)
+                .Append(_mmdSupport.LayerPlaybackWhen)
+                .ToArray());
     }
 
     private void InstallModeState(

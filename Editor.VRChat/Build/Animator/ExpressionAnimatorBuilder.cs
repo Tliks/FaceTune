@@ -40,13 +40,7 @@ internal sealed class ExpressionAnimatorBuilder
         IReadOnlyList<ExpressionItem> expressions,
         int layerPriority)
     {
-        _aap.EnsureExpressionParameters(controller);
-        AnimatorGraph.EnsureConditionParameters(
-            controller,
-            expressions.Select(expression => (DnfCondition?)expression.RawWhen)
-                .Append(_lockFacialInactiveWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
-                .ToArray());
+        EnsureParameters(controller, expressions);
 
         var layerIndex = 0;
         for (var index = 0; index < expressions.Count;)
@@ -89,6 +83,19 @@ internal sealed class ExpressionAnimatorBuilder
                         $"Unsupported expression write mode: {writeMode}");
             }
         }
+    }
+
+    private void EnsureParameters(
+        VirtualAnimatorController controller,
+        IReadOnlyList<ExpressionItem> expressions)
+    {
+        _aap.EnsureExpressionParameters(controller);
+        AnimatorGraph.EnsureConditionParameters(
+            controller,
+            expressions.Select(expression => (DnfCondition?)expression.RawWhen)
+                .Append(_lockFacialInactiveWhen)
+                .Append(_mmdSupport.LayerPlaybackWhen)
+                .ToArray());
     }
 
     private void BuildReplaceLayer(
