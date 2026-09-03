@@ -32,12 +32,9 @@ internal sealed class ExpressionDefinitionResolver
                 },
                 (left, right) => left == right);
             if (reference.Mode == SettingsReferenceMode.Direct) return provider;
-            return reference.Source == null
-                ? null
-                : context.GetComponents<FaceTuneTagComponent>(reference.Source.gameObject)
-                    .OfType<IExpressionDefinitionProvider>()
-                    .Select(candidate => Resolve(candidate, path))
-                    .LastOrDefault(candidate => candidate != null);
+            return reference.Source is IExpressionDefinitionProvider source
+                ? Resolve(source, path)
+                : null;
         }
         finally
         {
@@ -224,6 +221,22 @@ internal sealed class FacialAnimationResolver
         return true;
     }
 
+    public bool TryResolveCompositeBase(
+        Component component,
+        string bodyPath,
+        int entryIndex,
+        [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
+    {
+        var data = ReadData(component);
+        if (data == null || data.BlendShapeMode != FacialBlendShapeData.Mode.Composite)
+        {
+            value = null;
+            return false;
+        }
+        value = ResolveData(data, bodyPath, new HashSet<Component>(), true, entryIndex);
+        return true;
+    }
+
     public BlendShapeWeightAnimationSet ResolveIncoming(Transform target, string bodyPath)
     {
         var result = new BlendShapeWeightAnimationSet();
@@ -295,41 +308,61 @@ internal sealed class FacialAnimationResolver
         FacialBlendShapeData data,
         string bodyPath,
         HashSet<Component> path,
-        bool includeLocal)
+        bool includeLocal,
+        int? compositeEntryLimit = null)
     {
         var result = new BlendShapeWeightAnimationSet();
-        foreach (var reference in data.ReferenceAnimations ?? Enumerable.Empty<Transform>())
+        if (data.BlendShapeMode == FacialBlendShapeData.Mode.Simple)
         {
-            if (ResolveReference(reference, bodyPath, path) is { } value)
-                result.AddRange(value);
+            if (data.BaseSource == FacialBlendShapeData.SimpleBaseSource.Clip)
+                AddClip(result, data.Clip, data.ClipOption, bodyPath);
+            else if (ResolveReference(data.ReferenceSource, bodyPath, path) is { } reference)
+                result.AddRange(reference);
+            if (includeLocal)
+                result.AddRange(data.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
+            return result;
         }
-        foreach (var clipData in data.ClipAnimations ?? Enumerable.Empty<FacialClipBlendShapeData>())
+
+        var entries = data.CompositeEntries ?? new List<FacialBlendShapeData.CompositeEntry>();
+        var count = Mathf.Min(compositeEntryLimit ?? entries.Count, entries.Count);
+        for (var index = 0; index < count; index++)
         {
-            if (clipData?.Clip is not { } clip) continue;
-            _context.Observe(clip).GetBlendShapeAnimations(
-                clipData.ClipOption,
-                result,
-                bodyPath);
+            var entry = entries[index];
+            if (entry == null) continue;
+            switch (entry.EntryKind)
+            {
+                case FacialBlendShapeData.CompositeEntry.Kind.Direct:
+                    result.AddRange(entry.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
+                    break;
+                case FacialBlendShapeData.CompositeEntry.Kind.Clip:
+                    AddClip(result, entry.Clip, entry.ClipOption, bodyPath);
+                    break;
+                case FacialBlendShapeData.CompositeEntry.Kind.Reference:
+                    if (ResolveReference(entry.ReferenceSource, bodyPath, path) is { } reference)
+                        result.AddRange(reference);
+                    break;
+            }
         }
-        if (includeLocal)
-            result.AddRange(data.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
         return result;
     }
 
+    private void AddClip(
+        ICollection<BlendShapeWeightAnimation> result,
+        AnimationClip? clip,
+        ClipImportOption option,
+        string bodyPath)
+    {
+        if (clip != null)
+            _context.Observe(clip).GetBlendShapeAnimations(option, result, bodyPath);
+    }
+
     private BlendShapeWeightAnimationSet? ResolveReference(
-        Transform? source,
+        FaceTuneTagComponent? source,
         string bodyPath,
         HashSet<Component> path)
-    {
-        if (source == null) return null;
-        BlendShapeWeightAnimationSet? selected = null;
-        foreach (var component in _context.GetComponents<FaceTuneTagComponent>(source.gameObject))
-        {
-            if (component is not ISettingProvider<FacialBlendShapeData>) continue;
-            if (Resolve(component, bodyPath, path) is { } value) selected = value;
-        }
-        return selected;
-    }
+        => source is ISettingProvider<FacialBlendShapeData>
+            ? Resolve(source, bodyPath, path)
+            : null;
 }
 
 internal sealed class NonFacialAnimationResolver

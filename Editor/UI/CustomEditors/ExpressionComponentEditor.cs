@@ -108,7 +108,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
         _serializedObject = serializedObject;
         _reference = serializedObject.FindProperty(nameof(ExpressionComponent.ExpressionDataReference));
         _mode = _reference.FindPropertyRelative(nameof(SettingsReference.Mode));
-        _source = _reference.FindPropertyRelative(nameof(SettingsReference.Source));
+        _source = _reference.FindPropertyRelative(nameof(SettingsReference.ComponentSource));
 
         _preview = inheritance.DefinitionPreview;
         var preview = _preview;
@@ -119,7 +119,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                 new FacialDataSectionDrawer(serializedObject, nameof(ExpressionComponent.FacialBlendShapes)),
                 new FacialDataSectionDrawer(preview, nameof(ExpressionDefinitionPreviewState.FacialBlendShapes)),
                 true,
-                false),
+                true),
             new DefinitionChild(
                 "expression.behavior.section.label",
                 new ExpressionBehaviorSectionDrawer(serializedObject),
@@ -190,7 +190,9 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
             "expression.settingSource.short.standard".LG(),
             "expression.settingSource.short.batch".LG(),
             "expression.settingSource.short.setting".LG(),
-            "expression.settingSource.short.reference".LG()
+            "expression.settingSource.short.reference".LG(),
+            "expression.facials.mode.short.simple".LG(),
+            "expression.facials.mode.short.composite".LG()
         });
 
     public SectionActionSet Actions { get; }
@@ -276,7 +278,12 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
         if (isReference)
         {
             position.height = GUIHelper.LineHeight;
-            EditorGUI.PropertyField(position, _source, "common.component.label".LG());
+            var current = _source.objectReferenceValue as FaceTuneTagComponent;
+            _source.objectReferenceValue = ComponentReferenceGUI.Draw(
+                position,
+                "common.component.label".LG(),
+                current,
+                source => source is IExpressionDefinitionProvider);
             position.NewLine();
             if (ShowsMissingReference)
                 position = GUIHelper.HelpBox(
@@ -388,7 +395,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
             var reference = _serializedObject.FindProperty(nameof(ExpressionComponent.ExpressionDataReference));
             reference.FindPropertyRelative(nameof(SettingsReference.Mode)).intValue =
                 (int)SettingsReferenceMode.Reference;
-            reference.FindPropertyRelative(nameof(SettingsReference.Source)).objectReferenceValue = data.transform;
+            reference.FindPropertyRelative(nameof(SettingsReference.ComponentSource)).objectReferenceValue = data;
             _serializedObject.ApplyModifiedProperties();
         });
 

@@ -12,7 +12,7 @@ internal interface ISettingProvider<T> where T : class
 
 internal interface ISettingProviderWithReference<T> : ISettingProvider<T> where T : class
 {
-    (SettingsReferenceMode Mode, Transform? Source) Reference { get; }
+    (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) Reference { get; }
 }
 
 internal interface IExpressionDefinitionProvider
@@ -22,5 +22,5 @@ internal interface IExpressionDefinitionProvider
 internal interface IExpressionDefinitionProviderWithReference : IExpressionDefinitionProvider
 {
     SettingsReferenceMode DefinitionMode { get; }
-    Transform? DefinitionSource { get; }
+    FaceTuneTagComponent? DefinitionSource { get; }
 }

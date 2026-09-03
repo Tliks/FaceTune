@@ -79,11 +79,12 @@ internal static class FaceTuneRecipes
             Undo.RecordObject(settings, "Apply FaceRenderer Settings");
 
         settings.HasFacialBlendShapes = true;
-        settings.FacialBlendShapes.ReferenceAnimations.Clear();
-        settings.FacialBlendShapes.ClipAnimations.Clear();
-        settings.FacialBlendShapes.BlendShapeAnimations = context.FaceRenderer
-            .GetNonZeroBlendShapeAnimations(context.FaceMesh)
-            .ToList();
+        settings.FacialBlendShapes = new FacialBlendShapeData
+        {
+            BlendShapeAnimations = context.FaceRenderer
+                .GetNonZeroBlendShapeAnimations(context.FaceMesh)
+                .ToList()
+        };
         settings.ApplyToRenderer = true;
     }
 

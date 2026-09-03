@@ -7,18 +7,18 @@ internal sealed class AvatarObjectReferenceDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var path = property.FindPropertyRelative("referencePath");
         var target = property.FindPropertyRelative("targetObject");
         var avatarRoot = FindCommonAvatarRoot(property.serializedObject.targetObjects);
         if (avatarRoot == null)
         {
-            EditorGUI.LabelField(position, scope.content, new GUIContent(path.stringValue));
+            EditorGUI.LabelField(position, label, new GUIContent(path.stringValue));
             return;
         }
 
         var current = Resolve(path.stringValue, target.objectReferenceValue as GameObject, avatarRoot);
-        var field = EditorGUI.PrefixLabel(position, scope.content);
+        var field = EditorGUI.PrefixLabel(position, label);
         EditorGUI.BeginChangeCheck();
         var next = EditorGUI.ObjectField(field, current, typeof(Transform), true) as Transform;
         if (!EditorGUI.EndChangeCheck()) return;

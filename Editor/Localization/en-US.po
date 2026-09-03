@@ -141,6 +141,9 @@ msgstr "Expression Editor"
 msgid "facialEditor.open.button"
 msgstr "Open"
 
+msgid "facialEditor.edit.button"
+msgstr "Editor"
+
 msgid "facialEditor.rendererRequired.message"
 msgstr "Select a target renderer to edit the expression."
 
@@ -194,6 +197,42 @@ msgstr "Other Settings"
 
 msgid "expression.facials.clips.label"
 msgstr "Animation Clips"
+
+msgid "expression.facials.mode.short.simple"
+msgstr "Standard"
+
+msgid "expression.facials.mode.short.composite"
+msgstr "Composite"
+
+msgid "expression.facials.mode.simple"
+msgstr "Standard"
+
+msgid "expression.facials.mode.composite"
+msgstr "Compose Multiple Expressions"
+
+msgid "expression.facials.baseSource.clip"
+msgstr "Animation Clip"
+
+msgid "expression.facials.baseSource.component"
+msgstr "Component"
+
+msgid "expression.facials.compositeEntries.label"
+msgstr "Expression Composition (Lower Takes Priority)"
+
+msgid "expression.facials.entryKind.label"
+msgstr "Kind"
+
+msgid "expression.facials.entryKind.direct"
+msgstr "Direct"
+
+msgid "expression.facials.entryKind.clip"
+msgstr "Animation Clip"
+
+msgid "expression.facials.entryKind.reference"
+msgstr "Component"
+
+msgid "expression.clip.importOption.label"
+msgstr "Import Option"
 
 msgid "expression.multiFrame.section.label"
 msgstr "Multi-Frame Settings"

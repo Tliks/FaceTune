@@ -124,7 +124,7 @@ internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<
         bool DefaultExpanded);
 }
 
-internal sealed class ExpressionDataFacialSectionDrawer : ISectionDrawer
+internal sealed class ExpressionDataFacialSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer
 {
     private readonly FacialDataSectionDrawer _drawer;
 
@@ -147,6 +147,9 @@ internal sealed class ExpressionDataFacialSectionDrawer : ISectionDrawer
     public SectionActionSet Actions { get; }
     public float GetHeight() => _drawer.GetHeight();
     public void Draw(Rect position) => _drawer.Draw(position);
+    public float GetHeaderWidth() => _drawer.GetHeaderWidth();
+    public void DrawHeader(Rect position) => _drawer.DrawHeader(position);
+    public void DrawCollapsedHeader(Rect position) => _drawer.DrawCollapsedHeader(position);
 }
 
 internal sealed class ExpressionDataNonFacialSectionDrawer : ISectionDrawer

@@ -166,7 +166,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         bool DefaultExpanded = false);
 }
 
-internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHeaderMenuDrawer
+internal sealed class SettingsFacialSectionDrawer
+    : ISectionDrawer, ICollapsedSectionHeaderDrawer, ISectionHeaderMenuDrawer
 {
     private readonly FacialDataSectionDrawer _expression;
     private readonly SerializedProperty _applyToRenderer;
@@ -193,6 +194,10 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         => _expression.GetHeight()
          + GUIHelper.VerticalSpacing
          + GUIHelper.LineHeight;
+
+    public float GetHeaderWidth() => _expression.GetHeaderWidth();
+    public void DrawHeader(Rect position) => _expression.DrawHeader(position);
+    public void DrawCollapsedHeader(Rect position) => _expression.DrawCollapsedHeader(position);
 
     public void PopulateHeaderMenu(GenericMenu menu)
     {
@@ -247,8 +252,13 @@ internal sealed class SettingsFacialSectionDrawer : ISectionDrawer, ISectionHead
         serializedObject.UpdateIfRequiredOrScript();
         serializedObject.FindProperty(nameof(SettingsComponent.HasFacialBlendShapes)).boolValue = true;
         var direct = serializedObject.FindProperty(nameof(SettingsComponent.FacialBlendShapes));
-        direct.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceAnimations)).ClearArray();
-        direct.FindPropertyRelative(nameof(FacialBlendShapeData.ClipAnimations)).ClearArray();
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeMode)).intValue =
+            (int)FacialBlendShapeData.Mode.Simple;
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.BaseSource)).intValue =
+            (int)FacialBlendShapeData.SimpleBaseSource.Clip;
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue = null;
+        direct.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntries)).ClearArray();
         direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)).SynchronizeArrayByKey(
             values,
             element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
