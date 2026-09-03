@@ -75,20 +75,18 @@ internal sealed class ExpressionItemBuilder
     public IEnumerable<ExpressionItem> Build(ExpressionComponent component)
     {
         var incomingFacialAnimations = _facial.ResolveIncoming(component.transform, _avatarContext.BodyPath);
-        RemoveProhibitedAnimations(
-            incomingFacialAnimations,
-            FaceTuneWriteKind.FacialData);
+        RemoveProhibited(incomingFacialAnimations, FaceTuneWriteKind.FacialData);
 
         var localFacialAnimations = _facial.TryResolve(component, _avatarContext.BodyPath, out var resolvedFacial)
             ? resolvedFacial
             : new BlendShapeWeightAnimationSet();
-        RemoveProhibitedAnimations(
-            localFacialAnimations,
-            FaceTuneWriteKind.FacialData);
+        RemoveProhibited(localFacialAnimations, FaceTuneWriteKind.FacialData);
 
         var nonFacialAnimations = _nonFacial.Resolve(component, _avatarContext.BodyPath);
-        var eyeBlink = ResolveEyeBlink(_eyeBlink.Resolve(component));
-        var lipSync = ResolveLipSync(_lipSync.Resolve(component));
+        var eyeBlink = _eyeBlink.Resolve(component);
+        var lipSync = _lipSync.Resolve(component);
+        RemoveProhibited(eyeBlink);
+        RemoveProhibited(lipSync);
         var transition = _transition.Resolve(component);
         var priority = _priority.Resolve(component);
         var behavior = _behavior.Resolve(component);
@@ -158,48 +156,13 @@ internal sealed class ExpressionItemBuilder
             priority,
             when);
 
-    private EyeBlinkSettings ResolveEyeBlink(EyeBlinkSettings source)
-    {
-        var result = new EyeBlinkSettings
-        {
-            EyeBlinkMode = source.EyeBlinkMode,
-            IntervalSeconds = source.IntervalSeconds,
-            SimpleDurationsSeconds = source.SimpleDurationsSeconds,
-            SimpleBlinkBlendShapes = source.SimpleBlinkBlendShapes
-                .Where(shape => CanWrite(
-                    FaceTuneWriteKind.EyeBlinkAnimation,
-                    shape.Name))
-                .ToList(),
-            SimpleConflictPreventionBlendShapes = source.SimpleConflictPreventionBlendShapes
-                .Where(shape => CanWrite(
-                    FaceTuneWriteKind.FacialData,
-                    shape.Name))
-                .ToList(),
-            Animations = source.Animations
-                .Where(animation => CanWrite(
-                    FaceTuneWriteKind.EyeBlinkAnimation,
-                    animation.Name))
-                .ToList()
-        };
-        return result;
-    }
-
-    private LipSyncSettings ResolveLipSync(LipSyncSettings source)
-    {
-        return new LipSyncSettings
-        {
-            CancellerBlendShapes = source.CancellerBlendShapes
-                .Where(shape => CanWrite(FaceTuneWriteKind.FacialData, shape.Name))
-                .ToList()
-        };
-    }
-
     private bool CanWrite(FaceTuneWriteKind writeKind, string name)
         => _settings.CanWriteBlendShape(writeKind, name);
 
-    private void RemoveProhibitedAnimations(
-        BlendShapeWeightAnimationSet animations,
-        FaceTuneWriteKind writeKind)
+    private void RemoveProhibited<T>(List<T> items, FaceTuneWriteKind writeKind, Func<T, string> nameOf)
+        => items.RemoveAll(item => !CanWrite(writeKind, nameOf(item)));
+
+    private void RemoveProhibited(BlendShapeWeightAnimationSet animations, FaceTuneWriteKind writeKind)
     {
         var prohibited = animations
             .Where(animation => !CanWrite(writeKind, animation.Name))
@@ -207,6 +170,28 @@ internal sealed class ExpressionItemBuilder
             .ToArray();
         animations.RemoveRange(prohibited);
     }
+
+    private void RemoveProhibited(EyeBlinkSettings settings)
+    {
+        RemoveProhibited(
+            settings.SimpleBlinkBlendShapes,
+            FaceTuneWriteKind.EyeBlinkAnimation,
+            static shape => shape.Name);
+        RemoveProhibited(
+            settings.SimpleConflictPreventionBlendShapes,
+            FaceTuneWriteKind.FacialData,
+            static shape => shape.Name);
+        RemoveProhibited(
+            settings.Animations,
+            FaceTuneWriteKind.EyeBlinkAnimation,
+            static animation => animation.Name);
+    }
+
+    private void RemoveProhibited(LipSyncSettings settings)
+        => RemoveProhibited(
+            settings.CancellerBlendShapes,
+            FaceTuneWriteKind.FacialData,
+            static shape => shape.Name);
 
     private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {

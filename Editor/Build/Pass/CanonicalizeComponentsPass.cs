@@ -21,8 +21,7 @@ internal static class MenuCanonicalizer
         var root = context.AvatarContext.Root;
 
         ExpandExpressionSets(root);
-        var behavior = new ExpressionBehaviorResolver();
-        ExpandDirectMenus(root, behavior);
+        ExpandDirectMenus(root);
 
         var settings = context.RequireSettings();
         var parameterDomains = BindParameters(root, settings.ParameterDomains);
@@ -61,14 +60,13 @@ internal static class MenuCanonicalizer
         }
     }
 
-    private static void ExpandDirectMenus(
-        GameObject root,
-        ExpressionBehaviorResolver behavior)
+    private static void ExpandDirectMenus(GameObject root)
     {
         var sources = root.GetComponentsInChildren<ExpressionComponent>(true)
             .Where(expression => expression.DirectMenuEnabled)
             .ToArray();
 
+        var behavior = new ExpressionBehaviorResolver();
         foreach (var source in sources)
         {
             var menuObject = new GameObject(source.name);

@@ -36,6 +36,9 @@ internal sealed class ScopedValueResolver<T> where T : class
     }
 }
 
+/// <summary>
+/// Resolve が返す値は毎回 snapshot が作り出したものなので、呼び出し側でそのまま変更してよい。
+/// </summary>
 internal sealed class SettingValueResolver<TValue> where TValue : class
 {
     private readonly ComputeContext context;
