@@ -190,7 +190,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
 
     private bool DrawBinding(Rect position)
     {
-        using var _ = new EditorGUI.PropertyScope(position, "menu.binding.label".LG(), _useExistingParameter);
+        GUIHelper.RegisterPropertyRegion(position, _useExistingParameter);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = _useExistingParameter.hasMultipleDifferentValues;
@@ -212,13 +212,13 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
 
     private static void DrawFloatToggle(Rect position, SerializedProperty property, string labelKey)
     {
-        using var scope = new EditorGUI.PropertyScope(position, labelKey.LG(), property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
         var value = !Mathf.Approximately(property.floatValue, 0f);
         EditorGUI.BeginChangeCheck();
-        var next = EditorGUI.Toggle(position, scope.content, value);
+        var next = EditorGUI.Toggle(position, labelKey.LG(), value);
         if (EditorGUI.EndChangeCheck()) property.floatValue = next ? 1f : 0f;
         EditorGUI.showMixedValue = previousMixed;
     }

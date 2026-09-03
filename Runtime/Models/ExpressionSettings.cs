@@ -24,63 +24,95 @@ internal enum SettingsReferenceMode
 internal sealed class SettingsReference
 {
     public SettingsReferenceMode Mode = SettingsReferenceMode.Direct;
-    public Transform? Source;
-}
 
-[Serializable]
-internal sealed class FacialClipBlendShapeData : IEquatable<FacialClipBlendShapeData>
-{
-    public AnimationClip? Clip = null;
-    public ClipImportOption ClipOption = ClipImportOption.NonZero;
-
-    internal FacialClipBlendShapeData Clone()
-        => new()
-        {
-            Clip = Clip,
-            ClipOption = ClipOption
-        };
-
-    public bool Equals(FacialClipBlendShapeData? other)
-        => other is not null
-        && Clip == other.Clip
-        && ClipOption == other.ClipOption;
-
-    public override bool Equals(object? obj)
-        => obj is FacialClipBlendShapeData other && Equals(other);
-
-    public override int GetHashCode()
-        => HashCode.Combine(Clip, ClipOption);
+    public FaceTuneTagComponent? ComponentSource;
 }
 
 /// <summary>
-/// 顔のBlendShape data。参照の後にClip、その後に手動入力を重ねる。
+/// 顔のBlendShape data。Simpleはbase sourceの後にlocalを重ね、Compositeはentry順に重ねる。
 /// 後の同名BlendShapeが前を置き換え、0も明示値として扱う。
 /// </summary>
 [Serializable]
 internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
 {
-    public List<Transform> ReferenceAnimations = new();
-    public List<FacialClipBlendShapeData> ClipAnimations = new();
+    public enum Mode
+    {
+        Simple = 10,
+        Composite = 20
+    }
+
+    public Mode BlendShapeMode = Mode.Simple;
+
+#region Simple Mode
+
+    public enum SimpleBaseSource
+    {
+        Clip = 10,
+        Reference = 20
+    }
+
+    public SimpleBaseSource BaseSource = SimpleBaseSource.Clip;
+
+    // SimpleBaseSource.Clip
+    public AnimationClip? Clip = null;
+    public ClipImportOption ClipOption = ClipImportOption.NonZero;
+    // SimpleBaseSource.Reference
+    public FaceTuneTagComponent? ReferenceSource = null;
+
+    // Simpleモード共通
     public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+
+#endregion
+
+#region Composite Mode
+
+    [Serializable]
+    public class CompositeEntry
+    {
+        public enum Kind
+        {
+            Direct = 10,
+            Clip = 20,
+            Reference = 30
+        }
+
+        public Kind EntryKind = Kind.Clip;
+
+        // Direct
+        public List<BlendShapeWeightAnimation> BlendShapeAnimations = new();
+        // Clip
+        public AnimationClip? Clip = null;
+        public ClipImportOption ClipOption = ClipImportOption.NonZero;
+        // Reference
+        public FaceTuneTagComponent? ReferenceSource = null;
+    }
+
+    public List<CompositeEntry> CompositeEntries = new();
+
+#endregion
 
     internal FacialBlendShapeData Clone()
         => new()
         {
-            ReferenceAnimations = ReferenceAnimations.ToList(),
-            ClipAnimations = ClipAnimations
-                .Where(animation => animation != null)
-                .Select(animation => animation.Clone())
-                .ToList(),
-            BlendShapeAnimations = BlendShapeAnimations
-                .Select(animation => new BlendShapeWeightAnimation(animation.Name, animation.Curve))
-                .ToList()
+            BlendShapeMode = BlendShapeMode,
+            BaseSource = BaseSource,
+            Clip = Clip,
+            ClipOption = ClipOption,
+            ReferenceSource = ReferenceSource,
+            BlendShapeAnimations = CloneAnimations(BlendShapeAnimations),
+            CompositeEntries = CompositeEntries.Select(CloneEntry).ToList()
         };
 
     public bool Equals(FacialBlendShapeData? other)
         => other is not null
-        && ReferenceAnimations.SequenceEqual(other.ReferenceAnimations)
-        && ClipAnimations.SequenceEqual(other.ClipAnimations)
-        && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations);
+        && BlendShapeMode == other.BlendShapeMode
+        && BaseSource == other.BaseSource
+        && Clip == other.Clip
+        && ClipOption == other.ClipOption
+        && ReferenceSource == other.ReferenceSource
+        && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations)
+        && CompositeEntries.Count == other.CompositeEntries.Count
+        && CompositeEntries.Zip(other.CompositeEntries, EntryEquals).All(equal => equal);
 
     public override bool Equals(object? obj)
         => obj is FacialBlendShapeData other && Equals(other);
@@ -88,14 +120,44 @@ internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        foreach (var reference in ReferenceAnimations)
-            hash.Add(reference);
-        foreach (var animation in ClipAnimations)
-            hash.Add(animation);
-        foreach (var animation in BlendShapeAnimations)
-            hash.Add(animation);
+        hash.Add(BlendShapeMode);
+        hash.Add(BaseSource);
+        hash.Add(Clip);
+        hash.Add(ClipOption);
+        hash.Add(ReferenceSource);
+        foreach (var animation in BlendShapeAnimations) hash.Add(animation);
+        foreach (var entry in CompositeEntries)
+        {
+            hash.Add(entry.EntryKind);
+            hash.Add(entry.Clip);
+            hash.Add(entry.ClipOption);
+            hash.Add(entry.ReferenceSource);
+            foreach (var animation in entry.BlendShapeAnimations) hash.Add(animation);
+        }
         return hash.ToHashCode();
     }
+
+    private static CompositeEntry CloneEntry(CompositeEntry entry)
+        => new()
+        {
+            EntryKind = entry.EntryKind,
+            BlendShapeAnimations = CloneAnimations(entry.BlendShapeAnimations),
+            Clip = entry.Clip,
+            ClipOption = entry.ClipOption,
+            ReferenceSource = entry.ReferenceSource
+        };
+
+    private static List<BlendShapeWeightAnimation> CloneAnimations(
+        IEnumerable<BlendShapeWeightAnimation> animations)
+        => animations.Select(animation =>
+            new BlendShapeWeightAnimation(animation.Name, animation.Curve)).ToList();
+
+    private static bool EntryEquals(CompositeEntry left, CompositeEntry right)
+        => left.EntryKind == right.EntryKind
+        && left.Clip == right.Clip
+        && left.ClipOption == right.ClipOption
+        && left.ReferenceSource == right.ReferenceSource
+        && left.BlendShapeAnimations.SequenceEqual(right.BlendShapeAnimations);
 }
 
 internal enum ClipImportOption

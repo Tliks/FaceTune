@@ -49,6 +49,12 @@ internal static partial class GUIHelper
 
     // Unity's IMGUI buttons and sliders consume right-button MouseDown events.
     // Keep their control IDs, but let the following ContextClick reach PropertyScope.
+    // Prefab overrideの対象範囲だけを登録し、後続の独自UIへPropertyScopeの表示状態を持ち込まない。
+    internal static void RegisterPropertyRegion(Rect position, SerializedProperty property)
+    {
+        using var scope = new EditorGUI.PropertyScope(position, GUIContent.none, property);
+    }
+
     internal readonly struct RightClickPassthroughScope : IDisposable
     {
         private readonly Event _event;
@@ -368,10 +374,10 @@ internal static partial class GUIHelper
             return;
         }
 
-        using var scope = new EditorGUI.PropertyScope(position, label, propertyScope);
+        GUIHelper.RegisterPropertyRegion(position, propertyScope);
         DrawShurikenHeaderContent(
             position,
-            scope.content,
+            label,
             style,
             createHeaderMenu,
             drawHeader,
@@ -483,11 +489,11 @@ internal static partial class GUIHelper
         GUIContent placeholder,
         bool indentLabel = false)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
         var (labelPosition, valuePosition) = SplitIndentedLabel(position);
-        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, scope.content);
-        if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
+        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, label);
+        if (indentLabel) EditorGUI.LabelField(labelPosition, label);
         EditorGUI.PropertyField(field, property, GUIContent.none);
         if (!string.IsNullOrEmpty(property.stringValue)) return;
         GUI.Label(field, placeholder, GUIStyles.PlaceholderText);
@@ -499,9 +505,9 @@ internal static partial class GUIHelper
         GUIContent label,
         GUIContent placeholder)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
-        var field = EditorGUI.PrefixLabel(position, scope.content);
+        var field = EditorGUI.PrefixLabel(position, label);
         EditorGUI.PropertyField(field, property, GUIContent.none);
         if (property.objectReferenceValue != null) return;
         DrawObjectPlaceholder(field, placeholder);
@@ -515,11 +521,11 @@ internal static partial class GUIHelper
         bool isEmpty,
         bool indentLabel = false)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
         var (labelPosition, valuePosition) = SplitIndentedLabel(position);
-        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, scope.content, EditorStyles.label);
-        if (indentLabel) EditorGUI.LabelField(labelPosition, scope.content);
+        var field = indentLabel ? valuePosition : EditorGUI.PrefixLabel(position, label, EditorStyles.label);
+        if (indentLabel) EditorGUI.LabelField(labelPosition, label);
         EditorGUI.PropertyField(field, property, GUIContent.none, true);
         if (!isEmpty) return;
         DrawObjectPlaceholder(field, placeholder);
@@ -543,12 +549,12 @@ internal static partial class GUIHelper
 
     public static void DrawToggleLeft(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
         var previousMixedValue = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
         EditorGUI.BeginChangeCheck();
-        var value = EditorGUI.ToggleLeft(position, scope.content, property.boolValue);
+        var value = EditorGUI.ToggleLeft(position, label, property.boolValue);
         if (EditorGUI.EndChangeCheck()) property.boolValue = value;
         EditorGUI.showMixedValue = previousMixedValue;
     }
@@ -569,10 +575,15 @@ internal static partial class GUIHelper
 }
 
 
+internal enum PopupPresentation
+{
+    Standard,
+    Compact
+}
+
 /// <summary>Stateless localized wrappers around Unity's IMGUI API.</summary>
 internal static partial class GUIHelper
 {
-    private const float PopupHorizontalMargin = 6f;
     private const float CompactPopupArrowSpacing = 4f;
     private const float CompactPopupArrowWidth = 8f;
     private const float CompactPopupArrowHeight = 5f;
@@ -581,16 +592,32 @@ internal static partial class GUIHelper
     private static readonly Color CompactPopupArrowColor = new(1f, 1f, 1f, 0.75f);
     private static readonly GUIContent IndentedLabelPlaceholder = new(" ");
 
-    public static float PopupWidth(IEnumerable<GUIContent> labels)
-        => labels.Max(label => EditorStyles.popup.CalcSize(label).x) + PopupHorizontalMargin;
+    public static float PopupWidth(
+        GUIContent content,
+        PopupPresentation presentation = PopupPresentation.Standard)
+        => presentation == PopupPresentation.Compact
+            ? EditorStyles.label.CalcSize(content).x + CompactPopupTrailingWidth
+            : EditorStyles.popup.CalcSize(content).x;
 
-    public static float LocalizedPopupWidth(IEnumerable<string> optionKeys)
-        => PopupWidth(optionKeys.Select(key => key.LG()));
+    public static float MaxPopupWidth(
+        IEnumerable<GUIContent> contents,
+        PopupPresentation presentation = PopupPresentation.Standard)
+        => contents.Max(content => PopupWidth(content, presentation));
+
+    public static float LocalizedPopupWidth(
+        string optionKey,
+        PopupPresentation presentation = PopupPresentation.Standard)
+        => PopupWidth(optionKey.LG(), presentation);
+
+    public static float MaxLocalizedPopupWidth(
+        IEnumerable<string> optionKeys,
+        PopupPresentation presentation = PopupPresentation.Standard)
+        => MaxPopupWidth(optionKeys.Select(key => key.LG()), presentation);
 
     public static float LocalizedEnumPopupWidth(SerializedProperty property, string typeName)
     {
         var optionPrefix = char.ToLowerInvariant(typeName[0]) + typeName[1..];
-        return LocalizedPopupWidth(property.enumNames.Select(name =>
+        return MaxLocalizedPopupWidth(property.enumNames.Select(name =>
             $"{optionPrefix}.option.{char.ToLowerInvariant(name[0]) + name[1..]}"));
     }
 
@@ -619,7 +646,7 @@ internal static partial class GUIHelper
         string enabledOptionKey,
         Action<SerializedProperty> initializeElement)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, list);
+        GUIHelper.RegisterPropertyRegion(position, list);
         using var rightClick = new RightClickPassthroughScope(position);
         var enabled = OptionalListEnabled(list);
         var previousMixed = EditorGUI.showMixedValue;
@@ -627,7 +654,7 @@ internal static partial class GUIHelper
         EditorGUI.BeginChangeCheck();
         var next = EditorGUI.Popup(
             position,
-            scope.content,
+            label,
             enabled ? 1 : 0,
             new[] { disabledOptionKey.LG(), enabledOptionKey.LG() });
         var changed = EditorGUI.EndChangeCheck();
@@ -646,13 +673,15 @@ internal static partial class GUIHelper
     }
 
     public static float CompactPopupWidth(IEnumerable<GUIContent> labels)
-        => labels.Max(label => EditorStyles.label.CalcSize(label).x) + CompactPopupTrailingWidth;
+        => labels.Max(label => GUIStyles.SectionHeaderPopupLabel.CalcSize(label).x)
+         + CompactPopupTrailingWidth;
 
     public static void CompactHeaderValue(
         Rect position,
         GUIContent value,
         bool mixed = false,
-        bool centered = false)
+        bool centered = false,
+        GUIStyle? labelStyle = null)
     {
         var previousMixed = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = mixed;
@@ -660,7 +689,9 @@ internal static partial class GUIHelper
         GUI.Label(
             position,
             value,
-            centered ? GUIStyles.SectionHeaderPopupCenteredLabel : GUIStyles.SectionHeaderPopupLabel);
+            labelStyle ?? (centered
+                ? GUIStyles.SectionHeaderPopupCenteredLabel
+                : GUIStyles.SectionHeaderPopupLabel));
         EditorGUI.showMixedValue = previousMixed;
     }
 
@@ -672,10 +703,11 @@ internal static partial class GUIHelper
         Action<int> select,
         bool mixed = false,
         int separatorBefore = -1,
-        bool centered = false)
+        bool centered = false,
+        GUIStyle? labelStyle = null)
     {
         var opened = GUI.Button(position, GUIContent.none, GUIStyle.none);
-        CompactHeaderValue(position, current, mixed, centered);
+        CompactHeaderValue(position, current, mixed, centered, labelStyle);
         DrawCompactPopupArrow(position);
         if (!opened) return;
 
@@ -721,7 +753,7 @@ internal static partial class GUIHelper
         bool includeChildren = true)
     {
         position.height = EditorGUI.GetPropertyHeight(property, includeChildren);
-        using (new EditorGUI.PropertyScope(position, labelKey.LG(), property))
+        RegisterPropertyRegion(position, property);
         using (new RightClickPassthroughScope(position))
         {
             LocalizedPropertyField(position, property, labelKey, includeChildren);
@@ -755,12 +787,20 @@ internal static partial class GUIHelper
         LocalizedEnumPopup(position, property, labelKey, optionKeys);
     }
 
-    public static (Rect Label, Rect Value) SplitIndentedLabel(Rect position)
+    public static (Rect Label, Rect Value) SplitLabel(Rect position)
     {
         var value = EditorGUI.PrefixLabel(position, IndentedLabelPlaceholder);
+        return (
+            new Rect(position.x, position.y, Mathf.Max(0f, value.x - position.x), position.height),
+            value);
+    }
+
+    public static (Rect Label, Rect Value) SplitIndentedLabel(Rect position)
+    {
+        var (label, value) = SplitLabel(position);
         var labelX = position.x + IndentWidth;
         return (
-            new Rect(labelX, position.y, Mathf.Max(0f, value.x - labelX), position.height),
+            new Rect(labelX, label.y, Mathf.Max(0f, value.x - labelX), label.height),
             value);
     }
 
@@ -771,10 +811,11 @@ internal static partial class GUIHelper
         bool includeChildren = true)
     {
         position.height = EditorGUI.GetPropertyHeight(property, GUIContent.none, includeChildren);
-        using var scope = new EditorGUI.PropertyScope(position, labelKey.LG(), property);
+        var content = labelKey.LG();
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
         var (label, value) = SplitIndentedLabel(position);
-        EditorGUI.LabelField(label, scope.content);
+        EditorGUI.LabelField(label, content);
         EditorGUI.PropertyField(value, property, GUIContent.none, includeChildren);
         position.NewLine();
     }
@@ -783,14 +824,32 @@ internal static partial class GUIHelper
         Rect position,
         SerializedProperty property,
         string labelKey,
-        IEnumerable<string> optionKeys)
+        IEnumerable<string> optionKeys,
+        PopupPresentation presentation = PopupPresentation.Standard)
     {
-        var label = string.IsNullOrEmpty(labelKey) ? GUIContent.none : labelKey.LG();
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        var keys = optionKeys as IReadOnlyList<string> ?? optionKeys.ToArray();
+        RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
         var previousMixedValue = EditorGUI.showMixedValue;
         EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
-        var next = LocalizedPopup(position, property.enumValueIndex, string.IsNullOrEmpty(labelKey) ? null : labelKey, optionKeys);
+        int next;
+        if (presentation == PopupPresentation.Compact)
+        {
+            next = EditorGUI.Popup(
+                position,
+                property.enumValueIndex,
+                keys.Select(key => key.LG()).ToArray(),
+                EditorStyles.label);
+            DrawCompactPopupArrow(position);
+        }
+        else
+        {
+            next = LocalizedPopup(
+                position,
+                property.enumValueIndex,
+                string.IsNullOrEmpty(labelKey) ? null : labelKey,
+                keys);
+        }
         if (next != property.enumValueIndex) property.enumValueIndex = next;
         EditorGUI.showMixedValue = previousMixedValue;
     }

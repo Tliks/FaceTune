@@ -12,7 +12,7 @@ internal static class MenuSettingsGUI
 
     public static void Draw(Rect position, SerializedProperty settings, Component? owner, string menuNameLabelKey)
     {
-        using var _ = new EditorGUI.PropertyScope(position, menuNameLabelKey.LG(), settings);
+        GUIHelper.RegisterPropertyRegion(position, settings);
         position.height = GUIHelper.LineHeight;
         var menuName = settings.FindPropertyRelative(nameof(MenuSettings.MenuName));
         var fallbackName = owner.DestroyedAsNull()?.gameObject.name ?? string.Empty;
@@ -102,13 +102,13 @@ internal static class MenuGUI
             return true;
         }
 
-        using var scope = new EditorGUI.PropertyScope(position, label, groupName);
+        GUIHelper.RegisterPropertyRegion(position, groupName);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var state = GetGroupState(groupName);
         if (state.IsCreating)
         {
             GUI.SetNextControlName(state.ControlName);
-            groupName.stringValue = EditorGUI.DelayedTextField(position, scope.content, groupName.stringValue);
+            groupName.stringValue = EditorGUI.DelayedTextField(position, label, groupName.stringValue);
             if (!string.IsNullOrWhiteSpace(groupName.stringValue)) state.IsCreating = false;
 
             var current = Event.current;
@@ -145,7 +145,7 @@ internal static class MenuGUI
         for (var i = 0; i < groups.Count; i++) options[i + 1] = new GUIContent(groups[i]);
         options[^1] = "menu.group.new.label".LG();
         var selectedIndex = currentIndex < 0 ? 0 : currentIndex + 1;
-        var nextIndex = EditorGUI.Popup(position, scope.content, selectedIndex, options);
+        var nextIndex = EditorGUI.Popup(position, label, selectedIndex, options);
         if (nextIndex == selectedIndex) return !string.IsNullOrWhiteSpace(groupName.stringValue);
         if (nextIndex == options.Length - 1)
         {
@@ -190,12 +190,12 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var mode = property.FindPropertyRelative(nameof(MenuIconSettings.Mode));
         var manual = property.FindPropertyRelative(nameof(MenuIconSettings.ManualIcon));
         var preview = property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression));
         position.SetSingleHeight();
-        using (new EditorGUI.PropertyScope(position, "menuIcon.icon.label".LG(), mode))
+        GUIHelper.RegisterPropertyRegion(position, mode);
         using (new GUIHelper.RightClickPassthroughScope(position))
         {
             mode.enumValueIndex = GUIHelper.LocalizedPopup(position, mode.enumValueIndex, "menuIcon.icon.label", ModeKeys);
@@ -265,7 +265,7 @@ internal sealed class DirectMenuSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var menu = property.FindPropertyRelative(nameof(DirectMenuSettings.Menu));
         var advanced = GUIState.Foldout(property, "DirectMenuAdvancedSettings");
 

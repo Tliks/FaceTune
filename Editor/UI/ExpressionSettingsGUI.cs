@@ -16,7 +16,7 @@ internal sealed class SerializedReferenceableSettings
     {
         Reference = serializedObject.FindProperty(referencePropertyName);
         Mode = Reference.FindPropertyRelative(nameof(SettingsReference.Mode));
-        Source = Reference.FindPropertyRelative(nameof(SettingsReference.Source));
+        Source = Reference.FindPropertyRelative(nameof(SettingsReference.ComponentSource));
         Direct = serializedObject.FindProperty(directPropertyName);
     }
 
@@ -52,7 +52,7 @@ internal static class SettingsReferenceGUI
         if (settings.Mode.intValue == (int)SettingsReferenceMode.Reference)
         {
             position.SetSingleHeight();
-            EditorGUI.PropertyField(position, settings.Source, "common.component.label".LG());
+            DrawComponentSource(position, settings);
             position.NewLine();
             if (ShowsMissingReference(settings.Source))
             {
@@ -86,8 +86,75 @@ internal static class SettingsReferenceGUI
             settings.Mode.hasMultipleDifferentValues);
     }
 
+    internal static void DrawComponentSource(
+        Rect position,
+        SerializedReferenceableSettings settings)
+    {
+        var current = settings.Source.objectReferenceValue as FaceTuneTagComponent;
+        settings.Source.objectReferenceValue = ComponentReferenceGUI.Draw(
+            position,
+            "common.component.label".LG(),
+            current,
+            source => IsValidSource(settings.Direct, source));
+    }
+
+    private static bool IsValidSource(SerializedProperty direct, FaceTuneTagComponent? source)
+    {
+        if (source == null) return true;
+        var name = direct.name;
+        if (name.Contains("EyeBlink", StringComparison.Ordinal))
+            return source is ISettingProvider<EyeBlinkSettings>;
+        if (name.Contains("LipSync", StringComparison.Ordinal))
+            return source is ISettingProvider<LipSyncSettings>;
+        return source is IExpressionDefinitionProvider;
+    }
+
     private static bool ShowsMissingReference(SerializedProperty source)
         => !source.hasMultipleDifferentValues && source.objectReferenceValue == null;
+}
+
+internal static class ComponentReferenceGUI
+{
+    internal static FaceTuneTagComponent? Draw(
+        Rect position,
+        GUIContent label,
+        FaceTuneTagComponent? current,
+        Func<FaceTuneTagComponent, bool> accepts)
+    {
+        if (position.Contains(Event.current.mousePosition)
+            && Event.current.type is EventType.DragUpdated or EventType.DragPerform)
+        {
+            var candidates = DragAndDrop.objectReferences
+                .SelectMany(value => value switch
+                {
+                    FaceTuneTagComponent component => new[] { component },
+                    GameObject gameObject => gameObject.GetComponents<FaceTuneTagComponent>(),
+                    _ => Array.Empty<FaceTuneTagComponent>()
+                })
+                .Where(accepts)
+                .Distinct()
+                .ToArray();
+            DragAndDrop.visualMode = candidates.Length == 1
+                ? DragAndDropVisualMode.Link
+                : DragAndDropVisualMode.Rejected;
+            if (Event.current.type == EventType.DragPerform)
+            {
+                DragAndDrop.AcceptDrag();
+                Event.current.Use();
+                return candidates.Length == 1 ? candidates[0] : current;
+            }
+            Event.current.Use();
+            return current;
+        }
+
+        var selected = EditorGUI.ObjectField(
+            position,
+            label,
+            current,
+            typeof(FaceTuneTagComponent),
+            true) as FaceTuneTagComponent;
+        return selected == null || accepts(selected) ? selected : null;
+    }
 }
 
 internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
@@ -177,7 +244,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var mode = property.FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode));
         position.SetSingleHeight();
         DrawMode(position, mode);
@@ -216,7 +283,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     private static void DrawMode(Rect position, SerializedProperty mode)
     {
-        using var _ = new EditorGUI.PropertyScope(position, "eyeBlink.mode.label".LG(), mode);
+        GUIHelper.RegisterPropertyRegion(position, mode);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var selected = Array.IndexOf(ModeValues, (EyeBlinkSettings.Kind)mode.intValue);
         if (selected < 0) selected = 0;
@@ -313,10 +380,10 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         IReadOnlyList<string> columnLabelKeys,
         float[] values)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var header = new Rect(position.x, position.y, position.width, GUIHelper.LineHeight);
-        var fields = EditorGUI.PrefixLabel(header, scope.content);
+        var fields = EditorGUI.PrefixLabel(header, label);
         var preferredWidths = Enumerable.Repeat(1f, values.Length).ToArray();
         var labelColumns = fields.FlexHorizontalSpaced(GUIHelper.HorizontalSpacing, preferredWidths);
         var valueRow = new Rect(
@@ -385,7 +452,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var blendShapes = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
         position.height = GUIHelper.GetOptionalListHeight(blendShapes, BlendShapesOptions);
         GUIHelper.DrawLocalizedOptionalList(
@@ -409,7 +476,7 @@ internal sealed class TransitionSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         EditorGUI.PropertyField(
             position,
             property.FindPropertyRelative(nameof(TransitionSettings.DurationSeconds)),
@@ -423,7 +490,7 @@ internal sealed class PrioritySettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         EditorGUI.PropertyField(
             position,
             property.FindPropertyRelative(nameof(PrioritySettings.Priority)),
@@ -437,7 +504,7 @@ internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         position.SetSingleHeight();
         EditorGUI.PropertyField(
             position,
@@ -496,7 +563,7 @@ internal sealed class MMDSupportSettingsDrawer : PropertyDrawer
         ElementHeight: GUIHelper.LineHeight);
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var supportMode = property.FindPropertyRelative(nameof(MMDSupportSettings.SupportMode));
         position.SetSingleHeight();
         GUIHelper.LocalizedEnumPopup(position, supportMode, "mmdSupport.mode.label", SupportModeKeys);

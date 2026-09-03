@@ -141,6 +141,9 @@ msgstr "表情編集画面"
 msgid "facialEditor.open.button"
 msgstr "開く"
 
+msgid "facialEditor.edit.button"
+msgstr "編集画面"
+
 msgid "facialEditor.rendererRequired.message"
 msgstr "表情を編集する対象Rendererを設定してください。"
 
@@ -194,6 +197,42 @@ msgstr "他の設定"
 
 msgid "expression.facials.clips.label"
 msgstr "アニメーションクリップ"
+
+msgid "expression.facials.mode.short.simple"
+msgstr "標準"
+
+msgid "expression.facials.mode.short.composite"
+msgstr "合成"
+
+msgid "expression.facials.mode.simple"
+msgstr "標準"
+
+msgid "expression.facials.mode.composite"
+msgstr "複数の表情を合成する"
+
+msgid "expression.facials.baseSource.clip"
+msgstr "アニメーションクリップ"
+
+msgid "expression.facials.baseSource.component"
+msgstr "コンポーネント"
+
+msgid "expression.facials.compositeEntries.label"
+msgstr "表情の合成 (下が優先)"
+
+msgid "expression.facials.entryKind.label"
+msgstr "種類"
+
+msgid "expression.facials.entryKind.direct"
+msgstr "直接編集"
+
+msgid "expression.facials.entryKind.clip"
+msgstr "アニメーションクリップ"
+
+msgid "expression.facials.entryKind.reference"
+msgstr "コンポーネント"
+
+msgid "expression.clip.importOption.label"
+msgstr "読み込み対象"
 
 msgid "expression.multiFrame.section.label"
 msgstr "マルチフレーム設定"

@@ -90,14 +90,14 @@ namespace Aoyon.FaceTune
 #region Interfaces
 
         SettingsReferenceMode IExpressionDefinitionProviderWithReference.DefinitionMode => ExpressionDataReference.Mode;
-        Transform? IExpressionDefinitionProviderWithReference.DefinitionSource => ExpressionDataReference.Source;
+        FaceTuneTagComponent? IExpressionDefinitionProviderWithReference.DefinitionSource => ExpressionDataReference.ComponentSource;
 
         (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (true, FacialBlendShapes);
         (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (true, NonFacialAnimations);
         (bool Enabled, EyeBlinkSettings Value) ISettingProvider<EyeBlinkSettings>.Setting => (HasEyeBlink, EyeBlink);
-        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<EyeBlinkSettings>.Reference => (EyeBlinkReference.Mode, EyeBlinkReference.Source);
+        (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) ISettingProviderWithReference<EyeBlinkSettings>.Reference => (EyeBlinkReference.Mode, EyeBlinkReference.ComponentSource);
         (bool Enabled, LipSyncSettings Value) ISettingProvider<LipSyncSettings>.Setting => (HasLipSync, LipSync);
-        (SettingsReferenceMode Mode, Transform? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.Source);
+        (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.ComponentSource);
         (bool Enabled, ExpressionBehavior Value) ISettingProvider<ExpressionBehavior>.Setting => (true, new(WriteMode, AllowEyeBlink, AllowLipSync));
         (bool Enabled, MultiFrameSettings Value) ISettingProvider<MultiFrameSettings>.Setting => (true, MultiFrame);
         (bool Enabled, TransitionSettings Value) ISettingProvider<TransitionSettings>.Setting => (HasTransition, Transition);

@@ -76,12 +76,9 @@ internal sealed class SettingValueResolver<TValue> where TValue : class
                                  && left.Source == right.Source);
             if (!value.Enabled) return null;
             if (!value.FollowReference) return value.Value;
-            return value.Source == null
-                ? null
-                : context.GetComponents<FaceTuneTagComponent>(value.Source.gameObject)
-                    .OfType<ISettingProvider<TValue>>()
-                    .Select(candidate => Resolve(candidate, path))
-                    .LastOrDefault(candidate => candidate != null);
+            return value.Source is ISettingProvider<TValue> source
+                ? Resolve(source, path)
+                : null;
         }
         finally
         {
