@@ -16,8 +16,9 @@ internal class EditingShapesPreview : DirectBlendShapePreview<EditingShapesPrevi
 
     public static void Refresh(BlendShapeApply apply)
     {
-        if (_target.Value == null) return;
-        SetCurrentNodeDirectly(apply);
+        var target = _target.Value;
+        if (target == null) return;
+        SetCurrentNodeDirectly(target, apply);
     }
 
     public static void Stop()

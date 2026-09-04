@@ -96,7 +96,7 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
 internal class SelectedShapesPreviewSession : IDisposable
 {
     private readonly (GameObject root, SkinnedMeshRenderer renderer, string path)[] _targets;
-    private readonly Action<BlendShapeApply> _setPreview;
+    private readonly Action<SkinnedMeshRenderer, BlendShapeApply> _setPreview;
     private readonly Action<SkinnedMeshRenderer> _clearPreview;
     private readonly Action _onInvalidate;
 
@@ -106,7 +106,7 @@ internal class SelectedShapesPreviewSession : IDisposable
 
     private SelectedShapesPreviewSession(
         IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
-        Action<BlendShapeApply> setPreview,
+        Action<SkinnedMeshRenderer, BlendShapeApply> setPreview,
         Action<SkinnedMeshRenderer> clearPreview,
         Action onInvalidate)
     {
@@ -122,7 +122,7 @@ internal class SelectedShapesPreviewSession : IDisposable
     public static SelectedShapesPreviewSession FromClip(
         AnimationClip clip,
         IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
-        Action<BlendShapeApply> setPreview,
+        Action<SkinnedMeshRenderer, BlendShapeApply> setPreview,
         Action<SkinnedMeshRenderer> clearPreview,
         Action onInvalidate)
     {
@@ -134,7 +134,7 @@ internal class SelectedShapesPreviewSession : IDisposable
     public static SelectedShapesPreviewSession FromGameObject(
         GameObject gameObject,
         IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
-        Action<BlendShapeApply> setPreview,
+        Action<SkinnedMeshRenderer, BlendShapeApply> setPreview,
         Action<SkinnedMeshRenderer> clearPreview,
         Action onInvalidate)
     {
@@ -167,12 +167,8 @@ internal class SelectedShapesPreviewSession : IDisposable
             clip.GetBlendShapeAnimations(ClipImportOption.NonZero, animations, path);
 
             // Clip preview は既存 preview の上に、clip が持つ値だけを重ねる。
-            resultToAdd.Add(Writer.Create(
-                new BlendShapeApply(renderer, new BlendShapeWeightSet()),
-                animations,
-                isLooping,
-                _setPreview,
-                _clearPreview));
+            var apply = new BlendShapeApply(new BlendShapeWeightSet());
+            resultToAdd.Add(Writer.Create(renderer, apply, animations, isLooping, _setPreview, _clearPreview));
         }
     }
 
@@ -186,13 +182,9 @@ internal class SelectedShapesPreviewSession : IDisposable
         if (!TryGetGameObjectAnimations(_context, obj, target.root, target.path, animations, out var isLooping)) return;
 
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(target.root, _context);
-        var apply = new BlendShapeApply(
-            target.renderer,
-            new BlendShapeWeightSet(),
-            0f,
-            ignoredNames);
+        var apply = new BlendShapeApply(new BlendShapeWeightSet(), 0f, ignoredNames);
         // GameObject preview は選択表情の facial style を含めて完全に置き換える。
-        resultToAdd.Add(Writer.Create(apply, animations, isLooping, _setPreview, _clearPreview));
+        resultToAdd.Add(Writer.Create(target.renderer, apply, animations, isLooping, _setPreview, _clearPreview));
     }
 
     private static bool TryGetGameObjectAnimations(ComputeContext context, GameObject target, GameObject root, string bodyPath, List<BlendShapeWeightAnimation> resultToAdd, out bool isLooping)
@@ -253,10 +245,11 @@ internal class SelectedShapesPreviewSession : IDisposable
         }
 
         public static Writer Create(
+            SkinnedMeshRenderer renderer,
             BlendShapeApply apply,
             List<BlendShapeWeightAnimation> animations,
             bool isLooping,
-            Action<BlendShapeApply> applyPreview,
+            Action<SkinnedMeshRenderer, BlendShapeApply> applyPreview,
             Action<SkinnedMeshRenderer> clearPreview)
         {
             if (animations.Any(a => a.IsMultiFrame))
@@ -265,15 +258,15 @@ internal class SelectedShapesPreviewSession : IDisposable
                     apply,
                     animations,
                     isLooping,
-                    applyPreview);
-                return new Writer(apply.Renderer, multiFrame, clearPreview);
+                    frame => applyPreview(renderer, frame));
+                return new Writer(renderer, multiFrame, clearPreview);
             }
 
-            applyPreview(apply with
+            applyPreview(renderer, apply with
             {
                 Set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes())
             });
-            return new Writer(apply.Renderer, null, clearPreview);
+            return new Writer(renderer, null, clearPreview);
         }
 
         public void Dispose()

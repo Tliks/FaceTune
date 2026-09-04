@@ -1,16 +1,13 @@
 namespace Aoyon.FaceTune;
 
 internal readonly record struct BlendShapeApply(
-    SkinnedMeshRenderer Renderer,
     IReadOnlyBlendShapeSet Set,
     float? DefaultValue = null,
-    ISet<string>? IgnoredNames = null)
+    ImmutableHashSet<string>? IgnoredNames = null)
 {
     public bool Equals(BlendShapeApply other)
     {
-        if (!EqualityComparer<SkinnedMeshRenderer>.Default.Equals(Renderer, other.Renderer)
-            || DefaultValue != other.DefaultValue
-            || !Set.Equals(other.Set))
+        if (DefaultValue != other.DefaultValue || !Set.Equals(other.Set))
             return false;
 
         if (ReferenceEquals(IgnoredNames, other.IgnoredNames)) return true;
@@ -36,7 +33,7 @@ internal readonly record struct BlendShapeApply(
                 ignoredNamesHash ^= StringComparer.Ordinal.GetHashCode(name);
         }
 
-        return HashCode.Combine(Renderer, Set, DefaultValue, ignoredNamesHash);
+        return HashCode.Combine(Set, DefaultValue, ignoredNamesHash);
     }
 
     // false means that the current renderer value must be preserved.
@@ -97,14 +94,14 @@ internal static partial class Utils
         return blendShapes;
     }
 
-    public static void ApplyBlendShapes(this BlendShapeApply apply, Mesh mesh)
+    public static void ApplyBlendShapes(this SkinnedMeshRenderer renderer, BlendShapeApply apply, Mesh mesh)
     {
         var blendShapeCount = mesh.blendShapeCount;
         for (var i = 0; i < blendShapeCount; i++)
         {
             var name = mesh.GetBlendShapeName(i);
             if (apply.TryGetWeight(name, out var weight))
-                apply.Renderer.SetBlendShapeWeight(i, weight);
+                renderer.SetBlendShapeWeight(i, weight);
         }
     }
     

@@ -136,11 +136,8 @@ internal class PreviewManager : IDisposable
     private void RefreshPreview()
     {
         if (_renderer == null) return;
-        EditingShapesPreview.Refresh(new BlendShapeApply(
-            _renderer,
-            _previewSet,
-            0f,
-            _blendShapeOverrideManager.ExplicitlyExcluded));
+        var ignoredNames = _blendShapeOverrideManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal);
+        EditingShapesPreview.Refresh(new BlendShapeApply(_previewSet, 0f, ignoredNames));
     }
 
     private void GetCurrentSet(BlendShapeWeightSet result)

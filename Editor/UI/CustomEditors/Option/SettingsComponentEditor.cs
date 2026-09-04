@@ -234,8 +234,8 @@ internal sealed class SettingsFacialSectionDrawer
         var values = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(context.Root);
         Undo.RecordObject(context.FaceRenderer, "Apply Blend Shapes");
-        new BlendShapeApply(context.FaceRenderer, values, 0f, ignoredNames)
-            .ApplyBlendShapes(context.FaceMesh);
+        var apply = new BlendShapeApply(values, 0f, ignoredNames);
+        context.FaceRenderer.ApplyBlendShapes(apply, context.FaceMesh);
         Selection.activeGameObject = context.FaceRenderer.gameObject;
         EditorGUIUtility.PingObject(context.FaceRenderer);
     }

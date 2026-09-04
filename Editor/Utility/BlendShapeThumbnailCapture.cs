@@ -293,7 +293,8 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
             renderRenderer.lightProbeUsage = _renderer.lightProbeUsage;
             renderRenderer.reflectionProbeUsage = _renderer.reflectionProbeUsage;
             renderRenderer.probeAnchor = _renderer.probeAnchor;
-            new BlendShapeApply(renderRenderer, blendShapes).ApplyBlendShapes(_mesh);
+            var apply = new BlendShapeApply(blendShapes);
+            renderRenderer.ApplyBlendShapes(apply, _mesh);
             return renderObject;
         }
         catch
