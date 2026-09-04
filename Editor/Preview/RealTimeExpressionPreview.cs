@@ -26,7 +26,11 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
     // ExpressionComponent増減時の再計算の範囲を縮小するためのPropCache
     private static readonly PropCache<GameObject, ExpressionComponent?> _targetComponent = new(
-        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent, ReferenceEquals
+        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent,
+        // 前の結果がDestyoedになる可能性があるので、nullと区別する為に参照比較する
+        ReferenceEquals, 
+        // アバターが消えた際のDestryoedと、Undoで復活した際のObjectを区別する為に参照比較する
+        ReferenceEqualityComparer<GameObject>.Instance
     );
     
     private static ExpressionComponent? GetTargetComponent(ComputeContext context, GameObject root)
@@ -48,7 +52,20 @@ internal class RealTimeExpressionPreview : IRenderFilter
         return target;
     }
 
-    record PassingData(GameObject Root, string FacePath);
+    record PassingData(GameObject Root, string FacePath)
+    {
+        public virtual bool Equals(PassingData other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return ReferenceEquals(Root, other.Root) && FacePath == other.FacePath;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Root, FacePath);
+        }
+    }
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {

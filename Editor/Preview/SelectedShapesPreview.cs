@@ -83,7 +83,7 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
 
     // Component増減時の再計算の範囲を縮小するためのPropCache
     private static readonly PropCache<GameObject, bool> _hasAnyComponent = new(
-        $"{nameof(SelectedShapesPreview)}:{nameof(HasAnyComponent)}", HasAnyComponent, (a, b) => a == b
+        $"{nameof(SelectedShapesPreview)}:{nameof(HasAnyComponent)}", HasAnyComponent, (a, b) => a == b, ReferenceEqualityComparer<GameObject>.Instance
     );
 
     private static bool HasAnyComponent(ComputeContext context, GameObject root)
