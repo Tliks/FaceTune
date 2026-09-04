@@ -296,15 +296,17 @@ internal sealed class LegacyFaceTuneImporter
 
         var isMenuItemImported = TryImportLegacyMenuItem(source, target);
 
-        target.HasCondition = true;
         if (hasLocalConditions)
         {
+            target.HasCondition = true;
             target.Condition.Mode = ConditionSelection.Kind.Conditional;
             target.Condition.Condition = new Condition(
                 localConditions.Select(ToConditionCase).ToArray());
         }
-        else if (!isMenuItemImported)
+
+        if (!hasLocalConditions && !isMenuItemImported)
         {
+            target.HasCondition = true;
             target.Condition.Mode = ConditionSelection.Kind.Always;
             target.Condition.Condition = new Condition();
         }
