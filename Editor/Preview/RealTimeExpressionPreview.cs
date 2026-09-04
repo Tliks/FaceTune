@@ -17,9 +17,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
             var component = _targetComponent.Get(context, root);
             if (component == null) continue;
 
-            // PassingDataにComponentを入れるとNDMF側でNREが発生するのでIndexに変換する。Todo: NDMF側の修正
-            var componentIndex = Array.IndexOf(root.GetComponentsInChildren<ExpressionComponent>(), component);
-            var data = new PassingData(root, componentIndex, avatarContext.BodyPath);
+            var data = new PassingData(root, avatarContext.BodyPath);
 
             builder.Add(RenderGroup.For(avatarContext.FaceRenderer).WithData(data, (a, b) => a.Equals(b)));
         }
@@ -28,7 +26,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
     // ExpressionComponent増減時の再計算の範囲を縮小するためのPropCache
     private static readonly PropCache<GameObject, ExpressionComponent?> _targetComponent = new(
-        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent, (a, b) => a == b
+        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent, ReferenceEquals
     );
     
     private static ExpressionComponent? GetTargetComponent(ComputeContext context, GameObject root)
@@ -50,21 +48,19 @@ internal class RealTimeExpressionPreview : IRenderFilter
         return target;
     }
 
-    record PassingData(GameObject Root, int ComponentIndex, string FacePath);
+    record PassingData(GameObject Root, string FacePath);
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
         try
         {
             var pair = proxyPairs.First();
-            if (pair.Item1 is not SkinnedMeshRenderer renderer
+            if (pair.Item1 is not SkinnedMeshRenderer
                 || pair.Item2 is not SkinnedMeshRenderer proxy)
                 throw new Exception("SkinnedMeshRenderer not found");
 
             var data = group.GetData<PassingData>();
-            var component = data.Root.GetComponentsInChildren<ExpressionComponent>()[data.ComponentIndex];
-
-            var apply = _blendShapeApply.Get(context, (renderer, data.Root, component, data.FacePath));
+            var apply = _blendShapeApply.Get(context, data);
             var node = new BlendShapePreviewNode(proxy, apply);
             
             return Task.FromResult<IRenderFilterNode>(node);
@@ -77,24 +73,26 @@ internal class RealTimeExpressionPreview : IRenderFilter
     }
 
     // 再計算の範囲を縮小するためのPropCache
-    private static readonly PropCache<(SkinnedMeshRenderer, GameObject, Component, string), BlendShapeApply> _blendShapeApply = new(
-        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetBlendShapeApply, (a, b) => a.Equals(b)
+    private static readonly PropCache<PassingData, BlendShapeApply> _blendShapeApply = new(
+        $"{nameof(RealTimeExpressionPreview)}:BlendShapeApply", GetBlendShapeApply, (a, b) => a.Equals(b)
     );
 
-    private static BlendShapeApply GetBlendShapeApply(ComputeContext context, 
-        (SkinnedMeshRenderer Renderer, GameObject Root, Component Component, string FacePath) input)
+    private static BlendShapeApply GetBlendShapeApply(ComputeContext context, PassingData data)
     {
-        var (renderer, Root, Component, FacePath) = input;
+        var component = _targetComponent.Get(context, data.Root);
+        if (component == null)
+            return new BlendShapeApply(new BlendShapeWeightSet());
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
-        var facial = new FacialAnimationResolver(Root, context);
-        animations.AddRange(facial.ResolveIncoming(Component.transform, FacePath));
-        if (facial.TryResolve(Component, FacePath, out var definition))
+        var facial = new FacialAnimationResolver(data.Root, context);
+        animations.AddRange(facial.ResolveIncoming(component.transform, data.FacePath));
+
+        if (facial.TryResolve(component, data.FacePath, out var definition))
             animations.AddRange(definition);
+
         var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);
 
-        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(Root, context);
-
-        return new BlendShapeApply(renderer, set.AsReadOnly(), 0f, ignoredNames);
+        return new BlendShapeApply(set.AsReadOnly(), 0f, ignoredNames);
     }
 }
