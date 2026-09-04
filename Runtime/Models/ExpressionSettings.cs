@@ -8,7 +8,7 @@ internal sealed record ExpressionBehavior(
 {
     internal static readonly ExpressionBehavior Default = new(
         ExpressionWriteMode.Replace,
-        TrackingPermission.Disallow,
+        TrackingPermission.Allow,
         TrackingPermission.Allow);
 }
 
