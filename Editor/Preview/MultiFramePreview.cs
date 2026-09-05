@@ -93,12 +93,9 @@ sealed class BlendShapeMultiFramePreview : MultiFramePreviewBase
 
     protected override void ApplyFrame(float time)
     {
-        using var _frameSet = BlendShapeSetPool.Get(out var frameSet);
-        foreach (var animation in _animations)
-        {
-            frameSet.Add(new BlendShapeWeight(animation.Name, animation.Weight(time)));
-        }
-
-        _apply(_baseApply with { Set = frameSet });
+        var frameSet = new ImmutableBlendShapeWeightSet(
+            _animations.Select(animation => new BlendShapeWeight(animation.Name, animation.Weight(time))),
+            _animations.Count);
+        _apply(new BlendShapeApply(frameSet, _baseApply.DefaultValue, _baseApply.IgnoredNames));
     }
 }

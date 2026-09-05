@@ -231,7 +231,7 @@ internal sealed class SettingsFacialSectionDrawer
         var resolver = new FacialAnimationResolver(context.Root);
         if (!resolver.TryResolve(settings, context.BodyPath, out var animations)) return;
 
-        var values = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        var values = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(context.Root);
         Undo.RecordObject(context.FaceRenderer, "Apply Blend Shapes");
         var apply = new BlendShapeApply(values, 0f, ignoredNames);

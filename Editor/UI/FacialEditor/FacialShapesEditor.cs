@@ -135,11 +135,11 @@ internal class FacialShapesEditor : EditorWindow
         return animations;
     }
 
-    private static IReadOnlyBlendShapeSet? ToFirstFrameSet(
+    private static ImmutableBlendShapeWeightSet? ToFirstFrameSet(
         IReadOnlyList<BlendShapeWeightAnimation>? animations)
     {
         if (animations == null) return null;
-        return new BlendShapeWeightSet(
+        return new ImmutableBlendShapeWeightSet(
             animations.Select(animation => animation.ToFirstFrameBlendShape()));
     }
 

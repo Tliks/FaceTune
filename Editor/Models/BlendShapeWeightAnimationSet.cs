@@ -36,10 +36,10 @@ internal class BlendShapeWeightAnimationSet : NamedItemSetBase<BlendShapeWeightA
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         if (Count != other.Count) return false;
-        foreach (var (name, anim) in map)
+        foreach (var animation in this)
         {
-            if (!other.map.TryGetValue(name, out var otherAnim)) return false;
-            if (!anim.Equals(otherAnim)) return false;
+            if (!other.TryGetValue(animation.Name, out var otherAnimation)) return false;
+            if (!animation.Equals(otherAnimation)) return false;
         }
         return true;
     }
@@ -50,9 +50,9 @@ internal class BlendShapeWeightAnimationSet : NamedItemSetBase<BlendShapeWeightA
     public override int GetHashCode()
     {
         var hash = 0;
-        foreach (var (name, anim) in map)
+        foreach (var animation in this)
         {
-            hash ^= HashCode.Combine(name, anim);
+            hash ^= HashCode.Combine(animation.Name, animation);
         }
         return HashCode.Combine(Count, hash);
     }

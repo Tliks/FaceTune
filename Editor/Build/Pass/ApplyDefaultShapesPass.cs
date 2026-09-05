@@ -33,7 +33,9 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
         if (set.Count == 0) return;
 
-        var apply = new BlendShapeApply(set, IgnoredNames: settings.ExplicitlyExcludedBlendShapeNames);
+        var apply = new BlendShapeApply(
+            new ImmutableBlendShapeWeightSet(set),
+            IgnoredNames: settings.ExplicitlyExcludedBlendShapeNames);
         avatarContext.FaceRenderer.ApplyBlendShapes(apply, avatarContext.FaceMesh);
     }
 }

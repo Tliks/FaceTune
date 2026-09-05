@@ -63,24 +63,22 @@ internal class BlendShapeOverrideManager : IDisposable
                                             && _restoreStateVersion == _stateVersionProperty.intValue;
 
     private string[] _allKeysArray = new string[0];
-    private IReadOnlyBlendShapeSet _facialSet = new BlendShapeWeightSet();
-    private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
-    private readonly BlendShapeWeightSet _effectiveBaseSet = new();
+    private ImmutableBlendShapeWeightSet _facialSet = new();
+    private ImmutableBlendShapeWeightSet _baseSet = new();
+    private ImmutableBlendShapeWeightSet _effectiveBaseSet = new();
     private ISet<string> _explicitlyExcluded = new HashSet<string>();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
-    public IReadOnlyBlendShapeSet FacialSet => _facialSet;
-    public IReadOnlyBlendShapeSet BaseSet => _baseSet;
-    public IReadOnlyBlendShapeSet EffectiveBaseSet => _effectiveBaseSet;
+    public ImmutableBlendShapeWeightSet FacialSet => _facialSet;
+    public ImmutableBlendShapeWeightSet BaseSet => _baseSet;
+    public ImmutableBlendShapeWeightSet EffectiveBaseSet => _effectiveBaseSet;
     public ISet<string> ExplicitlyExcluded => _explicitlyExcluded;
     public bool IsExplicitlyExcluded(string name) => _explicitlyExcluded.Contains(name);
 
     private void RebuildEffectiveBaseSet()
     {
-        _effectiveBaseSet.Clear();
-        _effectiveBaseSet.AddRange(_facialSet);
-        _effectiveBaseSet.AddRange(_baseSet);
+        _effectiveBaseSet = new ImmutableBlendShapeWeightSet(_facialSet.Concat(_baseSet));
     }
 
     public event Action<int>? OnSingleShapeAdded;
@@ -108,9 +106,9 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void SetInitialState(
         SkinnedMeshRenderer? targetRenderer,
-        IReadOnlyBlendShapeSet? facialSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? targetSet,
+        ImmutableBlendShapeWeightSet? facialSet,
+        ImmutableBlendShapeWeightSet? baseSet,
+        ImmutableBlendShapeWeightSet? targetSet,
         ISet<string> explicitlyExcluded,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null)
     {
@@ -138,14 +136,14 @@ internal class BlendShapeOverrideManager : IDisposable
     }
 
     private void InitializeSourceSets(
-        IReadOnlyBlendShapeSet? facialSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? targetSet,
+        ImmutableBlendShapeWeightSet? facialSet,
+        ImmutableBlendShapeWeightSet? baseSet,
+        ImmutableBlendShapeWeightSet? targetSet,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves)
     {
-        _facialSet = facialSet ?? new BlendShapeWeightSet();
-        _baseSet = baseSet ?? new BlendShapeWeightSet();
-        var initialTargetSet = targetSet ?? new BlendShapeWeightSet();
+        _facialSet = facialSet ?? new ImmutableBlendShapeWeightSet();
+        _baseSet = baseSet ?? new ImmutableBlendShapeWeightSet();
+        var initialTargetSet = targetSet ?? new ImmutableBlendShapeWeightSet();
         RebuildEffectiveBaseSet();
         ExecuteModification(() =>
         {

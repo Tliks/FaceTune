@@ -210,7 +210,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
         SetCaptureLayers();
     }
 
-    public Texture2D Capture(IReadOnlyBlendShapeSet blendShapes)
+    public Texture2D Capture(ImmutableBlendShapeWeightSet blendShapes)
     {
         using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Capture");
         ThrowIfDisposed();
@@ -265,7 +265,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
     }
 
     // UnityのSkinnedMeshRendererは元Rendererへ設定したBlendShapeが撮影用描画へ反映されないことがあるため、顔だけ複製して撮影する。
-    private GameObject CreateRenderObject(IReadOnlyBlendShapeSet blendShapes)
+    private GameObject CreateRenderObject(ImmutableBlendShapeWeightSet blendShapes)
     {
         var sourceTransform = _renderer.transform;
         var renderObject = new GameObject($"{FaceTuneConstants.Name} Thumbnail Face")

@@ -167,7 +167,7 @@ internal class SelectedShapesPreviewSession : IDisposable
             clip.GetBlendShapeAnimations(ClipImportOption.NonZero, animations, path);
 
             // Clip preview は既存 preview の上に、clip が持つ値だけを重ねる。
-            var apply = new BlendShapeApply(new BlendShapeWeightSet());
+            var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet());
             resultToAdd.Add(Writer.Create(renderer, apply, animations, isLooping, _setPreview, _clearPreview));
         }
     }
@@ -182,7 +182,7 @@ internal class SelectedShapesPreviewSession : IDisposable
         if (!TryGetGameObjectAnimations(_context, obj, target.root, target.path, animations, out var isLooping)) return;
 
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(target.root, _context);
-        var apply = new BlendShapeApply(new BlendShapeWeightSet(), 0f, ignoredNames);
+        var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet(), 0f, ignoredNames);
         // GameObject preview は選択表情の facial style を含めて完全に置き換える。
         resultToAdd.Add(Writer.Create(target.renderer, apply, animations, isLooping, _setPreview, _clearPreview));
     }
@@ -264,7 +264,7 @@ internal class SelectedShapesPreviewSession : IDisposable
 
             applyPreview(renderer, apply with
             {
-                Set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes())
+                Set = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes())
             });
             return new Writer(renderer, null, clearPreview);
         }

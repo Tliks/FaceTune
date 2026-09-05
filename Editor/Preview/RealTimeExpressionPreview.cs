@@ -98,7 +98,7 @@ internal class RealTimeExpressionPreview : IRenderFilter
     {
         var component = _targetComponent.Get(context, data.Root);
         if (component == null)
-            return new BlendShapeApply(new BlendShapeWeightSet());
+            return new BlendShapeApply(new ImmutableBlendShapeWeightSet());
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
         var facial = new FacialAnimationResolver(data.Root, context);
@@ -107,9 +107,9 @@ internal class RealTimeExpressionPreview : IRenderFilter
         if (facial.TryResolve(component, data.FacePath, out var definition))
             animations.AddRange(definition);
 
-        var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        var set = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);
 
-        return new BlendShapeApply(set.AsReadOnly(), 0f, ignoredNames);
+        return new BlendShapeApply(set, 0f, ignoredNames);
     }
 }

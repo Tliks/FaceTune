@@ -1,7 +1,7 @@
 namespace Aoyon.FaceTune;
 
 internal readonly record struct BlendShapeApply(
-    IReadOnlyBlendShapeSet Set,
+    ImmutableBlendShapeWeightSet Set,
     float? DefaultValue = null,
     ImmutableHashSet<string>? IgnoredNames = null)
 {
