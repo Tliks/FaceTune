@@ -7,6 +7,8 @@ namespace Aoyon.FaceTune.Preview;
 // early
 internal class RealTimeExpressionPreview : IRenderFilter
 {
+    public static RealTimeExpressionPreview Instance { get; } = new();
+
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
         var builder = ImmutableList.CreateBuilder<RenderGroup>();

@@ -83,7 +83,7 @@ internal class PreviewManager : IDisposable
 
     private void InitializeTargetRenderer(SkinnedMeshRenderer? renderer)
     {
-        DirectBlendShapePreview.Instance.Editing.Stop();
+        Preview.Stop();
         if (renderer == null)
         {
             _isEnabled = false;

@@ -109,10 +109,10 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     {
         return writeKind switch
         {
-            FaceTuneWriteKind.FacialData => GetBlinkBlendShapes()
-                .Concat(GetLipSyncBlendShapes()),
-            FaceTuneWriteKind.EyeBlinkAnimation => GetLipSyncBlendShapes(),
-            FaceTuneWriteKind.LipSyncAnimation => GetBlinkBlendShapes(),
+            FaceTuneWriteKind.FacialData => GetBuildInBlinkBlendShapes()
+                .Concat(GetBuldInLipSyncBlendShapes()),
+            FaceTuneWriteKind.EyeBlinkAnimation => GetBuldInLipSyncBlendShapes(),
+            FaceTuneWriteKind.LipSyncAnimation => GetBuildInBlinkBlendShapes(),
             _ => throw new ArgumentOutOfRangeException(nameof(writeKind), writeKind, null)
         };
     }
@@ -136,7 +136,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     private static int ToPlatformGestureValue(HandGesture gesture)
         => VRChatGestureMap.ToPlatformValue(gesture);
 
-    private IEnumerable<string> GetBlinkBlendShapes()
+    private IEnumerable<string> GetBuildInBlinkBlendShapes()
     {
         var settings = _descriptor.customEyeLookSettings;
         var renderer = settings.eyelidsSkinnedMesh;
@@ -153,7 +153,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .Distinct(StringComparer.Ordinal);
     }
 
-    internal IEnumerable<string> GetLipSyncBlendShapes()
+    internal IEnumerable<string> GetBuldInLipSyncBlendShapes()
     {
         return _descriptor.lipSync == VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape
                && _descriptor.VisemeSkinnedMesh != null

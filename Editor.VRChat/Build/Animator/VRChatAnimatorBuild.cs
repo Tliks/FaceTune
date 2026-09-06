@@ -29,7 +29,7 @@ internal static class VRChatAnimatorBuilder
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var externalLipSyncBlendShapes = settings.AvatarContext.Root
             .TryGetComponent<VRCAvatarDescriptor>(out var descriptor)
-            ? new VRChatSupport(descriptor).GetLipSyncBlendShapes().ToHashSet(StringComparer.Ordinal)
+            ? new VRChatSupport(descriptor).GetBuldInLipSyncBlendShapes().ToHashSet(StringComparer.Ordinal)
             : new HashSet<string>(StringComparer.Ordinal);
 
         bool? analyzedWriteDefaults;
