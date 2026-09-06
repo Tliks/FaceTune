@@ -1,41 +1,33 @@
-using nadena.dev.ndmf.preview;
-
 namespace Aoyon.FaceTune.Preview;
 
-internal class EditingShapesPreview : DirectBlendShapePreview<EditingShapesPreview>
+internal class EditingShapesPreview
 {
-    private static readonly PublishedValue<SkinnedMeshRenderer?> _target = new(null);
+    private readonly DirectBlendShapePreviewContext _preview;
+    private SkinnedMeshRenderer? _target;
 
-    public static void Start(SkinnedMeshRenderer? target)
+    internal EditingShapesPreview(DirectBlendShapePreviewContext preview)
     {
-        // 既存のプレビューは上書き
-        _target.Value = target;
-        // OnSelectedなプレビューとは共存させる意味がないので停止させる
-        SelectedShapesPreview.Disable();
+        _preview = preview;
     }
 
-    public static void Refresh(BlendShapeApply apply)
+    public void Start(SkinnedMeshRenderer? target)
     {
-        var target = _target.Value;
-        if (target == null) return;
-        SetCurrentNodeDirectly(target, apply);
+        if (_target != null && _target != target)
+            _preview.Clear(_target);
+
+        _target = target;
     }
 
-    public static void Stop()
+    public void Refresh(BlendShapeApply apply)
     {
-        if (_target.Value != null)
-        {
-            ClearCurrentNodeDirectly(_target.Value);
-        }
-        _target.Value = null;
-        SelectedShapesPreview.MayEnable();
+        if (_target != null)
+            _preview.Set(_target, apply);
     }
 
-    protected override void GetTargetRenderers(ComputeContext context, List<SkinnedMeshRenderer> targetRenderers)
+    public void Stop()
     {
-        var target = context.Observe(_target, t => t, (a, b) => a == b);
-        if (target == null) return;
-
-        targetRenderers.Add(target);
+        if (_target != null)
+            _preview.Clear(_target);
+        _target = null;
     }
 }

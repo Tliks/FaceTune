@@ -52,6 +52,8 @@ internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendSha
 
 internal sealed class ImmutableBlendShapeWeightSet : ReadOnlyNamedItemSetBase<BlendShapeWeight>, IEquatable<ImmutableBlendShapeWeightSet>
 {
+    public static readonly ImmutableBlendShapeWeightSet Empty = new();
+
     public ImmutableBlendShapeWeightSet()
     {
     }

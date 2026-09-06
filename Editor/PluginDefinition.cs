@@ -37,6 +37,6 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
 
         sequence = InPhase(BuildPhase.PlatformFinish);
         sequence.Run("Empty Pass", _ => { })
-            .PreviewingWith(new EditingShapesPreview(), new SelectedShapesPreview());
+            .PreviewingWith(DirectBlendShapePreview.Instance);
     }
 }

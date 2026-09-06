@@ -5,6 +5,8 @@ internal readonly record struct BlendShapeApply(
     float? DefaultValue = null,
     ImmutableHashSet<string>? IgnoredNames = null)
 {
+    public static readonly BlendShapeApply Empty = new(ImmutableBlendShapeWeightSet.Empty);
+
     public bool Equals(BlendShapeApply other)
     {
         if (DefaultValue != other.DefaultValue || !Set.Equals(other.Set))

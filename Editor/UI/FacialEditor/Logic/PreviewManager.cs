@@ -57,6 +57,8 @@ internal class PreviewManager : IDisposable
     private int _currentAppliedHoverIndex = -1;
     private bool _needsShapeRefresh = false;
 
+    private EditingShapesPreview Preview => DirectBlendShapePreview.Instance.Editing;
+
     public PreviewManager(BlendShapeOverrideManager blendShapeOverrideManager, VisualElement rootElement, SkinnedMeshRenderer? renderer)
     {
         _blendShapeOverrideManager = blendShapeOverrideManager;
@@ -81,7 +83,7 @@ internal class PreviewManager : IDisposable
 
     private void InitializeTargetRenderer(SkinnedMeshRenderer? renderer)
     {
-        EditingShapesPreview.Stop();
+        DirectBlendShapePreview.Instance.Editing.Stop();
         if (renderer == null)
         {
             _isEnabled = false;
@@ -89,7 +91,7 @@ internal class PreviewManager : IDisposable
         else
         {
             _isEnabled = true;
-            EditingShapesPreview.Start(renderer);
+            Preview.Start(renderer);
             GetCurrentSet(_previewSet);
             RefreshPreview();
             RequestShapeRefresh();
@@ -137,7 +139,7 @@ internal class PreviewManager : IDisposable
     {
         if (_renderer == null) return;
         var ignoredNames = _blendShapeOverrideManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal);
-        EditingShapesPreview.Refresh(new BlendShapeApply(
+        Preview.Refresh(new BlendShapeApply(
             new ImmutableBlendShapeWeightSet(_previewSet),
             0f,
             ignoredNames));
@@ -155,6 +157,6 @@ internal class PreviewManager : IDisposable
         _isEnabled = false;
         _blendShapeOverrideManager.OnAnyDataChange -= RequestShapeRefresh;
         _updateScheduler?.Pause();
-        EditingShapesPreview.Stop();
+        Preview.Stop();
     }
 }

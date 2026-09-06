@@ -4,44 +4,28 @@ using Aoyon.FaceTune.Settings;
 
 namespace Aoyon.FaceTune.Preview;
 
-internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPreview>
+internal class SelectedShapesPreview
 {
-    // 編集UIなどから一時的にプレビュー全体を無効化するための深さ。
-    private static int _disabledDepth = 0; // 0で有効 無効化したい時は足す
-    public static bool Enabled => _disabledDepth == 0;
-    public static void MayEnable()
-    {
-        if (_disabledDepth <= 0) return;
-        _disabledDepth--;
-        if (Enabled) RebuildSessionFromSelection();
-    }
-    public static void Disable()
-    {
-        _disabledDepth++;
-        DisposeSession();
-    }
+    private readonly DirectBlendShapePreviewContext _preview;
+    private SelectedShapesPreviewSession? _session;
 
-    private static SelectedShapesPreviewSession? _session;
-    private static readonly List<(GameObject root, SkinnedMeshRenderer renderer, string path)> _targets = new();
-    
-    [InitializeOnLoadMethod]
-    static void Init()
+    internal SelectedShapesPreview(DirectBlendShapePreviewContext preview)
     {
+        _preview = preview;
         ProjectSettings.SelectedExpressionPreviewSettingsChanged += RebuildSessionFromSelection;
         Selection.selectionChanged += RebuildSessionFromSelection;
         RebuildSessionFromSelection();
     }
 
-    private static void RebuildSessionFromSelection()
+    private void RebuildSessionFromSelection()
     {
         var selection = Selection.objects.Length == 1 ? Selection.objects[0] : null;
         RebuildSession(selection);
     }
 
-    private static void RebuildSession(Object? selection)
+    private void RebuildSession(Object? selection)
     {
         DisposeSession();
-        if (!Enabled) return;
         if (selection == null) return;
 
         var isProjectSelection = selection is AnimationClip || EditorUtility.IsPersistent(selection);
@@ -53,93 +37,57 @@ internal class SelectedShapesPreview : DirectBlendShapePreview<SelectedShapesPre
         _session = selection switch
         {
             AnimationClip clip => SelectedShapesPreviewSession.FromClip(
-                clip, _targets, SetCurrentNodeDirectly, ClearCurrentNodeDirectly,
-                () => RebuildSession(selection)),
+                clip, _preview, () => RebuildSession(selection)),
             GameObject obj => SelectedShapesPreviewSession.FromGameObject(
-                obj, _targets, SetCurrentNodeDirectly, ClearCurrentNodeDirectly,
-                () => RebuildSession(selection)),
+                obj, _preview, () => RebuildSession(selection)),
             _ => null
         };
     }
 
-    private static void DisposeSession()
+    private void DisposeSession()
     {
         _session?.Dispose();
         _session = null;
-    }
-
-    // FaceTuneのコンポーネントがあれば常に対象とする
-    protected override void GetTargetRenderers(ComputeContext context, List<SkinnedMeshRenderer> targetRenderers)
-    {
-        _targets.Clear();
-        foreach (var root in context.GetAvatarRoots())
-        {
-            if (!AvatarContext.TryGet(root, out var avatarContext, out _, context)) continue;
-            if (!_hasAnyComponent.Get(context, root)) continue;
-            _targets.Add((root, avatarContext.FaceRenderer, avatarContext.BodyPath));
-            targetRenderers.Add(avatarContext.FaceRenderer);
-        }
-    }
-
-    // Component増減時の再計算の範囲を縮小するためのPropCache
-    private static readonly PropCache<GameObject, bool> _hasAnyComponent = new(
-        $"{nameof(SelectedShapesPreview)}:{nameof(HasAnyComponent)}", HasAnyComponent, (a, b) => a == b, ReferenceEqualityComparer<GameObject>.Instance
-    );
-
-    private static bool HasAnyComponent(ComputeContext context, GameObject root)
-    {
-        var components = context.GetComponentsInChildren<FaceTuneTagComponent>(root, true);
-        return components.Length > 0;
     }
 }
 
 internal class SelectedShapesPreviewSession : IDisposable
 {
-    private readonly (GameObject root, SkinnedMeshRenderer renderer, string path)[] _targets;
-    private readonly Action<SkinnedMeshRenderer, BlendShapeApply> _setPreview;
-    private readonly Action<SkinnedMeshRenderer> _clearPreview;
+    private readonly DirectBlendShapePreviewContext _preview;
     private readonly Action _onInvalidate;
 
     private readonly ComputeContext _context;
-    private readonly List<Writer> _writers;
+    private readonly List<IDisposable> _previews;
     private bool _disposed;
 
     private SelectedShapesPreviewSession(
-        IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
-        Action<SkinnedMeshRenderer, BlendShapeApply> setPreview,
-        Action<SkinnedMeshRenderer> clearPreview,
+        DirectBlendShapePreviewContext preview,
         Action onInvalidate)
     {
-        _targets = targets.ToArray();
-        _setPreview = setPreview;
-        _clearPreview = clearPreview;
+        _preview = preview;
         _onInvalidate = onInvalidate;
         _context = new($"{nameof(SelectedShapesPreviewSession)}:{nameof(_context)}");
-        _writers = new List<Writer>();
+        _previews = new List<IDisposable>();
         _context.InvokeOnInvalidate(this, s => s.OnInvalidate());
     }
 
     public static SelectedShapesPreviewSession FromClip(
         AnimationClip clip,
-        IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
-        Action<SkinnedMeshRenderer, BlendShapeApply> setPreview,
-        Action<SkinnedMeshRenderer> clearPreview,
+        DirectBlendShapePreviewContext preview,
         Action onInvalidate)
     {
-        var session = new SelectedShapesPreviewSession(targets, setPreview, clearPreview, onInvalidate);
-        session.AddWriterForClip(clip, session._writers);
+        var session = new SelectedShapesPreviewSession(preview, onInvalidate);
+        session.AddWriterForClip(clip, session._previews);
         return session;
     }
 
     public static SelectedShapesPreviewSession FromGameObject(
         GameObject gameObject,
-        IReadOnlyList<(GameObject root, SkinnedMeshRenderer renderer, string path)> targets,
-        Action<SkinnedMeshRenderer, BlendShapeApply> setPreview,
-        Action<SkinnedMeshRenderer> clearPreview,
+        DirectBlendShapePreviewContext preview,
         Action onInvalidate)
     {
-        var session = new SelectedShapesPreviewSession(targets, setPreview, clearPreview, onInvalidate);
-        session.AddWriterForGameObject(gameObject, session._writers);
+        var session = new SelectedShapesPreviewSession(preview, onInvalidate);
+        session.AddWriterForGameObject(gameObject, session._previews);
         return session;
     }
 
@@ -153,38 +101,39 @@ internal class SelectedShapesPreviewSession : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        foreach (var node in _writers) node.Dispose();
-        _writers.Clear();
+        foreach (var preview in _previews) preview.Dispose();
+        _previews.Clear();
     }
     
-    private void AddWriterForClip(AnimationClip clip, List<Writer> resultToAdd)
+    private void AddWriterForClip(AnimationClip clip, List<IDisposable> resultToAdd)
     {
         var isLooping = _context.Observe(clip, c => c.isLooping, (a, b) => a == b);
+        var targets = _preview.GetTargets(_context);
 
-        foreach (var (_, renderer, path) in _targets)
+        foreach (var target in targets)
         {
             var animations = new List<BlendShapeWeightAnimation>();
-            clip.GetBlendShapeAnimations(ClipImportOption.NonZero, animations, path);
+            clip.GetBlendShapeAnimations(ClipImportOption.NonZero, animations, target.BodyPath);
 
             // Clip preview は既存 preview の上に、clip が持つ値だけを重ねる。
             var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet());
-            resultToAdd.Add(Writer.Create(renderer, apply, animations, isLooping, _setPreview, _clearPreview));
+            resultToAdd.Add(_preview.ApplyAnimation(target.FaceRenderer, apply, animations, isLooping));
         }
     }
 
-    private void AddWriterForGameObject(GameObject obj, List<Writer> resultToAdd)
+    private void AddWriterForGameObject(GameObject obj, List<IDisposable> resultToAdd)
     {
-        var target = _targets
-            .FirstOrDefault(pair => obj.transform.IsChildOf(pair.root.transform));
-        if (target == default) return;
+        var target = _preview.GetTargets(_context)
+            .FirstOrDefault(target => obj.transform.IsChildOf(target.Root.transform));
+        if (target == null) return;
 
         var animations = new List<BlendShapeWeightAnimation>();
-        if (!TryGetGameObjectAnimations(_context, obj, target.root, target.path, animations, out var isLooping)) return;
+        if (!TryGetGameObjectAnimations(_context, obj, target.Root, target.BodyPath, animations, out var isLooping)) return;
 
-        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(target.root, _context);
+        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(target.Root, _context);
         var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet(), 0f, ignoredNames);
         // GameObject preview は選択表情の facial style を含めて完全に置き換える。
-        resultToAdd.Add(Writer.Create(target.renderer, apply, animations, isLooping, _setPreview, _clearPreview));
+        resultToAdd.Add(_preview.ApplyAnimation(target.FaceRenderer, apply, animations, isLooping));
     }
 
     private static bool TryGetGameObjectAnimations(ComputeContext context, GameObject target, GameObject root, string bodyPath, List<BlendShapeWeightAnimation> resultToAdd, out bool isLooping)
@@ -229,50 +178,5 @@ internal class SelectedShapesPreviewSession : IDisposable
         }
 
         return true;
-    }
-
-    sealed class Writer : IDisposable
-    {
-        private readonly SkinnedMeshRenderer _renderer;
-        private readonly IDisposable? _multiFrame;
-        private readonly Action<SkinnedMeshRenderer> _clearPreview;
-        
-        private Writer(SkinnedMeshRenderer renderer, IDisposable? multiFrame, Action<SkinnedMeshRenderer> clearPreview)
-        {
-            _renderer = renderer;
-            _multiFrame = multiFrame;
-            _clearPreview = clearPreview;
-        }
-
-        public static Writer Create(
-            SkinnedMeshRenderer renderer,
-            BlendShapeApply apply,
-            List<BlendShapeWeightAnimation> animations,
-            bool isLooping,
-            Action<SkinnedMeshRenderer, BlendShapeApply> applyPreview,
-            Action<SkinnedMeshRenderer> clearPreview)
-        {
-            if (animations.Any(a => a.IsMultiFrame))
-            {
-                var multiFrame = new BlendShapeMultiFramePreview(
-                    apply,
-                    animations,
-                    isLooping,
-                    frame => applyPreview(renderer, frame));
-                return new Writer(renderer, multiFrame, clearPreview);
-            }
-
-            applyPreview(renderer, apply with
-            {
-                Set = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes())
-            });
-            return new Writer(renderer, null, clearPreview);
-        }
-
-        public void Dispose()
-        {
-            _multiFrame?.Dispose();
-            _clearPreview(_renderer);
-        }
     }
 }
