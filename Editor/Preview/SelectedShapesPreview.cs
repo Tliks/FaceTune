@@ -136,20 +136,23 @@ internal class SelectedShapesPreviewSession : IDisposable
         resultToAdd.Add(_preview.ApplyAnimation(target.FaceRenderer, apply, animations, isLooping));
     }
 
-    private static bool TryGetGameObjectAnimations(ComputeContext context, GameObject target, GameObject root, string bodyPath, List<BlendShapeWeightAnimation> resultToAdd, out bool isLooping)
+    private static bool TryGetGameObjectAnimations(
+        ComputeContext context,
+        GameObject target,
+        GameObject root,
+        string bodyPath,
+        List<BlendShapeWeightAnimation> resultToAdd,
+        out bool isLooping)
     {
+        isLooping = false;
+
         using var _ = ListPool<ExpressionComponent>.Get(out var expressions);
-        context.GetComponentsInChildren<ExpressionComponent>(target, true, expressions);
-        var expressionCount = expressions.Count;
+        context.GetComponents<ExpressionComponent>(target, expressions);
 
-        // 配下に複数Expressionがある場合は境界が推定不能なので無効化
-        if (expressionCount > 1)
-        {
-            isLooping = false;
-            return false;
-        }
+        // 対象GameObjectに複数Expressionがある場合は境界が推定不能なので無効化
+        if (expressions.Count > 1) return false;
 
-        if (expressionCount == 1)
+        if (expressions.Count == 1)
         {
             var expression = expressions[0];
             var facial = new FacialAnimationResolver(root, context);
@@ -158,25 +161,38 @@ internal class SelectedShapesPreviewSession : IDisposable
                 resultToAdd.AddRange(definition);
             isLooping = new MultiFrameResolver(context).Resolve(expression).MultiFrameMode
                         == MultiFrameSettings.Kind.Loop;
-        }
-        else
-        {
-            // Dataの配置はExpressionへ影響しないが、Data自身を選択した場合は編集用にpreviewする。
-            var dataComponents = context.GetComponents<ExpressionDataComponent>(target).ToList();
-            var facial = new FacialAnimationResolver(root, context);
-            if (dataComponents.Count != 1
-                || !facial.TryResolve(dataComponents[0], bodyPath, out var dataAnimations))
-            {
-                isLooping = false;
-                return false;
-            }
-
-            resultToAdd.AddRange(facial.ResolveIncoming(target.transform, bodyPath));
-            foreach (var animation in dataAnimations)
-                resultToAdd.Add(animation);
-            isLooping = false;
+            return true;
         }
 
+        // 子に Expression が残っている場合は Data 単体選択ではないので無効化
+        using var _children = ListPool<ExpressionComponent>.Get(out var childExpressions);
+        context.GetComponentsInChildren<ExpressionComponent>(target, true, childExpressions);
+        if (childExpressions.Count > 0) return false;
+
+        return TryResolveSubtreeData(context, target, root, bodyPath, resultToAdd);
+    }
+
+    private static bool TryResolveSubtreeData(
+        ComputeContext context,
+        GameObject target,
+        GameObject root,
+        string bodyPath,
+        List<BlendShapeWeightAnimation> resultToAdd)
+    {
+        // Dataの配置はExpressionへ影響しないが、Expressionが全く無いGameObjectを選択した場合は編集用にpreviewする。
+        using var _ = ListPool<ExpressionDataComponent>.Get(out var datas);
+        context.GetComponentsInChildren<ExpressionDataComponent>(target, true, datas);
+        if (datas.Count == 0) return false;
+
+        var facial = new FacialAnimationResolver(root, context);
+        var animations = new BlendShapeWeightAnimationSet();
+        foreach (var data in datas)
+            if (facial.TryResolve(data, bodyPath, out var resolved))
+                animations.AddRange(resolved);
+        if (animations.Count == 0) return false;
+
+        resultToAdd.AddRange(facial.ResolveIncoming(target.transform, bodyPath));
+        resultToAdd.AddRange(animations);
         return true;
     }
 }
