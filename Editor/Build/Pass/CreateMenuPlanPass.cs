@@ -29,7 +29,7 @@ internal static class MenuPlanBuilder
             .Select(folder => folder.transform)
             .ToHashSet();
         var menuResolver = new FaceTuneMenuResolver(context.AvatarContext.Root, existingFolders);
-        var root = new NodeCollection();
+        var installationRoots = new Dictionary<Transform, NodeCollection>();
         var existingFolderChildren = new Dictionary<Transform, NodeCollection>();
 
         foreach (var folder in folders.Values)
@@ -39,7 +39,7 @@ internal static class MenuPlanBuilder
                 folders,
                 existingFolders,
                 existingFolderChildren,
-                root,
+                installationRoots,
                 menuResolver);
             destination.Folders.Add(folder);
         }
@@ -51,7 +51,7 @@ internal static class MenuPlanBuilder
                 folders,
                 existingFolders,
                 existingFolderChildren,
-                root,
+                installationRoots,
                 menuResolver);
             destination.Controls.Add(menu);
         }
@@ -66,8 +66,14 @@ internal static class MenuPlanBuilder
             }
         }
 
-        var rootNodes = BuildChildren(root, expressionByTransform, menuResolver);
-        return new MenuPlan(rootNodes, builtExistingFolderChildren);
+        var installations = new List<MenuInstallationPlan>();
+        foreach (var (parent, children) in installationRoots)
+        {
+            var nodes = BuildChildren(children, expressionByTransform, menuResolver);
+            foreach (var node in nodes)
+                installations.Add(new MenuInstallationPlan(parent, node));
+        }
+        return new MenuPlan(installations, builtExistingFolderChildren);
     }
 
     private static IReadOnlyList<MenuNodePlan> BuildChildren(
@@ -154,7 +160,7 @@ internal static class MenuPlanBuilder
         IReadOnlyDictionary<MenuComponent, FolderNode> folders,
         ISet<Transform> existingFolders,
         IDictionary<Transform, NodeCollection> existingFolderChildren,
-        NodeCollection root,
+        IDictionary<Transform, NodeCollection> installationRoots,
         FaceTuneMenuResolver menuResolver)
     {
         var configuredTarget = menu.Menu.InstallContainer.DestroyedAsNull();
@@ -162,15 +168,17 @@ internal static class MenuPlanBuilder
             menuResolver.ValidateInstallTarget(configuredTarget, menu);
 
         var destination = menuResolver.ResolveDestination(menu, configuredTarget);
-        if (destination == null)
-            return root;
-
-        var folder = destination.GetComponent<MenuComponent>();
+        var folder = destination != null ? destination.GetComponent<MenuComponent>() : null;
         if (folder != null && folders.TryGetValue(folder, out var parent))
             return parent.Children;
-        if (destination == menuResolver.Root && !existingFolders.Contains(destination))
-            return root;
-        return existingFolderChildren.GetOrAdd(destination, _ => new NodeCollection());
+        if (destination != null
+            && (destination != menuResolver.Root || existingFolders.Contains(destination)))
+        {
+            return existingFolderChildren.GetOrAdd(destination, _ => new NodeCollection());
+        }
+
+        var installationParent = configuredTarget ?? menu.transform;
+        return installationRoots.GetOrAdd(installationParent, _ => new NodeCollection());
     }
 
     private sealed class NodeCollection

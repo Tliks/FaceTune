@@ -24,16 +24,20 @@ internal sealed record MenuControlPlan(
     float Value)
     : MenuNodePlan(DisplayName, Icon);
 
+internal sealed record MenuInstallationPlan(
+    Transform Parent,
+    MenuNodePlan Node);
+
 internal sealed class MenuPlan
 {
-    public IReadOnlyList<MenuNodePlan> RootNodes { get; }
+    public IReadOnlyList<MenuInstallationPlan> Installations { get; }
     public IReadOnlyDictionary<Transform, IReadOnlyList<MenuNodePlan>> ExistingFolderChildren { get; }
 
     public MenuPlan(
-        IEnumerable<MenuNodePlan> rootNodes,
+        IEnumerable<MenuInstallationPlan> installations,
         IReadOnlyDictionary<Transform, IReadOnlyList<MenuNodePlan>> existingFolderChildren)
     {
-        RootNodes = rootNodes.ToArray();
+        Installations = installations.ToArray();
         ExistingFolderChildren = existingFolderChildren.ToDictionary(
             pair => pair.Key,
             pair => (IReadOnlyList<MenuNodePlan>)pair.Value.ToArray());

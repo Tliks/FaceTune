@@ -8,11 +8,10 @@ internal static class VRChatMenuBuilder
 {
     public static void Build(BuildContext context, MenuPlan plan)
     {
-        CreateChildren(
-            context,
-            plan.RootNodes,
-            context.AvatarRootTransform,
-            installRoots: true);
+        foreach (var installation in plan.Installations)
+        {
+            CreateNode(context, installation.Node, installation.Parent, installRoot: true);
+        }
 
         foreach (var (folder, children) in plan.ExistingFolderChildren)
         {
@@ -27,18 +26,25 @@ internal static class VRChatMenuBuilder
         bool installRoots = false)
     {
         foreach (var node in nodes)
+            CreateNode(context, node, parent, installRoots);
+    }
+
+    private static void CreateNode(
+        BuildContext context,
+        MenuNodePlan node,
+        Transform parent,
+        bool installRoot)
+    {
+        switch (node)
         {
-            switch (node)
-            {
-                case MenuFolderPlan folder:
-                    CreateFolder(context, folder, parent, installRoots);
-                    break;
-                case MenuControlPlan control:
-                    CreateControl(context, control, parent, installRoots);
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unknown menu node type: {node.GetType()}");
-            }
+            case MenuFolderPlan folder:
+                CreateFolder(context, folder, parent, installRoot);
+                break;
+            case MenuControlPlan control:
+                CreateControl(context, control, parent, installRoot);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown menu node type: {node.GetType()}");
         }
     }
 
