@@ -104,9 +104,9 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
         var facial = new FacialAnimationResolver(data.Root, context);
-        animations.AddRange(facial.ResolveIncoming(component.transform, data.FacePath));
+        animations.AddRange(facial.ResolveIncoming(component.transform));
 
-        if (facial.TryResolve(component, data.FacePath, out var definition))
+        if (facial.TryResolve(component, out var definition))
             animations.AddRange(definition);
 
         var set = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes());

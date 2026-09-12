@@ -199,16 +199,14 @@ internal sealed class FacialAnimationResolver
 
     public bool TryResolve(
         Component component,
-        string bodyPath,
         [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
     {
-        value = Resolve(component, bodyPath, new HashSet<Component>());
+        value = Resolve(component, new HashSet<Component>());
         return value != null;
     }
 
     public bool TryResolveBase(
         Component component,
-        string bodyPath,
         [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
     {
         var data = ReadData(component);
@@ -217,13 +215,12 @@ internal sealed class FacialAnimationResolver
             value = null;
             return false;
         }
-        value = ResolveData(data, bodyPath, new HashSet<Component>(), includeLocal: false);
+        value = ResolveData(data, new HashSet<Component>(), includeLocal: false);
         return true;
     }
 
     public bool TryResolveCompositeBase(
         Component component,
-        string bodyPath,
         int entryIndex,
         [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
     {
@@ -233,11 +230,11 @@ internal sealed class FacialAnimationResolver
             value = null;
             return false;
         }
-        value = ResolveData(data, bodyPath, new HashSet<Component>(), true, entryIndex);
+        value = ResolveData(data, new HashSet<Component>(), true, entryIndex);
         return true;
     }
 
-    public BlendShapeWeightAnimationSet ResolveIncoming(Transform target, string bodyPath)
+    public BlendShapeWeightAnimationSet ResolveIncoming(Transform target)
     {
         var result = new BlendShapeWeightAnimationSet();
         foreach (var settings in _context.GetComponentsInParentExcludingSelf<SettingsComponent>(
@@ -245,13 +242,13 @@ internal sealed class FacialAnimationResolver
                      target,
                      true))
         {
-            if (Resolve(settings, bodyPath, new HashSet<Component>()) is { } value)
+            if (Resolve(settings, new HashSet<Component>()) is { } value)
                 result.AddRange(value);
         }
         return result;
     }
 
-    public void AddRenderer(ICollection<BlendShapeWeightAnimation> result, string bodyPath)
+    public void AddRenderer(ICollection<BlendShapeWeightAnimation> result)
     {
         foreach (var settings in _context.GetComponentsInChildren<SettingsComponent>(_root, true))
         {
@@ -259,7 +256,7 @@ internal sealed class FacialAnimationResolver
                 settings,
                 value => value.ApplyToRenderer,
                 (left, right) => left == right);
-            if (!enabled || Resolve(settings, bodyPath, new HashSet<Component>()) is not { } value)
+            if (!enabled || Resolve(settings, new HashSet<Component>()) is not { } value)
                 continue;
             foreach (var animation in value) result.Add(animation);
         }
@@ -267,7 +264,6 @@ internal sealed class FacialAnimationResolver
 
     private BlendShapeWeightAnimationSet? Resolve(
         Component? component,
-        string bodyPath,
         HashSet<Component> path)
     {
         if (component == null) return null;
@@ -275,13 +271,13 @@ internal sealed class FacialAnimationResolver
         {
             var source = _definitions.Resolve(expression);
             if (source == null) return null;
-            if (source != expression) return Resolve((Component)source, bodyPath, path);
+            if (source != expression) return Resolve((Component)source, path);
         }
         if (!path.Add(component)) return null;
         try
         {
             var data = ReadData(component);
-            return data == null ? null : ResolveData(data, bodyPath, path, includeLocal: true);
+            return data == null ? null : ResolveData(data, path, includeLocal: true);
         }
         finally
         {
@@ -306,7 +302,6 @@ internal sealed class FacialAnimationResolver
 
     private BlendShapeWeightAnimationSet ResolveData(
         FacialBlendShapeData data,
-        string bodyPath,
         HashSet<Component> path,
         bool includeLocal,
         int? compositeEntryLimit = null)
@@ -315,8 +310,8 @@ internal sealed class FacialAnimationResolver
         if (data.BlendShapeMode == FacialBlendShapeData.Mode.Simple)
         {
             if (data.BaseSource == FacialBlendShapeData.SimpleBaseSource.Clip)
-                AddClip(result, data.Clip, data.ClipOption, bodyPath);
-            else if (ResolveReference(data.ReferenceSource, bodyPath, path) is { } reference)
+                AddClip(result, data.Clip, data.ClipOption);
+            else if (ResolveReference(data.ReferenceSource, path) is { } reference)
                 result.AddRange(reference);
             if (includeLocal)
                 result.AddRange(data.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
@@ -335,10 +330,10 @@ internal sealed class FacialAnimationResolver
                     result.AddRange(entry.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
                     break;
                 case FacialBlendShapeData.CompositeEntry.Kind.Clip:
-                    AddClip(result, entry.Clip, entry.ClipOption, bodyPath);
+                    AddClip(result, entry.Clip, entry.ClipOption);
                     break;
                 case FacialBlendShapeData.CompositeEntry.Kind.Reference:
-                    if (ResolveReference(entry.ReferenceSource, bodyPath, path) is { } reference)
+                    if (ResolveReference(entry.ReferenceSource, path) is { } reference)
                         result.AddRange(reference);
                     break;
             }
@@ -349,19 +344,17 @@ internal sealed class FacialAnimationResolver
     private void AddClip(
         ICollection<BlendShapeWeightAnimation> result,
         AnimationClip? clip,
-        ClipImportOption option,
-        string bodyPath)
+        ClipImportOption option)
     {
         if (clip != null)
-            _context.Observe(clip).GetBlendShapeAnimations(option, result, bodyPath);
+            _context.Observe(clip).GetBlendShapeAnimations(option, result, string.Empty);
     }
 
     private BlendShapeWeightAnimationSet? ResolveReference(
         FaceTuneTagComponent? source,
-        string bodyPath,
         HashSet<Component> path)
         => source is ISettingProvider<FacialBlendShapeData>
-            ? Resolve(source, bodyPath, path)
+            ? Resolve(source, path)
             : null;
 }
 

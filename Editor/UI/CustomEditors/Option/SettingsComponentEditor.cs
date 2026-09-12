@@ -229,7 +229,7 @@ internal sealed class SettingsFacialSectionDrawer
             || !AvatarContext.TryGet(settings.gameObject, out var context, out _)) return;
 
         var resolver = new FacialAnimationResolver(context.Root);
-        if (!resolver.TryResolve(settings, context.BodyPath, out var animations)) return;
+        if (!resolver.TryResolve(settings, out var animations)) return;
 
         var values = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(context.Root);

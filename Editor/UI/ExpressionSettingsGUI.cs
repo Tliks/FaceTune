@@ -427,7 +427,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         if (clip == null || animations.serializedObject.targetObject is not Component component) return;
         if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
         var values = new List<BlendShapeWeightAnimation>();
-        clip.GetBlendShapeAnimations(ClipImportOption.All, values, context.BodyPath);
+        clip.GetBlendShapeAnimations(ClipImportOption.All, values, string.Empty);
         var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
             context.Root,
             FaceTuneWriteKind.EyeBlinkAnimation);

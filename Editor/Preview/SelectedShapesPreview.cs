@@ -128,7 +128,7 @@ internal class SelectedShapesPreviewSession : IDisposable
         if (target == null) return;
 
         var animations = new List<BlendShapeWeightAnimation>();
-        if (!TryGetGameObjectAnimations(_context, obj, target.Root, target.BodyPath, animations, out var isLooping)) return;
+        if (!TryGetGameObjectAnimations(_context, obj, target.Root, animations, out var isLooping)) return;
 
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(target.Root, _context);
         var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet(), 0f, ignoredNames);
@@ -140,7 +140,6 @@ internal class SelectedShapesPreviewSession : IDisposable
         ComputeContext context,
         GameObject target,
         GameObject root,
-        string bodyPath,
         List<BlendShapeWeightAnimation> resultToAdd,
         out bool isLooping)
     {
@@ -156,8 +155,8 @@ internal class SelectedShapesPreviewSession : IDisposable
         {
             var expression = expressions[0];
             var facial = new FacialAnimationResolver(root, context);
-            resultToAdd.AddRange(facial.ResolveIncoming(expression.transform, bodyPath));
-            if (facial.TryResolve(expression, bodyPath, out var definition))
+            resultToAdd.AddRange(facial.ResolveIncoming(expression.transform));
+            if (facial.TryResolve(expression, out var definition))
                 resultToAdd.AddRange(definition);
             isLooping = new MultiFrameResolver(context).Resolve(expression).MultiFrameMode
                         == MultiFrameSettings.Kind.Loop;
@@ -169,14 +168,13 @@ internal class SelectedShapesPreviewSession : IDisposable
         context.GetComponentsInChildren<ExpressionComponent>(target, true, childExpressions);
         if (childExpressions.Count > 0) return false;
 
-        return TryResolveSubtreeData(context, target, root, bodyPath, resultToAdd);
+        return TryResolveSubtreeData(context, target, root, resultToAdd);
     }
 
     private static bool TryResolveSubtreeData(
         ComputeContext context,
         GameObject target,
         GameObject root,
-        string bodyPath,
         List<BlendShapeWeightAnimation> resultToAdd)
     {
         // Dataの配置はExpressionへ影響しないが、Expressionが全く無いGameObjectを選択した場合は編集用にpreviewする。
@@ -187,11 +185,11 @@ internal class SelectedShapesPreviewSession : IDisposable
         var facial = new FacialAnimationResolver(root, context);
         var animations = new BlendShapeWeightAnimationSet();
         foreach (var data in datas)
-            if (facial.TryResolve(data, bodyPath, out var resolved))
+            if (facial.TryResolve(data, out var resolved))
                 animations.AddRange(resolved);
         if (animations.Count == 0) return false;
 
-        resultToAdd.AddRange(facial.ResolveIncoming(target.transform, bodyPath));
+        resultToAdd.AddRange(facial.ResolveIncoming(target.transform));
         resultToAdd.AddRange(animations);
         return true;
     }

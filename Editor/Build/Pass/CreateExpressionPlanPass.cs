@@ -74,10 +74,10 @@ internal sealed class ExpressionItemBuilder
 
     public IEnumerable<ExpressionItem> Build(ExpressionComponent component)
     {
-        var incomingFacialAnimations = _facial.ResolveIncoming(component.transform, _avatarContext.BodyPath);
+        var incomingFacialAnimations = _facial.ResolveIncoming(component.transform);
         RemoveProhibited(incomingFacialAnimations, FaceTuneWriteKind.FacialData);
 
-        var localFacialAnimations = _facial.TryResolve(component, _avatarContext.BodyPath, out var resolvedFacial)
+        var localFacialAnimations = _facial.TryResolve(component, out var resolvedFacial)
             ? resolvedFacial
             : new BlendShapeWeightAnimationSet();
         RemoveProhibited(localFacialAnimations, FaceTuneWriteKind.FacialData);

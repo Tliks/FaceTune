@@ -236,15 +236,14 @@ internal static class FacialDataGUI
                 return;
             var option = (ClipImportOption)data
                 .FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue;
-            clip.GetBlendShapeAnimations(option, values, avatar.BodyPath);
+            clip.GetBlendShapeAnimations(option, values, string.Empty);
             data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
         }
         else
         {
             if (data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue
                     is not FaceTuneTagComponent reference
-                || !new FacialAnimationResolver(avatar.Root)
-                    .TryResolve(reference, avatar.BodyPath, out var resolved))
+                || !new FacialAnimationResolver(avatar.Root).TryResolve(reference, out var resolved))
                 return;
             values.AddRange(resolved);
             data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue = null;
@@ -313,11 +312,11 @@ internal static class FacialDataGUI
         targetingSource.AnimationPropertyPath = animations.propertyPath;
 
         var resolver = new FacialAnimationResolver(avatar.Root);
-        var incoming = resolver.ResolveIncoming(component.transform, avatar.BodyPath).ToList();
+        var incoming = resolver.ResolveIncoming(component.transform).ToList();
         BlendShapeWeightAnimationSet? resolvedBase;
         var hasBase = compositeEntryIndex is { } index
-            ? resolver.TryResolveCompositeBase(component, avatar.BodyPath, index, out resolvedBase)
-            : resolver.TryResolveBase(component, avatar.BodyPath, out resolvedBase);
+            ? resolver.TryResolveCompositeBase(component, index, out resolvedBase)
+            : resolver.TryResolveBase(component, out resolvedBase);
         FacialShapesEditor.TryOpenEditor(
             avatar.FaceRenderer,
             targeting,
@@ -398,8 +397,7 @@ internal static class FacialDataGUI
         if (requiresFlatten
             && data.serializedObject.targetObject is Component component
             && AvatarContext.TryGet(component.gameObject, out var avatar, out _)
-            && new FacialAnimationResolver(avatar.Root)
-                .TryResolve(component, avatar.BodyPath, out var resolved))
+            && new FacialAnimationResolver(avatar.Root).TryResolve(component, out var resolved))
             flattened = resolved.ToList();
 
         ClearSimple(data);
