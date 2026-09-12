@@ -13,11 +13,18 @@ namespace Aoyon.FaceTune
             Folder = 20
         }
 
+        public enum ToggleParameterType
+        {
+            Bool = 0,
+            Int = 10
+        }
+
         public Kind MenuKind = DefaultMenuKind;
         public MenuSettings Menu = new();
 
         // ParameterNameで既存Parameterを参照する。Folderでは使用しない。
         public bool UseExistingParameter = DefaultUseExistingParameter;
+        public ToggleParameterType ExistingToggleParameterType = DefaultExistingToggleParameterType;
 
         // 同じGroupNameのToggleで一つのInt Parameterを共有する。
         public bool GenerateParameterGroup = DefaultGenerateParameterGroup;
@@ -43,6 +50,7 @@ namespace Aoyon.FaceTune
 
         internal const Kind DefaultMenuKind = Kind.Toggle;
         internal const bool DefaultUseExistingParameter = false;
+        internal const ToggleParameterType DefaultExistingToggleParameterType = ToggleParameterType.Bool;
         internal const bool DefaultGenerateParameterGroup = false;
         internal const bool DefaultSynced = true;
         internal const bool DefaultSaved = true;

@@ -736,6 +736,9 @@ msgstr "既存"
 msgid "menu.selectedValue.label"
 msgstr "選択時の値"
 
+msgid "menu.toggleParameterType.label"
+msgstr "パラメーター型"
+
 # FaceTune Window
 msgid "window.avatarMissing.message"
 msgstr "アバターを右クリックし、GameObject/FaceTune/Windowから開き直してください。"

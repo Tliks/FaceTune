@@ -105,14 +105,19 @@ internal sealed class ConditionResolver
                 $"Menu '{menu.name}' has an incompatible condition.");
         }
         var isEnabled = condition.Mode == MenuConditionMode.Enabled;
-        return !menu.UseExistingParameter && menu.GenerateParameterGroup
-            ? ParameterCondition.Int(
+        var usesGeneratedGroup = !menu.UseExistingParameter && menu.GenerateParameterGroup;
+        var usesExistingInt = menu.UseExistingParameter
+                              && menu.ExistingToggleParameterType == MenuComponent.ToggleParameterType.Int;
+        if (usesGeneratedGroup || usesExistingInt)
+        {
+            return ParameterCondition.Int(
                 menu.ParameterName,
                 isEnabled ? ComparisonType.Equal : ComparisonType.NotEqual,
-                (int)menu.SelectedValue)
-            : ParameterCondition.Bool(
-                menu.ParameterName,
-                isEnabled == (menu.SelectedValue != 0f));
+                Mathf.RoundToInt(menu.SelectedValue));
+        }
+        return ParameterCondition.Bool(
+            menu.ParameterName,
+            isEnabled == (menu.SelectedValue != 0f));
     }
 
     private DnfCondition? ResolveConditionCase(ConditionCase conditionCase)

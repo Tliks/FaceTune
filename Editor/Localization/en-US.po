@@ -736,6 +736,9 @@ msgstr "Existing"
 msgid "menu.selectedValue.label"
 msgstr "Selected Value"
 
+msgid "menu.toggleParameterType.label"
+msgstr "Parameter Type"
+
 # FaceTune Window
 msgid "window.avatarMissing.message"
 msgstr "Right-click the avatar, then reopen it from GameObject/FaceTune/Window."

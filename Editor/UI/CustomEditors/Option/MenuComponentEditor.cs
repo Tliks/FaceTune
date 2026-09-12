@@ -82,6 +82,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     private readonly Component _owner;
     private readonly SerializedProperty _kind;
     private readonly SerializedProperty _useExistingParameter;
+    private readonly SerializedProperty _existingToggleParameterType;
     private readonly SerializedProperty _generateParameterGroup;
     private readonly SerializedProperty _parameterName;
     private readonly SerializedProperty _groupName;
@@ -95,6 +96,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         _owner = owner;
         _kind = serializedObject.FindProperty(nameof(MenuComponent.MenuKind));
         _useExistingParameter = serializedObject.FindProperty(nameof(MenuComponent.UseExistingParameter));
+        _existingToggleParameterType = serializedObject.FindProperty(nameof(MenuComponent.ExistingToggleParameterType));
         _generateParameterGroup = serializedObject.FindProperty(nameof(MenuComponent.GenerateParameterGroup));
         _parameterName = serializedObject.FindProperty(nameof(MenuComponent.ParameterName));
         _groupName = serializedObject.FindProperty(nameof(MenuComponent.GroupName));
@@ -107,6 +109,9 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
             new[]
             {
                 SectionActionField.From(_useExistingParameter, () => MenuComponent.DefaultUseExistingParameter),
+                SectionActionField.From(
+                    _existingToggleParameterType,
+                    () => MenuComponent.DefaultExistingToggleParameterType),
                 SectionActionField.From(_generateParameterGroup, () => MenuComponent.DefaultGenerateParameterGroup),
                 SectionActionField.From(_parameterName, () => MenuComponent.DefaultParameterName),
                 SectionActionField.From(_groupName, () => MenuComponent.DefaultGroupName),
@@ -122,6 +127,7 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
     public float GetHeight()
     {
         var rows = 1;
+        if (IsExisting && IsToggle) rows++;
         if (!IsExisting && IsToggle) rows++;
         if (!IsGroup) rows++;
         if (!IsExisting) rows += IsGroup ? 1 : 3;
@@ -168,6 +174,15 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
             position.NewLine();
         }
 
+        if (isExisting && isToggle)
+        {
+            EditorGUI.PropertyField(
+                position,
+                _existingToggleParameterType,
+                "menu.toggleParameterType.label".LG());
+            position.NewLine();
+        }
+
         if (!isExisting)
         {
             if (isToggle)
@@ -185,7 +200,15 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
         }
 
         if (isToggle && !isGroup)
-            DrawFloatToggle(position, _selectedValue, "menu.selectedValue.label");
+        {
+            var usesInt = isExisting
+                          && _existingToggleParameterType.intValue
+                          == (int)MenuComponent.ToggleParameterType.Int;
+            if (usesInt)
+                EditorGUI.PropertyField(position, _selectedValue, "menu.selectedValue.label".LG());
+            else
+                DrawFloatToggle(position, _selectedValue, "menu.selectedValue.label");
+        }
     }
 
     private bool DrawBinding(Rect position)
