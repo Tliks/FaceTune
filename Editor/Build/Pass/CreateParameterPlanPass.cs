@@ -7,18 +7,7 @@ internal sealed class CreateParameterPlanPass : FaceTunePass<CreateParameterPlan
 
     protected override void Execute(FaceTuneContext context)
     {
-        context.SetParameterPlan(ParameterPlanBuilder.Build(context.AvatarContext.Root));
+        var plan = ParameterResolver.Resolve(context.AvatarContext.Root, validateForBuild: true);
+        context.SetParameterPlan(plan);
     }
-}
-
-internal static class ParameterPlanBuilder
-{
-    public static ParameterPlan Build(GameObject root)
-        => new(ParameterResolver.ResolveParameters(root).Select(declaration =>
-            new ParameterItem(
-                declaration.Name,
-                declaration.Type,
-                declaration.DefaultValue,
-                declaration.Synced,
-                declaration.Saved)));
 }

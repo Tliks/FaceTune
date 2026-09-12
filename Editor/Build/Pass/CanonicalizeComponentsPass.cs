@@ -19,79 +19,100 @@ internal static class MenuCanonicalizer
     public static void Canonicalize(FaceTuneContext context)
     {
         var root = context.AvatarContext.Root;
-        var definitions = ParameterResolver.ResolveMenus(root, validateForBuild: true);
+        var parameterPlan = context.RequireParameterPlan();
 
-        foreach (var definition in definitions)
-            Apply(root, definition);
+        ApplyParameterBindings(parameterPlan);
+        ExpandExpressionSets(root, parameterPlan);
+        ExpandDirectMenus(root, parameterPlan);
 
-        var parameterDomains = context.RequireSettings().ParameterDomains;
-        var groupedDefinitions = definitions.Where(definition => definition.GenerateParameterGroup);
-        var groupsByParameter = groupedDefinitions.GroupBy(
-            definition => definition.ParameterName,
-            StringComparer.Ordinal);
-        foreach (var group in groupsByParameter)
-        {
-            parameterDomains = parameterDomains.WithIntDomainOverride(
-                group.Key,
-                new IntParameterDomain(0, group.Count()));
-        }
         var settings = context.RequireSettings();
+        var parameterDomains = settings.ParameterDomains;
+        foreach (var (name, domain) in parameterPlan.IntDomains)
+            parameterDomains = parameterDomains.WithIntDomainOverride(name, domain);
         context.SetSettings(settings with { ParameterDomains = parameterDomains });
     }
 
-    private static void Apply(GameObject root, ResolvedMenuDefinition definition)
+    private static void ApplyParameterBindings(ParameterPlan parameterPlan)
     {
-        if (definition.ExistingMenu != null)
+        foreach (var (source, binding) in parameterPlan.Bindings)
         {
-            ApplyResolvedValues(definition.ExistingMenu, definition);
-            return;
+            if (source is not MenuComponent menu) continue;
+            ApplyParameterBinding(menu, binding);
         }
+    }
 
-        var menuObject = new GameObject(definition.Source is SettingsComponent
-            ? $"{definition.Source.name} (Expression Set Menu)"
-            : definition.Source.name);
-        var parent = definition.Source.transform.parent.DestroyedAsNull() ?? root.transform;
-        menuObject.transform.SetParent(parent, false);
+    private static void ExpandExpressionSets(GameObject root, ParameterPlan parameterPlan)
+    {
+        var allSettings = root.GetComponentsInChildren<SettingsComponent>(true);
+        var expressionSets = allSettings.Where(settings => settings.ExpressionSetEnabled).ToArray();
+
+        foreach (var settings in expressionSets)
+        {
+            var menuObject = new GameObject($"{settings.name} (Expression Set Menu)");
+            var parent = settings.transform.parent.DestroyedAsNull() ?? root.transform;
+            menuObject.transform.SetParent(parent, false);
+
+            var menu = menuObject.AddComponent<MenuComponent>();
+            menu.MenuKind = MenuComponent.Kind.Toggle;
+            menu.Menu = settings.ExpressionSet.Menu;
+            menu.UseExistingParameter = false;
+            menu.DefaultValue = settings.ExpressionSet.DefaultSelected ? 1f : 0f;
+            ApplyParameterBinding(menu, parameterPlan.GetBinding(settings));
+
+            settings.HasCondition = true;
+            if (settings.Condition.Cases.Count == 0)
+                settings.Condition.Cases.Add(new ConditionCase());
+
+            foreach (var conditionCase in settings.Condition.Cases)
+                conditionCase.MenuConditions.Add(MenuCondition.Enabled(menu));
+        }
+    }
+
+    private static void ExpandDirectMenus(GameObject root, ParameterPlan parameterPlan)
+    {
+        var expressions = root.GetComponentsInChildren<ExpressionComponent>(true);
+        var sources = expressions.Where(expression => expression.DirectMenuEnabled).ToArray();
+
+        foreach (var source in sources)
+        {
+            var menuObject = new GameObject(source.name);
+            var parent = source.transform.parent.DestroyedAsNull() ?? root.transform;
+            menuObject.transform.SetParent(parent, false);
+            source.DirectMenuSettings.GeneratedCondition = MenuCondition.Enabled(
+                CreateDirectMenu(
+                    menuObject,
+                    source,
+                    parameterPlan.GetBinding(source)));
+        }
+    }
+
+    private static MenuComponent CreateDirectMenu(
+        GameObject menuObject,
+        ExpressionComponent source,
+        ParameterBinding binding)
+    {
         var menu = menuObject.AddComponent<MenuComponent>();
-        ApplyResolvedValues(menu, definition);
-
-        switch (definition.Source)
+        menu.MenuKind = MenuComponent.Kind.Toggle;
+        menu.Menu = source.DirectMenuSettings.Menu;
+        if (menu.Menu.Icon.Mode == MenuIconSettings.Kind.ExpressionPreview
+            && menu.Menu.Icon.PreviewExpression == null)
         {
-            case ExpressionComponent expression:
-                menu.Menu = expression.DirectMenuSettings.Menu;
-                if (menu.Menu.Icon.Mode == MenuIconSettings.Kind.ExpressionPreview
-                    && menu.Menu.Icon.PreviewExpression == null)
-                {
-                    menu.Menu.Icon.PreviewExpression = expression.transform;
-                }
-                expression.DirectMenuSettings.GeneratedCondition = MenuCondition.Enabled(menu);
-                break;
-            case SettingsComponent settings:
-                menu.Menu = settings.ExpressionSet.Menu;
-                settings.HasCondition = true;
-                if (settings.Condition.Cases.Count == 0)
-                    settings.Condition.Cases.Add(new ConditionCase());
-                foreach (var conditionCase in settings.Condition.Cases)
-                    conditionCase.MenuConditions.Add(MenuCondition.Enabled(menu));
-                break;
+            menu.Menu.Icon.PreviewExpression = source.transform;
         }
+        menu.UseExistingParameter = false;
+        ApplyParameterBinding(menu, binding);
+        return menu;
     }
 
-    private static void ApplyResolvedValues(
-        MenuComponent menu,
-        ResolvedMenuDefinition definition)
+    private static void ApplyParameterBinding(MenuComponent menu, ParameterBinding binding)
     {
-        menu.MenuKind = definition.Kind;
-        menu.UseExistingParameter = definition.UseExistingParameter;
-        menu.GenerateParameterGroup = definition.GenerateParameterGroup;
-        menu.GroupName = definition.GroupName;
-        menu.ParameterName = definition.ParameterName;
-        menu.Synced = definition.Synced;
-        menu.Saved = definition.Saved;
-        menu.DefaultValue = definition.DefaultValue;
-        menu.SelectedValue = definition.SelectedValue;
+        menu.ParameterName = binding.Name;
+        menu.SelectedValue = binding.SelectedValue;
+        menu.GenerateParameterGroup = binding.GenerateParameterGroup;
+        menu.GroupName = binding.GroupName;
+        menu.Synced = binding.Synced;
+        menu.Saved = binding.Saved;
     }
-
 }
 
 internal static class EmptyConditionRemover

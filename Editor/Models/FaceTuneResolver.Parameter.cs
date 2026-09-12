@@ -2,245 +2,209 @@ using Aoyon.FaceTune.Build;
 
 namespace Aoyon.FaceTune;
 
-internal sealed record ParameterDeclaration(
-    FaceTuneTagComponent Source,
-    string Name,
-    ParameterValueType Type,
-    float DefaultValue,
-    bool Synced,
-    bool Saved);
-
-internal sealed record ResolvedMenuDefinition(
-    FaceTuneTagComponent Source,
-    MenuComponent? ExistingMenu,
-    MenuComponent.Kind Kind,
-    bool UseExistingParameter,
-    bool GenerateParameterGroup,
-    string GroupName,
-    string ParameterName,
-    bool Synced,
-    bool Saved,
-    float DefaultValue,
-    float SelectedValue);
-
 internal static class ParameterResolver
 {
-    public static IReadOnlyList<ResolvedMenuDefinition> ResolveMenus(
-        GameObject root,
-        bool validateForBuild = false)
+    public static ParameterPlan Resolve(GameObject root, bool validateForBuild = false)
     {
-        var unresolved = CollectMenus(root);
-        var groupIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var result = new List<ResolvedMenuDefinition>(unresolved.Count);
-        foreach (var menu in unresolved)
+        var sources = ResolveSources(root);
+        if (validateForBuild) Validate(root, sources);
+        var items = new List<ParameterItem>();
+        var individualSources = sources.Where(source => !source.GenerateParameterGroup);
+        foreach (var source in individualSources)
         {
-            if (menu.GenerateParameterGroup)
-            {
-                var selectedValue = groupIndices.TryGetValue(menu.GroupName, out var previous)
-                    ? previous + 1
-                    : 1;
-                groupIndices[menu.GroupName] = selectedValue;
-                result.Add(menu.Resolve(GroupParameterName(menu.GroupName), selectedValue));
-                continue;
-            }
-
-            result.Add(menu.Resolve(
-                menu.UseExistingParameter || !string.IsNullOrWhiteSpace(menu.ParameterName)
-                    ? menu.ParameterName
-                    : GeneratedParameterName(root, menu.Source, menu.Purpose),
-                menu.SelectedValue));
+            items.Add(new ParameterItem(
+                source.Source,
+                source.ParameterName,
+                source.Kind == MenuComponent.Kind.Toggle
+                    ? ParameterValueType.Bool
+                    : ParameterValueType.Float,
+                GetDefaultValue(source),
+                source.Synced,
+                source.Saved));
         }
-        if (validateForBuild) Validate(result);
-        return result;
-    }
 
-    public static IReadOnlyList<ParameterDeclaration> ResolveParameters(GameObject root)
-    {
-        var menus = ResolveMenus(root).Where(menu => !menu.UseExistingParameter).ToArray();
-        var individualMenus = menus.Where(menu => !menu.GenerateParameterGroup);
-        var result = individualMenus.Select(menu => new ParameterDeclaration(
-            menu.Source,
-            menu.ParameterName,
-            menu.Kind == MenuComponent.Kind.Toggle
-                ? ParameterValueType.Bool
-                : ParameterValueType.Float,
-            GetIndividualDefaultValue(menu),
-            menu.Synced,
-            menu.Saved)).ToList();
-
-        var groupedMenus = menus.Where(menu => menu.GenerateParameterGroup);
-        var groupsByParameter = groupedMenus.GroupBy(
-            menu => menu.ParameterName,
-            StringComparer.Ordinal);
-        foreach (var group in groupsByParameter)
+        var groupedSources = sources.Where(source => source.GenerateParameterGroup);
+        var groups = groupedSources.GroupBy(source => source.ParameterName, StringComparer.Ordinal);
+        foreach (var group in groups)
         {
             var members = group.ToArray();
-            var defaultMenu = members.FirstOrDefault(menu => menu.DefaultValue != 0f);
-            result.Add(new ParameterDeclaration(
+            var defaultSource = members.FirstOrDefault(source => source.DefaultValue != 0f);
+            items.Add(new ParameterItem(
                 members[0].Source,
                 group.Key,
                 ParameterValueType.Int,
-                defaultMenu?.SelectedValue ?? 0f,
+                defaultSource?.SelectedValue ?? 0f,
                 Synced: true,
                 Saved: true));
         }
 
-        return result;
+        var bindings = sources.ToDictionary(
+            source => source.Source,
+            source => new ParameterBinding(
+                source.ParameterName,
+                source.SelectedValue,
+                source.GenerateParameterGroup,
+                source.GroupName,
+                source.Synced,
+                source.Saved));
+        var intDomains = groups.ToDictionary(
+            group => group.Key,
+            group => new IntParameterDomain(0, group.Count()),
+            StringComparer.Ordinal);
+        return new ParameterPlan(items, bindings, intDomains);
     }
 
-    public static string GroupParameterName(string groupName)
+    public static string GenerateParameterName(
+        GameObject root,
+        FaceTuneTagComponent source,
+        string purpose)
+    {
+        var indices = new Stack<int>();
+        for (var current = source.transform; current != root.transform; current = current.parent!)
+            indices.Push(current.GetSiblingIndex());
+        var componentIndex = Array.IndexOf(source.GetComponents<FaceTuneTagComponent>(), source);
+        var identity = $"{string.Join("/", indices)}:{componentIndex}:{purpose}";
+        var hash = Hash128.Compute(identity);
+        return $"{FaceTuneConstants.GeneratedParameterPrefix}/Menu/{source.gameObject.name}_{hash}";
+    }
+
+    public static string GetGroupParameterName(string groupName)
         => $"{FaceTuneConstants.GeneratedParameterPrefix}/MenuGroup/{groupName}";
 
-    private static List<UnresolvedMenuDefinition> CollectMenus(GameObject root)
+    private static IReadOnlyList<ParameterSource> ResolveSources(GameObject root)
     {
-        var result = new List<UnresolvedMenuDefinition>();
-        var behavior = new ExpressionBehaviorResolver();
-        foreach (var component in root.GetComponentsInChildren<FaceTuneTagComponent>(true))
-        {
-            switch (component)
-            {
-                case MenuComponent menu when menu.MenuKind != MenuComponent.Kind.Folder:
-                {
-                    var grouped = !menu.UseExistingParameter
-                                  && menu.MenuKind == MenuComponent.Kind.Toggle
-                                  && menu.GenerateParameterGroup
-                                  && !string.IsNullOrWhiteSpace(menu.GroupName);
-                    result.Add(new UnresolvedMenuDefinition(
-                        menu,
-                        menu,
-                        menu.MenuKind,
-                        menu.UseExistingParameter,
-                        grouped,
-                        menu.GroupName,
-                        menu.ParameterName,
-                        "Menu",
-                        grouped || menu.Synced,
-                        grouped || menu.Saved,
-                        menu.DefaultValue,
-                        menu.SelectedValue));
-                    break;
-                }
-                case ExpressionComponent expression when expression.DirectMenuEnabled:
-                {
-                    var settings = expression.DirectMenuSettings;
-                    var writeMode = behavior.Resolve(expression).WriteMode;
-                    var grouped = writeMode == ExpressionWriteMode.Replace
-                                  || !string.IsNullOrWhiteSpace(settings.GroupName);
-                    result.Add(new UnresolvedMenuDefinition(
-                        expression,
-                        null,
-                        MenuComponent.Kind.Toggle,
-                        UseExistingParameter: false,
-                        grouped,
-                        writeMode == ExpressionWriteMode.Replace
-                            ? BuiltInMenuGroups.DirectMenuReplace
-                            : settings.GroupName,
-                        string.Empty,
-                        "DirectMenu",
-                        Synced: true,
-                        Saved: true,
-                        DefaultValue: 0f,
-                        SelectedValue: 1f));
-                    break;
-                }
-                case SettingsComponent settings when settings.ExpressionSetEnabled:
-                    result.Add(new UnresolvedMenuDefinition(
-                        settings,
-                        null,
-                        MenuComponent.Kind.Toggle,
-                        UseExistingParameter: false,
-                        GenerateParameterGroup: true,
-                        BuiltInMenuGroups.ExpressionSet,
-                        string.Empty,
-                        "ExpressionSet",
-                        Synced: true,
-                        Saved: true,
-                        settings.ExpressionSet.DefaultSelected ? 1f : 0f,
-                        SelectedValue: 1f));
-                    break;
-            }
-        }
-
-        var virtualSiblingIndices = new Dictionary<FaceTuneTagComponent, int>();
-        var virtualMenus = result.Where(menu => menu.ExistingMenu == null).ToArray();
-        foreach (var parentGroup in virtualMenus.GroupBy(menu =>
-                     menu.Source.transform.parent.DestroyedAsNull() ?? root.transform))
-        {
-            var nextIndex = parentGroup.Key.childCount;
-            foreach (var menu in parentGroup.Where(menu => menu.Source is SettingsComponent))
-                virtualSiblingIndices.Add(menu.Source, nextIndex++);
-            foreach (var menu in parentGroup.Where(menu => menu.Source is ExpressionComponent))
-                virtualSiblingIndices.Add(menu.Source, nextIndex++);
-        }
-
-        result.Sort((left, right) => CompareHierarchyOrder(
-            GetCanonicalPath(root, left, virtualSiblingIndices),
-            GetCanonicalPath(root, right, virtualSiblingIndices)));
+        var result = new List<ParameterSource>();
+        AddMenus(root, result);
+        AddDirectMenus(root, result);
+        AddPresets(root, result);
+        AssignParameterGroups(result);
         return result;
     }
 
-    private static int[] GetCanonicalPath(
-        GameObject root,
-        UnresolvedMenuDefinition menu,
-        IReadOnlyDictionary<FaceTuneTagComponent, int> virtualSiblingIndices)
+    private static void AddMenus(GameObject root, ICollection<ParameterSource> result)
     {
-        var transform = menu.ExistingMenu != null
-            ? menu.ExistingMenu.transform
-            : menu.Source.transform.parent.DestroyedAsNull() ?? root.transform;
-        var indices = new Stack<int>();
-        for (var current = transform; current != root.transform; current = current.parent!)
-            indices.Push(current.GetSiblingIndex());
-        var path = indices.ToList();
-        if (menu.ExistingMenu == null)
-            path.Add(virtualSiblingIndices[menu.Source]);
-        return path.ToArray();
-    }
-
-    private static int CompareHierarchyOrder(IReadOnlyList<int> left, IReadOnlyList<int> right)
-    {
-        var count = Mathf.Min(left.Count, right.Count);
-        for (var index = 0; index < count; index++)
+        var components = root.GetComponentsInChildren<MenuComponent>(true);
+        foreach (var menu in components)
         {
-            var comparison = left[index].CompareTo(right[index]);
-            if (comparison != 0) return comparison;
+            if (menu.MenuKind == MenuComponent.Kind.Folder || menu.UseExistingParameter) continue;
+            var grouped = menu.MenuKind == MenuComponent.Kind.Toggle
+                          && menu.GenerateParameterGroup
+                          && !string.IsNullOrWhiteSpace(menu.GroupName);
+            var parameterName = string.IsNullOrWhiteSpace(menu.ParameterName)
+                ? GenerateParameterName(root, menu, "Menu")
+                : menu.ParameterName;
+            result.Add(new ParameterSource(
+                menu,
+                menu.MenuKind,
+                grouped,
+                menu.GroupName,
+                parameterName,
+                grouped || menu.Synced,
+                grouped || menu.Saved,
+                menu.DefaultValue,
+                menu.SelectedValue));
         }
-        return left.Count.CompareTo(right.Count);
     }
 
-    private static void Validate(IReadOnlyList<ResolvedMenuDefinition> definitions)
+    private static void AddDirectMenus(GameObject root, ICollection<ParameterSource> result)
     {
-        foreach (var definition in definitions)
+        var behavior = new ExpressionBehaviorResolver();
+        var expressions = root.GetComponentsInChildren<ExpressionComponent>(true);
+        foreach (var expression in expressions)
         {
-            ValidateParameterName(definition.ParameterName, definition.Source);
-            if (definition.GenerateParameterGroup
-                && (string.IsNullOrWhiteSpace(definition.GroupName)
-                    || definition.GroupName.Any(char.IsControl)))
+            if (!expression.DirectMenuEnabled) continue;
+            var writeMode = behavior.Resolve(expression).WriteMode;
+            var groupName = writeMode == ExpressionWriteMode.Replace
+                ? BuiltInMenuGroups.DirectMenuReplace
+                : expression.DirectMenuSettings.GroupName;
+            var grouped = writeMode == ExpressionWriteMode.Replace
+                          || !string.IsNullOrWhiteSpace(groupName);
+            var parameterName = grouped
+                ? string.Empty
+                : GenerateParameterName(root, expression, "DirectMenu");
+            result.Add(new ParameterSource(
+                expression,
+                MenuComponent.Kind.Toggle,
+                grouped,
+                groupName,
+                parameterName,
+                true,
+                true,
+                0f,
+                1f));
+        }
+    }
+
+    private static void AddPresets(GameObject root, ICollection<ParameterSource> result)
+    {
+        var settingsComponents = root.GetComponentsInChildren<SettingsComponent>(true);
+        foreach (var settings in settingsComponents)
+        {
+            if (!settings.ExpressionSetEnabled) continue;
+            result.Add(new ParameterSource(
+                settings,
+                MenuComponent.Kind.Toggle,
+                true,
+                BuiltInMenuGroups.ExpressionSet,
+                string.Empty,
+                true,
+                true,
+                settings.ExpressionSet.DefaultSelected ? 1f : 0f,
+                1f));
+        }
+    }
+
+    private static void AssignParameterGroups(IReadOnlyList<ParameterSource> sources)
+    {
+        var groupedSources = sources.Where(source => source.GenerateParameterGroup);
+        var groups = groupedSources.GroupBy(source => source.GroupName, StringComparer.Ordinal);
+        foreach (var group in groups)
+        {
+            var parameterName = GetGroupParameterName(group.Key);
+            var selectedValue = 1f;
+            foreach (var source in group)
+            {
+                source.ParameterName = parameterName;
+                source.SelectedValue = selectedValue++;
+            }
+        }
+    }
+
+    private static void Validate(GameObject root, IReadOnlyList<ParameterSource> sources)
+    {
+        var menus = root.GetComponentsInChildren<MenuComponent>(true);
+        var existingParameters = menus.Where(menu =>
+            menu.MenuKind != MenuComponent.Kind.Folder && menu.UseExistingParameter);
+        foreach (var menu in existingParameters)
+            ValidateParameterName(menu.ParameterName, menu);
+
+        foreach (var source in sources)
+        {
+            ValidateParameterName(source.ParameterName, source.Source);
+            if (source.GenerateParameterGroup
+                && (string.IsNullOrWhiteSpace(source.GroupName)
+                    || source.GroupName.Any(char.IsControl)))
             {
                 throw new InvalidOperationException(
-                    $"Menu group name is invalid: '{definition.Source.name}'.");
+                    $"Menu group name is invalid: '{source.Source.name}'.");
             }
         }
 
-        var generatedDefinitions = definitions.Where(definition => !definition.UseExistingParameter);
-        var definitionsByName = generatedDefinitions.GroupBy(
-            definition => definition.ParameterName,
-            StringComparer.Ordinal);
-        foreach (var sameName in definitionsByName)
+        var sourcesByName = sources.GroupBy(source => source.ParameterName, StringComparer.Ordinal);
+        foreach (var sameName in sourcesByName)
         {
-            if (sameName.Count() > 1 && sameName.Any(definition => !definition.GenerateParameterGroup))
+            if (sameName.Count() > 1 && sameName.Any(source => !source.GenerateParameterGroup))
             {
                 throw new InvalidOperationException(
                     $"Menu parameter name is used by multiple generated controls: '{sameName.Key}'.");
             }
         }
 
-        var groupedDefinitions = definitions.Where(definition => definition.GenerateParameterGroup);
-        var groupsByParameter = groupedDefinitions.GroupBy(
-            definition => definition.ParameterName,
-            StringComparer.Ordinal);
-        foreach (var group in groupsByParameter)
+        var groupedSources = sources.Where(source => source.GenerateParameterGroup);
+        var groups = groupedSources.GroupBy(source => source.ParameterName, StringComparer.Ordinal);
+        foreach (var group in groups)
         {
-            if (group.Count(definition => definition.DefaultValue != 0f) > 1)
+            if (group.Count(source => source.DefaultValue != 0f) > 1)
             {
                 throw new InvalidOperationException(
                     $"Menu group '{group.First().GroupName}' has multiple initial options.");
@@ -259,51 +223,44 @@ internal static class ParameterResolver
         }
     }
 
-    private static string GeneratedParameterName(
-        GameObject root,
-        FaceTuneTagComponent source,
-        string purpose)
+    private static float GetDefaultValue(ParameterSource source)
     {
-        var indices = new Stack<int>();
-        for (var current = source.transform; current != root.transform; current = current.parent!)
-            indices.Push(current.GetSiblingIndex());
-        var componentIndex = Array.IndexOf(source.GetComponents<FaceTuneTagComponent>(), source);
-        var identity = $"{string.Join("/", indices)}:{componentIndex}:{purpose}";
-        return $"{FaceTuneConstants.GeneratedParameterPrefix}/Menu/{source.gameObject.name}_{Hash128.Compute(identity)}";
+        if (source.Kind != MenuComponent.Kind.Toggle) return source.DefaultValue;
+        return (source.DefaultValue != 0f) == (source.SelectedValue != 0f) ? 1f : 0f;
     }
 
-    private static float GetIndividualDefaultValue(ResolvedMenuDefinition menu)
+    private sealed class ParameterSource
     {
-        if (menu.Kind != MenuComponent.Kind.Toggle) return menu.DefaultValue;
-        return (menu.DefaultValue != 0f) == (menu.SelectedValue != 0f) ? 1f : 0f;
-    }
+        public FaceTuneTagComponent Source { get; }
+        public MenuComponent.Kind Kind { get; }
+        public bool GenerateParameterGroup { get; }
+        public string GroupName { get; }
+        public string ParameterName { get; set; }
+        public bool Synced { get; }
+        public bool Saved { get; }
+        public float DefaultValue { get; }
+        public float SelectedValue { get; set; }
 
-    private sealed record UnresolvedMenuDefinition(
-        FaceTuneTagComponent Source,
-        MenuComponent? ExistingMenu,
-        MenuComponent.Kind Kind,
-        bool UseExistingParameter,
-        bool GenerateParameterGroup,
-        string GroupName,
-        string ParameterName,
-        string Purpose,
-        bool Synced,
-        bool Saved,
-        float DefaultValue,
-        float SelectedValue)
-    {
-        public ResolvedMenuDefinition Resolve(string parameterName, float selectedValue)
-            => new(
-                Source,
-                ExistingMenu,
-                Kind,
-                UseExistingParameter,
-                GenerateParameterGroup,
-                GroupName,
-                parameterName,
-                Synced,
-                Saved,
-                DefaultValue,
-                selectedValue);
+        public ParameterSource(
+            FaceTuneTagComponent source,
+            MenuComponent.Kind kind,
+            bool generateParameterGroup,
+            string groupName,
+            string parameterName,
+            bool synced,
+            bool saved,
+            float defaultValue,
+            float selectedValue)
+        {
+            Source = source;
+            Kind = kind;
+            GenerateParameterGroup = generateParameterGroup;
+            GroupName = groupName;
+            ParameterName = parameterName;
+            Synced = synced;
+            Saved = saved;
+            DefaultValue = defaultValue;
+            SelectedValue = selectedValue;
+        }
     }
 }

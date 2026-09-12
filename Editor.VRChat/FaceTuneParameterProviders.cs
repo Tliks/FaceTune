@@ -56,20 +56,21 @@ internal static class FaceTuneParameterProvider
                    ?? RuntimeUtil.FindAvatarInParents(component.transform)?.gameObject;
         if (root == null) yield break;
 
-        foreach (var declaration in ParameterResolver.ResolveParameters(root))
+        var parameterPlan = ParameterResolver.Resolve(root);
+        foreach (var item in parameterPlan.Items)
         {
-            if (declaration.Source != component) continue;
+            if (item.Source != component) continue;
             yield return new ProvidedParameter(
-                declaration.Name,
+                item.Name,
                 ParameterNamespace.Animator,
                 component,
                 PluginDefinition.Instance,
-                ToAnimatorType(declaration.Type))
+                ToAnimatorType(item.Type))
             {
                 IsAnimatorOnly = false,
                 IsHidden = true,
-                WantSynced = declaration.Synced,
-                DefaultValue = declaration.DefaultValue
+                WantSynced = item.Synced,
+                DefaultValue = item.DefaultValue
             };
         }
     }
