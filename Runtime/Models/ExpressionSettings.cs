@@ -331,40 +331,119 @@ internal class EyeBlinkSettings : IEquatable<EyeBlinkSettings>
         };
 }
 
-/// <summary>LipSyncと競合するBlendShapeの打ち消し設定。</summary>
 [Serializable]
-internal class LipSyncSettings : IEquatable<LipSyncSettings>
+internal sealed class LipSyncSettings : IEquatable<LipSyncSettings>
 {
     public enum Kind
     {
         BuiltIn = 0,
-        Animation = 10
+        Custom = 10
     }
 
+    public Kind Mode = Kind.BuiltIn;
+
+    // 発話中、各音の設定より先に適用する共通のBlendShape値。
     public List<BlendShapeWeight> CancellerBlendShapes = new();
+
+    // Custom時のみ使用。
+    // 各音で指定したBlendShape値は、FacialDataの同じ論理Bindingを上書きする。
+    public VrcVisemeLipSyncShapes Shapes = new();
 
     public bool Equals(LipSyncSettings? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return CancellerBlendShapes.SequenceEqual(other.CancellerBlendShapes);
-    }
 
-    public override bool Equals(object? obj)
-        => obj is LipSyncSettings other && Equals(other);
+        return Mode == other.Mode
+               && CancellerBlendShapes.SequenceEqual(other.CancellerBlendShapes)
+               && (Mode != Kind.Custom || Shapes.Equals(other.Shapes));
+    }
 
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        foreach (var blendShape in CancellerBlendShapes)
-        {
-            hash.Add(blendShape);
-        }
+
+        hash.Add(Mode);
+
+        foreach (var value in CancellerBlendShapes)
+            hash.Add(value);
+
+        if (Mode == Kind.Custom)
+            hash.Add(Shapes);
+
+        return hash.ToHashCode();
+    }
+}
+
+[Serializable]
+internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes>
+{
+    public List<BlendShapeWeight> Sil = new();
+
+    public List<BlendShapeWeight> PP = new();
+    public List<BlendShapeWeight> FF = new();
+    public List<BlendShapeWeight> TH = new();
+    public List<BlendShapeWeight> DD = new();
+    public List<BlendShapeWeight> KK = new();
+    public List<BlendShapeWeight> CH = new();
+    public List<BlendShapeWeight> SS = new();
+    public List<BlendShapeWeight> NN = new();
+    public List<BlendShapeWeight> RR = new();
+
+    public List<BlendShapeWeight> AA = new();
+    public List<BlendShapeWeight> E = new();
+    public List<BlendShapeWeight> IH = new();
+    public List<BlendShapeWeight> OH = new();
+    public List<BlendShapeWeight> OU = new();
+
+    public bool Equals(VrcVisemeLipSyncShapes? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        return Sil.SequenceEqual(other.Sil)
+               && PP.SequenceEqual(other.PP)
+               && FF.SequenceEqual(other.FF)
+               && TH.SequenceEqual(other.TH)
+               && DD.SequenceEqual(other.DD)
+               && KK.SequenceEqual(other.KK)
+               && CH.SequenceEqual(other.CH)
+               && SS.SequenceEqual(other.SS)
+               && NN.SequenceEqual(other.NN)
+               && RR.SequenceEqual(other.RR)
+               && AA.SequenceEqual(other.AA)
+               && E.SequenceEqual(other.E)
+               && IH.SequenceEqual(other.IH)
+               && OH.SequenceEqual(other.OH)
+               && OU.SequenceEqual(other.OU);
+    }
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        Add(ref hash, Sil);
+        Add(ref hash, PP);
+        Add(ref hash, FF);
+        Add(ref hash, TH);
+        Add(ref hash, DD);
+        Add(ref hash, KK);
+        Add(ref hash, CH);
+        Add(ref hash, SS);
+        Add(ref hash, NN);
+        Add(ref hash, RR);
+        Add(ref hash, AA);
+        Add(ref hash, E);
+        Add(ref hash, IH);
+        Add(ref hash, OH);
+        Add(ref hash, OU);
         return hash.ToHashCode();
     }
 
-    internal LipSyncSettings Clone()
-        => new() { CancellerBlendShapes = CancellerBlendShapes.ToList() };
+    private static void Add(ref HashCode hash, IEnumerable<BlendShapeWeight> values)
+    {
+        foreach (var value in values)
+            hash.Add(value);
+    }
 }
 
 /// <summary>表情の遷移時間。</summary>
