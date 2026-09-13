@@ -335,6 +335,12 @@ internal class EyeBlinkSettings : IEquatable<EyeBlinkSettings>
 [Serializable]
 internal class LipSyncSettings : IEquatable<LipSyncSettings>
 {
+    public enum Kind
+    {
+        BuiltIn = 0,
+        Animation = 10
+    }
+
     public List<BlendShapeWeight> CancellerBlendShapes = new();
 
     public bool Equals(LipSyncSettings? other)
