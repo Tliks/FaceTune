@@ -13,7 +13,7 @@ internal class FacialShapesEditor : EditorWindow
     private int _initialUndoGroup = -1;
     private Func<SkinnedMeshRenderer, ISet<string>?>? _resolveUnavailableBlendShapeNames;
 
-    private const int MIN_WINDOW_WIDTH = 500;
+    private const int MIN_WINDOW_WIDTH = 570;
     private const int MIN_WINDOW_HEIGHT = 700;
 
     public static FacialShapesEditor? TryOpenEditor()

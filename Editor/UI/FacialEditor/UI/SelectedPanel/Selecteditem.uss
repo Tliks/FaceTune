@@ -19,7 +19,7 @@
 
 #facial-rail {
     width: 1px;
-    height: 12px;
+    height: 14px;
     background-color: var(--unity-colors-default-text);
 }
 

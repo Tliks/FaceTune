@@ -280,7 +280,7 @@ internal class SelectedPanel
             bool? isInTarget = null)
         {
             changedMarker.style.opacity = _blendShapeManager.IsShapeChangedFromInitialState(item.KeyIndex) ? 1f : 0f;
-            facialRail.style.opacity = _styleToggle.value && item.IsFacial ? 0.4f : 0f;
+            facialRail.style.opacity = _styleToggle.value && item.IsFacial ? 0.5f : 0f;
             nameLabel.style.opacity = (isInTarget ?? _blendShapeManager.IsInTarget(item.KeyIndex)) ? 1f : 0.65f;
         }
 
