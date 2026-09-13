@@ -51,6 +51,7 @@ internal static class MenuCanonicalizer
             var menuObject = new GameObject($"{settings.name} (Expression Set Menu)");
             var parent = settings.transform.parent.DestroyedAsNull() ?? root.transform;
             menuObject.transform.SetParent(parent, false);
+            menuObject.transform.SetSiblingIndex(settings.transform.GetSiblingIndex() + 1);
 
             var menu = menuObject.AddComponent<MenuComponent>();
             menu.MenuKind = MenuComponent.Kind.Toggle;
@@ -78,6 +79,7 @@ internal static class MenuCanonicalizer
             var menuObject = new GameObject(source.name);
             var parent = source.transform.parent.DestroyedAsNull() ?? root.transform;
             menuObject.transform.SetParent(parent, false);
+            menuObject.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
             source.DirectMenuSettings.GeneratedCondition = MenuCondition.Enabled(
                 CreateDirectMenu(
                     menuObject,

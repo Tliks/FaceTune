@@ -21,100 +21,76 @@ internal static class MenuPlanBuilder
 
         var menus = context.AvatarContext.Root
             .GetComponentsInChildren<MenuComponent>(true);
-        var folders = menus
+        var folderChildren = menus
             .Where(menu => menu.MenuKind == MenuComponent.Kind.Folder)
-            .ToDictionary(menu => menu, menu => new FolderNode(menu));
+            .ToDictionary(menu => menu, _ => new List<MenuComponent>());
         var existingFolders = context.PlatformSupport.GetMenuFolderObjects()
             .SkipDestroyed()
             .Select(folder => folder.transform)
             .ToHashSet();
         var menuResolver = new FaceTuneMenuResolver(context.AvatarContext.Root, existingFolders);
-        var installationRoots = new Dictionary<Transform, NodeCollection>();
-        var existingFolderChildren = new Dictionary<Transform, NodeCollection>();
+        var installations = new List<MenuComponent>();
+        var existingFolderChildren = new Dictionary<Transform, List<MenuComponent>>();
 
-        foreach (var folder in folders.Values)
-        {
-            var destination = GetDestinationCollection(
-                folder.Source,
-                folders,
-                existingFolders,
-                existingFolderChildren,
-                installationRoots,
-                menuResolver);
-            destination.Folders.Add(folder);
-        }
-
-        foreach (var menu in menus.Where(menu => menu.MenuKind != MenuComponent.Kind.Folder))
+        foreach (var menu in menus)
         {
             var destination = GetDestinationCollection(
                 menu,
-                folders,
+                folderChildren,
                 existingFolders,
                 existingFolderChildren,
-                installationRoots,
+                installations,
                 menuResolver);
-            destination.Controls.Add(menu);
+            destination.Add(menu);
         }
 
         var builtExistingFolderChildren = new Dictionary<Transform, IReadOnlyList<MenuNodePlan>>();
         foreach (var (folder, children) in existingFolderChildren)
         {
-            var nodes = BuildChildren(children, expressionByTransform, menuResolver);
+            var nodes = BuildChildren(children, folderChildren, expressionByTransform);
             if (nodes.Count != 0)
-            {
                 builtExistingFolderChildren.Add(folder, nodes);
-            }
         }
 
-        var installations = new List<MenuInstallationPlan>();
-        foreach (var (parent, children) in installationRoots)
-        {
-            var nodes = BuildChildren(children, expressionByTransform, menuResolver);
-            foreach (var node in nodes)
-                installations.Add(new MenuInstallationPlan(parent, node));
-        }
-        return new MenuPlan(installations, builtExistingFolderChildren);
+        return new MenuPlan(
+            BuildChildren(installations, folderChildren, expressionByTransform),
+            builtExistingFolderChildren);
     }
 
     private static IReadOnlyList<MenuNodePlan> BuildChildren(
-        NodeCollection children,
-        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform,
-        FaceTuneMenuResolver menuResolver)
+        IReadOnlyList<MenuComponent> children,
+        IReadOnlyDictionary<MenuComponent, List<MenuComponent>> folderChildren,
+        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
     {
         var nodes = new List<MenuNodePlan>();
-
-        foreach (var folder in children.Folders)
+        foreach (var menu in children)
         {
-            var built = BuildFolder(folder, expressionByTransform, menuResolver);
+            MenuNodePlan? built = menu.MenuKind == MenuComponent.Kind.Folder
+                ? BuildFolder(menu, folderChildren, expressionByTransform)
+                : BuildControl(menu, expressionByTransform);
             if (built != null)
-            {
                 nodes.Add(built);
-            }
         }
-
-        foreach (var control in children.Controls)
-        {
-            nodes.Add(BuildControl(control, expressionByTransform));
-        }
-
         return nodes;
     }
 
     private static MenuFolderPlan? BuildFolder(
-        FolderNode folder,
-        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform,
-        FaceTuneMenuResolver menuResolver)
+        MenuComponent folder,
+        IReadOnlyDictionary<MenuComponent, List<MenuComponent>> folderChildren,
+        IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
     {
-        var children = BuildChildren(folder.Children, expressionByTransform, menuResolver);
-        if (children.Count == 0)
-        {
+        var builtChildren = BuildChildren(
+            folderChildren[folder],
+            folderChildren,
+            expressionByTransform);
+        if (builtChildren.Count == 0)
             return null;
-        }
 
         return new MenuFolderPlan(
-            FaceTuneMenuResolver.GetDisplayName(folder.Source.Menu.MenuName, folder.Source.name),
-            BuildIcon(folder.Source.Menu.Icon, folder.Source, expressionByTransform),
-            children);
+            GetHierarchyAnchor(folder),
+            FaceTuneMenuResolver.GetDisplayName(folder.Menu.MenuName, folder.name),
+            BuildIcon(folder.Menu.Icon, folder, expressionByTransform),
+            builtChildren);
     }
 
     private static MenuControlPlan BuildControl(
@@ -122,12 +98,16 @@ internal static class MenuPlanBuilder
         IReadOnlyDictionary<Transform, ExpressionItem> expressionByTransform)
     {
         return new MenuControlPlan(
+            GetHierarchyAnchor(menu),
             FaceTuneMenuResolver.GetDisplayName(menu.Menu.MenuName, menu.name),
             BuildIcon(menu.Menu.Icon, menu, expressionByTransform),
             menu.MenuKind,
             menu.ParameterName,
             menu.MenuKind == MenuComponent.Kind.Toggle ? menu.SelectedValue : 1f);
     }
+
+    private static Transform GetHierarchyAnchor(MenuComponent menu)
+        => menu.Menu.InstallContainer.DestroyedAsNull() ?? menu.transform;
 
     private static MenuIconPlan BuildIcon(
         MenuIconSettings settings,
@@ -155,12 +135,12 @@ internal static class MenuPlanBuilder
         return new MenuIconPlan.ExpressionPreview(expression);
     }
 
-    private static NodeCollection GetDestinationCollection(
+    private static List<MenuComponent> GetDestinationCollection(
         MenuComponent menu,
-        IReadOnlyDictionary<MenuComponent, FolderNode> folders,
+        IReadOnlyDictionary<MenuComponent, List<MenuComponent>> folderChildren,
         ISet<Transform> existingFolders,
-        IDictionary<Transform, NodeCollection> existingFolderChildren,
-        IDictionary<Transform, NodeCollection> installationRoots,
+        IDictionary<Transform, List<MenuComponent>> existingFolderChildren,
+        List<MenuComponent> installations,
         FaceTuneMenuResolver menuResolver)
     {
         var configuredTarget = menu.Menu.InstallContainer.DestroyedAsNull();
@@ -169,26 +149,14 @@ internal static class MenuPlanBuilder
 
         var destination = menuResolver.ResolveDestination(menu, configuredTarget);
         var folder = destination != null ? destination.GetComponent<MenuComponent>() : null;
-        if (folder != null && folders.TryGetValue(folder, out var parent))
-            return parent.Children;
+        if (folder != null && folderChildren.TryGetValue(folder, out var children))
+            return children;
         if (destination != null
             && (destination != menuResolver.Root || existingFolders.Contains(destination)))
         {
-            return existingFolderChildren.GetOrAdd(destination, _ => new NodeCollection());
+            return existingFolderChildren.GetOrAdd(destination, _ => new List<MenuComponent>());
         }
 
-        var installationParent = configuredTarget ?? menu.transform;
-        return installationRoots.GetOrAdd(installationParent, _ => new NodeCollection());
-    }
-
-    private sealed class NodeCollection
-    {
-        public List<FolderNode> Folders { get; } = new();
-        public List<MenuComponent> Controls { get; } = new();
-    }
-
-    private sealed record FolderNode(MenuComponent Source)
-    {
-        public NodeCollection Children { get; } = new();
+        return installations;
     }
 }

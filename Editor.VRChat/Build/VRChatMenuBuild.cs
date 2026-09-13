@@ -10,13 +10,41 @@ internal static class VRChatMenuBuilder
     {
         foreach (var installation in plan.Installations)
         {
-            CreateNode(context, installation.Node, installation.Parent, installRoot: true);
+            CreateNode(context, installation, installation.HierarchyAnchor, installRoot: true);
         }
 
         foreach (var (folder, children) in plan.ExistingFolderChildren)
         {
-            CreateChildren(context, children, folder);
+            CreateExistingFolderChildren(context, children, folder);
         }
+    }
+
+    private static void CreateExistingFolderChildren(
+        BuildContext context,
+        IReadOnlyList<MenuNodePlan> children,
+        Transform parent)
+    {
+        var lastGeneratedByAnchor = new Dictionary<Transform, Transform>();
+        foreach (var child in children)
+        {
+            var generated = CreateNode(context, child, parent, installRoot: false);
+            var anchor = FindDirectChild(parent, child.HierarchyAnchor);
+            if (anchor == null) continue;
+
+            var predecessor = lastGeneratedByAnchor.GetValueOrDefault(anchor, anchor);
+            generated.SetSiblingIndex(predecessor.GetSiblingIndex() + 1);
+            lastGeneratedByAnchor[anchor] = generated;
+        }
+    }
+
+    private static Transform? FindDirectChild(Transform parent, Transform hierarchyAnchor)
+    {
+        for (var current = hierarchyAnchor; current != null && current != parent; current = current.parent)
+        {
+            if (current.parent == parent)
+                return current;
+        }
+        return null;
     }
 
     private static void CreateChildren(
@@ -29,26 +57,21 @@ internal static class VRChatMenuBuilder
             CreateNode(context, node, parent, installRoots);
     }
 
-    private static void CreateNode(
+    private static Transform CreateNode(
         BuildContext context,
         MenuNodePlan node,
         Transform parent,
         bool installRoot)
     {
-        switch (node)
+        return node switch
         {
-            case MenuFolderPlan folder:
-                CreateFolder(context, folder, parent, installRoot);
-                break;
-            case MenuControlPlan control:
-                CreateControl(context, control, parent, installRoot);
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown menu node type: {node.GetType()}");
-        }
+            MenuFolderPlan folder => CreateFolder(context, folder, parent, installRoot),
+            MenuControlPlan control => CreateControl(context, control, parent, installRoot),
+            _ => throw new InvalidOperationException($"Unknown menu node type: {node.GetType()}")
+        };
     }
 
-    private static void CreateFolder(
+    private static Transform CreateFolder(
         BuildContext context,
         MenuFolderPlan folder,
         Transform parent,
@@ -65,9 +88,10 @@ internal static class VRChatMenuBuilder
         menuItem.MenuSource = SubmenuSource.Children;
 
         CreateChildren(context, folder.Children, obj.transform);
+        return obj.transform;
     }
 
-    private static void CreateControl(
+    private static Transform CreateControl(
         BuildContext context,
         MenuControlPlan control,
         Transform parent,
@@ -88,6 +112,7 @@ internal static class VRChatMenuBuilder
         menuItem.PortableControl.Parameter = control.ParameterName;
         menuItem.PortableControl.Value = control.Value;
         menuItem.PortableControl.Icon = ResolveIcon(control.Icon);
+        return obj.transform;
     }
 
     private static string ResolveEmittedName(BuildContext context, MenuNodePlan node)
