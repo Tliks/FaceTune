@@ -106,38 +106,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -149,10 +117,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -199,9 +197,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -226,38 +228,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -269,10 +239,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -319,9 +319,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -346,38 +350,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -389,10 +361,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -439,9 +441,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -466,38 +472,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -509,10 +483,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -559,9 +563,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -586,38 +594,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -629,10 +605,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -679,9 +685,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -706,38 +716,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -749,10 +727,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -799,9 +807,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -826,38 +838,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -869,10 +849,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -919,9 +929,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
@@ -946,38 +960,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7ab537407ac421380bd7e6a33dc32d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllowEyeBlink: 10
-  AllowLipSync: 0
-  WriteMode: 0
-  MultiFrame:
-    MultiFrameMode: 0
-    TriggerHand: 0
-    ParameterName: 
-    MenuSource: {fileID: 0}
-  FacialBlendShapesReference:
-    Mode: 0
-    Source: {fileID: 0}
-  FacialBlendShapes:
-    Clip: {fileID: 0}
-    ClipOption: 10
-    BlendShapeAnimations: []
-  NonFacialAnimationsReference:
-    Mode: 0
-    Source: {fileID: 0}
-  NonFacialAnimations:
-    AnimationClips: []
-    TransformAnimations: []
-  DirectMenuEnabled: 0
-  DirectMenuSettings:
-    Menu:
-      MenuName: 
-      Icon:
-        Mode: 20
-        ManualIcon: {fileID: 0}
-        PreviewExpression: {fileID: 0}
-      InstallContainer: {fileID: 0}
-    GroupName: 
-    PriorityOffset: 10
   HasCondition: 1
   Condition:
     Mode: 10
@@ -989,10 +971,40 @@ MonoBehaviour:
           Matches: 1
         MenuConditions: []
         ParameterConditions: []
+  DirectMenuEnabled: 0
+  DirectMenuSettings:
+    Menu:
+      MenuName: 
+      Icon:
+        Mode: 20
+        ManualIcon: {fileID: 0}
+        PreviewExpression: {fileID: 0}
+      InstallContainer: {fileID: 0}
+    GroupName: 
+    PriorityOffset: 10
+  ExpressionDataReference:
+    Mode: 0
+    ComponentSource: {fileID: 0}
+  FacialBlendShapes:
+    BlendShapeMode: 10
+    BaseSource: 10
+    Clip: {fileID: 0}
+    ClipOption: 10
+    ReferenceSource: {fileID: 0}
+    BlendShapeAnimations: []
+    CompositeEntries: []
+  WriteMode: 0
+  MultiFrame:
+    MultiFrameMode: 0
+    TriggerHand: 0
+    ParameterName: 
+    MenuSource: {fileID: 0}
+  AllowEyeBlink: 0
+  AllowLipSync: 0
   HasEyeBlink: 0
   EyeBlinkReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   EyeBlink:
     EyeBlinkMode: 0
     IntervalSeconds: {x: 4, y: 20}
@@ -1039,9 +1051,13 @@ MonoBehaviour:
   HasLipSync: 0
   LipSyncReference:
     Mode: 0
-    Source: {fileID: 0}
+    ComponentSource: {fileID: 0}
   LipSync:
     CancellerBlendShapes: []
+  NonFacialAnimations:
+    ReferenceAnimations: []
+    AnimationClips: []
+    TransformAnimations: []
   HasTransition: 0
   Transition:
     DurationSeconds: 0.1
