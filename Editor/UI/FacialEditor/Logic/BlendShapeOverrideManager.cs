@@ -249,14 +249,28 @@ internal class BlendShapeOverrideManager : IDisposable
                 _overrideCurvesProperty.arraySize);
             for (int i = 0; i < length; i++)
             {
-                _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = snapshot.Flags[i];
-                _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = snapshot.Weights[i];
-                _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue
-                    = snapshot.Curves[i] ?? new AnimationCurve();
+                ApplySnapshotAt(snapshot, i);
             }
         }, registerUndo)) return;
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
+    }
+
+    private void ApplySnapshotAt(OverrideStateSnapshot snapshot, int index)
+    {
+        _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = snapshot.Flags[index];
+        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = snapshot.Weights[index];
+        _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
+            = snapshot.Curves[index] ?? new AnimationCurve();
+    }
+
+    public bool TryRestoreShapeToInitialState(int index)
+    {
+        if (!_initialSnapshot.HasValue || !IsShapeChangedFromInitialState(index)) return false;
+        if (!ExecuteModification(() => ApplySnapshotAt(_initialSnapshot.Value, index))) return false;
+        OnUnknownChange?.Invoke();
+        OnAnyDataChange?.Invoke();
+        return true;
     }
 
     public bool TryRestoreInitialOverrides()

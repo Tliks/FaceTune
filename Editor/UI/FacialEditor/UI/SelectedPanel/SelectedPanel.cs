@@ -147,6 +147,7 @@ internal class SelectedPanel
             flashOverlay.AddToClassList("flash-overlay");
             element.Insert(0, flashOverlay);
 
+            var metadataGutter = element.Q<VisualElement>("metadata-gutter");
             var changedMarker = element.Q<VisualElement>("changed-marker");
             var facialRail = element.Q<VisualElement>("facial-rail");
             var nameLabel = element.Q<Label>("name");
@@ -155,6 +156,16 @@ internal class SelectedPanel
             var curveToggle = element.Q<Button>("curve-toggle");
             var toggleButton = element.Q<Button>("toggle-button");
             var actionButton = element.Q<Button>("action");
+
+            metadataGutter.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (element.userData is not ElementData item
+                    || !_blendShapeManager.IsShapeChangedFromInitialState(item.KeyIndex))
+                    return;
+
+                _blendShapeManager.TryRestoreShapeToInitialState(item.KeyIndex);
+                evt.StopPropagation();
+            });
 
             nameLabel.RegisterCallback<ClickEvent>(evt =>
             {
@@ -279,7 +290,9 @@ internal class SelectedPanel
             Label nameLabel,
             bool? isInTarget = null)
         {
-            changedMarker.style.opacity = _blendShapeManager.IsShapeChangedFromInitialState(item.KeyIndex) ? 1f : 0f;
+            changedMarker.EnableInClassList(
+                "changed-marker--visible",
+                _blendShapeManager.IsShapeChangedFromInitialState(item.KeyIndex));
             facialRail.style.opacity = _styleToggle.value && item.IsFacial ? 0.5f : 0f;
             nameLabel.style.opacity = (isInTarget ?? _blendShapeManager.IsInTarget(item.KeyIndex)) ? 1f : 0.65f;
         }

@@ -7,7 +7,7 @@ internal class BlendShapeGrouping
     private readonly BlendShapeGroup[] _groupByBlendShapeIndex;
     public event Action<IReadOnlyList<(BlendShapeGroup Group, bool Selected)>>? OnGroupSelectionChanged;
 
-    private bool _isLeftSelected = true;
+    private bool _isLeftSelected;
     public event Action<bool>? OnLeftSelectionChanged;
     public bool IsLeftSelected
     {
