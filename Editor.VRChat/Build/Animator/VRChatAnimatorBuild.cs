@@ -81,7 +81,9 @@ internal static class VRChatAnimatorBuilder
                 settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
         }
 
-        var graph = new AnimatorGraph(analyzedWriteDefaults ?? true);
+        var graph = new AnimatorGraph(
+            analyzedWriteDefaults ?? true,
+            controllerContext.CloneContext);
         var mmdSupport = new MmdSupport(
             settings.AvatarContext.Root,
             graph,
@@ -136,12 +138,19 @@ internal static class VRChatAnimatorBuilder
             mmdSupport,
             trackingPlan,
             aap);
-        var lipSyncBuilder = new LipSyncAnimatorBuilder(
+        var lipSyncCancellerBuilder = new LipSyncCancellerAnimatorBuilder(
             settings.AvatarContext,
             graph,
             mmdSupport,
             trackingPlan,
             aap);
+        var lipSyncBuilder = new LipSyncAnimatorBuilder(
+            settings.AvatarContext,
+            graph,
+            mmdSupport,
+            trackingPlan,
+            aap,
+            externalLipSyncBlendShapes);
         if (trackingPlan.ShouldBuildAnyLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
@@ -155,6 +164,8 @@ internal static class VRChatAnimatorBuilder
                 TrackingControlLayerPriority);
             if (trackingPlan.ShouldBuildEyeBlinkLayer)
                 eyeBlinkBuilder.Build(controlController, TrackingControlLayerPriority);
+            if (trackingPlan.ShouldBuildLipSyncCancellerLayer)
+                lipSyncCancellerBuilder.Build(controlController, TrackingControlLayerPriority);
             if (trackingPlan.ShouldBuildLipSyncLayer)
                 lipSyncBuilder.Build(controlController, TrackingControlLayerPriority);
         }
