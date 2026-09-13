@@ -127,7 +127,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                 true,
                 false),
             new DefinitionChild(
-                "common.options.section.label",
+                "expression.options.section.label",
                 CreateOptionsDrawer(serializedObject, inheritance, readOnly: false),
                 CreateOptionsDrawer(preview, inheritance, readOnly: true),
                 false,
@@ -312,6 +312,15 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
             var drawHeader = isReference && headerDrawer is ICollapsedSectionHeaderDrawer collapsed
                 ? collapsed.DrawCollapsedHeader
                 : SectionHeaderGUI.GetDrawAction(headerDrawer, child.Foldout.Expanded);
+            if (isReference && drawHeader != null)
+            {
+                var readOnlyHeader = drawHeader;
+                drawHeader = headerPosition =>
+                {
+                    using var disabled = new EditorGUI.DisabledScope(true);
+                    readOnlyHeader(headerPosition);
+                };
+            }
             var headerWidth = drawHeader == null ? 0f : sharedHeaderWidth;
             Func<GenericMenu>? createMenu = isReference
                 ? null

@@ -315,6 +315,9 @@ msgstr "コンポーネント"
 msgid "common.options.section.label"
 msgstr "オプション"
 
+msgid "expression.options.section.label"
+msgstr "表情オプション"
+
 msgid "section.empty.message"
 msgstr "現在、設定項目はありません"
 

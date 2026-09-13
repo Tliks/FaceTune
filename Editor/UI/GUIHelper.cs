@@ -589,7 +589,6 @@ internal static partial class GUIHelper
     private const float CompactPopupArrowHeight = 5f;
     private const float CompactPopupArrowVisualOffsetY = -1f;
     private const float CompactPopupTrailingWidth = CompactPopupArrowWidth + CompactPopupArrowSpacing;
-    private static readonly Color CompactPopupArrowColor = new(1f, 1f, 1f, 0.75f);
     private static readonly GUIContent IndentedLabelPlaceholder = new(" ");
 
     public static float PopupWidth(
@@ -737,7 +736,9 @@ internal static partial class GUIHelper
         var previousColor = Handles.color;
 
         Handles.BeginGUI();
-        Handles.color = CompactPopupArrowColor;
+        Handles.color = EditorGUIUtility.isProSkin
+            ? new Color(1f, 1f, 1f, 0.55f)
+            : new Color(0f, 0f, 0f, 0.55f);
         Handles.DrawAAConvexPolygon(
             center + new Vector3(-halfWidth, -halfHeight),
             center + new Vector3(halfWidth, -halfHeight),

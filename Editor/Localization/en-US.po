@@ -315,6 +315,9 @@ msgstr "Component"
 msgid "common.options.section.label"
 msgstr "Options"
 
+msgid "expression.options.section.label"
+msgstr "Expression Options"
+
 msgid "section.empty.message"
 msgstr "No settings available."
 
