@@ -19,15 +19,13 @@ internal class SelectedPanel
 
     private TextField _searchField = null!;
     private SimpleToggle _styleToggle = null!;
-    private SimpleToggle _baseToggle = null!;
-    private SimpleToggle _zeroToggle = null!;
 
     private VisualElement _control = null!;
 
     private ListView _selectedListView = null!;
     
     private Button _selectedRemoveAll0Button = null!;
-    private bool _zeroControlsRefreshPending;
+    private bool _controlsRefreshPending;
     private readonly Dictionary<int, double> _flashExpiryByKeyIndex = new();
     private IVisualElementScheduledItem? _flashCleanupSchedule;
     
@@ -80,7 +78,7 @@ internal class SelectedPanel
         // _blendShapeManager.OnSingleShapeWeightChanged += (keyIndex) => RebuildListViewsSlow();
         _blendShapeManager.OnMultipleShapeWeightChanged += (keyIndices) => RebuildListViewsSlow();
         _blendShapeManager.OnUnknownChange += () => RebuildListViewsSlow();
-        _blendShapeManager.OnAnyDataChange += RequestZeroControlsVisibilityUpdate;
+        _blendShapeManager.OnAnyDataChange += RequestControlsVisibilityUpdate;
     }
 
     private bool _selectedZero = true;
@@ -96,13 +94,6 @@ internal class SelectedPanel
         _styleToggle = _control.Q<SimpleToggle>("style-toggle");
         _styleToggle.SetValueWithoutNotify(false);
         _styleToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
-
-        _baseToggle = _control.Q<SimpleToggle>("base-toggle");
-        _baseToggle.SetValueWithoutNotify(true);
-        _baseToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
-
-        _zeroToggle = _control.Q<SimpleToggle>("zero-toggle");
-        _zeroToggle.RegisterValueChangedCallback(evt => RebuildListViewsSlow());
 
         _selectedRemoveAll0Button = _control.Q<Button>("selected-remove-all-0-button");
         _selectedRemoveAll0Button.clicked += () =>
@@ -156,6 +147,8 @@ internal class SelectedPanel
             flashOverlay.AddToClassList("flash-overlay");
             element.Insert(0, flashOverlay);
 
+            var changedMarker = element.Q<VisualElement>("changed-marker");
+            var facialRail = element.Q<VisualElement>("facial-rail");
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var curveField = element.Q<IMGUIContainer>("curve-field");
@@ -183,6 +176,7 @@ internal class SelectedPanel
                 if (element.userData is ElementData item && item.KeyIndex == keyIndex)
                 {
                     sliderFloatField.SetValueWithoutNotify(_blendShapeManager.GetEffectiveShapeWeight(keyIndex));
+                    UpdateRowPresentation(item, changedMarker, facialRail, nameLabel);
                     UpdateActionButton(item, actionButton);
                 }
             };
@@ -254,6 +248,8 @@ internal class SelectedPanel
                     flashOverlay.style.opacity = 0f;
             }
              
+            var changedMarker = element.Q<VisualElement>("changed-marker");
+            var facialRail = element.Q<VisualElement>("facial-rail");
             var nameLabel = element.Q<Label>("name");
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var curveField = element.Q<IMGUIContainer>("curve-field");
@@ -262,17 +258,30 @@ internal class SelectedPanel
             var actionButton = element.Q<Button>("action");
 
             var isInTarget = _blendShapeManager.IsInTarget(item.KeyIndex);
+            UpdateRowPresentation(item, changedMarker, facialRail, nameLabel, isInTarget);
             var isCurveMode = _blendShapeManager.IsCurveMode(item.KeyIndex);
             sliderFloatField.SetVisible(!isCurveMode);
             curveField.SetVisible(isCurveMode);
-            curveToggle.SetEnabled(isInTarget);
+            curveToggle.SetEnabled(true);
             curveToggle.style.unityFontStyleAndWeight = isCurveMode ? FontStyle.Bold : FontStyle.Normal;
-            toggleButton.SetEnabled(isInTarget && !isCurveMode);
+            toggleButton.SetEnabled(!isCurveMode);
 
             nameLabel.text = item.ShapeName;
             var currentWeight = _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex);
             sliderFloatField.SetValueWithoutNotify(currentWeight);
             UpdateActionButton(item, actionButton);
+        }
+
+        void UpdateRowPresentation(
+            ElementData item,
+            VisualElement changedMarker,
+            VisualElement facialRail,
+            Label nameLabel,
+            bool? isInTarget = null)
+        {
+            changedMarker.style.opacity = _blendShapeManager.IsShapeChangedFromInitialState(item.KeyIndex) ? 1f : 0f;
+            facialRail.style.opacity = _styleToggle.value && item.IsFacial ? 0.4f : 0f;
+            nameLabel.style.opacity = (isInTarget ?? _blendShapeManager.IsInTarget(item.KeyIndex)) ? 1f : 0.65f;
         }
 
         void UpdateActionButton(ElementData item, Button actionButton)
@@ -342,42 +351,30 @@ internal class SelectedPanel
         }
         _allSource = allSource.AsReadOnly();
         _currentSource = new();
+        _styleToggle.SetVisible(_allSource.Any(item => item.IsFacial));
         BuildCurrentSource();
-        UpdateSourceToggleVisibility();
 
         _selectedListView.itemsSource = _currentSource;
 
+        UpdateControlsVisibility();
         _selectedListView.RefreshItems();
     }
 
-    private void UpdateSourceToggleVisibility()
+    private void RequestControlsVisibilityUpdate()
     {
-        _styleToggle.SetVisible(_blendShapeManager.FacialSet.Count > 0);
-        _baseToggle.SetVisible(_blendShapeManager.BaseSet.Count > 0);
-        UpdateZeroControlsVisibility();
-    }
+        if (_controlsRefreshPending) return;
 
-    private void RequestZeroControlsVisibilityUpdate()
-    {
-        if (_zeroControlsRefreshPending) return;
-
-        _zeroControlsRefreshPending = true;
+        _controlsRefreshPending = true;
         _element.schedule.Execute(() =>
         {
-            _zeroControlsRefreshPending = false;
-            UpdateZeroControlsVisibility();
+            _controlsRefreshPending = false;
+            UpdateControlsVisibility();
         });
     }
 
-    private void UpdateZeroControlsVisibility()
+    private void UpdateControlsVisibility()
     {
         if (_allSource == null) return;
-
-        var hasVisibleZero = EnumerateCurrentSource(applyZeroFilter: false)
-            .Any(item => Mathf.Approximately(
-                _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex),
-                0f));
-        _zeroToggle.SetVisible(hasVisibleZero);
 
         var hasExplicitZeroTarget = _currentSource.Any(item => IsExplicitZeroTarget(item.KeyIndex));
         _selectedRemoveAll0Button.SetVisible(hasExplicitZeroTarget);
@@ -392,10 +389,10 @@ internal class SelectedPanel
         using var _ = new Utils.ProfilingSampleScope("SelectedPanel.BuildCurrentSource");
 
         _currentSource.Clear();
-        _currentSource.AddRange(EnumerateCurrentSource(applyZeroFilter: true));
+        _currentSource.AddRange(EnumerateCurrentSource());
     }
 
-    private IEnumerable<ElementData> EnumerateCurrentSource(bool applyZeroFilter)
+    private IEnumerable<ElementData> EnumerateCurrentSource()
     {
         var searchText = _searchField.value ?? string.Empty;
         var hasSearchText = searchText.Length > 0;
@@ -414,14 +411,8 @@ internal class SelectedPanel
                 continue;
 
             var isInTarget = _blendShapeManager.IsInTarget(item.KeyIndex);
-            var isVisibleSource = _styleToggle.value && item.IsFacial
-                || _baseToggle.value && item.IsBase;
+            var isVisibleSource = item.IsBase || (_styleToggle.value && item.IsFacial);
             if (!isVisibleSource && !isInTarget)
-                continue;
-
-            if (applyZeroFilter
-                && !_zeroToggle.value
-                && _blendShapeManager.GetEffectiveShapeWeight(item.KeyIndex) == 0f)
                 continue;
 
             yield return item;
@@ -432,7 +423,7 @@ internal class SelectedPanel
     private void RebuildListViewsSlow()
     {
         BuildCurrentSource();
-        UpdateZeroControlsVisibility();
+        UpdateControlsVisibility();
         _selectedListView.RefreshItems();
     }
 }

@@ -3,6 +3,26 @@
     position: relative;
 }
 
+#metadata-gutter {
+    flex: 0 0 6px;
+    height: 18px;
+    flex-direction: row;
+    align-items: center;
+}
+
+#changed-marker {
+    width: 2px;
+    height: 18px;
+    margin-right: 3px;
+    background-color: var(--unity-colors-link-text);
+}
+
+#facial-rail {
+    width: 1px;
+    height: 12px;
+    background-color: var(--unity-colors-default-text);
+}
+
 #name {
     flex: 1 1 100px;
 }
@@ -17,13 +37,10 @@
     padding: 0px;
 }
 
-#curve-toggle {
-    flex: 0 0 24px;
-}
-
+#curve-toggle,
 #toggle-button,
 #action {
-    flex: 0 0 35px;
+    flex: 0 0 30px;
 }
 
 .flash-overlay {

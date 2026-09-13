@@ -162,9 +162,6 @@ msgstr "保存"
 msgid "facialEditor.style.option"
 msgstr "顔つき"
 
-msgid "facialEditor.base.option"
-msgstr "ベース"
-
 msgid "facialEditor.search.placeholder"
 msgstr "検索"
 

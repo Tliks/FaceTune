@@ -162,9 +162,6 @@ msgstr "Save"
 msgid "facialEditor.style.option"
 msgstr "Style"
 
-msgid "facialEditor.base.option"
-msgstr "Base"
-
 msgid "facialEditor.search.placeholder"
 msgstr "Search"
 

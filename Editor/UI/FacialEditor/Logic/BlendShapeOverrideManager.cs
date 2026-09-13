@@ -208,22 +208,32 @@ internal class BlendShapeOverrideManager : IDisposable
         if (_overrideFlagsProperty.arraySize != snapshot.Flags.Length) return false;
         if (_overrideWeightsProperty.arraySize != snapshot.Weights.Length) return false;
 
-        var length = snapshot.Flags.Length;
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < snapshot.Flags.Length; i++)
         {
-            var isOverridden = _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue;
-            if (isOverridden != snapshot.Flags[i]) return false;
-            if (!isOverridden) continue;
-            if (!Mathf.Approximately(
-                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue,
-                    snapshot.Weights[i]))
-                return false;
-            if (!Equals(
-                    IsCurveModeAt(i) ? GetCurveValueAt(i) : null,
-                    snapshot.Curves[i]))
-                return false;
+            if (!IsSameAsSnapshot(snapshot, i)) return false;
         }
         return true;
+    }
+
+    public bool IsShapeChangedFromInitialState(int index)
+    {
+        return _initialSnapshot.HasValue
+               && ((uint)index >= (uint)_initialSnapshot.Value.Flags.Length
+                   || !IsSameAsSnapshot(_initialSnapshot.Value, index));
+    }
+
+    private bool IsSameAsSnapshot(OverrideStateSnapshot snapshot, int index)
+    {
+        var isOverridden = _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue;
+        if (isOverridden != snapshot.Flags[index]) return false;
+        if (!isOverridden) return true;
+        if (!Mathf.Approximately(
+                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue,
+                snapshot.Weights[index]))
+            return false;
+        return Equals(
+            IsCurveModeAt(index) ? GetCurveValueAt(index) : null,
+            snapshot.Curves[index]);
     }
 
     private void ApplySnapshot(OverrideStateSnapshot snapshot, bool registerUndo = true)
@@ -281,6 +291,7 @@ internal class BlendShapeOverrideManager : IDisposable
         _editedSnapshotBeforeRestoreInitial = null;
         _restoreStateVersion = null;
         _hasChangedStateCache = false;
+        OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
 
@@ -380,8 +391,6 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void ToggleCurveMode(int index)
     {
-        if (!IsInTarget(index)) return;
-
         if (IsCurveModeAt(index))
         {
             if (!ExecuteModification(() =>
@@ -394,9 +403,11 @@ internal class BlendShapeOverrideManager : IDisposable
         }
         else
         {
-            var weight = GetShapeWeight(index);
+            var weight = GetEffectiveShapeWeight(index);
             if (!ExecuteModification(() =>
             {
+                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
                 _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
                     = new AnimationCurve(new Keyframe(0f, weight), new Keyframe(1f, weight));
             })) return;
