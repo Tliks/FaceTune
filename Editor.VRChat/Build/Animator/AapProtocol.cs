@@ -20,7 +20,7 @@ internal sealed class AapProtocol
     {
         _plan = plan;
         _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
-        _lipSyncModeNames = CreateModeNames(plan.LipSyncCancellers.Count, LipSyncModeName);
+        _lipSyncModeNames = CreateModeNames(plan.GeneratedLipSyncSettings.Count, LipSyncModeName);
     }
 
     public ImmutableList<(string ParameterName, float Value)> BuildTrackingReplacementWrites(

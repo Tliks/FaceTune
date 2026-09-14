@@ -15,7 +15,9 @@ internal sealed class VRChatTrackingPlan
     public DnfCondition? ForceDisableEyeBlinkWhen { get; }
     public DnfCondition? ForceDisableLipSyncWhen { get; }
     public ImmutableList<EyeBlinkSettings> EyeBlinkAnimations { get; }
-    public ImmutableList<LipSyncSettings> LipSyncCancellers { get; }
+    public ImmutableList<LipSyncSettings> GeneratedLipSyncSettings { get; }
+    public bool ShouldBuildLipSyncCancellerLayer => GeneratedLipSyncSettings.Any(
+        settings => settings.CancellerBlendShapes.Count > 0);
 
     private readonly ImmutableDictionary<EyeBlinkSettings, int> _eyeBlinkModes;
     private readonly ImmutableDictionary<LipSyncSettings, int> _lipSyncModes;
@@ -27,15 +29,15 @@ internal sealed class VRChatTrackingPlan
         ForceDisableEyeBlinkWhen = avatarControlSettings.DisableEyeBlinkWhen;
         ForceDisableLipSyncWhen = avatarControlSettings.DisableLipSyncWhen;
         EyeBlinkAnimations = CollectEyeBlinkAnimations(items);
-        LipSyncCancellers = CollectLipSyncCancellers(items);
+        GeneratedLipSyncSettings = CollectGeneratedLipSyncSettings(items);
         _eyeBlinkModes = CreateModeMap(EyeBlinkAnimations);
-        _lipSyncModes = CreateModeMap(LipSyncCancellers);
+        _lipSyncModes = CreateModeMap(GeneratedLipSyncSettings);
         ShouldBuildEyeBlinkLayer = ForceDisableEyeBlinkWhen != null
                                    || EyeBlinkAnimations.Count > 0
                                    || items.Any(item =>
                                        item.AllowEyeBlink == TrackingPermission.Disallow);
         ShouldBuildLipSyncLayer = ForceDisableLipSyncWhen != null
-                                 || LipSyncCancellers.Count > 0
+                                 || GeneratedLipSyncSettings.Count > 0
                                  || items.Any(item =>
                                      item.AllowLipSync == TrackingPermission.Disallow);
     }
@@ -59,10 +61,12 @@ internal sealed class VRChatTrackingPlan
     {
         if (expression.AllowLipSync == TrackingPermission.Keep) return null;
         if (expression.AllowLipSync == TrackingPermission.Disallow) return DisabledMode;
-        if (expression.LipSync.CancellerBlendShapes.Count == 0) return BuiltInMode;
+        if (expression.LipSync.Mode == LipSyncSettings.Kind.BuiltIn
+            && expression.LipSync.CancellerBlendShapes.Count == 0)
+            return BuiltInMode;
 
         if (_lipSyncModes.TryGetValue(expression.LipSync, out var mode)) return mode;
-        throw new InvalidOperationException("Lip sync canceller mode was not registered.");
+        throw new InvalidOperationException("Generated lip sync mode was not registered.");
     }
 
     private static ImmutableDictionary<T, int> CreateModeMap<T>(ImmutableList<T> settings)
@@ -90,16 +94,18 @@ internal sealed class VRChatTrackingPlan
         return animations.ToImmutable();
     }
 
-    private static ImmutableList<LipSyncSettings> CollectLipSyncCancellers(
+    private static ImmutableList<LipSyncSettings> CollectGeneratedLipSyncSettings(
         IEnumerable<ExpressionItem> items)
     {
-        var cancellers = ImmutableList.CreateBuilder<LipSyncSettings>();
+        var generated = ImmutableList.CreateBuilder<LipSyncSettings>();
         var seen = new HashSet<LipSyncSettings>();
         foreach (var settings in items.Select(item => item.LipSync))
         {
-            if (settings.CancellerBlendShapes.Count > 0 && seen.Add(settings))
-                cancellers.Add(settings);
+            if ((settings.Mode == LipSyncSettings.Kind.Custom
+                 || settings.CancellerBlendShapes.Count > 0)
+                && seen.Add(settings))
+                generated.Add(settings);
         }
-        return cancellers.ToImmutable();
+        return generated.ToImmutable();
     }
 }

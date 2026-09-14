@@ -19,18 +19,25 @@ internal static class VRChatAnimatorBuilder
         AvatarControlSettings avatarControlSettings,
         ExpressionPlan expressionPlan)
     {
-        var trackingPlan = VRChatTrackingPlan.Build(
-            expressionPlan.Items,
-            avatarControlSettings);
-        if (expressionPlan.IsEmpty && !trackingPlan.ShouldBuildAnyLayer) return;
-        var aap = new AapProtocol(trackingPlan);
-
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
         var externalLipSyncBlendShapes = settings.AvatarContext.Root
             .TryGetComponent<VRCAvatarDescriptor>(out var descriptor)
             ? new VRChatSupport(descriptor).GetBuldInLipSyncBlendShapes().ToHashSet(StringComparer.Ordinal)
             : new HashSet<string>(StringComparer.Ordinal);
+        var proxy = CustomLipSyncBlendShapeProxy.Apply(
+            buildContext,
+            settings,
+            expressionPlan,
+            externalLipSyncBlendShapes);
+        settings = proxy.Settings;
+        expressionPlan = proxy.Expressions;
+
+        var trackingPlan = VRChatTrackingPlan.Build(
+            expressionPlan.Items,
+            avatarControlSettings);
+        if (expressionPlan.IsEmpty && !trackingPlan.ShouldBuildAnyLayer) return;
+        var aap = new AapProtocol(trackingPlan);
 
         bool? analyzedWriteDefaults;
         using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.AnalyzeWriteDefaults"))
@@ -81,7 +88,9 @@ internal static class VRChatAnimatorBuilder
                 settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
         }
 
-        var graph = new AnimatorGraph(analyzedWriteDefaults ?? true);
+        var graph = new AnimatorGraph(
+            analyzedWriteDefaults ?? true,
+            controllerContext.CloneContext);
         var mmdSupport = new MmdSupport(
             settings.AvatarContext.Root,
             graph,
@@ -103,6 +112,7 @@ internal static class VRChatAnimatorBuilder
                 graph,
                 settings,
                 externalLipSyncBlendShapes,
+                proxy.ProxyNames,
                 nonFacialDefaults,
                 mmdSupport);
         }
@@ -136,6 +146,12 @@ internal static class VRChatAnimatorBuilder
             mmdSupport,
             trackingPlan,
             aap);
+        var lipSyncCancellerBuilder = new LipSyncCancellerAnimatorBuilder(
+            settings.AvatarContext,
+            graph,
+            mmdSupport,
+            trackingPlan,
+            aap);
         var lipSyncBuilder = new LipSyncAnimatorBuilder(
             settings.AvatarContext,
             graph,
@@ -155,6 +171,8 @@ internal static class VRChatAnimatorBuilder
                 TrackingControlLayerPriority);
             if (trackingPlan.ShouldBuildEyeBlinkLayer)
                 eyeBlinkBuilder.Build(controlController, TrackingControlLayerPriority);
+            if (trackingPlan.ShouldBuildLipSyncCancellerLayer)
+                lipSyncCancellerBuilder.Build(controlController, TrackingControlLayerPriority);
             if (trackingPlan.ShouldBuildLipSyncLayer)
                 lipSyncBuilder.Build(controlController, TrackingControlLayerPriority);
         }
@@ -165,6 +183,7 @@ internal static class VRChatAnimatorBuilder
         AnimatorGraph graph,
         BuildSettings settings,
         ISet<string> externalLipSyncBlendShapes,
+        ISet<string> generatedLipSyncBlendShapes,
         ResolvedNonFacialAnimationSet nonFacialDefaults,
         MmdSupport mmdSupport)
     {
@@ -173,6 +192,9 @@ internal static class VRChatAnimatorBuilder
             .GetBlendShapeWeights(settings.AvatarContext.FaceMesh)
             .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name)
                 && !externalLipSyncBlendShapes.Contains(shape.Name))
+            .Select(shape => generatedLipSyncBlendShapes.Contains(shape.Name)
+                ? shape with { Weight = 0f }
+                : shape)
             .ToArray();
 
         var origin = InitialDefaultStatePosition;

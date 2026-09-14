@@ -188,10 +188,29 @@ internal sealed class ExpressionItemBuilder
     }
 
     private void RemoveProhibited(LipSyncSettings settings)
-        => RemoveProhibited(
+    {
+        RemoveProhibited(
             settings.CancellerBlendShapes,
             FaceTuneWriteKind.FacialData,
             static shape => shape.Name);
+
+        var shapes = settings.Shapes;
+        RemoveProhibited(shapes.Sil, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.PP, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.FF, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.TH, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.DD, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.KK, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.CH, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.SS, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.NN, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.RR, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.AA, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.E, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.IH, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.OH, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+        RemoveProhibited(shapes.OU, FaceTuneWriteKind.LipSyncAnimation, static shape => shape.Name);
+    }
 
     private MultiFrameSettings ResolveMultiFrame(MultiFrameSettings settings)
     {

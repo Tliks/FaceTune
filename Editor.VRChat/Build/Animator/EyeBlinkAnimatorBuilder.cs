@@ -52,7 +52,7 @@ internal sealed class EyeBlinkAnimatorBuilder
         var xStep = AnimatorGraph.PositionXStep;
         var yStep = AnimatorGraph.PositionYStep;
         var layer = _graph.AddLayer(controller, "Eye Blink", layerPriority);
-        layer.StateMachine!.ExitPosition += new Vector3(xStep, 0, 0);
+        var root = layer.StateMachine!;
 
         var evaluationState = _graph.AddState(layer, "Mode Evaluation", origin);
         _graph.AsPassThrough(evaluationState);
@@ -75,23 +75,23 @@ internal sealed class EyeBlinkAnimatorBuilder
             disabledWhen,
             false,
             evaluationState,
-            origin + new Vector3(xStep, 0, 0));
+            origin + new Vector3(xStep, -yStep, 0));
         InstallModeState(
             layer,
             "Built-in",
             builtInWhen,
             true,
             evaluationState,
-            origin + new Vector3(xStep, yStep, 0));
+            origin + new Vector3(xStep, 0, 0));
 
         if (animationModes.Count > 0)
         {
             InstallAnimations(
-                layer,
+                root,
                 animationModes,
                 animationConditions,
                 evaluationState,
-                origin + new Vector3(xStep, yStep * 2, 0),
+                origin + new Vector3(xStep, yStep, 0),
                 yStep);
         }
     }
@@ -140,7 +140,7 @@ internal sealed class EyeBlinkAnimatorBuilder
     }
 
     private void InstallAnimations(
-        VirtualLayer layer,
+        VirtualStateMachine root,
         ImmutableList<(EyeBlinkSettings Settings, int Mode)> animationModes,
         ImmutableList<DnfCondition> animationConditions,
         VirtualState evaluationState,
@@ -155,69 +155,59 @@ internal sealed class EyeBlinkAnimatorBuilder
             var name = entry.Settings.EyeBlinkMode == EyeBlinkSettings.Kind.SimpleAnimation
                 ? $"Simple {++simpleNumber}"
                 : $"Custom {++customNumber}";
+            var machine = _graph.AddStateMachine(root, name, position);
             var stare = entry.Settings.EyeBlinkMode switch
             {
                 EyeBlinkSettings.Kind.SimpleAnimation => InstallSimple(
-                    layer,
-                    name,
+                    machine,
                     entry.Settings,
                     animationConditions[index],
-                    evaluationState,
-                    SpeedParameterName(entry.Mode),
-                    position,
-                    yStep),
+                    SpeedParameterName(entry.Mode)),
                 EyeBlinkSettings.Kind.CustomAnimation => InstallCustom(
-                    layer,
-                    name,
+                    machine,
                     entry.Settings,
                     animationConditions[index],
-                    evaluationState,
-                    SpeedParameterName(entry.Mode),
-                    position,
-                    yStep),
+                    SpeedParameterName(entry.Mode)),
                 _ => throw new InvalidOperationException(
                     $"Unsupported generated eye blink mode: {entry.Settings.EyeBlinkMode}")
             };
             SetEyeBlinkTracking(stare, false);
+            _graph.AddEntryTransition(machine, stare);
             _graph.AddStateTransition(
                 evaluationState,
-                stare,
+                machine,
                 animationConditions[index],
                 0f);
-            position.y += entry.Settings.EyeBlinkMode == EyeBlinkSettings.Kind.SimpleAnimation
-                ? yStep * 4
-                : yStep * 2;
+            _graph.AddStateMachineTransition(root, machine, evaluationState);
+            position.y += yStep;
         }
     }
 
     private VirtualState InstallSimple(
-        VirtualLayer layer,
-        string name,
+        VirtualStateMachine machine,
         EyeBlinkSettings settings,
         DnfCondition when,
-        VirtualState evaluationState,
-        string speedParameterName,
-        Vector3 position,
-        float yStep)
+        string speedParameterName)
     {
+        var yStep = AnimatorGraph.PositionYStep;
         var stare = AddWaitingState(
-            layer,
-            $"{name} Stare",
-            position,
+            machine,
+            "Stare",
+            LayoutOrigin,
             settings.IntervalSeconds,
             speedParameterName);
         var entry = _graph.AddState(
-            layer,
-            $"{name} Entry",
-            position + new Vector3(0, yStep, 0));
+            machine,
+            "Entry",
+            LayoutOrigin + new Vector3(0, yStep, 0));
         var close = _graph.AddState(
-            layer,
-            $"{name} Close",
-            position + new Vector3(0, yStep * 2, 0));
+            machine,
+            "Close",
+            LayoutOrigin + new Vector3(0, yStep * 2, 0));
         var exit = _graph.AddState(
-            layer,
-            $"{name} Exit",
-            position + new Vector3(0, yStep * 3, 0));
+            machine,
+            "Exit",
+            LayoutOrigin + new Vector3(0, yStep * 3, 0));
         _graph.AsPassThrough(entry);
         _graph.AsPassThrough(exit);
         var holdDuration = Math.Max(0f, settings.SimpleDurationsSeconds.y);
@@ -225,7 +215,7 @@ internal sealed class EyeBlinkAnimatorBuilder
 
         var continueWhen = DnfCondition.Always;
         foreach (var state in new[] { stare, entry, close, exit })
-            _graph.AddStateTransition(state, evaluationState, when.Complement(), 0f);
+            _graph.AddExitTransitions(state, when.Complement(), 0f);
 
         _graph.AddExitTimeTransition(stare, entry, continueWhen, 1f, 0f);
         _graph.AddStateTransition(
@@ -248,45 +238,42 @@ internal sealed class EyeBlinkAnimatorBuilder
     }
 
     private VirtualState InstallCustom(
-        VirtualLayer layer,
-        string name,
+        VirtualStateMachine machine,
         EyeBlinkSettings settings,
         DnfCondition when,
-        VirtualState evaluationState,
-        string speedParameterName,
-        Vector3 position,
-        float yStep)
+        string speedParameterName)
     {
+        var yStep = AnimatorGraph.PositionYStep;
         var stare = AddWaitingState(
-            layer,
-            $"{name} Stare",
-            position,
+            machine,
+            "Stare",
+            LayoutOrigin,
             settings.IntervalSeconds,
             speedParameterName);
         var blink = _graph.AddState(
-            layer,
-            $"{name} Blink",
-            position + new Vector3(0, yStep, 0));
+            machine,
+            "Blink",
+            LayoutOrigin + new Vector3(0, yStep, 0));
         blink.SetNewClip(blink.Name).AddBlendShapeAnimations(
             _avatarContext.BodyPath,
             settings.Animations);
 
         var continueWhen = DnfCondition.Always;
-        _graph.AddStateTransition(stare, evaluationState, when.Complement(), 0f);
-        _graph.AddStateTransition(blink, evaluationState, when.Complement(), 0f);
+        _graph.AddExitTransitions(stare, when.Complement(), 0f);
+        _graph.AddExitTransitions(blink, when.Complement(), 0f);
         _graph.AddExitTimeTransition(stare, blink, continueWhen, 1f, 0f);
         _graph.AddExitTimeTransition(blink, stare, continueWhen, 1f, 0f);
         return stare;
     }
 
     private VirtualState AddWaitingState(
-        VirtualLayer layer,
+        VirtualStateMachine machine,
         string name,
         Vector3 position,
         Vector2 intervalSeconds,
         string speedParameterName)
     {
-        var state = _graph.AddState(layer, name, position);
+        var state = _graph.AddState(machine, name, position);
         state.Motion = AnimatorHelper.CreateDelayClip(1f, name);
         state.SpeedParameter = speedParameterName;
 

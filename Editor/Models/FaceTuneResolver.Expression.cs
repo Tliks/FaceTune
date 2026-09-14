@@ -115,7 +115,7 @@ internal sealed class LipSyncResolver
     public LipSyncResolver(GameObject root, ComputeContext? context = null)
     {
         definitions = new ExpressionDefinitionResolver(context);
-        references = new SettingValueResolver<LipSyncSettings>(static (_, value) => value.Clone(), context);
+        references = new SettingValueResolver<LipSyncSettings>(static (_, value) => Clone(value), context);
         scope = new ScopedValueResolver<LipSyncSettings>(
             root,
             settings => references.Resolve(settings),
@@ -133,6 +133,31 @@ internal sealed class LipSyncResolver
 
     public LipSyncSettings Resolve(ExpressionComponent expression)
         => ResolveDefinition(expression) ?? ResolveInherited(expression).Value;
+
+    private static LipSyncSettings Clone(LipSyncSettings value)
+        => new()
+        {
+            Mode = value.Mode,
+            CancellerBlendShapes = value.CancellerBlendShapes.ToList(),
+            Shapes = new VrcVisemeLipSyncShapes
+            {
+                Sil = value.Shapes.Sil.ToList(),
+                PP = value.Shapes.PP.ToList(),
+                FF = value.Shapes.FF.ToList(),
+                TH = value.Shapes.TH.ToList(),
+                DD = value.Shapes.DD.ToList(),
+                KK = value.Shapes.KK.ToList(),
+                CH = value.Shapes.CH.ToList(),
+                SS = value.Shapes.SS.ToList(),
+                NN = value.Shapes.NN.ToList(),
+                RR = value.Shapes.RR.ToList(),
+                AA = value.Shapes.AA.ToList(),
+                E = value.Shapes.E.ToList(),
+                IH = value.Shapes.IH.ToList(),
+                OH = value.Shapes.OH.ToList(),
+                OU = value.Shapes.OU.ToList()
+            }
+        };
 }
 
 internal sealed class TransitionResolver
