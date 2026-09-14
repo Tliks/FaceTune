@@ -2,10 +2,10 @@ namespace Aoyon.FaceTune.Preview;
 
 internal class EditingShapesPreview
 {
-    private readonly DirectBlendShapePreviewContext _preview;
+    private readonly DirectBlendShapePreviewLayer _preview;
     private SkinnedMeshRenderer? _target;
 
-    internal EditingShapesPreview(DirectBlendShapePreviewContext preview)
+    internal EditingShapesPreview(DirectBlendShapePreviewLayer preview)
     {
         _preview = preview;
     }

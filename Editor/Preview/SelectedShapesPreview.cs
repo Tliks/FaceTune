@@ -1,196 +1,381 @@
-using nadena.dev.ndmf.preview;
 using Aoyon.FaceTune.Settings;
-
+using nadena.dev.ndmf.preview;
 
 namespace Aoyon.FaceTune.Preview;
 
-internal class SelectedShapesPreview
+internal enum VisemeHoverSource
 {
-    private readonly DirectBlendShapePreviewContext _preview;
-    private SelectedShapesPreviewSession? _session;
-
-    internal SelectedShapesPreview(DirectBlendShapePreviewContext preview)
-    {
-        _preview = preview;
-        ProjectSettings.SelectedExpressionPreviewSettingsChanged += RebuildSessionFromSelection;
-        Selection.selectionChanged += RebuildSessionFromSelection;
-        RebuildSessionFromSelection();
-    }
-
-    private void RebuildSessionFromSelection()
-    {
-        var selection = Selection.objects.Length == 1 ? Selection.objects[0] : null;
-        RebuildSession(selection);
-    }
-
-    private void RebuildSession(Object? selection)
-    {
-        DisposeSession();
-        if (selection == null) return;
-
-        var isProjectSelection = selection is AnimationClip || EditorUtility.IsPersistent(selection);
-        var selectionPreviewEnabled = isProjectSelection
-            ? ProjectSettings.EnableProjectSelectedExpressionPreview
-            : ProjectSettings.EnableHierarchySelectedExpressionPreview;
-        if (!selectionPreviewEnabled) return;
-
-        _session = selection switch
-        {
-            AnimationClip clip => SelectedShapesPreviewSession.FromClip(
-                clip, _preview, () => RebuildSession(selection)),
-            GameObject obj => SelectedShapesPreviewSession.FromGameObject(
-                obj, _preview, () => RebuildSession(selection)),
-            _ => null
-        };
-    }
-
-    private void DisposeSession()
-    {
-        _session?.Dispose();
-        _session = null;
-    }
+    Overlay,
+    Inspector
 }
 
-internal class SelectedShapesPreviewSession : IDisposable
+internal sealed class SelectedShapesPreviewSession : IDisposable
 {
-    private readonly DirectBlendShapePreviewContext _preview;
-    private readonly Action _onInvalidate;
-
     private readonly ComputeContext _context;
-    private readonly List<IDisposable> _previews;
+    private readonly Action _onInvalidate;
     private bool _disposed;
 
-    private SelectedShapesPreviewSession(
-        DirectBlendShapePreviewContext preview,
-        Action onInvalidate)
+    private SelectedShapesPreviewSession(Action onInvalidate)
     {
-        _preview = preview;
         _onInvalidate = onInvalidate;
         _context = new($"{nameof(SelectedShapesPreviewSession)}:{nameof(_context)}");
-        _previews = new List<IDisposable>();
-        _context.InvokeOnInvalidate(this, s => s.OnInvalidate());
+        _context.InvokeOnInvalidate(this, session => session.OnInvalidate());
     }
 
-    public static SelectedShapesPreviewSession FromClip(
-        AnimationClip clip,
-        DirectBlendShapePreviewContext preview,
-        Action onInvalidate)
-    {
-        var session = new SelectedShapesPreviewSession(preview, onInvalidate);
-        session.AddWriterForClip(clip, session._previews);
-        return session;
-    }
+    internal SelectedPreviewData Data { get; private set; } = null!;
 
-    public static SelectedShapesPreviewSession FromGameObject(
-        GameObject gameObject,
-        DirectBlendShapePreviewContext preview,
+    internal static SelectedShapesPreviewSession? Create(
+        Object selection,
+        DirectBlendShapePreviewLayer preview,
         Action onInvalidate)
     {
-        var session = new SelectedShapesPreviewSession(preview, onInvalidate);
-        session.AddWriterForGameObject(gameObject, session._previews);
+        var session = new SelectedShapesPreviewSession(onInvalidate);
+        var data = SelectedPreviewResolver.Resolve(selection, preview, session._context);
+        if (data == null)
+        {
+            session.Dispose();
+            return null;
+        }
+        session.Data = data;
         return session;
     }
 
     private void OnInvalidate()
     {
-        if (_disposed) return;
-        _onInvalidate();
+        if (!_disposed) _onInvalidate();
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
         _disposed = true;
-        foreach (var preview in _previews) preview.Dispose();
-        _previews.Clear();
     }
-    
-    private void AddWriterForClip(AnimationClip clip, List<IDisposable> resultToAdd)
+}
+
+internal sealed class SelectedShapesPreview
+{
+    private readonly DirectBlendShapePreviewLayer _expressionLayer;
+    private readonly DirectBlendShapePreviewLayer _eyeBlinkLayer;
+    private readonly DirectBlendShapePreviewLayer _lipSyncCancellerLayer;
+    private readonly DirectBlendShapePreviewLayer _lipSyncVisemeLayer;
+    private readonly PreviewTimeline _multiFrame = new();
+    private readonly PreviewTimeline _eyeBlink = new();
+
+    private Object? _selection;
+    private SelectedShapesPreviewSession? _session;
+    private AvatarPreviewData? _currentAvatar;
+    private bool _eyeBlinkActive;
+    private int _selectedViseme = -1;
+    private int _hoveredViseme = -1;
+    private VisemeHoverSource? _visemeHoverSource;
+
+    internal SelectedShapesPreview(
+        DirectBlendShapePreviewLayer expressionLayer,
+        DirectBlendShapePreviewLayer eyeBlinkLayer,
+        DirectBlendShapePreviewLayer lipSyncCancellerLayer,
+        DirectBlendShapePreviewLayer lipSyncVisemeLayer)
     {
-        var isLooping = _context.Observe(clip, c => c.isLooping, (a, b) => a == b);
-        var targets = _preview.GetTargets(_context);
+        _expressionLayer = expressionLayer;
+        _eyeBlinkLayer = eyeBlinkLayer;
+        _lipSyncCancellerLayer = lipSyncCancellerLayer;
+        _lipSyncVisemeLayer = lipSyncVisemeLayer;
 
-        foreach (var target in targets)
+        _multiFrame.TimeChanged += _ => ApplyFacial();
+        _multiFrame.StateChanged += RepaintOverlay;
+        _eyeBlink.TimeChanged += _ => ApplyEyeBlink();
+        _eyeBlink.Completed += OnEyeBlinkCompleted;
+        _eyeBlink.StateChanged += RepaintOverlay;
+        ProjectSettings.SelectedExpressionPreviewSettingsChanged += RebuildFromSelection;
+        Selection.selectionChanged += OnSelectionChanged;
+        OnSelectionChanged();
+    }
+
+    private SelectedPreviewData? Data => _session?.Data;
+
+    private AvatarPreviewData? CurrentAvatar => _currentAvatar;
+
+    internal event Action? TargetsChanged;
+
+    internal int AvatarCount => Data?.Avatars.Count ?? 0;
+    internal GameObject? CurrentAvatarRoot => CurrentAvatar?.Root;
+    internal int SelectedAvatarIndex
+    {
+        get
         {
-            var animations = new List<BlendShapeWeightAnimation>();
-            clip.GetBlendShapeAnimations(ClipImportOption.NonZero, animations, target.BodyPath);
-
-            // Clip preview は既存 preview の上に、clip が持つ値だけを重ねる。
-            var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet());
-            resultToAdd.Add(_preview.ApplyAnimation(target.FaceRenderer, apply, animations, isLooping));
+            var current = CurrentAvatar;
+            var avatars = Data?.Avatars;
+            if (current == null || avatars == null) return -1;
+            for (var index = 0; index < avatars.Count; index++)
+            {
+                if (ReferenceEquals(avatars[index], current)) return index;
+            }
+            return -1;
         }
     }
 
-    private void AddWriterForGameObject(GameObject obj, List<IDisposable> resultToAdd)
+    internal bool HasMultiFrame => CurrentAvatar?.Facial.MultiFrame != null;
+    internal bool IsMultiFramePlaying => HasMultiFrame && _multiFrame.IsPlaying;
+    internal float MultiFrameTime => _multiFrame.NormalizedTime;
+    internal bool HasEyeBlink => CurrentAvatar?.EyeBlink != null;
+    internal bool IsEyeBlinkPlaying => HasEyeBlink && _eyeBlink.IsPlaying;
+    internal float EyeBlinkTime => _eyeBlink.NormalizedTime;
+    internal Vector2? EyeBlinkClosedRange => CurrentAvatar?.EyeBlink?.ClosedRange;
+    internal bool HasLipSync => CurrentAvatar?.LipSync != null;
+    internal int SelectedViseme => _selectedViseme;
+    internal ExpressionComponent? CurrentExpression => CurrentAvatar?.Expression;
+    internal Object? CurrentSource => CurrentExpression != null ? CurrentExpression : _selection;
+
+    internal string GetAvatarName(int index)
+        => Data?.Avatars[index].Root.name ?? string.Empty;
+
+    internal void SetAvatar(int index)
     {
-        var target = _preview.GetTargets(_context)
-            .FirstOrDefault(target => obj.transform.IsChildOf(target.Root.transform));
-        if (target == null) return;
+        var avatars = Data?.Avatars;
+        if (avatars == null || index < 0 || index >= avatars.Count) return;
+        var next = avatars[index];
+        if (ReferenceEquals(next, CurrentAvatar)) return;
 
-        var animations = new List<BlendShapeWeightAnimation>();
-        if (!TryGetGameObjectAnimations(_context, obj, target.Root, animations, out var isLooping)) return;
-
-        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(target.Root, _context);
-        var apply = new BlendShapeApply(new ImmutableBlendShapeWeightSet(), 0f, ignoredNames);
-        // GameObject preview は選択表情の facial style を含めて完全に置き換える。
-        resultToAdd.Add(_preview.ApplyAnimation(target.FaceRenderer, apply, animations, isLooping));
+        ClearCurrentPreview();
+        _currentAvatar = next;
+        ConfigureTimelines(restartMultiFrame: false);
+        if (!HasEyeBlink) _eyeBlinkActive = false;
+        if (!HasLipSync) ResetVisemes();
+        ApplyAll();
+        RepaintOverlay();
     }
 
-    private static bool TryGetGameObjectAnimations(
-        ComputeContext context,
-        GameObject target,
-        GameObject root,
-        List<BlendShapeWeightAnimation> resultToAdd,
-        out bool isLooping)
+    internal void ToggleMultiFramePlayback()
+        => _multiFrame.TogglePlayback();
+
+    internal void SetMultiFrameTime(float value)
+        => _multiFrame.Seek(value);
+
+    internal void ToggleEyeBlinkPlayback()
     {
-        isLooping = false;
+        if (!HasEyeBlink) return;
+        _eyeBlinkActive = true;
+        _eyeBlink.TogglePlayback();
+    }
 
-        using var _ = ListPool<ExpressionComponent>.Get(out var expressions);
-        context.GetComponents<ExpressionComponent>(target, expressions);
+    internal void SetEyeBlinkTime(float value)
+    {
+        if (!HasEyeBlink) return;
+        _eyeBlinkActive = true;
+        _eyeBlink.Seek(value);
+    }
 
-        // 対象GameObjectに複数Expressionがある場合は境界が推定不能なので無効化
-        if (expressions.Count > 1) return false;
+    internal void SetVisemeSelection(int index)
+    {
+        index = Mathf.Clamp(index, -1, LipSyncPreviewData.VisemeCount - 1);
+        if (_selectedViseme == index) return;
+        _selectedViseme = index;
+        ApplyLipSync();
+        UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
+    }
 
-        if (expressions.Count == 1)
+    internal void SetVisemeHover(VisemeHoverSource source, int index)
+    {
+        index = Mathf.Clamp(index, -1, LipSyncPreviewData.VisemeCount - 1);
+        var sameSource = _visemeHoverSource == source;
+        if (index < 0 && !sameSource) return;
+        if (index == _hoveredViseme && sameSource) return;
+
+        _visemeHoverSource = index < 0 ? null : source;
+        _hoveredViseme = index;
+        ApplyLipSync();
+        RepaintOverlay();
+    }
+
+    private void OnSelectionChanged()
+    {
+        _selection = Selection.objects.Length == 1 ? Selection.objects[0] : null;
+        RebuildSession(resetControls: true);
+    }
+
+    private void RebuildFromSelection()
+        => RebuildSession(resetControls: false);
+
+    private void RebuildSession(bool resetControls)
+    {
+        var previousRoot = resetControls ? null : CurrentAvatar?.Root;
+        DisposeSession();
+        if (resetControls) ResetControls();
+        if (_selection == null || !PreviewEnabled(_selection))
         {
-            var expression = expressions[0];
-            var facial = new FacialAnimationResolver(root, context);
-            resultToAdd.AddRange(facial.ResolveIncoming(expression.transform));
-            if (facial.TryResolve(expression, out var definition))
-                resultToAdd.AddRange(definition);
-            isLooping = new MultiFrameResolver(context).Resolve(expression).MultiFrameMode
-                        == MultiFrameSettings.Kind.Loop;
-            return true;
+            DisableTimelines();
+            NotifyTargetsChanged();
+            return;
         }
 
-        // 子に Expression が残っている場合は Data 単体選択ではないので無効化
-        using var _children = ListPool<ExpressionComponent>.Get(out var childExpressions);
-        context.GetComponentsInChildren<ExpressionComponent>(target, true, childExpressions);
-        if (childExpressions.Count > 0) return false;
+        _session = SelectedShapesPreviewSession.Create(
+            _selection,
+            _expressionLayer,
+            RebuildFromSelection);
+        var avatars = Data?.Avatars;
+        if (avatars == null || avatars.Count == 0)
+        {
+            DisableTimelines();
+            NotifyTargetsChanged();
+            return;
+        }
 
-        return TryResolveSubtreeData(context, target, root, resultToAdd);
+        var previousAvatar = avatars.FirstOrDefault(avatar => avatar.Root == previousRoot);
+        _currentAvatar = previousAvatar ?? avatars[0];
+        ConfigureTimelines(resetControls);
+        if (!HasLipSync) ResetVisemes();
+        ApplyAll();
+        NotifyTargetsChanged();
     }
 
-    private static bool TryResolveSubtreeData(
-        ComputeContext context,
-        GameObject target,
-        GameObject root,
-        List<BlendShapeWeightAnimation> resultToAdd)
+    private void NotifyTargetsChanged()
     {
-        // Dataの配置はExpressionへ影響しないが、Expressionが全く無いGameObjectを選択した場合は編集用にpreviewする。
-        using var _ = ListPool<ExpressionDataComponent>.Get(out var datas);
-        context.GetComponentsInChildren<ExpressionDataComponent>(target, true, datas);
-        if (datas.Count == 0) return false;
-
-        var facial = new FacialAnimationResolver(root, context);
-        var animations = new BlendShapeWeightAnimationSet();
-        foreach (var data in datas)
-            if (facial.TryResolve(data, out var resolved))
-                animations.AddRange(resolved);
-        if (animations.Count == 0) return false;
-
-        resultToAdd.AddRange(facial.ResolveIncoming(target.transform));
-        resultToAdd.AddRange(animations);
-        return true;
+        TargetsChanged?.Invoke();
+        RepaintOverlay();
     }
+
+    private void ConfigureTimelines(bool restartMultiFrame)
+    {
+        var multiFrame = CurrentAvatar?.Facial.MultiFrame;
+        _multiFrame.Configure(
+            multiFrame?.Duration ?? 0f,
+            multiFrame?.IsLooping ?? false);
+        _eyeBlink.Configure(CurrentAvatar?.EyeBlink?.Duration ?? 0f, false);
+        if (restartMultiFrame && multiFrame != null)
+            _multiFrame.Restart();
+        if (!HasEyeBlink) _eyeBlinkActive = false;
+    }
+
+    private void DisableTimelines()
+    {
+        _multiFrame.Configure(0f, false);
+        _eyeBlink.Configure(0f, false);
+    }
+
+    private static bool PreviewEnabled(Object selection)
+    {
+        var isClip = selection is AnimationClip;
+        var isProjectSelection = isClip || EditorUtility.IsPersistent(selection);
+        return isProjectSelection
+            ? ProjectSettings.EnableProjectSelectedExpressionPreview
+            : ProjectSettings.EnableHierarchySelectedExpressionPreview;
+    }
+
+    private void ResetControls()
+    {
+        DisableTimelines();
+        _eyeBlinkActive = false;
+        ResetVisemes();
+    }
+
+    private void ResetVisemes()
+    {
+        _selectedViseme = -1;
+        _hoveredViseme = -1;
+        _visemeHoverSource = null;
+    }
+
+    private void OnEyeBlinkCompleted()
+    {
+        _eyeBlinkActive = false;
+        _eyeBlink.Seek(0f);
+    }
+
+    private void ApplyAll()
+    {
+        ApplyFacial();
+        ApplyEyeBlink();
+        ApplyLipSync();
+    }
+
+    private void ApplyFacial()
+    {
+        var avatar = CurrentAvatar;
+        if (avatar == null) return;
+        var facial = avatar.Facial;
+
+        var time = facial.MultiFrame == null
+            ? 0f
+            : facial.MultiFrame.Duration * _multiFrame.NormalizedTime;
+        var shapes = BlendShapeAnimationPreview.Evaluate(facial.Animations, time);
+        var apply = new BlendShapeApply(
+            shapes,
+            facial.DefaultWeight,
+            facial.IgnoredNames);
+        _expressionLayer.Set(avatar.FaceRenderer, apply);
+    }
+
+    private void ApplyEyeBlink()
+    {
+        var avatar = CurrentAvatar;
+        var eyeBlink = avatar?.EyeBlink;
+        if (avatar == null) return;
+        if (!_eyeBlinkActive || eyeBlink == null)
+        {
+            _eyeBlinkLayer.Clear(avatar.FaceRenderer);
+            return;
+        }
+
+        if (eyeBlink.ClosedShapes != null)
+        {
+            var apply = new BlendShapeApply(
+                eyeBlink.ClosedShapes,
+                IgnoredNames: avatar.Facial.IgnoredNames);
+            var opacity = eyeBlink.SimpleOpacity(_eyeBlink.NormalizedTime);
+            _eyeBlinkLayer.Set(avatar.FaceRenderer, apply, opacity);
+            return;
+        }
+
+        var time = eyeBlink.Duration * _eyeBlink.NormalizedTime;
+        var shapes = BlendShapeAnimationPreview.Evaluate(eyeBlink.Animations, time);
+        var animationApply = new BlendShapeApply(
+            shapes,
+            IgnoredNames: avatar.Facial.IgnoredNames);
+        _eyeBlinkLayer.Set(avatar.FaceRenderer, animationApply);
+    }
+
+    private void ApplyLipSync()
+    {
+        var avatar = CurrentAvatar;
+        var lipSync = avatar?.LipSync;
+        if (avatar == null) return;
+
+        var viseme = _hoveredViseme >= 0 ? _hoveredViseme : _selectedViseme;
+        if (viseme < 0 || lipSync == null)
+        {
+            _lipSyncCancellerLayer.Clear(avatar.FaceRenderer);
+            _lipSyncVisemeLayer.Clear(avatar.FaceRenderer);
+            return;
+        }
+
+        var ignoredNames = avatar.Facial.IgnoredNames;
+        var canceller = new BlendShapeApply(
+            lipSync.Canceller,
+            IgnoredNames: ignoredNames);
+        var visemeShapes = new BlendShapeApply(
+            lipSync.Visemes[viseme],
+            IgnoredNames: ignoredNames);
+        _lipSyncCancellerLayer.Set(avatar.FaceRenderer, canceller);
+        _lipSyncVisemeLayer.Set(avatar.FaceRenderer, visemeShapes);
+    }
+
+    private void DisposeSession()
+    {
+        if (_session == null) return;
+        ClearCurrentPreview();
+        _session.Dispose();
+        _session = null;
+        _currentAvatar = null;
+    }
+
+    private void ClearCurrentPreview()
+    {
+        var renderer = CurrentAvatar?.FaceRenderer;
+        if (renderer == null) return;
+        _expressionLayer.Clear(renderer);
+        _eyeBlinkLayer.Clear(renderer);
+        _lipSyncCancellerLayer.Clear(renderer);
+        _lipSyncVisemeLayer.Clear(renderer);
+    }
+
+    private static void RepaintOverlay()
+        => SceneView.RepaintAll();
 }

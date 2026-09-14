@@ -1,4 +1,5 @@
 using Aoyon.FaceTune.Platforms;
+using Aoyon.FaceTune.Preview;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -475,25 +476,34 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 
         if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.Custom)
         {
-            var visemes = GetVisemes(property);
+            var visemes = GetSerializedVisemes(property);
             var selection = GetVisemeSelection(property);
             var customPosition = position;
             customPosition.Indent();
             customPosition.height = GUIHelper.GetLinesHeight(VisemeRows);
-            DrawVisemeGrid(customPosition, visemes, selection);
+            DrawVisemeGrid(customPosition, property, visemes, selection);
             customPosition.NewLine();
 
-            var selected = visemes[selection.Index];
-            customPosition.height = GUIHelper.GetListHeight(selected.Shapes, VisemeOptions);
-            GUIHelper.DrawList(
-                customPosition,
-                selected.Shapes,
-                new GUIContent(string.Format(
-                    "lipSync.selectedVisemeBlendShapes.label".LS(),
-                    selected.Name)),
-                VisemeOptions);
-            customPosition.NewLine();
+            if (selection >= 0)
+            {
+                var selected = visemes[selection];
+                customPosition.height = GUIHelper.GetListHeight(selected.Shapes, VisemeOptions);
+                GUIHelper.DrawList(
+                    customPosition,
+                    selected.Shapes,
+                    new GUIContent(string.Format(
+                        "lipSync.selectedVisemeBlendShapes.label".LS(),
+                        selected.Name)),
+                    VisemeOptions);
+                customPosition.NewLine();
+            }
             position.y = customPosition.y;
+        }
+        else if (EditsCurrentExpression(property))
+        {
+            DirectBlendShapePreview.Instance.Selected.SetVisemeHover(
+                VisemeHoverSource.Inspector,
+                -1);
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
@@ -513,11 +523,14 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         var mode = property.FindPropertyRelative(nameof(LipSyncSettings.Mode));
         if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.Custom)
         {
-            var visemes = GetVisemes(property);
             var selection = GetVisemeSelection(property);
             height += GUIHelper.GetLinesHeight(VisemeRows) + GUIHelper.VerticalSpacing;
-            height += GUIHelper.GetListHeight(visemes[selection.Index].Shapes, VisemeOptions)
-                      + GUIHelper.VerticalSpacing;
+            if (selection >= 0)
+            {
+                var visemes = GetSerializedVisemes(property);
+                var listHeight = GUIHelper.GetListHeight(visemes[selection].Shapes, VisemeOptions);
+                height += listHeight + GUIHelper.VerticalSpacing;
+            }
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
@@ -576,9 +589,11 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 
     private static void DrawVisemeGrid(
         Rect position,
+        SerializedProperty property,
         IReadOnlyList<(string Name, SerializedProperty Shapes)> visemes,
-        VisemeSelectionState selection)
+        int selection)
     {
+        var hovered = -1;
         for (var row = 0; row < VisemeRows; row++)
         {
             var rowRect = new Rect(
@@ -594,15 +609,13 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
                 var index = row * VisemeColumns + column;
                 var (name, shapes) = visemes[index];
                 var cell = cells[column];
+                if (cell.Contains(Event.current.mousePosition)) hovered = index;
                 GUIHelper.RegisterPropertyRegion(cell, shapes);
                 using (new GUIHelper.RightClickPassthroughScope(cell))
                 {
-                    if (GUI.Toggle(
-                            cell,
-                            selection.Index == index,
-                            name,
-                            EditorStyles.miniButton) != (selection.Index == index))
-                        selection.Index = index;
+                    var selected = selection == index;
+                    if (GUI.Toggle(cell, selected, name, EditorStyles.miniButton) != selected)
+                        SetVisemeSelection(property, selected ? -1 : index);
                 }
 
                 if (shapes.arraySize == 0)
@@ -619,41 +632,77 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
                 }
             }
         }
+
+        if (EditsCurrentExpression(property)
+            && (Event.current.type == EventType.Repaint
+                || Event.current.type == EventType.MouseMove
+                || Event.current.type == EventType.MouseLeaveWindow))
+        {
+            var nextHover = Event.current.type == EventType.MouseLeaveWindow
+                ? -1
+                : hovered;
+            DirectBlendShapePreview.Instance.Selected.SetVisemeHover(
+                VisemeHoverSource.Inspector,
+                nextHover);
+        }
     }
 
-    private static VisemeSelectionState GetVisemeSelection(SerializedProperty property)
+    private static int GetVisemeSelection(SerializedProperty property)
     {
-        var state = GUIState.Get(property, "lipSyncViseme", () => new VisemeSelectionState());
-        state.Index = Mathf.Clamp(state.Index, 0, VisemeColumns * VisemeRows - 1);
-        return state;
+        var preview = DirectBlendShapePreview.Instance.Selected;
+        return EditsCurrentExpression(property)
+            ? preview.SelectedViseme
+            : GUIState.Get(property, "lipSyncViseme", () => new VisemeSelectionState()).Index;
+    }
+
+    private static void SetVisemeSelection(SerializedProperty property, int index)
+    {
+        var preview = DirectBlendShapePreview.Instance.Selected;
+        if (EditsCurrentExpression(property))
+            preview.SetVisemeSelection(index);
+        else
+            GUIState.Get(property, "lipSyncViseme", () => new VisemeSelectionState()).Index = index;
+    }
+
+    private static bool EditsCurrentExpression(SerializedProperty property)
+    {
+        if (property.serializedObject.targetObjects.Length != 1) return false;
+        var target = property.serializedObject.targetObject;
+        var expression = DirectBlendShapePreview.Instance.Selected.CurrentExpression;
+        if (!ReferenceEquals(target, expression)) return false;
+        return property.propertyPath == nameof(ExpressionComponent.LipSync);
     }
 
     private sealed class VisemeSelectionState
     {
-        public int Index;
+        public int Index = -1;
     }
 
-    private static (string Name, SerializedProperty Shapes)[] GetVisemes(SerializedProperty property)
+    private static (string Name, SerializedProperty Shapes)[] GetSerializedVisemes(
+        SerializedProperty property)
     {
         var shapes = property.FindPropertyRelative(nameof(LipSyncSettings.Shapes));
-        return new[]
+        var properties = new[]
         {
-            ("sil", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.Sil))),
-            ("PP", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.PP))),
-            ("FF", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.FF))),
-            ("TH", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.TH))),
-            ("DD", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.DD))),
-            ("kk", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.KK))),
-            ("CH", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.CH))),
-            ("SS", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.SS))),
-            ("nn", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.NN))),
-            ("RR", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.RR))),
-            ("aa", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.AA))),
-            ("E", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.E))),
-            ("ih", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.IH))),
-            ("oh", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OH))),
-            ("ou", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OU)))
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.Sil)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.PP)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.FF)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.TH)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.DD)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.KK)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.CH)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.SS)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.NN)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.RR)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.AA)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.E)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.IH)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OH)),
+            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OU))
         };
+        return LipSyncPreviewData.VisemeNames
+            .Zip(properties, (name, shapesProperty) => (name, shapesProperty))
+            .ToArray();
     }
 }
 

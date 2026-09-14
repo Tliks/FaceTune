@@ -895,3 +895,21 @@ msgstr "生成Assetの保存先"
 
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "選択"
+
+msgid "previewOverlay.avatar.label"
+msgstr "アバター"
+
+msgid "previewOverlay.multiFrame.label"
+msgstr "マルチフレーム"
+
+msgid "previewOverlay.eyeBlink.label"
+msgstr "まばたき"
+
+msgid "previewOverlay.lipSync.label"
+msgstr "リップシンク"
+
+msgid "previewOverlay.play.tooltip"
+msgstr "再生"
+
+msgid "previewOverlay.pause.tooltip"
+msgstr "一時停止"

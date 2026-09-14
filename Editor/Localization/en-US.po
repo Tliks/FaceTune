@@ -895,3 +895,21 @@ msgstr "Generated Asset Folder"
 
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "Select"
+
+msgid "previewOverlay.avatar.label"
+msgstr "Avatar"
+
+msgid "previewOverlay.multiFrame.label"
+msgstr "MultiFrame"
+
+msgid "previewOverlay.eyeBlink.label"
+msgstr "Eye Blink"
+
+msgid "previewOverlay.lipSync.label"
+msgstr "Lip Sync"
+
+msgid "previewOverlay.play.tooltip"
+msgstr "Play"
+
+msgid "previewOverlay.pause.tooltip"
+msgstr "Pause"
