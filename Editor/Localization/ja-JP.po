@@ -518,7 +518,7 @@ msgid "lipSync.section.label"
 msgstr "リップシンク設定"
 
 msgid "lipSync.mode.label"
-msgstr "口の動き"
+msgstr "口の形"
 
 msgid "lipSync.mode.option.builtIn"
 msgstr "アバター設定"
@@ -526,11 +526,8 @@ msgstr "アバター設定"
 msgid "lipSync.mode.option.custom"
 msgstr "カスタム"
 
-msgid "lipSync.visemes.label"
-msgstr "音"
-
-msgid "lipSync.visemeBlendShapes.label"
-msgstr "口形状"
+msgid "lipSync.selectedVisemeBlendShapes.label"
+msgstr "選択中の口（{0}）のブレンドシェイプ"
 
 msgid "eyeBlink.section.label"
 msgstr "まばたき設定"
@@ -653,7 +650,7 @@ msgid "priority.value.label"
 msgstr "優先度"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "発話時の共通設定"
+msgstr "発話時の共通リセット"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"

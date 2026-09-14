@@ -17,22 +17,19 @@ internal sealed class LipSyncAnimatorBuilder
     private readonly MmdSupport _mmdSupport;
     private readonly VRChatTrackingPlan _plan;
     private readonly AapProtocol _aap;
-    private readonly ISet<string> _builtInLipSyncBlendShapes;
 
     public LipSyncAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
         MmdSupport mmdSupport,
         VRChatTrackingPlan plan,
-        AapProtocol aap,
-        ISet<string> builtInLipSyncBlendShapes)
+        AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
         _mmdSupport = mmdSupport;
         _plan = plan;
         _aap = aap;
-        _builtInLipSyncBlendShapes = builtInLipSyncBlendShapes;
     }
 
     public void Build(VirtualAnimatorController controller, int layerPriority)
@@ -158,7 +155,6 @@ internal sealed class LipSyncAnimatorBuilder
         DnfCondition modeWhen)
     {
         var visemes = GetVisemes(settings.Shapes);
-        var builtInDefaults = GetBuiltInDefaults(visemes.SelectMany(viseme => viseme.Shapes));
         var yStep = AnimatorGraph.PositionYStep;
 
         for (var index = 0; index < visemes.Length; index++)
@@ -169,7 +165,7 @@ internal sealed class LipSyncAnimatorBuilder
                 settingsMachine,
                 viseme.Name,
                 LayoutOrigin + new Vector3(0, index * yStep, 0));
-            SetVisemeClip(state, builtInDefaults, viseme.Shapes);
+            SetVisemeClip(state, viseme.Shapes);
             SetLipSyncTracking(state, false);
             _graph.AddEntryTransition(settingsMachine, state, visemeWhen);
 
@@ -181,29 +177,11 @@ internal sealed class LipSyncAnimatorBuilder
         }
     }
 
-    private BlendShapeWeight[] GetBuiltInDefaults(IEnumerable<BlendShapeWeight> usedShapes)
-    {
-        var renderer = _avatarContext.FaceRenderer;
-        var mesh = _avatarContext.FaceMesh;
-        return usedShapes
-            .Select(shape => shape.Name)
-            .Where(_builtInLipSyncBlendShapes.Contains)
-            .Distinct(StringComparer.Ordinal)
-            .Select(name => (Name: name, Index: mesh.GetBlendShapeIndex(name)))
-            .Where(entry => entry.Index >= 0)
-            .Select(entry => new BlendShapeWeight(
-                entry.Name,
-                renderer.GetBlendShapeWeight(entry.Index)))
-            .ToArray();
-    }
-
     private void SetVisemeClip(
         VirtualState state,
-        IEnumerable<BlendShapeWeight> builtInDefaults,
         IEnumerable<BlendShapeWeight> visemeShapes)
     {
-        var output = new BlendShapeWeightSet(builtInDefaults);
-        output.AddRange(visemeShapes);
+        var output = new BlendShapeWeightSet(visemeShapes);
         state.SetNewClip(state.Name).AddBlendShapeAnimations(
             _avatarContext.BodyPath,
             output.ToBlendShapeAnimations());

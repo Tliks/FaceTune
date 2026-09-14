@@ -518,7 +518,7 @@ msgid "lipSync.section.label"
 msgstr "Lip Sync Settings"
 
 msgid "lipSync.mode.label"
-msgstr "Mouth Movement"
+msgstr "Mouth Shape"
 
 msgid "lipSync.mode.option.builtIn"
 msgstr "Avatar Settings"
@@ -526,11 +526,8 @@ msgstr "Avatar Settings"
 msgid "lipSync.mode.option.custom"
 msgstr "Custom"
 
-msgid "lipSync.visemes.label"
-msgstr "Sound"
-
-msgid "lipSync.visemeBlendShapes.label"
-msgstr "Mouth Shape"
+msgid "lipSync.selectedVisemeBlendShapes.label"
+msgstr "Blend Shapes for Selected Mouth ({0})"
 
 msgid "eyeBlink.section.label"
 msgstr "Eye Blink Settings"
@@ -653,7 +650,7 @@ msgid "priority.value.label"
 msgstr "Priority"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "Shared Settings While Speaking"
+msgstr "Shared Reset While Speaking"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"
