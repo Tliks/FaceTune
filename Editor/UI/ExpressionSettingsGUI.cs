@@ -191,6 +191,8 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
 [CustomPropertyDrawer(typeof(EyeBlinkSettings))]
 internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 {
+    private const float ListMaxVisibleHeight = 63f;
+
     private static readonly EyeBlinkSettings.Kind[] ModeValues =
     {
         EyeBlinkSettings.Kind.BuiltIn,
@@ -216,6 +218,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     };
     private static readonly ReorderableListOptions BlinkBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
+        MaxVisibleHeight: ListMaxVisibleHeight,
         InitializeElement: element => element.CopyFrom(EyeBlinkSettings.CreateDefaultBlinkBlendShape()),
         DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(
             position,
@@ -225,6 +228,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         ElementHeight: GUIHelper.LineHeight);
     private static readonly ReorderableListOptions ConflictBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
+        MaxVisibleHeight: ListMaxVisibleHeight,
         InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
         DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(
             position,
@@ -239,6 +243,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     };
     private static readonly ReorderableListOptions AnimationsOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
+        MaxVisibleHeight: ListMaxVisibleHeight,
         HeaderContentHeight: GUIHelper.LineHeight,
         DrawHeaderContent: DrawClipImport,
         InitializeElement: InitializeAnimation);
@@ -440,6 +445,8 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(LipSyncSettings))]
 internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 {
+    private const float ListMaxVisibleHeight = 63f;
+
     private static readonly LipSyncSettings.Kind[] ModeValues =
     {
         LipSyncSettings.Kind.BuiltIn,
@@ -578,6 +585,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         FaceTuneWriteKind writeKind)
         => new(
             Header: header,
+            MaxVisibleHeight: ListMaxVisibleHeight,
             InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
             DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
                 position,

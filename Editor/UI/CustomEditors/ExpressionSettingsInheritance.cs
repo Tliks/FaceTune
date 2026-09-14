@@ -345,7 +345,7 @@ internal sealed class ExpressionScopedSettingsGroupDrawer : ISectionDrawer
         public string LabelKey { get; }
         public ExpressionScopedSettingSectionDrawer Drawer { get; }
         public SectionActionSet Actions { get; }
-        public FoldoutState Foldout { get; } = new(false);
+        public FoldoutState Foldout { get; } = new(true);
     }
 }
 
