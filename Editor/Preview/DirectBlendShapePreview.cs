@@ -62,7 +62,7 @@ internal sealed class DirectBlendShapePreview : IRenderFilter
             eyeBlink,
             lipSyncCanceller,
             lipSyncViseme);
-        Editing = new EditingShapesPreview(editing);
+        Editing = new EditingShapesPreview(editing, Selected);
     }
 
     private DirectBlendShapePreviewLayer CreateLayer()

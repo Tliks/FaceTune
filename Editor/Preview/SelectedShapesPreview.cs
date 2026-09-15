@@ -67,6 +67,7 @@ internal sealed class SelectedShapesPreview
     private int _selectedViseme = -1;
     private int _hoveredViseme = -1;
     private VisemeHoverSource? _visemeHoverSource;
+    private int _suspendDepth;
 
     internal SelectedShapesPreview(
         DirectBlendShapePreviewLayer expressionLayer,
@@ -131,6 +132,24 @@ internal sealed class SelectedShapesPreview
     internal string GetAvatarName(int index)
         => Data?.Avatars[index].Root.name ?? string.Empty;
 
+    internal void Suspend()
+    {
+        _suspendDepth++;
+        if (_suspendDepth != 1) return;
+
+        DisposeSession();
+        NotifyTargetsChanged();
+    }
+
+    internal void Resume()
+    {
+        if (_suspendDepth == 0) return;
+        _suspendDepth--;
+        if (_suspendDepth != 0) return;
+
+        RebuildSession(resetControls: true);
+    }
+
     internal void SetAvatar(int index)
     {
         var avatars = Data?.Avatars;
@@ -192,11 +211,15 @@ internal sealed class SelectedShapesPreview
     private void OnSelectionChanged()
     {
         _selection = Selection.objects.Length == 1 ? Selection.objects[0] : null;
-        RebuildSession(resetControls: true);
+        if (_suspendDepth == 0)
+            RebuildSession(resetControls: true);
     }
 
     private void RebuildFromSelection()
-        => RebuildSession(resetControls: false);
+    {
+        if (_suspendDepth == 0)
+            RebuildSession(resetControls: false);
+    }
 
     private void RebuildSession(bool resetControls)
     {
