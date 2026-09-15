@@ -84,9 +84,11 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
     private static void DrawSource(SelectedShapesPreview preview)
     {
         using var disabled = new EditorGUI.DisabledScope(true);
+        var source = preview.CurrentSource;
+        var sourceType = source?.GetType() ?? typeof(Object);
         EditorGUILayout.ObjectField(
-            preview.CurrentSource,
-            typeof(Object),
+            source,
+            sourceType,
             true,
             GUILayout.Width(ContentWidth));
     }

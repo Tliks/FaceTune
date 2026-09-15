@@ -506,7 +506,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             }
             position.y = customPosition.y;
         }
-        else if (EditsCurrentExpression(property))
+        else if (EditsCurrentSource(property))
         {
             DirectBlendShapePreview.Instance.Selected.SetVisemeHover(
                 VisemeHoverSource.Inspector,
@@ -641,7 +641,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             }
         }
 
-        if (EditsCurrentExpression(property)
+        if (EditsCurrentSource(property)
             && (Event.current.type == EventType.Repaint
                 || Event.current.type == EventType.MouseMove
                 || Event.current.type == EventType.MouseLeaveWindow))
@@ -658,7 +658,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
     private static int GetVisemeSelection(SerializedProperty property)
     {
         var preview = DirectBlendShapePreview.Instance.Selected;
-        return EditsCurrentExpression(property)
+        return EditsCurrentSource(property)
             ? preview.SelectedViseme
             : GUIState.Get(property, "lipSyncViseme", () => new VisemeSelectionState()).Index;
     }
@@ -666,18 +666,18 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
     private static void SetVisemeSelection(SerializedProperty property, int index)
     {
         var preview = DirectBlendShapePreview.Instance.Selected;
-        if (EditsCurrentExpression(property))
+        if (EditsCurrentSource(property))
             preview.SetVisemeSelection(index);
         else
             GUIState.Get(property, "lipSyncViseme", () => new VisemeSelectionState()).Index = index;
     }
 
-    private static bool EditsCurrentExpression(SerializedProperty property)
+    private static bool EditsCurrentSource(SerializedProperty property)
     {
         if (property.serializedObject.targetObjects.Length != 1) return false;
         var target = property.serializedObject.targetObject;
-        var expression = DirectBlendShapePreview.Instance.Selected.CurrentExpression;
-        if (!ReferenceEquals(target, expression)) return false;
+        var source = DirectBlendShapePreview.Instance.Selected.CurrentSource;
+        if (!ReferenceEquals(target, source)) return false;
         return property.propertyPath == nameof(ExpressionComponent.LipSync);
     }
 

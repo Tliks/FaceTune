@@ -15,14 +15,16 @@ internal sealed class AvatarPreviewData
     internal AvatarPreviewData(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
-        ExpressionComponent? expression,
-        FacialPreviewData facial,
+        FaceTuneTagComponent? source,
+        ImmutableHashSet<string> ignoredNames,
+        FacialPreviewData? facial,
         EyeBlinkPreviewData? eyeBlink,
         LipSyncPreviewData? lipSync)
     {
         Root = root;
         FaceRenderer = faceRenderer;
-        Expression = expression;
+        Source = source;
+        IgnoredNames = ignoredNames;
         Facial = facial;
         EyeBlink = eyeBlink;
         LipSync = lipSync;
@@ -30,8 +32,9 @@ internal sealed class AvatarPreviewData
 
     internal GameObject Root { get; }
     internal SkinnedMeshRenderer FaceRenderer { get; }
-    internal ExpressionComponent? Expression { get; }
-    internal FacialPreviewData Facial { get; }
+    internal FaceTuneTagComponent? Source { get; }
+    internal ImmutableHashSet<string> IgnoredNames { get; }
+    internal FacialPreviewData? Facial { get; }
     internal EyeBlinkPreviewData? EyeBlink { get; }
     internal LipSyncPreviewData? LipSync { get; }
 }
@@ -39,24 +42,21 @@ internal sealed class AvatarPreviewData
 internal sealed class FacialPreviewData
 {
     internal FacialPreviewData(
-        IReadOnlyList<BlendShapeWeightAnimation> animations,
+        IEnumerable<BlendShapeWeightAnimation> animations,
         float? defaultWeight,
-        ImmutableHashSet<string> ignoredNames,
         bool isLooping)
     {
-        Animations = animations;
+        Animations = animations.ToList();
         DefaultWeight = defaultWeight;
-        IgnoredNames = ignoredNames;
 
-        var duration = BlendShapeAnimationPreview.GetDuration(animations);
-        var hasMultipleFrames = animations.Any(animation => animation.IsMultiFrame);
+        var duration = BlendShapeAnimationPreview.GetDuration(Animations);
+        var hasMultipleFrames = Animations.Any(animation => animation.IsMultiFrame);
         if (duration > 0f && hasMultipleFrames)
             MultiFrame = new MultiFramePreviewData(duration, isLooping);
     }
 
     internal IReadOnlyList<BlendShapeWeightAnimation> Animations { get; }
     internal float? DefaultWeight { get; }
-    internal ImmutableHashSet<string> IgnoredNames { get; }
     internal MultiFramePreviewData? MultiFrame { get; }
 }
 

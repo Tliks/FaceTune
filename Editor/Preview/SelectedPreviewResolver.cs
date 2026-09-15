@@ -39,12 +39,12 @@ internal static class SelectedPreviewResolver
             var facial = new FacialPreviewData(
                 animations,
                 null,
-                ignoredNames,
                 isLooping);
             avatars.Add(new AvatarPreviewData(
                 avatar.Root,
                 avatar.FaceRenderer,
                 null,
+                ignoredNames,
                 facial,
                 null,
                 null));
@@ -57,114 +57,162 @@ internal static class SelectedPreviewResolver
         DirectBlendShapePreviewLayer preview,
         ComputeContext context)
     {
+        FaceTuneTagComponent? source = GetFirst<ExpressionComponent>(gameObject, context);
+        source ??= GetFirst<SettingsComponent>(gameObject, context);
+        source ??= GetFirst<ExpressionDataComponent>(gameObject, context);
+        return source == null ? null : ResolveComponent(source, preview, context);
+    }
+
+    private static SelectedPreviewData? ResolveComponent(
+        FaceTuneTagComponent source,
+        DirectBlendShapePreviewLayer preview,
+        ComputeContext context)
+    {
         var avatar = preview.GetTargets(context)
-            .FirstOrDefault(value => gameObject.transform.IsChildOf(value.Root.transform));
+            .FirstOrDefault(value => source.transform.IsChildOf(value.Root.transform));
         if (avatar == null) return null;
-
-        using var _ = ListPool<ExpressionComponent>.Get(out var expressions);
-        context.GetComponents<ExpressionComponent>(gameObject, expressions);
-        if (expressions.Count > 1) return null;
-
-        var animations = new List<BlendShapeWeightAnimation>();
-        ExpressionComponent? expression = null;
-        var isLooping = false;
-        if (expressions.Count == 1)
-        {
-            expression = expressions[0];
-            ResolveExpressionAnimations(expression, avatar.Root, context, animations);
-            var multiFrame = new MultiFrameResolver(context).Resolve(expression);
-            isLooping = multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop;
-        }
-        else if (!ResolveDataAnimations(gameObject, avatar.Root, context, animations))
-        {
-            return null;
-        }
 
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(
             avatar.Root,
             context);
+        AvatarPreviewData? resolved = source switch
+        {
+            ExpressionComponent expression => ResolveExpression(
+                expression,
+                avatar,
+                ignoredNames,
+                context),
+            SettingsComponent settings => ResolveSettings(
+                settings,
+                avatar,
+                ignoredNames,
+                context),
+            ExpressionDataComponent data => ResolveData(
+                data,
+                avatar,
+                ignoredNames,
+                context),
+            _ => null
+        };
+        return resolved == null ? null : new SelectedPreviewData(new[] { resolved });
+    }
+
+    private static T? GetFirst<T>(GameObject gameObject, ComputeContext context)
+        where T : Component
+    {
+        using var _ = ListPool<T>.Get(out var components);
+        context.GetComponents<T>(gameObject, components);
+        return components.FirstOrDefault();
+    }
+
+    private static AvatarPreviewData ResolveExpression(
+        ExpressionComponent expression,
+        AvatarContext avatar,
+        ImmutableHashSet<string> ignoredNames,
+        ComputeContext context)
+    {
+        var facialResolver = new FacialAnimationResolver(avatar.Root, context);
+        var animations = facialResolver.ResolveIncoming(expression.transform);
+        if (facialResolver.TryResolve(expression, out var expressionAnimations))
+            animations.AddRange(expressionAnimations);
+
+        var multiFrame = new MultiFrameResolver(context).Resolve(expression);
         var facial = new FacialPreviewData(
             animations,
             0f,
-            ignoredNames,
-            isLooping);
-        var eyeBlink = expression == null
-            ? null
-            : ResolveEyeBlink(expression, avatar, context);
-        var lipSync = expression == null
-            ? null
-            : ResolveLipSync(expression, avatar, context);
-        var resolvedAvatar = new AvatarPreviewData(
+            multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop);
+        var eyeBlinkSettings = new EyeBlinkResolver(avatar.Root, context).Resolve(expression);
+        var lipSyncSettings = new LipSyncResolver(avatar.Root, context).Resolve(expression);
+        return new AvatarPreviewData(
             avatar.Root,
             avatar.FaceRenderer,
             expression,
+            ignoredNames,
+            facial,
+            CreateEyeBlink(eyeBlinkSettings, avatar),
+            CreateLipSync(lipSyncSettings, avatar));
+    }
+
+    private static AvatarPreviewData? ResolveSettings(
+        SettingsComponent settings,
+        AvatarContext avatar,
+        ImmutableHashSet<string> ignoredNames,
+        ComputeContext context)
+    {
+        var facialResolver = new FacialAnimationResolver(avatar.Root, context);
+        FacialPreviewData? facial = null;
+        if (facialResolver.TryResolve(settings, out var animations))
+            facial = new FacialPreviewData(animations, null, false);
+
+        var eyeBlinkResolver = new EyeBlinkResolver(avatar.Root, context);
+        var eyeBlinkSettings = eyeBlinkResolver.ResolveProvider(settings);
+        var lipSyncResolver = new LipSyncResolver(avatar.Root, context);
+        var lipSyncSettings = lipSyncResolver.ResolveProvider(settings);
+        var eyeBlink = eyeBlinkSettings == null
+            ? null
+            : CreateEyeBlink(eyeBlinkSettings, avatar);
+        var lipSync = lipSyncSettings == null
+            ? null
+            : CreateLipSync(lipSyncSettings, avatar);
+        if (facial == null && eyeBlink == null && lipSync == null) return null;
+
+        return new AvatarPreviewData(
+            avatar.Root,
+            avatar.FaceRenderer,
+            settings,
+            ignoredNames,
             facial,
             eyeBlink,
             lipSync);
-        return new SelectedPreviewData(new[] { resolvedAvatar });
     }
 
-    private static void ResolveExpressionAnimations(
-        ExpressionComponent expression,
-        GameObject root,
-        ComputeContext context,
-        ICollection<BlendShapeWeightAnimation> result)
-    {
-        var facial = new FacialAnimationResolver(root, context);
-        foreach (var animation in facial.ResolveIncoming(expression.transform))
-            result.Add(animation);
-        if (!facial.TryResolve(expression, out var definition)) return;
-        foreach (var animation in definition)
-            result.Add(animation);
-    }
-
-    private static bool ResolveDataAnimations(
-        GameObject gameObject,
-        GameObject root,
-        ComputeContext context,
-        ICollection<BlendShapeWeightAnimation> result)
-    {
-        using var _expressions = ListPool<ExpressionComponent>.Get(out var childExpressions);
-        context.GetComponentsInChildren<ExpressionComponent>(gameObject, true, childExpressions);
-        if (childExpressions.Count > 0) return false;
-
-        using var _data = ListPool<ExpressionDataComponent>.Get(out var dataComponents);
-        context.GetComponentsInChildren<ExpressionDataComponent>(gameObject, true, dataComponents);
-        if (dataComponents.Count == 0) return false;
-
-        var facial = new FacialAnimationResolver(root, context);
-        var resolved = new BlendShapeWeightAnimationSet();
-        foreach (var data in dataComponents)
-        {
-            if (facial.TryResolve(data, out var value))
-                resolved.AddRange(value);
-        }
-        if (resolved.Count == 0) return false;
-
-        foreach (var animation in facial.ResolveIncoming(gameObject.transform))
-            result.Add(animation);
-        foreach (var animation in resolved)
-            result.Add(animation);
-        return true;
-    }
-
-    private static EyeBlinkPreviewData? ResolveEyeBlink(
-        ExpressionComponent expression,
+    private static AvatarPreviewData ResolveData(
+        ExpressionDataComponent data,
         AvatarContext avatar,
+        ImmutableHashSet<string> ignoredNames,
         ComputeContext context)
     {
-        var settings = new EyeBlinkResolver(avatar.Root, context).Resolve(expression);
-        switch (settings.EyeBlinkMode)
+        var facialResolver = new FacialAnimationResolver(avatar.Root, context);
+        var animations = facialResolver.ResolveIncoming(data.transform);
+        var hasFacial = facialResolver.TryResolve(data, out var dataAnimations);
+        if (hasFacial) animations.AddRange(dataAnimations);
+
+        var multiFrameResolver = new MultiFrameResolver(context);
+        var multiFrame = multiFrameResolver.ResolveProvider(data) ?? new MultiFrameSettings();
+        var facial = hasFacial || animations.Count > 0
+            ? new FacialPreviewData(
+                animations,
+                0f,
+                multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop)
+            : null;
+
+        var eyeBlinkResolver = new EyeBlinkResolver(avatar.Root, context);
+        var eyeBlinkSettings = eyeBlinkResolver.ResolveProvider(data);
+        eyeBlinkSettings ??= eyeBlinkResolver.ResolveIncoming(data).Value;
+        var lipSyncResolver = new LipSyncResolver(avatar.Root, context);
+        var lipSyncSettings = lipSyncResolver.ResolveProvider(data);
+        lipSyncSettings ??= lipSyncResolver.ResolveIncoming(data).Value;
+        return new AvatarPreviewData(
+            avatar.Root,
+            avatar.FaceRenderer,
+            data,
+            ignoredNames,
+            facial,
+            CreateEyeBlink(eyeBlinkSettings, avatar),
+            CreateLipSync(lipSyncSettings, avatar));
+    }
+
+    private static EyeBlinkPreviewData? CreateEyeBlink(
+        EyeBlinkSettings settings,
+        AvatarContext avatar)
+    {
+        return settings.EyeBlinkMode switch
         {
-            case EyeBlinkSettings.Kind.SimpleAnimation:
-                return EyeBlinkPreviewData.FromSimple(settings);
-            case EyeBlinkSettings.Kind.CustomAnimation:
-                return EyeBlinkPreviewData.FromAnimation(settings.Animations);
-            case EyeBlinkSettings.Kind.BuiltIn:
-                return ResolveBuiltInEyeBlink(avatar);
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            EyeBlinkSettings.Kind.SimpleAnimation => EyeBlinkPreviewData.FromSimple(settings),
+            EyeBlinkSettings.Kind.CustomAnimation => EyeBlinkPreviewData.FromAnimation(settings.Animations),
+            EyeBlinkSettings.Kind.BuiltIn => ResolveBuiltInEyeBlink(avatar),
+            _ => throw new ArgumentOutOfRangeException()
+        };
     }
 
     private static EyeBlinkPreviewData? ResolveBuiltInEyeBlink(AvatarContext avatar)
@@ -177,26 +225,19 @@ internal static class SelectedPreviewResolver
         return EyeBlinkPreviewData.FromAnimation(animations, new Vector2(0.5f, 0.5f));
     }
 
-    private static LipSyncPreviewData? ResolveLipSync(
-        ExpressionComponent expression,
-        AvatarContext avatar,
-        ComputeContext context)
+    private static LipSyncPreviewData? CreateLipSync(
+        LipSyncSettings settings,
+        AvatarContext avatar)
     {
-        var settings = new LipSyncResolver(avatar.Root, context).Resolve(expression);
-        VrcVisemeLipSyncShapes? shapes;
-        switch (settings.Mode)
+        var shapes = settings.Mode switch
         {
-            case LipSyncSettings.Kind.Custom:
-                shapes = settings.Shapes;
-                break;
-            case LipSyncSettings.Kind.BuiltIn:
-                shapes = GetBuiltInLipSyncShapes(avatar);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-        if (shapes == null) return null;
-        return new LipSyncPreviewData(settings.CancellerBlendShapes, shapes);
+            LipSyncSettings.Kind.Custom => settings.Shapes,
+            LipSyncSettings.Kind.BuiltIn => GetBuiltInLipSyncShapes(avatar),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        return shapes == null
+            ? null
+            : new LipSyncPreviewData(settings.CancellerBlendShapes, shapes);
     }
 
     private static VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(AvatarContext avatar)

@@ -112,7 +112,7 @@ internal sealed class SelectedShapesPreview
         }
     }
 
-    internal bool HasMultiFrame => CurrentAvatar?.Facial.MultiFrame != null;
+    internal bool HasMultiFrame => CurrentAvatar?.Facial?.MultiFrame != null;
     internal bool IsMultiFramePlaying => HasMultiFrame && _multiFrame.IsPlaying;
     internal float MultiFrameTime => _multiFrame.NormalizedTime;
     internal bool HasEyeBlink => CurrentAvatar?.EyeBlink != null;
@@ -121,8 +121,8 @@ internal sealed class SelectedShapesPreview
     internal Vector2? EyeBlinkClosedRange => CurrentAvatar?.EyeBlink?.ClosedRange;
     internal bool HasLipSync => CurrentAvatar?.LipSync != null;
     internal int SelectedViseme => _selectedViseme;
-    internal ExpressionComponent? CurrentExpression => CurrentAvatar?.Expression;
-    internal Object? CurrentSource => CurrentExpression != null ? CurrentExpression : _selection;
+    internal Object? CurrentSource
+        => (Object?)CurrentAvatar?.Source ?? (_selection as AnimationClip);
 
     internal string GetAvatarName(int index)
         => Data?.Avatars[index].Root.name ?? string.Empty;
@@ -234,7 +234,7 @@ internal sealed class SelectedShapesPreview
 
     private void ConfigureTimelines(bool restartMultiFrame)
     {
-        var multiFrame = CurrentAvatar?.Facial.MultiFrame;
+        var multiFrame = CurrentAvatar?.Facial?.MultiFrame;
         _multiFrame.Configure(
             multiFrame?.Duration ?? 0f,
             multiFrame?.IsLooping ?? false);
@@ -289,8 +289,8 @@ internal sealed class SelectedShapesPreview
     private void ApplyFacial()
     {
         var avatar = CurrentAvatar;
-        if (avatar == null) return;
-        var facial = avatar.Facial;
+        var facial = avatar?.Facial;
+        if (avatar == null || facial == null) return;
 
         var time = facial.MultiFrame == null
             ? 0f
@@ -299,7 +299,7 @@ internal sealed class SelectedShapesPreview
         var apply = new BlendShapeApply(
             shapes,
             facial.DefaultWeight,
-            facial.IgnoredNames);
+            avatar.IgnoredNames);
         _expressionLayer.Set(avatar.FaceRenderer, apply);
     }
 
@@ -318,7 +318,7 @@ internal sealed class SelectedShapesPreview
         {
             var apply = new BlendShapeApply(
                 eyeBlink.ClosedShapes,
-                IgnoredNames: avatar.Facial.IgnoredNames);
+                IgnoredNames: avatar.IgnoredNames);
             var opacity = eyeBlink.SimpleOpacity(_eyeBlink.NormalizedTime);
             _eyeBlinkLayer.Set(avatar.FaceRenderer, apply, opacity);
             return;
@@ -328,7 +328,7 @@ internal sealed class SelectedShapesPreview
         var shapes = BlendShapeAnimationPreview.Evaluate(eyeBlink.Animations, time);
         var animationApply = new BlendShapeApply(
             shapes,
-            IgnoredNames: avatar.Facial.IgnoredNames);
+            IgnoredNames: avatar.IgnoredNames);
         _eyeBlinkLayer.Set(avatar.FaceRenderer, animationApply);
     }
 
@@ -346,7 +346,7 @@ internal sealed class SelectedShapesPreview
             return;
         }
 
-        var ignoredNames = avatar.Facial.IgnoredNames;
+        var ignoredNames = avatar.IgnoredNames;
         var canceller = new BlendShapeApply(
             lipSync.Canceller,
             IgnoredNames: ignoredNames);

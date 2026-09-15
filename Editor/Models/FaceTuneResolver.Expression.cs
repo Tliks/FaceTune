@@ -73,8 +73,11 @@ internal sealed class MultiFrameResolver
 
     public MultiFrameSettings Resolve(ExpressionComponent expression)
         => definitions.Resolve(expression) is ISettingProvider<MultiFrameSettings> provider
-            ? values.Resolve(provider) ?? new MultiFrameSettings()
+            ? ResolveProvider(provider) ?? new MultiFrameSettings()
             : new MultiFrameSettings();
+
+    public MultiFrameSettings? ResolveProvider(ISettingProvider<MultiFrameSettings> provider)
+        => values.Resolve(provider);
 }
 
 internal sealed class EyeBlinkResolver
@@ -99,11 +102,17 @@ internal sealed class EyeBlinkResolver
             ? references.Resolve(provider)
             : null;
 
+    public EyeBlinkSettings? ResolveProvider(ISettingProvider<EyeBlinkSettings> provider)
+        => references.Resolve(provider);
+
+    public ScopedValue<EyeBlinkSettings> ResolveIncoming(Component component)
+        => scope.GetIncoming(component);
+
     public ScopedValue<EyeBlinkSettings> ResolveInherited(ExpressionComponent expression)
-        => scope.GetIncoming(expression);
+        => ResolveIncoming(expression);
 
     public EyeBlinkSettings Resolve(ExpressionComponent expression)
-        => ResolveDefinition(expression) ?? ResolveInherited(expression).Value;
+        => ResolveDefinition(expression) ?? ResolveIncoming(expression).Value;
 }
 
 internal sealed class LipSyncResolver
@@ -128,11 +137,17 @@ internal sealed class LipSyncResolver
             ? references.Resolve(provider)
             : null;
 
+    public LipSyncSettings? ResolveProvider(ISettingProvider<LipSyncSettings> provider)
+        => references.Resolve(provider);
+
+    public ScopedValue<LipSyncSettings> ResolveIncoming(Component component)
+        => scope.GetIncoming(component);
+
     public ScopedValue<LipSyncSettings> ResolveInherited(ExpressionComponent expression)
-        => scope.GetIncoming(expression);
+        => ResolveIncoming(expression);
 
     public LipSyncSettings Resolve(ExpressionComponent expression)
-        => ResolveDefinition(expression) ?? ResolveInherited(expression).Value;
+        => ResolveDefinition(expression) ?? ResolveIncoming(expression).Value;
 
     private static LipSyncSettings Clone(LipSyncSettings value)
         => new()
