@@ -3,14 +3,14 @@ using nadena.dev.ndmf.preview;
 
 namespace Aoyon.FaceTune.Preview;
 
-internal sealed class DirectBlendShapePreviewContext
+internal sealed class DirectBlendShapePreviewLayer
 {
     private readonly Func<ComputeContext, AvatarContext[]> _getTargets;
-    private readonly Action<SkinnedMeshRenderer, BlendShapeApply> _write;
+    private readonly Action<SkinnedMeshRenderer, BlendShapePreviewLayerState> _write;
 
-    internal DirectBlendShapePreviewContext(
+    internal DirectBlendShapePreviewLayer(
         Func<ComputeContext, AvatarContext[]> getTargets,
-        Action<SkinnedMeshRenderer, BlendShapeApply> write)
+        Action<SkinnedMeshRenderer, BlendShapePreviewLayerState> write)
     {
         _getTargets = getTargets;
         _write = write;
@@ -21,66 +21,17 @@ internal sealed class DirectBlendShapePreviewContext
         return _getTargets(context);
     }
 
-    internal void Set(SkinnedMeshRenderer renderer, BlendShapeApply apply)
+    internal void Set(
+        SkinnedMeshRenderer renderer,
+        BlendShapeApply apply,
+        float opacity = 1f)
     {
-        _write(renderer, apply);
+        _write(renderer, new BlendShapePreviewLayerState(apply, opacity));
     }
 
     internal void Clear(SkinnedMeshRenderer renderer)
     {
         Set(renderer, BlendShapeApply.Empty);
-    }
-
-    internal IDisposable ApplyAnimation(
-        SkinnedMeshRenderer renderer,
-        BlendShapeApply baseApply,
-        IReadOnlyList<BlendShapeWeightAnimation> animations,
-        bool isLooping)
-    {
-        IDisposable? multiFrame = null;
-        if (animations.Any(animation => animation.IsMultiFrame))
-        {
-            multiFrame = new BlendShapeMultiFramePreview(
-                baseApply,
-                animations,
-                isLooping,
-                frame => Set(renderer, frame));
-        }
-        else
-        {
-            Set(renderer, baseApply with
-            {
-                Set = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes())
-            });
-        }
-
-        return new PreviewHandle(this, renderer, multiFrame);
-    }
-
-    private sealed class PreviewHandle : IDisposable
-    {
-        private readonly DirectBlendShapePreviewContext _preview;
-        private readonly SkinnedMeshRenderer _renderer;
-        private readonly IDisposable? _multiFrame;
-        private bool _disposed;
-
-        internal PreviewHandle(
-            DirectBlendShapePreviewContext preview,
-            SkinnedMeshRenderer renderer,
-            IDisposable? multiFrame)
-        {
-            _preview = preview;
-            _renderer = renderer;
-            _multiFrame = multiFrame;
-        }
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-            _disposed = true;
-            _multiFrame?.Dispose();
-            _preview.Clear(_renderer);
-        }
     }
 }
 
@@ -88,38 +39,52 @@ internal sealed class DirectBlendShapePreview : IRenderFilter
 {
     internal static DirectBlendShapePreview Instance { get; } = new();
 
-    private const int SourceCount = 2;
-
     private readonly Dictionary<SkinnedMeshRenderer, BlendShapePreviewNode> _currentNodes = new();
-    private readonly Dictionary<SkinnedMeshRenderer, BlendShapeApply[]> _directStates = new();
+    private readonly Dictionary<SkinnedMeshRenderer, BlendShapePreviewLayerState[]> _directStates = new();
     private readonly PropCache<int, AvatarContext[]> _targets = new( $"{nameof(DirectBlendShapePreview)}:{nameof(_targets)}",
         CollectTargets, (a, b) => a.SequenceEqual(b));
     private readonly PublishedValue<int> _instantiatingTrigger = new(0, $"{nameof(DirectBlendShapePreview)}.{nameof(_instantiatingTrigger)}");
+    private int _layerCount;
 
     public SelectedShapesPreview Selected { get; }
     public EditingShapesPreview Editing { get; }
 
     private DirectBlendShapePreview()
     {
-        Selected = new SelectedShapesPreview(CreateContext(0));
-        Editing = new EditingShapesPreview(CreateContext(1));
+        var expression = CreateLayer();
+        var eyeBlink = CreateLayer();
+        var lipSyncCanceller = CreateLayer();
+        var lipSyncViseme = CreateLayer();
+        var editing = CreateLayer();
+
+        Selected = new SelectedShapesPreview(
+            expression,
+            eyeBlink,
+            lipSyncCanceller,
+            lipSyncViseme);
+        Editing = new EditingShapesPreview(editing, Selected);
     }
 
-    private DirectBlendShapePreviewContext CreateContext(int sourceIndex)
+    private DirectBlendShapePreviewLayer CreateLayer()
     {
-        return new DirectBlendShapePreviewContext(
+        var layerIndex = _layerCount++;
+        return new DirectBlendShapePreviewLayer(
             GetTargets,
-            (renderer, apply) => Write(sourceIndex, renderer, apply));
+            (renderer, apply) => Write(layerIndex, renderer, apply));
     }
 
-    private void Write(int sourceIndex, SkinnedMeshRenderer renderer, BlendShapeApply apply)
+    private void Write(
+        int layerIndex,
+        SkinnedMeshRenderer renderer,
+        BlendShapePreviewLayerState layer)
     {
         var state = GetOrCreateState(renderer);
-        state[sourceIndex] = apply;
+        if (state[layerIndex].Equals(layer)) return;
+        state[layerIndex] = layer;
 
         if (TryGetNode(renderer, out var node))
         {
-            node.SetDirectly(sourceIndex, apply);
+            node.SetDirectly(layerIndex, layer);
             SceneView.RepaintAll();
         }
         else
@@ -128,12 +93,12 @@ internal sealed class DirectBlendShapePreview : IRenderFilter
         }
     }
 
-    private BlendShapeApply[] GetOrCreateState(SkinnedMeshRenderer renderer)
+    private BlendShapePreviewLayerState[] GetOrCreateState(SkinnedMeshRenderer renderer)
     {
         if (_directStates.TryGetValue(renderer, out var state)) return state;
 
-        state = new BlendShapeApply[SourceCount];
-        Array.Fill(state, BlendShapeApply.Empty);
+        state = new BlendShapePreviewLayerState[_layerCount];
+        Array.Fill(state, new BlendShapePreviewLayerState(BlendShapeApply.Empty));
         _directStates.Add(renderer, state);
         return state;
     }

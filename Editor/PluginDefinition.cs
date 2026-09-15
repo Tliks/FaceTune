@@ -28,12 +28,15 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence.Run(ApplyDefaultShapesPass.Instance)
             .PreviewingWith(RealTimeExpressionPreview.Instance);
         sequence.Run(BuildPlatformAssetsPass.Instance);
-        sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
         sequence = InPhase(BuildPhase.Transforming)
             .AfterPlugin("nadena.dev.modular-avatar")
             .AfterPlugin("net.rs64.tex-trans-tool");
         sequence.Run(FinishPlatformBuildPass.Instance);
+
+        sequence = InPhase(BuildPhase.Optimizing)
+            .BeforePlugin("com.anatawa12.avatar-optimizer");
+        sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
         sequence = InPhase(BuildPhase.PlatformFinish);
         sequence.Run("Empty Pass", _ => { })

@@ -17,6 +17,10 @@ internal interface IMetabasePlatformSupport
 
     IEnumerable<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind);
 
+    IReadOnlyList<BlendShapeWeightAnimation>? GetBuiltInEyeBlinkAnimations(
+        SkinnedMeshRenderer faceRenderer)
+        => null;
+
     VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(SkinnedMeshRenderer faceRenderer)
         => null;
 

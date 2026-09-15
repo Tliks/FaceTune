@@ -1,101 +1,120 @@
 namespace Aoyon.FaceTune.Preview;
 
-abstract class MultiFramePreviewBase : IDisposable
+internal sealed class PreviewTimeline : IDisposable
 {
-    private const double UpdateIntervalSeconds = 1.0 / 30.0; // 30fpsにスロットリング
+    private const double UpdateIntervalSeconds = 1.0 / 30.0;
 
-    private readonly bool _isLooping;
-    private readonly float _duration;
-    private readonly double _startTime;
+    private float _duration;
+    private bool _isLooping;
     private double _lastUpdateTime;
-    private bool _isActive;
 
-    protected MultiFramePreviewBase(float duration, bool isLooping)
+    internal float NormalizedTime { get; private set; }
+    internal bool IsPlaying { get; private set; }
+    internal bool IsAvailable => _duration > 0f;
+
+    internal event Action<float>? TimeChanged;
+    internal event Action? Completed;
+    internal event Action? StateChanged;
+
+    internal PreviewTimeline()
     {
-        _isLooping = isLooping;
-        _duration = duration;
-        _startTime = EditorApplication.timeSinceStartup;
-        _lastUpdateTime = 0;
-        _isActive = _duration > 0f;
-
         EditorApplication.update += OnEditorUpdate;
     }
 
-    protected abstract void ApplyFrame(float time);
-
-    private void Stop()
+    internal void Configure(float duration, bool isLooping)
     {
-        _isActive = false;
+        _duration = Mathf.Max(0f, duration);
+        _isLooping = isLooping;
+        if (IsAvailable)
+        {
+            if (IsPlaying) _lastUpdateTime = EditorApplication.timeSinceStartup;
+            return;
+        }
+        NormalizedTime = 0f;
+        IsPlaying = false;
+    }
+
+    internal void Restart()
+    {
+        NormalizedTime = 0f;
+        IsPlaying = IsAvailable;
+        _lastUpdateTime = EditorApplication.timeSinceStartup;
+        TimeChanged?.Invoke(NormalizedTime);
+        StateChanged?.Invoke();
+    }
+
+    internal void TogglePlayback()
+    {
+        if (!IsAvailable) return;
+        if (IsPlaying)
+        {
+            IsPlaying = false;
+        }
+        else
+        {
+            if (NormalizedTime >= 1f)
+            {
+                NormalizedTime = 0f;
+                TimeChanged?.Invoke(NormalizedTime);
+            }
+            IsPlaying = true;
+            _lastUpdateTime = EditorApplication.timeSinceStartup;
+        }
+        StateChanged?.Invoke();
+    }
+
+    internal void Seek(float normalizedTime)
+    {
+        if (!IsAvailable) return;
+        NormalizedTime = Mathf.Clamp01(normalizedTime);
+        IsPlaying = false;
+        TimeChanged?.Invoke(NormalizedTime);
+        StateChanged?.Invoke();
     }
 
     private void OnEditorUpdate()
     {
-        if (!_isActive) return;
-
+        if (!IsPlaying) return;
         var now = EditorApplication.timeSinceStartup;
         if (now - _lastUpdateTime < UpdateIntervalSeconds) return;
+        var delta = (float)(now - _lastUpdateTime);
         _lastUpdateTime = now;
 
-        var elapsed = now - _startTime;
-        var endReached = false;
-        float time;
-        if (_isLooping)
+        NormalizedTime += delta / _duration;
+        if (NormalizedTime >= 1f)
         {
-            time = (float)(elapsed % _duration);
-        }
-        else if (elapsed >= _duration)
-        {
-            time = _duration;
-            endReached = true;
-        }
-        else
-        {
-            time = (float)elapsed;
+            if (_isLooping)
+            {
+                NormalizedTime %= 1f;
+            }
+            else
+            {
+                NormalizedTime = 1f;
+                IsPlaying = false;
+            }
         }
 
-        ApplyFrame(time);
-
-        if (endReached)
-        {
-            Stop();
-        }
+        TimeChanged?.Invoke(NormalizedTime);
+        if (!IsPlaying) Completed?.Invoke();
+        StateChanged?.Invoke();
     }
 
     public void Dispose()
     {
         EditorApplication.update -= OnEditorUpdate;
-        Stop();
+        IsPlaying = false;
     }
 }
 
-sealed class BlendShapeMultiFramePreview : MultiFramePreviewBase
+internal static class BlendShapeAnimationPreview
 {
-    private readonly BlendShapeApply _baseApply;
-    private readonly IReadOnlyList<BlendShapeWeightAnimation> _animations;
-    private readonly Action<BlendShapeApply> _apply;
+    internal static float GetDuration(IEnumerable<BlendShapeWeightAnimation> animations)
+        => animations.Select(animation => animation.Time).DefaultIfEmpty().Max();
 
-    public BlendShapeMultiFramePreview(
-        BlendShapeApply baseApply,
+    internal static ImmutableBlendShapeWeightSet Evaluate(
         IReadOnlyList<BlendShapeWeightAnimation> animations,
-        bool isLooping,
-        Action<BlendShapeApply> apply)
-        : base(GetDuration(animations), isLooping)
-    {
-        _baseApply = baseApply;
-        _animations = animations;
-        _apply = apply;
-    }
-
-    private static float GetDuration(IReadOnlyList<BlendShapeWeightAnimation> animations)
-    {
-        return animations.Count == 0 ? 0f : animations.Max(animation => animation.Time);
-    }
-
-    protected override void ApplyFrame(float time)
-    {
-        var frameSet = new ImmutableBlendShapeWeightSet(
-            _animations.Select(animation => new BlendShapeWeight(animation.Name, animation.Weight(time))),
-            _animations.Count);
-        _apply(new BlendShapeApply(frameSet, _baseApply.DefaultValue, _baseApply.IgnoredNames));
-    }
+        float time)
+        => new(
+            animations.Select(animation => new BlendShapeWeight(animation.Name, animation.Weight(time))),
+            animations.Count);
 }

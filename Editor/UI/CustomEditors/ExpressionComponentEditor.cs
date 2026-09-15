@@ -152,7 +152,8 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                 new NestedSection(
                     "expression.multiFrame.section.label",
                     new MultiFrameDefinitionSectionDrawer(
-                        serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame)))),
+                        serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame))),
+                    DefaultExpanded: false),
                 new NestedSection(
                     "eyeBlink.section.label",
                     new ExpressionScopedSettingSectionDrawer(
@@ -162,7 +163,9 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                         nameof(ExpressionComponent.EyeBlinkReference),
                         ExpressionInheritedSettingKind.EyeBlink,
                         inheritance,
-                        () => new EyeBlinkSettings())),
+                        () => new EyeBlinkSettings(),
+                        showSourceActions: !readOnly),
+                    DefaultExpanded: false),
                 new NestedSection(
                     "lipSync.section.label",
                     new ExpressionScopedSettingSectionDrawer(
@@ -172,7 +175,9 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                         nameof(ExpressionComponent.LipSyncReference),
                         ExpressionInheritedSettingKind.LipSync,
                         inheritance,
-                        () => new LipSyncSettings())),
+                        () => new LipSyncSettings(),
+                        showSourceActions: !readOnly),
+                    DefaultExpanded: false),
                 new NestedSection(
                     "expression.additionalAnimations.section.label",
                     new NonFacialAnimationDataSectionDrawer(

@@ -436,6 +436,15 @@ msgstr "この表情で設定"
 msgid "expression.settingSource.option.reference"
 msgstr "他の設定を使用"
 
+msgid "expression.settingSource.action.editBatch"
+msgstr "一括設定変更"
+
+msgid "expression.settingSource.action.editLocal"
+msgstr "この表情だけ設定変更"
+
+msgid "expression.settingSource.action.useBatch"
+msgstr "一括設定に戻す"
+
 msgid "expression.realTimePreview.label"
 msgstr "この表情を常にプレビュー"
 
@@ -560,7 +569,10 @@ msgid "eyeBlink.simple.blinkBlendShapes.label"
 msgstr "ブレンドシェイプ"
 
 msgid "eyeBlink.simple.conflictBlendShapes.label"
-msgstr "干渉補正"
+msgstr "干渉補正（おすすめ）"
+
+msgid "eyeBlink.simple.conflictBlendShapes.tooltip"
+msgstr "ほぼ全ての表情で、まばたきが干渉しなくなります。編集画面から、目のブレンドシェイプを全て選択すると、殆どのケースで綺麗になります。"
 
 msgid "eyeBlink.animations.label"
 msgstr "アニメーション"
@@ -650,7 +662,10 @@ msgid "priority.value.label"
 msgstr "優先度"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "発話時の共通リセット"
+msgstr "発話時のリセット（おすすめ）"
+
+msgid "lipSync.cancellerBlendShapes.tooltip"
+msgstr "ほぼ全ての表情で、リップシンクが干渉しなくなります。編集画面から、口のブレンドシェイプを全て選択すると、殆どのケースで綺麗になります。"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"
@@ -895,3 +910,27 @@ msgstr "生成Assetの保存先"
 
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "選択"
+
+msgid "previewOverlay.avatar.label"
+msgstr "アバター"
+
+msgid "previewOverlay.target.label"
+msgstr "対象"
+
+msgid "previewOverlay.status.present"
+msgstr "あり"
+
+msgid "previewOverlay.status.keep"
+msgstr "維持"
+
+msgid "previewOverlay.status.previewOnly"
+msgstr "なし（プレビューのみ）"
+
+msgid "previewOverlay.multiFrame.label"
+msgstr "マルチフレーム"
+
+msgid "previewOverlay.eyeBlink.label"
+msgstr "まばたき"
+
+msgid "previewOverlay.lipSync.label"
+msgstr "リップシンク"

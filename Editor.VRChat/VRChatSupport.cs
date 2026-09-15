@@ -117,6 +117,33 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
         };
     }
 
+    public IReadOnlyList<BlendShapeWeightAnimation>? GetBuiltInEyeBlinkAnimations(
+        SkinnedMeshRenderer faceRenderer)
+    {
+        var settings = _descriptor.customEyeLookSettings;
+        if (settings.eyelidType != VRCAvatarDescriptor.EyelidType.Blendshapes
+            || settings.eyelidsSkinnedMesh != faceRenderer
+            || settings.eyelidsBlendshapes == null
+            || settings.eyelidsBlendshapes.Length == 0
+            || faceRenderer.sharedMesh == null)
+            return null;
+
+        var index = settings.eyelidsBlendshapes[0];
+        if (index < 0 || index >= faceRenderer.sharedMesh.blendShapeCount)
+            return null;
+
+        var curve = new AnimationCurve(
+            new Keyframe(0f, 0f),
+            new Keyframe(.07f, 100f),
+            new Keyframe(.14f, 0f));
+        return new[]
+        {
+            new BlendShapeWeightAnimation(
+                faceRenderer.sharedMesh.GetBlendShapeName(index),
+                curve)
+        };
+    }
+
     public VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(SkinnedMeshRenderer faceRenderer)
     {
         if (_descriptor.lipSync != VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape

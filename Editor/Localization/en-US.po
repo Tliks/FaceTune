@@ -436,6 +436,15 @@ msgstr "Set for This Expression"
 msgid "expression.settingSource.option.reference"
 msgstr "Use Other Settings"
 
+msgid "expression.settingSource.action.editBatch"
+msgstr "Edit Batch Settings"
+
+msgid "expression.settingSource.action.editLocal"
+msgstr "Edit This Expression Only"
+
+msgid "expression.settingSource.action.useBatch"
+msgstr "Return to Batch Settings"
+
 msgid "expression.realTimePreview.label"
 msgstr "Always Preview This Expression"
 
@@ -560,7 +569,10 @@ msgid "eyeBlink.simple.blinkBlendShapes.label"
 msgstr "Blend Shapes"
 
 msgid "eyeBlink.simple.conflictBlendShapes.label"
-msgstr "Conflict Correction"
+msgstr "Conflict Correction (Recommended)"
+
+msgid "eyeBlink.simple.conflictBlendShapes.tooltip"
+msgstr "Prevents eye blink interference in almost all expressions. Select all eye blend shapes in the editor for clean results in most cases."
 
 msgid "eyeBlink.animations.label"
 msgstr "Animation"
@@ -650,7 +662,10 @@ msgid "priority.value.label"
 msgstr "Priority"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "Shared Reset While Speaking"
+msgstr "Reset While Speaking (Recommended)"
+
+msgid "lipSync.cancellerBlendShapes.tooltip"
+msgstr "Prevents lip sync interference in almost all expressions. Select all mouth blend shapes in the editor for clean results in most cases."
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"
@@ -895,3 +910,27 @@ msgstr "Generated Asset Folder"
 
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "Select"
+
+msgid "previewOverlay.avatar.label"
+msgstr "Avatar"
+
+msgid "previewOverlay.target.label"
+msgstr "Target"
+
+msgid "previewOverlay.status.present"
+msgstr "Present"
+
+msgid "previewOverlay.status.keep"
+msgstr "Keep"
+
+msgid "previewOverlay.status.previewOnly"
+msgstr "None (preview only)"
+
+msgid "previewOverlay.multiFrame.label"
+msgstr "MultiFrame"
+
+msgid "previewOverlay.eyeBlink.label"
+msgstr "Eye Blink"
+
+msgid "previewOverlay.lipSync.label"
+msgstr "Lip Sync"
