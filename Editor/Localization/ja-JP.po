@@ -569,7 +569,10 @@ msgid "eyeBlink.simple.blinkBlendShapes.label"
 msgstr "ブレンドシェイプ"
 
 msgid "eyeBlink.simple.conflictBlendShapes.label"
-msgstr "干渉補正"
+msgstr "干渉補正（おすすめ）"
+
+msgid "eyeBlink.simple.conflictBlendShapes.tooltip"
+msgstr "ほぼ全ての表情で、まばたきが干渉しなくなります。編集画面から、目のブレンドシェイプを全て選択すると、殆どのケースで綺麗になります。"
 
 msgid "eyeBlink.animations.label"
 msgstr "アニメーション"
@@ -659,7 +662,10 @@ msgid "priority.value.label"
 msgstr "優先度"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "発話時の共通リセット"
+msgstr "発話時のリセット（おすすめ）"
+
+msgid "lipSync.cancellerBlendShapes.tooltip"
+msgstr "ほぼ全ての表情で、リップシンクが干渉しなくなります。編集画面から、口のブレンドシェイプを全て選択すると、殆どのケースで綺麗になります。"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"

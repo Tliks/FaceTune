@@ -46,8 +46,8 @@ internal static class SelectedPreviewResolver
                 null,
                 ignoredNames,
                 facial,
-                TrackingPermission.Keep,
-                TrackingPermission.Keep,
+                null,
+                null,
                 null,
                 null));
         }
@@ -167,8 +167,8 @@ internal static class SelectedPreviewResolver
             settings,
             ignoredNames,
             facial,
-            TrackingPermission.Keep,
-            TrackingPermission.Keep,
+            null,
+            null,
             eyeBlink,
             lipSync);
     }
@@ -205,8 +205,8 @@ internal static class SelectedPreviewResolver
             data,
             ignoredNames,
             facial,
-            data.HasFacialBehavior ? data.AllowEyeBlink : TrackingPermission.Keep,
-            data.HasFacialBehavior ? data.AllowLipSync : TrackingPermission.Keep,
+            data.HasFacialBehavior ? data.AllowEyeBlink : null,
+            data.HasFacialBehavior ? data.AllowLipSync : null,
             CreateEyeBlink(eyeBlinkSettings, avatar),
             CreateLipSync(lipSyncSettings, avatar));
     }

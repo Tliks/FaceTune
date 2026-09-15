@@ -116,14 +116,14 @@ internal sealed class SelectedShapesPreview
     internal bool IsMultiFramePlaying => HasMultiFrame && _multiFrame.IsPlaying;
     internal float MultiFrameTime => _multiFrame.NormalizedTime;
     internal bool HasEyeBlink => CurrentAvatar?.EyeBlink != null;
-    internal TrackingPermission EyeBlinkPermission
-        => CurrentAvatar?.EyeBlinkPermission ?? TrackingPermission.Keep;
+    internal TrackingPermission? EyeBlinkPermission
+        => CurrentAvatar?.EyeBlinkPermission;
     internal bool IsEyeBlinkPlaying => HasEyeBlink && _eyeBlink.IsPlaying;
     internal float EyeBlinkTime => _eyeBlink.NormalizedTime;
     internal Vector2? EyeBlinkClosedRange => CurrentAvatar?.EyeBlink?.ClosedRange;
     internal bool HasLipSync => CurrentAvatar?.LipSync != null;
-    internal TrackingPermission LipSyncPermission
-        => CurrentAvatar?.LipSyncPermission ?? TrackingPermission.Keep;
+    internal TrackingPermission? LipSyncPermission
+        => CurrentAvatar?.LipSyncPermission;
     internal int SelectedViseme => _selectedViseme;
     internal Object? CurrentSource
         => (Object?)CurrentAvatar?.Source ?? (_selection as AnimationClip);

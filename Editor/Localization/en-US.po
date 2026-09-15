@@ -569,7 +569,10 @@ msgid "eyeBlink.simple.blinkBlendShapes.label"
 msgstr "Blend Shapes"
 
 msgid "eyeBlink.simple.conflictBlendShapes.label"
-msgstr "Conflict Correction"
+msgstr "Conflict Correction (Recommended)"
+
+msgid "eyeBlink.simple.conflictBlendShapes.tooltip"
+msgstr "Prevents eye blink interference in almost all expressions. Select all eye blend shapes in the editor for clean results in most cases."
 
 msgid "eyeBlink.animations.label"
 msgstr "Animation"
@@ -659,7 +662,10 @@ msgid "priority.value.label"
 msgstr "Priority"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "Shared Reset While Speaking"
+msgstr "Reset While Speaking (Recommended)"
+
+msgid "lipSync.cancellerBlendShapes.tooltip"
+msgstr "Prevents lip sync interference in almost all expressions. Select all mouth blend shapes in the editor for clean results in most cases."
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"

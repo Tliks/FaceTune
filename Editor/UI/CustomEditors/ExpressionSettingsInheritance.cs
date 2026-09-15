@@ -197,6 +197,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
             return;
         }
 
+        SettingsComponentEditor.RequestSectionExpansion(owner, kind);
         Selection.activeObject = owner;
         EditorGUIUtility.PingObject(owner);
     }
@@ -230,6 +231,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         serializedOwner.ApplyModifiedProperties();
 
         EditorUtility.SetDirty(owner);
+        SettingsComponentEditor.RequestSectionExpansion(owner, kind);
         Selection.activeObject = owner;
         EditorGUIUtility.PingObject(owner);
     }

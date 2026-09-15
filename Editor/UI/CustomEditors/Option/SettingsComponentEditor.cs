@@ -4,7 +4,17 @@ namespace Aoyon.FaceTune.Gui;
 [CustomEditor(typeof(SettingsComponent))]
 internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<SettingsComponent>
 {
+    private const double ExpansionRequestLifetimeSeconds = 5d;
+    private static ExpansionRequest? _expansionRequest;
     private SettingEntry[]? _settings;
+
+    internal static void RequestSectionExpansion(
+        SettingsComponent target,
+        ExpressionInheritedSettingKind kind)
+        => _expansionRequest = new ExpansionRequest(
+            target.GetInstanceID(),
+            kind,
+            EditorApplication.timeSinceStartup + ExpansionRequestLifetimeSeconds);
 
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
     {
@@ -20,6 +30,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                 populateHeaderMenu: menu => PopulateHeaderMenu(menu, setting),
                 isVisible: () => IsEnabled(setting.Enabled),
                 spacingGroup: setting.SpacingGroup);
+            if (setting.Kind is { } kind && ConsumeExpansionRequest(kind))
+                sections[i].Foldout.Expanded = true;
         }
         return sections;
     }
@@ -73,7 +85,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                     nameof(SettingsComponent.EyeBlinkReference),
                     nameof(SettingsComponent.EyeBlink)),
                 () => new EyeBlinkSettings()),
-            1),
+            1,
+            kind: ExpressionInheritedSettingKind.EyeBlink),
         CreateReferenceableSetting(
             nameof(SettingsComponent.HasLipSync),
             "settings.lipSync.section.label",
@@ -83,7 +96,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                     nameof(SettingsComponent.LipSyncReference),
                     nameof(SettingsComponent.LipSync)),
                 () => new LipSyncSettings()),
-            1),
+            1,
+            kind: ExpressionInheritedSettingKind.LipSync),
         CreateSetting(
             nameof(SettingsComponent.ExpressionSetEnabled),
             "settings.expressionSet.section.label",
@@ -130,13 +144,15 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         string labelKey,
         ISectionDrawer drawer,
         int spacingGroup,
-        bool defaultExpanded = false)
+        bool defaultExpanded = false,
+        ExpressionInheritedSettingKind? kind = null)
         => new(
             serializedObject.FindProperty(enabledPropertyName),
             labelKey,
             drawer,
             spacingGroup,
-            defaultExpanded);
+            defaultExpanded,
+            kind);
 
     private void PopulateHeaderMenu(GenericMenu menu, SettingEntry setting)
     {
@@ -155,6 +171,22 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             serializedObject.ApplyModifiedProperties();
         });
 
+    private bool ConsumeExpansionRequest(ExpressionInheritedSettingKind kind)
+    {
+        var request = _expansionRequest;
+        if (request == null) return false;
+        if (request.ExpiresAt < EditorApplication.timeSinceStartup)
+        {
+            _expansionRequest = null;
+            return false;
+        }
+        if (request.TargetInstanceId != Component.GetInstanceID() || request.Kind != kind)
+            return false;
+
+        _expansionRequest = null;
+        return true;
+    }
+
     private static bool IsEnabled(SerializedProperty property)
         => property.boolValue || property.hasMultipleDifferentValues;
 
@@ -163,7 +195,13 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
         string LabelKey,
         ISectionDrawer Drawer,
         int SpacingGroup,
-        bool DefaultExpanded = false);
+        bool DefaultExpanded = false,
+        ExpressionInheritedSettingKind? Kind = null);
+
+    private sealed record ExpansionRequest(
+        int TargetInstanceId,
+        ExpressionInheritedSettingKind Kind,
+        double ExpiresAt);
 }
 
 internal sealed class SettingsFacialSectionDrawer

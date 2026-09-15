@@ -43,6 +43,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
                 FormatStatus(
                     "previewOverlay.multiFrame.label",
                     "previewOverlay.status.present"),
+                true,
                 preview.IsMultiFramePlaying,
                 preview.MultiFrameTime,
                 null,
@@ -50,16 +51,19 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
                 preview.SetMultiFrameTime);
         if (preview.HasEyeBlink)
             DrawTimeline(
-                FormatStatus(
+                FormatPermissionStatus(
                     "previewOverlay.eyeBlink.label",
-                    PermissionStatusKey(preview.EyeBlinkPermission)),
+                    preview.EyeBlinkPermission),
+                preview.EyeBlinkPermission != TrackingPermission.Keep,
                 preview.IsEyeBlinkPlaying,
                 preview.EyeBlinkTime,
                 preview.EyeBlinkClosedRange,
                 preview.ToggleEyeBlinkPlayback,
                 preview.SetEyeBlinkTime);
         if (preview.HasLipSync)
-            DrawVisemes(preview);
+            DrawVisemes(
+                preview,
+                preview.LipSyncPermission != TrackingPermission.Keep);
     }
 
     private void UpdateVisibility()
@@ -104,6 +108,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
 
     private void DrawTimeline(
         string label,
+        bool enabled,
         bool playing,
         float time,
         Vector2? markers,
@@ -112,6 +117,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
     {
         DrawSectionLabel(label);
         using var row = new GUILayout.HorizontalScope();
+        using var disabled = new EditorGUI.DisabledScope(!enabled);
         _playButtonStyle ??= new GUIStyle(GUI.skin.button)
         {
             alignment = TextAnchor.MiddleCenter,
@@ -167,6 +173,13 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         EditorGUI.DrawRect(rect, color);
     }
 
+    private static string FormatPermissionStatus(
+        string labelKey,
+        TrackingPermission? permission)
+        => permission is { } value
+            ? FormatStatus(labelKey, PermissionStatusKey(value))
+            : labelKey.LS();
+
     private static string PermissionStatusKey(TrackingPermission permission)
         => permission switch
         {
@@ -196,11 +209,12 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         GUILayout.Label(label, _sectionLabelStyle, GUILayout.Height(SectionLabelHeight));
     }
 
-    private void DrawVisemes(SelectedShapesPreview preview)
+    private void DrawVisemes(SelectedShapesPreview preview, bool enabled)
     {
-        DrawSectionLabel(FormatStatus(
+        DrawSectionLabel(FormatPermissionStatus(
             "previewOverlay.lipSync.label",
-            PermissionStatusKey(preview.LipSyncPermission)));
+            preview.LipSyncPermission));
+        using var disabled = new EditorGUI.DisabledScope(!enabled);
         using var grid = new GUILayout.VerticalScope();
 
         _visemeButtonStyle ??= new GUIStyle(EditorStyles.miniButton)
@@ -235,7 +249,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
             && eventType != EventType.MouseLeaveWindow)
             return;
 
-        var nextHover = preview.HasLipSync && eventType != EventType.MouseLeaveWindow
+        var nextHover = enabled && eventType != EventType.MouseLeaveWindow
             ? hovered
             : -1;
         preview.SetVisemeHover(VisemeHoverSource.Overlay, nextHover);

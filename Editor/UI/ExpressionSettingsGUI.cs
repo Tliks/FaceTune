@@ -322,7 +322,9 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         GUIHelper.DrawLocalizedOptionalList(
             position,
             conflicts,
-            "eyeBlink.simple.conflictBlendShapes.label".LG(),
+            new GUIContent(
+                "eyeBlink.simple.conflictBlendShapes.label".LS(),
+                "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
             "common.option.none",
             "common.option.present",
             ConflictBlendShapesOptions);
@@ -518,7 +520,9 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         GUIHelper.DrawLocalizedOptionalList(
             position,
             canceller,
-            "lipSync.cancellerBlendShapes.label".LG(),
+            new GUIContent(
+                "lipSync.cancellerBlendShapes.label".LS(),
+                "lipSync.cancellerBlendShapes.tooltip".LS()),
             "common.option.none",
             "common.option.present",
             CancellerOptions);
