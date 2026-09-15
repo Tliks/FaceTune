@@ -46,6 +46,8 @@ internal static class SelectedPreviewResolver
                 null,
                 ignoredNames,
                 facial,
+                TrackingPermission.Keep,
+                TrackingPermission.Keep,
                 null,
                 null));
         }
@@ -121,6 +123,7 @@ internal static class SelectedPreviewResolver
             animations,
             0f,
             multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop);
+        var behavior = new ExpressionBehaviorResolver(context).Resolve(expression);
         var eyeBlinkSettings = new EyeBlinkResolver(avatar.Root, context).Resolve(expression);
         var lipSyncSettings = new LipSyncResolver(avatar.Root, context).Resolve(expression);
         return new AvatarPreviewData(
@@ -129,6 +132,8 @@ internal static class SelectedPreviewResolver
             expression,
             ignoredNames,
             facial,
+            behavior.AllowEyeBlink,
+            behavior.AllowLipSync,
             CreateEyeBlink(eyeBlinkSettings, avatar),
             CreateLipSync(lipSyncSettings, avatar));
     }
@@ -162,6 +167,8 @@ internal static class SelectedPreviewResolver
             settings,
             ignoredNames,
             facial,
+            TrackingPermission.Keep,
+            TrackingPermission.Keep,
             eyeBlink,
             lipSync);
     }
@@ -198,6 +205,8 @@ internal static class SelectedPreviewResolver
             data,
             ignoredNames,
             facial,
+            data.HasFacialBehavior ? data.AllowEyeBlink : TrackingPermission.Keep,
+            data.HasFacialBehavior ? data.AllowLipSync : TrackingPermission.Keep,
             CreateEyeBlink(eyeBlinkSettings, avatar),
             CreateLipSync(lipSyncSettings, avatar));
     }

@@ -436,6 +436,15 @@ msgstr "この表情で設定"
 msgid "expression.settingSource.option.reference"
 msgstr "他の設定を使用"
 
+msgid "expression.settingSource.action.editBatch"
+msgstr "一括設定変更"
+
+msgid "expression.settingSource.action.editLocal"
+msgstr "この表情だけ設定変更"
+
+msgid "expression.settingSource.action.useBatch"
+msgstr "一括設定に戻す"
+
 msgid "expression.realTimePreview.label"
 msgstr "この表情を常にプレビュー"
 
@@ -898,6 +907,18 @@ msgstr "選択"
 
 msgid "previewOverlay.avatar.label"
 msgstr "アバター"
+
+msgid "previewOverlay.target.label"
+msgstr "対象"
+
+msgid "previewOverlay.status.present"
+msgstr "あり"
+
+msgid "previewOverlay.status.keep"
+msgstr "維持"
+
+msgid "previewOverlay.status.previewOnly"
+msgstr "なし（プレビューのみ）"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "マルチフレーム"

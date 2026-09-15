@@ -185,6 +185,22 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
     public bool CanCreateBatchOverride => _singleTarget && _batchOverrideTarget != null;
 
+    public bool CanOpenBatchOverride(ExpressionInheritedSettingKind kind)
+        => GetOwner(kind) != null || CanCreateBatchOverride;
+
+    public void OpenBatchOverride(ExpressionInheritedSettingKind kind)
+    {
+        var owner = GetOwner(kind);
+        if (owner == null)
+        {
+            CreateBatchOverride(kind);
+            return;
+        }
+
+        Selection.activeObject = owner;
+        EditorGUIUtility.PingObject(owner);
+    }
+
     public void CreateBatchOverride(ExpressionInheritedSettingKind kind)
     {
         if (_batchOverrideTarget == null) return;
@@ -395,6 +411,7 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     private readonly SerializedReferenceableSettings? _source;
     private readonly ExpressionInheritedSettingKind _kind;
     private readonly ExpressionSettingsInheritance _inheritance;
+    private readonly bool _showSourceActions;
 
     public ExpressionScopedSettingSectionDrawer(
         SerializedObject serializedObject,
@@ -403,12 +420,14 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         string? referencePropertyName,
         ExpressionInheritedSettingKind kind,
         ExpressionSettingsInheritance inheritance,
-        Func<object?> createDefault)
+        Func<object?> createDefault,
+        bool showSourceActions = false)
     {
         _enabled = serializedObject.FindProperty(enabledPropertyName);
         _local = serializedObject.FindProperty(localPropertyName);
         _kind = kind;
         _inheritance = inheritance;
+        _showSourceActions = showSourceActions;
         if (referencePropertyName != null)
             _source = new SerializedReferenceableSettings(
                 serializedObject,
@@ -434,12 +453,12 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     public bool ActionsEnabled => ShowsLocalValue;
 
     public float GetHeight()
-    {
-        var height = GetValueHeight();
-        if (ShowsInheritedValue)
-            height += GUIHelper.LineHeight + GUIHelper.VerticalSpacing;
-        return height;
-    }
+        => GetValueHeight()
+         + (_showSourceActions
+             ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
+             : ShowsInheritedValue
+                 ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
+                 : 0f);
 
     public float GetHeaderWidth()
         => GUIHelper.CompactPopupWidth(
@@ -476,7 +495,7 @@ internal sealed class ExpressionScopedSettingSectionDrawer
 
     public void Draw(Rect position)
     {
-        if (ShowsInheritedValue)
+        if (!_showSourceActions && ShowsInheritedValue)
         {
             using var disabled = new EditorGUI.DisabledScope(true);
             EditorGUI.ObjectField(
@@ -489,19 +508,48 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         }
 
         var value = GetDisplayedValue();
-        using var valueDisabled = new EditorGUI.DisabledScope(!ShowsLocalValue);
-        if (!ShowsLocalValue || _source == null)
+        var valueHeight = GetValueHeight();
+        position.height = valueHeight;
+        using (new EditorGUI.DisabledScope(!ShowsLocalValue))
         {
-            position.height = EditorGUI.GetPropertyHeight(value, GUIContent.none, true);
-            EditorGUI.PropertyField(position, value, GUIContent.none, true);
+            if (!ShowsLocalValue || _source == null)
+            {
+                EditorGUI.PropertyField(position, value, GUIContent.none, true);
+            }
+            else
+            {
+                SettingsReferenceGUI.Draw(
+                    position,
+                    _source,
+                    EditorGUI.GetPropertyHeight(_local, GUIContent.none, true),
+                    rect => EditorGUI.PropertyField(rect, _local, GUIContent.none, true));
+            }
+        }
+
+        if (!_showSourceActions) return;
+        position.y += valueHeight + GUIHelper.VerticalSpacing;
+        DrawSourceActions(position.SetSingleHeight());
+    }
+
+    private void DrawSourceActions(Rect position)
+    {
+        if (ShowsLocalValue)
+        {
+            if (GUI.Button(position, "expression.settingSource.action.useBatch".LG()))
+                SetLocalOverride(false);
             return;
         }
 
-        SettingsReferenceGUI.Draw(
-            position,
-            _source,
-            EditorGUI.GetPropertyHeight(_local, GUIContent.none, true),
-            rect => EditorGUI.PropertyField(rect, _local, GUIContent.none, true));
+        var buttons = position.FlexHorizontalSpaced(
+            GUIHelper.HorizontalSpacing,
+            new[] { 1f, 1f });
+        using (new EditorGUI.DisabledScope(!_inheritance.CanOpenBatchOverride(_kind)))
+        {
+            if (GUI.Button(buttons[0], "expression.settingSource.action.editBatch".LG()))
+                _inheritance.OpenBatchOverride(_kind);
+        }
+        if (GUI.Button(buttons[1], "expression.settingSource.action.editLocal".LG()))
+            SetLocalOverride(true);
     }
 
     private float GetValueHeight()

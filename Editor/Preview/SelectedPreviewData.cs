@@ -18,6 +18,8 @@ internal sealed class AvatarPreviewData
         FaceTuneTagComponent? source,
         ImmutableHashSet<string> ignoredNames,
         FacialPreviewData? facial,
+        TrackingPermission eyeBlinkPermission,
+        TrackingPermission lipSyncPermission,
         EyeBlinkPreviewData? eyeBlink,
         LipSyncPreviewData? lipSync)
     {
@@ -26,6 +28,8 @@ internal sealed class AvatarPreviewData
         Source = source;
         IgnoredNames = ignoredNames;
         Facial = facial;
+        EyeBlinkPermission = eyeBlinkPermission;
+        LipSyncPermission = lipSyncPermission;
         EyeBlink = eyeBlink;
         LipSync = lipSync;
     }
@@ -35,6 +39,8 @@ internal sealed class AvatarPreviewData
     internal FaceTuneTagComponent? Source { get; }
     internal ImmutableHashSet<string> IgnoredNames { get; }
     internal FacialPreviewData? Facial { get; }
+    internal TrackingPermission EyeBlinkPermission { get; }
+    internal TrackingPermission LipSyncPermission { get; }
     internal EyeBlinkPreviewData? EyeBlink { get; }
     internal LipSyncPreviewData? LipSync { get; }
 }

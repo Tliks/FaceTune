@@ -436,6 +436,15 @@ msgstr "Set for This Expression"
 msgid "expression.settingSource.option.reference"
 msgstr "Use Other Settings"
 
+msgid "expression.settingSource.action.editBatch"
+msgstr "Edit Batch Settings"
+
+msgid "expression.settingSource.action.editLocal"
+msgstr "Edit This Expression Only"
+
+msgid "expression.settingSource.action.useBatch"
+msgstr "Return to Batch Settings"
+
 msgid "expression.realTimePreview.label"
 msgstr "Always Preview This Expression"
 
@@ -898,6 +907,18 @@ msgstr "Select"
 
 msgid "previewOverlay.avatar.label"
 msgstr "Avatar"
+
+msgid "previewOverlay.target.label"
+msgstr "Target"
+
+msgid "previewOverlay.status.present"
+msgstr "Present"
+
+msgid "previewOverlay.status.keep"
+msgstr "Keep"
+
+msgid "previewOverlay.status.previewOnly"
+msgstr "None (preview only)"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "MultiFrame"

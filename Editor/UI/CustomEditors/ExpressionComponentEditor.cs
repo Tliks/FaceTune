@@ -163,8 +163,9 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                         nameof(ExpressionComponent.EyeBlinkReference),
                         ExpressionInheritedSettingKind.EyeBlink,
                         inheritance,
-                        () => new EyeBlinkSettings()),
-                    DefaultExpanded: true),
+                        () => new EyeBlinkSettings(),
+                        showSourceActions: !readOnly),
+                    DefaultExpanded: false),
                 new NestedSection(
                     "lipSync.section.label",
                     new ExpressionScopedSettingSectionDrawer(
@@ -174,8 +175,9 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                         nameof(ExpressionComponent.LipSyncReference),
                         ExpressionInheritedSettingKind.LipSync,
                         inheritance,
-                        () => new LipSyncSettings()),
-                    DefaultExpanded: true),
+                        () => new LipSyncSettings(),
+                        showSourceActions: !readOnly),
+                    DefaultExpanded: false),
                 new NestedSection(
                     "expression.additionalAnimations.section.label",
                     new NonFacialAnimationDataSectionDrawer(
