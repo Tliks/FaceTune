@@ -138,6 +138,12 @@ msgstr "条件"
 msgid "facialEditor.title"
 msgstr "表情編集画面"
 
+msgid "facialEditor.open.button"
+msgstr "開く"
+
+msgid "facialEditor.edit.button"
+msgstr "編集画面"
+
 msgid "facialEditor.rendererRequired.message"
 msgstr "表情を編集する対象Rendererを設定してください。"
 
@@ -155,9 +161,6 @@ msgstr "保存"
 
 msgid "facialEditor.style.option"
 msgstr "顔つき"
-
-msgid "facialEditor.base.option"
-msgstr "ベース"
 
 msgid "facialEditor.search.placeholder"
 msgstr "検索"
@@ -180,11 +183,68 @@ msgstr "メニューから直接再生"
 msgid "expression.section.label"
 msgstr "表情"
 
+msgid "expression.content.section.label"
+msgstr "表情内容"
+
+msgid "expression.facials.section.label"
+msgstr "顔アニメーション"
+
+msgid "expression.facials.references.label"
+msgstr "他の設定"
+
+msgid "expression.facials.clips.label"
+msgstr "アニメーションクリップ"
+
+msgid "expression.facials.mode.short.simple"
+msgstr "標準"
+
+msgid "expression.facials.mode.short.composite"
+msgstr "合成"
+
+msgid "expression.facials.mode.simple"
+msgstr "標準"
+
+msgid "expression.facials.mode.composite"
+msgstr "複数の表情を合成する"
+
+msgid "expression.facials.baseSource.clip"
+msgstr "アニメーションクリップ"
+
+msgid "expression.facials.baseSource.component"
+msgstr "コンポーネント"
+
+msgid "expression.facials.compositeEntries.label"
+msgstr "表情の合成 (下が優先)"
+
+msgid "expression.facials.entryKind.label"
+msgstr "種類"
+
+msgid "expression.facials.entryKind.direct"
+msgstr "直接編集"
+
+msgid "expression.facials.entryKind.clip"
+msgstr "アニメーションクリップ"
+
+msgid "expression.facials.entryKind.reference"
+msgstr "コンポーネント"
+
+msgid "expression.clip.importOption.label"
+msgstr "読み込み対象"
+
+msgid "expression.multiFrame.section.label"
+msgstr "マルチフレーム設定"
+
+msgid "expression.behavior.enabled.label"
+msgstr "表情設定を指定"
+
 msgid "blendShapeAnimation.multiFrame.label"
 msgstr "マルチフレーム"
 
 msgid "expression.additionalAnimations.section.label"
 msgstr "表情外アニメーション"
+
+msgid "expression.additionalAnimations.references.label"
+msgstr "他の設定"
 
 msgid "expression.additionalAnimations.clips.label"
 msgstr "アニメーションクリップ"
@@ -254,6 +314,9 @@ msgstr "コンポーネント"
 
 msgid "common.options.section.label"
 msgstr "オプション"
+
+msgid "expression.options.section.label"
+msgstr "表情オプション"
 
 msgid "section.empty.message"
 msgstr "現在、設定項目はありません"
@@ -454,6 +517,18 @@ msgstr "置き換え表情"
 msgid "lipSync.section.label"
 msgstr "リップシンク設定"
 
+msgid "lipSync.mode.label"
+msgstr "口の形"
+
+msgid "lipSync.mode.option.builtIn"
+msgstr "アバター設定"
+
+msgid "lipSync.mode.option.custom"
+msgstr "カスタム"
+
+msgid "lipSync.selectedVisemeBlendShapes.label"
+msgstr "選択中の口（{0}）のブレンドシェイプ"
+
 msgid "eyeBlink.section.label"
 msgstr "まばたき設定"
 
@@ -575,7 +650,7 @@ msgid "priority.value.label"
 msgstr "優先度"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "干渉補正"
+msgstr "発話時の共通リセット"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"
@@ -672,6 +747,9 @@ msgstr "既存"
 
 msgid "menu.selectedValue.label"
 msgstr "選択時の値"
+
+msgid "menu.toggleParameterType.label"
+msgstr "パラメーター型"
 
 # FaceTune Window
 msgid "window.avatarMissing.message"

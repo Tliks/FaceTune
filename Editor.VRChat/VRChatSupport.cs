@@ -109,12 +109,52 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     {
         return writeKind switch
         {
-            FaceTuneWriteKind.FacialData => GetBlinkBlendShapes()
-                .Concat(GetLipSyncBlendShapes()),
-            FaceTuneWriteKind.EyeBlinkAnimation => GetLipSyncBlendShapes(),
-            FaceTuneWriteKind.LipSyncAnimation => GetBlinkBlendShapes(),
+            FaceTuneWriteKind.FacialData => GetBuildInBlinkBlendShapes()
+                .Concat(GetBuldInLipSyncBlendShapes()),
+            FaceTuneWriteKind.EyeBlinkAnimation => GetBuldInLipSyncBlendShapes(),
+            FaceTuneWriteKind.LipSyncAnimation => GetBuildInBlinkBlendShapes(),
             _ => throw new ArgumentOutOfRangeException(nameof(writeKind), writeKind, null)
         };
+    }
+
+    public VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(SkinnedMeshRenderer faceRenderer)
+    {
+        if (_descriptor.lipSync != VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape
+            || _descriptor.VisemeSkinnedMesh != faceRenderer
+            || _descriptor.VisemeBlendShapes == null)
+            return null;
+
+        var names = _descriptor.VisemeBlendShapes;
+        return new VrcVisemeLipSyncShapes
+        {
+            Sil = GetVisemeShape(names, 0, faceRenderer),
+            PP = GetVisemeShape(names, 1, faceRenderer),
+            FF = GetVisemeShape(names, 2, faceRenderer),
+            TH = GetVisemeShape(names, 3, faceRenderer),
+            DD = GetVisemeShape(names, 4, faceRenderer),
+            KK = GetVisemeShape(names, 5, faceRenderer),
+            CH = GetVisemeShape(names, 6, faceRenderer),
+            SS = GetVisemeShape(names, 7, faceRenderer),
+            NN = GetVisemeShape(names, 8, faceRenderer),
+            RR = GetVisemeShape(names, 9, faceRenderer),
+            AA = GetVisemeShape(names, 10, faceRenderer),
+            E = GetVisemeShape(names, 11, faceRenderer),
+            IH = GetVisemeShape(names, 12, faceRenderer),
+            OH = GetVisemeShape(names, 13, faceRenderer),
+            OU = GetVisemeShape(names, 14, faceRenderer)
+        };
+    }
+
+    private static List<BlendShapeWeight> GetVisemeShape(
+        IReadOnlyList<string> names,
+        int index,
+        SkinnedMeshRenderer renderer)
+    {
+        if (index >= names.Count || string.IsNullOrWhiteSpace(names[index])
+            || renderer.sharedMesh == null
+            || renderer.sharedMesh.GetBlendShapeIndex(names[index]) < 0)
+            return new List<BlendShapeWeight>();
+        return new List<BlendShapeWeight> { new(names[index], 100f) };
     }
 
     private static DnfCondition HandRule(
@@ -136,7 +176,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     private static int ToPlatformGestureValue(HandGesture gesture)
         => VRChatGestureMap.ToPlatformValue(gesture);
 
-    private IEnumerable<string> GetBlinkBlendShapes()
+    private IEnumerable<string> GetBuildInBlinkBlendShapes()
     {
         var settings = _descriptor.customEyeLookSettings;
         var renderer = settings.eyelidsSkinnedMesh;
@@ -153,7 +193,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
             .Distinct(StringComparer.Ordinal);
     }
 
-    internal IEnumerable<string> GetLipSyncBlendShapes()
+    internal IEnumerable<string> GetBuldInLipSyncBlendShapes()
     {
         return _descriptor.lipSync == VRC_AvatarDescriptor.LipSyncStyle.VisemeBlendShape
                && _descriptor.VisemeSkinnedMesh != null

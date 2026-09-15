@@ -14,12 +14,14 @@ internal sealed class AnimatorGraph
     private const float InitialEvaluationDelaySeconds = 0.5f;
 
     private readonly bool _useWriteDefaults;
+    private readonly CloneContext _cloneContext;
     private readonly VirtualClip _emptyClip;
     private readonly VirtualClip _defaultDelayClip;
 
-    public AnimatorGraph(bool useWriteDefaults)
+    public AnimatorGraph(bool useWriteDefaults, CloneContext cloneContext)
     {
         _useWriteDefaults = useWriteDefaults;
+        _cloneContext = cloneContext;
         _emptyClip = AnimatorHelper.CreateCustomEmptyClip();
         _defaultDelayClip = AnimatorHelper.CreateDelayClip(
             InitialEvaluationDelaySeconds,
@@ -30,10 +32,28 @@ internal sealed class AnimatorGraph
         => controller.AddLayer(new LayerPriority(priority), $"{FaceTuneConstants.Name}: {name}");
 
     public VirtualState AddState(VirtualLayer layer, string name, Vector3 position)
+        => AddState(layer.StateMachine!, name, position);
+
+    public VirtualState AddState(VirtualStateMachine stateMachine, string name, Vector3 position)
     {
-        var state = layer.StateMachine!.AddState(name, position: position);
+        var state = stateMachine.AddState(name, position: position);
         state.WriteDefaultValues = _useWriteDefaults;
         return state;
+    }
+
+    public VirtualStateMachine AddStateMachine(
+        VirtualStateMachine parent,
+        string name,
+        Vector3 position)
+    {
+        var child = VirtualStateMachine.Create(_cloneContext, name);
+        parent.StateMachines = parent.StateMachines.Add(
+            new VirtualStateMachine.VirtualChildStateMachine
+            {
+                StateMachine = child,
+                Position = position
+            });
+        return child;
     }
 
     public void AsPassThrough(VirtualState state)
@@ -86,6 +106,22 @@ internal sealed class AnimatorGraph
         float duration)
     {
         var transitions = CreateStateTransitions(destination, when, duration);
+        source.Transitions = source.Transitions.AddRange(transitions);
+    }
+
+    public void AddStateTransition(
+        VirtualState source,
+        VirtualStateMachine destination,
+        DnfCondition when,
+        float duration)
+    {
+        var transitions = TransitionCases(when).Select(conditionCase =>
+        {
+            var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
+            transition.SetDestination(destination);
+            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
+            return transition;
+        });
         source.Transitions = source.Transitions.AddRange(transitions);
     }
 
@@ -151,15 +187,89 @@ internal sealed class AnimatorGraph
     }
 
     public void AddEntryTransition(VirtualLayer layer, VirtualState destination, DnfCondition when)
+        => AddEntryTransition(layer.StateMachine!, destination, when);
+
+    public void AddEntryTransition(
+        VirtualStateMachine stateMachine,
+        VirtualState destination,
+        DnfCondition? when = null)
     {
+        if (when == null)
+        {
+            stateMachine.EntryTransitions = stateMachine.EntryTransitions.Add(
+                CreateEntryTransition(destination));
+            return;
+        }
+
         var transitions = TransitionCases(when).Select(conditionCase =>
         {
             var transition = CreateEntryTransition(destination);
             transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
             return transition;
         });
-        layer.StateMachine!.EntryTransitions =
-            layer.StateMachine.EntryTransitions.AddRange(transitions);
+        stateMachine.EntryTransitions = stateMachine.EntryTransitions.AddRange(transitions);
+    }
+
+    public void AddStateMachineTransition(
+        VirtualStateMachine parent,
+        VirtualStateMachine source,
+        VirtualStateMachine destination,
+        DnfCondition when)
+        => AddStateMachineTransition(parent, source, when, transition =>
+            transition.SetDestination(destination));
+
+    public void AddStateMachineTransition(
+        VirtualStateMachine parent,
+        VirtualStateMachine source,
+        VirtualState destination)
+        => AddStateMachineTransition(parent, source, transition =>
+            transition.SetDestination(destination));
+
+    public void AddStateMachineTransition(
+        VirtualStateMachine parent,
+        VirtualStateMachine source,
+        VirtualState destination,
+        DnfCondition when)
+        => AddStateMachineTransition(parent, source, when, transition =>
+            transition.SetDestination(destination));
+
+    private static void AddStateMachineTransition(
+        VirtualStateMachine parent,
+        VirtualStateMachine source,
+        Action<VirtualTransition> setDestination)
+    {
+        var transition = VirtualTransition.Create();
+        setDestination(transition);
+        AddStateMachineTransitions(parent, source, new[] { transition });
+    }
+
+    private static void AddStateMachineTransition(
+        VirtualStateMachine parent,
+        VirtualStateMachine source,
+        DnfCondition when,
+        Action<VirtualTransition> setDestination)
+    {
+        var transitions = TransitionCases(when).Select(conditionCase =>
+        {
+            var transition = VirtualTransition.Create();
+            setDestination(transition);
+            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
+            return transition;
+        });
+        AddStateMachineTransitions(parent, source, transitions);
+    }
+
+    private static void AddStateMachineTransitions(
+        VirtualStateMachine parent,
+        VirtualStateMachine source,
+        IEnumerable<VirtualTransition> transitions)
+    {
+        var current = parent.StateMachineTransitions.TryGetValue(source, out var existing)
+            ? existing
+            : ImmutableList<VirtualTransition>.Empty;
+        parent.StateMachineTransitions = parent.StateMachineTransitions.SetItem(
+            source,
+            current.AddRange(transitions));
     }
 
     private static IEnumerable<VirtualStateTransition> CreateStateTransitions(

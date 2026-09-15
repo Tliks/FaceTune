@@ -82,7 +82,7 @@ internal partial class SliderFloatField : SpacedHorizontalElement
         _slider.style.marginBottom = 0;
         _slider.style.minHeight = 0;
 
-        _floatField = new FloatField();
+        _floatField = new FloatField { isDelayed = true };
         _floatField.style.flexGrow = 0;
         _floatField.style.flexShrink = 0;
         _floatField.style.flexBasis = new StyleLength(32);

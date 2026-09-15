@@ -3,6 +3,35 @@
     position: relative;
 }
 
+#metadata-gutter {
+    flex: 0 0 9px;
+    height: 18px;
+    flex-direction: row;
+    align-items: center;
+}
+
+#changed-marker {
+    width: 3px;
+    height: 18px;
+    margin-right: 4px;
+    opacity: 0;
+    background-color: var(--unity-colors-link-text);
+}
+
+#changed-marker.changed-marker--visible {
+    opacity: 0.7;
+}
+
+#metadata-gutter:hover #changed-marker.changed-marker--visible {
+    opacity: 1;
+}
+
+#facial-rail {
+    width: 2px;
+    height: 14px;
+    background-color: var(--unity-colors-default-text);
+}
+
 #name {
     flex: 1 1 100px;
 }
@@ -17,13 +46,10 @@
     padding: 0px;
 }
 
-#curve-toggle {
-    flex: 0 0 24px;
-}
-
+#curve-toggle,
 #toggle-button,
 #action {
-    flex: 0 0 35px;
+    flex: 0 0 30px;
 }
 
 .flash-overlay {

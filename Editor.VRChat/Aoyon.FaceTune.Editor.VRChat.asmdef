@@ -5,6 +5,7 @@
         "Aoyon.FaceTune.Runtime",
         "Aoyon.FaceTune.Editor",
         "nadena.dev.ndmf",
+        "nadena.dev.ndmf.vrchat",
         "nadena.dev.ndmf.runtime",
         "nadena.dev.modular-avatar.core"
     ],

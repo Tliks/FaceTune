@@ -16,9 +16,11 @@ internal sealed record ReorderableListOptions(
     Action<SerializedProperty>? InitializeElement = null,
     Action<SerializedProperty>? AddElementOverride = null,
     Action<Rect, SerializedProperty>? DrawHeaderAction = null,
+    Action<Rect, SerializedProperty>? DrawHeaderLabelOverride = null,
     float HeaderActionWidth = 60f,
     float? ElementHeight = null,
-    bool Reorderable = true)
+    bool Reorderable = true,
+    bool SingleLineWhenEmpty = false)
 {
     internal enum HeaderMode
     {
@@ -96,7 +98,7 @@ internal static partial class GUIHelper
         else if (options.Controls == ReorderableListOptions.ControlsPlacement.Header)
         {
             var controls = new Rect(position.x, bodyY, position.width, HeaderHeight);
-            using var scope = new EditorGUI.PropertyScope(controls, GUIContent.none, property);
+            GUIHelper.RegisterPropertyRegion(controls, property);
             using var rightClick = new RightClickPassthroughScope(controls);
             DrawControls(controls, _ => { }, property, list, options);
             bodyY = controls.yMax + GUIHelper.VerticalSpacing;
@@ -106,7 +108,7 @@ internal static partial class GUIHelper
         {
             var headerContent = new Rect(position.x, bodyY, position.width, options.HeaderContentHeight);
             if (options.NestContent) headerContent.Indent();
-            using var headerScope = new EditorGUI.PropertyScope(headerContent, GUIContent.none, property);
+            GUIHelper.RegisterPropertyRegion(headerContent, property);
             using var rightClick = new RightClickPassthroughScope(headerContent);
             options.DrawHeaderContent(headerContent, property);
             bodyY = headerContent.yMax + GUIHelper.VerticalSpacing;
@@ -118,7 +120,7 @@ internal static partial class GUIHelper
             {
                 var empty = new Rect(position.x, bodyY, position.width, emptyHeight);
                 if (options.NestContent) empty.Indent();
-                using var emptyScope = new EditorGUI.PropertyScope(empty, GUIContent.none, property);
+                GUIHelper.RegisterPropertyRegion(empty, property);
                 using var rightClick = new RightClickPassthroughScope(empty);
                 if (options.DrawEmptyOverride != null)
                     options.DrawEmptyOverride(empty, property);
@@ -161,13 +163,14 @@ internal static partial class GUIHelper
     {
         if (options.Controls != ReorderableListOptions.ControlsPlacement.Footer) return;
         var footer = new Rect(right - ListControlsWidth, y, ListControlsWidth, HeaderHeight);
-        using var scope = new EditorGUI.PropertyScope(footer, GUIContent.none, property);
+        GUIHelper.RegisterPropertyRegion(footer, property);
         using var rightClick = new RightClickPassthroughScope(footer);
         DrawControls(footer, _ => { }, property, list, options);
     }
 
     private static float GetEmptyContentHeight(ReorderableList list, ReorderableListOptions options)
     {
+        if (options.SingleLineWhenEmpty) return 0f;
         var height = options.DrawEmptyOverride == null
             ? list.GetHeight()
             : Mathf.Max(0f, options.EmptyContentHeight);
@@ -256,7 +259,7 @@ internal static partial class GUIHelper
                        ?? EditorGUI.GetPropertyHeight(element, GUIContent.none, true);
             if (options.DrawElementOverride != null)
             {
-                using var elementScope = new EditorGUI.PropertyScope(rect, GUIContent.none, element);
+                GUIHelper.RegisterPropertyRegion(rect, element);
                 using var rightClick = new RightClickPassthroughScope(rect);
                 options.DrawElementOverride(rect, element);
             }
@@ -410,7 +413,7 @@ internal static partial class GUIHelper
         options ??= new ReorderableListOptions();
         var state = GetState(property);
         var list = GetList(property, state, options);
-        using var scope = new EditorGUI.PropertyScope(position, GUIContent.none, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
         DrawControls(position, _ => { }, property, list, options);
     }
@@ -424,12 +427,14 @@ internal static partial class GUIHelper
         State state)
     {
         // The built-in ReorderableList header is disabled, so reproduce its list-level scope here.
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new RightClickPassthroughScope(position);
-        var headerLabel = scope.content;
-        Action<Rect> drawLabel = options.Header == ReorderableListOptions.HeaderMode.Foldout
-            ? rect => state.Foldout.Expanded = GUIHelper.DrawFoldout(rect, state.Foldout.Expanded, headerLabel)
-            : rect => EditorGUI.LabelField(rect, headerLabel);
+        var headerLabel = label;
+        Action<Rect> drawLabel = options.DrawHeaderLabelOverride != null
+            ? rect => options.DrawHeaderLabelOverride(rect, property)
+            : options.Header == ReorderableListOptions.HeaderMode.Foldout
+                ? rect => state.Foldout.Expanded = GUIHelper.DrawFoldout(rect, state.Foldout.Expanded, headerLabel)
+                : rect => EditorGUI.LabelField(rect, headerLabel);
         var showHeaderControls = options.Controls == ReorderableListOptions.ControlsPlacement.Header
             && (options.Header != ReorderableListOptions.HeaderMode.Foldout || state.Foldout.Expanded);
         if (showHeaderControls)

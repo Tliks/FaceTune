@@ -7,6 +7,8 @@ namespace Aoyon.FaceTune.Preview;
 // early
 internal class RealTimeExpressionPreview : IRenderFilter
 {
+    public static RealTimeExpressionPreview Instance { get; } = new();
+
     ImmutableList<RenderGroup> IRenderFilter.GetTargetGroups(ComputeContext context)
     {
         var builder = ImmutableList.CreateBuilder<RenderGroup>();
@@ -17,7 +19,8 @@ internal class RealTimeExpressionPreview : IRenderFilter
             var component = _targetComponent.Get(context, root);
             if (component == null) continue;
 
-            var data = new PassingData(root, component, avatarContext.BodyPath);
+            var data = new PassingData(root, avatarContext.BodyPath);
+
             builder.Add(RenderGroup.For(avatarContext.FaceRenderer).WithData(data, (a, b) => a.Equals(b)));
         }
         return builder.ToImmutable();
@@ -25,7 +28,11 @@ internal class RealTimeExpressionPreview : IRenderFilter
 
     // ExpressionComponent増減時の再計算の範囲を縮小するためのPropCache
     private static readonly PropCache<GameObject, ExpressionComponent?> _targetComponent = new(
-        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent, (a, b) => a == b
+        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetTargetComponent,
+        // 前の結果がDestyoedになる可能性があるので、nullと区別する為に参照比較する
+        ReferenceEquals, 
+        // アバターが消えた際のDestryoedと、Undoで復活した際のObjectを区別する為に参照比較する
+        ReferenceEqualityComparer<GameObject>.Instance
     );
     
     private static ExpressionComponent? GetTargetComponent(ComputeContext context, GameObject root)
@@ -47,19 +54,32 @@ internal class RealTimeExpressionPreview : IRenderFilter
         return target;
     }
 
-    record PassingData(GameObject Root, ExpressionComponent Component, string FacePath);
+    record PassingData(GameObject Root, string FacePath)
+    {
+        public virtual bool Equals(PassingData other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return ReferenceEquals(Root, other.Root) && FacePath == other.FacePath;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Root, FacePath);
+        }
+    }
 
     Task<IRenderFilterNode> IRenderFilter.Instantiate(RenderGroup group, IEnumerable<(Renderer, Renderer)> proxyPairs, ComputeContext context)
     {
         try
         {
             var pair = proxyPairs.First();
-            if (pair.Item1 is not SkinnedMeshRenderer renderer
+            if (pair.Item1 is not SkinnedMeshRenderer
                 || pair.Item2 is not SkinnedMeshRenderer proxy)
                 throw new Exception("SkinnedMeshRenderer not found");
 
             var data = group.GetData<PassingData>();
-            var apply = _blendShapeApply.Get(context, (renderer, data));
+            var apply = _blendShapeApply.Get(context, data);
             var node = new BlendShapePreviewNode(proxy, apply);
             
             return Task.FromResult<IRenderFilterNode>(node);
@@ -72,22 +92,26 @@ internal class RealTimeExpressionPreview : IRenderFilter
     }
 
     // 再計算の範囲を縮小するためのPropCache
-    private static readonly PropCache<(SkinnedMeshRenderer, PassingData), BlendShapeApply> _blendShapeApply = new(
-        $"{nameof(RealTimeExpressionPreview)}:TargetComponent", GetBlendShapeApply, (a, b) => a.Equals(b)
+    private static readonly PropCache<PassingData, BlendShapeApply> _blendShapeApply = new(
+        $"{nameof(RealTimeExpressionPreview)}:BlendShapeApply", GetBlendShapeApply, (a, b) => a.Equals(b)
     );
 
-    private static BlendShapeApply GetBlendShapeApply(
-        ComputeContext context,
-        (SkinnedMeshRenderer Renderer, PassingData Data) input)
+    private static BlendShapeApply GetBlendShapeApply(ComputeContext context, PassingData data)
     {
-        var (renderer, data) = input;
+        var component = _targetComponent.Get(context, data.Root);
+        if (component == null)
+            return new BlendShapeApply(new ImmutableBlendShapeWeightSet());
 
         using var _ = ListPool<BlendShapeWeightAnimation>.Get(out var animations);
-        new FaceTuneResolver(data.Root, context).FacialData.Add(data.Component, animations, data.FacePath);
-        var set = new BlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
+        var facial = new FacialAnimationResolver(data.Root, context);
+        animations.AddRange(facial.ResolveIncoming(component.transform));
 
+        if (facial.TryResolve(component, out var definition))
+            animations.AddRange(definition);
+
+        var set = new ImmutableBlendShapeWeightSet(animations.ToFirstFrameBlendShapes());
         var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(data.Root, context);
 
-        return new BlendShapeApply(renderer, set.AsReadOnly(), 0f, ignoredNames);
+        return new BlendShapeApply(set, 0f, ignoredNames);
     }
 }

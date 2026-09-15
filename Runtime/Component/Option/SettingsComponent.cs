@@ -3,17 +3,16 @@ namespace Aoyon.FaceTune
     [DisallowMultipleComponent]
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
     internal sealed class SettingsComponent : FaceTuneTagComponent,
-        IHasConditions,
-        IReferenceableExpressionSettings<FacialBlendShapeData>,
-        IReferenceableExpressionSettings<EyeBlinkSettings>,
-        IReferenceableExpressionSettings<LipSyncSettings>
+        ISettingProvider<FacialBlendShapeData>,
+        ISettingProviderWithReference<EyeBlinkSettings>,
+        ISettingProviderWithReference<LipSyncSettings>,
+        ISettingProvider<TransitionSettings>,
+        ISettingProvider<PrioritySettings>
     {
         internal const string ComponentName = ComponentNamePrefix + "Settings";
-        internal const bool DefaultApplyToRenderer = false;
 
         // このGameObjectより下のExpressionへ、親側から順に重ねる。
         public bool HasFacialBlendShapes = false;
-        public SettingsReference FacialBlendShapesReference = new();
         public FacialBlendShapeData FacialBlendShapes = new();
         public bool ApplyToRenderer = DefaultApplyToRenderer;
 
@@ -41,22 +40,26 @@ namespace Aoyon.FaceTune
         public PrioritySettings Priority = new();
 
 
+#region Defaults
+
+        internal const bool DefaultApplyToRenderer = false;
+
         internal static Condition CreateDefaultCondition()
             => new(new ConditionCase());
 
-        IEnumerable<Condition> IHasConditions.Conditions
-            => HasCondition
-                ? new[] { Condition }
-                : Array.Empty<Condition>();
+#endregion
 
-        ReferenceableExpressionSettings<FacialBlendShapeData> IReferenceableExpressionSettings<FacialBlendShapeData>.Settings
-            => new(HasFacialBlendShapes, FacialBlendShapesReference.Mode, FacialBlendShapesReference.Source, FacialBlendShapes);
+#region Interfaces
 
-        ReferenceableExpressionSettings<EyeBlinkSettings> IReferenceableExpressionSettings<EyeBlinkSettings>.Settings
-            => new(HasEyeBlink, EyeBlinkReference.Mode, EyeBlinkReference.Source, EyeBlink);
+        (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (HasFacialBlendShapes, FacialBlendShapes);
+        (bool Enabled, EyeBlinkSettings Value) ISettingProvider<EyeBlinkSettings>.Setting => (HasEyeBlink, EyeBlink);
+        (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) ISettingProviderWithReference<EyeBlinkSettings>.Reference => (EyeBlinkReference.Mode, EyeBlinkReference.ComponentSource);
+        (bool Enabled, LipSyncSettings Value) ISettingProvider<LipSyncSettings>.Setting => (HasLipSync, LipSync);
+        (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) ISettingProviderWithReference<LipSyncSettings>.Reference => (LipSyncReference.Mode, LipSyncReference.ComponentSource);
+        (bool Enabled, TransitionSettings Value) ISettingProvider<TransitionSettings>.Setting => (HasTransition, Transition);
+        (bool Enabled, PrioritySettings Value) ISettingProvider<PrioritySettings>.Setting => (HasPriority, Priority);
 
-        ReferenceableExpressionSettings<LipSyncSettings> IReferenceableExpressionSettings<LipSyncSettings>.Settings
-            => new(HasLipSync, LipSyncReference.Mode, LipSyncReference.Source, LipSync);
+#endregion
 
     }
 }

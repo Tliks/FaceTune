@@ -11,7 +11,7 @@ internal sealed class TransformAnimationDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         position.SetSingleHeight();
         var targetWidth = position.width * PreferredTargetRatio;
         if (position.width >= MinimumFieldWidth * 2f)

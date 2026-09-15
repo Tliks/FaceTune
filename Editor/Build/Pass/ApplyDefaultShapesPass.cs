@@ -15,9 +15,7 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         var set = new BlendShapeWeightSet();
 
         var animations = new List<BlendShapeWeightAnimation>();
-        new FaceTuneResolver(avatarContext.Root).FacialData.AddRenderer(
-            animations,
-            avatarContext.BodyPath);
+        new FacialAnimationResolver(avatarContext.Root).AddRenderer(animations);
         animations.RemoveAll(animation =>
             !settings.CanWriteBlendShape(FaceTuneWriteKind.FacialData, animation.Name));
         if (animations.Count > 0)
@@ -33,10 +31,9 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
         set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
         if (set.Count == 0) return;
 
-        new BlendShapeApply(
-            avatarContext.FaceRenderer,
-            set,
-            IgnoredNames: settings.ExplicitlyExcludedBlendShapeNames)
-            .ApplyBlendShapes(avatarContext.FaceMesh);
+        var apply = new BlendShapeApply(
+            new ImmutableBlendShapeWeightSet(set),
+            IgnoredNames: settings.ExplicitlyExcludedBlendShapeNames);
+        avatarContext.FaceRenderer.ApplyBlendShapes(apply, avatarContext.FaceMesh);
     }
 }

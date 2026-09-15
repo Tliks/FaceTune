@@ -7,33 +7,36 @@ internal abstract record MenuIconPlan
 }
 
 internal abstract record MenuNodePlan(
+    Transform HierarchyAnchor,
     string DisplayName,
     MenuIconPlan Icon);
 
 internal sealed record MenuFolderPlan(
+    Transform HierarchyAnchor,
     string DisplayName,
     MenuIconPlan Icon,
     IReadOnlyList<MenuNodePlan> Children)
-    : MenuNodePlan(DisplayName, Icon);
+    : MenuNodePlan(HierarchyAnchor, DisplayName, Icon);
 
 internal sealed record MenuControlPlan(
+    Transform HierarchyAnchor,
     string DisplayName,
     MenuIconPlan Icon,
     MenuComponent.Kind Kind,
     string ParameterName,
     float Value)
-    : MenuNodePlan(DisplayName, Icon);
+    : MenuNodePlan(HierarchyAnchor, DisplayName, Icon);
 
 internal sealed class MenuPlan
 {
-    public IReadOnlyList<MenuNodePlan> RootNodes { get; }
+    public IReadOnlyList<MenuNodePlan> Installations { get; }
     public IReadOnlyDictionary<Transform, IReadOnlyList<MenuNodePlan>> ExistingFolderChildren { get; }
 
     public MenuPlan(
-        IEnumerable<MenuNodePlan> rootNodes,
+        IEnumerable<MenuNodePlan> installations,
         IReadOnlyDictionary<Transform, IReadOnlyList<MenuNodePlan>> existingFolderChildren)
     {
-        RootNodes = rootNodes.ToArray();
+        Installations = installations.ToArray();
         ExistingFolderChildren = existingFolderChildren.ToDictionary(
             pair => pair.Key,
             pair => (IReadOnlyList<MenuNodePlan>)pair.Value.ToArray());

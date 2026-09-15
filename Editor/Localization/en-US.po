@@ -138,6 +138,12 @@ msgstr "Conditions"
 msgid "facialEditor.title"
 msgstr "Expression Editor"
 
+msgid "facialEditor.open.button"
+msgstr "Open"
+
+msgid "facialEditor.edit.button"
+msgstr "Editor"
+
 msgid "facialEditor.rendererRequired.message"
 msgstr "Select a target renderer to edit the expression."
 
@@ -155,9 +161,6 @@ msgstr "Save"
 
 msgid "facialEditor.style.option"
 msgstr "Style"
-
-msgid "facialEditor.base.option"
-msgstr "Base"
 
 msgid "facialEditor.search.placeholder"
 msgstr "Search"
@@ -180,11 +183,68 @@ msgstr "Play Directly from Menu"
 msgid "expression.section.label"
 msgstr "Expression"
 
+msgid "expression.content.section.label"
+msgstr "Expression Content"
+
+msgid "expression.facials.section.label"
+msgstr "Facial Animations"
+
+msgid "expression.facials.references.label"
+msgstr "Other Settings"
+
+msgid "expression.facials.clips.label"
+msgstr "Animation Clips"
+
+msgid "expression.facials.mode.short.simple"
+msgstr "Standard"
+
+msgid "expression.facials.mode.short.composite"
+msgstr "Composite"
+
+msgid "expression.facials.mode.simple"
+msgstr "Standard"
+
+msgid "expression.facials.mode.composite"
+msgstr "Compose Multiple Expressions"
+
+msgid "expression.facials.baseSource.clip"
+msgstr "Animation Clip"
+
+msgid "expression.facials.baseSource.component"
+msgstr "Component"
+
+msgid "expression.facials.compositeEntries.label"
+msgstr "Expression Composition (Lower Takes Priority)"
+
+msgid "expression.facials.entryKind.label"
+msgstr "Kind"
+
+msgid "expression.facials.entryKind.direct"
+msgstr "Direct"
+
+msgid "expression.facials.entryKind.clip"
+msgstr "Animation Clip"
+
+msgid "expression.facials.entryKind.reference"
+msgstr "Component"
+
+msgid "expression.clip.importOption.label"
+msgstr "Import Option"
+
+msgid "expression.multiFrame.section.label"
+msgstr "Multi-Frame Settings"
+
+msgid "expression.behavior.enabled.label"
+msgstr "Specify Expression Behavior"
+
 msgid "blendShapeAnimation.multiFrame.label"
 msgstr "Multi-Frame"
 
 msgid "expression.additionalAnimations.section.label"
 msgstr "Non-Facial Animations"
+
+msgid "expression.additionalAnimations.references.label"
+msgstr "Other Settings"
 
 msgid "expression.additionalAnimations.clips.label"
 msgstr "Animation Clips"
@@ -254,6 +314,9 @@ msgstr "Component"
 
 msgid "common.options.section.label"
 msgstr "Options"
+
+msgid "expression.options.section.label"
+msgstr "Expression Options"
 
 msgid "section.empty.message"
 msgstr "No settings available."
@@ -454,6 +517,18 @@ msgstr "Replace Expression"
 msgid "lipSync.section.label"
 msgstr "Lip Sync Settings"
 
+msgid "lipSync.mode.label"
+msgstr "Mouth Shape"
+
+msgid "lipSync.mode.option.builtIn"
+msgstr "Avatar Settings"
+
+msgid "lipSync.mode.option.custom"
+msgstr "Custom"
+
+msgid "lipSync.selectedVisemeBlendShapes.label"
+msgstr "Blend Shapes for Selected Mouth ({0})"
+
 msgid "eyeBlink.section.label"
 msgstr "Eye Blink Settings"
 
@@ -575,7 +650,7 @@ msgid "priority.value.label"
 msgstr "Priority"
 
 msgid "lipSync.cancellerBlendShapes.label"
-msgstr "Conflict Correction"
+msgstr "Shared Reset While Speaking"
 
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"
@@ -672,6 +747,9 @@ msgstr "Existing"
 
 msgid "menu.selectedValue.label"
 msgstr "Selected Value"
+
+msgid "menu.toggleParameterType.label"
+msgstr "Parameter Type"
 
 # FaceTune Window
 msgid "window.avatarMissing.message"

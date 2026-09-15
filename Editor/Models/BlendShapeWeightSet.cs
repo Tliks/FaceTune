@@ -3,7 +3,7 @@ namespace Aoyon.FaceTune;
 /// <summary>
 /// 同名のBlendShapeWeightを許容しない集合
 /// </summary>
-internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendShapeWeightSet>, IEquatable<BlendShapeWeightSet>, IReadOnlyBlendShapeSet
+internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendShapeWeightSet>, IEquatable<BlendShapeWeightSet>
 {
     protected override Func<BlendShapeWeight, string> KeySelector => static x => x.Name;
 
@@ -19,11 +19,6 @@ internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendSha
     {
     }
 
-    public IReadOnlyBlendShapeSet AsReadOnly()
-    {
-        return this;
-    }
-
     public override bool Equals(object? obj)
     {
         return obj is BlendShapeWeightSet set && Equals(set);
@@ -32,42 +27,71 @@ internal class BlendShapeWeightSet : NamedItemSetBase<BlendShapeWeight, BlendSha
     public bool Equals(BlendShapeWeightSet other)
     {
         if (other is null) return false;
-        return Equals(other.AsReadOnly());
+        if (ReferenceEquals(this, other)) return true;
+        if (Count != other.Count) return false;
+
+        foreach (var blendShape in this)
+        {
+            if (!other.TryGetValue(blendShape.Name, out var otherBlendShape)) return false;
+            if (blendShape.Weight != otherBlendShape.Weight) return false;
+        }
+        return true;
     }
 
     public override int GetHashCode()
     {
         var hash = 0;
-        foreach (var (name, blendShape) in map)
+        foreach (var blendShape in this)
         {
-            hash ^= HashCode.Combine(name, blendShape.Weight);
+            hash ^= HashCode.Combine(blendShape.Name, blendShape.Weight);
         }
         return HashCode.Combine(Count, hash);
     }
 
-    public bool Equals(IReadOnlyBlendShapeSet other)
+}
+
+internal sealed class ImmutableBlendShapeWeightSet : ReadOnlyNamedItemSetBase<BlendShapeWeight>, IEquatable<ImmutableBlendShapeWeightSet>
+{
+    public static readonly ImmutableBlendShapeWeightSet Empty = new();
+
+    public ImmutableBlendShapeWeightSet()
+    {
+    }
+
+    public ImmutableBlendShapeWeightSet(IEnumerable<BlendShapeWeight> blendShapes)
+        : base(blendShapes)
+    {
+    }
+
+    internal ImmutableBlendShapeWeightSet(IEnumerable<BlendShapeWeight> blendShapes, int capacity)
+        : base(blendShapes, capacity)
+    {
+    }
+
+    protected override Func<BlendShapeWeight, string> KeySelector => static x => x.Name;
+
+    public bool Equals(ImmutableBlendShapeWeightSet? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         if (Count != other.Count) return false;
 
-        foreach (var (name, blendShape) in map)
+        foreach (var blendShape in this)
         {
-            if (!other.TryGetValue(name, out var otherBlendShape)) return false;
+            if (!other.TryGetValue(blendShape.Name, out var otherBlendShape)) return false;
             if (blendShape.Weight != otherBlendShape.Weight) return false;
         }
         return true;
     }
-}
 
-internal interface IReadOnlyBlendShapeSet : IReadOnlyCollection<BlendShapeWeight>, IEquatable<IReadOnlyBlendShapeSet>
-{
-    Dictionary<string, BlendShapeWeight>.ValueCollection Values { get; }
-    Dictionary<string, BlendShapeWeight>.KeyCollection Keys { get; }
-    BlendShapeWeightSet Clone();
-    void CloneTo(BlendShapeWeightSet result);
-    bool ContainsKey(string name);
-    bool Contains(BlendShapeWeight item);
-    bool TryGetValue(string key, out BlendShapeWeight value);
-    BlendShapeWeightSet Where(Func<BlendShapeWeight, bool> predicate);
+    public override bool Equals(object? obj)
+        => obj is ImmutableBlendShapeWeightSet other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        var hash = 0;
+        foreach (var blendShape in this)
+            hash ^= HashCode.Combine(blendShape.Name, blendShape.Weight);
+        return HashCode.Combine(Count, hash);
+    }
 }

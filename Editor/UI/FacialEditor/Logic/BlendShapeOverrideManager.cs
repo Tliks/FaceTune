@@ -63,24 +63,22 @@ internal class BlendShapeOverrideManager : IDisposable
                                             && _restoreStateVersion == _stateVersionProperty.intValue;
 
     private string[] _allKeysArray = new string[0];
-    private IReadOnlyBlendShapeSet _facialSet = new BlendShapeWeightSet();
-    private IReadOnlyBlendShapeSet _baseSet = new BlendShapeWeightSet();
-    private readonly BlendShapeWeightSet _effectiveBaseSet = new();
+    private ImmutableBlendShapeWeightSet _facialSet = new();
+    private ImmutableBlendShapeWeightSet _baseSet = new();
+    private ImmutableBlendShapeWeightSet _effectiveBaseSet = new();
     private ISet<string> _explicitlyExcluded = new HashSet<string>();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
-    public IReadOnlyBlendShapeSet FacialSet => _facialSet;
-    public IReadOnlyBlendShapeSet BaseSet => _baseSet;
-    public IReadOnlyBlendShapeSet EffectiveBaseSet => _effectiveBaseSet;
+    public ImmutableBlendShapeWeightSet FacialSet => _facialSet;
+    public ImmutableBlendShapeWeightSet BaseSet => _baseSet;
+    public ImmutableBlendShapeWeightSet EffectiveBaseSet => _effectiveBaseSet;
     public ISet<string> ExplicitlyExcluded => _explicitlyExcluded;
     public bool IsExplicitlyExcluded(string name) => _explicitlyExcluded.Contains(name);
 
     private void RebuildEffectiveBaseSet()
     {
-        _effectiveBaseSet.Clear();
-        _effectiveBaseSet.AddRange(_facialSet);
-        _effectiveBaseSet.AddRange(_baseSet);
+        _effectiveBaseSet = new ImmutableBlendShapeWeightSet(_facialSet.Concat(_baseSet));
     }
 
     public event Action<int>? OnSingleShapeAdded;
@@ -108,9 +106,9 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void SetInitialState(
         SkinnedMeshRenderer? targetRenderer,
-        IReadOnlyBlendShapeSet? facialSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? targetSet,
+        ImmutableBlendShapeWeightSet? facialSet,
+        ImmutableBlendShapeWeightSet? baseSet,
+        ImmutableBlendShapeWeightSet? targetSet,
         ISet<string> explicitlyExcluded,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null)
     {
@@ -138,14 +136,14 @@ internal class BlendShapeOverrideManager : IDisposable
     }
 
     private void InitializeSourceSets(
-        IReadOnlyBlendShapeSet? facialSet,
-        IReadOnlyBlendShapeSet? baseSet,
-        IReadOnlyBlendShapeSet? targetSet,
+        ImmutableBlendShapeWeightSet? facialSet,
+        ImmutableBlendShapeWeightSet? baseSet,
+        ImmutableBlendShapeWeightSet? targetSet,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves)
     {
-        _facialSet = facialSet ?? new BlendShapeWeightSet();
-        _baseSet = baseSet ?? new BlendShapeWeightSet();
-        var initialTargetSet = targetSet ?? new BlendShapeWeightSet();
+        _facialSet = facialSet ?? new ImmutableBlendShapeWeightSet();
+        _baseSet = baseSet ?? new ImmutableBlendShapeWeightSet();
+        var initialTargetSet = targetSet ?? new ImmutableBlendShapeWeightSet();
         RebuildEffectiveBaseSet();
         ExecuteModification(() =>
         {
@@ -210,22 +208,32 @@ internal class BlendShapeOverrideManager : IDisposable
         if (_overrideFlagsProperty.arraySize != snapshot.Flags.Length) return false;
         if (_overrideWeightsProperty.arraySize != snapshot.Weights.Length) return false;
 
-        var length = snapshot.Flags.Length;
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < snapshot.Flags.Length; i++)
         {
-            var isOverridden = _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue;
-            if (isOverridden != snapshot.Flags[i]) return false;
-            if (!isOverridden) continue;
-            if (!Mathf.Approximately(
-                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue,
-                    snapshot.Weights[i]))
-                return false;
-            if (!Equals(
-                    IsCurveModeAt(i) ? GetCurveValueAt(i) : null,
-                    snapshot.Curves[i]))
-                return false;
+            if (!IsSameAsSnapshot(snapshot, i)) return false;
         }
         return true;
+    }
+
+    public bool IsShapeChangedFromInitialState(int index)
+    {
+        return _initialSnapshot.HasValue
+               && ((uint)index >= (uint)_initialSnapshot.Value.Flags.Length
+                   || !IsSameAsSnapshot(_initialSnapshot.Value, index));
+    }
+
+    private bool IsSameAsSnapshot(OverrideStateSnapshot snapshot, int index)
+    {
+        var isOverridden = _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue;
+        if (isOverridden != snapshot.Flags[index]) return false;
+        if (!isOverridden) return true;
+        if (!Mathf.Approximately(
+                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue,
+                snapshot.Weights[index]))
+            return false;
+        return Equals(
+            IsCurveModeAt(index) ? GetCurveValueAt(index) : null,
+            snapshot.Curves[index]);
     }
 
     private void ApplySnapshot(OverrideStateSnapshot snapshot, bool registerUndo = true)
@@ -241,14 +249,28 @@ internal class BlendShapeOverrideManager : IDisposable
                 _overrideCurvesProperty.arraySize);
             for (int i = 0; i < length; i++)
             {
-                _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = snapshot.Flags[i];
-                _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = snapshot.Weights[i];
-                _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue
-                    = snapshot.Curves[i] ?? new AnimationCurve();
+                ApplySnapshotAt(snapshot, i);
             }
         }, registerUndo)) return;
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
+    }
+
+    private void ApplySnapshotAt(OverrideStateSnapshot snapshot, int index)
+    {
+        _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = snapshot.Flags[index];
+        _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = snapshot.Weights[index];
+        _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
+            = snapshot.Curves[index] ?? new AnimationCurve();
+    }
+
+    public bool TryRestoreShapeToInitialState(int index)
+    {
+        if (!_initialSnapshot.HasValue || !IsShapeChangedFromInitialState(index)) return false;
+        if (!ExecuteModification(() => ApplySnapshotAt(_initialSnapshot.Value, index))) return false;
+        OnUnknownChange?.Invoke();
+        OnAnyDataChange?.Invoke();
+        return true;
     }
 
     public bool TryRestoreInitialOverrides()
@@ -283,6 +305,7 @@ internal class BlendShapeOverrideManager : IDisposable
         _editedSnapshotBeforeRestoreInitial = null;
         _restoreStateVersion = null;
         _hasChangedStateCache = false;
+        OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
 
@@ -382,8 +405,6 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void ToggleCurveMode(int index)
     {
-        if (!IsInTarget(index)) return;
-
         if (IsCurveModeAt(index))
         {
             if (!ExecuteModification(() =>
@@ -396,9 +417,11 @@ internal class BlendShapeOverrideManager : IDisposable
         }
         else
         {
-            var weight = GetShapeWeight(index);
+            var weight = GetEffectiveShapeWeight(index);
             if (!ExecuteModification(() =>
             {
+                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
                 _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
                     = new AnimationCurve(new Keyframe(0f, weight), new Keyframe(1f, weight));
             })) return;

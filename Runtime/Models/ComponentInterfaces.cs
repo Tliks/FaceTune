@@ -5,27 +5,22 @@ internal interface IHasObjectReferences
     void ResolveReferences();
 }
 
-/// <summary>このComponentで有効になっている条件。</summary>
-internal interface IHasConditions
+internal interface ISettingProvider<T> where T : class
 {
-    IEnumerable<Condition> Conditions { get; }
+    (bool Enabled, T Value) Setting { get; }
 }
 
-/// <summary>シリアライズ構造から独立した、参照可能な設定の読み取りモデル。</summary>
-internal readonly record struct ReferenceableExpressionSettings<TValue>(
-    bool Enabled,
-    SettingsReferenceMode Mode,
-    Transform? Source,
-    TValue Direct)
-    where TValue : class;
-
-/// <summary>
-/// Transformから参照できるExpression設定。
-/// Scoped / Unscopedの収集規則は設定種別ごとのResolverが担う。
-/// </summary>
-internal interface IReferenceableExpressionSettings<TValue>
-    where TValue : class
+internal interface ISettingProviderWithReference<T> : ISettingProvider<T> where T : class
 {
-    ReferenceableExpressionSettings<TValue> Settings { get; }
+    (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) Reference { get; }
 }
 
+internal interface IExpressionDefinitionProvider
+{
+}
+
+internal interface IExpressionDefinitionProviderWithReference : IExpressionDefinitionProvider
+{
+    SettingsReferenceMode DefinitionMode { get; }
+    FaceTuneTagComponent? DefinitionSource { get; }
+}

@@ -1,7 +1,51 @@
 namespace Aoyon.FaceTune;
 
+// 名前付きアイテム集合の読み取り部分。
+internal abstract class ReadOnlyNamedItemSetBase<TItem> : IReadOnlyCollection<TItem>
+{
+    protected abstract Func<TItem, string> KeySelector { get; }
+
+    private readonly Dictionary<string, TItem> _map;
+
+    public IEnumerable<TItem> Values => _map.Values;
+    public IEnumerable<string> Keys => _map.Keys;
+    public int Count => _map.Count;
+
+    protected ReadOnlyNamedItemSetBase(IEnumerable<TItem> items)
+        : this(items, 0)
+    {
+    }
+
+    protected ReadOnlyNamedItemSetBase(IEnumerable<TItem> items, int capacity)
+    {
+        _map = new Dictionary<string, TItem>(capacity);
+        foreach (var item in items)
+        {
+            var key = KeySelector(item);
+            if (!string.IsNullOrWhiteSpace(key))
+                _map[key] = item;
+        }
+    }
+
+    protected ReadOnlyNamedItemSetBase() : this(Array.Empty<TItem>(), 0) { }
+
+    public IEnumerator<TItem> GetEnumerator() => _map.Values.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public bool ContainsKey(string key) => _map.ContainsKey(key);
+
+    public bool Contains(TItem item)
+    {
+        var key = KeySelector(item);
+        return _map.TryGetValue(key, out var existing) && EqualityComparer<TItem>.Default.Equals(existing, item);
+    }
+
+    public bool TryGetValue(string key, out TItem value) => _map.TryGetValue(key, out value);
+}
+
 // 汎用の名前付きアイテム集合基底。
-internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IReadOnlyCollection<TItem> where TSelf : NamedItemSetBase<TItem, TSelf>, new()
+internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IReadOnlyCollection<TItem>
+    where TSelf : NamedItemSetBase<TItem, TSelf>, new()
 {
     protected abstract Func<TItem, string> KeySelector { get; }
 
@@ -47,7 +91,6 @@ internal abstract class NamedItemSetBase<TItem, TSelf> : ICollection<TItem>, IRe
         map[key] = item;
         return (TSelf)this;
     }
-
 
     public TSelf AddRange(IEnumerable<TItem> items)
     {

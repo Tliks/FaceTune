@@ -17,6 +17,9 @@ internal interface IMetabasePlatformSupport
 
     IEnumerable<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind);
 
+    VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(SkinnedMeshRenderer faceRenderer)
+        => null;
+
     void PostProcessDefaultBlendShapes(
         BuildSettings settings,
         AvatarControlSettings avatarControlSettings,

@@ -20,13 +20,13 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
         sequence = InPhase(BuildPhase.Transforming)
             .BeforePlugin("nadena.dev.modular-avatar");
         sequence.Run(GetBuildSettingsPass.Instance);
+        sequence.Run(CreateParameterPlanPass.Instance);
         sequence.Run(CanonicalizeComponentsPass.Instance);
         sequence.Run(CreateAvatarControlSettingsPass.Instance);
-        sequence.Run(CreateParameterPlanPass.Instance);
         sequence.Run(CreateExpressionPlanPass.Instance);
         sequence.Run(CreateMenuPlanPass.Instance);
         sequence.Run(ApplyDefaultShapesPass.Instance)
-            .PreviewingWith(new RealTimeExpressionPreview());
+            .PreviewingWith(RealTimeExpressionPreview.Instance);
         sequence.Run(BuildPlatformAssetsPass.Instance);
         sequence.Run(RemoveFaceTuneComponentsPass.Instance);
 
@@ -37,6 +37,6 @@ internal sealed class PluginDefinition : Plugin<PluginDefinition>
 
         sequence = InPhase(BuildPhase.PlatformFinish);
         sequence.Run("Empty Pass", _ => { })
-            .PreviewingWith(new EditingShapesPreview(), new SelectedShapesPreview());
+            .PreviewingWith(DirectBlendShapePreview.Instance);
     }
 }

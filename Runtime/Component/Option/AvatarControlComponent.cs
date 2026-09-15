@@ -1,10 +1,9 @@
 namespace Aoyon.FaceTune
 {
     [AddComponentMenu(OptionMenuPathPrefix + ComponentName)]
-    internal class AvatarControlComponent : FaceTuneTagComponent, IHasConditions
+    internal class AvatarControlComponent : FaceTuneTagComponent
     {
         internal const string ComponentName = ComponentNamePrefix + "Avatar Control";
-        internal const Kind DefaultControlKind = Kind.LockFacial;
 
         public enum Kind
         {
@@ -22,6 +21,10 @@ namespace Aoyon.FaceTune
         // for All kind
         public ConditionSelection Condition = CreateDefaultCondition();
 
+#region Defaults
+
+        internal const Kind DefaultControlKind = Kind.LockFacial;
+
         internal static ConditionSelection CreateDefaultCondition()
             => new()
             {
@@ -29,9 +32,6 @@ namespace Aoyon.FaceTune
                     ConditionCase.From(new MenuCondition()))
             };
 
-        IEnumerable<Condition> IHasConditions.Conditions
-            => Condition.Mode == ConditionSelection.Kind.Conditional
-                ? new[] { Condition.Condition }
-                : Array.Empty<Condition>();
+#endregion
     }
 }

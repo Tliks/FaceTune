@@ -7,6 +7,7 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 {
     public RenderAspects WhatChanged => RenderAspects.Shapes;
 
+    private readonly BlendShapeApply[] _applies;
     private readonly int _blendShapeCount;
     private readonly PooledObject<List<string>> _blendShapeNames;
     private readonly PooledObject<List<float>> _blendShapeWeights;
@@ -14,10 +15,13 @@ internal class BlendShapePreviewNode : IRenderFilterNode
 
     public bool Disposed { get; private set; }
 
-    public BlendShapePreviewNode(SkinnedMeshRenderer smr, BlendShapeApply apply)
+    public BlendShapePreviewNode(SkinnedMeshRenderer smr, params BlendShapeApply[] applies)
     {
+        _applies = applies.ToArray();
+
         var mesh = smr.sharedMesh.DestroyedAsNull()
             ?? throw new ArgumentException("Renderer has no mesh.", nameof(smr));
+
         _blendShapeCount = mesh.blendShapeCount;
         _blendShapeNames = ListPool<string>.Get(out var names);
         for (int i = 0; i < _blendShapeCount; i++)
@@ -26,10 +30,11 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         }
         _blendShapeWeights = ListPool<float>.Get(out _);
         _shouldApply = ListPool<bool>.Get(out _);
-        SetInternal(apply);
+
+        SetInternal();
     }
 
-    private void SetInternal(BlendShapeApply apply)
+    private void SetInternal()
     {
         if (Disposed) return;
         var names = _blendShapeNames.Value;
@@ -39,23 +44,24 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         shouldApply.Clear();
         for (int i = 0; i < _blendShapeCount; i++)
         {
-            if (apply.TryGetWeight(names[i], out var weight))
+            var hasWeight = false;
+            var weight = default(float);
+            foreach (var apply in _applies)
             {
-                current.Add(weight);
-                shouldApply.Add(true);
+                if (!apply.TryGetWeight(names[i], out var layerWeight)) continue;
+                weight = layerWeight;
+                hasWeight = true;
             }
-            else
-            {
-                current.Add(default);
-                shouldApply.Add(false);
-            }
+            current.Add(weight);
+            shouldApply.Add(hasWeight);
         }
     }
 
     // Nodeを再生成せず、高頻度な編集内容を次回のOnFrameへ反映する。
-    public void SetDirectly(BlendShapeApply apply)
+    public void SetDirectly(int sourceIndex, BlendShapeApply apply)
     {
-        SetInternal(apply);
+        _applies[sourceIndex] = apply;
+        SetInternal();
     }
 
     public void OnFrame(Renderer original, Renderer proxy)
@@ -78,7 +84,6 @@ internal class BlendShapePreviewNode : IRenderFilterNode
         {
             if (!shouldApply[i]) continue;
             var weight = weights[i];
-            // if (proxy.GetBlendShapeWeight(i) == weight) continue;
             proxy.SetBlendShapeWeight(i, weight);
         }
     }

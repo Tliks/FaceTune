@@ -119,16 +119,24 @@ internal sealed class AnimationClipTargeting : IShapesEditorTargeting<AnimationC
     }
 }
 
-internal abstract class FacialSourceTargeting<T> : IShapesEditorTargeting<T> where T : Component
+internal interface IFacialSourceTargeting
+{
+    string? AnimationPropertyPath { get; set; }
+}
+
+internal abstract class FacialSourceTargeting<T> : IShapesEditorTargeting<T>, IFacialSourceTargeting where T : Component
 {
     protected abstract string SourcePropertyName { get; }
+    public string? AnimationPropertyPath { get; set; }
     public override void Save(GameObject root, SkinnedMeshRenderer renderer, BlendShapeOverrideManager dataManager)
     {
         if (Target == null) throw new InvalidOperationException("Target is not set.");
         var serialized = new SerializedObject(Target);
         serialized.Update();
-        var animations = serialized.FindProperty(SourcePropertyName)
-            .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        var animations = AnimationPropertyPath == null
+            ? serialized.FindProperty(SourcePropertyName)
+                .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations))
+            : serialized.FindProperty(AnimationPropertyPath);
         FacialShapeAnimationSaver.Save(animations, dataManager);
         serialized.ApplyModifiedProperties();
     }

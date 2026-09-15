@@ -58,7 +58,7 @@ internal static class VRChatMenuThumbnailFeature
                 var cacheKey = new BlendShapeWeightSet(blendShapes);
                 control.icon = textureCache.GetOrAdd(cacheKey, _ =>
                 {
-                    var texture = capture.Capture(blendShapes);
+                    var texture = capture.Capture(new ImmutableBlendShapeWeightSet(blendShapes));
                     texture.name = $"{FaceTuneConstants.Name} Thumbnail {generatedTextures.Count + 1}";
                     generatedTextures.Add(texture);
                     return texture;

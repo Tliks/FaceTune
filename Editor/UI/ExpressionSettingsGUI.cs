@@ -16,7 +16,7 @@ internal sealed class SerializedReferenceableSettings
     {
         Reference = serializedObject.FindProperty(referencePropertyName);
         Mode = Reference.FindPropertyRelative(nameof(SettingsReference.Mode));
-        Source = Reference.FindPropertyRelative(nameof(SettingsReference.Source));
+        Source = Reference.FindPropertyRelative(nameof(SettingsReference.ComponentSource));
         Direct = serializedObject.FindProperty(directPropertyName);
     }
 
@@ -52,7 +52,7 @@ internal static class SettingsReferenceGUI
         if (settings.Mode.intValue == (int)SettingsReferenceMode.Reference)
         {
             position.SetSingleHeight();
-            EditorGUI.PropertyField(position, settings.Source, "common.component.label".LG());
+            DrawComponentSource(position, settings);
             position.NewLine();
             if (ShowsMissingReference(settings.Source))
             {
@@ -86,8 +86,75 @@ internal static class SettingsReferenceGUI
             settings.Mode.hasMultipleDifferentValues);
     }
 
+    internal static void DrawComponentSource(
+        Rect position,
+        SerializedReferenceableSettings settings)
+    {
+        var current = settings.Source.objectReferenceValue as FaceTuneTagComponent;
+        settings.Source.objectReferenceValue = ComponentReferenceGUI.Draw(
+            position,
+            "common.component.label".LG(),
+            current,
+            source => IsValidSource(settings.Direct, source));
+    }
+
+    private static bool IsValidSource(SerializedProperty direct, FaceTuneTagComponent? source)
+    {
+        if (source == null) return true;
+        var name = direct.name;
+        if (name.Contains("EyeBlink", StringComparison.Ordinal))
+            return source is ISettingProvider<EyeBlinkSettings>;
+        if (name.Contains("LipSync", StringComparison.Ordinal))
+            return source is ISettingProvider<LipSyncSettings>;
+        return source is IExpressionDefinitionProvider;
+    }
+
     private static bool ShowsMissingReference(SerializedProperty source)
         => !source.hasMultipleDifferentValues && source.objectReferenceValue == null;
+}
+
+internal static class ComponentReferenceGUI
+{
+    internal static FaceTuneTagComponent? Draw(
+        Rect position,
+        GUIContent label,
+        FaceTuneTagComponent? current,
+        Func<FaceTuneTagComponent, bool> accepts)
+    {
+        if (position.Contains(Event.current.mousePosition)
+            && Event.current.type is EventType.DragUpdated or EventType.DragPerform)
+        {
+            var candidates = DragAndDrop.objectReferences
+                .SelectMany(value => value switch
+                {
+                    FaceTuneTagComponent component => new[] { component },
+                    GameObject gameObject => gameObject.GetComponents<FaceTuneTagComponent>(),
+                    _ => Array.Empty<FaceTuneTagComponent>()
+                })
+                .Where(accepts)
+                .Distinct()
+                .ToArray();
+            DragAndDrop.visualMode = candidates.Length == 1
+                ? DragAndDropVisualMode.Link
+                : DragAndDropVisualMode.Rejected;
+            if (Event.current.type == EventType.DragPerform)
+            {
+                DragAndDrop.AcceptDrag();
+                Event.current.Use();
+                return candidates.Length == 1 ? candidates[0] : current;
+            }
+            Event.current.Use();
+            return current;
+        }
+
+        var selected = EditorGUI.ObjectField(
+            position,
+            label,
+            current,
+            typeof(FaceTuneTagComponent),
+            true) as FaceTuneTagComponent;
+        return selected == null || accepts(selected) ? selected : null;
+    }
 }
 
 internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
@@ -177,7 +244,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var mode = property.FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode));
         position.SetSingleHeight();
         DrawMode(position, mode);
@@ -216,7 +283,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     private static void DrawMode(Rect position, SerializedProperty mode)
     {
-        using var _ = new EditorGUI.PropertyScope(position, "eyeBlink.mode.label".LG(), mode);
+        GUIHelper.RegisterPropertyRegion(position, mode);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var selected = Array.IndexOf(ModeValues, (EyeBlinkSettings.Kind)mode.intValue);
         if (selected < 0) selected = 0;
@@ -313,10 +380,10 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         IReadOnlyList<string> columnLabelKeys,
         float[] values)
     {
-        using var scope = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         var header = new Rect(position.x, position.y, position.width, GUIHelper.LineHeight);
-        var fields = EditorGUI.PrefixLabel(header, scope.content);
+        var fields = EditorGUI.PrefixLabel(header, label);
         var preferredWidths = Enumerable.Repeat(1f, values.Length).ToArray();
         var labelColumns = fields.FlexHorizontalSpaced(GUIHelper.HorizontalSpacing, preferredWidths);
         var valueRow = new Rect(
@@ -360,7 +427,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         if (clip == null || animations.serializedObject.targetObject is not Component component) return;
         if (!AvatarContext.TryGet(component.gameObject, out var context, out _)) return;
         var values = new List<BlendShapeWeightAnimation>();
-        clip.GetBlendShapeAnimations(ClipImportOption.All, values, context.BodyPath);
+        clip.GetBlendShapeAnimations(ClipImportOption.All, values, string.Empty);
         var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
             context.Root,
             FaceTuneWriteKind.EyeBlinkAnimation);
@@ -372,36 +439,222 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 [CustomPropertyDrawer(typeof(LipSyncSettings))]
 internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 {
-    private static readonly ReorderableListOptions BlendShapesOptions = new(
-        Header: ReorderableListOptions.HeaderMode.Label,
-        InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
-        DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
-            position,
-            list,
-            element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
-            (element, name) => element.CopyFrom(new BlendShapeWeight(name, 0f)),
-            FaceTuneWriteKind.FacialData),
-        ElementHeight: GUIHelper.LineHeight);
+    private static readonly LipSyncSettings.Kind[] ModeValues =
+    {
+        LipSyncSettings.Kind.BuiltIn,
+        LipSyncSettings.Kind.Custom
+    };
+    private static readonly string[] ModeKeys =
+    {
+        "lipSync.mode.option.builtIn",
+        "lipSync.mode.option.custom"
+    };
+    private static readonly ReorderableListOptions CancellerOptions = CreateBlendShapeOptions(
+        ReorderableListOptions.HeaderMode.Label,
+        0f,
+        FaceTuneWriteKind.FacialData);
+    private static readonly ReorderableListOptions VisemeOptions = CreateBlendShapeOptions(
+        ReorderableListOptions.HeaderMode.Label,
+        100f,
+        FaceTuneWriteKind.LipSyncAnimation) with
+    {
+        NestContent = false
+    };
+    private const int VisemeColumns = 5;
+    private const int VisemeRows = 3;
+    private static readonly float[] VisemeColumnWidths =
+        Enumerable.Repeat(1f, VisemeColumns).ToArray();
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
-        var blendShapes = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        position.height = GUIHelper.GetOptionalListHeight(blendShapes, BlendShapesOptions);
+        GUIHelper.RegisterPropertyRegion(position, property);
+        var mode = property.FindPropertyRelative(nameof(LipSyncSettings.Mode));
+        position.SetSingleHeight();
+        DrawMode(position, property, mode);
+        position.NewLine();
+
+        if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.Custom)
+        {
+            var visemes = GetVisemes(property);
+            var selection = GetVisemeSelection(property);
+            var customPosition = position;
+            customPosition.Indent();
+            customPosition.height = GUIHelper.GetLinesHeight(VisemeRows);
+            DrawVisemeGrid(customPosition, visemes, selection);
+            customPosition.NewLine();
+
+            var selected = visemes[selection.Index];
+            customPosition.height = GUIHelper.GetListHeight(selected.Shapes, VisemeOptions);
+            GUIHelper.DrawList(
+                customPosition,
+                selected.Shapes,
+                new GUIContent(string.Format(
+                    "lipSync.selectedVisemeBlendShapes.label".LS(),
+                    selected.Name)),
+                VisemeOptions);
+            customPosition.NewLine();
+            position.y = customPosition.y;
+        }
+
+        var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
+        position.height = GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
         GUIHelper.DrawLocalizedOptionalList(
             position,
-            blendShapes,
+            canceller,
             "lipSync.cancellerBlendShapes.label".LG(),
             "common.option.none",
             "common.option.present",
-            BlendShapesOptions);
+            CancellerOptions);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        => GUIHelper.GetOptionalListHeight(
-            property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes)),
-            BlendShapesOptions);
+    {
+        var height = GUIHelper.LineHeight + GUIHelper.VerticalSpacing;
+        var mode = property.FindPropertyRelative(nameof(LipSyncSettings.Mode));
+        if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.Custom)
+        {
+            var visemes = GetVisemes(property);
+            var selection = GetVisemeSelection(property);
+            height += GUIHelper.GetLinesHeight(VisemeRows) + GUIHelper.VerticalSpacing;
+            height += GUIHelper.GetListHeight(visemes[selection.Index].Shapes, VisemeOptions)
+                      + GUIHelper.VerticalSpacing;
+        }
 
+        var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
+        return height + GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
+    }
+
+    private static void DrawMode(
+        Rect position,
+        SerializedProperty settings,
+        SerializedProperty mode)
+    {
+        GUIHelper.RegisterPropertyRegion(position, mode);
+        using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
+        var selected = Array.IndexOf(ModeValues, (LipSyncSettings.Kind)mode.intValue);
+        if (selected < 0) selected = 0;
+        var previousMixed = EditorGUI.showMixedValue;
+        EditorGUI.showMixedValue = mode.hasMultipleDifferentValues;
+        var next = GUIHelper.LocalizedPopup(position, selected, "lipSync.mode.label", ModeKeys);
+        EditorGUI.showMixedValue = previousMixed;
+        if (next == selected) return;
+
+        mode.intValue = (int)ModeValues[next];
+        if (ModeValues[selected] == LipSyncSettings.Kind.BuiltIn
+            && ModeValues[next] == LipSyncSettings.Kind.Custom)
+            InitializeCustomShapes(settings);
+    }
+
+    private static void InitializeCustomShapes(SerializedProperty settings)
+    {
+        if (settings.serializedObject.targetObjects.Length != 1
+            || settings.serializedObject.targetObject is not Component component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
+            return;
+
+        var shapes = MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+            .Select(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer))
+            .FirstOrDefault(value => value != null);
+        if (shapes != null)
+            settings.FindPropertyRelative(nameof(LipSyncSettings.Shapes)).CopyFrom(shapes);
+    }
+
+    private static ReorderableListOptions CreateBlendShapeOptions(
+        ReorderableListOptions.HeaderMode header,
+        float initialWeight,
+        FaceTuneWriteKind writeKind)
+        => new(
+            Header: header,
+            InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
+            DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
+                position,
+                list,
+                element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
+                (element, name) => element.CopyFrom(new BlendShapeWeight(name, initialWeight)),
+                writeKind),
+            ElementHeight: GUIHelper.LineHeight);
+
+    private static void DrawVisemeGrid(
+        Rect position,
+        IReadOnlyList<(string Name, SerializedProperty Shapes)> visemes,
+        VisemeSelectionState selection)
+    {
+        for (var row = 0; row < VisemeRows; row++)
+        {
+            var rowRect = new Rect(
+                position.x,
+                position.y + row * (GUIHelper.LineHeight + GUIHelper.VerticalSpacing),
+                position.width,
+                GUIHelper.LineHeight);
+            var cells = rowRect.FlexHorizontalSpaced(
+                GUIHelper.HorizontalSpacing,
+                VisemeColumnWidths);
+            for (var column = 0; column < VisemeColumns; column++)
+            {
+                var index = row * VisemeColumns + column;
+                var (name, shapes) = visemes[index];
+                var cell = cells[column];
+                GUIHelper.RegisterPropertyRegion(cell, shapes);
+                using (new GUIHelper.RightClickPassthroughScope(cell))
+                {
+                    if (GUI.Toggle(
+                            cell,
+                            selection.Index == index,
+                            name,
+                            EditorStyles.miniButton) != (selection.Index == index))
+                        selection.Index = index;
+                }
+
+                if (shapes.arraySize == 0)
+                {
+                    var marker = new Rect(cell.xMax - 6f, cell.y + 3f, 3f, 3f);
+                    EditorGUI.DrawRect(marker, EditorGUIUtility.isProSkin
+                        ? new Color(.75f, .75f, .75f)
+                        : new Color(.3f, .3f, .3f));
+                }
+                if (shapes.prefabOverride)
+                {
+                    var marker = new Rect(cell.x + 1f, cell.yMax - 2f, cell.width - 2f, 2f);
+                    EditorGUI.DrawRect(marker, new Color(.25f, .55f, 1f));
+                }
+            }
+        }
+    }
+
+    private static VisemeSelectionState GetVisemeSelection(SerializedProperty property)
+    {
+        var state = GUIState.Get(property, "lipSyncViseme", () => new VisemeSelectionState());
+        state.Index = Mathf.Clamp(state.Index, 0, VisemeColumns * VisemeRows - 1);
+        return state;
+    }
+
+    private sealed class VisemeSelectionState
+    {
+        public int Index;
+    }
+
+    private static (string Name, SerializedProperty Shapes)[] GetVisemes(SerializedProperty property)
+    {
+        var shapes = property.FindPropertyRelative(nameof(LipSyncSettings.Shapes));
+        return new[]
+        {
+            ("sil", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.Sil))),
+            ("PP", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.PP))),
+            ("FF", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.FF))),
+            ("TH", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.TH))),
+            ("DD", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.DD))),
+            ("kk", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.KK))),
+            ("CH", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.CH))),
+            ("SS", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.SS))),
+            ("nn", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.NN))),
+            ("RR", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.RR))),
+            ("aa", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.AA))),
+            ("E", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.E))),
+            ("ih", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.IH))),
+            ("oh", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OH))),
+            ("ou", shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OU)))
+        };
+    }
 }
 
 [CustomPropertyDrawer(typeof(TransitionSettings))]
@@ -409,7 +662,7 @@ internal sealed class TransitionSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         EditorGUI.PropertyField(
             position,
             property.FindPropertyRelative(nameof(TransitionSettings.DurationSeconds)),
@@ -423,7 +676,7 @@ internal sealed class PrioritySettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         EditorGUI.PropertyField(
             position,
             property.FindPropertyRelative(nameof(PrioritySettings.Priority)),
@@ -437,7 +690,7 @@ internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         position.SetSingleHeight();
         EditorGUI.PropertyField(
             position,
@@ -496,7 +749,7 @@ internal sealed class MMDSupportSettingsDrawer : PropertyDrawer
         ElementHeight: GUIHelper.LineHeight);
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var supportMode = property.FindPropertyRelative(nameof(MMDSupportSettings.SupportMode));
         position.SetSingleHeight();
         GUIHelper.LocalizedEnumPopup(position, supportMode, "mmdSupport.mode.label", SupportModeKeys);

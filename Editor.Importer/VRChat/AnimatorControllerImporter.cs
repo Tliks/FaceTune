@@ -220,7 +220,8 @@ internal class AnimatorControllerImporter
         var expression = obj.AddComponent<ExpressionComponent>();
 
         expression.FacialBlendShapes.Clip = clip;
-        expression.FacialBlendShapes.ClipOption = isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
+        expression.FacialBlendShapes.ClipOption =
+            isBlending ? ClipImportOption.All : ClipImportOption.NonZero;
 
         if (!dnf.IsAlways && !dnf.IsNever)
         {

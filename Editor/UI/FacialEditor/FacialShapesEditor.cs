@@ -13,7 +13,7 @@ internal class FacialShapesEditor : EditorWindow
     private int _initialUndoGroup = -1;
     private Func<SkinnedMeshRenderer, ISet<string>?>? _resolveUnavailableBlendShapeNames;
 
-    private const int MIN_WINDOW_WIDTH = 500;
+    private const int MIN_WINDOW_WIDTH = 570;
     private const int MIN_WINDOW_HEIGHT = 700;
 
     public static FacialShapesEditor? TryOpenEditor()
@@ -135,11 +135,11 @@ internal class FacialShapesEditor : EditorWindow
         return animations;
     }
 
-    private static IReadOnlyBlendShapeSet? ToFirstFrameSet(
+    private static ImmutableBlendShapeWeightSet? ToFirstFrameSet(
         IReadOnlyList<BlendShapeWeightAnimation>? animations)
     {
         if (animations == null) return null;
-        return new BlendShapeWeightSet(
+        return new ImmutableBlendShapeWeightSet(
             animations.Select(animation => animation.ToFirstFrameBlendShape()));
     }
 

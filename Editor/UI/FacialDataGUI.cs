@@ -1,270 +1,142 @@
 using Aoyon.FaceTune.Gui.ShapesEditor;
 using Aoyon.FaceTune.Platforms;
+using UnityEditorInternal;
 
 namespace Aoyon.FaceTune.Gui;
 
-internal sealed class FacialDataSectionDrawer : ISectionDrawer, ISectionHeaderDrawer, ISectionHeaderMenuDrawer
+internal sealed class FacialDataSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer
 {
-    private readonly SerializedReferenceableSettings _source;
+    private readonly SerializedProperty _data;
 
-    public FacialDataSectionDrawer(
-        SerializedObject serializedObject,
-        string referencePropertyName,
-        string directPropertyName)
+    public FacialDataSectionDrawer(SerializedObject serializedObject, string directPropertyName)
     {
-        _source = new SerializedReferenceableSettings(serializedObject, referencePropertyName, directPropertyName);
-        Actions = _source.CreateActionSet(() => new FacialBlendShapeData());
+        _data = serializedObject.FindProperty(directPropertyName);
+        Actions = new SectionActionSet(
+            serializedObject,
+            new[] { SectionActionField.From(_data, () => new FacialBlendShapeData()) });
     }
 
     public SectionActionSet Actions { get; }
+    public float GetHeight() => FacialDataGUI.GetContentHeight(_data);
+    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _data);
 
-    public float GetHeight() => FacialDataGUI.GetContentHeight(_source);
-    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _source);
-    public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
-    public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _source);
-    public void PopulateHeaderMenu(GenericMenu menu)
-        => FacialDataGUI.PopulateHeaderMenu(menu, _source, Actions);
+    public float GetHeaderWidth()
+        => GUIHelper.CompactPopupWidth(new[]
+        {
+            "expression.facials.mode.short.simple".LG(),
+            "expression.facials.mode.short.composite".LG()
+        });
+
+    public void DrawHeader(Rect position)
+    {
+        var mode = _data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeMode));
+        var selected = mode.intValue == (int)FacialBlendShapeData.Mode.Composite ? 1 : 0;
+        GUIHelper.CompactPopup(
+            position,
+            mode.hasMultipleDifferentValues
+                ? EditorGUIUtility.TrTextContent("—")
+                : (selected == 0
+                    ? "expression.facials.mode.short.simple"
+                    : "expression.facials.mode.short.composite").LG(),
+            new[]
+            {
+                "expression.facials.mode.simple".LG(),
+                "expression.facials.mode.composite".LG()
+            },
+            selected,
+            next => FacialDataGUI.ChangeMode(_data, next == 0
+                ? FacialBlendShapeData.Mode.Simple
+                : FacialBlendShapeData.Mode.Composite),
+            mode.hasMultipleDifferentValues);
+    }
+
+    public void DrawCollapsedHeader(Rect position) => DrawHeader(position);
 }
 
 internal static class FacialDataGUI
 {
-    private static readonly ReorderableListOptions AnimationListOptions = new(
+    private static readonly ReorderableListOptions BlendShapeAnimationsOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
         NestContent: false,
-        HeaderContentHeight: GUIHelper.LineHeight,
-        DrawHeaderContent: DrawClipRow,
         InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()),
-        DrawHeaderAction: DrawEditorButton,
         ElementHeight: GUIHelper.LineHeight,
-        Reorderable: false);
+        Reorderable: false,
+        SingleLineWhenEmpty: true);
 
-    public static float GetContentHeight(SerializedReferenceableSettings source)
-        => SettingsReferenceGUI.GetHeight(source, GetDirectHeight(source));
+    private static readonly ReorderableListOptions CompositeEntriesOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        MaxVisibleHeight: null,
+        InitializeElement: property => property.CopyFrom(new FacialBlendShapeData.CompositeEntry()));
 
-    public static void DrawContent(Rect position, SerializedReferenceableSettings source)
-        => SettingsReferenceGUI.Draw(
-            position,
-            source,
-            GetDirectHeight(source),
-            rect => DrawDirect(rect, source));
+    internal static readonly ReorderableListOptions DirectEntryAnimationsOptions = new(
+        Header: ReorderableListOptions.HeaderMode.Label,
+        NestContent: false,
+        InitializeElement: property => property.CopyFrom(new BlendShapeWeightAnimation()),
+        DrawHeaderAction: DrawDirectEditorButton,
+        DrawHeaderLabelOverride: DrawDirectKindPopup,
+        HeaderActionWidth: 70f,
+        ElementHeight: GUIHelper.LineHeight,
+        Reorderable: false,
+        SingleLineWhenEmpty: false);
 
-    internal static void PopulateHeaderMenu(
-        GenericMenu menu,
-        SerializedReferenceableSettings source,
-        SectionActionSet actions)
+    internal static float GetContentHeight(SerializedProperty data)
     {
-        var label = "expression.separate.menu".LG();
-        if (CanSeparate(source))
-            menu.AddItem(label, false, () => Separate(source, actions));
+        var mode = (FacialBlendShapeData.Mode)data
+            .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeMode)).intValue;
+        if (mode == FacialBlendShapeData.Mode.Composite)
+            return GUIHelper.GetListHeight(
+                data.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntries)),
+                CompositeEntriesOptions);
+
+        var animations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        return GUIHelper.LineHeight
+             + GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(animations, BlendShapeAnimationsOptions)
+             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
+    }
+
+    internal static void DrawContent(Rect position, SerializedProperty data)
+    {
+        var mode = (FacialBlendShapeData.Mode)data
+            .FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeMode)).intValue;
+        if (mode == FacialBlendShapeData.Mode.Composite)
+        {
+            var entries = data.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntries));
+            position.height = GUIHelper.GetListHeight(entries, CompositeEntriesOptions);
+            GUIHelper.DrawList(
+                position,
+                entries,
+                "expression.facials.compositeEntries.label".LG(),
+                CompositeEntriesOptions);
+            return;
+        }
+
+        position.SetSingleHeight();
+        DrawSimpleSource(position, data);
+        position.NewLine();
+        var animations = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        position.height = GUIHelper.GetListHeight(animations, BlendShapeAnimationsOptions);
+        GUIHelper.DrawList(position, animations, "expression.blendShapes.label".LG(), BlendShapeAnimationsOptions);
+        position.NewLine();
+        position.height = GUIHelper.LineHeight;
+        DrawEditorRow(position, data, animations);
+    }
+
+    internal static void ChangeMode(SerializedProperty data, FacialBlendShapeData.Mode next)
+    {
+        data.serializedObject.UpdateIfRequiredOrScript();
+        var mode = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeMode));
+        if ((FacialBlendShapeData.Mode)mode.intValue == next) return;
+        if (next == FacialBlendShapeData.Mode.Composite)
+            ConvertSimpleToComposite(data);
         else
-            menu.AddDisabledItem(label);
+            ConvertCompositeToSimple(data);
+        mode.intValue = (int)next;
+        data.serializedObject.ApplyModifiedProperties();
     }
 
-    private static bool CanSeparate(SerializedReferenceableSettings source)
-    {
-        var serializedObject = source.Reference.serializedObject;
-        return serializedObject.targetObjects.Length == 1
-               && !source.Mode.hasMultipleDifferentValues
-               && source.Mode.intValue == (int)SettingsReferenceMode.Direct
-               && serializedObject.targetObject is Component component
-               && !EditorUtility.IsPersistent(component.gameObject);
-    }
-
-    private static void Separate(
-        SerializedReferenceableSettings source,
-        SectionActionSet actions)
-    {
-        if (!CanSeparate(source)) return;
-
-        var serializedObject = source.Reference.serializedObject;
-        serializedObject.UpdateIfRequiredOrScript();
-        if (serializedObject.targetObject is not Component owner) return;
-
-        ExpressionDataComponent? separatedData = null;
-        SectionOperations.RunUndo("expression.separate.menu".LS(), () =>
-        {
-            var expressionData = FaceTuneRecipes.AddExpressionData(owner.transform.parent);
-            separatedData = expressionData;
-            using var expressionDataSerializedObject = new SerializedObject(expressionData);
-            expressionDataSerializedObject.UpdateIfRequiredOrScript();
-            expressionDataSerializedObject.CopyFromSerializedProperty(source.Direct);
-            expressionDataSerializedObject.ApplyModifiedProperties();
-
-            SectionOperations.ResetValues(actions);
-            source.Mode.intValue = (int)SettingsReferenceMode.Reference;
-            source.Source.objectReferenceValue = expressionData.transform;
-            serializedObject.ApplyModifiedProperties();
-        });
-
-        if (separatedData != null)
-            EditorGUIUtility.PingObject(separatedData);
-    }
-
-    private static float GetDirectHeight(SerializedReferenceableSettings source)
-    {
-        var animations = source.Direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        return GUIHelper.GetListHeight(animations, AnimationListOptions);
-    }
-
-    private static void DrawDirect(
-        Rect position,
-        SerializedReferenceableSettings source)
-    {
-        var direct = source.Direct;
-        var animations = direct.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
-        position.height = GUIHelper.GetListHeight(animations, AnimationListOptions);
-        GUIHelper.DrawList(position, animations, "expression.blendShapes.label".LG(), AnimationListOptions);
-    }
-
-    private static void DrawEditorButton(Rect position, SerializedProperty animations)
-    {
-        using var disabled = new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1);
-        if (GUI.Button(position, "expression.editor.button".LG(), GUIStyles.ListButton)
-            && animations.serializedObject.targetObject is Component component)
-            OpenEditor(component);
-    }
-
-    private static void DrawClipRow(Rect position, SerializedProperty animations)
-    {
-        var directPath = animations.propertyPath[..^(nameof(FacialBlendShapeData.BlendShapeAnimations).Length + 1)];
-        var direct = animations.serializedObject.FindProperty(directPath);
-        if (direct == null || animations.serializedObject.targetObject is not Component component) return;
-        var clip = direct.FindPropertyRelative(nameof(FacialBlendShapeData.Clip));
-        var option = direct.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption));
-        var valueRect = position;
-        var importLabel = "expression.clip.import.button".LG();
-        var (fields, button) = valueRect.SplitRight(GUI.skin.button.CalcSize(importLabel).x);
-        var (clipRect, optionRect) = fields.SplitRight(GUIHelper.PopupWidth(new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() }));
-        EditorGUI.PropertyField(clipRect, clip, GUIContent.none);
-        using (new EditorGUI.PropertyScope(optionRect, GUIContent.none, option))
-        using (new GUIHelper.RightClickPassthroughScope(optionRect))
-        using (new EditorGUI.DisabledScope(clip.objectReferenceValue == null))
-        {
-            option.enumValueIndex = EditorGUI.Popup(optionRect, option.enumValueIndex, new[] { "clipImportOption.option.all".LG(), "clipImportOption.option.nonZero".LG() });
-        }
-        using (new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1 || clip.objectReferenceValue == null))
-            if (GUI.Button(button, importLabel)) ImportClip(component, direct);
-    }
-
-    private static void ImportClip(Component component, SerializedProperty data)
-    {
-        if (data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue is not AnimationClip clip
-            || clip == null
-            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
-        var animations = new List<BlendShapeWeightAnimation>();
-        var option = (ClipImportOption)data
-            .FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption))
-            .intValue;
-        clip.GetBlendShapeAnimations(option, animations, avatar.BodyPath);
-        var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
-            avatar.Root,
-            FaceTuneWriteKind.FacialData);
-        animations.RemoveAll(animation => unavailable.Contains(animation.Name));
-        MergeBlendShapeAnimations(
-            data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)),
-            animations,
-            false);
-        data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
-    }
-
-    private static void OpenEditor(Component component)
-    {
-        if (!AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
-        var source = FacialEditorSource.Create(component);
-        if (source == null) return;
-        var resolver = new FaceTuneResolver(avatar.Root);
-        var facialAnimations = new List<BlendShapeWeightAnimation>();
-        resolver.FacialData.AddIncoming(component.transform, facialAnimations, avatar.BodyPath);
-        var baseAnimations = source.ResolveBaseAnimations(resolver, avatar.BodyPath);
-        FacialShapesEditor.TryOpenEditor(
-            avatar.FaceRenderer,
-            source.Targeting,
-            facialAnimations,
-            baseAnimations,
-            source.Direct.BlendShapeAnimations,
-            AvatarContext.GetUnavailableBlendShapeNames(
-                avatar.Root,
-                FaceTuneWriteKind.FacialData));
-    }
-
-    private sealed record FacialEditorSource(
-        IShapesEditorTargeting Targeting,
-        FacialBlendShapeData Direct,
-        Func<FaceTuneResolver, string, IReadOnlyList<BlendShapeWeightAnimation>> ResolveBaseAnimations)
-    {
-        public static FacialEditorSource? Create(Component component)
-            => component switch
-            {
-                ExpressionComponent expression => new(
-                    new FaceTuneDataTargeting { Target = expression },
-                    expression.FacialBlendShapes,
-                    (resolver, bodyPath) => ResolveExpressionBaseAnimations(expression, resolver, bodyPath)),
-                ExpressionDataComponent data => new(
-                    new ExpressionDataTargeting { Target = data },
-                    data.FacialBlendShapes,
-                    (resolver, bodyPath) => ResolveExpressionDataBaseAnimations(data, resolver, bodyPath)),
-                SettingsComponent settings => new(
-                    new SettingsFacialTargeting { Target = settings },
-                    settings.FacialBlendShapes,
-                    (resolver, bodyPath) => ResolveSettingsBaseAnimations(settings, resolver, bodyPath)),
-                _ => null
-            };
-    }
-
-    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveExpressionBaseAnimations(
-        ExpressionComponent expression,
-        FaceTuneResolver resolver,
-        string bodyPath)
-    {
-        var result = new List<BlendShapeWeightAnimation>();
-        var expressionData = resolver.FacialData.EnumerateLocal(expression)
-            .Concat(resolver.FacialData.EnumerateLocalData(expression.transform))
-            .FirstOrDefault().Value;
-        AddClipAnimations(expressionData, result, bodyPath);
-        return result;
-    }
-
-    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveExpressionDataBaseAnimations(
-        ExpressionDataComponent targetData,
-        FaceTuneResolver resolver,
-        string bodyPath)
-    {
-        var result = new List<BlendShapeWeightAnimation>();
-        var owner = targetData.GetComponentInParent<ExpressionComponent>(true);
-        if (owner == null) return result;
-
-        var sources = resolver.FacialData.EnumerateLocal(owner)
-            .Concat(resolver.FacialData.EnumerateLocalData(owner.transform));
-        foreach (var (source, data) in sources)
-        {
-            AddClipAnimations(data, result, bodyPath);
-            if (source == targetData) break;
-            foreach (var animation in data.BlendShapeAnimations) result.Add(animation);
-        }
-        return result;
-    }
-
-    private static IReadOnlyList<BlendShapeWeightAnimation> ResolveSettingsBaseAnimations(
-        SettingsComponent settings,
-        FaceTuneResolver resolver,
-        string bodyPath)
-    {
-        var result = new List<BlendShapeWeightAnimation>();
-        if (resolver.SettingsReferences.TryResolve<FacialBlendShapeData>(settings, out var settingsData))
-            AddClipAnimations(settingsData, result, bodyPath);
-        return result;
-    }
-
-    private static void AddClipAnimations(
-        FacialBlendShapeData? data,
-        ICollection<BlendShapeWeightAnimation> result,
-        string bodyPath)
-    {
-        if (data?.Clip != null)
-            data.Clip.GetBlendShapeAnimations(data.ClipOption, result, bodyPath);
-    }
-
-    internal static void SetBlendShapeAnimations(SerializedProperty property, IReadOnlyList<BlendShapeWeightAnimation> animations)
+    internal static void SetBlendShapeAnimations(
+        SerializedProperty property,
+        IReadOnlyList<BlendShapeWeightAnimation> animations)
     {
         property.arraySize = animations.Count;
         for (var i = 0; i < animations.Count; i++)
@@ -275,18 +147,460 @@ internal static class FacialDataGUI
         }
     }
 
-    private static void MergeBlendShapeAnimations(
-        SerializedProperty property,
-        IReadOnlyCollection<BlendShapeWeightAnimation> animations,
-        bool overwrite)
-        => property.MergeArrayByKey(
-            animations,
-            element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
-            animation => animation.Name,
-            (element, animation) => element.CopyFrom(animation),
-            overwrite);
+    private static void DrawSimpleSource(Rect position, SerializedProperty data)
+    {
+        var source = data.FindPropertyRelative(nameof(FacialBlendShapeData.BaseSource));
+        var sourceKeys = new[]
+        {
+            "expression.facials.baseSource.clip",
+            "expression.facials.baseSource.component"
+        };
+        var importLabel = "expression.clip.import.button".LG();
+        var importWidth = GUI.skin.button.CalcSize(importLabel).x;
+        var (popupArea, value) = GUIHelper.SplitLabel(position);
+        var selected = source.intValue == (int)FacialBlendShapeData.SimpleBaseSource.Reference ? 1 : 0;
+        var popup = popupArea;
+        popup.width = GUIHelper.LocalizedPopupWidth(
+            sourceKeys[selected],
+            PopupPresentation.Compact);
+        var (field, importButton) = value.SplitRight(importWidth);
+        var previous = source.intValue;
+        GUIHelper.LocalizedEnumPopup(
+            popup,
+            source,
+            string.Empty,
+            sourceKeys,
+            PopupPresentation.Compact);
+        if (source.intValue != previous)
+        {
+            data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
+            data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue = (int)ClipImportOption.NonZero;
+            data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue = null;
+        }
+
+        var hasSource = false;
+        if (source.intValue == (int)FacialBlendShapeData.SimpleBaseSource.Reference)
+        {
+            var reference = data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource));
+            DrawFacialComponentField(field, reference);
+            hasSource = reference.objectReferenceValue != null;
+        }
+        else
+        {
+            var clip = data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip));
+            var option = data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption));
+            var optionWidth = GUIHelper.MaxLocalizedPopupWidth(new[]
+            {
+                "clipImportOption.option.all",
+                "clipImportOption.option.nonZero"
+            });
+            var (clipRect, optionRect) = field.SplitRight(optionWidth);
+            EditorGUI.PropertyField(clipRect, clip, GUIContent.none);
+            using (new EditorGUI.DisabledScope(clip.objectReferenceValue == null))
+                GUIHelper.LocalizedEnumPopup(optionRect, option, string.Empty, new[]
+                {
+                    "clipImportOption.option.all",
+                    "clipImportOption.option.nonZero"
+                });
+            hasSource = clip.objectReferenceValue != null;
+        }
+
+        using var disabled = new EditorGUI.DisabledScope(
+            !hasSource || data.serializedObject.targetObjects.Length != 1);
+        if (GUI.Button(importButton, importLabel)) ImportSimpleBase(data);
+    }
+
+    private static void DrawFacialComponentField(Rect position, SerializedProperty property)
+    {
+        var current = property.objectReferenceValue as FaceTuneTagComponent;
+        property.objectReferenceValue = ComponentReferenceGUI.Draw(
+            position,
+            GUIContent.none,
+            current,
+            source => source is ISettingProvider<FacialBlendShapeData>);
+    }
+
+    private static void ImportSimpleBase(SerializedProperty data)
+    {
+        if (data.serializedObject.targetObject is not Component owner
+            || !AvatarContext.TryGet(owner.gameObject, out var avatar, out _))
+            return;
+
+        var values = new List<BlendShapeWeightAnimation>();
+        var source = (FacialBlendShapeData.SimpleBaseSource)data
+            .FindPropertyRelative(nameof(FacialBlendShapeData.BaseSource)).intValue;
+        if (source == FacialBlendShapeData.SimpleBaseSource.Clip)
+        {
+            if (data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue
+                    is not AnimationClip clip)
+                return;
+            var option = (ClipImportOption)data
+                .FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue;
+            clip.GetBlendShapeAnimations(option, values, string.Empty);
+            data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
+        }
+        else
+        {
+            if (data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue
+                    is not FaceTuneTagComponent reference
+                || !new FacialAnimationResolver(avatar.Root).TryResolve(reference, out var resolved))
+                return;
+            values.AddRange(resolved);
+            data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue = null;
+        }
+
+        var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
+            avatar.Root,
+            FaceTuneWriteKind.FacialData);
+        values.RemoveAll(animation => unavailable.Contains(animation.Name));
+        var local = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        foreach (var animation in values) MergeAnimation(local, animation, overwrite: false);
+        data.serializedObject.ApplyModifiedProperties();
+    }
+
+    private static void DrawEditorRow(
+        Rect position,
+        SerializedProperty data,
+        SerializedProperty animations)
+    {
+        var button = EditorGUI.PrefixLabel(position, "facialEditor.title".LG());
+        using var disabled = new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1);
+        if (GUI.Button(button, "facialEditor.open.button".LG())
+            && animations.serializedObject.targetObject is Component component)
+            OpenEditor(component, animations, null);
+    }
+
+    private static void DrawDirectKindPopup(Rect position, SerializedProperty animations)
+    {
+        var suffix = "." + nameof(FacialBlendShapeData.CompositeEntry.BlendShapeAnimations);
+        if (!animations.propertyPath.EndsWith(suffix, StringComparison.Ordinal)) return;
+        var entry = animations.serializedObject.FindProperty(
+            animations.propertyPath[..^suffix.Length]);
+        if (entry != null) FacialCompositeEntryDrawer.DrawKindPopup(position, entry);
+    }
+
+    private static void DrawDirectEditorButton(Rect position, SerializedProperty animations)
+    {
+        using var disabled = new EditorGUI.DisabledScope(animations.serializedObject.targetObjects.Length != 1);
+        if (!GUI.Button(position, "facialEditor.edit.button".LG())
+            || animations.serializedObject.targetObject is not Component component)
+            return;
+        var data = FindOwningFacialData(animations);
+        var entryIndex = FindCompositeEntryIndex(animations);
+        if (data != null && entryIndex >= 0)
+            OpenEditor(component, animations, entryIndex);
+    }
+
+    private static void OpenEditor(
+        Component component,
+        SerializedProperty animations,
+        int? compositeEntryIndex)
+    {
+        if (component is ExpressionComponent expression
+            && expression.ExpressionDataReference.Mode == SettingsReferenceMode.Reference)
+            return;
+        if (!AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
+
+        IShapesEditorTargeting? targeting = component switch
+        {
+            ExpressionComponent expressionComponent => new FaceTuneDataTargeting { Target = expressionComponent },
+            ExpressionDataComponent dataComponent => new ExpressionDataTargeting { Target = dataComponent },
+            SettingsComponent settingsComponent => new SettingsFacialTargeting { Target = settingsComponent },
+            _ => null
+        };
+        if (targeting is not IFacialSourceTargeting targetingSource) return;
+        targetingSource.AnimationPropertyPath = animations.propertyPath;
+
+        var resolver = new FacialAnimationResolver(avatar.Root);
+        var incoming = resolver.ResolveIncoming(component.transform).ToList();
+        BlendShapeWeightAnimationSet? resolvedBase;
+        var hasBase = compositeEntryIndex is { } index
+            ? resolver.TryResolveCompositeBase(component, index, out resolvedBase)
+            : resolver.TryResolveBase(component, out resolvedBase);
+        FacialShapesEditor.TryOpenEditor(
+            avatar.FaceRenderer,
+            targeting,
+            incoming,
+            hasBase ? resolvedBase!.ToList() : Array.Empty<BlendShapeWeightAnimation>(),
+            ReadAnimations(animations).ToList(),
+            AvatarContext.GetUnavailableBlendShapeNames(avatar.Root, FaceTuneWriteKind.FacialData));
+    }
+
+    private static void ConvertSimpleToComposite(SerializedProperty data)
+    {
+        var entries = data.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntries));
+        entries.ClearArray();
+        var baseSource = (FacialBlendShapeData.SimpleBaseSource)data
+            .FindPropertyRelative(nameof(FacialBlendShapeData.BaseSource)).intValue;
+        var hasBase = baseSource == FacialBlendShapeData.SimpleBaseSource.Clip
+            ? data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue != null
+            : data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue != null;
+        if (hasBase)
+        {
+            entries.InsertArrayElementAtIndex(entries.arraySize);
+            var entry = entries.GetArrayElementAtIndex(entries.arraySize - 1);
+            entry.CopyFrom(new FacialBlendShapeData.CompositeEntry());
+            entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind)).intValue =
+                baseSource == FacialBlendShapeData.SimpleBaseSource.Clip
+                    ? (int)FacialBlendShapeData.CompositeEntry.Kind.Clip
+                    : (int)FacialBlendShapeData.CompositeEntry.Kind.Reference;
+            if (baseSource == FacialBlendShapeData.SimpleBaseSource.Clip)
+            {
+                entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.Clip)).objectReferenceValue =
+                    data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue;
+                entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ClipOption)).intValue =
+                    data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue;
+            }
+            else
+            {
+                entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ReferenceSource)).objectReferenceValue =
+                    data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue;
+            }
+        }
+        var local = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        if (local.arraySize > 0)
+        {
+            entries.InsertArrayElementAtIndex(entries.arraySize);
+            var direct = entries.GetArrayElementAtIndex(entries.arraySize - 1);
+            direct.CopyFrom(new FacialBlendShapeData.CompositeEntry());
+            direct.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind)).intValue =
+                (int)FacialBlendShapeData.CompositeEntry.Kind.Direct;
+            SetBlendShapeAnimations(
+                direct.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.BlendShapeAnimations)),
+                ReadAnimations(local).ToList());
+        }
+        ClearSimple(data);
+    }
+
+    private static void ConvertCompositeToSimple(SerializedProperty data)
+    {
+        var entries = data.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntries));
+        var sourceCount = 0;
+        var sawDirect = false;
+        var requiresFlatten = false;
+        for (var i = 0; i < entries.arraySize; i++)
+        {
+            var kind = (FacialBlendShapeData.CompositeEntry.Kind)entries
+                .GetArrayElementAtIndex(i)
+                .FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind))
+                .intValue;
+            if (kind == FacialBlendShapeData.CompositeEntry.Kind.Direct)
+            {
+                sawDirect = true;
+                continue;
+            }
+            sourceCount++;
+            requiresFlatten |= sourceCount > 1 || sawDirect;
+        }
+
+        IReadOnlyList<BlendShapeWeightAnimation>? flattened = null;
+        if (requiresFlatten
+            && data.serializedObject.targetObject is Component component
+            && AvatarContext.TryGet(component.gameObject, out var avatar, out _)
+            && new FacialAnimationResolver(avatar.Root).TryResolve(component, out var resolved))
+            flattened = resolved.ToList();
+
+        ClearSimple(data);
+        data.FindPropertyRelative(nameof(FacialBlendShapeData.BaseSource)).intValue =
+            (int)FacialBlendShapeData.SimpleBaseSource.Clip;
+        var local = data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations));
+        if (flattened != null)
+        {
+            SetBlendShapeAnimations(local, flattened);
+            entries.ClearArray();
+            return;
+        }
+
+        var copiedSource = false;
+        for (var i = 0; i < entries.arraySize; i++)
+        {
+            var entry = entries.GetArrayElementAtIndex(i);
+            var kind = (FacialBlendShapeData.CompositeEntry.Kind)entry
+                .FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind)).intValue;
+            if (kind == FacialBlendShapeData.CompositeEntry.Kind.Direct)
+            {
+                foreach (var animation in ReadAnimations(entry.FindPropertyRelative(
+                             nameof(FacialBlendShapeData.CompositeEntry.BlendShapeAnimations))))
+                    MergeAnimation(local, animation);
+                continue;
+            }
+            if (copiedSource) continue;
+            copiedSource = true;
+            if (kind == FacialBlendShapeData.CompositeEntry.Kind.Clip)
+            {
+                data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue =
+                    entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.Clip)).objectReferenceValue;
+                data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue =
+                    entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ClipOption)).intValue;
+            }
+            else
+            {
+                data.FindPropertyRelative(nameof(FacialBlendShapeData.BaseSource)).intValue =
+                    (int)FacialBlendShapeData.SimpleBaseSource.Reference;
+                data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue =
+                    entry.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ReferenceSource)).objectReferenceValue;
+            }
+        }
+        entries.ClearArray();
+    }
+
+    private static void ClearSimple(SerializedProperty data)
+    {
+        data.FindPropertyRelative(nameof(FacialBlendShapeData.Clip)).objectReferenceValue = null;
+        data.FindPropertyRelative(nameof(FacialBlendShapeData.ClipOption)).intValue = (int)ClipImportOption.NonZero;
+        data.FindPropertyRelative(nameof(FacialBlendShapeData.ReferenceSource)).objectReferenceValue = null;
+        data.FindPropertyRelative(nameof(FacialBlendShapeData.BlendShapeAnimations)).ClearArray();
+    }
+
+    private static void MergeAnimation(
+        SerializedProperty animations,
+        BlendShapeWeightAnimation value,
+        bool overwrite = true)
+    {
+        for (var i = 0; i < animations.arraySize; i++)
+        {
+            var element = animations.GetArrayElementAtIndex(i);
+            if (element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue != value.Name) continue;
+            if (overwrite) element.CopyFrom(value);
+            return;
+        }
+        animations.InsertArrayElementAtIndex(animations.arraySize);
+        animations.GetArrayElementAtIndex(animations.arraySize - 1).CopyFrom(value);
+    }
+
+    private static IEnumerable<BlendShapeWeightAnimation> ReadAnimations(SerializedProperty animations)
+    {
+        for (var i = 0; i < animations.arraySize; i++)
+        {
+            var element = animations.GetArrayElementAtIndex(i);
+            yield return new BlendShapeWeightAnimation(
+                element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
+                element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName).animationCurveValue);
+        }
+    }
+
+    private static SerializedProperty? FindOwningFacialData(SerializedProperty property)
+    {
+        var marker = "." + nameof(FacialBlendShapeData.CompositeEntries) + ".Array";
+        var index = property.propertyPath.IndexOf(marker, StringComparison.Ordinal);
+        return index < 0 ? null : property.serializedObject.FindProperty(property.propertyPath[..index]);
+    }
+
+    private static int FindCompositeEntryIndex(SerializedProperty property)
+    {
+        var marker = nameof(FacialBlendShapeData.CompositeEntries) + ".Array.data[";
+        var start = property.propertyPath.IndexOf(marker, StringComparison.Ordinal);
+        if (start < 0) return -1;
+        start += marker.Length;
+        var end = property.propertyPath.IndexOf(']', start);
+        return end > start && int.TryParse(property.propertyPath[start..end], out var index) ? index : -1;
+    }
 }
 
+[CustomPropertyDrawer(typeof(FacialBlendShapeData.CompositeEntry))]
+internal sealed class FacialCompositeEntryDrawer : PropertyDrawer
+{
+    private static readonly string[] KindKeys =
+    {
+        "expression.facials.entryKind.direct",
+        "expression.facials.entryKind.clip",
+        "expression.facials.entryKind.reference"
+    };
+
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        GUIHelper.RegisterPropertyRegion(position, property);
+        var kind = (FacialBlendShapeData.CompositeEntry.Kind)property
+            .FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind)).intValue;
+        if (kind == FacialBlendShapeData.CompositeEntry.Kind.Direct)
+        {
+            var animations = property.FindPropertyRelative(
+                nameof(FacialBlendShapeData.CompositeEntry.BlendShapeAnimations));
+            position.height = GUIHelper.GetListHeight(
+                animations,
+                FacialDataGUI.DirectEntryAnimationsOptions);
+            GUIHelper.DrawList(
+                position,
+                animations,
+                GUIContent.none,
+                FacialDataGUI.DirectEntryAnimationsOptions);
+            return;
+        }
+
+        position.SetSingleHeight();
+        var popup = position;
+        popup.width = GUIHelper.MaxLocalizedPopupWidth(KindKeys);
+        var value = new Rect(
+            popup.xMax + GUIHelper.HorizontalSpacing,
+            position.y,
+            Mathf.Max(0f, position.xMax - popup.xMax - GUIHelper.HorizontalSpacing),
+            position.height);
+        DrawKindPopup(popup, property);
+
+        if (kind == FacialBlendShapeData.CompositeEntry.Kind.Reference)
+        {
+            var source = property.FindPropertyRelative(
+                nameof(FacialBlendShapeData.CompositeEntry.ReferenceSource));
+            var current = source.objectReferenceValue as FaceTuneTagComponent;
+            source.objectReferenceValue = ComponentReferenceGUI.Draw(
+                value,
+                GUIContent.none,
+                current,
+                candidate => candidate is ISettingProvider<FacialBlendShapeData>);
+            return;
+        }
+
+        var clip = property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.Clip));
+        var option = property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ClipOption));
+        var optionWidth = GUIHelper.MaxLocalizedPopupWidth(new[]
+        {
+            "clipImportOption.option.all",
+            "clipImportOption.option.nonZero"
+        });
+        var (clipRect, optionRect) = value.SplitRight(optionWidth);
+        EditorGUI.PropertyField(clipRect, clip, GUIContent.none);
+        using (new EditorGUI.DisabledScope(clip.objectReferenceValue == null))
+            GUIHelper.LocalizedEnumPopup(optionRect, option, string.Empty, new[]
+            {
+                "clipImportOption.option.all",
+                "clipImportOption.option.nonZero"
+            });
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+    {
+        var kind = (FacialBlendShapeData.CompositeEntry.Kind)property
+            .FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind)).intValue;
+        return kind == FacialBlendShapeData.CompositeEntry.Kind.Direct
+            ? GUIHelper.GetListHeight(
+                property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.BlendShapeAnimations)),
+                FacialDataGUI.DirectEntryAnimationsOptions)
+            : GUIHelper.LineHeight;
+    }
+
+    internal static void DrawKindPopup(Rect position, SerializedProperty property)
+    {
+        var kind = property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.EntryKind));
+        position.width = Mathf.Min(
+            position.width,
+            GUIHelper.MaxLocalizedPopupWidth(KindKeys));
+        var previous = kind.intValue;
+        GUIHelper.LocalizedEnumPopup(
+            position,
+            kind,
+            string.Empty,
+            KindKeys);
+        if (kind.intValue != previous) ClearInactivePayload(property);
+    }
+
+    private static void ClearInactivePayload(SerializedProperty property)
+    {
+        property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.BlendShapeAnimations)).ClearArray();
+        property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.Clip)).objectReferenceValue = null;
+        property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ClipOption)).intValue = (int)ClipImportOption.NonZero;
+        property.FindPropertyRelative(nameof(FacialBlendShapeData.CompositeEntry.ReferenceSource)).objectReferenceValue = null;
+    }
+}
 [CustomPropertyDrawer(typeof(MultiFrameSettings))]
 internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
 {
@@ -294,7 +608,7 @@ internal sealed class MultiFrameSettingsDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var mode = property.FindPropertyRelative(nameof(MultiFrameSettings.MultiFrameMode));
         position.SetSingleHeight();
         GUIHelper.LocalizedEnumPopup(position, mode, "expression.multiFrame.mode.label", new[]
@@ -381,7 +695,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         position.SetSingleHeight();
         var contentWidth = Mathf.Max(0f, position.width - ModeToggleWidth);

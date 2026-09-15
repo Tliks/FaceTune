@@ -296,15 +296,17 @@ internal sealed class LegacyFaceTuneImporter
 
         var isMenuItemImported = TryImportLegacyMenuItem(source, target);
 
-        target.HasCondition = true;
         if (hasLocalConditions)
         {
+            target.HasCondition = true;
             target.Condition.Mode = ConditionSelection.Kind.Conditional;
             target.Condition.Condition = new Condition(
                 localConditions.Select(ToConditionCase).ToArray());
         }
-        else if (!isMenuItemImported)
+
+        if (!hasLocalConditions && !isMenuItemImported)
         {
+            target.HasCondition = true;
             target.Condition.Mode = ConditionSelection.Kind.Always;
             target.Condition.Condition = new Condition();
         }
@@ -328,8 +330,14 @@ internal sealed class LegacyFaceTuneImporter
         LegacyExpressionComponent source,
         ExpressionComponent target)
     {
-        foreach (var sourceData in source.GetComponentsInChildren<LegacyExpressionDataComponent>(true))
+        var targetTransforms = new Dictionary<Transform, Transform>
         {
+            [source.transform] = target.transform
+        };
+        var sourceDataComponents = source.GetComponentsInChildren<LegacyExpressionDataComponent>(true);
+        foreach (var sourceData in sourceDataComponents)
+        {
+            if (FindNearestExpression(sourceData.transform) != source) continue;
             if (sourceData.transform == source.transform)
             {
                 ImportExpressionData(
@@ -339,12 +347,45 @@ internal sealed class LegacyFaceTuneImporter
                 continue;
             }
 
-            var data = target.gameObject.AddComponent<ExpressionDataComponent>();
+            var targetTransform = GetOrCreateExpressionDataTransform(
+                sourceData.transform,
+                source.transform,
+                targetTransforms);
+            var data = targetTransform.gameObject.AddComponent<ExpressionDataComponent>();
             ImportExpressionData(
                 sourceData,
                 data.FacialBlendShapes,
                 data.NonFacialAnimations);
         }
+    }
+
+    private static LegacyExpressionComponent? FindNearestExpression(Transform source)
+    {
+        for (Transform? current = source; current != null; current = current.parent)
+        {
+            if (current.TryGetComponent<LegacyExpressionComponent>(out var expression))
+                return expression;
+        }
+        return null;
+    }
+
+    private static Transform GetOrCreateExpressionDataTransform(
+        Transform source,
+        Transform sourceRoot,
+        IDictionary<Transform, Transform> targets)
+    {
+        if (targets.TryGetValue(source, out var target)) return target;
+        var sourceParent = source.parent;
+        if (sourceParent == null || !source.IsChildOf(sourceRoot))
+            throw new InvalidOperationException($"Expression data '{source.name}' is outside its expression hierarchy.");
+
+        var targetParent = GetOrCreateExpressionDataTransform(sourceParent, sourceRoot, targets);
+        var targetObject = new GameObject(source.name);
+        targetObject.transform.SetParent(targetParent, false);
+        Undo.RegisterCreatedObjectUndo(targetObject, "Import Legacy FaceTune Expression Data");
+        CopyEditorOnlyTag(source, targetObject);
+        targets.Add(source, targetObject.transform);
+        return targetObject.transform;
     }
 
     private void ImportExpressionData(

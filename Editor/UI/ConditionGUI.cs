@@ -5,7 +5,7 @@ internal sealed class ConditionSelectionDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var mode = property.FindPropertyRelative(nameof(ConditionSelection.Mode));
         var condition = property.FindPropertyRelative(nameof(ConditionSelection.Condition));
         position.SetSingleHeight();
@@ -107,7 +107,7 @@ internal sealed class ConditionDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         ConditionGUI.Draw(position, property, true);
     }
 
@@ -123,7 +123,7 @@ internal sealed class ConditionCaseDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var rows = GetRows(property);
         GUIHelper.DrawVirtualList(
             position,
@@ -246,7 +246,7 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         position.SetSingleHeight();
         var hand = property.FindPropertyRelative(nameof(HandGestureCondition.Hand));
         var gesture = property.FindPropertyRelative(nameof(HandGestureCondition.Gesture));
@@ -258,7 +258,7 @@ internal sealed class HandGestureConditionDrawer : PropertyDrawer
         var matchesRect = fields[2];
         GUIHelper.DrawLocalizedEnum(handRect, hand, string.Empty, nameof(HandGestureHand));
         GUIHelper.DrawLocalizedEnum(gestureRect, gesture, string.Empty, nameof(HandGesture));
-        using (new EditorGUI.PropertyScope(matchesRect, GUIContent.none, matches))
+        GUIHelper.RegisterPropertyRegion(matchesRect, matches);
         using (new GUIHelper.RightClickPassthroughScope(matchesRect))
         {
             matches.boolValue = EditorGUI.Popup(matchesRect, matches.boolValue ? 0 : 1, matchOptions) == 0;
@@ -273,7 +273,7 @@ internal sealed class MenuConditionDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         position.SetSingleHeight();
         var mode = property.FindPropertyRelative("Mode");
         var modeWidth = GUIHelper.LocalizedEnumPopupWidth(mode, nameof(MenuConditionMode));
@@ -281,7 +281,7 @@ internal sealed class MenuConditionDrawer : PropertyDrawer
         var sourceRect = beforeMode;
         var thresholdRect = Rect.zero;
         if (mode.intValue >= (int)MenuConditionMode.GreaterThan)
-            (sourceRect, thresholdRect) = beforeMode.SplitRight(GUIHelper.PopupWidth(new[] { new GUIContent("0.00") }));
+            (sourceRect, thresholdRect) = beforeMode.SplitRight(GUIHelper.PopupWidth(new GUIContent("0.00")));
         EditorGUI.PropertyField(sourceRect, property.FindPropertyRelative("MenuSource"), GUIContent.none);
         GUIHelper.DrawLocalizedEnum(modeRect, mode, string.Empty, nameof(MenuConditionMode));
         if (mode.intValue >= (int)MenuConditionMode.GreaterThan)
@@ -296,7 +296,7 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
 {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        using var _ = new EditorGUI.PropertyScope(position, label, property);
+        GUIHelper.RegisterPropertyRegion(position, property);
         var name = property.FindPropertyRelative("ParameterName");
         var type = property.FindPropertyRelative("ParameterType");
         var comparison = property.FindPropertyRelative("ComparisonType");
@@ -306,12 +306,12 @@ internal sealed class ParameterConditionDrawer : PropertyDrawer
         if (type.intValue == (int)ParameterType.Bool)
         {
             var boolOptions = new[] { "condition.bool.enabled.label".LG(), "condition.bool.disabled.label".LG() };
-            var (beforeBoolValue, boolValueRect) = position.SplitRight(GUIHelper.PopupWidth(boolOptions));
+            var (beforeBoolValue, boolValueRect) = position.SplitRight(GUIHelper.MaxPopupWidth(boolOptions));
             var (nameRect, typeRect) = beforeBoolValue.SplitRight(
                 GUIHelper.LocalizedEnumPopupWidth(type, nameof(ParameterType)));
             EditorGUI.PropertyField(nameRect, name, GUIContent.none);
             GUIHelper.DrawLocalizedEnum(typeRect, type, string.Empty, nameof(ParameterType));
-            using (new EditorGUI.PropertyScope(boolValueRect, GUIContent.none, value))
+            GUIHelper.RegisterPropertyRegion(boolValueRect, value);
             using (new GUIHelper.RightClickPassthroughScope(boolValueRect))
             {
                 value.boolValue = EditorGUI.Popup(boolValueRect, value.boolValue ? 0 : 1, boolOptions) == 0;

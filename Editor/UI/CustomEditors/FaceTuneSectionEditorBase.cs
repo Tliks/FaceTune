@@ -5,6 +5,11 @@ internal interface ISectionActionProvider
     SectionActionSet Actions { get; }
 }
 
+internal interface ISectionActionAvailability
+{
+    bool ActionsEnabled { get; }
+}
+
 internal interface ISectionDrawer : ISectionActionProvider
 {
     float GetHeight();
@@ -36,6 +41,16 @@ internal static class SectionHeaderGUI
         return drawer is ICollapsedSectionHeaderDrawer collapsed
             ? collapsed.DrawCollapsedHeader
             : null;
+    }
+
+    public static Action<Rect>? Disable(Action<Rect>? draw, bool disabled)
+    {
+        if (draw == null || !disabled) return draw;
+        return position =>
+        {
+            using var scope = new EditorGUI.DisabledScope(true);
+            draw(position);
+        };
     }
 }
 
@@ -90,6 +105,133 @@ internal sealed class PropertiesSectionDrawer : ISectionDrawer
 
 }
 
+internal readonly record struct SectionToggleState(bool Enabled, bool Mixed);
+
+internal sealed record SectionToggle(
+    Func<SectionToggleState> GetState,
+    Action<bool> SetEnabled,
+    bool Editable = true)
+{
+    public static SectionToggle From(SerializedProperty property)
+        => new(
+            () => new SectionToggleState(
+                property.boolValue,
+                property.hasMultipleDifferentValues),
+            enabled => property.boolValue = enabled);
+}
+
+internal sealed record NestedSection(
+    string LabelKey,
+    ISectionDrawer Drawer,
+    SectionToggle? Toggle = null,
+    bool ShowHeader = true,
+    bool DefaultExpanded = false)
+{
+    public FoldoutState Foldout { get; } = new(DefaultExpanded);
+}
+
+internal sealed class NestedSectionGroupDrawer : ISectionDrawer
+{
+    private readonly NestedSection[] _sections;
+    private readonly float _headerWidth;
+    private readonly bool _readOnly;
+
+    public NestedSectionGroupDrawer(
+        SerializedObject serializedObject,
+        IEnumerable<NestedSection> sections,
+        float headerWidth,
+        bool readOnly = false)
+    {
+        _sections = sections.ToArray();
+        _headerWidth = headerWidth;
+        _readOnly = readOnly;
+        Actions = new SectionActionSet(
+            serializedObject,
+            _sections.SelectMany(section => section.Drawer.Actions.Fields));
+    }
+
+    public SectionActionSet Actions { get; }
+
+    public float GetHeight()
+        => _sections.Sum(section => GUIHelper.GetShurikenSectionHeight(
+            section.Foldout,
+            section.Drawer.GetHeight()))
+         + GUIHelper.VerticalSpacing * (_sections.Length - 1);
+
+    public void Draw(Rect position)
+    {
+        position.Indent(GUIHelper.NestedSectionIndent);
+        position.width += GUIHelper.ContentPadding;
+        for (var i = 0; i < _sections.Length; i++)
+        {
+            var section = _sections[i];
+            var contentHeight = section.Drawer.GetHeight();
+            var rect = new Rect(
+                position.x,
+                position.y,
+                position.width,
+                GUIHelper.GetShurikenSectionHeight(section.Foldout, contentHeight));
+            var toggle = _readOnly && section.Toggle != null
+                ? section.Toggle with { Editable = false }
+                : section.Toggle;
+            var toggleState = toggle?.GetState();
+            var disabled = _readOnly
+                           || toggleState is { } state && (!state.Enabled || state.Mixed);
+            var headerDrawer = section.ShowHeader
+                ? section.Drawer as ISectionHeaderDrawer
+                : null;
+            var drawHeader = _readOnly && headerDrawer is ICollapsedSectionHeaderDrawer collapsed
+                ? collapsed.DrawCollapsedHeader
+                : SectionHeaderGUI.GetDrawAction(headerDrawer, section.Foldout.Expanded);
+            drawHeader = SectionHeaderGUI.Disable(drawHeader, disabled);
+
+            Func<GenericMenu>? createMenu = _readOnly
+                ? null
+                : () => SectionHeaderMenu.Create(
+                    section.Drawer.Actions,
+                    enabled: !disabled && SectionHeaderMenu.ActionsEnabled(section.Drawer));
+            bool drawn;
+            Rect content;
+            if (toggle == null)
+            {
+                drawn = GUIHelper.DrawShurikenSection(
+                    rect,
+                    section.Foldout,
+                    section.LabelKey.LG(),
+                    contentHeight,
+                    out content,
+                    createMenu,
+                    drawHeader,
+                    drawHeader == null ? 0f : _headerWidth,
+                    section.Drawer.Actions.ScopeProperty);
+            }
+            else
+            {
+                drawn = GUIHelper.DrawShurikenToggleSection(
+                    rect,
+                    section.Foldout,
+                    toggle,
+                    section.LabelKey.LG(),
+                    contentHeight,
+                    out content,
+                    createMenu,
+                    drawHeader,
+                    drawHeader == null ? 0f : _headerWidth,
+                    section.Drawer.Actions.ScopeProperty);
+            }
+            if (drawn)
+            {
+                content.height = GUIHelper.LineHeight;
+                using var scope = new EditorGUI.DisabledScope(disabled);
+                section.Drawer.Draw(content);
+            }
+            position.y = rect.yMax;
+            if (i + 1 < _sections.Length)
+                position.y += GUIHelper.VerticalSpacing;
+        }
+    }
+}
+
 internal sealed record FaceTuneSection(
     Func<GUIContent> GetLabel,
     Func<float> GetContentHeight,
@@ -97,7 +239,7 @@ internal sealed record FaceTuneSection(
     bool DefaultExpanded,
     SectionActionSet Actions,
     Func<GenericMenu> CreateHeaderMenu,
-    SerializedProperty? EnabledProperty = null,
+    SectionToggle? Toggle = null,
     ISectionHeaderDrawer? HeaderDrawer = null,
     Func<bool>? IsVisible = null,
     int SpacingGroup = 0)
@@ -124,6 +266,7 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
         ISectionDrawer drawer,
         bool defaultExpanded,
         SerializedProperty? enabledProperty = null,
+        SectionToggle? customToggle = null,
         Action<GenericMenu>? populateHeaderMenu = null,
         Func<bool>? isVisible = null,
         int spacingGroup = 0)
@@ -140,7 +283,7 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
             defaultExpanded,
             actions,
             () => SectionHeaderMenu.Create(actions, populateMenu),
-            enabledProperty,
+            customToggle ?? (enabledProperty == null ? null : SectionToggle.From(enabledProperty)),
             drawer as ISectionHeaderDrawer,
             isVisible,
             spacingGroup);
@@ -205,10 +348,17 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
             var drawHeader = SectionHeaderGUI.GetDrawAction(
                 section.HeaderDrawer,
                 section.Foldout.Expanded);
+            var toggleState = section.Toggle?.GetState();
+            var sectionDisabled = toggleState is { } state
+                                  && (!state.Enabled || state.Mixed);
+            drawHeader = SectionHeaderGUI.Disable(drawHeader, sectionDisabled);
             var headerWidth = drawHeader == null
                 ? 0f
                 : section.HeaderDrawer!.GetHeaderWidth();
-            if (section.EnabledProperty == null)
+            Func<GenericMenu> createHeaderMenu = sectionDisabled
+                ? () => SectionHeaderMenu.Create(section.Actions, enabled: false)
+                : section.CreateHeaderMenu;
+            if (section.Toggle == null)
             {
                 drawn = GUIHelper.DrawShurikenSection(
                     sectionPosition,
@@ -216,7 +366,7 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                     section.GetLabel(),
                     contentHeight,
                     out content,
-                    section.CreateHeaderMenu,
+                    createHeaderMenu,
                     drawHeader,
                     headerWidth,
                     section.Actions.ScopeProperty);
@@ -226,11 +376,11 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                 drawn = GUIHelper.DrawShurikenToggleSection(
                     sectionPosition,
                     section.Foldout,
-                    section.EnabledProperty,
+                    section.Toggle,
                     section.GetLabel(),
                     contentHeight,
                     out content,
-                    section.CreateHeaderMenu,
+                    createHeaderMenu,
                     drawHeader,
                     headerWidth,
                     section.Actions.ScopeProperty);
@@ -238,9 +388,7 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
             if (drawn)
             {
                 content.height = GUIHelper.LineHeight;
-                using var disabled = new EditorGUI.DisabledScope(
-                    section.EnabledProperty != null
-                    && (!section.EnabledProperty.boolValue || section.EnabledProperty.hasMultipleDifferentValues));
+                using var disabled = new EditorGUI.DisabledScope(sectionDisabled);
                 section.DrawContent(content);
             }
             position.y = sectionPosition.yMax;
