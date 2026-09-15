@@ -6,15 +6,18 @@ namespace Aoyon.FaceTune.Preview;
 internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
 {
     private const float PlayButtonSize = 20f;
+    private const int PlayButtonIconSize = 12;
     private const float AvatarFieldWidth = 130f;
     private const float TimelineWidth = 130f;
     private const float ContentWidth = 154f;
     private const float VisemeButtonWidth = 30f;
+    private const float SectionLabelHeight = 10f;
     private const int VisemeColumns = 5;
 
     private SelectedShapesPreview? _preview;
     private GUIStyle? _playButtonStyle;
     private GUIStyle? _visemeButtonStyle;
+    private GUIStyle? _sectionLabelStyle;
 
     public override void OnCreated()
     {
@@ -102,22 +105,19 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         Action togglePlayback,
         Action<float> seek)
     {
+        DrawSectionLabel(label);
         using var row = new GUILayout.HorizontalScope();
         using var disabled = new EditorGUI.DisabledScope(!enabled);
         _playButtonStyle ??= new GUIStyle(GUI.skin.button)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 13,
+            fontSize = PlayButtonIconSize,
             fontStyle = FontStyle.Bold,
-            padding = new RectOffset()
+            padding = new RectOffset(1, 0, 0, 0)
         };
         var icon = playing ? "Ⅱ" : "▶";
-        var actionTooltip = playing
-            ? "previewOverlay.pause.tooltip".LS()
-            : "previewOverlay.play.tooltip".LS();
-        var tooltip = $"{label}: {actionTooltip}";
         if (GUILayout.Button(
-                new GUIContent(icon, tooltip),
+                icon,
                 _playButtonStyle,
                 GUILayout.Width(PlayButtonSize),
                 GUILayout.Height(PlayButtonSize)))
@@ -163,8 +163,26 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         EditorGUI.DrawRect(rect, color);
     }
 
+    private void DrawSectionLabel(string label)
+    {
+        if (_sectionLabelStyle == null)
+        {
+            _sectionLabelStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                fontSize = 10,
+                fixedHeight = SectionLabelHeight,
+                margin = new RectOffset(),
+                padding = new RectOffset()
+            };
+            var color = _sectionLabelStyle.normal.textColor;
+            _sectionLabelStyle.normal.textColor = color;
+        }
+        GUILayout.Label(label, _sectionLabelStyle, GUILayout.Height(SectionLabelHeight));
+    }
+
     private void DrawVisemes(SelectedShapesPreview preview)
     {
+        DrawSectionLabel("previewOverlay.lipSync.label".LS());
         using var disabled = new EditorGUI.DisabledScope(!preview.HasLipSync);
         using var grid = new GUILayout.VerticalScope();
 
@@ -173,7 +191,6 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
             fontSize = 10
         };
         var hovered = -1;
-        var lipSyncLabel = "previewOverlay.lipSync.label".LS();
         var rowCount = LipSyncPreviewData.VisemeCount / VisemeColumns;
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
@@ -183,10 +200,9 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
                 var index = rowIndex * VisemeColumns + column;
                 var selected = preview.SelectedViseme == index;
                 var visemeName = LipSyncPreviewData.VisemeNames[index];
-                var content = new GUIContent(visemeName, $"{lipSyncLabel}: {visemeName}");
                 var next = GUILayout.Toggle(
                     selected,
-                    content,
+                    visemeName,
                     _visemeButtonStyle,
                     GUILayout.Width(VisemeButtonWidth));
                 if (next != selected)

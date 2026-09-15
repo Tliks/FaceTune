@@ -907,9 +907,3 @@ msgstr "まばたき"
 
 msgid "previewOverlay.lipSync.label"
 msgstr "リップシンク"
-
-msgid "previewOverlay.play.tooltip"
-msgstr "再生"
-
-msgid "previewOverlay.pause.tooltip"
-msgstr "一時停止"

@@ -907,9 +907,3 @@ msgstr "Eye Blink"
 
 msgid "previewOverlay.lipSync.label"
 msgstr "Lip Sync"
-
-msgid "previewOverlay.play.tooltip"
-msgstr "Play"
-
-msgid "previewOverlay.pause.tooltip"
-msgstr "Pause"

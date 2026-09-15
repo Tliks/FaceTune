@@ -153,7 +153,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                     "expression.multiFrame.section.label",
                     new MultiFrameDefinitionSectionDrawer(
                         serializedObject.FindProperty(nameof(ExpressionComponent.MultiFrame))),
-                    DefaultExpanded: true),
+                    DefaultExpanded: false),
                 new NestedSection(
                     "eyeBlink.section.label",
                     new ExpressionScopedSettingSectionDrawer(
