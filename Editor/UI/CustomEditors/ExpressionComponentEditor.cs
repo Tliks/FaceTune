@@ -11,7 +11,7 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
     protected override bool ShowLanguageSwitcher => true;
 
     protected override void PrepareInspector()
-        => Inheritance.Refresh();
+        => Inheritance.RefreshIfNeeded();
 
     protected override void OnDisable()
     {
@@ -66,7 +66,10 @@ internal sealed class ExpressionComponentEditor : FaceTuneSectionEditorBase<Expr
             spacingGroup: 2);
 
     private ExpressionSettingsInheritance Inheritance
-        => _inheritance ??= new ExpressionSettingsInheritance(Component, targets.Length == 1);
+        => _inheritance ??= new ExpressionSettingsInheritance(
+            Component,
+            targets.Length == 1,
+            Repaint);
 
     private FaceTuneSection CreatePreviewSection()
         => CreateSection(

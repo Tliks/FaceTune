@@ -1,3 +1,5 @@
+using nadena.dev.ndmf.preview;
+
 namespace Aoyon.FaceTune.Gui;
 
 internal enum ExpressionInheritedSettingKind
@@ -36,6 +38,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 {
     private readonly ExpressionComponent _component;
     private readonly bool _singleTarget;
+    private readonly Action _repaint;
     private readonly ExpressionSettingsPreviewState _preview;
     private readonly SerializedObject _serializedPreview;
     private readonly ExpressionDefinitionPreviewState _definitionPreview;
@@ -50,11 +53,17 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     private SettingsComponent? _priorityOwner;
     private Transform? _batchOverrideTarget;
     private readonly IReadOnlyDictionary<ExpressionInheritedSettingKind, SettingBinding> _bindings;
+    private InheritanceSession? _session;
+    private bool _dirty = true;
 
-    public ExpressionSettingsInheritance(ExpressionComponent component, bool singleTarget)
+    public ExpressionSettingsInheritance(
+        ExpressionComponent component,
+        bool singleTarget,
+        Action repaint)
     {
         _component = component;
         _singleTarget = singleTarget;
+        _repaint = repaint;
         _preview = ScriptableObject.CreateInstance<ExpressionSettingsPreviewState>();
         _preview.hideFlags = HideFlags.HideAndDontSave;
         _serializedPreview = new SerializedObject(_preview);
@@ -98,8 +107,13 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         };
     }
 
-    public void Refresh()
+    public void RefreshIfNeeded()
     {
+        if (!_dirty) return;
+
+        _dirty = false;
+        _session?.Dispose();
+        _session = null;
         if (!_singleTarget || _component == null)
         {
             ClearOwners();
@@ -108,16 +122,21 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
             return;
         }
 
+        _session = new InheritanceSession(OnInvalidated);
+        var context = _session.Context;
+        context.Observe(_component);
         var root = _component.transform.root.gameObject;
-        var eyeBlink = new EyeBlinkResolver(root);
-        var lipSync = new LipSyncResolver(root);
-        var transition = new TransitionResolver(root);
-        var priority = new PriorityResolver(root);
-        var definition = new ExpressionDefinitionResolver().Resolve(_component);
+        var eyeBlink = new EyeBlinkResolver(root, context);
+        var lipSync = new LipSyncResolver(root, context);
+        var transition = new TransitionResolver(root, context);
+        var priority = new PriorityResolver(root, context);
+        var definition = new ExpressionDefinitionResolver(context).Resolve(_component);
+        if (definition is Component definitionComponent)
+            context.Observe(definitionComponent);
         RefreshDefinitionPreview(
             definition,
-            new ExpressionBehaviorResolver().Resolve(_component),
-            new MultiFrameResolver().Resolve(_component),
+            new ExpressionBehaviorResolver(context).Resolve(_component),
+            new MultiFrameResolver(context).Resolve(_component),
             eyeBlink.ResolveDefinition(_component),
             lipSync.ResolveDefinition(_component),
             eyeBlink.Resolve(_component),
@@ -132,6 +151,12 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     }
 
     public SerializedObject DefinitionPreview => _serializedDefinitionPreview;
+
+    private void OnInvalidated()
+    {
+        _dirty = true;
+        _repaint();
+    }
 
     private void RefreshDefinitionPreview(
         IExpressionDefinitionProvider? definition,
@@ -238,6 +263,8 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
     public void Dispose()
     {
+        _session?.Dispose();
+        _session = null;
         if (_preview != null)
             Object.DestroyImmediate(_preview);
         if (_definitionPreview != null)
@@ -263,6 +290,26 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         string ValuePropertyName,
         string? ReferencePropertyName,
         Action<SerializedProperty> CopyPreview);
+
+    private sealed class InheritanceSession : IDisposable
+    {
+        private bool _disposed;
+
+        public InheritanceSession(Action onInvalidate)
+        {
+            Context = new ComputeContext(
+                $"{nameof(ExpressionSettingsInheritance)}:{nameof(InheritanceSession)}");
+            Context.InvokeOnInvalidate(this, session =>
+            {
+                if (!session._disposed) onInvalidate();
+            });
+        }
+
+        public ComputeContext Context { get; }
+
+        public void Dispose()
+            => _disposed = true;
+    }
 }
 
 internal sealed class ExpressionScopedSettingsGroupDrawer : ISectionDrawer
