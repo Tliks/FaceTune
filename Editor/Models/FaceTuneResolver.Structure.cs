@@ -73,10 +73,15 @@ internal sealed class SettingValueResolver<TValue> where TValue : class
                         FollowReference: reference?.Mode == SettingsReferenceMode.Reference,
                         Source: reference?.Source);
                 },
-                (left, right) => left.Enabled == right.Enabled
-                                 && Equals(left.Value, right.Value)
-                                 && left.FollowReference == right.FollowReference
-                                 && left.Source == right.Source);
+                (left, right) =>
+                {
+                    if (left.Enabled != right.Enabled) return false;
+                    if (!left.Enabled) return true;
+                    if (left.FollowReference != right.FollowReference) return false;
+                    return left.FollowReference
+                        ? left.Source == right.Source
+                        : Equals(left.Value, right.Value);
+                });
             if (!value.Enabled) return null;
             if (!value.FollowReference) return value.Value;
             return value.Source is ISettingProvider<TValue> source
