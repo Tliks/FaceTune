@@ -63,7 +63,9 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
                     preview.EyeBlinkTime,
                     preview.EyeBlinkClosedRange,
                     preview.ToggleEyeBlinkPlayback,
-                    preview.SetEyeBlinkTime);
+                    preview.SetEyeBlinkTime,
+                    preview.IsEyeBlinkPreviewApplied,
+                    preview.ClearEyeBlinkPreview);
             else
                 DrawUnavailable(label);
         }
@@ -130,7 +132,9 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         float time,
         Vector2? markers,
         Action togglePlayback,
-        Action<float> seek)
+        Action<float> seek,
+        bool previewApplied = false,
+        Action? clearPreview = null)
     {
         DrawSectionLabel(label);
         using var row = new GUILayout.HorizontalScope();
@@ -151,14 +155,26 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
             togglePlayback();
 
         EditorGUI.BeginChangeCheck();
+        var timelineWidth = clearPreview == null
+            ? TimelineWidth
+            : TimelineWidth - PlayButtonSize - 4f;
         var next = GUILayout.HorizontalSlider(
             time,
             0f,
             1f,
-            GUILayout.Width(TimelineWidth));
+            GUILayout.Width(timelineWidth));
         var sliderRect = GUILayoutUtility.GetLastRect();
         DrawMarkers(sliderRect, markers);
         if (EditorGUI.EndChangeCheck()) seek(next);
+
+        if (clearPreview == null) return;
+        using var clearDisabled = new EditorGUI.DisabledScope(!previewApplied);
+        if (GUILayout.Button(
+                "■",
+                _playButtonStyle,
+                GUILayout.Width(PlayButtonSize),
+                GUILayout.Height(PlayButtonSize)))
+            clearPreview();
     }
 
     private static void DrawMarkers(Rect sliderRect, Vector2? markers)

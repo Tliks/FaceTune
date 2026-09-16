@@ -43,6 +43,14 @@ internal sealed class PreviewTimeline : IDisposable
         StateChanged?.Invoke();
     }
 
+    internal void Reset()
+    {
+        NormalizedTime = 0f;
+        IsPlaying = false;
+        TimeChanged?.Invoke(NormalizedTime);
+        StateChanged?.Invoke();
+    }
+
     internal void TogglePlayback()
     {
         if (!IsAvailable) return;

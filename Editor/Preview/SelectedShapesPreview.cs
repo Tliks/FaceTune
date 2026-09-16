@@ -121,6 +121,7 @@ internal sealed class SelectedShapesPreview
     internal TrackingSettingDisplay EyeBlinkSetting
         => CurrentAvatar?.EyeBlinkSetting ?? TrackingSettingDisplay.Hidden;
     internal bool CanPreviewEyeBlink => CurrentAvatar?.EyeBlink != null;
+    internal bool IsEyeBlinkPreviewApplied => _eyeBlinkActive;
     internal bool IsEyeBlinkPlaying => CanPreviewEyeBlink && _eyeBlink.IsPlaying;
     internal float EyeBlinkTime => _eyeBlink.NormalizedTime;
     internal Vector2? EyeBlinkClosedRange => CurrentAvatar?.EyeBlink?.ClosedRange;
@@ -188,6 +189,14 @@ internal sealed class SelectedShapesPreview
         if (!CanPreviewEyeBlink) return;
         _eyeBlinkActive = true;
         _eyeBlink.Seek(value);
+    }
+
+    internal void ClearEyeBlinkPreview()
+    {
+        if (!_eyeBlinkActive) return;
+        _eyeBlinkActive = false;
+        ApplyEyeBlink();
+        _eyeBlink.Reset();
     }
 
     internal void SetVisemeSelection(int index)
@@ -307,10 +316,7 @@ internal sealed class SelectedShapesPreview
     }
 
     private void OnEyeBlinkCompleted()
-    {
-        _eyeBlinkActive = false;
-        _eyeBlink.Seek(0f);
-    }
+        => ClearEyeBlinkPreview();
 
     private void ApplyAll()
     {
