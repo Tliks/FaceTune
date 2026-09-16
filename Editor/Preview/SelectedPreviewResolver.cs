@@ -72,33 +72,40 @@ internal static class SelectedPreviewResolver
         DirectBlendShapePreviewLayer preview,
         ComputeContext context)
     {
-        var avatar = preview.GetTargets(context)
-            .FirstOrDefault(value => source.transform.IsChildOf(value.Root.transform));
-        if (avatar == null) return null;
-
-        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(
-            avatar.Root,
-            context);
-        AvatarPreviewData? resolved = source switch
+        var targets = preview.GetTargets(context);
+        IEnumerable<AvatarContext> avatars = EditorUtility.IsPersistent(source)
+            ? targets
+            : targets
+                .Where(value => source.transform.IsChildOf(value.Root.transform))
+                .Take(1);
+        var resolved = new List<AvatarPreviewData>();
+        foreach (var avatar in avatars)
         {
-            ExpressionComponent expression => ResolveExpression(
-                expression,
-                avatar,
-                ignoredNames,
-                context),
-            SettingsComponent settings => ResolveSettings(
-                settings,
-                avatar,
-                ignoredNames,
-                context),
-            ExpressionDataComponent data => ResolveData(
-                data,
-                avatar,
-                ignoredNames,
-                context),
-            _ => null
-        };
-        return resolved == null ? null : new SelectedPreviewData(new[] { resolved });
+            var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(
+                avatar.Root,
+                context);
+            AvatarPreviewData? data = source switch
+            {
+                ExpressionComponent expression => ResolveExpression(
+                    expression,
+                    avatar,
+                    ignoredNames,
+                    context),
+                SettingsComponent settings => ResolveSettings(
+                    settings,
+                    avatar,
+                    ignoredNames,
+                    context),
+                ExpressionDataComponent expressionData => ResolveData(
+                    expressionData,
+                    avatar,
+                    ignoredNames,
+                    context),
+                _ => null
+            };
+            if (data != null) resolved.Add(data);
+        }
+        return resolved.Count == 0 ? null : new SelectedPreviewData(resolved);
     }
 
     private static T? GetFirst<T>(GameObject gameObject, ComputeContext context)
