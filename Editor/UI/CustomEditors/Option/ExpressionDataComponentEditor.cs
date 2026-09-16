@@ -248,6 +248,8 @@ internal sealed class OptionalReferenceableSettingsSectionDrawer
     private readonly SerializedReferenceableSettings _settings;
     private readonly BlendShapeValidationData? _validation;
     private readonly FaceTuneWriteKind _writeKind;
+    private readonly SerializedProperty _hasBehavior;
+    private readonly SerializedProperty _trackingPermission;
 
     public OptionalReferenceableSettingsSectionDrawer(
         SerializedObject serializedObject,
@@ -260,6 +262,12 @@ internal sealed class OptionalReferenceableSettingsSectionDrawer
         _enabled = serializedObject.FindProperty(enabledPropertyName);
         _validation = BlendShapeValidationData.Create(serializedObject);
         _writeKind = writeKind;
+        _hasBehavior = serializedObject.FindProperty(
+            nameof(ExpressionDataComponent.HasFacialBehavior));
+        _trackingPermission = serializedObject.FindProperty(
+            writeKind == FaceTuneWriteKind.EyeBlinkAnimation
+                ? nameof(ExpressionDataComponent.AllowEyeBlink)
+                : nameof(ExpressionDataComponent.AllowLipSync));
         _settings = new SerializedReferenceableSettings(
             serializedObject,
             referencePropertyName,
@@ -277,19 +285,44 @@ internal sealed class OptionalReferenceableSettingsSectionDrawer
     public SectionActionSet Actions { get; }
 
     public float GetHeight()
-        => SettingsReferenceGUI.GetHeight(
+    {
+        var height = SettingsReferenceGUI.GetHeight(
             _settings,
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true));
+        var warningHeight = GetWarningHeight();
+        return warningHeight > 0f
+            ? height + GUIHelper.VerticalSpacing + warningHeight
+            : height;
+    }
 
     public void Draw(Rect position)
     {
         using var scope = BlendShapeValidationScope.Push(_validation, _writeKind);
+        var contentHeight = SettingsReferenceGUI.GetHeight(
+            _settings,
+            EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true));
         SettingsReferenceGUI.Draw(
             position,
             _settings,
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true),
             rect => EditorGUI.PropertyField(rect, _settings.Direct, GUIContent.none, true));
+
+        var warningHeight = GetWarningHeight();
+        if (warningHeight <= 0f) return;
+        position.y += contentHeight + GUIHelper.VerticalSpacing;
+        position.height = warningHeight;
+        TrackingSettingWarningGUI.Draw(
+            position,
+            _trackingPermission,
+            _writeKind == FaceTuneWriteKind.EyeBlinkAnimation,
+            _hasBehavior);
     }
+
+    private float GetWarningHeight()
+        => TrackingSettingWarningGUI.GetHeight(
+            _trackingPermission,
+            _writeKind == FaceTuneWriteKind.EyeBlinkAnimation,
+            _hasBehavior);
 
     public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);

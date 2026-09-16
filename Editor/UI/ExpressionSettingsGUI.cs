@@ -196,6 +196,45 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);
 }
 
+internal static class TrackingSettingWarningGUI
+{
+    internal static float GetHeight(
+        SerializedProperty? permission,
+        bool eyeBlink,
+        SerializedProperty? hasBehavior = null)
+        => GetMessageKey(permission, eyeBlink, hasBehavior) is { } key
+            ? GUIHelper.GetHelpBoxHeight(key.LS(), MessageType.Warning)
+            : 0f;
+
+    internal static void Draw(
+        Rect position,
+        SerializedProperty? permission,
+        bool eyeBlink,
+        SerializedProperty? hasBehavior = null)
+    {
+        if (GetMessageKey(permission, eyeBlink, hasBehavior) is not { } key) return;
+        GUIHelper.HelpBox(position, key.LS(), MessageType.Warning);
+    }
+
+    private static string? GetMessageKey(
+        SerializedProperty? permission,
+        bool eyeBlink,
+        SerializedProperty? hasBehavior)
+    {
+        if (permission == null || permission.hasMultipleDifferentValues) return null;
+        if (hasBehavior != null
+            && (hasBehavior.hasMultipleDifferentValues || !hasBehavior.boolValue)) return null;
+        return ((TrackingPermission)permission.intValue, eyeBlink) switch
+        {
+            (TrackingPermission.Keep, true) => "eyeBlink.settingUnused.keep.message",
+            (TrackingPermission.Disallow, true) => "eyeBlink.settingUnused.disallow.message",
+            (TrackingPermission.Keep, false) => "lipSync.settingUnused.keep.message",
+            (TrackingPermission.Disallow, false) => "lipSync.settingUnused.disallow.message",
+            _ => null
+        };
+    }
+}
+
 internal static class SerializedObjectGUIContext
 {
     internal static Component? GetComponent(SerializedObject serializedObject)

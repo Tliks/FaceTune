@@ -956,6 +956,18 @@ msgstr "This blend shape does not exist on the facial mesh."
 msgid "blendShape.validation.unavailable.tooltip"
 msgstr "This blend shape cannot be used."
 
+msgid "eyeBlink.settingUnused.keep.message"
+msgstr "This setting is not used because eye blinking is set to Keep."
+
+msgid "eyeBlink.settingUnused.disallow.message"
+msgstr "This setting is not used because eye blinking is set to None."
+
+msgid "lipSync.settingUnused.keep.message"
+msgstr "This setting is not used because lip sync is set to Keep."
+
+msgid "lipSync.settingUnused.disallow.message"
+msgstr "This setting is not used because lip sync is set to None."
+
 msgid "eyeBlink.builtIn.unavailable.message"
 msgstr "Eye blink settings could not be retrieved from the avatar settings. Configure the Avatar Descriptor or equivalent settings, or change the mode to Animation or Custom Animation."
 

@@ -468,6 +468,7 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     private readonly ExpressionSettingsInheritance _inheritance;
     private readonly bool _showSourceActions;
     private readonly BlendShapeValidationData? _validation;
+    private readonly SerializedProperty? _trackingPermission;
 
     public ExpressionScopedSettingSectionDrawer(
         SerializedObject serializedObject,
@@ -485,6 +486,14 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         _inheritance = inheritance;
         _showSourceActions = showSourceActions;
         _validation = BlendShapeValidationData.Create(serializedObject);
+        _trackingPermission = kind switch
+        {
+            ExpressionInheritedSettingKind.EyeBlink => serializedObject.FindProperty(
+                nameof(ExpressionComponent.AllowEyeBlink)),
+            ExpressionInheritedSettingKind.LipSync => serializedObject.FindProperty(
+                nameof(ExpressionComponent.AllowLipSync)),
+            _ => null
+        };
         if (referencePropertyName != null)
             _source = new SerializedReferenceableSettings(
                 serializedObject,
@@ -510,12 +519,18 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     public bool ActionsEnabled => ShowsLocalValue;
 
     public float GetHeight()
-        => GetValueHeight()
-         + (_showSourceActions
-             ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
-             : ShowsInheritedValue
-                 ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
-                 : 0f);
+    {
+        var height = GetValueHeight()
+                   + (_showSourceActions
+                       ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
+                       : ShowsInheritedValue
+                           ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
+                           : 0f);
+        var warningHeight = GetWarningHeight();
+        return warningHeight > 0f
+            ? height + GUIHelper.VerticalSpacing + warningHeight
+            : height;
+    }
 
     public float GetHeaderWidth()
         => GUIHelper.CompactPopupWidth(
@@ -590,10 +605,29 @@ internal sealed class ExpressionScopedSettingSectionDrawer
             }
         }
 
+        var contentBottom = position.y + valueHeight;
+        var warningHeight = GetWarningHeight();
+        if (warningHeight > 0f)
+        {
+            position.y = contentBottom + GUIHelper.VerticalSpacing;
+            position.height = warningHeight;
+            TrackingSettingWarningGUI.Draw(
+                position,
+                _trackingPermission,
+                _kind == ExpressionInheritedSettingKind.EyeBlink);
+            contentBottom = position.yMax;
+        }
+
         if (!_showSourceActions) return;
-        position.y += valueHeight + GUIHelper.VerticalSpacing;
-        DrawSourceActions(position.SetSingleHeight());
+        position.y = contentBottom + GUIHelper.VerticalSpacing;
+        position.SetSingleHeight();
+        DrawSourceActions(position);
     }
+
+    private float GetWarningHeight()
+        => TrackingSettingWarningGUI.GetHeight(
+            _trackingPermission,
+            _kind == ExpressionInheritedSettingKind.EyeBlink);
 
     private void DrawSourceActions(Rect position)
     {

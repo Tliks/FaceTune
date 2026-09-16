@@ -956,6 +956,18 @@ msgstr "表情用のメッシュに、このブレンドシェイプが存在し
 msgid "blendShape.validation.unavailable.tooltip"
 msgstr "このブレンドシェイプは使用できません。"
 
+msgid "eyeBlink.settingUnused.keep.message"
+msgstr "まばたきが「維持」のため、この設定は使用されません。"
+
+msgid "eyeBlink.settingUnused.disallow.message"
+msgstr "まばたきが「なし」のため、この設定は使用されません。"
+
+msgid "lipSync.settingUnused.keep.message"
+msgstr "リップシンクが「維持」のため、この設定は使用されません。"
+
+msgid "lipSync.settingUnused.disallow.message"
+msgstr "リップシンクが「なし」のため、この設定は使用されません。"
+
 msgid "eyeBlink.builtIn.unavailable.message"
 msgstr "アバター設定からまばたきを取得できません。Avatar Descriptorなどを確認して設定するか、「アニメーション」または「カスタムアニメーション」に変更してください。"
 
