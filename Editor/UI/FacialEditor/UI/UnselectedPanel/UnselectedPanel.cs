@@ -151,6 +151,7 @@ internal class UnselectedPanel
         for (int i = 0; i < allSourceCount; i++)
         {
             var item = _allSource[i];
+            if (_blendShapeManager.IsUnavailable(item.KeyIndex)) continue;
 
             if (hasSearchText && item.ShapeName.IndexOf(
                     searchText,
