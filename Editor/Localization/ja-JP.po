@@ -950,6 +950,12 @@ msgstr "推定値"
 msgid "previewOverlay.multiFrame.label"
 msgstr "マルチフレーム"
 
+msgid "eyeBlink.builtIn.unavailable.message"
+msgstr "アバター設定からまばたきを取得できません。Avatar Descriptorなどを確認して設定するか、「アニメーション」または「カスタムアニメーション」に変更してください。"
+
+msgid "lipSync.builtIn.unavailable.message"
+msgstr "アバター設定からリップシンクを取得できません。Avatar Descriptorなどを確認して設定するか、「カスタム」に変更してください。"
+
 msgid "previewOverlay.eyeBlink.label"
 msgstr "まばたき"
 

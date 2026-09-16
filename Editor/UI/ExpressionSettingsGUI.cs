@@ -257,7 +257,15 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         position.NewLine();
 
         var kind = (EyeBlinkSettings.Kind)mode.intValue;
-        if (kind == EyeBlinkSettings.Kind.BuiltIn) return;
+        if (kind == EyeBlinkSettings.Kind.BuiltIn)
+        {
+            if (CannotResolveBuiltIn(property))
+                GUIHelper.HelpBox(
+                    position,
+                    "eyeBlink.builtIn.unavailable.message".LS(),
+                    MessageType.Warning);
+            return;
+        }
 
         switch (kind)
         {
@@ -276,7 +284,15 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var kind = (EyeBlinkSettings.Kind)property
             .FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode)).intValue;
-        if (kind == EyeBlinkSettings.Kind.BuiltIn) return GUIHelper.LineHeight;
+        if (kind == EyeBlinkSettings.Kind.BuiltIn)
+        {
+            if (!CannotResolveBuiltIn(property)) return GUIHelper.LineHeight;
+            return GUIHelper.LineHeight
+                 + GUIHelper.VerticalSpacing
+                 + GUIHelper.GetHelpBoxHeight(
+                     "eyeBlink.builtIn.unavailable.message".LS(),
+                     MessageType.Warning);
+        }
         var modeContentHeight = kind switch
         {
             EyeBlinkSettings.Kind.SimpleAnimation => GetSimpleHeight(property),
@@ -285,6 +301,17 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         };
         return GUIHelper.LineHeight
              + GUIHelper.VerticalSpacing + modeContentHeight;
+    }
+
+    private static bool CannotResolveBuiltIn(SerializedProperty property)
+    {
+        if (property.serializedObject.targetObjects.Length != 1
+            || property.serializedObject.targetObject is not Component component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
+            return false;
+
+        return MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+            .All(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer) == null);
     }
 
     private static void DrawMode(Rect position, SerializedProperty mode)
@@ -526,6 +553,14 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             "common.option.none",
             "common.option.present",
             CancellerOptions);
+
+        if ((LipSyncSettings.Kind)mode.intValue != LipSyncSettings.Kind.BuiltIn
+            || !CannotResolveBuiltIn(property)) return;
+        position.NewLine();
+        GUIHelper.HelpBox(
+            position,
+            "lipSync.builtIn.unavailable.message".LS(),
+            MessageType.Warning);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -545,7 +580,25 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        return height + GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
+        height += GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
+        if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.BuiltIn
+            && CannotResolveBuiltIn(property))
+            height += GUIHelper.VerticalSpacing
+                    + GUIHelper.GetHelpBoxHeight(
+                        "lipSync.builtIn.unavailable.message".LS(),
+                        MessageType.Warning);
+        return height;
+    }
+
+    private static bool CannotResolveBuiltIn(SerializedProperty property)
+    {
+        if (property.serializedObject.targetObjects.Length != 1
+            || property.serializedObject.targetObject is not Component component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
+            return false;
+
+        return MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+            .All(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer) == null);
     }
 
     private static void DrawMode(

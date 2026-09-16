@@ -950,6 +950,12 @@ msgstr "Estimated value"
 msgid "previewOverlay.multiFrame.label"
 msgstr "MultiFrame"
 
+msgid "eyeBlink.builtIn.unavailable.message"
+msgstr "Eye blink settings could not be retrieved from the avatar settings. Configure the Avatar Descriptor or equivalent settings, or change the mode to Animation or Custom Animation."
+
+msgid "lipSync.builtIn.unavailable.message"
+msgstr "Lip sync settings could not be retrieved from the avatar settings. Configure the Avatar Descriptor or equivalent settings, or change the mode to Custom."
+
 msgid "previewOverlay.eyeBlink.label"
 msgstr "Eye Blink"
 
