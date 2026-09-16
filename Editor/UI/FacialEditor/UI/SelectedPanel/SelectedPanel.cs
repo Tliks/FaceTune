@@ -152,17 +152,8 @@ internal class SelectedPanel
             var changedMarker = element.Q<VisualElement>("changed-marker");
             var facialRail = element.Q<VisualElement>("facial-rail");
             var nameLabel = element.Q<Label>("name");
-            var warningIcon = new Image
-            {
-                name = "validation-warning",
-                image = _warningIcon,
-                pickingMode = PickingMode.Ignore
-            };
-            warningIcon.style.width = 16f;
-            warningIcon.style.height = 16f;
-            warningIcon.style.flexShrink = 0f;
-            var nameParent = nameLabel.parent;
-            nameParent.Insert(nameParent.IndexOf(nameLabel), warningIcon);
+            var warningIcon = element.Q<Image>("validation-warning");
+            warningIcon.image = _warningIcon;
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var curveField = element.Q<IMGUIContainer>("curve-field");
             var curveToggle = element.Q<Button>("curve-toggle");

@@ -4,6 +4,7 @@
             <ui:VisualElement name="changed-marker" />
             <ui:VisualElement name="facial-rail" />
         </ui:VisualElement>
+        <ui:Image name="validation-warning" />
         <ui:Label name="name" class="list-item-label" />
         <aoyon:SliderFloatField name="slider-float-field" class="compact-field" low-value="0" high-value="100"/>
         <ui:IMGUIContainer name="curve-field" class="compact-field" />

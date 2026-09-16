@@ -32,6 +32,12 @@
     background-color: var(--unity-colors-default-text);
 }
 
+#validation-warning {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
 #name {
     flex: 1 1 100px;
 }

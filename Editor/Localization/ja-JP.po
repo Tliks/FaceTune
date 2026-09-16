@@ -954,7 +954,7 @@ msgid "blendShape.validation.missing.tooltip"
 msgstr "表情用のメッシュに、このブレンドシェイプが存在しません。"
 
 msgid "blendShape.validation.unavailable.tooltip"
-msgstr "このブレンドシェイプは編集対象から除外されています。"
+msgstr "このブレンドシェイプは使用できません。"
 
 msgid "eyeBlink.builtIn.unavailable.message"
 msgstr "アバター設定からまばたきを取得できません。Avatar Descriptorなどを確認して設定するか、「アニメーション」または「カスタムアニメーション」に変更してください。"
