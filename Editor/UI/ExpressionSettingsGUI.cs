@@ -352,7 +352,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         var blink = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes));
         var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
         return GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions)
-             + GUIHelper.VerticalSpacing + GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions)
+             + GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(conflicts, ConflictBlendShapesOptions)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
     }
@@ -366,16 +366,14 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         position.NewLine();
 
         var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
-        position.height = GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions);
+        position.height = GUIHelper.GetListHeight(conflicts, ConflictBlendShapesOptions);
         using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.FacialData))
-            GUIHelper.DrawLocalizedOptionalList(
+            GUIHelper.DrawList(
                 position,
                 conflicts,
                 new GUIContent(
                     "eyeBlink.simple.conflictBlendShapes.label".LS(),
                     "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
-                "common.option.none",
-                "common.option.present",
                 ConflictBlendShapesOptions);
         position.NewLine();
 
@@ -568,16 +566,14 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        position.height = GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
+        position.height = GUIHelper.GetListHeight(canceller, CancellerOptions);
         using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.FacialData))
-            GUIHelper.DrawLocalizedOptionalList(
+            GUIHelper.DrawList(
                 position,
                 canceller,
                 new GUIContent(
                     "lipSync.cancellerBlendShapes.label".LS(),
                     "lipSync.cancellerBlendShapes.tooltip".LS()),
-                "common.option.none",
-                "common.option.present",
                 CancellerOptions);
 
         if ((LipSyncSettings.Kind)mode.intValue != LipSyncSettings.Kind.BuiltIn
@@ -606,7 +602,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        height += GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
+        height += GUIHelper.GetListHeight(canceller, CancellerOptions);
         if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.BuiltIn
             && CannotResolveBuiltIn(property))
             height += GUIHelper.VerticalSpacing
