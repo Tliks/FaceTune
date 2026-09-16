@@ -292,8 +292,8 @@ internal sealed class EyeBlinkAnimatorBuilder
         EyeBlinkSettings settings,
         float holdDuration)
     {
-        var closeShapes = new BlendShapeWeightSet(settings.SimpleBlinkBlendShapes);
-        closeShapes.AddRange(settings.SimpleConflictPreventionBlendShapes);
+        var closeShapes = new BlendShapeWeightSet(settings.SimpleConflictPreventionBlendShapes);
+        closeShapes.AddRange(settings.SimpleBlinkBlendShapes);
         if (closeShapes.Count == 0)
         {
             state.Motion = AnimatorHelper.CreateDelayClip(holdDuration, state.Name);

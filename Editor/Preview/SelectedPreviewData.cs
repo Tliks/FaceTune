@@ -103,8 +103,8 @@ internal sealed class EyeBlinkPreviewData
 
     internal static EyeBlinkPreviewData? FromSimple(EyeBlinkSettings settings)
     {
-        var closed = new BlendShapeWeightSet(settings.SimpleBlinkBlendShapes);
-        closed.AddRange(settings.SimpleConflictPreventionBlendShapes);
+        var closed = new BlendShapeWeightSet(settings.SimpleConflictPreventionBlendShapes);
+        closed.AddRange(settings.SimpleBlinkBlendShapes);
         var durations = settings.SimpleDurationsSeconds;
         var closing = Mathf.Max(0f, durations.x);
         var hold = Mathf.Max(0f, durations.y);
