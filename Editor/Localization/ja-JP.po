@@ -923,8 +923,17 @@ msgstr "あり"
 msgid "previewOverlay.status.keep"
 msgstr "維持"
 
-msgid "previewOverlay.status.previewOnly"
-msgstr "なし（プレビューのみ）"
+msgid "previewOverlay.status.unset"
+msgstr "未設定"
+
+msgid "previewOverlay.status.enabled"
+msgstr "あり"
+
+msgid "previewOverlay.status.disabled"
+msgstr "なし"
+
+msgid "previewOverlay.qualifier.estimated"
+msgstr "推定値"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "マルチフレーム"
@@ -934,3 +943,6 @@ msgstr "まばたき"
 
 msgid "previewOverlay.lipSync.label"
 msgstr "リップシンク"
+
+msgid "previewOverlay.unavailable.label"
+msgstr "プレビューできません"

@@ -923,8 +923,17 @@ msgstr "Present"
 msgid "previewOverlay.status.keep"
 msgstr "Keep"
 
-msgid "previewOverlay.status.previewOnly"
-msgstr "None (preview only)"
+msgid "previewOverlay.status.unset"
+msgstr "Unset"
+
+msgid "previewOverlay.status.enabled"
+msgstr "Present"
+
+msgid "previewOverlay.status.disabled"
+msgstr "None"
+
+msgid "previewOverlay.qualifier.estimated"
+msgstr "Estimated value"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "MultiFrame"
@@ -934,3 +943,6 @@ msgstr "Eye Blink"
 
 msgid "previewOverlay.lipSync.label"
 msgstr "Lip Sync"
+
+msgid "previewOverlay.unavailable.label"
+msgstr "Preview unavailable"

@@ -49,21 +49,38 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
                 null,
                 preview.ToggleMultiFramePlayback,
                 preview.SetMultiFrameTime);
-        if (preview.HasEyeBlink)
-            DrawTimeline(
-                FormatPermissionStatus(
-                    "previewOverlay.eyeBlink.label",
-                    preview.EyeBlinkPermission),
-                preview.EyeBlinkPermission != TrackingPermission.Keep,
-                preview.IsEyeBlinkPlaying,
-                preview.EyeBlinkTime,
-                preview.EyeBlinkClosedRange,
-                preview.ToggleEyeBlinkPlayback,
-                preview.SetEyeBlinkTime);
-        if (preview.HasLipSync)
-            DrawVisemes(
-                preview,
-                preview.LipSyncPermission != TrackingPermission.Keep);
+        if (preview.EyeBlinkSetting != TrackingSettingDisplay.Hidden)
+        {
+            var label = FormatTrackingStatus(
+                "previewOverlay.eyeBlink.label",
+                preview.EyeBlinkBehavior,
+                preview.EyeBlinkSetting);
+            if (preview.CanPreviewEyeBlink)
+                DrawTimeline(
+                    label,
+                    preview.EyeBlinkBehavior != TrackingBehaviorDisplay.Keep,
+                    preview.IsEyeBlinkPlaying,
+                    preview.EyeBlinkTime,
+                    preview.EyeBlinkClosedRange,
+                    preview.ToggleEyeBlinkPlayback,
+                    preview.SetEyeBlinkTime);
+            else
+                DrawUnavailable(label);
+        }
+        if (preview.LipSyncSetting != TrackingSettingDisplay.Hidden)
+        {
+            var label = FormatTrackingStatus(
+                "previewOverlay.lipSync.label",
+                preview.LipSyncBehavior,
+                preview.LipSyncSetting);
+            if (preview.CanPreviewLipSync)
+                DrawVisemes(
+                    preview,
+                    label,
+                    preview.LipSyncBehavior != TrackingBehaviorDisplay.Keep);
+            else
+                DrawUnavailable(label);
+        }
     }
 
     private void UpdateVisibility()
@@ -173,21 +190,34 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         EditorGUI.DrawRect(rect, color);
     }
 
-    private static string FormatPermissionStatus(
+    private static string FormatTrackingStatus(
         string labelKey,
-        TrackingPermission? permission)
-        => permission is { } value
-            ? FormatStatus(labelKey, PermissionStatusKey(value))
-            : labelKey.LS();
-
-    private static string PermissionStatusKey(TrackingPermission permission)
-        => permission switch
+        TrackingBehaviorDisplay behavior,
+        TrackingSettingDisplay setting)
+    {
+        var label = labelKey.LS();
+        var statusKey = behavior switch
         {
-            TrackingPermission.Keep => "previewOverlay.status.keep",
-            TrackingPermission.Allow => "previewOverlay.status.present",
-            TrackingPermission.Disallow => "previewOverlay.status.previewOnly",
-            _ => throw new ArgumentOutOfRangeException(nameof(permission), permission, null)
+            TrackingBehaviorDisplay.NotApplicable => null,
+            TrackingBehaviorDisplay.Unset => "previewOverlay.status.unset",
+            TrackingBehaviorDisplay.Enabled => "previewOverlay.status.enabled",
+            TrackingBehaviorDisplay.Disabled => "previewOverlay.status.disabled",
+            TrackingBehaviorDisplay.Keep => "previewOverlay.status.keep",
+            _ => throw new ArgumentOutOfRangeException(nameof(behavior), behavior, null)
         };
+        var qualifiers = new List<string>(1);
+        if (setting == TrackingSettingDisplay.Estimated)
+            qualifiers.Add("previewOverlay.qualifier.estimated".LS());
+
+        if (statusKey == null)
+            return qualifiers.Count == 0
+                ? label
+                : $"{label}: {string.Join(" / ", qualifiers)}";
+        var status = statusKey.LS();
+        return qualifiers.Count == 0
+            ? $"{label}: {status}"
+            : $"{label}: {status}（{string.Join(" / ", qualifiers)}）";
+    }
 
     private static string FormatStatus(string labelKey, string statusKey)
         => $"{labelKey.LS()}: {statusKey.LS()}";
@@ -209,11 +239,21 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
         GUILayout.Label(label, _sectionLabelStyle, GUILayout.Height(SectionLabelHeight));
     }
 
-    private void DrawVisemes(SelectedShapesPreview preview, bool enabled)
+    private void DrawUnavailable(string label)
     {
-        DrawSectionLabel(FormatPermissionStatus(
-            "previewOverlay.lipSync.label",
-            preview.LipSyncPermission));
+        DrawSectionLabel(label);
+        using var disabled = new EditorGUI.DisabledScope(true);
+        GUILayout.Label(
+            "previewOverlay.unavailable.label".LS(),
+            EditorStyles.miniLabel);
+    }
+
+    private void DrawVisemes(
+        SelectedShapesPreview preview,
+        string label,
+        bool enabled)
+    {
+        DrawSectionLabel(label);
         using var disabled = new EditorGUI.DisabledScope(!enabled);
         using var grid = new GUILayout.VerticalScope();
 

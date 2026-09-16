@@ -46,8 +46,10 @@ internal static class SelectedPreviewResolver
                 null,
                 ignoredNames,
                 facial,
-                null,
-                null,
+                TrackingBehaviorDisplay.NotApplicable,
+                TrackingSettingDisplay.Hidden,
+                TrackingBehaviorDisplay.NotApplicable,
+                TrackingSettingDisplay.Hidden,
                 null,
                 null));
         }
@@ -132,8 +134,10 @@ internal static class SelectedPreviewResolver
             expression,
             ignoredNames,
             facial,
-            behavior.AllowEyeBlink,
-            behavior.AllowLipSync,
+            ToDisplay(behavior.AllowEyeBlink),
+            TrackingSettingDisplay.Defined,
+            ToDisplay(behavior.AllowLipSync),
+            TrackingSettingDisplay.Defined,
             CreateEyeBlink(eyeBlinkSettings, avatar),
             CreateLipSync(lipSyncSettings, avatar));
     }
@@ -149,6 +153,10 @@ internal static class SelectedPreviewResolver
         if (facialResolver.TryResolve(settings, out var animations))
             facial = new FacialPreviewData(animations, null, false);
 
+        var enabled = context.Observe(
+            settings,
+            value => (value.HasEyeBlink, value.HasLipSync),
+            (left, right) => left == right);
         var eyeBlinkResolver = new EyeBlinkResolver(avatar.Root, context);
         var eyeBlinkSettings = eyeBlinkResolver.ResolveProvider(settings);
         var lipSyncResolver = new LipSyncResolver(avatar.Root, context);
@@ -159,7 +167,7 @@ internal static class SelectedPreviewResolver
         var lipSync = lipSyncSettings == null
             ? null
             : CreateLipSync(lipSyncSettings, avatar);
-        if (facial == null && eyeBlink == null && lipSync == null) return null;
+        if (facial == null && !enabled.HasEyeBlink && !enabled.HasLipSync) return null;
 
         return new AvatarPreviewData(
             avatar.Root,
@@ -167,8 +175,14 @@ internal static class SelectedPreviewResolver
             settings,
             ignoredNames,
             facial,
-            null,
-            null,
+            TrackingBehaviorDisplay.NotApplicable,
+            enabled.HasEyeBlink
+                ? TrackingSettingDisplay.Defined
+                : TrackingSettingDisplay.Hidden,
+            TrackingBehaviorDisplay.NotApplicable,
+            enabled.HasLipSync
+                ? TrackingSettingDisplay.Defined
+                : TrackingSettingDisplay.Hidden,
             eyeBlink,
             lipSync);
     }
@@ -193,23 +207,53 @@ internal static class SelectedPreviewResolver
                 multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop)
             : null;
 
+        var options = context.Observe(
+            data,
+            value => (
+                value.HasFacialBehavior,
+                value.AllowEyeBlink,
+                value.AllowLipSync,
+                value.HasEyeBlink,
+                value.HasLipSync),
+            (left, right) => left == right);
         var eyeBlinkResolver = new EyeBlinkResolver(avatar.Root, context);
         var eyeBlinkSettings = eyeBlinkResolver.ResolveProvider(data);
         eyeBlinkSettings ??= eyeBlinkResolver.ResolveIncoming(data).Value;
+        var eyeBlink = CreateEyeBlink(eyeBlinkSettings, avatar);
         var lipSyncResolver = new LipSyncResolver(avatar.Root, context);
         var lipSyncSettings = lipSyncResolver.ResolveProvider(data);
         lipSyncSettings ??= lipSyncResolver.ResolveIncoming(data).Value;
+        var lipSync = CreateLipSync(lipSyncSettings, avatar);
         return new AvatarPreviewData(
             avatar.Root,
             avatar.FaceRenderer,
             data,
             ignoredNames,
             facial,
-            data.HasFacialBehavior ? data.AllowEyeBlink : null,
-            data.HasFacialBehavior ? data.AllowLipSync : null,
-            CreateEyeBlink(eyeBlinkSettings, avatar),
-            CreateLipSync(lipSyncSettings, avatar));
+            options.HasFacialBehavior
+                ? ToDisplay(options.AllowEyeBlink)
+                : TrackingBehaviorDisplay.Unset,
+            options.HasEyeBlink
+                ? TrackingSettingDisplay.Defined
+                : TrackingSettingDisplay.Estimated,
+            options.HasFacialBehavior
+                ? ToDisplay(options.AllowLipSync)
+                : TrackingBehaviorDisplay.Unset,
+            options.HasLipSync
+                ? TrackingSettingDisplay.Defined
+                : TrackingSettingDisplay.Estimated,
+            eyeBlink,
+            lipSync);
     }
+
+    private static TrackingBehaviorDisplay ToDisplay(TrackingPermission permission)
+        => permission switch
+        {
+            TrackingPermission.Allow => TrackingBehaviorDisplay.Enabled,
+            TrackingPermission.Disallow => TrackingBehaviorDisplay.Disabled,
+            TrackingPermission.Keep => TrackingBehaviorDisplay.Keep,
+            _ => throw new ArgumentOutOfRangeException(nameof(permission), permission, null)
+        };
 
     private static EyeBlinkPreviewData? CreateEyeBlink(
         EyeBlinkSettings settings,
