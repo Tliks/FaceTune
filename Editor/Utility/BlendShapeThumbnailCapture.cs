@@ -174,7 +174,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
 
     public BlendShapeThumbnailCapture(SkinnedMeshRenderer renderer, ThumbnailFraming framing)
     {
-        using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Initialize");
+        using var _ = new Utils.ProfilingSampleScope("Thumbnail.Initialize");
         _renderer = renderer;
         _mesh = renderer.sharedMesh.DestroyedAsNull()
             ?? throw new ArgumentException("Renderer has no mesh.", nameof(renderer));
@@ -212,7 +212,7 @@ internal sealed class BlendShapeThumbnailCapture : IDisposable
 
     public Texture2D Capture(ImmutableBlendShapeWeightSet blendShapes)
     {
-        using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Capture");
+        using var _ = new Utils.ProfilingSampleScope("Thumbnail.Capture");
         ThrowIfDisposed();
         GameObject? renderObject = null;
         var sourceWasForcedOff = _renderer.forceRenderingOff;
