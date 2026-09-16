@@ -161,12 +161,17 @@ internal static class ComponentReferenceGUI
 internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
 {
     private readonly SerializedReferenceableSettings _settings;
+    private readonly BlendShapeValidationData? _validation;
+    private readonly FaceTuneWriteKind _writeKind;
 
     public ReferenceableSettingsSectionDrawer(
         SerializedReferenceableSettings settings,
-        Func<object?> createDefaultValue)
+        Func<object?> createDefaultValue,
+        FaceTuneWriteKind writeKind)
     {
         _settings = settings;
+        _validation = BlendShapeValidationData.Create(settings.Direct.serializedObject);
+        _writeKind = writeKind;
         Actions = settings.CreateActionSet(createDefaultValue);
     }
 
@@ -178,17 +183,20 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true));
 
     public void Draw(Rect position)
-        => SettingsReferenceGUI.Draw(
+    {
+        using var scope = BlendShapeValidationScope.Push(_validation, _writeKind);
+        SettingsReferenceGUI.Draw(
             position,
             _settings,
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true),
             rect => EditorGUI.PropertyField(rect, _settings.Direct, GUIContent.none, true));
+    }
 
     public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);
 }
 
-internal static class TrackingSettingsGUIContext
+internal static class SerializedObjectGUIContext
 {
     internal static Component? GetComponent(SerializedObject serializedObject)
         => serializedObject.targetObject switch
@@ -318,7 +326,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     private static bool CannotResolveBuiltIn(SerializedProperty property)
     {
         if (property.serializedObject.targetObjects.Length != 1
-            || TrackingSettingsGUIContext.GetComponent(property.serializedObject) is not { } component
+            || SerializedObjectGUIContext.GetComponent(property.serializedObject) is not { } component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return false;
 
@@ -353,20 +361,22 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var blink = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes));
         position.height = GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions);
-        GUIHelper.DrawList(position, blink, "eyeBlink.simple.blinkBlendShapes.label".LG(), BlinkBlendShapesOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.EyeBlinkAnimation))
+            GUIHelper.DrawList(position, blink, "eyeBlink.simple.blinkBlendShapes.label".LG(), BlinkBlendShapesOptions);
         position.NewLine();
 
         var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
         position.height = GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions);
-        GUIHelper.DrawLocalizedOptionalList(
-            position,
-            conflicts,
-            new GUIContent(
-                "eyeBlink.simple.conflictBlendShapes.label".LS(),
-                "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
-            "common.option.none",
-            "common.option.present",
-            ConflictBlendShapesOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.FacialData))
+            GUIHelper.DrawLocalizedOptionalList(
+                position,
+                conflicts,
+                new GUIContent(
+                    "eyeBlink.simple.conflictBlendShapes.label".LS(),
+                    "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
+                "common.option.none",
+                "common.option.present",
+                ConflictBlendShapesOptions);
         position.NewLine();
 
         DrawInterval(ref position, property);
@@ -399,7 +409,8 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var animations = property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations));
         position.height = GUIHelper.GetListHeight(animations, AnimationsOptions);
-        GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.EyeBlinkAnimation))
+            GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
         position.NewLine();
         DrawInterval(ref position, property);
     }
@@ -529,20 +540,22 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             var customPosition = position;
             customPosition.Indent();
             customPosition.height = GUIHelper.GetLinesHeight(VisemeRows);
-            DrawVisemeGrid(customPosition, property, visemes, selection);
+            using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.LipSyncAnimation))
+                DrawVisemeGrid(customPosition, property, visemes, selection);
             customPosition.NewLine();
 
             if (selection >= 0)
             {
                 var selected = visemes[selection];
                 customPosition.height = GUIHelper.GetListHeight(selected.Shapes, VisemeOptions);
-                GUIHelper.DrawList(
-                    customPosition,
-                    selected.Shapes,
-                    new GUIContent(string.Format(
-                        "lipSync.selectedVisemeBlendShapes.label".LS(),
-                        selected.Name)),
-                    VisemeOptions);
+                using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.LipSyncAnimation))
+                    GUIHelper.DrawList(
+                        customPosition,
+                        selected.Shapes,
+                        new GUIContent(string.Format(
+                            "lipSync.selectedVisemeBlendShapes.label".LS(),
+                            selected.Name)),
+                        VisemeOptions);
                 customPosition.NewLine();
             }
             position.y = customPosition.y;
@@ -556,15 +569,16 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
         position.height = GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
-        GUIHelper.DrawLocalizedOptionalList(
-            position,
-            canceller,
-            new GUIContent(
-                "lipSync.cancellerBlendShapes.label".LS(),
-                "lipSync.cancellerBlendShapes.tooltip".LS()),
-            "common.option.none",
-            "common.option.present",
-            CancellerOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.FacialData))
+            GUIHelper.DrawLocalizedOptionalList(
+                position,
+                canceller,
+                new GUIContent(
+                    "lipSync.cancellerBlendShapes.label".LS(),
+                    "lipSync.cancellerBlendShapes.tooltip".LS()),
+                "common.option.none",
+                "common.option.present",
+                CancellerOptions);
 
         if ((LipSyncSettings.Kind)mode.intValue != LipSyncSettings.Kind.BuiltIn
             || !CannotResolveBuiltIn(property)) return;
@@ -605,7 +619,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
     private static bool CannotResolveBuiltIn(SerializedProperty property)
     {
         if (property.serializedObject.targetObjects.Length != 1
-            || TrackingSettingsGUIContext.GetComponent(property.serializedObject) is not { } component
+            || SerializedObjectGUIContext.GetComponent(property.serializedObject) is not { } component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return false;
 

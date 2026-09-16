@@ -467,6 +467,7 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     private readonly ExpressionInheritedSettingKind _kind;
     private readonly ExpressionSettingsInheritance _inheritance;
     private readonly bool _showSourceActions;
+    private readonly BlendShapeValidationData? _validation;
 
     public ExpressionScopedSettingSectionDrawer(
         SerializedObject serializedObject,
@@ -483,6 +484,7 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         _kind = kind;
         _inheritance = inheritance;
         _showSourceActions = showSourceActions;
+        _validation = BlendShapeValidationData.Create(serializedObject);
         if (referencePropertyName != null)
             _source = new SerializedReferenceableSettings(
                 serializedObject,
@@ -565,6 +567,13 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         var value = GetDisplayedValue();
         var valueHeight = GetValueHeight();
         position.height = valueHeight;
+        using var validation = BlendShapeValidationScope.Push(
+            _validation,
+            _kind == ExpressionInheritedSettingKind.EyeBlink
+                ? FaceTuneWriteKind.EyeBlinkAnimation
+                : _kind == ExpressionInheritedSettingKind.LipSync
+                    ? FaceTuneWriteKind.LipSyncAnimation
+                    : null);
         using (new EditorGUI.DisabledScope(!ShowsLocalValue))
         {
             if (!ShowsLocalValue || _source == null)

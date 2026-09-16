@@ -98,7 +98,8 @@ internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<
                 nameof(ExpressionDataComponent.HasEyeBlink),
                 nameof(ExpressionDataComponent.EyeBlinkReference),
                 nameof(ExpressionDataComponent.EyeBlink),
-                () => new EyeBlinkSettings()),
+                () => new EyeBlinkSettings(),
+                FaceTuneWriteKind.EyeBlinkAnimation),
             false),
         new SettingEntry(
             serializedObject.FindProperty(nameof(ExpressionDataComponent.HasLipSync)),
@@ -108,7 +109,8 @@ internal sealed class ExpressionDataComponentEditor : FaceTuneSectionEditorBase<
                 nameof(ExpressionDataComponent.HasLipSync),
                 nameof(ExpressionDataComponent.LipSyncReference),
                 nameof(ExpressionDataComponent.LipSync),
-                () => new LipSyncSettings()),
+                () => new LipSyncSettings(),
+                FaceTuneWriteKind.LipSyncAnimation),
             false),
         new SettingEntry(
             serializedObject.FindProperty(nameof(ExpressionDataComponent.HasNonFacialAnimations)),
@@ -244,15 +246,20 @@ internal sealed class OptionalReferenceableSettingsSectionDrawer
 {
     private readonly SerializedProperty _enabled;
     private readonly SerializedReferenceableSettings _settings;
+    private readonly BlendShapeValidationData? _validation;
+    private readonly FaceTuneWriteKind _writeKind;
 
     public OptionalReferenceableSettingsSectionDrawer(
         SerializedObject serializedObject,
         string enabledPropertyName,
         string referencePropertyName,
         string valuePropertyName,
-        Func<object?> createDefault)
+        Func<object?> createDefault,
+        FaceTuneWriteKind writeKind)
     {
         _enabled = serializedObject.FindProperty(enabledPropertyName);
+        _validation = BlendShapeValidationData.Create(serializedObject);
+        _writeKind = writeKind;
         _settings = new SerializedReferenceableSettings(
             serializedObject,
             referencePropertyName,
@@ -275,11 +282,14 @@ internal sealed class OptionalReferenceableSettingsSectionDrawer
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true));
 
     public void Draw(Rect position)
-        => SettingsReferenceGUI.Draw(
+    {
+        using var scope = BlendShapeValidationScope.Push(_validation, _writeKind);
+        SettingsReferenceGUI.Draw(
             position,
             _settings,
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true),
             rect => EditorGUI.PropertyField(rect, _settings.Direct, GUIContent.none, true));
+    }
 
     public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);

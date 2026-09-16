@@ -84,7 +84,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                     serializedObject,
                     nameof(SettingsComponent.EyeBlinkReference),
                     nameof(SettingsComponent.EyeBlink)),
-                () => new EyeBlinkSettings()),
+                () => new EyeBlinkSettings(),
+                FaceTuneWriteKind.EyeBlinkAnimation),
             1,
             kind: ExpressionInheritedSettingKind.EyeBlink),
         CreateReferenceableSetting(
@@ -95,7 +96,8 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                     serializedObject,
                     nameof(SettingsComponent.LipSyncReference),
                     nameof(SettingsComponent.LipSync)),
-                () => new LipSyncSettings()),
+                () => new LipSyncSettings(),
+                FaceTuneWriteKind.LipSyncAnimation),
             1,
             kind: ExpressionInheritedSettingKind.LipSync),
         CreateSetting(

@@ -31,11 +31,13 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
         ElementHeight: GUIHelper.LineHeight);
     private readonly SerializedProperty _faceObject;
     private readonly SerializedProperty _excludedBlendShapes;
+    private readonly BlendShapeValidationData? _validation;
 
     public AvatarSettingsSectionDrawer(SerializedObject serializedObject)
     {
         _faceObject = serializedObject.FindProperty(nameof(AvatarSettingsComponent.FaceObjectReference));
         _excludedBlendShapes = serializedObject.FindProperty(nameof(AvatarSettingsComponent.ExcludedBlendShapeNames));
+        _validation = BlendShapeValidationData.Create(serializedObject);
         Actions = new SectionActionSet(
             serializedObject,
             new[]
@@ -104,6 +106,7 @@ internal sealed class AvatarSettingsSectionDrawer : ISectionDrawer
         position.NewLine();
         position.Indent();
         position.height = GUIHelper.GetListHeight(_excludedBlendShapes, ExcludedBlendShapesOptions);
+        using var validation = BlendShapeValidationScope.Push(_validation);
         GUIHelper.DrawList(position, _excludedBlendShapes, "avatarSettings.excludedBlendShapes.label".LG(), ExcludedBlendShapesOptions);
     }
 
