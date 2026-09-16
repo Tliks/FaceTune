@@ -945,7 +945,7 @@ msgid "previewOverlay.status.disabled"
 msgstr "None"
 
 msgid "previewOverlay.qualifier.estimated"
-msgstr "Estimated value"
+msgstr "Estimated settings"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "MultiFrame"
