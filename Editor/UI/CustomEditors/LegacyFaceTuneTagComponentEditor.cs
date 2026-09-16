@@ -9,6 +9,8 @@ namespace Aoyon.FaceTune.Gui
     {
         private const string WarningMessageKey = "legacy.component.deprecation.warning";
 
+        protected override bool ShowAvatarContextWarning => false;
+
         protected override float GetInspectorHeight()
         {
             var warning = WarningMessageKey.LS();

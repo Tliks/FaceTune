@@ -911,6 +911,18 @@ msgstr "Generated Asset Folder"
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "Select"
 
+msgid "inspector.avatarContext.avatar.message"
+msgstr "The avatar could not be identified."
+
+msgid "inspector.avatarContext.renderer.message"
+msgstr "The facial renderer could not be identified.\nAdd an Avatar Settings component and specify it."
+
+msgid "inspector.avatarContext.mesh.message"
+msgstr "No mesh is assigned to the facial renderer."
+
+msgid "inspector.avatarContext.multiple.message"
+msgstr "Avatar settings could not be retrieved for some of the selected components."
+
 msgid "previewOverlay.avatar.label"
 msgstr "Avatar"
 

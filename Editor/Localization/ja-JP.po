@@ -911,6 +911,18 @@ msgstr "生成Assetの保存先"
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "選択"
 
+msgid "inspector.avatarContext.avatar.message"
+msgstr "アバターを特定できません。"
+
+msgid "inspector.avatarContext.renderer.message"
+msgstr "表情用のレンダラーを特定できません。\nAvatar Settingsコンポーネントを追加し、指定してください。"
+
+msgid "inspector.avatarContext.mesh.message"
+msgstr "表情用のレンダラーに、メッシュが設定されていません。"
+
+msgid "inspector.avatarContext.multiple.message"
+msgstr "選択中の一部のコンポーネントでアバター設定を取得できません。"
+
 msgid "previewOverlay.avatar.label"
 msgstr "アバター"
 
