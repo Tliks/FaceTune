@@ -119,7 +119,10 @@ internal static class BlendShapeNameGUI
             candidates = candidates.Where(name => !unavailable.Contains(name));
         }
 
-        var values = candidates.ToArray();
+        var values = candidates
+            .Where(name => BlendShapeValidationScope.Validate(name)
+                           == BlendShapeValidationIssue.None)
+            .ToArray();
         names = values;
         return values.Length > 0;
     }
