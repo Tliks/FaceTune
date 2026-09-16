@@ -2,7 +2,7 @@ using UnityEditor.Overlays;
 
 namespace Aoyon.FaceTune.Preview;
 
-[Overlay(typeof(SceneView), "FaceTune Preview", true)]
+[Overlay(typeof(SceneView), "FaceTune Preview", false)]
 internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
 {
     private const float PlayButtonSize = 20f;
