@@ -911,6 +911,18 @@ msgstr "Generated Asset Folder"
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "Select"
 
+msgid "inspector.avatarContext.avatar.message"
+msgstr "The avatar could not be identified."
+
+msgid "inspector.avatarContext.renderer.message"
+msgstr "The facial renderer could not be identified.\nAdd an Avatar Settings component and specify it."
+
+msgid "inspector.avatarContext.mesh.message"
+msgstr "No mesh is assigned to the facial renderer."
+
+msgid "inspector.avatarContext.multiple.message"
+msgstr "Avatar settings could not be retrieved for some of the selected components."
+
 msgid "previewOverlay.avatar.label"
 msgstr "Avatar"
 
@@ -923,14 +935,50 @@ msgstr "Present"
 msgid "previewOverlay.status.keep"
 msgstr "Keep"
 
-msgid "previewOverlay.status.previewOnly"
-msgstr "None (preview only)"
+msgid "previewOverlay.status.unset"
+msgstr "Unset"
+
+msgid "previewOverlay.status.enabled"
+msgstr "Present"
+
+msgid "previewOverlay.status.disabled"
+msgstr "None"
+
+msgid "previewOverlay.qualifier.estimated"
+msgstr "Estimated value"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "MultiFrame"
+
+msgid "blendShape.validation.missing.tooltip"
+msgstr "This blend shape does not exist on the facial mesh."
+
+msgid "blendShape.validation.unavailable.tooltip"
+msgstr "This blend shape cannot be used."
+
+msgid "eyeBlink.settingUnused.keep.message"
+msgstr "This setting is not used because eye blinking is set to Keep."
+
+msgid "eyeBlink.settingUnused.disallow.message"
+msgstr "This setting is not used because eye blinking is set to None."
+
+msgid "lipSync.settingUnused.keep.message"
+msgstr "This setting is not used because lip sync is set to Keep."
+
+msgid "lipSync.settingUnused.disallow.message"
+msgstr "This setting is not used because lip sync is set to None."
+
+msgid "eyeBlink.builtIn.unavailable.message"
+msgstr "Eye blink settings could not be retrieved from the avatar settings. Configure the Avatar Descriptor or equivalent settings, or change the mode to Animation or Custom Animation."
+
+msgid "lipSync.builtIn.unavailable.message"
+msgstr "Lip sync settings could not be retrieved from the avatar settings. Configure the Avatar Descriptor or equivalent settings, or change the mode to Custom."
 
 msgid "previewOverlay.eyeBlink.label"
 msgstr "Eye Blink"
 
 msgid "previewOverlay.lipSync.label"
 msgstr "Lip Sync"
+
+msgid "previewOverlay.unavailable.label"
+msgstr "Preview unavailable"

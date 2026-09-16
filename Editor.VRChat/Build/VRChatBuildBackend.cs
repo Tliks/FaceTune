@@ -19,17 +19,17 @@ internal sealed class VRChatBuildBackend : IPlatformBuildBackend
         MenuPlan menus,
         ParameterPlan parameters)
     {
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.VRChat.Menu"))
+        using (new Utils.ProfilingSampleScope("Build.VRChat.Menu"))
         {
             VRChatMenuBuilder.Build(buildContext, menus);
         }
 
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.VRChat.Parameters"))
+        using (new Utils.ProfilingSampleScope("Build.VRChat.Parameters"))
         {
             VRChatParameterBuilder.Build(buildContext, parameters);
         }
 
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.VRChat.Animator"))
+        using (new Utils.ProfilingSampleScope("Build.VRChat.Animator"))
         {
             VRChatAnimatorBuilder.Build(buildContext, settings, avatarControlSettings, expressions);
         }

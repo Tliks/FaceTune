@@ -6,10 +6,22 @@ namespace Aoyon.FaceTune.Gui;
 internal static class BlendShapeNameGUI
 {
     private const float PickerButtonWidth = 20f;
+    private const float WarningIconWidth = 18f;
 
     public static void Draw(Rect position, SerializedProperty name)
     {
         var (field, button) = position.SplitRight(PickerButtonWidth);
+        var issue = BlendShapeValidationScope.Validate(name.stringValue);
+        if (issue != BlendShapeValidationIssue.None)
+        {
+            var (nextField, warning) = field.SplitRight(WarningIconWidth);
+            field = nextField;
+            var tooltipKey = issue == BlendShapeValidationIssue.Missing
+                ? "blendShape.validation.missing.tooltip"
+                : "blendShape.validation.unavailable.tooltip";
+            var icon = EditorGUIUtility.IconContent("console.warnicon.sml");
+            GUI.Label(warning, new GUIContent(icon.image, tooltipKey.LS()));
+        }
         EditorGUI.PropertyField(field, name, GUIContent.none);
 
         if (!GUI.Button(button, GUIContent.none, EditorStyles.popup)
@@ -107,7 +119,10 @@ internal static class BlendShapeNameGUI
             candidates = candidates.Where(name => !unavailable.Contains(name));
         }
 
-        var values = candidates.ToArray();
+        var values = candidates
+            .Where(name => BlendShapeValidationScope.Validate(name)
+                           == BlendShapeValidationIssue.None)
+            .ToArray();
         names = values;
         return values.Length > 0;
     }

@@ -116,15 +116,20 @@ internal sealed class SelectedShapesPreview
     internal bool HasMultiFrame => CurrentAvatar?.Facial?.MultiFrame != null;
     internal bool IsMultiFramePlaying => HasMultiFrame && _multiFrame.IsPlaying;
     internal float MultiFrameTime => _multiFrame.NormalizedTime;
-    internal bool HasEyeBlink => CurrentAvatar?.EyeBlink != null;
-    internal TrackingPermission? EyeBlinkPermission
-        => CurrentAvatar?.EyeBlinkPermission;
-    internal bool IsEyeBlinkPlaying => HasEyeBlink && _eyeBlink.IsPlaying;
+    internal TrackingBehaviorDisplay EyeBlinkBehavior
+        => CurrentAvatar?.EyeBlinkBehavior ?? TrackingBehaviorDisplay.NotApplicable;
+    internal TrackingSettingDisplay EyeBlinkSetting
+        => CurrentAvatar?.EyeBlinkSetting ?? TrackingSettingDisplay.Hidden;
+    internal bool CanPreviewEyeBlink => CurrentAvatar?.EyeBlink != null;
+    internal bool IsEyeBlinkPreviewApplied => _eyeBlinkActive;
+    internal bool IsEyeBlinkPlaying => CanPreviewEyeBlink && _eyeBlink.IsPlaying;
     internal float EyeBlinkTime => _eyeBlink.NormalizedTime;
     internal Vector2? EyeBlinkClosedRange => CurrentAvatar?.EyeBlink?.ClosedRange;
-    internal bool HasLipSync => CurrentAvatar?.LipSync != null;
-    internal TrackingPermission? LipSyncPermission
-        => CurrentAvatar?.LipSyncPermission;
+    internal TrackingBehaviorDisplay LipSyncBehavior
+        => CurrentAvatar?.LipSyncBehavior ?? TrackingBehaviorDisplay.NotApplicable;
+    internal TrackingSettingDisplay LipSyncSetting
+        => CurrentAvatar?.LipSyncSetting ?? TrackingSettingDisplay.Hidden;
+    internal bool CanPreviewLipSync => CurrentAvatar?.LipSync != null;
     internal int SelectedViseme => _selectedViseme;
     internal Object? CurrentSource
         => (Object?)CurrentAvatar?.Source ?? (_selection as AnimationClip);
@@ -160,8 +165,8 @@ internal sealed class SelectedShapesPreview
         ClearCurrentPreview();
         _currentAvatar = next;
         ConfigureTimelines(restartMultiFrame: false);
-        if (!HasEyeBlink) _eyeBlinkActive = false;
-        if (!HasLipSync) ResetVisemes();
+        if (!CanPreviewEyeBlink) _eyeBlinkActive = false;
+        if (!CanPreviewLipSync) ResetVisemes();
         ApplyAll();
         RepaintOverlay();
     }
@@ -174,16 +179,24 @@ internal sealed class SelectedShapesPreview
 
     internal void ToggleEyeBlinkPlayback()
     {
-        if (!HasEyeBlink) return;
+        if (!CanPreviewEyeBlink) return;
         _eyeBlinkActive = true;
         _eyeBlink.TogglePlayback();
     }
 
     internal void SetEyeBlinkTime(float value)
     {
-        if (!HasEyeBlink) return;
+        if (!CanPreviewEyeBlink) return;
         _eyeBlinkActive = true;
         _eyeBlink.Seek(value);
+    }
+
+    internal void ClearEyeBlinkPreview()
+    {
+        if (!_eyeBlinkActive) return;
+        _eyeBlinkActive = false;
+        ApplyEyeBlink();
+        _eyeBlink.Reset();
     }
 
     internal void SetVisemeSelection(int index)
@@ -210,6 +223,7 @@ internal sealed class SelectedShapesPreview
 
     private void OnSelectionChanged()
     {
+        using var _ = new Utils.ProfilingSampleScope("Preview.SelectionChanged");
         _selection = Selection.objects.Length == 1 ? Selection.objects[0] : null;
         if (_suspendDepth == 0)
             RebuildSession(resetControls: true);
@@ -223,6 +237,7 @@ internal sealed class SelectedShapesPreview
 
     private void RebuildSession(bool resetControls)
     {
+        using var _ = new Utils.ProfilingSampleScope("Preview.RebuildSession");
         var previousRoot = resetControls ? null : CurrentAvatar?.Root;
         DisposeSession();
         if (resetControls) ResetControls();
@@ -248,7 +263,7 @@ internal sealed class SelectedShapesPreview
         var previousAvatar = avatars.FirstOrDefault(avatar => avatar.Root == previousRoot);
         _currentAvatar = previousAvatar ?? avatars[0];
         ConfigureTimelines(resetControls);
-        if (!HasLipSync) ResetVisemes();
+        if (!CanPreviewLipSync) ResetVisemes();
         ApplyAll();
         NotifyTargetsChanged();
     }
@@ -268,7 +283,7 @@ internal sealed class SelectedShapesPreview
         _eyeBlink.Configure(CurrentAvatar?.EyeBlink?.Duration ?? 0f, false);
         if (restartMultiFrame && multiFrame != null)
             _multiFrame.Restart();
-        if (!HasEyeBlink) _eyeBlinkActive = false;
+        if (!CanPreviewEyeBlink) _eyeBlinkActive = false;
     }
 
     private void DisableTimelines()
@@ -301,10 +316,7 @@ internal sealed class SelectedShapesPreview
     }
 
     private void OnEyeBlinkCompleted()
-    {
-        _eyeBlinkActive = false;
-        _eyeBlink.Seek(0f);
-    }
+        => ClearEyeBlinkPreview();
 
     private void ApplyAll()
     {

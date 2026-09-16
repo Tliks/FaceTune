@@ -4,11 +4,14 @@ internal abstract class FaceTuneEditorBase<T> : Editor where T : FaceTuneTagComp
 {
     protected T Component => (T)target;
     protected virtual bool ShowLanguageSwitcher => false;
+    protected virtual bool ShowAvatarContextWarning => true;
 
     public sealed override void OnInspectorGUI()
     {
+        using var _ = new Utils.ProfilingSampleScope($"Inspector.{typeof(T).Name}");
         serializedObject.UpdateIfRequiredOrScript();
         PrepareInspector();
+        DrawAvatarContextWarning();
 
         var height = GetInspectorHeight();
         var position = EditorGUILayout.GetControlRect(false, height, GUIStyle.none);
@@ -24,6 +27,38 @@ internal abstract class FaceTuneEditorBase<T> : Editor where T : FaceTuneTagComp
 
     protected virtual void PrepareInspector()
     {
+    }
+
+    private void DrawAvatarContextWarning()
+    {
+        if (!ShowAvatarContextWarning) return;
+
+        var failures = targets
+            .OfType<FaceTuneTagComponent>()
+            .Select(component => AvatarContext.TryGet(
+                component.gameObject,
+                out _,
+                out var result)
+                ? AvatarContext.BuildResult.Success
+                : result)
+            .Where(result => result != AvatarContext.BuildResult.Success)
+            .ToArray();
+        if (failures.Length == 0) return;
+
+        var messageKey = targets.Length > 1
+            ? "inspector.avatarContext.multiple.message"
+            : failures[0] switch
+            {
+                AvatarContext.BuildResult.NotFoundAvatarRoot
+                    => "inspector.avatarContext.avatar.message",
+                AvatarContext.BuildResult.NotFoundFaceRenderer
+                    => "inspector.avatarContext.renderer.message",
+                AvatarContext.BuildResult.NotFoundFaceMesh
+                    => "inspector.avatarContext.mesh.message",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        EditorGUILayout.HelpBox(messageKey.LS(), MessageType.Warning);
+        EditorGUILayout.Space(GUIHelper.VerticalSpacing);
     }
 
     protected virtual void OnDisable()

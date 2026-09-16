@@ -7,10 +7,12 @@ namespace Aoyon.FaceTune.Gui;
 internal sealed class FacialDataSectionDrawer : ISectionDrawer, ICollapsedSectionHeaderDrawer
 {
     private readonly SerializedProperty _data;
+    private readonly BlendShapeValidationData? _validation;
 
     public FacialDataSectionDrawer(SerializedObject serializedObject, string directPropertyName)
     {
         _data = serializedObject.FindProperty(directPropertyName);
+        _validation = BlendShapeValidationData.Create(serializedObject);
         Actions = new SectionActionSet(
             serializedObject,
             new[] { SectionActionField.From(_data, () => new FacialBlendShapeData()) });
@@ -18,7 +20,13 @@ internal sealed class FacialDataSectionDrawer : ISectionDrawer, ICollapsedSectio
 
     public SectionActionSet Actions { get; }
     public float GetHeight() => FacialDataGUI.GetContentHeight(_data);
-    public void Draw(Rect position) => FacialDataGUI.DrawContent(position, _data);
+    public void Draw(Rect position)
+    {
+        using var scope = BlendShapeValidationScope.Push(
+            _validation,
+            FaceTuneWriteKind.FacialData);
+        FacialDataGUI.DrawContent(position, _data);
+    }
 
     public float GetHeaderWidth()
         => GUIHelper.CompactPopupWidth(new[]
@@ -695,6 +703,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        using var _ = new Utils.ProfilingSampleScope("BlendShapeRow");
         GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         position.SetSingleHeight();

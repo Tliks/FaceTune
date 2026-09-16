@@ -40,13 +40,13 @@ internal static class VRChatAnimatorBuilder
         var aap = new AapProtocol(trackingPlan);
 
         bool? analyzedWriteDefaults;
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.AnalyzeWriteDefaults"))
+        using (new Utils.ProfilingSampleScope("Build.Animator.AnalyzeWriteDefaults"))
         {
             analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         }
 
         ISet<Transform> unitBoundaryTransforms;
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.FindUnitBoundaries"))
+        using (new Utils.ProfilingSampleScope("Build.Animator.FindUnitBoundaries"))
         {
             unitBoundaryTransforms = FindUnitBoundaryTransforms(
                 settings,
@@ -80,7 +80,7 @@ internal static class VRChatAnimatorBuilder
             || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
-                "FaceTune.Build.Animator.ReplaceExternalTrackingControls");
+                "Build.Animator.ReplaceExternalTrackingControls");
             ReplaceExternalTrackingControls(
                 controllerContext,
                 aap,
@@ -101,7 +101,7 @@ internal static class VRChatAnimatorBuilder
         if (units.Length > 0)
         {
             using var _ = new Utils.ProfilingSampleScope(
-                "FaceTune.Build.Animator.BuildInitial");
+                "Build.Animator.BuildInitial");
             var initialController = CreateMergeAnimatorController(
                 controllerContext,
                 units[0].Anchor,
@@ -123,7 +123,7 @@ internal static class VRChatAnimatorBuilder
             avatarControlSettings,
             mmdSupport,
             aap);
-        using (new Utils.ProfilingSampleScope("FaceTune.Build.Animator.BuildUnits"))
+        using (new Utils.ProfilingSampleScope("Build.Animator.BuildUnits"))
         {
             foreach (var unit in units)
             {
@@ -161,7 +161,7 @@ internal static class VRChatAnimatorBuilder
         if (trackingPlan.ShouldBuildAnyLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
-                "FaceTune.Build.Animator.BuildTrackingControls");
+                "Build.Animator.BuildTrackingControls");
             var controlAnchor = new GameObject($"{FaceTuneConstants.Name} Tracking Controls");
             controlAnchor.transform.SetParent(buildContext.AvatarRootTransform, false);
             var controlController = CreateMergeAnimatorController(

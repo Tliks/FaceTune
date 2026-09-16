@@ -1,5 +1,21 @@
 namespace Aoyon.FaceTune.Preview;
 
+internal enum TrackingBehaviorDisplay
+{
+    NotApplicable,
+    Unset,
+    Enabled,
+    Disabled,
+    Keep
+}
+
+internal enum TrackingSettingDisplay
+{
+    Hidden,
+    Defined,
+    Estimated
+}
+
 internal sealed class SelectedPreviewData
 {
     internal SelectedPreviewData(IReadOnlyList<AvatarPreviewData> avatars)
@@ -18,8 +34,10 @@ internal sealed class AvatarPreviewData
         FaceTuneTagComponent? source,
         ImmutableHashSet<string> ignoredNames,
         FacialPreviewData? facial,
-        TrackingPermission? eyeBlinkPermission,
-        TrackingPermission? lipSyncPermission,
+        TrackingBehaviorDisplay eyeBlinkBehavior,
+        TrackingSettingDisplay eyeBlinkSetting,
+        TrackingBehaviorDisplay lipSyncBehavior,
+        TrackingSettingDisplay lipSyncSetting,
         EyeBlinkPreviewData? eyeBlink,
         LipSyncPreviewData? lipSync)
     {
@@ -28,8 +46,10 @@ internal sealed class AvatarPreviewData
         Source = source;
         IgnoredNames = ignoredNames;
         Facial = facial;
-        EyeBlinkPermission = eyeBlinkPermission;
-        LipSyncPermission = lipSyncPermission;
+        EyeBlinkBehavior = eyeBlinkBehavior;
+        EyeBlinkSetting = eyeBlinkSetting;
+        LipSyncBehavior = lipSyncBehavior;
+        LipSyncSetting = lipSyncSetting;
         EyeBlink = eyeBlink;
         LipSync = lipSync;
     }
@@ -39,8 +59,10 @@ internal sealed class AvatarPreviewData
     internal FaceTuneTagComponent? Source { get; }
     internal ImmutableHashSet<string> IgnoredNames { get; }
     internal FacialPreviewData? Facial { get; }
-    internal TrackingPermission? EyeBlinkPermission { get; }
-    internal TrackingPermission? LipSyncPermission { get; }
+    internal TrackingBehaviorDisplay EyeBlinkBehavior { get; }
+    internal TrackingSettingDisplay EyeBlinkSetting { get; }
+    internal TrackingBehaviorDisplay LipSyncBehavior { get; }
+    internal TrackingSettingDisplay LipSyncSetting { get; }
     internal EyeBlinkPreviewData? EyeBlink { get; }
     internal LipSyncPreviewData? LipSync { get; }
 }
@@ -81,8 +103,8 @@ internal sealed class EyeBlinkPreviewData
 
     internal static EyeBlinkPreviewData? FromSimple(EyeBlinkSettings settings)
     {
-        var closed = new BlendShapeWeightSet(settings.SimpleBlinkBlendShapes);
-        closed.AddRange(settings.SimpleConflictPreventionBlendShapes);
+        var closed = new BlendShapeWeightSet(settings.SimpleConflictPreventionBlendShapes);
+        closed.AddRange(settings.SimpleBlinkBlendShapes);
         var durations = settings.SimpleDurationsSeconds;
         var closing = Mathf.Max(0f, durations.x);
         var hold = Mathf.Max(0f, durations.y);

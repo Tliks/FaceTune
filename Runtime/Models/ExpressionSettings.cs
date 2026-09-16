@@ -104,15 +104,25 @@ internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
         };
 
     public bool Equals(FacialBlendShapeData? other)
-        => other is not null
-        && BlendShapeMode == other.BlendShapeMode
-        && BaseSource == other.BaseSource
-        && Clip == other.Clip
-        && ClipOption == other.ClipOption
-        && ReferenceSource == other.ReferenceSource
-        && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations)
-        && CompositeEntries.Count == other.CompositeEntries.Count
-        && CompositeEntries.Zip(other.CompositeEntries, EntryEquals).All(equal => equal);
+    {
+        if (other is null || BlendShapeMode != other.BlendShapeMode) return false;
+        return BlendShapeMode switch
+        {
+            Mode.Simple => BaseSource == other.BaseSource
+                && BaseSource switch
+                {
+                    SimpleBaseSource.Clip => Clip == other.Clip
+                        && ClipOption == other.ClipOption
+                        && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations),
+                    SimpleBaseSource.Reference => ReferenceSource == other.ReferenceSource
+                        && BlendShapeAnimations.SequenceEqual(other.BlendShapeAnimations),
+                    _ => throw new ArgumentOutOfRangeException()
+                },
+            Mode.Composite => CompositeEntries.Count == other.CompositeEntries.Count
+                && CompositeEntries.Zip(other.CompositeEntries, EntryEquals).All(equal => equal),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
 
     public override bool Equals(object? obj)
         => obj is FacialBlendShapeData other && Equals(other);
@@ -121,18 +131,24 @@ internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
     {
         var hash = new HashCode();
         hash.Add(BlendShapeMode);
-        hash.Add(BaseSource);
-        hash.Add(Clip);
-        hash.Add(ClipOption);
-        hash.Add(ReferenceSource);
-        foreach (var animation in BlendShapeAnimations) hash.Add(animation);
-        foreach (var entry in CompositeEntries)
+        if (BlendShapeMode == Mode.Simple)
         {
-            hash.Add(entry.EntryKind);
-            hash.Add(entry.Clip);
-            hash.Add(entry.ClipOption);
-            hash.Add(entry.ReferenceSource);
-            foreach (var animation in entry.BlendShapeAnimations) hash.Add(animation);
+            hash.Add(BaseSource);
+            if (BaseSource == SimpleBaseSource.Clip)
+            {
+                hash.Add(Clip);
+                hash.Add(ClipOption);
+            }
+            else
+            {
+                hash.Add(ReferenceSource);
+            }
+            foreach (var animation in BlendShapeAnimations) hash.Add(animation);
+        }
+        else
+        {
+            foreach (var entry in CompositeEntries)
+                AddEntryHash(ref hash, entry);
         }
         return hash.ToHashCode();
     }
@@ -153,11 +169,38 @@ internal class FacialBlendShapeData : IEquatable<FacialBlendShapeData>
             new BlendShapeWeightAnimation(animation.Name, animation.Curve)).ToList();
 
     private static bool EntryEquals(CompositeEntry left, CompositeEntry right)
-        => left.EntryKind == right.EntryKind
-        && left.Clip == right.Clip
-        && left.ClipOption == right.ClipOption
-        && left.ReferenceSource == right.ReferenceSource
-        && left.BlendShapeAnimations.SequenceEqual(right.BlendShapeAnimations);
+    {
+        if (left.EntryKind != right.EntryKind) return false;
+        return left.EntryKind switch
+        {
+            CompositeEntry.Kind.Direct => left.BlendShapeAnimations.SequenceEqual(
+                right.BlendShapeAnimations),
+            CompositeEntry.Kind.Clip => left.Clip == right.Clip
+                && left.ClipOption == right.ClipOption,
+            CompositeEntry.Kind.Reference => left.ReferenceSource == right.ReferenceSource,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    private static void AddEntryHash(ref HashCode hash, CompositeEntry entry)
+    {
+        hash.Add(entry.EntryKind);
+        switch (entry.EntryKind)
+        {
+            case CompositeEntry.Kind.Direct:
+                foreach (var animation in entry.BlendShapeAnimations) hash.Add(animation);
+                break;
+            case CompositeEntry.Kind.Clip:
+                hash.Add(entry.Clip);
+                hash.Add(entry.ClipOption);
+                break;
+            case CompositeEntry.Kind.Reference:
+                hash.Add(entry.ReferenceSource);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
 }
 
 internal enum ClipImportOption
@@ -359,6 +402,9 @@ internal sealed class LipSyncSettings : IEquatable<LipSyncSettings>
                && (Mode != Kind.Custom || Shapes.Equals(other.Shapes));
     }
 
+    public override bool Equals(object? obj)
+        => obj is LipSyncSettings other && Equals(other);
+
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -448,9 +494,18 @@ internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes
 
 /// <summary>表情の遷移時間。</summary>
 [Serializable]
-internal class TransitionSettings
+internal class TransitionSettings : IEquatable<TransitionSettings>
 {
     public float DurationSeconds = 0.1f;
+
+    public bool Equals(TransitionSettings? other)
+        => other != null && DurationSeconds.Equals(other.DurationSeconds);
+
+    public override bool Equals(object? obj)
+        => obj is TransitionSettings other && Equals(other);
+
+    public override int GetHashCode()
+        => DurationSeconds.GetHashCode();
 }
 
 /// <summary>
@@ -458,9 +513,18 @@ internal class TransitionSettings
 /// VRCではMergeAnimatorの優先度と同一。
 /// </summary>
 [Serializable]
-internal class PrioritySettings
+internal class PrioritySettings : IEquatable<PrioritySettings>
 {
     public int Priority = 0;
+
+    public bool Equals(PrioritySettings? other)
+        => other != null && Priority == other.Priority;
+
+    public override bool Equals(object? obj)
+        => obj is PrioritySettings other && Equals(other);
+
+    public override int GetHashCode()
+        => Priority;
 }
 
 /// <summary>Menuの選択状態を、このSettingsが付いたGameObject以下の条件へ加える。</summary>
@@ -513,15 +577,28 @@ internal class MultiFrameSettings : IEquatable<MultiFrameSettings>
         };
 
     public bool Equals(MultiFrameSettings? other)
-        => other != null
-        && MultiFrameMode == other.MultiFrameMode
-        && TriggerHand == other.TriggerHand
-        && ParameterName == other.ParameterName
-        && MenuSource == other.MenuSource;
+    {
+        if (other == null || MultiFrameMode != other.MultiFrameMode) return false;
+        return MultiFrameMode switch
+        {
+            Kind.Default or Kind.Loop => true,
+            Kind.Trigger => TriggerHand == other.TriggerHand,
+            Kind.Parameter => ParameterName == other.ParameterName,
+            Kind.Menu => MenuSource == other.MenuSource,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
 
     public override bool Equals(object? obj)
         => obj is MultiFrameSettings other && Equals(other);
 
     public override int GetHashCode()
-        => HashCode.Combine(MultiFrameMode, TriggerHand, ParameterName, MenuSource);
+        => MultiFrameMode switch
+        {
+            Kind.Default or Kind.Loop => MultiFrameMode.GetHashCode(),
+            Kind.Trigger => HashCode.Combine(MultiFrameMode, TriggerHand),
+            Kind.Parameter => HashCode.Combine(MultiFrameMode, ParameterName),
+            Kind.Menu => HashCode.Combine(MultiFrameMode, MenuSource),
+            _ => throw new ArgumentOutOfRangeException()
+        };
 }

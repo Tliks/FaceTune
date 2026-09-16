@@ -67,6 +67,7 @@ internal class BlendShapeOverrideManager : IDisposable
     private ImmutableBlendShapeWeightSet _baseSet = new();
     private ImmutableBlendShapeWeightSet _effectiveBaseSet = new();
     private ISet<string> _explicitlyExcluded = new HashSet<string>();
+    private ISet<string> _rendererBlendShapeNames = new HashSet<string>();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
 
     public IReadOnlyList<string> AllKeys => _allKeysArray;
@@ -75,6 +76,9 @@ internal class BlendShapeOverrideManager : IDisposable
     public ImmutableBlendShapeWeightSet EffectiveBaseSet => _effectiveBaseSet;
     public ISet<string> ExplicitlyExcluded => _explicitlyExcluded;
     public bool IsExplicitlyExcluded(string name) => _explicitlyExcluded.Contains(name);
+    public bool IsMissing(int index) => !_rendererBlendShapeNames.Contains(_allKeysArray[index]);
+    public bool IsUnavailable(int index)
+        => IsMissing(index) || IsExplicitlyExcluded(_allKeysArray[index]);
 
     private void RebuildEffectiveBaseSet()
     {
@@ -113,20 +117,29 @@ internal class BlendShapeOverrideManager : IDisposable
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null)
     {
         _explicitlyExcluded = explicitlyExcluded;
-        InitializeTargetRenderer(targetRenderer, explicitlyExcluded);
+        InitializeTargetRenderer(targetRenderer, targetSet, explicitlyExcluded);
         InitializeSourceSets(facialSet, baseSet, targetSet, initialCurves);
     }
 
     private void InitializeTargetRenderer(
         SkinnedMeshRenderer? targetRenderer,
+        ImmutableBlendShapeWeightSet? targetSet,
         ISet<string> explicitlyExcluded)
     {
-        var allBlendShapes = targetRenderer == null
+        var rendererBlendShapes = targetRenderer == null
             ? Array.Empty<BlendShapeWeight>()
-            : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh)
-                .Where(shape => !explicitlyExcluded.Contains(shape.Name))
-                .ToArray();
-        _allKeysArray = allBlendShapes.Select(x => x.Name).ToArray();
+            : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh).ToArray();
+        _rendererBlendShapeNames = rendererBlendShapes
+            .Select(shape => shape.Name)
+            .ToHashSet(StringComparer.Ordinal);
+        var retainedNames = targetSet?.Select(shape => shape.Name)
+            ?? Enumerable.Empty<string>();
+        _allKeysArray = rendererBlendShapes
+            .Select(shape => shape.Name)
+            .Where(name => !explicitlyExcluded.Contains(name))
+            .Concat(retainedNames)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         _shapeNameToIndexMap = _allKeysArray.Select((x, i) => (x, i)).ToDictionary(x => x.x, x => x.i);
         _overrideFlagsProperty.arraySize = _allKeysArray.Length;
         _overrideWeightsProperty.arraySize = _allKeysArray.Length;

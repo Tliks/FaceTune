@@ -84,7 +84,7 @@ internal static class VRChatMenuThumbnailFeature
     // Todo: 設計として正しいか確認 / NDMF側のAPI追加(containerの追加)を検討
     private static void SaveThumbnails(IAssetSaver assetSaver, IReadOnlyList<Texture2D> textures)
     {
-        using var _ = new Utils.ProfilingSampleScope("FaceTune.Thumbnail.Save");
+        using var _ = new Utils.ProfilingSampleScope("Thumbnail.Save");
         if (textures.Count == 0) return;
         if (assetSaver.CurrentContainer == null)
         {

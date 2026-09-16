@@ -8,7 +8,7 @@ internal static partial class Utils
     {
         public ProfilingSampleScope(string name)
         {
-            Profiler.BeginSample(name);
+            Profiler.BeginSample($"{FaceTuneConstants.Name}.{name}");
         }
 
         void IDisposable.Dispose()

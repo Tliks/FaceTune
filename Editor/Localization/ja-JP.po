@@ -911,6 +911,18 @@ msgstr "生成Assetの保存先"
 msgid "window.import.faceEmo.outputFolder.button"
 msgstr "選択"
 
+msgid "inspector.avatarContext.avatar.message"
+msgstr "アバターを特定できません。"
+
+msgid "inspector.avatarContext.renderer.message"
+msgstr "表情用のレンダラーを特定できません。\nAvatar Settingsコンポーネントを追加し、指定してください。"
+
+msgid "inspector.avatarContext.mesh.message"
+msgstr "表情用のレンダラーに、メッシュが設定されていません。"
+
+msgid "inspector.avatarContext.multiple.message"
+msgstr "選択中の一部のコンポーネントでアバター設定を取得できません。"
+
 msgid "previewOverlay.avatar.label"
 msgstr "アバター"
 
@@ -923,14 +935,50 @@ msgstr "あり"
 msgid "previewOverlay.status.keep"
 msgstr "維持"
 
-msgid "previewOverlay.status.previewOnly"
-msgstr "なし（プレビューのみ）"
+msgid "previewOverlay.status.unset"
+msgstr "未設定"
+
+msgid "previewOverlay.status.enabled"
+msgstr "あり"
+
+msgid "previewOverlay.status.disabled"
+msgstr "なし"
+
+msgid "previewOverlay.qualifier.estimated"
+msgstr "推定値"
 
 msgid "previewOverlay.multiFrame.label"
 msgstr "マルチフレーム"
+
+msgid "blendShape.validation.missing.tooltip"
+msgstr "表情用のメッシュに、このブレンドシェイプが存在しません。"
+
+msgid "blendShape.validation.unavailable.tooltip"
+msgstr "このブレンドシェイプは使用できません。"
+
+msgid "eyeBlink.settingUnused.keep.message"
+msgstr "まばたきが「維持」のため、この設定は使用されません。"
+
+msgid "eyeBlink.settingUnused.disallow.message"
+msgstr "まばたきが「なし」のため、この設定は使用されません。"
+
+msgid "lipSync.settingUnused.keep.message"
+msgstr "リップシンクが「維持」のため、この設定は使用されません。"
+
+msgid "lipSync.settingUnused.disallow.message"
+msgstr "リップシンクが「なし」のため、この設定は使用されません。"
+
+msgid "eyeBlink.builtIn.unavailable.message"
+msgstr "アバター設定からまばたきを取得できません。Avatar Descriptorなどを確認して設定するか、「アニメーション」または「カスタムアニメーション」に変更してください。"
+
+msgid "lipSync.builtIn.unavailable.message"
+msgstr "アバター設定からリップシンクを取得できません。Avatar Descriptorなどを確認して設定するか、「カスタム」に変更してください。"
 
 msgid "previewOverlay.eyeBlink.label"
 msgstr "まばたき"
 
 msgid "previewOverlay.lipSync.label"
 msgstr "リップシンク"
+
+msgid "previewOverlay.unavailable.label"
+msgstr "プレビューできません"

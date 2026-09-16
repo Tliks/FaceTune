@@ -1,3 +1,5 @@
+using nadena.dev.ndmf.preview;
+
 namespace Aoyon.FaceTune.Gui;
 
 internal enum ExpressionInheritedSettingKind
@@ -10,6 +12,8 @@ internal enum ExpressionInheritedSettingKind
 
 internal sealed class ExpressionSettingsPreviewState : ScriptableObject
 {
+    [NonSerialized] internal ExpressionComponent? Component;
+
     public EyeBlinkSettings EyeBlink = new();
     public LipSyncSettings LipSync = new();
     public TransitionSettings Transition = new();
@@ -18,6 +22,8 @@ internal sealed class ExpressionSettingsPreviewState : ScriptableObject
 
 internal sealed class ExpressionDefinitionPreviewState : ScriptableObject
 {
+    [NonSerialized] internal ExpressionComponent? Component;
+
     public FacialBlendShapeData FacialBlendShapes = new();
     public NonFacialAnimationData NonFacialAnimations = new();
     public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
@@ -36,6 +42,7 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 {
     private readonly ExpressionComponent _component;
     private readonly bool _singleTarget;
+    private readonly Action _repaint;
     private readonly ExpressionSettingsPreviewState _preview;
     private readonly SerializedObject _serializedPreview;
     private readonly ExpressionDefinitionPreviewState _definitionPreview;
@@ -50,16 +57,24 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     private SettingsComponent? _priorityOwner;
     private Transform? _batchOverrideTarget;
     private readonly IReadOnlyDictionary<ExpressionInheritedSettingKind, SettingBinding> _bindings;
+    private InheritanceSession? _session;
+    private bool _dirty = true;
 
-    public ExpressionSettingsInheritance(ExpressionComponent component, bool singleTarget)
+    public ExpressionSettingsInheritance(
+        ExpressionComponent component,
+        bool singleTarget,
+        Action repaint)
     {
         _component = component;
         _singleTarget = singleTarget;
+        _repaint = repaint;
         _preview = ScriptableObject.CreateInstance<ExpressionSettingsPreviewState>();
         _preview.hideFlags = HideFlags.HideAndDontSave;
+        _preview.Component = component;
         _serializedPreview = new SerializedObject(_preview);
         _definitionPreview = ScriptableObject.CreateInstance<ExpressionDefinitionPreviewState>();
         _definitionPreview.hideFlags = HideFlags.HideAndDontSave;
+        _definitionPreview.Component = component;
         _serializedDefinitionPreview = new SerializedObject(_definitionPreview);
         _eyeBlink = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.EyeBlink));
         _lipSync = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.LipSync));
@@ -98,8 +113,13 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         };
     }
 
-    public void Refresh()
+    public void RefreshIfNeeded()
     {
+        if (!_dirty) return;
+
+        _dirty = false;
+        _session?.Dispose();
+        _session = null;
         if (!_singleTarget || _component == null)
         {
             ClearOwners();
@@ -108,16 +128,21 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
             return;
         }
 
+        _session = new InheritanceSession(OnInvalidated);
+        var context = _session.Context;
+        context.Observe(_component);
         var root = _component.transform.root.gameObject;
-        var eyeBlink = new EyeBlinkResolver(root);
-        var lipSync = new LipSyncResolver(root);
-        var transition = new TransitionResolver(root);
-        var priority = new PriorityResolver(root);
-        var definition = new ExpressionDefinitionResolver().Resolve(_component);
+        var eyeBlink = new EyeBlinkResolver(root, context);
+        var lipSync = new LipSyncResolver(root, context);
+        var transition = new TransitionResolver(root, context);
+        var priority = new PriorityResolver(root, context);
+        var definition = new ExpressionDefinitionResolver(context).Resolve(_component);
+        if (definition is Component definitionComponent)
+            context.Observe(definitionComponent);
         RefreshDefinitionPreview(
             definition,
-            new ExpressionBehaviorResolver().Resolve(_component),
-            new MultiFrameResolver().Resolve(_component),
+            new ExpressionBehaviorResolver(context).Resolve(_component),
+            new MultiFrameResolver(context).Resolve(_component),
             eyeBlink.ResolveDefinition(_component),
             lipSync.ResolveDefinition(_component),
             eyeBlink.Resolve(_component),
@@ -132,6 +157,12 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
     }
 
     public SerializedObject DefinitionPreview => _serializedDefinitionPreview;
+
+    private void OnInvalidated()
+    {
+        _dirty = true;
+        _repaint();
+    }
 
     private void RefreshDefinitionPreview(
         IExpressionDefinitionProvider? definition,
@@ -238,6 +269,8 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
 
     public void Dispose()
     {
+        _session?.Dispose();
+        _session = null;
         if (_preview != null)
             Object.DestroyImmediate(_preview);
         if (_definitionPreview != null)
@@ -263,6 +296,26 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         string ValuePropertyName,
         string? ReferencePropertyName,
         Action<SerializedProperty> CopyPreview);
+
+    private sealed class InheritanceSession : IDisposable
+    {
+        private bool _disposed;
+
+        public InheritanceSession(Action onInvalidate)
+        {
+            Context = new ComputeContext(
+                $"{nameof(ExpressionSettingsInheritance)}:{nameof(InheritanceSession)}");
+            Context.InvokeOnInvalidate(this, session =>
+            {
+                if (!session._disposed) onInvalidate();
+            });
+        }
+
+        public ComputeContext Context { get; }
+
+        public void Dispose()
+            => _disposed = true;
+    }
 }
 
 internal sealed class ExpressionScopedSettingsGroupDrawer : ISectionDrawer
@@ -414,6 +467,8 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     private readonly ExpressionInheritedSettingKind _kind;
     private readonly ExpressionSettingsInheritance _inheritance;
     private readonly bool _showSourceActions;
+    private readonly BlendShapeValidationData? _validation;
+    private readonly SerializedProperty? _trackingPermission;
 
     public ExpressionScopedSettingSectionDrawer(
         SerializedObject serializedObject,
@@ -430,6 +485,15 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         _kind = kind;
         _inheritance = inheritance;
         _showSourceActions = showSourceActions;
+        _validation = BlendShapeValidationData.Create(serializedObject);
+        _trackingPermission = kind switch
+        {
+            ExpressionInheritedSettingKind.EyeBlink => serializedObject.FindProperty(
+                nameof(ExpressionComponent.AllowEyeBlink)),
+            ExpressionInheritedSettingKind.LipSync => serializedObject.FindProperty(
+                nameof(ExpressionComponent.AllowLipSync)),
+            _ => null
+        };
         if (referencePropertyName != null)
             _source = new SerializedReferenceableSettings(
                 serializedObject,
@@ -455,12 +519,18 @@ internal sealed class ExpressionScopedSettingSectionDrawer
     public bool ActionsEnabled => ShowsLocalValue;
 
     public float GetHeight()
-        => GetValueHeight()
-         + (_showSourceActions
-             ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
-             : ShowsInheritedValue
-                 ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
-                 : 0f);
+    {
+        var height = GetValueHeight()
+                   + (_showSourceActions
+                       ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
+                       : ShowsInheritedValue
+                           ? GUIHelper.LineHeight + GUIHelper.VerticalSpacing
+                           : 0f);
+        var warningHeight = GetWarningHeight();
+        return warningHeight > 0f
+            ? height + GUIHelper.VerticalSpacing + warningHeight
+            : height;
+    }
 
     public float GetHeaderWidth()
         => GUIHelper.CompactPopupWidth(
@@ -512,6 +582,13 @@ internal sealed class ExpressionScopedSettingSectionDrawer
         var value = GetDisplayedValue();
         var valueHeight = GetValueHeight();
         position.height = valueHeight;
+        using var validation = BlendShapeValidationScope.Push(
+            _validation,
+            _kind == ExpressionInheritedSettingKind.EyeBlink
+                ? FaceTuneWriteKind.EyeBlinkAnimation
+                : _kind == ExpressionInheritedSettingKind.LipSync
+                    ? FaceTuneWriteKind.LipSyncAnimation
+                    : null);
         using (new EditorGUI.DisabledScope(!ShowsLocalValue))
         {
             if (!ShowsLocalValue || _source == null)
@@ -528,10 +605,29 @@ internal sealed class ExpressionScopedSettingSectionDrawer
             }
         }
 
+        var contentBottom = position.y + valueHeight;
+        var warningHeight = GetWarningHeight();
+        if (warningHeight > 0f)
+        {
+            position.y = contentBottom + GUIHelper.VerticalSpacing;
+            position.height = warningHeight;
+            TrackingSettingWarningGUI.Draw(
+                position,
+                _trackingPermission,
+                _kind == ExpressionInheritedSettingKind.EyeBlink);
+            contentBottom = position.yMax;
+        }
+
         if (!_showSourceActions) return;
-        position.y += valueHeight + GUIHelper.VerticalSpacing;
-        DrawSourceActions(position.SetSingleHeight());
+        position.y = contentBottom + GUIHelper.VerticalSpacing;
+        position.SetSingleHeight();
+        DrawSourceActions(position);
     }
+
+    private float GetWarningHeight()
+        => TrackingSettingWarningGUI.GetHeight(
+            _trackingPermission,
+            _kind == ExpressionInheritedSettingKind.EyeBlink);
 
     private void DrawSourceActions(Rect position)
     {

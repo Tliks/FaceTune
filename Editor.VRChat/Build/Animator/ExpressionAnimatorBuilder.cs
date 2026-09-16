@@ -114,7 +114,7 @@ internal sealed class ExpressionAnimatorBuilder
         IReadOnlyList<ExpressionItem> expressions,
         int layerPriority)
     {
-        using var _ = new Utils.ProfilingSampleScope("FaceTune.Animator.Expression.ReplaceLayer");
+        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.ReplaceLayer");
         var enterConditions = new DnfCondition[expressions.Count];
         var higherPriority = DnfCondition.Never;
         for (var expressionIndex = expressions.Count - 1; expressionIndex >= 0; expressionIndex--)
@@ -222,7 +222,7 @@ internal sealed class ExpressionAnimatorBuilder
     private IReadOnlyList<List<ExpressionItem>> PackBlendRun(
         IReadOnlyList<ExpressionItem> expressions)
     {
-        using var _ = new Utils.ProfilingSampleScope("FaceTune.Animator.Expression.PackBlendRun");
+        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.PackBlendRun");
         var layers = new List<List<ExpressionItem>>();
         var layerIndices = new int[expressions.Count];
 

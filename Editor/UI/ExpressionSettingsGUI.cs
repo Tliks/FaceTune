@@ -161,12 +161,17 @@ internal static class ComponentReferenceGUI
 internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISectionHeaderDrawer
 {
     private readonly SerializedReferenceableSettings _settings;
+    private readonly BlendShapeValidationData? _validation;
+    private readonly FaceTuneWriteKind _writeKind;
 
     public ReferenceableSettingsSectionDrawer(
         SerializedReferenceableSettings settings,
-        Func<object?> createDefaultValue)
+        Func<object?> createDefaultValue,
+        FaceTuneWriteKind writeKind)
     {
         _settings = settings;
+        _validation = BlendShapeValidationData.Create(settings.Direct.serializedObject);
+        _writeKind = writeKind;
         Actions = settings.CreateActionSet(createDefaultValue);
     }
 
@@ -178,14 +183,68 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true));
 
     public void Draw(Rect position)
-        => SettingsReferenceGUI.Draw(
+    {
+        using var scope = BlendShapeValidationScope.Push(_validation, _writeKind);
+        SettingsReferenceGUI.Draw(
             position,
             _settings,
             EditorGUI.GetPropertyHeight(_settings.Direct, GUIContent.none, true),
             rect => EditorGUI.PropertyField(rect, _settings.Direct, GUIContent.none, true));
+    }
 
     public float GetHeaderWidth() => SettingsReferenceGUI.GetHeaderWidth();
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);
+}
+
+internal static class TrackingSettingWarningGUI
+{
+    internal static float GetHeight(
+        SerializedProperty? permission,
+        bool eyeBlink,
+        SerializedProperty? hasBehavior = null)
+        => GetMessageKey(permission, eyeBlink, hasBehavior) is { } key
+            ? GUIHelper.GetHelpBoxHeight(key.LS(), MessageType.Warning)
+            : 0f;
+
+    internal static void Draw(
+        Rect position,
+        SerializedProperty? permission,
+        bool eyeBlink,
+        SerializedProperty? hasBehavior = null)
+    {
+        if (GetMessageKey(permission, eyeBlink, hasBehavior) is not { } key) return;
+        GUIHelper.HelpBox(position, key.LS(), MessageType.Warning);
+    }
+
+    private static string? GetMessageKey(
+        SerializedProperty? permission,
+        bool eyeBlink,
+        SerializedProperty? hasBehavior)
+    {
+        if (permission == null || permission.hasMultipleDifferentValues) return null;
+        if (hasBehavior != null
+            && (hasBehavior.hasMultipleDifferentValues || !hasBehavior.boolValue)) return null;
+        return ((TrackingPermission)permission.intValue, eyeBlink) switch
+        {
+            (TrackingPermission.Keep, true) => "eyeBlink.settingUnused.keep.message",
+            (TrackingPermission.Disallow, true) => "eyeBlink.settingUnused.disallow.message",
+            (TrackingPermission.Keep, false) => "lipSync.settingUnused.keep.message",
+            (TrackingPermission.Disallow, false) => "lipSync.settingUnused.disallow.message",
+            _ => null
+        };
+    }
+}
+
+internal static class SerializedObjectGUIContext
+{
+    internal static Component? GetComponent(SerializedObject serializedObject)
+        => serializedObject.targetObject switch
+        {
+            Component component => component,
+            ExpressionSettingsPreviewState preview => preview.Component,
+            ExpressionDefinitionPreviewState preview => preview.Component,
+            _ => null
+        };
 }
 
 [CustomPropertyDrawer(typeof(EyeBlinkSettings))]
@@ -257,7 +316,15 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         position.NewLine();
 
         var kind = (EyeBlinkSettings.Kind)mode.intValue;
-        if (kind == EyeBlinkSettings.Kind.BuiltIn) return;
+        if (kind == EyeBlinkSettings.Kind.BuiltIn)
+        {
+            if (CannotResolveBuiltIn(property))
+                GUIHelper.HelpBox(
+                    position,
+                    "eyeBlink.builtIn.unavailable.message".LS(),
+                    MessageType.Warning);
+            return;
+        }
 
         switch (kind)
         {
@@ -276,7 +343,15 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var kind = (EyeBlinkSettings.Kind)property
             .FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode)).intValue;
-        if (kind == EyeBlinkSettings.Kind.BuiltIn) return GUIHelper.LineHeight;
+        if (kind == EyeBlinkSettings.Kind.BuiltIn)
+        {
+            if (!CannotResolveBuiltIn(property)) return GUIHelper.LineHeight;
+            return GUIHelper.LineHeight
+                 + GUIHelper.VerticalSpacing
+                 + GUIHelper.GetHelpBoxHeight(
+                     "eyeBlink.builtIn.unavailable.message".LS(),
+                     MessageType.Warning);
+        }
         var modeContentHeight = kind switch
         {
             EyeBlinkSettings.Kind.SimpleAnimation => GetSimpleHeight(property),
@@ -285,6 +360,17 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         };
         return GUIHelper.LineHeight
              + GUIHelper.VerticalSpacing + modeContentHeight;
+    }
+
+    private static bool CannotResolveBuiltIn(SerializedProperty property)
+    {
+        if (property.serializedObject.targetObjects.Length != 1
+            || SerializedObjectGUIContext.GetComponent(property.serializedObject) is not { } component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
+            return false;
+
+        return MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+            .All(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer) == null);
     }
 
     private static void DrawMode(Rect position, SerializedProperty mode)
@@ -305,7 +391,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         var blink = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes));
         var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
         return GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions)
-             + GUIHelper.VerticalSpacing + GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions)
+             + GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(conflicts, ConflictBlendShapesOptions)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
     }
@@ -314,20 +400,20 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var blink = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes));
         position.height = GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions);
-        GUIHelper.DrawList(position, blink, "eyeBlink.simple.blinkBlendShapes.label".LG(), BlinkBlendShapesOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.EyeBlinkAnimation))
+            GUIHelper.DrawList(position, blink, "eyeBlink.simple.blinkBlendShapes.label".LG(), BlinkBlendShapesOptions);
         position.NewLine();
 
         var conflicts = property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes));
-        position.height = GUIHelper.GetOptionalListHeight(conflicts, ConflictBlendShapesOptions);
-        GUIHelper.DrawLocalizedOptionalList(
-            position,
-            conflicts,
-            new GUIContent(
-                "eyeBlink.simple.conflictBlendShapes.label".LS(),
-                "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
-            "common.option.none",
-            "common.option.present",
-            ConflictBlendShapesOptions);
+        position.height = GUIHelper.GetListHeight(conflicts, ConflictBlendShapesOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.FacialData))
+            GUIHelper.DrawList(
+                position,
+                conflicts,
+                new GUIContent(
+                    "eyeBlink.simple.conflictBlendShapes.label".LS(),
+                    "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
+                ConflictBlendShapesOptions);
         position.NewLine();
 
         DrawInterval(ref position, property);
@@ -360,7 +446,8 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     {
         var animations = property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations));
         position.height = GUIHelper.GetListHeight(animations, AnimationsOptions);
-        GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.EyeBlinkAnimation))
+            GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
         position.NewLine();
         DrawInterval(ref position, property);
     }
@@ -490,20 +577,22 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             var customPosition = position;
             customPosition.Indent();
             customPosition.height = GUIHelper.GetLinesHeight(VisemeRows);
-            DrawVisemeGrid(customPosition, property, visemes, selection);
+            using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.LipSyncAnimation))
+                DrawVisemeGrid(customPosition, property, visemes, selection);
             customPosition.NewLine();
 
             if (selection >= 0)
             {
                 var selected = visemes[selection];
                 customPosition.height = GUIHelper.GetListHeight(selected.Shapes, VisemeOptions);
-                GUIHelper.DrawList(
-                    customPosition,
-                    selected.Shapes,
-                    new GUIContent(string.Format(
-                        "lipSync.selectedVisemeBlendShapes.label".LS(),
-                        selected.Name)),
-                    VisemeOptions);
+                using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.LipSyncAnimation))
+                    GUIHelper.DrawList(
+                        customPosition,
+                        selected.Shapes,
+                        new GUIContent(string.Format(
+                            "lipSync.selectedVisemeBlendShapes.label".LS(),
+                            selected.Name)),
+                        VisemeOptions);
                 customPosition.NewLine();
             }
             position.y = customPosition.y;
@@ -516,16 +605,23 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        position.height = GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
-        GUIHelper.DrawLocalizedOptionalList(
+        position.height = GUIHelper.GetListHeight(canceller, CancellerOptions);
+        using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.FacialData))
+            GUIHelper.DrawList(
+                position,
+                canceller,
+                new GUIContent(
+                    "lipSync.cancellerBlendShapes.label".LS(),
+                    "lipSync.cancellerBlendShapes.tooltip".LS()),
+                CancellerOptions);
+
+        if ((LipSyncSettings.Kind)mode.intValue != LipSyncSettings.Kind.BuiltIn
+            || !CannotResolveBuiltIn(property)) return;
+        position.NewLine();
+        GUIHelper.HelpBox(
             position,
-            canceller,
-            new GUIContent(
-                "lipSync.cancellerBlendShapes.label".LS(),
-                "lipSync.cancellerBlendShapes.tooltip".LS()),
-            "common.option.none",
-            "common.option.present",
-            CancellerOptions);
+            "lipSync.builtIn.unavailable.message".LS(),
+            MessageType.Warning);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -545,7 +641,25 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         }
 
         var canceller = property.FindPropertyRelative(nameof(LipSyncSettings.CancellerBlendShapes));
-        return height + GUIHelper.GetOptionalListHeight(canceller, CancellerOptions);
+        height += GUIHelper.GetListHeight(canceller, CancellerOptions);
+        if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.BuiltIn
+            && CannotResolveBuiltIn(property))
+            height += GUIHelper.VerticalSpacing
+                    + GUIHelper.GetHelpBoxHeight(
+                        "lipSync.builtIn.unavailable.message".LS(),
+                        MessageType.Warning);
+        return height;
+    }
+
+    private static bool CannotResolveBuiltIn(SerializedProperty property)
+    {
+        if (property.serializedObject.targetObjects.Length != 1
+            || SerializedObjectGUIContext.GetComponent(property.serializedObject) is not { } component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
+            return false;
+
+        return MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+            .All(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer) == null);
     }
 
     private static void DrawMode(
