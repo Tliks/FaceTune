@@ -695,6 +695,7 @@ internal sealed class BlendShapeWeightAnimationDrawer : PropertyDrawer
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
+        using var _ = new Utils.ProfilingSampleScope("BlendShapeRow");
         GUIHelper.RegisterPropertyRegion(position, property);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
         position.SetSingleHeight();

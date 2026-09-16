@@ -7,6 +7,7 @@ internal abstract class FaceTuneEditorBase<T> : Editor where T : FaceTuneTagComp
 
     public sealed override void OnInspectorGUI()
     {
+        using var _ = new Utils.ProfilingSampleScope($"Inspector.{typeof(T).Name}");
         serializedObject.UpdateIfRequiredOrScript();
         PrepareInspector();
 

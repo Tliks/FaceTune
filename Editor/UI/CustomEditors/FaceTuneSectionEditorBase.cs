@@ -309,7 +309,15 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                 height += GUIHelper.HeaderSpacing;
                 if (section.SpacingGroup != previous.SpacingGroup) height += SectionGroupSpacing;
             }
-            height += GetSectionHeight(section);
+            var label = section.GetLabel().text;
+
+            float SectionHeight()
+            {
+                using var _ = new Utils.ProfilingSampleScope($"Height.{label}");
+                return GetSectionHeight(section);
+            }
+
+            height += SectionHeight();
             previous = section;
         }
         var footerHeight = GetFooterHeight();
@@ -337,6 +345,8 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
                 if (section.SpacingGroup != previous.SpacingGroup) position.y += SectionGroupSpacing;
             }
 
+            var sectionLabel = section.GetLabel().text;
+            using var _ = new Utils.ProfilingSampleScope($"Draw.{sectionLabel}");
             var contentHeight = section.GetContentHeight();
             var sectionPosition = new Rect(
                 position.x,
