@@ -2,13 +2,6 @@ using Aoyon.FaceTune.Build;
 
 namespace Aoyon.FaceTune.Platforms;
 
-internal enum FaceTuneWriteKind
-{
-    FacialData,
-    EyeBlinkAnimation,
-    LipSyncAnimation
-}
-
 internal interface IMetabasePlatformSupport
 {
     IPlatformBuildBackend? BuildBackend => null;
