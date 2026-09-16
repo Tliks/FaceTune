@@ -12,6 +12,8 @@ internal enum ExpressionInheritedSettingKind
 
 internal sealed class ExpressionSettingsPreviewState : ScriptableObject
 {
+    [NonSerialized] internal ExpressionComponent? Component;
+
     public EyeBlinkSettings EyeBlink = new();
     public LipSyncSettings LipSync = new();
     public TransitionSettings Transition = new();
@@ -20,6 +22,8 @@ internal sealed class ExpressionSettingsPreviewState : ScriptableObject
 
 internal sealed class ExpressionDefinitionPreviewState : ScriptableObject
 {
+    [NonSerialized] internal ExpressionComponent? Component;
+
     public FacialBlendShapeData FacialBlendShapes = new();
     public NonFacialAnimationData NonFacialAnimations = new();
     public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
@@ -66,9 +70,11 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         _repaint = repaint;
         _preview = ScriptableObject.CreateInstance<ExpressionSettingsPreviewState>();
         _preview.hideFlags = HideFlags.HideAndDontSave;
+        _preview.Component = component;
         _serializedPreview = new SerializedObject(_preview);
         _definitionPreview = ScriptableObject.CreateInstance<ExpressionDefinitionPreviewState>();
         _definitionPreview.hideFlags = HideFlags.HideAndDontSave;
+        _definitionPreview.Component = component;
         _serializedDefinitionPreview = new SerializedObject(_definitionPreview);
         _eyeBlink = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.EyeBlink));
         _lipSync = _serializedPreview.FindProperty(nameof(ExpressionSettingsPreviewState.LipSync));

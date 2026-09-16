@@ -188,6 +188,18 @@ internal sealed class ReferenceableSettingsSectionDrawer : ISectionDrawer, ISect
     public void DrawHeader(Rect position) => SettingsReferenceGUI.DrawHeader(position, _settings);
 }
 
+internal static class TrackingSettingsGUIContext
+{
+    internal static Component? GetComponent(SerializedObject serializedObject)
+        => serializedObject.targetObject switch
+        {
+            Component component => component,
+            ExpressionSettingsPreviewState preview => preview.Component,
+            ExpressionDefinitionPreviewState preview => preview.Component,
+            _ => null
+        };
+}
+
 [CustomPropertyDrawer(typeof(EyeBlinkSettings))]
 internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 {
@@ -306,7 +318,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
     private static bool CannotResolveBuiltIn(SerializedProperty property)
     {
         if (property.serializedObject.targetObjects.Length != 1
-            || property.serializedObject.targetObject is not Component component
+            || TrackingSettingsGUIContext.GetComponent(property.serializedObject) is not { } component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return false;
 
@@ -593,7 +605,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
     private static bool CannotResolveBuiltIn(SerializedProperty property)
     {
         if (property.serializedObject.targetObjects.Length != 1
-            || property.serializedObject.targetObject is not Component component
+            || TrackingSettingsGUIContext.GetComponent(property.serializedObject) is not { } component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return false;
 
