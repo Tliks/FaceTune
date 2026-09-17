@@ -2,7 +2,7 @@ namespace Aoyon.FaceTune.Preview;
 
 internal sealed class PreviewTimeline : IDisposable
 {
-    private const double UpdateIntervalSeconds = 1.0 / 30.0;
+    private const double UpdateIntervalSeconds = 1.0 / 60.0;
 
     private float _duration;
     private bool _isLooping;
