@@ -2,7 +2,7 @@ using Aoyon.FaceTune.Build;
 
 namespace Aoyon.FaceTune.Platforms;
 
-internal interface IMetabasePlatformSupport
+internal interface IMetaversePlatformSupport
 {
     IPlatformBuildBackend? BuildBackend => null;
 

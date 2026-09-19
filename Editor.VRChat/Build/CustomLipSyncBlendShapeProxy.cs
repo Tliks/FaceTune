@@ -56,7 +56,6 @@ internal static class CustomLipSyncBlendShapeProxy
         }
 
         settings.AvatarContext.FaceRenderer.sharedMesh = mesh;
-        buildContext.AssetSaver.SaveAsset(mesh);
 
         var avatarContext = settings.AvatarContext with { FaceMesh = mesh };
         var rewrittenSettings = settings with { AvatarContext = avatarContext };

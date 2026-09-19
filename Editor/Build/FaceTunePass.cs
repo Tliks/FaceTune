@@ -14,11 +14,22 @@ internal class BuildEnabledState
 
     public static BuildEnabledState Create(BuildContext buildContext)
     {
+        return new BuildEnabledState(ShouldBuild(buildContext));
+    }
+
+    private static bool ShouldBuild(BuildContext buildContext)
+    {
         var root = buildContext.AvatarRootObject;
-        var platformSupport = MetabasePlatformSupport.GetForBuild(buildContext);
-        var canBuild = AvatarContext.TryGet(root, platformSupport, out _, out _);
-        var anyComponents = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Length > 0;
-        return new BuildEnabledState(canBuild && anyComponents);
+        var platformSupport = MetaversePlatformSupport.GetForBuild(buildContext);
+
+        var components = root.GetComponentsInChildren<FaceTuneTagComponent>(true).Length;
+        if (components == 0)
+            return false;
+
+        if (!AvatarContext.TryGet(root, platformSupport, out _, out _))
+            return false;
+
+        return true;
     }
 }
 
@@ -26,7 +37,7 @@ internal class FaceTuneContext
 {
     public BuildContext BuildContext { get; }
     public AvatarContext AvatarContext { get; }
-    public IMetabasePlatformSupport PlatformSupport { get; }
+    public IMetaversePlatformSupport PlatformSupport { get; }
 
     private BuildSettings? Settings { get; set; }
     private AvatarControlSettings? AvatarControlSettingsState { get; set; }
@@ -37,7 +48,7 @@ internal class FaceTuneContext
     private FaceTuneContext(
         BuildContext buildContext,
         AvatarContext avatarContext,
-        IMetabasePlatformSupport platformSupport)
+        IMetaversePlatformSupport platformSupport)
     {
         BuildContext = buildContext;
         AvatarContext = avatarContext;
@@ -47,7 +58,7 @@ internal class FaceTuneContext
     public static FaceTuneContext Create(BuildContext buildContext)
     {
         var root = buildContext.AvatarRootObject;
-        var platformSupport = MetabasePlatformSupport.GetForBuild(buildContext);
+        var platformSupport = MetaversePlatformSupport.GetForBuild(buildContext);
         if (!AvatarContext.TryGet(root, platformSupport, out var avatarContext, out _))
         {
             throw new InvalidOperationException("FaceTuneContext cannot be created for this avatar.");

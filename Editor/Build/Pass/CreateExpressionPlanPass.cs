@@ -21,7 +21,7 @@ internal static class ExpressionPlanBuilder
 {
     public static ExpressionPlan Build(
         AvatarContext context,
-        IMetabasePlatformSupport platformSupport,
+        IMetaversePlatformSupport platformSupport,
         BuildSettings settings)
     {
         var components = context.Root.GetComponentsInChildren<ExpressionComponent>(true);
@@ -40,7 +40,7 @@ internal static class ExpressionPlanBuilder
 internal sealed class ExpressionItemBuilder
 {
     private readonly AvatarContext _avatarContext;
-    private readonly IMetabasePlatformSupport _platformSupport;
+    private readonly IMetaversePlatformSupport _platformSupport;
     private readonly ConditionResolver _conditionResolver;
     private readonly FacialAnimationResolver _facial;
     private readonly NonFacialAnimationResolver _nonFacial;
@@ -54,7 +54,7 @@ internal sealed class ExpressionItemBuilder
 
     public ExpressionItemBuilder(
         AvatarContext avatarContext,
-        IMetabasePlatformSupport platformSupport,
+        IMetaversePlatformSupport platformSupport,
         BuildSettings settings,
         ConditionResolver conditionResolver)
     {

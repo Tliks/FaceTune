@@ -1,5 +1,3 @@
-using Aoyon.FaceTune.Platforms;
-
 namespace Aoyon.FaceTune.Build;
 
 internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>

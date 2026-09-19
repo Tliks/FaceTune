@@ -26,13 +26,13 @@ internal record AvatarContext(
             return false;
         }
 
-        var platformSupports = MetabasePlatformSupport.GetForAvatar(root.transform);
+        var platformSupports = MetaversePlatformSupport.GetForAvatar(root.transform);
         return TryGet(target, platformSupports, out avatarContext, out result, context);
     }
 
     public static bool TryGet(
         GameObject target,
-        IMetabasePlatformSupport platformSupport,
+        IMetaversePlatformSupport platformSupport,
         [NotNullWhen(true)] out AvatarContext? avatarContext,
         out BuildResult result,
         ComputeContext? context = null)
@@ -42,7 +42,7 @@ internal record AvatarContext(
 
     public static bool TryGet(
         GameObject target,
-        IReadOnlyList<IMetabasePlatformSupport> platformSupports,
+        IReadOnlyList<IMetaversePlatformSupport> platformSupports,
         [NotNullWhen(true)] out AvatarContext? avatarContext,
         out BuildResult result,
         ComputeContext? context = null)
@@ -98,7 +98,7 @@ internal record AvatarContext(
 
     private static SkinnedMeshRenderer? ResolveFaceRenderer(
         Transform root,
-        IEnumerable<IMetabasePlatformSupport> platformSupports)
+        IEnumerable<IMetaversePlatformSupport> platformSupports)
     {
         var candidates = platformSupports
             .Select(support => support.GetFaceRenderer())
@@ -115,7 +115,7 @@ internal record AvatarContext(
         FaceTuneWriteKind writeKind,
         ComputeContext? context = null)
     {
-        var prohibited = MetabasePlatformSupport.GetForAvatar(root.transform)
+        var prohibited = MetaversePlatformSupport.GetForAvatar(root.transform)
             .SelectMany(support => support.GetProhibitedBlendShapeNames(writeKind));
         return prohibited
             .Concat(GetExplicitlyExcludedBlendShapeNames(root, context))

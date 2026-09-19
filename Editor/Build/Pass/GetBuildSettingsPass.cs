@@ -12,7 +12,7 @@ internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
         var root = context.AvatarContext.Root;
         var settings = root.GetComponentsInChildren<AvatarSettingsComponent>(true)
             .FirstOrDefault().DestroyedAsNull();
-        var platformSupports = MetabasePlatformSupport.GetForAvatar(root.transform)
+        var platformSupports = MetaversePlatformSupport.GetForAvatar(root.transform)
             .Append(context.PlatformSupport)
             .ToArray();
         var explicitlyExcluded = AvatarContext.GetExplicitlyExcludedBlendShapeNames(root);
@@ -29,7 +29,7 @@ internal sealed class GetBuildSettingsPass : FaceTunePass<GetBuildSettingsPass>
     }
 
     private static ImmutableHashSet<string> GetProhibited(
-        IEnumerable<IMetabasePlatformSupport> platformSupports,
+        IEnumerable<IMetaversePlatformSupport> platformSupports,
         FaceTuneWriteKind writeKind)
     {
         return platformSupports

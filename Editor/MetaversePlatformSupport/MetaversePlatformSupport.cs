@@ -2,9 +2,9 @@ using nadena.dev.ndmf;
 
 namespace Aoyon.FaceTune.Platforms;
 
-internal static class MetabasePlatformSupport
+internal static class MetaversePlatformSupport
 {
-    internal delegate IMetabasePlatformSupport? Factory(Transform root);
+    internal delegate IMetaversePlatformSupport? Factory(Transform root);
 
     private static readonly Dictionary<string, Factory> s_factories = new();
 
@@ -13,7 +13,7 @@ internal static class MetabasePlatformSupport
         s_factories[platformId] = factory;
     }
 
-    public static IMetabasePlatformSupport GetForBuild(BuildContext context)
+    public static IMetaversePlatformSupport GetForBuild(BuildContext context)
     {
         if (s_factories.TryGetValue(context.PlatformProvider.QualifiedName, out var factory))
         {
@@ -24,11 +24,11 @@ internal static class MetabasePlatformSupport
         return new FallbackSupport(context.AvatarRootTransform);
     }
 
-    public static IReadOnlyList<IMetabasePlatformSupport> GetForAvatar(Transform root)
+    public static IReadOnlyList<IMetaversePlatformSupport> GetForAvatar(Transform root)
     {
         return s_factories.Values
             .Select(factory => factory(root))
-            .OfType<IMetabasePlatformSupport>()
+            .OfType<IMetaversePlatformSupport>()
             .ToArray();
     }
 }

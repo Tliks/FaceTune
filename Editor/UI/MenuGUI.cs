@@ -77,7 +77,7 @@ internal sealed class MenuInstallContainerDrawer : PropertyDrawer
     private static IEnumerable<Transform> GetEditorExternalFolders(Transform root)
     {
         // The inspector has no active build platform, so include folders from all applicable platform supports.
-        return MetabasePlatformSupport.GetForAvatar(root)
+        return MetaversePlatformSupport.GetForAvatar(root)
             .SelectMany(support => support.GetMenuFolderObjects())
             .SkipDestroyed()
             .Select(folder => folder.transform);

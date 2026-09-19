@@ -277,7 +277,7 @@ internal static class SelectedPreviewResolver
 
     private static EyeBlinkPreviewData? ResolveBuiltInEyeBlink(AvatarContext avatar)
     {
-        var supports = MetabasePlatformSupport.GetForAvatar(avatar.Root.transform);
+        var supports = MetaversePlatformSupport.GetForAvatar(avatar.Root.transform);
         var animations = supports
             .Select(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer))
             .FirstOrDefault(value => value != null);
@@ -302,7 +302,7 @@ internal static class SelectedPreviewResolver
 
     private static VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(AvatarContext avatar)
     {
-        var supports = MetabasePlatformSupport.GetForAvatar(avatar.Root.transform);
+        var supports = MetaversePlatformSupport.GetForAvatar(avatar.Root.transform);
         return supports
             .Select(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer))
             .FirstOrDefault(value => value != null);

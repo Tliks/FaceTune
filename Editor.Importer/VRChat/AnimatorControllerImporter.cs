@@ -11,7 +11,7 @@ internal class AnimatorControllerImporter
 
     private readonly AvatarContext _context;
     private readonly AnimatorController _animatorController;
-    private readonly IMetabasePlatformSupport _platformSupport;
+    private readonly IMetaversePlatformSupport _platformSupport;
     private readonly ParameterDomainRegistry _parameterDomains;
     private readonly Dictionary<string, AnimatorControllerParameterType> _parameterTypes;
 
@@ -19,7 +19,7 @@ internal class AnimatorControllerImporter
     public AnimatorControllerImporter(
         AvatarContext context,
         AnimatorController animatorController,
-        IMetabasePlatformSupport platformSupport)
+        IMetaversePlatformSupport platformSupport)
     {
         _context = context;
         _animatorController = animatorController;

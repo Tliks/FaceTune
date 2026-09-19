@@ -93,7 +93,7 @@ internal sealed class FaceEmoImporterProvider : IFaceTuneImporterProvider
             var source = _sources[_selectedSource];
             var menu = source.GetComponent<MenuRepositoryComponent>().SerializableMenu;
             var transitionSeconds = (float)(source.AV3Setting?.TransitionDurationSeconds ?? 0d);
-            var platformSupport = MetabasePlatformSupport.GetForAvatar(context.Root.transform).FirstOrDefault()
+            var platformSupport = MetaversePlatformSupport.GetForAvatar(context.Root.transform).FirstOrDefault()
                                   ?? throw new InvalidOperationException("FaceTune platform support is unavailable.");
             EnsureFolder(_outputFolder);
 

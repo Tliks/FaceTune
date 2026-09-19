@@ -57,7 +57,7 @@ internal sealed class VRChatAnimatorImporterProvider : IFaceTuneImporterProvider
         public GameObject? Import(AvatarContext context, GameObject destination)
         {
             if (_controller == null) return null;
-            var platformSupport = MetabasePlatformSupport.GetForAvatar(_descriptor.transform)
+            var platformSupport = MetaversePlatformSupport.GetForAvatar(_descriptor.transform)
                 .OfType<VRChatSupport>()
                 .FirstOrDefault();
             if (platformSupport == null)

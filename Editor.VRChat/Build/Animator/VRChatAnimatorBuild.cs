@@ -95,7 +95,7 @@ internal static class VRChatAnimatorBuilder
             settings.AvatarContext.Root,
             graph,
             avatarControlSettings.MmdPlayback,
-            MetabasePlatformSupport.GetForBuild(buildContext),
+            MetaversePlatformSupport.GetForBuild(buildContext),
             settings.ParameterDomains,
             analyzedWriteDefaults);
         if (units.Length > 0)

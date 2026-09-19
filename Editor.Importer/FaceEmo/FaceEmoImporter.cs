@@ -31,7 +31,7 @@ internal sealed class FaceEmoImporter
         SerializableMenu menu,
         float transitionSeconds,
         string outputFolder,
-        IMetabasePlatformSupport platformSupport)
+        IMetaversePlatformSupport platformSupport)
     {
         _context = context;
         _source = source;

@@ -1,6 +1,6 @@
 namespace Aoyon.FaceTune.Platforms;
 
-internal sealed class FallbackSupport : IMetabasePlatformSupport
+internal sealed class FallbackSupport : IMetaversePlatformSupport
 {
     private readonly Transform _root;
 

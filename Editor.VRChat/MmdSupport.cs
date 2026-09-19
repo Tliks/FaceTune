@@ -18,7 +18,7 @@ internal sealed class MmdSupport
         GameObject root,
         AnimatorGraph graph,
         MmdPlaybackSettings settings,
-        IMetabasePlatformSupport platformSupport,
+        IMetaversePlatformSupport platformSupport,
         ParameterDomainRegistry parameterDomains,
         bool? analyzedWriteDefaults)
     {

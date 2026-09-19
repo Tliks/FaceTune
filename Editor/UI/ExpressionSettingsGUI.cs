@@ -369,7 +369,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return false;
 
-        return MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+        return MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
             .All(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer) == null);
     }
 
@@ -658,7 +658,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return false;
 
-        return MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+        return MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
             .All(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer) == null);
     }
 
@@ -690,7 +690,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
             return;
 
-        var shapes = MetabasePlatformSupport.GetForAvatar(avatar.Root.transform)
+        var shapes = MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
             .Select(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer))
             .FirstOrDefault(value => value != null);
         if (shapes != null)

@@ -8,7 +8,7 @@ using VRC.SDKBase;
 
 namespace Aoyon.FaceTune.Platforms;
 
-internal sealed class VRChatSupport : IMetabasePlatformSupport
+internal sealed class VRChatSupport : IMetaversePlatformSupport
 {
     private const string GestureLeftParameter = "GestureLeft";
     private const string GestureRightParameter = "GestureRight";
@@ -28,7 +28,7 @@ internal sealed class VRChatSupport : IMetabasePlatformSupport
     [InitializeOnLoadMethod]
     private static void Register()
     {
-        MetabasePlatformSupport.Register(
+        MetaversePlatformSupport.Register(
             WellKnownPlatforms.VRChatAvatar30,
             root => root.TryGetComponent<VRCAvatarDescriptor>(out var descriptor)
                 ? new VRChatSupport(descriptor)

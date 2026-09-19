@@ -5,12 +5,12 @@ namespace Aoyon.FaceTune;
 internal sealed class ConditionResolver
 {
     private readonly GameObject _root;
-    private readonly IMetabasePlatformSupport _platformSupport;
+    private readonly IMetaversePlatformSupport _platformSupport;
     private readonly ParameterDomainRegistry _parameterDomains;
 
     public ConditionResolver(
         GameObject root,
-        IMetabasePlatformSupport platformSupport,
+        IMetaversePlatformSupport platformSupport,
         ParameterDomainRegistry parameterDomains)
     {
         _root = root;
