@@ -10,24 +10,20 @@ internal sealed class LipSyncAnimatorBuilder
 {
     private static readonly Vector3 LayoutOrigin = new(300, 0, 0);
     private const float VisemeTransitionDurationSeconds = 0.05f;
-    private const string VisemeParameterName = "Viseme";
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
-    private readonly MmdSupport _mmdSupport;
     private readonly VRChatTrackingPlan _plan;
     private readonly AapProtocol _aap;
 
     public LipSyncAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
-        MmdSupport mmdSupport,
         VRChatTrackingPlan plan,
         AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
-        _mmdSupport = mmdSupport;
         _plan = plan;
         _aap = aap;
     }
@@ -65,12 +61,6 @@ internal sealed class LipSyncAnimatorBuilder
         SetLipSyncTracking(initial, false);
         _graph.AddExitTimeTransition(initial, evaluation);
 
-        var mmdState = _mmdSupport.AddPassThroughState(
-            layer,
-            LayoutOrigin - new Vector3(0, yStep * 2, 0),
-            evaluation);
-        if (mmdState != null) SetLipSyncTracking(mmdState, false);
-
         var disabled = _graph.AddState(
             layer,
             "Disabled",
@@ -107,13 +97,15 @@ internal sealed class LipSyncAnimatorBuilder
     {
         _aap.EnsureLipSyncParameters(controller);
         if (generated.Any(entry => entry.Settings.Mode == LipSyncSettings.Kind.Custom))
-            controller.EnsureIntParameterExists(VisemeParameterName);
+        {
+            controller.EnsureIntParameterExists(VRChatSupport.VisemeParameter);
+            controller.EnsureFloatParameterExists(VRChatSupport.VoiceParameter);
+        }
         AnimatorGraph.EnsureConditionParameters(
             controller,
             generated.Select(entry => _aap.LipSyncModeIs(entry.Mode))
                 .Append(disabledWhen)
                 .Append(builtInWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
                 .ToArray());
     }
 
@@ -166,6 +158,7 @@ internal sealed class LipSyncAnimatorBuilder
                 viseme.Name,
                 LayoutOrigin + new Vector3(0, index * yStep, 0));
             SetVisemeClip(state, viseme.Shapes);
+            state.TimeParameter = VRChatSupport.VoiceParameter;
             SetLipSyncTracking(state, false);
             _graph.AddEntryTransition(settingsMachine, state, visemeWhen);
 
@@ -184,7 +177,9 @@ internal sealed class LipSyncAnimatorBuilder
         var output = new BlendShapeWeightSet(visemeShapes);
         state.SetNewClip(state.Name).AddBlendShapeAnimations(
             _avatarContext.BodyPath,
-            output.ToBlendShapeAnimations());
+            output.Select(shape => new BlendShapeWeightAnimation(
+                shape.Name,
+                AnimationCurve.Linear(0f, 0f, 1f, shape.Weight))));
     }
 
     private static DnfCondition VisemeIs(int value)
@@ -192,7 +187,7 @@ internal sealed class LipSyncAnimatorBuilder
             new AnimatorConditionRule(
                 new AnimatorCondition
                 {
-                    parameter = VisemeParameterName,
+                    parameter = VRChatSupport.VisemeParameter,
                     mode = AnimatorConditionMode.Equals,
                     threshold = value
                 },

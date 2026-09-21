@@ -58,29 +58,13 @@ internal sealed class MmdSupport
         DisableFxLayer = disableFxLayer;
     }
 
-    public VirtualState? AddPassThroughState(
-        VirtualLayer layer,
-        Vector3 position,
-        VirtualState? returnState = null)
-    {
-        if (LayerPlaybackWhen is not { IsNever: false } playbackWhen) return null;
-
-        var state = _graph.AddState(layer, "MMD Playback", position);
-        _graph.AsPassThrough(state);
-        _graph.SetAnyStateTransition(layer, state, playbackWhen, 0f);
-        if (returnState == null)
-            _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
-        else
-            _graph.AddStateTransition(state, returnState, playbackWhen.Complement(), 0f);
-        return state;
-    }
-
     public void AddInitialMmdState(
         VirtualLayer layer,
         VirtualState defaultState,
         IEnumerable<BlendShapeWeight> blendShapes,
         Vector3 position,
-        string bodyPath)
+        string bodyPath,
+        string? inactiveParameterName)
     {
         _graph.SetExitTransitions(
             defaultState,
@@ -91,9 +75,16 @@ internal sealed class MmdSupport
         var state = _graph.AddState(layer, "MMD Playback", position);
         var mmdBlendShapes = blendShapes
             .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
-        state.SetNewClip("MMD Playback").AddBlendShapeAnimations(
-            bodyPath,
-            mmdBlendShapes.ToBlendShapeAnimations());
+        var clip = state.SetNewClip("MMD Playback");
+        clip.AddBlendShapeAnimations(bodyPath, mmdBlendShapes.ToBlendShapeAnimations());
+        if (inactiveParameterName != null)
+        {
+            clip.SetFloatCurve(
+                "",
+                typeof(UnityEngine.Animator),
+                inactiveParameterName,
+                new AnimationCurve(new Keyframe(0f, 1f)));
+        }
         _graph.AddEntryTransition(layer, state, playbackWhen);
         _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
 

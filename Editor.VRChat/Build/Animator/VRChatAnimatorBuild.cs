@@ -37,7 +37,6 @@ internal static class VRChatAnimatorBuilder
             expressionPlan.Items,
             avatarControlSettings);
         if (expressionPlan.IsEmpty && !trackingPlan.ShouldBuildAnyLayer) return;
-        var aap = new AapProtocol(trackingPlan);
 
         bool? analyzedWriteDefaults;
         using (new Utils.ProfilingSampleScope("Build.Animator.AnalyzeWriteDefaults"))
@@ -76,6 +75,20 @@ internal static class VRChatAnimatorBuilder
                     .Select(entry => entry.Key)
                     .Concat(item.NonFacialAnimations.ObjectCurves.Select(entry => entry.Key))));
 
+        var graph = new AnimatorGraph(
+            analyzedWriteDefaults ?? true,
+            controllerContext.CloneContext);
+        var mmdSupport = new MmdSupport(
+            settings.AvatarContext.Root,
+            graph,
+            avatarControlSettings.MmdPlayback,
+            MetaversePlatformSupport.GetForBuild(buildContext),
+            settings.ParameterDomains,
+            analyzedWriteDefaults);
+        var useInactiveAap = mmdSupport.LayerPlaybackWhen is { IsNever: false }
+            && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer);
+        var aap = new AapProtocol(trackingPlan, useInactiveAap);
+
         if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
             || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
         {
@@ -88,23 +101,16 @@ internal static class VRChatAnimatorBuilder
                 settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
         }
 
-        var graph = new AnimatorGraph(
-            analyzedWriteDefaults ?? true,
-            controllerContext.CloneContext);
-        var mmdSupport = new MmdSupport(
-            settings.AvatarContext.Root,
-            graph,
-            avatarControlSettings.MmdPlayback,
-            MetaversePlatformSupport.GetForBuild(buildContext),
-            settings.ParameterDomains,
-            analyzedWriteDefaults);
-        if (units.Length > 0)
+        if (units.Length > 0 || useInactiveAap)
         {
             using var _ = new Utils.ProfilingSampleScope(
                 "Build.Animator.BuildInitial");
+            var initialAnchor = units.Length > 0
+                ? units[0].Anchor
+                : buildContext.AvatarRootTransform;
             var initialController = CreateMergeAnimatorController(
                 controllerContext,
-                units[0].Anchor,
+                initialAnchor,
                 "Initial",
                 InitialLayerPriority);
             BuildInitialLayer(
@@ -114,14 +120,14 @@ internal static class VRChatAnimatorBuilder
                 externalLipSyncBlendShapes,
                 proxy.ProxyNames,
                 nonFacialDefaults,
-                mmdSupport);
+                mmdSupport,
+                aap);
         }
 
         var expressionBuilder = new ExpressionAnimatorBuilder(
             settings,
             graph,
             avatarControlSettings,
-            mmdSupport,
             aap);
         using (new Utils.ProfilingSampleScope("Build.Animator.BuildUnits"))
         {
@@ -143,19 +149,16 @@ internal static class VRChatAnimatorBuilder
         var eyeBlinkBuilder = new EyeBlinkAnimatorBuilder(
             settings.AvatarContext,
             graph,
-            mmdSupport,
             trackingPlan,
             aap);
         var lipSyncCancellerBuilder = new LipSyncCancellerAnimatorBuilder(
             settings.AvatarContext,
             graph,
-            mmdSupport,
             trackingPlan,
             aap);
         var lipSyncBuilder = new LipSyncAnimatorBuilder(
             settings.AvatarContext,
             graph,
-            mmdSupport,
             trackingPlan,
             aap);
         if (trackingPlan.ShouldBuildAnyLayer)
@@ -185,9 +188,11 @@ internal static class VRChatAnimatorBuilder
         ISet<string> externalLipSyncBlendShapes,
         ISet<string> generatedLipSyncBlendShapes,
         ResolvedNonFacialAnimationSet nonFacialDefaults,
-        MmdSupport mmdSupport)
+        MmdSupport mmdSupport,
+        AapProtocol aap)
     {
         AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
+        aap.EnsureExpressionInactiveParameter(controller);
         var blendShapes = settings.AvatarContext.FaceRenderer
             .GetBlendShapeWeights(settings.AvatarContext.FaceMesh)
             .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name)
@@ -212,7 +217,8 @@ internal static class VRChatAnimatorBuilder
             defaultState,
             blendShapes,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
-            settings.AvatarContext.BodyPath);
+            settings.AvatarContext.BodyPath,
+            aap.ExpressionInactiveParameterName);
     }
 
     private static void SetInitialClip(
@@ -402,7 +408,9 @@ internal static class VRChatAnimatorBuilder
 
         if (writes.Count > 0)
         {
-            aap.EnsureParameters(controller, writes);
+            aap.EnsureParameters(
+                controller,
+                writes.Select(write => write.ParameterName));
             AddAapWritesToClip(state, writes);
         }
 

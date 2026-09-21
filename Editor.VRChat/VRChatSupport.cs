@@ -14,7 +14,8 @@ internal sealed class VRChatSupport : IMetaversePlatformSupport
     private const string GestureRightParameter = "GestureRight";
     private const string GestureLeftWeightParameter = "GestureLeftWeight";
     private const string GestureRightWeightParameter = "GestureRightWeight";
-    private const string VisemeParameter = "Viseme";
+    internal const string VisemeParameter = "Viseme";
+    internal const string VoiceParameter = "Voice";
     private const string PreviewModeParameter = "PreviewMode";
     private const string TrackingTypeParameter = "TrackingType";
     private const string VRModeParameter = "VRMode";

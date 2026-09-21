@@ -1,4 +1,3 @@
-using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDKBase;
@@ -10,24 +9,21 @@ internal sealed class EyeBlinkAnimatorBuilder
 {
     private static readonly Vector3 LayoutOrigin = new(300, 0, 0);
     private const string SpeedParameterPrefix =
-        FaceTuneConstants.GeneratedParameterPrefix + "/Blink/Speed/";
+        FaceTuneConstants.InternalParameterPrefix + "/Blink/Speed/";
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
-    private readonly MmdSupport _mmdSupport;
     private readonly VRChatTrackingPlan _plan;
     private readonly AapProtocol _aap;
 
     public EyeBlinkAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
-        MmdSupport mmdSupport,
         VRChatTrackingPlan plan,
         AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
-        _mmdSupport = mmdSupport;
         _plan = plan;
         _aap = aap;
     }
@@ -64,11 +60,6 @@ internal sealed class EyeBlinkAnimatorBuilder
         SetEyeBlinkTracking(defaultState, false);
         _graph.AddExitTimeTransition(defaultState, evaluationState);
 
-        var mmdState = _mmdSupport.AddPassThroughState(
-            layer,
-            origin - new Vector3(0, yStep * 2, 0),
-            evaluationState);
-        if (mmdState != null) SetEyeBlinkTracking(mmdState, false);
         InstallModeState(
             layer,
             "Disabled",
@@ -118,7 +109,6 @@ internal sealed class EyeBlinkAnimatorBuilder
             animationConditions
                 .Append(disabledWhen)
                 .Append(builtInWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
                 .ToArray());
     }
 
