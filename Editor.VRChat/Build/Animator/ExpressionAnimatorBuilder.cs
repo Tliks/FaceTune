@@ -42,46 +42,17 @@ internal sealed class ExpressionAnimatorBuilder
     {
         EnsureParameters(controller, expressions);
 
-        var layerIndex = 0;
-        for (var index = 0; index < expressions.Count;)
+        var packedLayers = Pack(expressions);
+        for (var layerIndex = 0; layerIndex < packedLayers.Count; layerIndex++)
         {
-            var writeMode = expressions[index].WriteMode;
-            var transitionDurationSeconds = expressions[index].Transition.DurationSeconds;
-            var run = new List<ExpressionItem>();
-            while (index < expressions.Count
-                   && expressions[index].WriteMode == writeMode
-                   && expressions[index].Transition.DurationSeconds == transitionDurationSeconds)
-            {
-                run.Add(expressions[index]);
-                index++;
-            }
-
-            switch (writeMode)
-            {
-                case ExpressionWriteMode.Replace:
-                    BuildReplaceLayer(
-                        controller,
-                        unitId,
-                        layerIndex++,
-                        run,
-                        layerPriority);
-                    break;
-                case ExpressionWriteMode.Blend:
-                    foreach (var packedLayer in PackBlendRun(run))
-                    {
-                        BuildExpressionLayer(
-                            controller,
-                            $"{unitId}-{layerIndex++} Blend",
-                            transitionDurationSeconds,
-                            packedLayer,
-                            packedLayer.Select(expression => expression.RawWhen).ToArray(),
-                            layerPriority);
-                    }
-                    break;
-                default:
-                    throw new InvalidOperationException(
-                        $"Unsupported expression write mode: {writeMode}");
-            }
+            var layer = packedLayers[layerIndex];
+            BuildExpressionLayer(
+                controller,
+                $"Expression {unitId}-{layerIndex}",
+                layer[0].Transition.DurationSeconds,
+                layer,
+                BuildEnterConditions(layer),
+                layerPriority);
         }
     }
 
@@ -105,32 +76,6 @@ internal sealed class ExpressionAnimatorBuilder
                 controller.EnsureFloatParameterExists(multiFrame.ParameterName);
             }
         }
-    }
-
-    private void BuildReplaceLayer(
-        VirtualAnimatorController controller,
-        int unitId,
-        int layerIndex,
-        IReadOnlyList<ExpressionItem> expressions,
-        int layerPriority)
-    {
-        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.ReplaceLayer");
-        var enterConditions = new DnfCondition[expressions.Count];
-        var higherPriority = DnfCondition.Never;
-        for (var expressionIndex = expressions.Count - 1; expressionIndex >= 0; expressionIndex--)
-        {
-            var expression = expressions[expressionIndex];
-            enterConditions[expressionIndex] = expression.RawWhen.Except(higherPriority);
-            higherPriority = higherPriority.Or(expression.RawWhen);
-        }
-
-        BuildExpressionLayer(
-            controller,
-            $"{unitId}-{layerIndex} Replace",
-            expressions[0].Transition.DurationSeconds,
-            expressions,
-            enterConditions,
-            layerPriority);
     }
 
     private void BuildExpressionLayer(
@@ -219,34 +164,44 @@ internal sealed class ExpressionAnimatorBuilder
         }
     }
 
-    private IReadOnlyList<List<ExpressionItem>> PackBlendRun(
+    private static List<List<ExpressionItem>> Pack(
         IReadOnlyList<ExpressionItem> expressions)
     {
-        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.PackBlendRun");
+        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.Pack");
         var layers = new List<List<ExpressionItem>>();
-        var layerIndices = new int[expressions.Count];
-
-        for (var currentIndex = 0; currentIndex < expressions.Count; currentIndex++)
+        var layerWhen = DnfCondition.Never;
+        foreach (var expression in expressions)
         {
-            // A later expression must be above every earlier expression that can be active with it.
-            var layerIndex = 0;
-            for (var previousIndex = 0; previousIndex < currentIndex; previousIndex++)
+            var isReplace = expression.WriteMode == ExpressionWriteMode.Replace;
+            var conflictWhen = isReplace ? DnfCondition.Never : layerWhen;
+            var canShare = layers.Count > 0
+                && layers[^1][0].Transition.DurationSeconds
+                    == expression.Transition.DurationSeconds
+                && conflictWhen.And(expression.RawWhen).IsNever;
+            if (!canShare)
             {
-                var canShareLayer = expressions[previousIndex].Transition.DurationSeconds
-                                    == expressions[currentIndex].Transition.DurationSeconds
-                                    && expressions[previousIndex].RawWhen
-                                        .And(expressions[currentIndex].RawWhen)
-                                        .IsNever;
-                if (canShareLayer) continue;
-                layerIndex = Math.Max(layerIndex, layerIndices[previousIndex] + 1);
+                layers.Add(new List<ExpressionItem>());
+                layerWhen = DnfCondition.Never;
             }
 
-            while (layers.Count <= layerIndex) layers.Add(new List<ExpressionItem>());
-            layers[layerIndex].Add(expressions[currentIndex]);
-            layerIndices[currentIndex] = layerIndex;
+            layers[^1].Add(expression);
+            layerWhen = layerWhen.Or(expression.RawWhen);
         }
-
         return layers;
+    }
+
+    private static IReadOnlyList<DnfCondition> BuildEnterConditions(
+        IReadOnlyList<ExpressionItem> expressions)
+    {
+        var result = expressions.Select(expression => expression.RawWhen).ToArray();
+        var higherPriority = DnfCondition.Never;
+        for (var index = expressions.Count - 1; index >= 0; index--)
+        {
+            result[index] = expressions[index].RawWhen.Except(higherPriority);
+            if (expressions[index].WriteMode == ExpressionWriteMode.Replace)
+                higherPriority = higherPriority.Or(expressions[index].RawWhen);
+        }
+        return result;
     }
 
     private void SetMotion(
