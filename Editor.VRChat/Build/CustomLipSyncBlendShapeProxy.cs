@@ -39,6 +39,9 @@ internal static class CustomLipSyncBlendShapeProxy
             .Select(mesh.GetBlendShapeName)
             .ToHashSet(StringComparer.Ordinal);
         var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
+        var deltaVertices = new Vector3[sourceMesh.vertexCount];
+        var deltaNormals = new Vector3[sourceMesh.vertexCount];
+        var deltaTangents = new Vector3[sourceMesh.vertexCount];
 
         using (new Utils.ProfilingSampleScope(
                    "Animator.CustomLipSyncProxy.DuplicateBlendShapes"))
@@ -49,7 +52,14 @@ internal static class CustomLipSyncBlendShapeProxy
                 if (sourceIndex < 0) continue;
 
                 var proxyName = CreateProxyName(sourceName, existingNames);
-                DuplicateBlendShape(sourceMesh, sourceIndex, mesh, proxyName);
+                DuplicateBlendShape(
+                    sourceMesh,
+                    sourceIndex,
+                    mesh,
+                    proxyName,
+                    deltaVertices,
+                    deltaNormals,
+                    deltaTangents);
                 existingNames.Add(proxyName);
                 mapping.Add(sourceName, proxyName);
             }
@@ -92,11 +102,11 @@ internal static class CustomLipSyncBlendShapeProxy
         Mesh source,
         int sourceIndex,
         Mesh destination,
-        string destinationName)
+        string destinationName,
+        Vector3[] deltaVertices,
+        Vector3[] deltaNormals,
+        Vector3[] deltaTangents)
     {
-        var deltaVertices = new Vector3[source.vertexCount];
-        var deltaNormals = new Vector3[source.vertexCount];
-        var deltaTangents = new Vector3[source.vertexCount];
         for (var frame = 0; frame < source.GetBlendShapeFrameCount(sourceIndex); frame++)
         {
             source.GetBlendShapeFrameVertices(
