@@ -7,6 +7,7 @@ internal static class FaceTuneConstants
 
     public const string ParameterPrefix = Name;
     public const string GeneratedParameterPrefix = ParameterPrefix + "/_Generated";
+    public const string InternalParameterPrefix = GeneratedParameterPrefix + "/Internal";
 
     public const string BlendShapePropertyPrefix = "blendShape.";
 }

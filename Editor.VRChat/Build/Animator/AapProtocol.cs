@@ -8,9 +8,10 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 internal sealed class AapProtocol
 {
     private const float ActiveThreshold = 0.999f;
-    private const string AapParameterPrefix = FaceTuneConstants.GeneratedParameterPrefix + "/AAP/";
-    private const string EyeBlinkModePrefix = AapParameterPrefix + "Blink/";
-    private const string LipSyncModePrefix = AapParameterPrefix + "LipSync/";
+    private const string EyeBlinkModePrefix =
+        FaceTuneConstants.InternalParameterPrefix + "/Blink/ModeAAP/";
+    private const string LipSyncModePrefix =
+        FaceTuneConstants.InternalParameterPrefix + "/LipSync/ModeAAP/";
 
     private readonly VRChatTrackingPlan _plan;
     private readonly ImmutableList<string> _eyeBlinkModeNames;

@@ -7,7 +7,7 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 internal sealed class AnimatorGraph
 {
     private const string AlwaysParameterName =
-        FaceTuneConstants.GeneratedParameterPrefix + "/Always";
+        FaceTuneConstants.InternalParameterPrefix + "/Always";
 
     public const float PositionXStep = 250f;
     public const float PositionYStep = 50f;

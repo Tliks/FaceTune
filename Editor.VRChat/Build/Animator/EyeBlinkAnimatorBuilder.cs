@@ -10,7 +10,7 @@ internal sealed class EyeBlinkAnimatorBuilder
 {
     private static readonly Vector3 LayoutOrigin = new(300, 0, 0);
     private const string SpeedParameterPrefix =
-        FaceTuneConstants.GeneratedParameterPrefix + "/Blink/Speed/";
+        FaceTuneConstants.InternalParameterPrefix + "/Blink/Speed/";
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
