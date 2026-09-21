@@ -163,14 +163,22 @@ internal sealed class ExpressionAnimatorBuilder
     {
         if (enterWhen.IsNever) return;
 
+        var outputAnimations = GetOutputAnimations(expression);
         // Splitting DNF cases keeps exit conditions small, but switching cases restarts time-dependent motions.
-        var canSplitWithoutResettingMotion = GetOutputAnimations(expression)
+        var canSplitWithoutResettingMotion = outputAnimations
             .All(animation => !animation.IsMultiFrame)
             && !expression.NonFacialAnimations.IsTimeDependent;
         var stateConditions = canSplitWithoutResettingMotion && enterWhen.Cases.Count > 1
             ? enterWhen.Cases.Select(DnfCondition.FromCase).ToArray()
             : new[] { enterWhen };
 
+        var baseName = $"{expressionIndex + 1} {expression.Name}";
+        var motionName = stateConditions.Length > 1 ? $"{baseName} #1" : baseName;
+        var motion = ResolveMotion(
+            motionName,
+            expression,
+            outputAnimations,
+            _aap.BuildWrites(expression));
         for (var stateIndex = 0; stateIndex < stateConditions.Length; stateIndex++)
         {
             var stateCondition = stateConditions[stateIndex];
@@ -178,12 +186,12 @@ internal sealed class ExpressionAnimatorBuilder
             if (_lockFacialInactiveWhen != null)
                 exitWhen = exitWhen.And(_lockFacialInactiveWhen);
 
-            var name = $"{expressionIndex + 1} {expression.Name}";
-            if (stateConditions.Length > 1) name += $" #{stateIndex + 1}";
-
+            var name = stateConditions.Length > 1
+                ? $"{baseName} #{stateIndex + 1}"
+                : baseName;
             var state = _graph.AddState(layer, name, position);
             position.y += AnimatorGraph.PositionYStep;
-            SetMotion(state, expression, _aap.BuildWrites(expression));
+            SetMotion(state, expression, motion);
             _graph.AddEntryTransition(layer, state, stateCondition);
             _graph.SetExitTransitions(state, exitWhen, transitionDurationSeconds);
         }
@@ -229,21 +237,29 @@ internal sealed class ExpressionAnimatorBuilder
         return result;
     }
 
-    private void SetMotion(
-        VirtualState state,
+    private VirtualClip ResolveMotion(
+        string name,
         ExpressionItem expression,
+        BlendShapeWeightAnimationSet outputAnimations,
         IReadOnlyList<(string ParameterName, float Value)> aapWrites)
     {
-        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.SetMotion");
-        var outputAnimations = GetOutputAnimations(expression);
+        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.ResolveMotion");
         var key = new ExpressionClipKey(
             outputAnimations,
             expression.NonFacialAnimations,
             expression.MultiFrame,
             aapWrites);
-        state.Motion = _clips.GetOrAdd(
+        return _clips.GetOrAdd(
             key,
-            _ => CreateClip(state.Name, expression, outputAnimations, aapWrites));
+            _ => CreateClip(name, expression, outputAnimations, aapWrites));
+    }
+
+    private static void SetMotion(
+        VirtualState state,
+        ExpressionItem expression,
+        VirtualClip motion)
+    {
+        state.Motion = motion;
         if (expression.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Parameter
             && !string.IsNullOrEmpty(expression.MultiFrame.ParameterName))
         {
