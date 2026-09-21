@@ -45,7 +45,7 @@ internal static class SelectedPreviewResolver
             avatars.Add(new AvatarPreviewData(
                 avatar.Root,
                 avatar.FaceRenderer,
-                null,
+                clip,
                 ignoredNames,
                 facial,
                 TrackingBehaviorDisplay.NotApplicable,

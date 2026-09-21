@@ -31,7 +31,7 @@ internal sealed class AvatarPreviewData
     internal AvatarPreviewData(
         GameObject root,
         SkinnedMeshRenderer faceRenderer,
-        FaceTuneTagComponent? source,
+        Object? source,
         ImmutableHashSet<string> ignoredNames,
         FacialPreviewData? facial,
         TrackingBehaviorDisplay eyeBlinkBehavior,
@@ -56,7 +56,7 @@ internal sealed class AvatarPreviewData
 
     internal GameObject Root { get; }
     internal SkinnedMeshRenderer FaceRenderer { get; }
-    internal FaceTuneTagComponent? Source { get; }
+    internal Object? Source { get; }
     internal ImmutableHashSet<string> IgnoredNames { get; }
     internal FacialPreviewData? Facial { get; }
     internal TrackingBehaviorDisplay EyeBlinkBehavior { get; }
