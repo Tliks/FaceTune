@@ -8,7 +8,6 @@ internal sealed class LipSyncCancellerAnimatorBuilder
 {
     private static readonly Vector3 LayoutOrigin = new(300, 0, 0);
     private const float TransitionDurationSeconds = 0.05f;
-    private const string VoiceParameterName = "Voice";
     private const float VoiceThreshold = 0.01f;
 
     private readonly AvatarContext _avatarContext;
@@ -106,7 +105,7 @@ internal sealed class LipSyncCancellerAnimatorBuilder
         ImmutableList<DnfCondition> modeConditions)
     {
         _aap.EnsureLipSyncParameters(controller);
-        controller.EnsureFloatParameterExists(VoiceParameterName);
+        controller.EnsureFloatParameterExists(VRChatSupport.VoiceParameter);
         AnimatorGraph.EnsureConditionParameters(
             controller,
             modeConditions
@@ -125,7 +124,7 @@ internal sealed class LipSyncCancellerAnimatorBuilder
     private static DnfCondition VoiceActiveWhen()
     {
         var condition = ParameterCondition.Float(
-            VoiceParameterName,
+            VRChatSupport.VoiceParameter,
             ComparisonType.GreaterThan,
             VoiceThreshold);
         return DnfCondition.Single(
