@@ -12,20 +12,17 @@ internal sealed class LipSyncCancellerAnimatorBuilder
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
-    private readonly MmdSupport _mmdSupport;
     private readonly VRChatTrackingPlan _plan;
     private readonly AapProtocol _aap;
 
     public LipSyncCancellerAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
-        MmdSupport mmdSupport,
         VRChatTrackingPlan plan,
         AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
-        _mmdSupport = mmdSupport;
         _plan = plan;
         _aap = aap;
     }
@@ -56,11 +53,6 @@ internal sealed class LipSyncCancellerAnimatorBuilder
             layer,
             LayoutOrigin + new Vector3(0, yStep * 2, 0));
         _graph.AddExitTimeTransition(initial, evaluation);
-
-        _mmdSupport.AddPassThroughState(
-            layer,
-            LayoutOrigin - new Vector3(0, yStep * 2, 0),
-            evaluation);
 
         var voiceActiveWhen = VoiceActiveWhen();
         var position = LayoutOrigin + new Vector3(xStep, -yStep, 0);
@@ -108,9 +100,7 @@ internal sealed class LipSyncCancellerAnimatorBuilder
         controller.EnsureFloatParameterExists(VRChatSupport.VoiceParameter);
         AnimatorGraph.EnsureConditionParameters(
             controller,
-            modeConditions
-                .Append(_mmdSupport.LayerPlaybackWhen)
-                .ToArray());
+            modeConditions.ToArray());
     }
 
     private void SetCancellerClip(VirtualState state, LipSyncSettings settings)

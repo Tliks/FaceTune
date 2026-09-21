@@ -13,7 +13,7 @@ internal sealed class ExpressionAnimatorBuilder
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _managedZeroAnimations;
     private readonly AnimatorGraph _graph;
     private readonly DnfCondition? _lockFacialInactiveWhen;
-    private readonly MmdSupport _mmdSupport;
+    private readonly DnfCondition? _expressionInactiveWhen;
     private readonly AapProtocol _aap;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _clips = new();
 
@@ -21,7 +21,6 @@ internal sealed class ExpressionAnimatorBuilder
         BuildSettings settings,
         AnimatorGraph graph,
         AvatarControlSettings avatarControlSettings,
-        MmdSupport mmdSupport,
         AapProtocol aap)
     {
         _avatarContext = settings.AvatarContext;
@@ -30,7 +29,7 @@ internal sealed class ExpressionAnimatorBuilder
             .ToArray();
         _graph = graph;
         _lockFacialInactiveWhen = avatarControlSettings.LockFacialWhen?.Complement();
-        _mmdSupport = mmdSupport;
+        _expressionInactiveWhen = aap.ExpressionInactiveWhen;
         _aap = aap;
     }
 
@@ -65,7 +64,7 @@ internal sealed class ExpressionAnimatorBuilder
             controller,
             expressions.Select(expression => (DnfCondition?)expression.RawWhen)
                 .Append(_lockFacialInactiveWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
+                .Append(_expressionInactiveWhen)
                 .ToArray());
         foreach (var expression in expressions)
         {
@@ -96,9 +95,16 @@ internal sealed class ExpressionAnimatorBuilder
         var defaultState = _graph.AddInitialDelayState(layer, origin);
         _graph.AddExitTimeExitTransition(defaultState);
 
-        _mmdSupport.AddPassThroughState(
-            layer,
-            origin - new Vector3(0, yStep * 2, 0));
+        if (_expressionInactiveWhen is { IsNever: false } inactiveWhen)
+        {
+            var inactive = _graph.AddState(
+                layer,
+                "Inactive",
+                origin - new Vector3(0, yStep * 2, 0));
+            _graph.AsPassThrough(inactive);
+            _graph.SetAnyStateTransition(layer, inactive, inactiveWhen, 0f);
+            _graph.SetExitTransitions(inactive, inactiveWhen.Complement(), 0f);
+        }
 
         var passThroughWhen = expressionWhen.Complement();
         if (!passThroughWhen.IsNever)

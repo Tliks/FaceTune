@@ -12,16 +12,25 @@ internal sealed class AapProtocol
         FaceTuneConstants.InternalParameterPrefix + "/Blink/ModeAAP/";
     private const string LipSyncModePrefix =
         FaceTuneConstants.InternalParameterPrefix + "/LipSync/ModeAAP/";
+    private const string ExpressionInactiveName =
+        FaceTuneConstants.InternalParameterPrefix + "/Expression/InactiveAAP";
 
     private readonly VRChatTrackingPlan _plan;
     private readonly ImmutableList<string> _eyeBlinkModeNames;
     private readonly ImmutableList<string> _lipSyncModeNames;
 
-    public AapProtocol(VRChatTrackingPlan plan)
+    public string? ExpressionInactiveParameterName { get; }
+    public DnfCondition? ExpressionInactiveWhen { get; }
+
+    public AapProtocol(VRChatTrackingPlan plan, bool useInactiveAap)
     {
         _plan = plan;
         _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
         _lipSyncModeNames = CreateModeNames(plan.GeneratedLipSyncSettings.Count, LipSyncModeName);
+        ExpressionInactiveParameterName = useInactiveAap ? ExpressionInactiveName : null;
+        ExpressionInactiveWhen = ExpressionInactiveParameterName == null
+            ? null
+            : ParameterIsActive(ExpressionInactiveParameterName);
     }
 
     public ImmutableList<(string ParameterName, float Value)> BuildTrackingReplacementWrites(
@@ -70,6 +79,7 @@ internal sealed class AapProtocol
     {
         EnsureEyeBlinkParameters(controller);
         EnsureLipSyncParameters(controller);
+        EnsureExpressionInactiveParameter(controller);
     }
 
     public void EnsureEyeBlinkParameters(VirtualAnimatorController controller)
@@ -86,23 +96,26 @@ internal sealed class AapProtocol
 
     public DnfCondition EyeBlinkModeIs(int mode)
         => ApplyForceDisable(
-            ModeIs(EyeBlinkModeName(mode)),
+            ParameterIsActive(EyeBlinkModeName(mode)),
             mode,
-            _plan.ForceDisableEyeBlinkWhen);
+            _plan.ForceDisableEyeBlinkWhen,
+            ExpressionInactiveWhen);
 
     public DnfCondition LipSyncModeIs(int mode)
         => ApplyForceDisable(
-            ModeIs(LipSyncModeName(mode)),
+            ParameterIsActive(LipSyncModeName(mode)),
             mode,
-            _plan.ForceDisableLipSyncWhen);
+            _plan.ForceDisableLipSyncWhen,
+            ExpressionInactiveWhen);
 
     public void EnsureParameters(
         VirtualAnimatorController controller,
-        IReadOnlyList<(string ParameterName, float Value)> writes)
+        IEnumerable<string> parameterNames)
     {
-        var names = writes.Select(write => write.ParameterName).ToHashSet(StringComparer.Ordinal);
+        var names = parameterNames.ToHashSet(StringComparer.Ordinal);
         if (names.Overlaps(_eyeBlinkModeNames)) EnsureEyeBlinkParameters(controller);
         if (names.Overlaps(_lipSyncModeNames)) EnsureLipSyncParameters(controller);
+        if (names.Contains(ExpressionInactiveName)) EnsureExpressionInactiveParameter(controller);
     }
 
     private static ImmutableList<string> CreateModeNames(
@@ -121,9 +134,11 @@ internal sealed class AapProtocol
     private static DnfCondition ApplyForceDisable(
         DnfCondition modeWhen,
         int mode,
-        DnfCondition? forceDisableWhen)
+        params DnfCondition?[] forceDisableConditions)
     {
-        if (forceDisableWhen == null) return modeWhen;
+        var forceDisableWhen = DnfCondition.Any(
+            forceDisableConditions.OfType<DnfCondition>());
+        if (forceDisableWhen.IsNever) return modeWhen;
         return mode == VRChatTrackingPlan.DisabledMode
             ? modeWhen.Or(forceDisableWhen)
             : modeWhen.And(forceDisableWhen.Complement());
@@ -151,7 +166,13 @@ internal sealed class AapProtocol
         }
     }
 
-    private static DnfCondition ModeIs(string parameterName)
+    public void EnsureExpressionInactiveParameter(VirtualAnimatorController controller)
+    {
+        if (ExpressionInactiveParameterName != null)
+            controller.EnsureFloatParameterExists(ExpressionInactiveParameterName);
+    }
+
+    private static DnfCondition ParameterIsActive(string parameterName)
     {
         var condition = ParameterCondition.Float(
             parameterName,

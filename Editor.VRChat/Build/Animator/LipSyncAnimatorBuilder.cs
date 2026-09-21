@@ -13,20 +13,17 @@ internal sealed class LipSyncAnimatorBuilder
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
-    private readonly MmdSupport _mmdSupport;
     private readonly VRChatTrackingPlan _plan;
     private readonly AapProtocol _aap;
 
     public LipSyncAnimatorBuilder(
         AvatarContext avatarContext,
         AnimatorGraph graph,
-        MmdSupport mmdSupport,
         VRChatTrackingPlan plan,
         AapProtocol aap)
     {
         _avatarContext = avatarContext;
         _graph = graph;
-        _mmdSupport = mmdSupport;
         _plan = plan;
         _aap = aap;
     }
@@ -63,12 +60,6 @@ internal sealed class LipSyncAnimatorBuilder
             LayoutOrigin + new Vector3(0, yStep * 2, 0));
         SetLipSyncTracking(initial, false);
         _graph.AddExitTimeTransition(initial, evaluation);
-
-        var mmdState = _mmdSupport.AddPassThroughState(
-            layer,
-            LayoutOrigin - new Vector3(0, yStep * 2, 0),
-            evaluation);
-        if (mmdState != null) SetLipSyncTracking(mmdState, false);
 
         var disabled = _graph.AddState(
             layer,
@@ -115,7 +106,6 @@ internal sealed class LipSyncAnimatorBuilder
             generated.Select(entry => _aap.LipSyncModeIs(entry.Mode))
                 .Append(disabledWhen)
                 .Append(builtInWhen)
-                .Append(_mmdSupport.LayerPlaybackWhen)
                 .ToArray());
     }
 
