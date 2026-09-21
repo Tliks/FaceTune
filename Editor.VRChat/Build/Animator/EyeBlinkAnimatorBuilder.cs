@@ -57,7 +57,6 @@ internal sealed class EyeBlinkAnimatorBuilder
         var defaultState = _graph.AddInitialDelayState(
             layer,
             origin + new Vector3(0, yStep * 2, 0));
-        SetEyeBlinkTracking(defaultState, false);
         _graph.AddExitTimeTransition(defaultState, evaluationState);
 
         InstallModeState(
