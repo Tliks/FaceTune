@@ -688,7 +688,7 @@ internal sealed class PreviewSettingsSectionDrawer : ISectionDrawer
             serializedObject,
             new[] { SectionActionField.From(
                 _enabled,
-                () => ExpressionComponent.DefaultAlwaysOnPreviewEnabled) });
+                () => false) });
     }
 
     public SectionActionSet Actions { get; }

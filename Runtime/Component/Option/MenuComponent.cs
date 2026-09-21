@@ -19,44 +19,44 @@ namespace Aoyon.FaceTune
             Int = 10
         }
 
-        public Kind MenuKind = DefaultMenuKind;
+        public Kind MenuKind;
         public MenuSettings Menu = new();
 
         // ParameterNameで既存Parameterを参照する。Folderでは使用しない。
-        public bool UseExistingParameter = DefaultUseExistingParameter;
-        public ToggleParameterType ExistingToggleParameterType = DefaultExistingToggleParameterType;
+        public bool UseExistingParameter;
+        public ToggleParameterType ExistingToggleParameterType;
 
         // 同じGroupNameのToggleで一つのInt Parameterを共有する。
-        public bool GenerateParameterGroup = DefaultGenerateParameterGroup;
+        public bool GenerateParameterGroup;
 
         // Groupで共有するParameterNameの生成元。
-        public string GroupName = DefaultGroupName;
+        public string GroupName = string.Empty;
 
         // 生成時に空なら自動生成する。
-        public string ParameterName = DefaultParameterName;
+        public string ParameterName = string.Empty;
 
         // 生成Parameter用。Groupでは両方true固定。
-        public bool Synced = DefaultSynced;
-        public bool Saved = DefaultSaved;
+        public bool Synced;
+        public bool Saved;
 
         // 生成Parameter用。Menuのデフォルト状態。Toggleでは0以外を選択状態とする。
         [Range(0f, 1f)]
-        public float DefaultValue = DefaultParameterValue;
+        public float DefaultValue;
 
         // Groupでは自動割り当てする。
-        public float SelectedValue = DefaultSelectedValue;
+        public float SelectedValue;
 
 #region Defaults
 
-        internal const Kind DefaultMenuKind = Kind.Toggle;
-        internal const bool DefaultUseExistingParameter = false;
-        internal const ToggleParameterType DefaultExistingToggleParameterType = ToggleParameterType.Bool;
-        internal const bool DefaultGenerateParameterGroup = false;
+        private void Reset()
+        {
+            Synced = DefaultSynced;
+            Saved = DefaultSaved;
+            SelectedValue = DefaultSelectedValue;
+        }
+
         internal const bool DefaultSynced = true;
         internal const bool DefaultSaved = true;
-        internal const string DefaultGroupName = "";
-        internal const string DefaultParameterName = "";
-        internal const float DefaultParameterValue = 0f;
         internal const float DefaultSelectedValue = 1f;
 
 #endregion

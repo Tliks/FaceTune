@@ -15,11 +15,17 @@ namespace Aoyon.FaceTune
         // facetune外部(組み込みFX Controllerや外部MergeAnimator等)のまばたき/リップシンク制御へ介入するか。
         // VRCにおける現状実装は、外部ControllerのTracking Control Behaviorを書き換えAAP制御へ移行させ、FaceTune側のレイヤーで中央制御する。
         [ToggleLeft]
-        public bool AvoidEyeBlinkConflicts = DefaultAvoidEyeBlinkConflicts;
+        public bool AvoidEyeBlinkConflicts;
         [ToggleLeft]
-        public bool AvoidLipSyncConflicts = DefaultAvoidLipSyncConflicts;
+        public bool AvoidLipSyncConflicts;
 
 #region Defaults
+
+        private void Reset()
+        {
+            AvoidEyeBlinkConflicts = DefaultAvoidEyeBlinkConflicts;
+            AvoidLipSyncConflicts = DefaultAvoidLipSyncConflicts;
+        }
 
         internal const bool DefaultAvoidEyeBlinkConflicts = true;
         internal const bool DefaultAvoidLipSyncConflicts = true;

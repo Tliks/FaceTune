@@ -13,29 +13,36 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Data";
 
-        public bool HasFacialBlendShapes = DefaultHasFacialBlendShapes;
+        public bool HasFacialBlendShapes;
         public FacialBlendShapeData FacialBlendShapes = new();
 
-        public bool HasFacialBehavior = DefaultHasFacialBehavior;
-        public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
-        public TrackingPermission AllowEyeBlink = ExpressionBehavior.Default.AllowEyeBlink;
-        public TrackingPermission AllowLipSync = ExpressionBehavior.Default.AllowLipSync;
+        public bool HasFacialBehavior;
+        public ExpressionWriteMode WriteMode;
+        public TrackingPermission AllowEyeBlink;
+        public TrackingPermission AllowLipSync;
 
-        public bool HasMultiFrame = DefaultHasMultiFrame;
+        public bool HasMultiFrame;
         public MultiFrameSettings MultiFrame = new();
 
-        public bool HasEyeBlink = false;
+        public bool HasEyeBlink;
         public SettingsReference EyeBlinkReference = new();
         public EyeBlinkSettings EyeBlink = new();
 
-        public bool HasLipSync = false;
+        public bool HasLipSync;
         public SettingsReference LipSyncReference = new();
         public LipSyncSettings LipSync = new();
 
-        public bool HasNonFacialAnimations = false;
+        public bool HasNonFacialAnimations;
         public NonFacialAnimationData NonFacialAnimations = new();
 
 #region Defaults
+
+        private void Reset()
+        {
+            HasFacialBlendShapes = DefaultHasFacialBlendShapes;
+            HasFacialBehavior = DefaultHasFacialBehavior;
+            HasMultiFrame = DefaultHasMultiFrame;
+        }
 
         internal const bool DefaultHasFacialBlendShapes = true;
         internal const bool DefaultHasFacialBehavior = true;

@@ -13,17 +13,20 @@ namespace Aoyon.FaceTune
             SupportMMD = 30
         }
 
-        public Kind ControlKind = DefaultControlKind;
+        public Kind ControlKind;
 
         // SupportMMD
         public MMDSupportSettings MMD = new();
 
         // for All kind
-        public ConditionSelection Condition = CreateDefaultCondition();
+        public ConditionSelection Condition = new();
 
 #region Defaults
 
-        internal const Kind DefaultControlKind = Kind.LockFacial;
+        private void Reset()
+        {
+            Condition = CreateDefaultCondition();
+        }
 
         internal static ConditionSelection CreateDefaultCondition()
             => new()
