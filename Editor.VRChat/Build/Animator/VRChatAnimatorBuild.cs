@@ -57,12 +57,19 @@ internal static class VRChatAnimatorBuilder
             expressionPlan,
             settings.AvatarContext,
             unitBoundaryTransforms);
-        var units = expressionPlan.Items
+        var unitGroups = expressionPlan.Items
             .GroupBy(item => (
                 Priority: item.Priority.Priority,
                 ExternalPartition: externalPartitions[item.SourceTransform]))
-            .Select((group, id) => (
-                Id: id,
+            .ToArray();
+        var unitIds = unitGroups
+            .OrderBy(group => group.Key.Priority)
+            .ThenByDescending(group => group.Key.ExternalPartition)
+            .Select((group, id) => (group.Key, Id: id))
+            .ToDictionary(entry => entry.Key, entry => entry.Id);
+        var units = unitGroups
+            .Select(group => (
+                Id: unitIds[group.Key],
                 Priority: group.Key.Priority,
                 Anchor: group.First().SourceTransform,
                 Expressions: (IReadOnlyList<ExpressionItem>)group.ToArray()))
