@@ -40,15 +40,19 @@ internal static class CustomLipSyncBlendShapeProxy
             .ToHashSet(StringComparer.Ordinal);
         var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        foreach (var sourceName in usedNames)
+        using (new Utils.ProfilingSampleScope(
+                   "Animator.CustomLipSyncProxy.DuplicateBlendShapes"))
         {
-            var sourceIndex = sourceMesh.GetBlendShapeIndex(sourceName);
-            if (sourceIndex < 0) continue;
+            foreach (var sourceName in usedNames)
+            {
+                var sourceIndex = sourceMesh.GetBlendShapeIndex(sourceName);
+                if (sourceIndex < 0) continue;
 
-            var proxyName = CreateProxyName(sourceName, existingNames);
-            DuplicateBlendShape(sourceMesh, sourceIndex, mesh, proxyName);
-            existingNames.Add(proxyName);
-            mapping.Add(sourceName, proxyName);
+                var proxyName = CreateProxyName(sourceName, existingNames);
+                DuplicateBlendShape(sourceMesh, sourceIndex, mesh, proxyName);
+                existingNames.Add(proxyName);
+                mapping.Add(sourceName, proxyName);
+            }
         }
 
         if (mapping.Count == 0)
@@ -57,18 +61,22 @@ internal static class CustomLipSyncBlendShapeProxy
             return new Result(settings, expressions, ImmutableHashSet<string>.Empty);
         }
 
-        settings.AvatarContext.FaceRenderer.sharedMesh = mesh;
+        using (new Utils.ProfilingSampleScope(
+                   "Animator.CustomLipSyncProxy.RewritePlan"))
+        {
+            settings.AvatarContext.FaceRenderer.sharedMesh = mesh;
 
-        var avatarContext = settings.AvatarContext with { FaceMesh = mesh };
-        var rewrittenSettings = settings with { AvatarContext = avatarContext };
-        var rewrittenExpressions = new ExpressionPlan(expressions.Items.Select(item =>
-            item.LipSync.Mode == LipSyncSettings.Kind.Custom
-                ? item with { LipSync = Rewrite(item.LipSync, mapping) }
-                : item));
-        return new Result(
-            rewrittenSettings,
-            rewrittenExpressions,
-            mapping.Values.ToImmutableHashSet(StringComparer.Ordinal));
+            var avatarContext = settings.AvatarContext with { FaceMesh = mesh };
+            var rewrittenSettings = settings with { AvatarContext = avatarContext };
+            var rewrittenExpressions = new ExpressionPlan(expressions.Items.Select(item =>
+                item.LipSync.Mode == LipSyncSettings.Kind.Custom
+                    ? item with { LipSync = Rewrite(item.LipSync, mapping) }
+                    : item));
+            return new Result(
+                rewrittenSettings,
+                rewrittenExpressions,
+                mapping.Values.ToImmutableHashSet(StringComparer.Ordinal));
+        }
     }
 
     private static string CreateProxyName(string sourceName, ISet<string> existingNames)

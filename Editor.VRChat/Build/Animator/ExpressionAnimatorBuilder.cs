@@ -138,15 +138,18 @@ internal sealed class ExpressionAnimatorBuilder
         }
 
         var position = origin + new Vector3(0, yStep * 4, 0);
-        for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
+        using (new Utils.ProfilingSampleScope("Animator.Expression.BuildStates"))
         {
-            AddExpressionStates(
-                layer,
-                expressions[expressionIndex],
-                expressionIndex,
-                enterConditions[expressionIndex],
-                transitionDurationSeconds,
-                ref position);
+            for (var expressionIndex = 0; expressionIndex < expressions.Count; expressionIndex++)
+            {
+                AddExpressionStates(
+                    layer,
+                    expressions[expressionIndex],
+                    expressionIndex,
+                    enterConditions[expressionIndex],
+                    transitionDurationSeconds,
+                    ref position);
+            }
         }
     }
 
@@ -231,6 +234,7 @@ internal sealed class ExpressionAnimatorBuilder
         ExpressionItem expression,
         IReadOnlyList<(string ParameterName, float Value)> aapWrites)
     {
+        using var _ = new Utils.ProfilingSampleScope("Animator.Expression.SetMotion");
         var outputAnimations = GetOutputAnimations(expression);
         var key = new ExpressionClipKey(
             outputAnimations,
