@@ -98,7 +98,7 @@ internal static class FaceTuneRecipes
 
     public static ExpressionDataComponent AddExpressionData(Transform? parent)
     {
-        var expressionDataObject = new GameObject("Expression Data");
+        var expressionDataObject = new GameObject("Data");
         Undo.RegisterCreatedObjectUndo(expressionDataObject, "Add FaceTune Expression Data");
         if (parent != null)
             Undo.SetTransformParent(expressionDataObject.transform, parent, "Place FaceTune Expression Data");
