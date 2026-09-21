@@ -93,8 +93,7 @@ namespace Aoyon.FaceTune
 
 #region Interfaces
 
-        SettingsReferenceMode IExpressionDefinitionProviderWithReference.DefinitionMode => ExpressionDataReference.Mode;
-        FaceTuneTagComponent? IExpressionDefinitionProviderWithReference.DefinitionSource => ExpressionDataReference.ComponentSource;
+        (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) IExpressionDefinitionProviderWithReference.Reference => (ExpressionDataReference.Mode, ExpressionDataReference.ComponentSource);
 
         (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (true, FacialBlendShapes);
         (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (true, NonFacialAnimations);

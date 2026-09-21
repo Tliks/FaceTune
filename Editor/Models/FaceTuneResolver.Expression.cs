@@ -25,11 +25,7 @@ internal sealed class ExpressionDefinitionResolver
             if (provider is not IExpressionDefinitionProviderWithReference) return provider;
             var reference = context.Observe(
                 component,
-                current =>
-                {
-                    var value = (IExpressionDefinitionProviderWithReference)current;
-                    return (Mode: value.DefinitionMode, Source: value.DefinitionSource);
-                },
+                current => ((IExpressionDefinitionProviderWithReference)current).Reference,
                 (left, right) => left == right);
             if (reference.Mode == SettingsReferenceMode.Direct) return provider;
             return reference.Source is IExpressionDefinitionProvider source

@@ -21,6 +21,5 @@ internal interface IExpressionDefinitionProvider
 
 internal interface IExpressionDefinitionProviderWithReference : IExpressionDefinitionProvider
 {
-    SettingsReferenceMode DefinitionMode { get; }
-    FaceTuneTagComponent? DefinitionSource { get; }
+    (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) Reference { get; }
 }
