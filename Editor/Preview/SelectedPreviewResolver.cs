@@ -36,6 +36,8 @@ internal static class SelectedPreviewResolver
                 ClipImportOption.NonZero,
                 animations,
                 avatar.BodyPath);
+            if (animations.Count == 0) continue;
+
             var facial = new FacialPreviewData(
                 animations,
                 null,
