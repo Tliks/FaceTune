@@ -48,6 +48,7 @@ internal sealed class SelectedShapesPreviewSession : IDisposable
     public void Dispose()
     {
         _disposed = true;
+        _context.Invalidate();
     }
 }
 
