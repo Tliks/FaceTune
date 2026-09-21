@@ -18,6 +18,8 @@ internal static class CustomLipSyncBlendShapeProxy
         ExpressionPlan expressions,
         ISet<string> builtInLipSyncBlendShapes)
     {
+        using var _ = new Utils.ProfilingSampleScope(
+            "Animator.ResolveCustomLipSyncProxy");
         var usedNames = expressions.Items
             .Select(item => item.LipSync)
             .Where(lipSync => lipSync.Mode == LipSyncSettings.Kind.Custom)

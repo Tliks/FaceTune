@@ -22,6 +22,7 @@ internal sealed class MmdSupport
         ParameterDomainRegistry parameterDomains,
         bool? analyzedWriteDefaults)
     {
+        using var _ = new Utils.ProfilingSampleScope("Animator.InitializeMmdSupport");
         _graph = graph;
         _settings = settings;
 

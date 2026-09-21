@@ -23,6 +23,8 @@ internal sealed class ExpressionAnimatorBuilder
         AvatarControlSettings avatarControlSettings,
         AapProtocol aap)
     {
+        using var _ = new Utils.ProfilingSampleScope(
+            "Animator.Expression.InitializeBuilder");
         _avatarContext = settings.AvatarContext;
         _managedZeroAnimations = settings.GetManagedZeroBlendShapes()
             .ToBlendShapeAnimations()
@@ -39,19 +41,33 @@ internal sealed class ExpressionAnimatorBuilder
         IReadOnlyList<ExpressionItem> expressions,
         int layerPriority)
     {
-        EnsureParameters(controller, expressions);
+        using var buildScope = new Utils.ProfilingSampleScope(
+            "Animator.Expression.BuildUnit");
+        using (new Utils.ProfilingSampleScope("Animator.Expression.EnsureParameters"))
+        {
+            EnsureParameters(controller, expressions);
+        }
 
         var packedLayers = Pack(expressions);
         for (var layerIndex = 0; layerIndex < packedLayers.Count; layerIndex++)
         {
             var layer = packedLayers[layerIndex];
-            BuildExpressionLayer(
-                controller,
-                $"Expression {unitId}-{layerIndex}",
-                layer[0].Transition.DurationSeconds,
-                layer,
-                BuildEnterConditions(layer),
-                layerPriority);
+            IReadOnlyList<DnfCondition> enterConditions;
+            using (new Utils.ProfilingSampleScope(
+                       "Animator.Expression.BuildEnterConditions"))
+            {
+                enterConditions = BuildEnterConditions(layer);
+            }
+            using (new Utils.ProfilingSampleScope("Animator.Expression.BuildLayer"))
+            {
+                BuildExpressionLayer(
+                    controller,
+                    $"Expression {unitId}-{layerIndex}",
+                    layer[0].Transition.DurationSeconds,
+                    layer,
+                    enterConditions,
+                    layerPriority);
+            }
         }
     }
 

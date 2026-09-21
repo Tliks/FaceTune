@@ -53,27 +53,31 @@ internal static class VRChatAnimatorBuilder
                 controllerContext);
         }
 
-        var externalPartitions = FindExternalPartitions(
-            expressionPlan,
-            settings.AvatarContext,
-            unitBoundaryTransforms);
-        var unitGroups = expressionPlan.Items
-            .GroupBy(item => (
-                Priority: item.Priority.Priority,
-                ExternalPartition: externalPartitions[item.SourceTransform]))
-            .ToArray();
-        var unitIds = unitGroups
-            .OrderBy(group => group.Key.Priority)
-            .ThenByDescending(group => group.Key.ExternalPartition)
-            .Select((group, id) => (group.Key, Id: id))
-            .ToDictionary(entry => entry.Key, entry => entry.Id);
-        var units = unitGroups
-            .Select(group => (
-                Id: unitIds[group.Key],
-                Priority: group.Key.Priority,
-                Anchor: group.First().SourceTransform,
-                Expressions: (IReadOnlyList<ExpressionItem>)group.ToArray()))
-            .ToArray();
+        ExpressionUnit[] units;
+        using (new Utils.ProfilingSampleScope("Build.Animator.ResolveUnits"))
+        {
+            var externalPartitions = FindExternalPartitions(
+                expressionPlan,
+                settings.AvatarContext,
+                unitBoundaryTransforms);
+            var unitGroups = expressionPlan.Items
+                .GroupBy(item => (
+                    Priority: item.Priority.Priority,
+                    ExternalPartition: externalPartitions[item.SourceTransform]))
+                .ToArray();
+            var unitIds = unitGroups
+                .OrderBy(group => group.Key.Priority)
+                .ThenByDescending(group => group.Key.ExternalPartition)
+                .Select((group, id) => (group.Key, Id: id))
+                .ToDictionary(entry => entry.Key, entry => entry.Id);
+            units = unitGroups
+                .Select(group => new ExpressionUnit(
+                    unitIds[group.Key],
+                    group.Key.Priority,
+                    group.First().SourceTransform,
+                    group.ToArray()))
+                .ToArray();
+        }
 
         var nonFacialDefaults = AnimatorHelper.GetDefaultValueAnimations(
             settings.AvatarContext.Root,
@@ -252,6 +256,7 @@ internal static class VRChatAnimatorBuilder
         string name,
         int priority)
     {
+        using var _ = new Utils.ProfilingSampleScope("Animator.CreateMergeController");
         var merge = anchor.gameObject.AddComponent<ModularAvatarMergeAnimator>();
         merge.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
         merge.deleteAttachedAnimator = false;
@@ -267,6 +272,12 @@ internal static class VRChatAnimatorBuilder
         controllerContext.Controllers[merge] = controller;
         return controller;
     }
+
+    private sealed record ExpressionUnit(
+        int Id,
+        int Priority,
+        Transform Anchor,
+        IReadOnlyList<ExpressionItem> Expressions);
 
     private static IReadOnlyDictionary<Transform, int> FindExternalPartitions(
         ExpressionPlan expressionPlan,

@@ -45,7 +45,10 @@ internal sealed class VRChatTrackingPlan
     public static VRChatTrackingPlan Build(
         ImmutableList<ExpressionItem> items,
         AvatarControlSettings avatarControlSettings)
-        => new(items, avatarControlSettings);
+    {
+        using var _ = new Utils.ProfilingSampleScope("Animator.ResolveTrackingPlan");
+        return new VRChatTrackingPlan(items, avatarControlSettings);
+    }
 
     public int? EyeBlinkModeFor(ExpressionItem expression)
     {
