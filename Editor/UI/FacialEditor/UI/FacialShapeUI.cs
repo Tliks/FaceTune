@@ -17,7 +17,7 @@ internal class FacialShapeUI : IDisposable
     private readonly VisualElement _selectedContainer;
     private readonly VisualElement _unselectedContainer;
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
-    private readonly List<SimpleToggle> _listButtons = new();
+    private readonly List<ToolbarToggle> _listButtons = new();
     private LipSyncPanel? _lipSyncPanel;
     private ToolbarToggle? _lipSyncButton;
     private ToolbarToggle? _cancellerButton;
@@ -132,22 +132,23 @@ internal class FacialShapeUI : IDisposable
         VisualElement container,
         IEnumerable<string> labels)
     {
+        var toolbar = new Toolbar();
         var labelArray = labels.ToArray();
         for (var index = 0; index < labelArray.Length; index++)
         {
             var listIndex = index;
-            var button = new SimpleToggle { text = labelArray[index] };
+            var button = new ToolbarToggle { text = labelArray[index] };
             button.RegisterValueChangedCallback(evt =>
             {
-                if (evt.newValue) _context.SetActiveList(listIndex);
+                if (evt.newValue)
+                    _context.SetActiveList(listIndex);
+                else if (_context.ActiveListIndex == listIndex)
+                    button.SetValueWithoutNotify(true);
             });
-            button.AddToClassList("compact-control");
-            button.style.minWidth = 120f;
-            button.style.marginRight = Spacing;
-            button.style.marginBottom = Spacing;
-            container.Add(button);
+            toolbar.Add(button);
             _listButtons.Add(button);
         }
+        container.Add(toolbar);
     }
 
     private void AddTimeSlider(VisualElement container, float initialValue)

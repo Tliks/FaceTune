@@ -146,7 +146,6 @@ internal class BlendShapeOverrideManager : IDisposable
             ?? Enumerable.Empty<string>();
         _allKeysArray = rendererBlendShapes
             .Select(shape => shape.Name)
-            .Where(name => !explicitlyExcluded.Contains(name))
             .Concat(retainedNames)
             .Distinct(StringComparer.Ordinal)
             .ToArray();

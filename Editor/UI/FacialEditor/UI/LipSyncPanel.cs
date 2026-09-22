@@ -143,7 +143,7 @@ internal sealed class LipSyncPanel
                                && index == _context.SelectedViseme);
             foreach (var shape in values[index])
             {
-                var shapeIndex = _context.DataManager.GetIndexForShape(shape.Name);
+                var shapeIndex = _context.Catalog.IndexOf(shape.Name);
                 if (search.Length > 0
                     && shape.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
                     || _context.GroupManager.IsLeftSelected
@@ -194,8 +194,8 @@ internal sealed class LipSyncPanel
         facialRail.style.opacity = 0f;
         metadata.RegisterCallback<ClickEvent>(_ => Restore(visemeIndex, shape.Name));
         name.text = shape.Name;
-        var shapeIndex = _context.DataManager.GetIndexForShape(shape.Name);
-        var missing = shapeIndex < 0 || _context.DataManager.IsMissing(shapeIndex);
+        var shapeIndex = _context.Catalog.IndexOf(shape.Name);
+        var missing = shapeIndex < 0;
         var unavailable = _context.LipSyncUnavailableNames.Contains(shape.Name);
         warning.SetVisible(missing || unavailable);
         warning.tooltip = missing
@@ -315,9 +315,9 @@ internal sealed class LipSyncPanel
     {
         _availableNames.Clear();
         var search = _availableSearch.value ?? string.Empty;
-        foreach (var name in _context.DataManager.AllKeys)
+        foreach (var name in _context.Catalog.Names)
         {
-            var shapeIndex = _context.DataManager.GetIndexForShape(name);
+            var shapeIndex = _context.Catalog.IndexOf(name);
             if (_context.LipSyncUnavailableNames.Contains(name)
                 || search.Length > 0
                 && name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
@@ -341,7 +341,7 @@ internal sealed class LipSyncPanel
         {
             if (element.userData is not string name) return;
             _context.PreviewManager.CurrentHoveredIndex =
-                _context.DataManager.GetIndexForShape(name);
+                _context.Catalog.IndexOf(name);
         });
         return element;
     }

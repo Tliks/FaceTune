@@ -37,10 +37,10 @@ internal class BlendShapeGrouping
         }
     }
 
-    public BlendShapeGrouping(BlendShapeOverrideManager dataManager)
+    public BlendShapeGrouping(IReadOnlyList<string> blendShapeNames)
     {
-        Groups = BuildGroups(dataManager.AllKeys);
-        _groupByBlendShapeIndex = new BlendShapeGroup[dataManager.AllKeys.Count];
+        Groups = BuildGroups(blendShapeNames);
+        _groupByBlendShapeIndex = new BlendShapeGroup[blendShapeNames.Count];
         foreach (var group in Groups)
         {
             foreach (var index in group.BlendShapeIndices)

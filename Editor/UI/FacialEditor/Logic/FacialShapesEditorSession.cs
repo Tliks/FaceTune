@@ -41,6 +41,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
     public IReadOnlyList<BlendShapeOverrideManager> DataManagers { get; }
     public BlendShapeOverrideManager DataManager => DataManagers[ActiveListIndex];
     public int ActiveListIndex { get; private set; }
+    public BlendShapeCatalog Catalog { get; }
     public BlendShapeGrouping GroupManager { get; }
     public PreviewManager PreviewManager { get; }
     public FacialShapeUI UI { get; }
@@ -92,7 +93,8 @@ internal sealed class FacialShapesEditorContext : IDisposable
         IgnoredNames = ignoredNames;
         LipSyncUnavailableNames = lipSyncUnavailableNames;
 
-        GroupManager = new BlendShapeGrouping(dataManagers[0]);
+        Catalog = new BlendShapeCatalog(renderer);
+        GroupManager = new BlendShapeGrouping(Catalog.Names);
         PreviewManager = new PreviewManager(this, root);
         UI = new FacialShapeUI(root, this, tryChangeRenderer, save);
     }
