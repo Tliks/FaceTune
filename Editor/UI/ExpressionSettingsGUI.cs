@@ -545,17 +545,13 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         "lipSync.mode.option.builtIn",
         "lipSync.mode.option.custom"
     };
-    private static readonly ReorderableListOptions CancellerOptions = CreateBlendShapeOptions(
-        ReorderableListOptions.HeaderMode.Label,
-        0f,
-        FaceTuneWriteKind.FacialData);
-    private static readonly ReorderableListOptions VisemeOptions = CreateBlendShapeOptions(
-        ReorderableListOptions.HeaderMode.Label,
-        100f,
-        FaceTuneWriteKind.LipSyncAnimation) with
-    {
-        NestContent = false
-    };
+    private static readonly ReorderableListOptions CancellerOptions =
+        CreateBlendShapeOptions(ReorderableListOptions.HeaderMode.Label);
+    private static readonly ReorderableListOptions VisemeOptions =
+        CreateBlendShapeOptions(ReorderableListOptions.HeaderMode.Label) with
+        {
+            NestContent = false
+        };
     private const int VisemeColumns = 5;
     private const int VisemeRows = 3;
     private static readonly float[] VisemeColumnWidths =
@@ -722,19 +718,11 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
     }
 
     private static ReorderableListOptions CreateBlendShapeOptions(
-        ReorderableListOptions.HeaderMode header,
-        float initialWeight,
-        FaceTuneWriteKind writeKind)
+        ReorderableListOptions.HeaderMode header)
         => new(
             Header: header,
             MaxVisibleHeight: ListMaxVisibleHeight,
             InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
-            DrawHeaderAction: (position, list) => BlendShapeNameGUI.DrawListPicker(
-                position,
-                list,
-                element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
-                (element, name) => element.CopyFrom(new BlendShapeWeight(name, initialWeight)),
-                writeKind),
             ElementHeight: GUIHelper.LineHeight);
 
     private static void DrawVisemeGrid(
