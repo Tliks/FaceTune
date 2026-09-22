@@ -9,15 +9,21 @@ internal abstract class ShapesEditorModeSession
     public virtual bool UsesFacialIgnoredNames => false;
     public virtual float InitialPreviewTime => 0f;
     public virtual bool HasChanges => false;
+    public abstract bool CanRestoreInitial { get; }
+    public abstract bool CanRestoreEdited { get; }
     public virtual float GetPreviewOpacity(float normalizedTime) => 1f;
     public event Action? Changed;
+    public event Action? PreviewChanged;
 
     protected void NotifyChanged() => Changed?.Invoke();
+    protected void NotifyPreviewChanged() => PreviewChanged?.Invoke();
 
     public abstract void BuildPreview(BlendShapeWeightSet result, float normalizedTime);
     public abstract void ImportClip(
         IReadOnlyList<BlendShapeWeightAnimation> animations,
         int activeListIndex);
+    public abstract void RestoreInitial();
+    public abstract void RestoreEdited();
     public virtual void SaveSettings(SerializedProperty settings)
         => throw new InvalidOperationException("This mode does not edit component settings.");
     public virtual bool SynchronizeAfterUndo() => false;
@@ -42,6 +48,8 @@ internal sealed class FacialModeSession : ShapesEditorModeSession
 
     public override ShapesEditorMode Kind => ShapesEditorMode.Facial;
     public override bool UsesFacialIgnoredNames => true;
+    public override bool CanRestoreInitial => _manager.IsChangedFromInitialState;
+    public override bool CanRestoreEdited => _manager.CanRestoreEditedOverrides;
 
     public FacialModeSession(BlendShapeOverrideManager manager) => _manager = manager;
 
@@ -55,23 +63,40 @@ internal sealed class FacialModeSession : ShapesEditorModeSession
         IReadOnlyList<BlendShapeWeightAnimation> animations,
         int activeListIndex)
         => _manager.AddShapesWithAnimations(animations);
+
+    public override void RestoreInitial() => _manager.TryRestoreInitialOverrides();
+    public override void RestoreEdited() => _manager.TryRestoreEditedOverrides();
 }
 
 internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
 {
     private readonly BlendShapeOverrideManager[] _managers;
     private readonly bool _simple;
+    private bool _restoring;
+    private bool _canRestoreEdited;
 
     public override ShapesEditorMode Kind
         => _simple ? ShapesEditorMode.EyeBlinkSimple : ShapesEditorMode.EyeBlinkCustom;
     public override float InitialPreviewTime => _simple ? 1f : 0f;
     public override float GetPreviewOpacity(float normalizedTime)
         => _simple ? normalizedTime : 1f;
+    public override bool CanRestoreInitial
+        => _managers.Any(manager => manager.IsChangedFromInitialState);
+    public override bool CanRestoreEdited
+        => _canRestoreEdited
+           && _managers.Any(manager => manager.CanRestoreEditedOverrides);
 
     public EyeBlinkModeSession(BlendShapeOverrideManager[] managers, bool simple)
     {
         _managers = managers;
         _simple = simple;
+        foreach (var manager in managers)
+        {
+            manager.OnAnyDataChange += () =>
+            {
+                if (!_restoring) _canRestoreEdited = false;
+            };
+        }
     }
 
     public override void BuildPreview(BlendShapeWeightSet result, float normalizedTime)
@@ -110,6 +135,26 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
             (manager.GetIndexForShape(animation.Name), animation.Weight(0f))));
     }
 
+    public override void RestoreInitial()
+    {
+        var hadChanges = CanRestoreInitial;
+        _restoring = true;
+        foreach (var manager in _managers)
+            manager.TryRestoreInitialOverrides();
+        _restoring = false;
+        _canRestoreEdited = hadChanges;
+    }
+
+    public override void RestoreEdited()
+    {
+        if (!CanRestoreEdited) return;
+        _restoring = true;
+        foreach (var manager in _managers)
+            manager.TryRestoreEditedOverrides();
+        _restoring = false;
+        _canRestoreEdited = false;
+    }
+
     public override void SaveSettings(SerializedProperty settings)
     {
         if (_simple)
@@ -134,10 +179,17 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
 internal sealed class LipSyncModeSession : ShapesEditorModeSession
 {
     private readonly BlendShapeOverrideManager _canceller;
+    private bool _restoring;
+    private bool _canRestoreEdited;
     public LipSyncEditing Editing { get; }
 
     public override ShapesEditorMode Kind => ShapesEditorMode.LipSync;
     public override bool HasChanges => Editing.HasChanges;
+    public override bool CanRestoreInitial
+        => Editing.HasChanges || _canceller.IsChangedFromInitialState;
+    public override bool CanRestoreEdited
+        => _canRestoreEdited
+           && (Editing.CanRestoreEdited || _canceller.CanRestoreEditedOverrides);
 
     public LipSyncModeSession(
         BlendShapeOverrideManager canceller,
@@ -145,14 +197,23 @@ internal sealed class LipSyncModeSession : ShapesEditorModeSession
     {
         _canceller = canceller;
         Editing = editing;
-        Editing.Changed += NotifyChanged;
+        Editing.DataChanged += () =>
+        {
+            if (!_restoring) _canRestoreEdited = false;
+            NotifyChanged();
+        };
+        Editing.PreviewChanged += NotifyPreviewChanged;
+        _canceller.OnAnyDataChange += () =>
+        {
+            if (!_restoring) _canRestoreEdited = false;
+        };
     }
 
     public override void BuildPreview(BlendShapeWeightSet result, float normalizedTime)
     {
         AddTargetValues(result, _canceller);
         if (Editing.PreviewShapes is not { } lipSync) return;
-        foreach (var shape in lipSync.GetOrderedShapes()[Editing.PreviewViseme])
+        foreach (var shape in lipSync.GetShapes(Editing.PreviewViseme))
         {
             if (!Editing.UnavailableNames.Contains(shape.Name))
                 result.Add(shape);
@@ -177,6 +238,28 @@ internal sealed class LipSyncModeSession : ShapesEditorModeSession
                 .Select(animation =>
                     new BlendShapeWeight(animation.Name, animation.Weight(0f))),
             replaceExisting: false);
+    }
+
+    public override void RestoreInitial()
+    {
+        var hadChanges = CanRestoreInitial;
+        _restoring = true;
+        Editing.TryRestoreInitial();
+        _canceller.TryRestoreInitialOverrides();
+        _restoring = false;
+        _canRestoreEdited = hadChanges;
+        NotifyChanged();
+    }
+
+    public override void RestoreEdited()
+    {
+        if (!CanRestoreEdited) return;
+        _restoring = true;
+        Editing.TryRestoreEdited();
+        _canceller.TryRestoreEditedOverrides();
+        _restoring = false;
+        _canRestoreEdited = false;
+        NotifyChanged();
     }
 
     public override void SaveSettings(SerializedProperty settings)

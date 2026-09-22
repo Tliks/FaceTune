@@ -44,6 +44,15 @@ internal sealed class SelectedShapeRow : VisualElement
         Warning.image = WarningIcon;
     }
 
+    internal static Label CreateEmptyLabel()
+    {
+        var label = new Label("facialEditor.list.empty".LS());
+        label.style.height = FacialShapeUI.RowHeight;
+        label.style.unityTextAlign = TextAnchor.MiddleLeft;
+        label.style.opacity = 0.6f;
+        return label;
+    }
+
     public void SetChanged(bool changed)
         => ChangedMarker.EnableInClassList("changed-marker--visible", changed);
 

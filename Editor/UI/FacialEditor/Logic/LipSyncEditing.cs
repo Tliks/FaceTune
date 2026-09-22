@@ -6,6 +6,7 @@ internal sealed class LipSyncEditing
     private readonly SerializedProperty _property;
     private LipSyncSettings _initial;
     private LipSyncSettings _observed;
+    private LipSyncSettings? _editedBeforeRestore;
 
     public LipSyncSettings Draft { get; }
     public VrcVisemeLipSyncShapes? BuiltIn { get; }
@@ -17,8 +18,11 @@ internal sealed class LipSyncEditing
     public VrcVisemeLipSyncShapes? PreviewShapes
         => Draft.Mode == LipSyncSettings.Kind.Custom ? Draft.Shapes : BuiltIn;
     public bool HasChanges => !Draft.Equals(_initial);
+    public bool CanRestoreEdited => _editedBeforeRestore != null;
 
-    public event Action? Changed;
+    public event Action? DataChanged;
+    public event Action? StructureChanged;
+    public event Action? PreviewChanged;
 
     public LipSyncEditing(
         SerializedObject serializedObject,
@@ -41,14 +45,14 @@ internal sealed class LipSyncEditing
         if (SelectedViseme == index && !CancellerSelected) return;
         SelectedViseme = index;
         CancellerSelected = false;
-        NotifyChanged();
+        PreviewChanged?.Invoke();
     }
 
     public void SelectCanceller()
     {
         if (CancellerSelected) return;
         CancellerSelected = true;
-        NotifyChanged();
+        PreviewChanged?.Invoke();
     }
 
     public void SetHoveredViseme(int index)
@@ -56,7 +60,7 @@ internal sealed class LipSyncEditing
         index = Mathf.Clamp(index, -1, VrcVisemeLipSyncShapes.Count - 1);
         if (HoveredViseme == index) return;
         HoveredViseme = index;
-        NotifyChanged();
+        PreviewChanged?.Invoke();
     }
 
     public void SetMode(LipSyncSettings.Kind mode)
@@ -71,12 +75,12 @@ internal sealed class LipSyncEditing
         {
             _property.FindPropertyRelative(nameof(LipSyncSettings.Shapes)).CopyFrom(BuiltIn);
         }
-        Apply();
+        Apply(structureChanged: true);
     }
 
     public bool TryGetInitialShape(int visemeIndex, string name, out BlendShapeWeight shape)
     {
-        foreach (var candidate in _initial.Shapes.GetOrderedShapes()[visemeIndex])
+        foreach (var candidate in _initial.Shapes.GetShapes(visemeIndex))
         {
             if (candidate.Name != name) continue;
             shape = candidate;
@@ -87,12 +91,11 @@ internal sealed class LipSyncEditing
     }
 
     public bool Contains(int visemeIndex, string name)
-        => Draft.Shapes.GetOrderedShapes()[visemeIndex]
-            .Any(shape => shape.Name == name);
+        => Draft.Shapes.GetShapes(visemeIndex).Any(shape => shape.Name == name);
 
     public float GetWeight(int visemeIndex, string name)
     {
-        foreach (var shape in Draft.Shapes.GetOrderedShapes()[visemeIndex])
+        foreach (var shape in Draft.Shapes.GetShapes(visemeIndex))
         {
             if (shape.Name == name) return shape.Weight;
         }
@@ -120,7 +123,7 @@ internal sealed class LipSyncEditing
             if (element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue != name)
                 continue;
             element.FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
-            Apply();
+            Apply(structureChanged: false);
             return;
         }
     }
@@ -134,7 +137,7 @@ internal sealed class LipSyncEditing
                     .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue != name)
                 continue;
             property.DeleteArrayElementAtIndex(index);
-            Apply();
+            Apply(structureChanged: true);
             return;
         }
     }
@@ -173,14 +176,37 @@ internal sealed class LipSyncEditing
             }
             property.GetArrayElementAtIndex(index).CopyFrom(shape);
         }
-        Apply();
+        Apply(structureChanged: true);
+    }
+
+    public bool TryRestoreInitial()
+    {
+        if (!HasChanges) return false;
+        var edited = Draft.Clone();
+        _serializedObject.UpdateIfRequiredOrScript();
+        _property.CopyFrom(_initial);
+        Apply(structureChanged: true);
+        _editedBeforeRestore = edited;
+        return true;
+    }
+
+    public bool TryRestoreEdited()
+    {
+        if (_editedBeforeRestore == null) return false;
+        var edited = _editedBeforeRestore;
+        _serializedObject.UpdateIfRequiredOrScript();
+        _property.CopyFrom(edited);
+        Apply(structureChanged: true);
+        return true;
     }
 
     public bool SynchronizeAfterUndo()
     {
         if (Draft.Equals(_observed)) return false;
         _observed = Draft.Clone();
-        Changed?.Invoke();
+        DataChanged?.Invoke();
+        StructureChanged?.Invoke();
+        PreviewChanged?.Invoke();
         return true;
     }
 
@@ -188,7 +214,8 @@ internal sealed class LipSyncEditing
     {
         _initial = Draft.Clone();
         _observed = Draft.Clone();
-        Changed?.Invoke();
+        _editedBeforeRestore = null;
+        DataChanged?.Invoke();
     }
 
     private SerializedProperty GetVisemeProperty(int index)
@@ -199,15 +226,13 @@ internal sealed class LipSyncEditing
             .FindPropertyRelative(VrcVisemeLipSyncShapes.PropertyNames[index]);
     }
 
-    private void Apply()
+    private void Apply(bool structureChanged)
     {
         _serializedObject.ApplyModifiedProperties();
-        NotifyChanged();
-    }
-
-    private void NotifyChanged()
-    {
         _observed = Draft.Clone();
-        Changed?.Invoke();
+        _editedBeforeRestore = null;
+        DataChanged?.Invoke();
+        if (structureChanged) StructureChanged?.Invoke();
+        PreviewChanged?.Invoke();
     }
 }

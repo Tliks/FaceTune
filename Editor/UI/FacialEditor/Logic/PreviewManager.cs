@@ -88,7 +88,7 @@ internal class PreviewManager : IDisposable
         foreach (var dataManager in context.DataManagers)
             dataManager.OnAnyDataChange += RequestShapeRefresh;
         context.ActiveListChanged += RequestShapeRefresh;
-        context.ModeSession.Changed += RequestShapeRefresh;
+        context.ModeSession.PreviewChanged += RequestShapeRefresh;
         OnSetBlendShapeTo100OnHoverChanged += _ =>
         {
             _currentAppliedHoverIndex = int.MinValue;
@@ -212,7 +212,7 @@ internal class PreviewManager : IDisposable
         foreach (var dataManager in _context.DataManagers)
             dataManager.OnAnyDataChange -= RequestShapeRefresh;
         _context.ActiveListChanged -= RequestShapeRefresh;
-        _context.ModeSession.Changed -= RequestShapeRefresh;
+        _context.ModeSession.PreviewChanged -= RequestShapeRefresh;
         _updateScheduler?.Pause();
         _updateScheduled = false;
         Preview.Stop();

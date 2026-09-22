@@ -11,7 +11,6 @@ internal class GeneralControls : IDisposable
     private readonly FacialShapesEditorContext _context;
     private readonly Func<SkinnedMeshRenderer?, bool> _tryChangeRenderer;
     private readonly Action _save;
-    private BlendShapeOverrideManager DataManager => _context.DataManager;
     private readonly BlendShapeGrouping _groupManager;
 
     private static VisualTreeAsset? _uxml;
@@ -139,7 +138,7 @@ internal class GeneralControls : IDisposable
         _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
         _restoreInitialOverridesButton.clicked += () =>
         {
-            DataManager.TryRestoreInitialOverrides();
+            _context.ModeSession.RestoreInitial();
             UpdateActionButtonStates();
         };
 
@@ -147,7 +146,7 @@ internal class GeneralControls : IDisposable
         _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon });
         _restoreEditedOverridesButton.clicked += () =>
         {
-            DataManager.TryRestoreEditedOverrides();
+            _context.ModeSession.RestoreEdited();
             UpdateActionButtonStates();
         };
 
@@ -259,8 +258,10 @@ internal class GeneralControls : IDisposable
         var hasChanges = _context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState)
                          || _context.ModeSession.HasChanges;
         _saveButton?.SetEnabled(hasRenderer && _context.Target != null && hasChanges);
-        _restoreInitialOverridesButton?.SetEnabled(hasRenderer && DataManager.IsChangedFromInitialState);
-        _restoreEditedOverridesButton?.SetEnabled(hasRenderer && DataManager.CanRestoreEditedOverrides);
+        _restoreInitialOverridesButton?.SetEnabled(
+            hasRenderer && _context.ModeSession.CanRestoreInitial);
+        _restoreEditedOverridesButton?.SetEnabled(
+            hasRenderer && _context.ModeSession.CanRestoreEdited);
     }
 
     public void Dispose()

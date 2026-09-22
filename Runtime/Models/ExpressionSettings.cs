@@ -466,6 +466,15 @@ internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes
     public List<BlendShapeWeight> OH = new();
     public List<BlendShapeWeight> OU = new();
 
+    internal List<BlendShapeWeight> GetShapes(int index)
+        => index switch
+        {
+            0 => Sil, 1 => PP, 2 => FF, 3 => TH, 4 => DD,
+            5 => KK, 6 => CH, 7 => SS, 8 => NN, 9 => RR,
+            10 => AA, 11 => E, 12 => IH, 13 => OH, 14 => OU,
+            _ => throw new ArgumentOutOfRangeException(nameof(index))
+        };
+
     internal IReadOnlyList<List<BlendShapeWeight>> GetOrderedShapes()
         => new[]
         {
