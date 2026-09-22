@@ -168,9 +168,9 @@ internal sealed class EyeBlinkPanel : IDisposable
                 ? "shapesEditor.eyeBlink.label".LS()
                 : "shapesEditor.conflictCorrection.label".LS();
             header.SetValueWithoutNotify(selected);
-            var manager = _context.DataManagers[row.ListIndex];
+            var controlsManager = _context.DataManagers[row.ListIndex];
             bulk.SetRemoveZeroVisible(VisibleTargetIndices(row.ListIndex)
-                .Any(index => Mathf.Approximately(manager.GetShapeWeight(index), 0f)));
+                .Any(index => Mathf.Approximately(controlsManager.GetShapeWeight(index), 0f)));
             return;
         }
 
