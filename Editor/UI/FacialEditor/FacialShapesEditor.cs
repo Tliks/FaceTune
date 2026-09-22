@@ -6,7 +6,7 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class FacialShapesEditor : EditorWindow
 {
-    [SerializeField] private BlendShapeOverrideManager _dataManager = null!;
+    [SerializeField] private BlendShapeOverrideManager[] _dataManagers = null!;
 
     private FacialShapesEditorContext? _context;
     private bool _unsavedStateSyncPending;
@@ -92,26 +92,28 @@ internal class FacialShapesEditor : EditorWindow
 
         initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, target);
 
+        _dataManagers = new BlendShapeOverrideManager[1];
         var serializedObject = new SerializedObject(this);
-        _dataManager = new BlendShapeOverrideManager(
-            serializedObject,
-            serializedObject.FindProperty(nameof(_dataManager)));
         serializedObject.Update();
+        _dataManagers[0] = new BlendShapeOverrideManager(
+            serializedObject,
+            serializedObject.FindProperty(nameof(_dataManagers)).GetArrayElementAtIndex(0));
         unavailableBlendShapeNames ??= renderer == null
             ? null
             : _resolveUnavailableBlendShapeNames?.Invoke(renderer);
-        _dataManager.SetInitialState(
+        var dataManager = _dataManagers[0];
+        dataManager.SetInitialState(
             renderer,
             ToFirstFrameSet(facialAnimations),
             ToFirstFrameSet(baseAnimations),
             ToFirstFrameSet(initialOverrideAnimations),
             unavailableBlendShapeNames ?? ImmutableHashSet<string>.Empty,
             GetInitialCurves(initialOverrideAnimations));
-        _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
+        dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
             serializedObject,
-            _dataManager,
+            _dataManagers,
             rootVisualElement,
             renderer,
             target,
@@ -162,10 +164,11 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_context != null)
         {
-            _context.DataManager.OnAnyDataChange -= SyncUnsavedChangesFromData;
+            foreach (var dataManager in _context.DataManagers)
+                dataManager.OnAnyDataChange -= SyncUnsavedChangesFromData;
             _context.Dispose();
             _context = null;
-            _dataManager = null!;
+            _dataManagers = null!;
         }
         _unsavedStateSyncPending = false;
     }
@@ -189,7 +192,8 @@ internal class FacialShapesEditor : EditorWindow
     private void SyncUnsavedChangesNow()
     {
         _unsavedStateSyncPending = false;
-        hasUnsavedChanges = _context?.DataManager.IsChangedFromInitialState == true;
+        hasUnsavedChanges = _context?.DataManagers.Any(
+            dataManager => dataManager.IsChangedFromInitialState) == true;
     }
 
     private bool CanDiscardCurrentContext()
@@ -246,7 +250,11 @@ internal class FacialShapesEditor : EditorWindow
                 processed = true;
                 break;
             case 1: // Discard
-                _context?.DataManager.TryDiscardToInitialOverrides();
+                if (_context != null)
+                {
+                    foreach (var dataManager in _context.DataManagers)
+                        dataManager.TryDiscardToInitialOverrides();
+                }
                 window.hasUnsavedChanges = false;
                 processed = true;
                 break;
@@ -292,13 +300,16 @@ internal class FacialShapesEditor : EditorWindow
             _context.DataManager,
             _context.ZeroUnspecifiedBlendShapes,
             _context.ZeroUnavailableBlendShapes);
-        _context.DataManager.MarkCurrentAsInitialState();
+        foreach (var dataManager in _context.DataManagers)
+            dataManager.MarkCurrentAsInitialState();
         SyncUnsavedChangesNow();
     }
 
     private void OnInspectorUpdate()
     {
-        _context?.DataManager.SynchronizeSerializedState();
+        if (_context == null) return;
+        foreach (var dataManager in _context.DataManagers)
+            dataManager.SynchronizeSerializedState();
     }
 
     private void OnDisable()

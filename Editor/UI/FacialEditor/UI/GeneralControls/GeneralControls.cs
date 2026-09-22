@@ -11,7 +11,7 @@ internal class GeneralControls : IDisposable
     private readonly FacialShapesEditorContext _context;
     private readonly Func<SkinnedMeshRenderer?, bool> _tryChangeRenderer;
     private readonly Action _save;
-    private readonly BlendShapeOverrideManager _blendShapeManager;
+    private BlendShapeOverrideManager DataManager => _context.DataManager;
     private readonly BlendShapeGrouping _groupManager;
 
     private static VisualTreeAsset? _uxml;
@@ -49,7 +49,6 @@ internal class GeneralControls : IDisposable
         _context = context;
         _tryChangeRenderer = tryChangeRenderer;
         _save = save;
-        _blendShapeManager = context.DataManager;
         _groupManager = context.GroupManager;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
@@ -64,8 +63,8 @@ internal class GeneralControls : IDisposable
 
     private void UpdateUndoRedoState()
     {
-        _undoButton?.SetEnabled(_blendShapeManager.CanUndo);
-        _redoButton?.SetEnabled(_blendShapeManager.CanRedo);
+        _undoButton?.SetEnabled(DataManager.CanUndo);
+        _redoButton?.SetEnabled(DataManager.CanRedo);
     }
 
     private void SetupControls()
@@ -140,7 +139,7 @@ internal class GeneralControls : IDisposable
         _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
         _restoreInitialOverridesButton.clicked += () =>
         {
-            _blendShapeManager.TryRestoreInitialOverrides();
+            DataManager.TryRestoreInitialOverrides();
             UpdateActionButtonStates();
         };
 
@@ -148,15 +147,19 @@ internal class GeneralControls : IDisposable
         _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon });
         _restoreEditedOverridesButton.clicked += () =>
         {
-            _blendShapeManager.TryRestoreEditedOverrides();
+            DataManager.TryRestoreEditedOverrides();
             UpdateActionButtonStates();
         };
 
         UpdateUndoRedoState();
         UpdateActionButtonStates();
 
-        _blendShapeManager.OnAnyDataChange += UpdateUndoRedoState;
-        _blendShapeManager.OnAnyDataChange += RequestActionButtonStateUpdate;
+        foreach (var dataManager in _context.DataManagers)
+        {
+            dataManager.OnAnyDataChange += UpdateUndoRedoState;
+            dataManager.OnAnyDataChange += RequestActionButtonStateUpdate;
+        }
+        _context.ActiveListChanged += UpdateActionButtonStates;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
         clipField.AddToClassList("compact-field");
@@ -232,7 +235,7 @@ internal class GeneralControls : IDisposable
     {
         var animations = new List<BlendShapeWeightAnimation>();
         clip.GetBlendShapeAnimations(_clipImportOption, animations, string.Empty);
-        _blendShapeManager.AddShapesWithAnimations(animations);
+        DataManager.AddShapesWithAnimations(animations);
     }
 
     private void RequestActionButtonStateUpdate()
@@ -250,15 +253,20 @@ internal class GeneralControls : IDisposable
     private void UpdateActionButtonStates()
     {
         var hasRenderer = _context.Renderer != null;
-        _saveButton?.SetEnabled(hasRenderer && _context.Target != null && _blendShapeManager.IsChangedFromInitialState);
-        _restoreInitialOverridesButton?.SetEnabled(hasRenderer && _blendShapeManager.IsChangedFromInitialState);
-        _restoreEditedOverridesButton?.SetEnabled(hasRenderer && _blendShapeManager.CanRestoreEditedOverrides);
+        var hasChanges = _context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState);
+        _saveButton?.SetEnabled(hasRenderer && _context.Target != null && hasChanges);
+        _restoreInitialOverridesButton?.SetEnabled(hasRenderer && DataManager.IsChangedFromInitialState);
+        _restoreEditedOverridesButton?.SetEnabled(hasRenderer && DataManager.CanRestoreEditedOverrides);
     }
 
     public void Dispose()
     {
-        _blendShapeManager.OnAnyDataChange -= UpdateUndoRedoState;
-        _blendShapeManager.OnAnyDataChange -= RequestActionButtonStateUpdate;
+        foreach (var dataManager in _context.DataManagers)
+        {
+            dataManager.OnAnyDataChange -= UpdateUndoRedoState;
+            dataManager.OnAnyDataChange -= RequestActionButtonStateUpdate;
+        }
+        _context.ActiveListChanged -= UpdateActionButtonStates;
     }
 
     private void RebuildGroupToggles()

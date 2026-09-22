@@ -11,9 +11,11 @@ internal class FacialShapeUI : IDisposable
     private static VisualTreeAsset? _uxml;
     private static StyleSheet? _uss;
 
-    private GeneralControls _generalControls = null!;
-    private SelectedPanel _selectedPanel = null!;
-    private UnselectedPanel _unselectedPanel = null!;
+    private readonly FacialShapesEditorContext _context;
+    private readonly VisualElement _selectedContainer;
+    private readonly VisualElement _unselectedContainer;
+    private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
+    private GeneralControls _generalControls;
 
     public FacialShapeUI(
         VisualElement root,
@@ -21,6 +23,7 @@ internal class FacialShapeUI : IDisposable
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
         Action save)
     {
+        _context = context;
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
 
@@ -30,29 +33,41 @@ internal class FacialShapeUI : IDisposable
         Localization.LocalizeUIElements(root);
 
         _generalControls = new GeneralControls(context, tryChangeRenderer, save);
-        _selectedPanel = new SelectedPanel(context.DataManager, context.GroupManager);
-        _unselectedPanel = new UnselectedPanel(context.DataManager, context.GroupManager, context.PreviewManager);
-
+        _selectedContainer = root.Q<VisualElement>("selected-content-container");
+        _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
-        root.Q<VisualElement>("selected-content-container").Add(_selectedPanel.Element);
-        root.Q<VisualElement>("unselected-content-container").Add(_unselectedPanel.Element);
 
-        UIEventHandler();
+        ShowActiveList();
+        context.ActiveListChanged += ShowActiveList;
     }
 
-    private void UIEventHandler()
+    private void ShowActiveList()
     {
-        _selectedPanel.OnSelectedItemNameClicked += keyIndex =>
+        var index = _context.ActiveListIndex;
+        if (!_panels.TryGetValue(index, out var panels))
         {
-            _unselectedPanel.Element.schedule.Execute(() =>
-            {
-                _unselectedPanel.ScrollToNearestKeyIndex(keyIndex, true, false);
-            });
-        };
+            var dataManager = _context.DataManagers[index];
+            var selected = new SelectedPanel(dataManager, _context.GroupManager);
+            var unselected = new UnselectedPanel(
+                dataManager,
+                _context.GroupManager,
+                _context.PreviewManager);
+            selected.OnSelectedItemNameClicked += keyIndex =>
+                unselected.Element.schedule.Execute(() =>
+                    unselected.ScrollToNearestKeyIndex(keyIndex, true, false));
+            panels = (selected, unselected);
+            _panels.Add(index, panels);
+        }
+
+        _selectedContainer.Clear();
+        _unselectedContainer.Clear();
+        _selectedContainer.Add(panels.Selected.Element);
+        _unselectedContainer.Add(panels.Unselected.Element);
     }
 
     public void Dispose()
     {
+        _context.ActiveListChanged -= ShowActiveList;
         _generalControls.Dispose();
     }
 }

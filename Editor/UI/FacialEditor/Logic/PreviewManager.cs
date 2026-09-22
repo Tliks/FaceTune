@@ -5,8 +5,9 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class PreviewManager : IDisposable
 {
-    private readonly BlendShapeOverrideManager _blendShapeOverrideManager;
-    
+    private readonly FacialShapesEditorContext _context;
+    private BlendShapeOverrideManager DataManager => _context.DataManager;
+
     private readonly VisualElement _rootElement;
     private readonly SkinnedMeshRenderer? _renderer;
     private IVisualElementScheduledItem _updateScheduler;
@@ -59,18 +60,20 @@ internal class PreviewManager : IDisposable
 
     private EditingShapesPreview Preview => DirectBlendShapePreview.Instance.Editing;
 
-    public PreviewManager(BlendShapeOverrideManager blendShapeOverrideManager, VisualElement rootElement, SkinnedMeshRenderer? renderer)
+    public PreviewManager(FacialShapesEditorContext context, VisualElement rootElement)
     {
-        _blendShapeOverrideManager = blendShapeOverrideManager;
+        _context = context;
         _rootElement = rootElement;
-        _renderer = renderer;
+        _renderer = context.Renderer;
         _previewSet = new();
         SetBlendShapeTo100OnHover = true;
         HighlightBlendShapeVerticesOnHover = false;
 
         
-        _blendShapeOverrideManager.OnAnyDataChange += RequestShapeRefresh;
-        OnSetBlendShapeTo100OnHoverChanged += (value) => { RequestShapeRefresh(); };
+        foreach (var dataManager in context.DataManagers)
+            dataManager.OnAnyDataChange += RequestShapeRefresh;
+        context.ActiveListChanged += RequestShapeRefresh;
+        OnSetBlendShapeTo100OnHoverChanged += _ => RequestShapeRefresh();
         
         // UI Elementsスケジューラーで定期的に両方の更新をチェック
         // UpdateIntervalMsで更新の頻度を制限する
@@ -78,7 +81,7 @@ internal class PreviewManager : IDisposable
             .Execute(CheckAndApplyUpdates)
             .Every(UpdateIntervalMs);
 
-        InitializeTargetRenderer(renderer);
+        InitializeTargetRenderer(_renderer);
     }
 
     private void InitializeTargetRenderer(SkinnedMeshRenderer? renderer)
@@ -124,7 +127,7 @@ internal class PreviewManager : IDisposable
             GetCurrentSet(_previewSet);
             if (SetBlendShapeTo100OnHover && index != -1)
             {
-                var key = _blendShapeOverrideManager.AllKeys[index];
+                var key = DataManager.AllKeys[index];
                 _previewSet.Add(new BlendShapeWeight(key, 100));
             }
             RefreshPreview();
@@ -138,7 +141,7 @@ internal class PreviewManager : IDisposable
     private void RefreshPreview()
     {
         if (_renderer == null) return;
-        var ignoredNames = _blendShapeOverrideManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal);
+        var ignoredNames = DataManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal);
         Preview.Refresh(new BlendShapeApply(
             new ImmutableBlendShapeWeightSet(_previewSet),
             0f,
@@ -148,14 +151,16 @@ internal class PreviewManager : IDisposable
     private void GetCurrentSet(BlendShapeWeightSet result)
     {
         result.Clear();
-        result.AddRange(_blendShapeOverrideManager.EffectiveBaseSet);
-        _blendShapeOverrideManager.GetTargetValues(result);
+        result.AddRange(DataManager.EffectiveBaseSet);
+        DataManager.GetTargetValues(result);
     }
 
     public void Dispose()
     {
         _isEnabled = false;
-        _blendShapeOverrideManager.OnAnyDataChange -= RequestShapeRefresh;
+        foreach (var dataManager in _context.DataManagers)
+            dataManager.OnAnyDataChange -= RequestShapeRefresh;
+        _context.ActiveListChanged -= RequestShapeRefresh;
         _updateScheduler?.Pause();
         Preview.Stop();
     }
