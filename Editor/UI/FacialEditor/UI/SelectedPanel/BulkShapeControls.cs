@@ -21,19 +21,19 @@ internal sealed class BulkShapeControls
     {
         Element.style.alignItems = Align.Center;
         Element.style.flexGrow = 1f;
-        var weight = new FloatField
-        {
-            isDelayed = true,
-            value = 100f,
-            showMixedValue = true
-        };
+        var weight = new TextField { isDelayed = true };
         weight.style.width = 32f;
+        weight.style.marginLeft = 0f;
+        weight.style.marginRight = 0f;
+        weight.style.marginTop = 0f;
+        weight.style.marginBottom = 0f;
+        weight.style.minHeight = 0f;
+        weight.style.flexShrink = 0f;
         weight.RegisterValueChangedCallback(evt =>
         {
-            var value = Mathf.Clamp(evt.newValue, 0f, 100f);
-            weight.SetValueWithoutNotify(value);
-            setWeights(value);
-            weight.showMixedValue = true;
+            if (float.TryParse(evt.newValue, out var value))
+                setWeights(Mathf.Clamp(value, 0f, 100f));
+            weight.SetValueWithoutNotify(string.Empty);
         });
         var spacer = new VisualElement();
         spacer.style.flexGrow = 1f;

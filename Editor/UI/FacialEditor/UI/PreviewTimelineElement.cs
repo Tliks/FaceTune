@@ -1,3 +1,4 @@
+using Aoyon.FaceTune.Gui.Components;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
@@ -14,7 +15,7 @@ internal sealed class PreviewTimelineElement : IDisposable
     private float _startValue;
     private bool _playing;
 
-    public VisualElement Element { get; } = new VisualElement();
+    public VisualElement Element { get; } = new SpacedHorizontalElement();
 
     public PreviewTimelineElement(float initialValue, Action<float> seek)
     {
@@ -42,9 +43,16 @@ internal sealed class PreviewTimelineElement : IDisposable
     private static Button CreateButton(string text, Action clicked)
     {
         var button = new Button(clicked) { text = text };
-        button.style.width = 24f;
+        button.style.width = 20f;
         button.style.height = 20f;
         button.style.flexShrink = 0f;
+        button.style.fontSize = 12f;
+        button.style.unityFontStyleAndWeight = FontStyle.Bold;
+        button.style.unityTextAlign = TextAnchor.MiddleCenter;
+        button.style.paddingLeft = 0f;
+        button.style.paddingRight = 0f;
+        button.style.paddingTop = 0f;
+        button.style.paddingBottom = 0f;
         return button;
     }
 
@@ -69,8 +77,8 @@ internal sealed class PreviewTimelineElement : IDisposable
                     / PlaybackDurationSeconds;
         if (value >= 1f)
         {
-            value = 1f;
-            Pause();
+            Stop();
+            return;
         }
         _slider.SetValueWithoutNotify(value);
         _seek(value);
