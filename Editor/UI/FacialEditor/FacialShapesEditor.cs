@@ -130,6 +130,7 @@ internal partial class FacialShapesEditor : EditorWindow
             _ => { },
             null,
             null,
+            null,
             TryChangeRenderer,
             SaveChanges);
         _context.LipSyncChanged += OnLipSyncChanged;
@@ -344,6 +345,7 @@ internal partial class FacialShapesEditor : EditorWindow
         }
         _initialLipSyncDraft = _context.LipSync?.Clone();
         _observedLipSyncDraft = _initialLipSyncDraft?.Clone();
+        _context.MarkLipSyncSaved();
         SyncUnsavedChangesNow();
     }
 

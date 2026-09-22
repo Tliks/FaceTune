@@ -13,7 +13,6 @@ internal class UnselectedPanel
     public VisualElement Element => _element;
 
     private static VisualTreeAsset? _uxml;
-    private static VisualTreeAsset? _unselectedItemUxml;
     private static StyleSheet? _uss;
 
     private TextField _unselectedSearchField = null!;
@@ -37,7 +36,6 @@ internal class UnselectedPanel
         _previewManager = previewManager;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "736ebf000f485f041ac2becabbde48d3");
-        var unselectedItemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _unselectedItemUxml, "3efe7e91dce1d544b873dd133a44039d");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "b9dfe6425f70d0544a5939a176bdf3b0");
         
         _element = uxml.CloneTree();
@@ -93,8 +91,7 @@ internal class UnselectedPanel
 
         VisualElement MakeUnselectedElement()
         {
-            var element = _unselectedItemUxml!.CloneTree();
-            Localization.LocalizeUIElements(element);
+            var element = UnselectedShapeRowUI.Create();
             
             element.RegisterCallback<ClickEvent>(evt =>
             {

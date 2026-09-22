@@ -1,4 +1,5 @@
 using Aoyon.FaceTune.Gui.Components;
+using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
@@ -18,8 +19,8 @@ internal class FacialShapeUI : IDisposable
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
     private readonly List<SimpleToggle> _listButtons = new();
     private LipSyncPanel? _lipSyncPanel;
-    private SimpleToggle? _lipSyncButton;
-    private SimpleToggle? _cancellerButton;
+    private ToolbarToggle? _lipSyncButton;
+    private ToolbarToggle? _cancellerButton;
     private GeneralControls _generalControls;
 
     public FacialShapeUI(
@@ -82,12 +83,13 @@ internal class FacialShapeUI : IDisposable
 
     private void SetupLipSyncToolbar(VisualElement container)
     {
-        _lipSyncButton = new SimpleToggle
+        var toolbar = new Toolbar();
+        _lipSyncButton = new ToolbarToggle
         {
             text = "previewOverlay.lipSync.label".LS(),
             value = true
         };
-        _cancellerButton = new SimpleToggle
+        _cancellerButton = new ToolbarToggle
         {
             text = "lipSync.cancellerBlendShapes.label".LS()
         };
@@ -103,10 +105,9 @@ internal class FacialShapeUI : IDisposable
             else if (_lipSyncButton?.value != true)
                 _cancellerButton.SetValueWithoutNotify(true);
         });
-        _lipSyncButton.style.flexGrow = 1f;
-        _cancellerButton.style.flexGrow = 1f;
-        container.Add(_lipSyncButton);
-        container.Add(_cancellerButton);
+        toolbar.Add(_lipSyncButton);
+        toolbar.Add(_cancellerButton);
+        container.Add(toolbar);
     }
 
     private void ShowLipSync()

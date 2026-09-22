@@ -29,6 +29,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
     public ISet<string> LipSyncUnavailableNames { get; }
     public int EditableListCount { get; }
     public LipSyncSettings? LipSync { get; }
+    public LipSyncSettings? InitialLipSync { get; private set; }
     public VrcVisemeLipSyncShapes? BuiltInLipSync { get; }
     public SerializedProperty? LipSyncProperty { get; }
     public int SelectedViseme { get; private set; }
@@ -62,6 +63,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
         int editableListCount,
         Action<int> initializeList,
         LipSyncSettings? lipSync,
+        LipSyncSettings? initialLipSync,
         VrcVisemeLipSyncShapes? builtInLipSync,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
         Action save)
@@ -78,6 +80,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
         EditableListCount = Mathf.Clamp(editableListCount, 0, dataManagers.Count);
         _initializeList = initializeList;
         LipSync = lipSync;
+        InitialLipSync = initialLipSync;
         BuiltInLipSync = builtInLipSync;
         LipSyncProperty = lipSync == null
             ? null
@@ -118,6 +121,12 @@ internal sealed class FacialShapesEditorContext : IDisposable
     }
 
     public void NotifyLipSyncChanged() => LipSyncChanged?.Invoke();
+
+    public void MarkLipSyncSaved()
+    {
+        InitialLipSync = LipSync?.Clone();
+        UI.RefreshLipSync();
+    }
 
     public void SetActiveList(int index)
     {

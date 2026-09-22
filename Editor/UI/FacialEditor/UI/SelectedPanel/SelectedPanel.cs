@@ -13,9 +13,7 @@ internal class SelectedPanel
     public VisualElement Element => _element;
 
     private static VisualTreeAsset? _uxml;
-    private static VisualTreeAsset? _itemUxml;
     private static StyleSheet? _uss;
-    private static StyleSheet? _itemUss;
 
     private TextField _searchField = null!;
     private SimpleToggle _styleToggle = null!;
@@ -40,7 +38,6 @@ internal class SelectedPanel
 
     private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff").image;
     private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
-    private static readonly Texture _warningIcon = EditorGUIUtility.IconContent("console.warnicon.sml").image;
 
 	public event Action<int>? OnSelectedItemNameClicked;
 
@@ -50,9 +47,7 @@ internal class SelectedPanel
         _groupManager = groupManager;
         
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
-        var itemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
-        var itemUss = UIAssetHelper.EnsureUssWithGuid(ref _itemUss, "a00c7162d21d9e34ab15764bdb0d1173");
         
         _element = uxml.CloneTree();
         _element.styleSheets.Add(uss);
@@ -140,9 +135,7 @@ internal class SelectedPanel
 
         VisualElement MakeElement()
         {
-            var element = _itemUxml!.CloneTree();
-            element.styleSheets.Add(_itemUss!);
-            Localization.LocalizeUIElements(element);
+            var element = SelectedShapeRowUI.Create();
 
             var flashOverlay = new VisualElement { name = "flash-overlay", pickingMode = PickingMode.Ignore };
             flashOverlay.AddToClassList("flash-overlay");
@@ -153,7 +146,6 @@ internal class SelectedPanel
             var facialRail = element.Q<VisualElement>("facial-rail");
             var nameLabel = element.Q<Label>("name");
             var warningIcon = element.Q<Image>("validation-warning");
-            warningIcon.image = _warningIcon;
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var curveField = element.Q<IMGUIContainer>("curve-field");
             var curveToggle = element.Q<Button>("curve-toggle");
@@ -195,13 +187,6 @@ internal class SelectedPanel
                 }
             };
              
-            toggleButton.text = "";
-            toggleButton.Add(new Image { image = _toggleIcon });
-            actionButton.text = "";
-            actionButton.Add(new Image { image = _removeIcon });
-
-            curveToggle.text = "M";
-            curveToggle.tooltip = "blendShapeAnimation.multiFrame.label".LS();
             curveToggle.clicked += () =>
             {
                 if (element.userData is ElementData item)

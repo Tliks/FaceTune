@@ -127,6 +127,7 @@ internal partial class FacialShapesEditor
             _dataManagers.Length,
             InitializeList,
             _lipSyncDraft,
+            _initialLipSyncDraft,
             builtInLipSync,
             TryChangeRenderer,
             SaveChanges);
