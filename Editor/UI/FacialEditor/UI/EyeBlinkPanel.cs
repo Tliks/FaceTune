@@ -12,19 +12,37 @@ internal sealed class EyeBlinkPanel : IDisposable
     private readonly UnselectedPanel[] _availablePanels;
     private readonly ListView _selected = new();
     private readonly List<RowData> _rows = new();
+    private readonly BulkShapeControls _bulkControls;
 
-    public VisualElement SelectedElement => _selected;
+    public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
     public VisualElement AvailableElement { get; } = new VisualElement();
 
-    public EyeBlinkPanel(FacialShapesEditorContext context)
+    public EyeBlinkPanel(
+        FacialShapesEditorContext context,
+        VisualElement timeline)
     {
         _context = context;
         _availablePanels = context.DataManagers
-            .Select(manager => new UnselectedPanel(
+            .Select((manager, index) => new UnselectedPanel(
                 manager,
                 context.GroupManager,
-                context.PreviewManager))
+                context.PreviewManager,
+                index == 1 ? 0f : 100f))
             .ToArray();
+
+        _bulkControls = new BulkShapeControls(
+            weight =>
+            {
+                ActiveManager.SetShapesWeight(VisibleTargetIndices(), weight);
+                _selected.RefreshItems();
+                UpdateBulkControls();
+            },
+            () => ActiveManager.RemoveShapes(VisibleTargetIndices()
+                .Where(index => Mathf.Approximately(ActiveManager.GetShapeWeight(index), 0f))),
+            () => ActiveManager.RemoveShapes(VisibleTargetIndices()));
+        SelectedElement.Add(timeline);
+        SelectedElement.Add(_bulkControls.Element);
+        SelectedElement.Add(_selected);
 
         _selected.fixedItemHeight = FacialShapeUI.ListItemHeight;
         _selected.selectionType = SelectionType.None;
@@ -50,6 +68,15 @@ internal sealed class EyeBlinkPanel : IDisposable
         UpdateSelection();
     }
 
+    private BlendShapeOverrideManager ActiveManager
+        => _context.DataManagers[_context.ActiveListIndex];
+
+    private int[] VisibleTargetIndices()
+        => ActiveManager.GetTargetIndices(index =>
+                !_context.GroupManager.IsLeftSelected
+                || _context.GroupManager.IsBlendShapeVisible(index))
+            .ToArray();
+
     private VisualElement MakeItem()
     {
         var root = new VisualElement();
@@ -74,6 +101,7 @@ internal sealed class EyeBlinkPanel : IDisposable
             var manager = _context.DataManagers[row.ListIndex];
             manager.SetShapeWeight(row.ManagerIndex, evt.newValue);
             shape.SetChanged(manager.IsShapeChangedFromInitialState(row.ManagerIndex));
+            UpdateBulkControls();
         });
         shape.WeightToggle.clicked += () =>
         {
@@ -85,6 +113,7 @@ internal sealed class EyeBlinkPanel : IDisposable
             manager.SetShapeWeight(row.ManagerIndex, weight);
             shape.Weight.SetValueWithoutNotify(weight);
             shape.SetChanged(manager.IsShapeChangedFromInitialState(row.ManagerIndex));
+            UpdateBulkControls();
         };
         shape.RemoveButton.clicked += () =>
         {
@@ -126,7 +155,7 @@ internal sealed class EyeBlinkPanel : IDisposable
         {
             header.text = row.ListIndex == 0
                 ? "previewOverlay.eyeBlink.label".LS()
-                : "eyeBlink.simple.conflictBlendShapes.label".LS();
+                : "eyeBlink.simple.conflict.shortLabel".LS();
             header.SetValueWithoutNotify(selected);
             return;
         }
@@ -162,14 +191,20 @@ internal sealed class EyeBlinkPanel : IDisposable
                 _rows.Add(new RowData(RowKind.Shape, listIndex, managerIndex));
         }
         _selected.RefreshItems();
+        UpdateBulkControls();
     }
 
     private void UpdateSelection()
     {
         _selected.RefreshItems();
+        UpdateBulkControls();
         AvailableElement.Clear();
         AvailableElement.Add(_availablePanels[_context.ActiveListIndex].Element);
     }
+
+    private void UpdateBulkControls()
+        => _bulkControls.SetRemoveZeroVisible(VisibleTargetIndices()
+            .Any(index => Mathf.Approximately(ActiveManager.GetShapeWeight(index), 0f)));
 
     public void Dispose()
     {

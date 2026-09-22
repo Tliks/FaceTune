@@ -129,17 +129,40 @@ internal sealed class LipSyncEditing
     }
 
     public void Remove(int visemeIndex, string name)
+        => RemoveShapes(visemeIndex, new[] { name });
+
+    public void RemoveShapes(int visemeIndex, IEnumerable<string> names)
     {
+        var targets = names.ToHashSet(StringComparer.Ordinal);
+        if (targets.Count == 0) return;
         var property = GetVisemeProperty(visemeIndex);
+        var changed = false;
+        for (var index = property.arraySize - 1; index >= 0; index--)
+        {
+            var name = property.GetArrayElementAtIndex(index)
+                .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
+            if (!targets.Contains(name)) continue;
+            property.DeleteArrayElementAtIndex(index);
+            changed = true;
+        }
+        if (changed) Apply(structureChanged: true);
+    }
+
+    public void SetWeights(int visemeIndex, IEnumerable<string> names, float weight)
+    {
+        var targets = names.ToHashSet(StringComparer.Ordinal);
+        if (targets.Count == 0) return;
+        var property = GetVisemeProperty(visemeIndex);
+        var changed = false;
         for (var index = 0; index < property.arraySize; index++)
         {
-            if (property.GetArrayElementAtIndex(index)
-                    .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue != name)
-                continue;
-            property.DeleteArrayElementAtIndex(index);
-            Apply(structureChanged: true);
-            return;
+            var element = property.GetArrayElementAtIndex(index);
+            var name = element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
+            if (!targets.Contains(name)) continue;
+            element.FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
+            changed = true;
         }
+        if (changed) Apply(structureChanged: false);
     }
 
     public void Add(string name)

@@ -17,6 +17,7 @@ internal class FacialShapeUI : IDisposable
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
     private LipSyncPanel? _lipSyncPanel;
     private EyeBlinkPanel? _eyeBlinkPanel;
+    private PreviewTimelineElement? _previewTimeline;
     private GeneralControls _generalControls;
 
     public FacialShapeUI(
@@ -38,10 +39,16 @@ internal class FacialShapeUI : IDisposable
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
         _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
+        if (context.Mode is ShapesEditorMode.EyeBlinkSimple or ShapesEditorMode.EyeBlinkCustom)
+        {
+            _previewTimeline = new PreviewTimelineElement(
+                context.InitialPreviewTime,
+                context.PreviewManager.SetNormalizedTime);
+        }
         if (context.ModeSession is LipSyncModeSession lipSync)
             _lipSyncPanel = new LipSyncPanel(context, lipSync.Editing);
         else if (context.Mode == ShapesEditorMode.EyeBlinkSimple)
-            _eyeBlinkPanel = new EyeBlinkPanel(context);
+            _eyeBlinkPanel = new EyeBlinkPanel(context, _previewTimeline!.Element);
         SetupListSelector(root);
 
         if (_lipSyncPanel != null) ShowLipSync();
@@ -67,10 +74,9 @@ internal class FacialShapeUI : IDisposable
                 gap.SetVisible(false);
                 break;
             case ShapesEditorMode.EyeBlinkSimple:
-                AddTimeSlider(container, 1f);
-                break;
             case ShapesEditorMode.EyeBlinkCustom:
-                AddTimeSlider(container, 0f);
+                container.SetVisible(false);
+                gap.SetVisible(false);
                 break;
             case ShapesEditorMode.LipSync:
                 container.SetVisible(false);
@@ -95,20 +101,6 @@ internal class FacialShapeUI : IDisposable
         _unselectedContainer.Clear();
         _selectedContainer.Add(_eyeBlinkPanel.SelectedElement);
         _unselectedContainer.Add(_eyeBlinkPanel.AvailableElement);
-    }
-
-    private void AddTimeSlider(VisualElement container, float initialValue)
-    {
-        var time = new Slider(0f, 1f)
-        {
-            value = initialValue,
-            showInputField = true,
-            tooltip = "eyeBlink.animations.label".LS()
-        };
-        time.style.flexGrow = 1f;
-        time.RegisterValueChangedCallback(evt =>
-            _context.PreviewManager.SetNormalizedTime(evt.newValue));
-        container.Add(time);
     }
 
     private void ShowActiveList()
@@ -137,6 +129,8 @@ internal class FacialShapeUI : IDisposable
         panels.Unselected.Element.SetEnabled(editable);
         _selectedContainer.Clear();
         _unselectedContainer.Clear();
+        if (_context.Mode == ShapesEditorMode.EyeBlinkCustom && _previewTimeline != null)
+            _selectedContainer.Add(_previewTimeline.Element);
         _selectedContainer.Add(panels.Selected.Element);
         _unselectedContainer.Add(panels.Unselected.Element);
     }
@@ -147,6 +141,7 @@ internal class FacialShapeUI : IDisposable
     {
         _context.ActiveListChanged -= ShowActiveList;
         _eyeBlinkPanel?.Dispose();
+        _previewTimeline?.Dispose();
         _generalControls.Dispose();
     }
 }

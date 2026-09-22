@@ -4,10 +4,7 @@
 
         <components:SpacedHorizontalElement name="selected-shapes-controls">
             <components:SimpleToggle text="facialEditor.style.option" name="style-toggle" class="ndmf-tr compact-control shape-filter-toggle filter-toggle" value="false" />
-            <ui:VisualElement name="control-spacer" />
-            <ui:Button name="selected-remove-all-0-button" class="compact-control control-button" text="0-" />
-            <ui:Button name="selected-0-100-toggle" class="compact-control control-button" />
-            <ui:Button name="remove-all-button" class="compact-control control-button" />
+            <ui:VisualElement name="bulk-controls" />
         </components:SpacedHorizontalElement>
 
         <ui:ListView name="selected-list-view" />

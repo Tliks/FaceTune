@@ -673,6 +673,12 @@ msgstr "リセット"
 msgid "facialEditor.list.empty"
 msgstr "リストは空です"
 
+msgid "facialEditor.bulkWeight.label"
+msgstr "一括Weight"
+
+msgid "eyeBlink.simple.conflict.shortLabel"
+msgstr "干渉補正"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"
 

@@ -23,6 +23,7 @@ internal sealed class LipSyncPanel
     private readonly ListView _selected = new();
     private readonly List<RowData> _rows = new();
     private readonly LipSyncAvailablePanel _available;
+    private readonly BulkShapeControls _bulkControls;
 
     public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
     public VisualElement AvailableElement => _available.Element;
@@ -35,9 +36,14 @@ internal sealed class LipSyncPanel
         _editing = editing;
         _canceller = context.DataManagers[0];
         _available = new LipSyncAvailablePanel(context, editing, _canceller);
+        _bulkControls = new BulkShapeControls(
+            SetCurrentWeights,
+            RemoveCurrentZeros,
+            RemoveCurrentShapes);
 
         SetupSelected();
         SelectedElement.Add(CreateModeField());
+        SelectedElement.Add(_bulkControls.Element);
         SelectedElement.Add(_selected);
 
         context.GroupManager.OnGroupSelectionChanged += _ => Rebuild();
@@ -84,6 +90,7 @@ internal sealed class LipSyncPanel
             if (row.Canceller) _editing.SelectCanceller();
             else _editing.SetSelectedViseme(row.SectionIndex);
             _selected.RefreshItems();
+            UpdateBulkControls();
             _available.Rebuild();
         });
         header.RegisterCallback<MouseEnterEvent>(_ =>
@@ -244,6 +251,61 @@ internal sealed class LipSyncPanel
             }
         }
         _selected.RefreshItems();
+        UpdateBulkControls();
+    }
+
+    private RowData[] CurrentShapeRows()
+        => _rows.Where(row => row.Kind == RowKind.Shape
+                              && (row.Canceller
+                                  ? _editing.CancellerSelected
+                                  : !_editing.CancellerSelected
+                                    && row.SectionIndex == _editing.SelectedViseme))
+            .ToArray();
+
+    private void SetCurrentWeights(float weight)
+    {
+        var rows = CurrentShapeRows();
+        if (_editing.CancellerSelected)
+            _canceller.SetShapesWeight(rows.Select(row => row.ManagerIndex), weight);
+        else
+            _editing.SetWeights(
+                _editing.SelectedViseme,
+                rows.Select(row => row.ShapeName),
+                weight);
+        _selected.RefreshItems();
+        UpdateBulkControls();
+    }
+
+    private void RemoveCurrentZeros()
+    {
+        var rows = CurrentShapeRows().Where(row => Mathf.Approximately(GetWeight(row), 0f)).ToArray();
+        if (_editing.CancellerSelected)
+            _canceller.RemoveShapes(rows.Select(row => row.ManagerIndex));
+        else
+            _editing.RemoveShapes(
+                _editing.SelectedViseme,
+                rows.Select(row => row.ShapeName));
+    }
+
+    private void RemoveCurrentShapes()
+    {
+        var rows = CurrentShapeRows();
+        if (_editing.CancellerSelected)
+            _canceller.RemoveShapes(rows.Select(row => row.ManagerIndex));
+        else
+            _editing.RemoveShapes(
+                _editing.SelectedViseme,
+                rows.Select(row => row.ShapeName));
+    }
+
+    private void UpdateBulkControls()
+    {
+        var rows = CurrentShapeRows();
+        _bulkControls.Element.SetEnabled(
+            _editing.CancellerSelected
+            || _editing.Draft.Mode == LipSyncSettings.Kind.Custom);
+        _bulkControls.SetRemoveZeroVisible(rows.Any(row =>
+            Mathf.Approximately(GetWeight(row), 0f)));
     }
 
     private float GetWeight(RowData row)
@@ -255,6 +317,7 @@ internal sealed class LipSyncPanel
     {
         if (row.Canceller) _canceller.SetShapeWeight(row.ManagerIndex, weight);
         else _editing.SetWeight(row.SectionIndex, row.ShapeName, weight);
+        UpdateBulkControls();
     }
 
     private bool IsChanged(RowData row, float weight)

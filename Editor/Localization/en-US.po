@@ -673,6 +673,12 @@ msgstr "Reset"
 msgid "facialEditor.list.empty"
 msgstr "List is Empty"
 
+msgid "facialEditor.bulkWeight.label"
+msgstr "Weight"
+
+msgid "eyeBlink.simple.conflict.shortLabel"
+msgstr "Conflict Correction"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"
 

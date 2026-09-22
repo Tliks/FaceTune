@@ -22,7 +22,7 @@ internal class SelectedPanel
 
     private ListView _selectedListView = null!;
     
-    private Button _selectedRemoveAll0Button = null!;
+    private BulkShapeControls _bulkControls = null!;
     private bool _controlsRefreshPending;
     private readonly Dictionary<int, double> _flashExpiryByKeyIndex = new();
     private IVisualElementScheduledItem? _flashCleanupSchedule;
@@ -35,9 +35,6 @@ internal class SelectedPanel
 
     private IReadOnlyList<ElementData> _allSource = null!;
     private List<ElementData> _currentSource = null!;
-
-    private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff").image;
-    private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
 
 	public event Action<int>? OnSelectedItemNameClicked;
 
@@ -81,7 +78,6 @@ internal class SelectedPanel
         _blendShapeManager.OnAnyDataChange += RequestControlsVisibilityUpdate;
     }
 
-    private bool _selectedZero = true;
     private void SetupControls()
     {
         _searchField = _element.Q<TextField>("search-field");
@@ -95,33 +91,19 @@ internal class SelectedPanel
         _styleToggle.SetValueWithoutNotify(false);
         _styleToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 
-        _selectedRemoveAll0Button = _control.Q<Button>("selected-remove-all-0-button");
-        _selectedRemoveAll0Button.clicked += () =>
-        {
-            var indices = _currentSource
+        _bulkControls = new BulkShapeControls(
+            weight => _blendShapeManager.SetShapesWeight(
+                _currentSource.Select(item => item.KeyIndex),
+                weight),
+            () => _blendShapeManager.RemoveShapes(_currentSource
                 .Where(item => IsExplicitZeroTarget(item.KeyIndex))
-                .Select(item => item.KeyIndex);
-            _blendShapeManager.RemoveShapes(indices);
-        };
-
-        var selected0100Toggle = _control.Q<Button>("selected-0-100-toggle");
-        selected0100Toggle.Add(new Image { image = _toggleIcon });
-        selected0100Toggle.clicked += () =>
-        {
-            var indices = _currentSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, _selectedZero ? 100f : 0f);
-            _selectedZero = !_selectedZero;
-        };
-
-        var removeAllButton = _control.Q<Button>("remove-all-button");
-        removeAllButton.Add(new Image { image = _removeIcon });
-        removeAllButton.clicked += () =>
-        {
-            var indices = _currentSource
+                .Select(item => item.KeyIndex)),
+            () => _blendShapeManager.RemoveShapes(_currentSource
                 .Select(item => item.KeyIndex)
-                .Where(index => _blendShapeManager.IsInTarget(index));
-            _blendShapeManager.RemoveShapes(indices);
-        };
+                .Where(index => _blendShapeManager.IsInTarget(index))));
+        var bulkContainer = _control.Q<VisualElement>("bulk-controls");
+        bulkContainer.style.flexGrow = 1f;
+        bulkContainer.Add(_bulkControls.Element);
     }
 
     private void SetupListViews()
@@ -392,7 +374,7 @@ internal class SelectedPanel
         if (_allSource == null) return;
 
         var hasExplicitZeroTarget = _currentSource.Any(item => IsExplicitZeroTarget(item.KeyIndex));
-        _selectedRemoveAll0Button.SetVisible(hasExplicitZeroTarget);
+        _bulkControls.SetRemoveZeroVisible(hasExplicitZeroTarget);
     }
 
     private bool IsExplicitZeroTarget(int index)
