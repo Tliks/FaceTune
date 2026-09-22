@@ -165,9 +165,8 @@ internal sealed class EyeBlinkPanel : IDisposable
                 ? "shapesEditor.eyeBlink.label".LS()
                 : "shapesEditor.conflictCorrection.label".LS();
             header.SetValueWithoutNotify(selected);
-            var controlsManager = _context.DataManagers[row.ListIndex];
-            bulk.SetRemoveZeroVisible(VisibleTargetIndices(row.ListIndex)
-                .Any(index => Mathf.Approximately(controlsManager.GetShapeWeight(index), 0f)));
+            // 干渉補正はWeight 0で追加する列表のため、0-を出さない
+            bulk.SetRemoveZeroVisible(row.ListIndex == 0 && HasZeroShape(row.ListIndex));
             return;
         }
 
@@ -221,6 +220,13 @@ internal sealed class EyeBlinkPanel : IDisposable
         _selected.RefreshItems();
     }
 
+    private bool HasZeroShape(int listIndex)
+    {
+        var manager = _context.DataManagers[listIndex];
+        return VisibleTargetIndices(listIndex)
+            .Any(index => Mathf.Approximately(manager.GetShapeWeight(index), 0f));
+    }
+
     private void RemoveSectionZeros(int listIndex)
     {
         var manager = _context.DataManagers[listIndex];
@@ -230,15 +236,13 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private void RefreshBulkControl(int listIndex)
     {
-        var manager = _context.DataManagers[listIndex];
-        var visible = VisibleTargetIndices(listIndex);
+        if (listIndex != 0) return;
         foreach (var (root, controls) in _bulkRows)
         {
             if (root.userData is RowData { Kind: RowKind.Controls } row
                 && row.ListIndex == listIndex)
             {
-                controls.SetRemoveZeroVisible(visible.Any(index =>
-                    Mathf.Approximately(manager.GetShapeWeight(index), 0f)));
+                controls.SetRemoveZeroVisible(HasZeroShape(listIndex));
             }
         }
     }
