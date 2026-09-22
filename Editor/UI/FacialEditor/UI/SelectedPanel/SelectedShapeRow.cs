@@ -48,6 +48,7 @@ internal sealed class SelectedShapeRow : VisualElement
     {
         var label = new Label("facialEditor.list.empty".LS());
         label.style.height = FacialShapeUI.RowHeight;
+        label.style.marginLeft = 11f;
         label.style.unityTextAlign = TextAnchor.MiddleLeft;
         label.style.opacity = 0.6f;
         return label;

@@ -5,14 +5,13 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal sealed class EyeBlinkPanel : IDisposable
 {
-    private enum RowKind { Header, Shape, Empty, Spacer }
+    private enum RowKind { Header, Controls, Shape, Empty, Spacer }
     private readonly record struct RowData(RowKind Kind, int ListIndex, int ManagerIndex);
 
     private readonly FacialShapesEditorContext _context;
     private readonly UnselectedPanel[] _availablePanels;
     private readonly ListView _selected = new();
     private readonly List<RowData> _rows = new();
-    private readonly BulkShapeControls _bulkControls;
 
     public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
     public VisualElement AvailableElement { get; } = new VisualElement();
@@ -30,18 +29,7 @@ internal sealed class EyeBlinkPanel : IDisposable
                 index == 1 ? 0f : 100f))
             .ToArray();
 
-        _bulkControls = new BulkShapeControls(
-            weight =>
-            {
-                ActiveManager.SetShapesWeight(VisibleTargetIndices(), weight);
-                _selected.RefreshItems();
-                UpdateBulkControls();
-            },
-            () => ActiveManager.RemoveShapes(VisibleTargetIndices()
-                .Where(index => Mathf.Approximately(ActiveManager.GetShapeWeight(index), 0f))),
-            () => ActiveManager.RemoveShapes(VisibleTargetIndices()));
         SelectedElement.Add(timeline);
-        SelectedElement.Add(_bulkControls.Element);
         SelectedElement.Add(_selected);
 
         _selected.fixedItemHeight = FacialShapeUI.ListItemHeight;
@@ -68,15 +56,6 @@ internal sealed class EyeBlinkPanel : IDisposable
         UpdateSelection();
     }
 
-    private BlendShapeOverrideManager ActiveManager
-        => _context.DataManagers[_context.ActiveListIndex];
-
-    private int[] VisibleTargetIndices()
-        => ActiveManager.GetTargetIndices(index =>
-                !_context.GroupManager.IsLeftSelected
-                || _context.GroupManager.IsBlendShapeVisible(index))
-            .ToArray();
-
     private VisualElement MakeItem()
     {
         var root = new VisualElement();
@@ -91,6 +70,25 @@ internal sealed class EyeBlinkPanel : IDisposable
                 header.SetValueWithoutNotify(true);
         });
 
+        var bulk = new BulkShapeControls(
+            weight =>
+            {
+                if (root.userData is RowData { Kind: RowKind.Controls } row)
+                    SetSectionWeights(row.ListIndex, weight);
+            },
+            () =>
+            {
+                if (root.userData is RowData { Kind: RowKind.Controls } row)
+                    RemoveSectionZeros(row.ListIndex);
+            },
+            () =>
+            {
+                if (root.userData is RowData { Kind: RowKind.Controls } row)
+                    _context.DataManagers[row.ListIndex].RemoveShapes(
+                        VisibleTargetIndices(row.ListIndex));
+            });
+        bulk.Element.name = "bulk";
+
         var shape = new SelectedShapeRow { name = "shape" };
         shape.FacialRail.style.opacity = 0f;
         shape.Curve.SetVisible(false);
@@ -101,7 +99,6 @@ internal sealed class EyeBlinkPanel : IDisposable
             var manager = _context.DataManagers[row.ListIndex];
             manager.SetShapeWeight(row.ManagerIndex, evt.newValue);
             shape.SetChanged(manager.IsShapeChangedFromInitialState(row.ManagerIndex));
-            UpdateBulkControls();
         });
         shape.WeightToggle.clicked += () =>
         {
@@ -113,7 +110,6 @@ internal sealed class EyeBlinkPanel : IDisposable
             manager.SetShapeWeight(row.ManagerIndex, weight);
             shape.Weight.SetValueWithoutNotify(weight);
             shape.SetChanged(manager.IsShapeChangedFromInitialState(row.ManagerIndex));
-            UpdateBulkControls();
         };
         shape.RemoveButton.clicked += () =>
         {
@@ -132,6 +128,7 @@ internal sealed class EyeBlinkPanel : IDisposable
         var empty = SelectedShapeRow.CreateEmptyLabel();
         empty.name = "empty";
         root.Add(header);
+        root.Add(bulk.Element);
         root.Add(shape);
         root.Add(empty);
         return root;
@@ -142,14 +139,17 @@ internal sealed class EyeBlinkPanel : IDisposable
         var row = _rows[index];
         element.userData = row;
         var header = element.Q<SimpleToggle>("header");
+        var bulk = element.Q<VisualElement>("bulk");
         var shape = element.Q<SelectedShapeRow>("shape");
         var empty = element.Q<Label>("empty");
         header.SetVisible(row.Kind == RowKind.Header);
+        bulk.SetVisible(row.Kind == RowKind.Controls);
         shape.SetVisible(row.Kind == RowKind.Shape);
         empty.SetVisible(row.Kind == RowKind.Empty);
         var selected = row.ListIndex == _context.ActiveListIndex;
         empty.SetEnabled(selected);
-        if (row.Kind is RowKind.Spacer or RowKind.Empty) return;
+        bulk.SetEnabled(selected);
+        if (row.Kind is RowKind.Spacer or RowKind.Empty or RowKind.Controls) return;
 
         if (row.Kind == RowKind.Header)
         {
@@ -177,6 +177,7 @@ internal sealed class EyeBlinkPanel : IDisposable
             if (listIndex > 0)
                 _rows.Add(new RowData(RowKind.Spacer, -1, -1));
             _rows.Add(new RowData(RowKind.Header, listIndex, -1));
+            _rows.Add(new RowData(RowKind.Controls, listIndex, -1));
             var manager = _context.DataManagers[listIndex];
             var indices = manager.GetTargetIndices(index =>
                     !_context.GroupManager.IsLeftSelected
@@ -191,20 +192,38 @@ internal sealed class EyeBlinkPanel : IDisposable
                 _rows.Add(new RowData(RowKind.Shape, listIndex, managerIndex));
         }
         _selected.RefreshItems();
-        UpdateBulkControls();
+    }
+
+    private int[] VisibleTargetIndices(int listIndex)
+    {
+        var manager = _context.DataManagers[listIndex];
+        return manager.GetTargetIndices(index =>
+                !_context.GroupManager.IsLeftSelected
+                || _context.GroupManager.IsBlendShapeVisible(index))
+            .ToArray();
+    }
+
+    private void SetSectionWeights(int listIndex, float weight)
+    {
+        _context.DataManagers[listIndex].SetShapesWeight(
+            VisibleTargetIndices(listIndex),
+            weight);
+        _selected.RefreshItems();
+    }
+
+    private void RemoveSectionZeros(int listIndex)
+    {
+        var manager = _context.DataManagers[listIndex];
+        manager.RemoveShapes(VisibleTargetIndices(listIndex)
+            .Where(index => Mathf.Approximately(manager.GetShapeWeight(index), 0f)));
     }
 
     private void UpdateSelection()
     {
         _selected.RefreshItems();
-        UpdateBulkControls();
         AvailableElement.Clear();
         AvailableElement.Add(_availablePanels[_context.ActiveListIndex].Element);
     }
-
-    private void UpdateBulkControls()
-        => _bulkControls.SetRemoveZeroVisible(VisibleTargetIndices()
-            .Any(index => Mathf.Approximately(ActiveManager.GetShapeWeight(index), 0f)));
 
     public void Dispose()
     {

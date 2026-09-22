@@ -19,11 +19,17 @@ internal sealed class PreviewTimelineElement : IDisposable
         _seek = seek;
         Element.style.flexDirection = FlexDirection.Row;
         Element.style.alignItems = Align.Center;
+        Element.style.width = Length.Percent(100f);
         _play = new Button(TogglePlayback) { text = "▶" };
         _play.style.width = 24f;
         _play.style.height = 20f;
+        _play.style.flexShrink = 0f;
         _slider = new Slider(0f, 1f) { value = initialValue };
         _slider.style.flexGrow = 1f;
+        _slider.style.flexShrink = 1f;
+        _slider.style.flexBasis = 0f;
+        _slider.style.minWidth = 0f;
+        _slider.style.height = 18f;
         _slider.RegisterValueChangedCallback(evt =>
         {
             Stop();

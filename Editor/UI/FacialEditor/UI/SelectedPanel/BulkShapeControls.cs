@@ -20,7 +20,7 @@ internal sealed class BulkShapeControls
         Action removeAll)
     {
         Element.style.alignItems = Align.Center;
-        var label = new Label("facialEditor.bulkWeight.label".LS());
+        Element.style.flexGrow = 1f;
         var weight = new FloatField { isDelayed = true, value = 100f };
         weight.style.width = 55f;
         weight.RegisterValueChangedCallback(evt =>
@@ -45,9 +45,8 @@ internal sealed class BulkShapeControls
             button.AddToClassList("compact-control");
             button.style.width = 30f;
         }
-        Element.Add(label);
-        Element.Add(weight);
         Element.Add(spacer);
+        Element.Add(weight);
         Element.Add(_removeZero);
         Element.Add(toggle);
         Element.Add(remove);

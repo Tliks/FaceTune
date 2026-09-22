@@ -667,14 +667,8 @@ msgstr "Reset While Speaking (Recommended)"
 msgid "lipSync.cancellerBlendShapes.tooltip"
 msgstr "Prevents lip sync interference in almost all expressions. Select all mouth blend shapes in the editor for clean results in most cases."
 
-msgid "lipSync.canceller.shortLabel"
-msgstr "Reset"
-
 msgid "facialEditor.list.empty"
 msgstr "List is Empty"
-
-msgid "facialEditor.bulkWeight.label"
-msgstr "Weight"
 
 msgid "eyeBlink.simple.conflict.shortLabel"
 msgstr "Conflict Correction"
