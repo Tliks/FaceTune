@@ -19,26 +19,19 @@ internal partial class FacialShapesEditor
 
         var lists = GetShapeLists(settings, mode);
         var usesAnimations = UsesAnimations(mode);
-        var initial = lists
+        var editableLists = mode == ShapesEditorMode.LipSync ? lists.Take(1) : lists;
+        var initial = editableLists
             .Select(list => (IReadOnlyList<BlendShapeWeightAnimation>)
                 ShapeListSerialization.Read(list, usesAnimations))
             .ToArray();
-        var readOnlyVisemes = mode == ShapesEditorMode.LipSync
-            && (LipSyncSettings.Kind)settings
-                .FindPropertyRelative(nameof(LipSyncSettings.Mode)).intValue
-                == LipSyncSettings.Kind.BuiltIn;
-        if (readOnlyVisemes)
-        {
-            var builtIn = MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
+        var lipSync = mode == ShapesEditorMode.LipSync
+            ? ((ISettingProvider<LipSyncSettings>)component).Setting.Value.Clone()
+            : null;
+        var builtInLipSync = mode == ShapesEditorMode.LipSync
+            ? MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
                 .Select(support => support.GetBuiltInLipSyncShapes(avatar.FaceRenderer))
-                .FirstOrDefault(value => value != null);
-            if (builtIn != null)
-            {
-                var visemes = ReadVisemes(builtIn);
-                for (var index = 0; index < visemes.Length; index++)
-                    initial[index + 1] = visemes[index];
-            }
-        }
+                .FirstOrDefault(value => value != null)
+            : null;
 
         var unavailable = GetUnavailableNames(avatar, mode, lists.Length);
         var facial = SelectedPreviewResolver.ResolveFacial(
@@ -58,7 +51,8 @@ internal partial class FacialShapesEditor
             facial?.DefaultWeight,
             ignoredNames,
             activeListIndex,
-            readOnlyVisemes);
+            lipSync,
+            builtInLipSync);
         return window;
     }
 
@@ -73,17 +67,22 @@ internal partial class FacialShapesEditor
         float? backgroundDefaultValue,
         ImmutableHashSet<string> ignoredNames,
         int activeListIndex,
-        bool readOnlyVisemes)
+        LipSyncSettings? lipSync,
+        VrcVisemeLipSyncShapes? builtInLipSync)
     {
         EndContext();
-        activeListIndex = Mathf.Clamp(activeListIndex, 0, initialLists.Length - 1);
+        var managerCount = mode == ShapesEditorMode.LipSync ? 1 : initialLists.Length;
+        activeListIndex = Mathf.Clamp(activeListIndex, 0, managerCount - 1);
+        _lipSyncDraft = lipSync ?? new LipSyncSettings();
+        _initialLipSyncDraft = lipSync?.Clone();
+        _observedLipSyncDraft = lipSync?.Clone();
 
-        _dataManagers = new BlendShapeOverrideManager[initialLists.Length];
+        _dataManagers = new BlendShapeOverrideManager[managerCount];
         var serializedObject = new SerializedObject(this);
         serializedObject.Update();
         var managerProperties = serializedObject.FindProperty(nameof(_dataManagers));
         var usesAnimations = UsesAnimations(mode);
-        for (var index = 0; index < initialLists.Length; index++)
+        for (var index = 0; index < managerCount; index++)
         {
             var manager = new BlendShapeOverrideManager(
                 serializedObject,
@@ -110,8 +109,6 @@ internal partial class FacialShapesEditor
         InitializeList(0);
         if (mode == ShapesEditorMode.EyeBlinkSimple)
             InitializeList(1);
-        else if (mode == ShapesEditorMode.LipSync && _dataManagers.Length > 1)
-            InitializeList(Mathf.Max(1, activeListIndex));
 
         _context = new FacialShapesEditorContext(
             serializedObject,
@@ -124,10 +121,16 @@ internal partial class FacialShapesEditor
             background,
             backgroundDefaultValue,
             ignoredNames,
-            readOnlyVisemes ? 1 : _dataManagers.Length,
+            mode == ShapesEditorMode.LipSync && unavailableNames.Length > 1
+                ? unavailableNames[1]
+                : ImmutableHashSet<string>.Empty,
+            _dataManagers.Length,
             InitializeList,
+            _lipSyncDraft,
+            builtInLipSync,
             TryChangeRenderer,
             SaveChanges);
+        _context.LipSyncChanged += OnLipSyncChanged;
         _context.SetActiveList(activeListIndex);
         titleContent = (mode == ShapesEditorMode.LipSync
             ? "lipSync.section.label"
@@ -148,15 +151,25 @@ internal partial class FacialShapesEditor
         serialized.Update();
         var settings = serialized.FindProperty(context.AnimationPropertyPath);
         var lists = GetShapeLists(settings, context.Mode);
-        var usesAnimations = UsesAnimations(context.Mode);
-        for (var index = 0; index < lists.Length; index++)
+        if (context.Mode == ShapesEditorMode.LipSync && context.LipSync != null)
         {
-            if (!context.IsListEditable(index)
-                || !context.DataManagers[index].IsInitialized) continue;
-            ShapeListSerialization.Save(
-                lists[index],
-                context.DataManagers[index],
-                usesAnimations);
+            settings.FindPropertyRelative(nameof(LipSyncSettings.Mode)).intValue =
+                (int)context.LipSync.Mode;
+            settings.FindPropertyRelative(nameof(LipSyncSettings.Shapes))
+                .CopyFrom(context.LipSync.Shapes);
+            ShapeListSerialization.Save(lists[0], context.DataManagers[0], animations: false);
+        }
+        else
+        {
+            var usesAnimations = UsesAnimations(context.Mode);
+            for (var index = 0; index < lists.Length; index++)
+            {
+                if (!context.DataManagers[index].IsInitialized) continue;
+                ShapeListSerialization.Save(
+                    lists[index],
+                    context.DataManagers[index],
+                    usesAnimations);
+            }
         }
         serialized.ApplyModifiedProperties();
     }
@@ -216,12 +229,4 @@ internal partial class FacialShapesEditor
             result[1] = facial;
         return result;
     }
-
-    private static IReadOnlyList<BlendShapeWeightAnimation>[] ReadVisemes(
-        VrcVisemeLipSyncShapes shapes)
-        => shapes.GetOrderedShapes()
-            .Select(list => (IReadOnlyList<BlendShapeWeightAnimation>)list
-                .Select(shape => BlendShapeWeightAnimation.SingleFrame(shape.Name, shape.Weight))
-                .ToArray())
-            .ToArray();
 }

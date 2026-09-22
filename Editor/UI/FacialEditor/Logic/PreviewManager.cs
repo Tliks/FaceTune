@@ -58,7 +58,6 @@ internal class PreviewManager : IDisposable
 
     private bool _isEnabled = false;
     private float _normalizedTime;
-    private int _previewListIndex;
 
     public void SetNormalizedTime(float value)
     {
@@ -67,7 +66,7 @@ internal class PreviewManager : IDisposable
     }
 
     private int _currentAppliedHoverIndex = -1;
-    private bool _needsShapeRefresh = false;
+    private bool _previewDirty;
 
     private EditingShapesPreview Preview => DirectBlendShapePreview.Instance.Editing;
 
@@ -80,15 +79,16 @@ internal class PreviewManager : IDisposable
         _previewSet = new();
         _hoverSet = new();
         _normalizedTime = context.InitialPreviewTime;
-        _previewListIndex = context.DataManagers.Count > 1 ? 1 : 0;
         SetBlendShapeTo100OnHover = true;
         HighlightBlendShapeVerticesOnHover = false;
 
         
         foreach (var dataManager in context.DataManagers)
             dataManager.OnAnyDataChange += RequestShapeRefresh;
-        context.ActiveListChanged += OnActiveListChanged;
-        OnSetBlendShapeTo100OnHoverChanged += _ => RequestShapeRefresh();
+        context.ActiveListChanged += RequestShapeRefresh;
+        context.LipSyncChanged += RequestShapeRefresh;
+        OnSetBlendShapeTo100OnHoverChanged += _ =>
+            _currentAppliedHoverIndex = int.MinValue;
         
         // UI Elementsスケジューラーで定期的に両方の更新をチェック
         // UpdateIntervalMsで更新の頻度を制限する
@@ -110,22 +110,16 @@ internal class PreviewManager : IDisposable
         {
             _isEnabled = true;
             Preview.Start(renderer);
-            BuildPreviewSets();
-            RefreshPreview();
-            RequestShapeRefresh();
+            SetBackground();
+            BuildPreviewSet();
+            SetPreview();
+            SetHover();
         }
     }
 
     private void RequestShapeRefresh()
     {
-        _needsShapeRefresh = true;
-    }
-
-    private void OnActiveListChanged()
-    {
-        if (_context.ActiveListIndex > 0)
-            _previewListIndex = _context.ActiveListIndex;
-        RequestShapeRefresh();
+        _previewDirty = true;
     }
 
     private void CheckAndApplyUpdates()
@@ -134,26 +128,18 @@ internal class PreviewManager : IDisposable
         {
             if (!_isEnabled) return;
 
-            var hoverIndexChanged = _currentHoveredIndex != _currentAppliedHoverIndex;
-            var shouldRefresh = hoverIndexChanged || _needsShapeRefresh;
-
-            if (!shouldRefresh)
+            if (_previewDirty)
             {
-                return;
+                _previewDirty = false;
+                BuildPreviewSet();
+                SetPreview();
             }
-            
-            _needsShapeRefresh = false;
-            _currentAppliedHoverIndex = _currentHoveredIndex;
-            var index = _currentAppliedHoverIndex;
 
-            BuildPreviewSets();
-            _hoverSet.Clear();
-            if (SetBlendShapeTo100OnHover && index != -1)
+            if (_currentHoveredIndex != _currentAppliedHoverIndex)
             {
-                var key = DataManager.AllKeys[index];
-                _hoverSet.Add(new BlendShapeWeight(key, 100));
+                _currentAppliedHoverIndex = _currentHoveredIndex;
+                SetHover();
             }
-            RefreshPreview();
         }
         catch (Exception e)
         {
@@ -161,34 +147,51 @@ internal class PreviewManager : IDisposable
         }
     }
 
-    private void RefreshPreview()
-    {
-        if (_renderer == null) return;
-        var ignoredNames = _context.UsesFacialIgnoredNames
+    private ImmutableHashSet<string> IgnoredNames
+        => _context.UsesFacialIgnoredNames
             ? DataManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal)
             : _context.IgnoredNames;
-        var background = _context.UsesFacialIgnoredNames
+
+    private void SetBackground()
+    {
+        if (_renderer == null) return;
+        _backgroundSet.Clear();
+        _backgroundSet.AddRange(_context.Background);
+        Preview.SetBackground(_context.UsesFacialIgnoredNames
             ? BlendShapeApply.Empty
             : new BlendShapeApply(
                 new ImmutableBlendShapeWeightSet(_backgroundSet),
                 _context.BackgroundDefaultValue,
-                ignoredNames);
-        Preview.Refresh(
-            background,
+                IgnoredNames));
+    }
+
+    private void SetPreview()
+    {
+        if (_renderer == null) return;
+        Preview.SetPreview(
             new BlendShapeApply(
                 new ImmutableBlendShapeWeightSet(_previewSet),
                 _context.UsesFacialIgnoredNames ? 0f : null,
-                ignoredNames),
-            _previewOpacity,
-            new BlendShapeApply(
-                new ImmutableBlendShapeWeightSet(_hoverSet),
-                IgnoredNames: ignoredNames));
+                IgnoredNames),
+            _previewOpacity);
     }
 
-    private void BuildPreviewSets()
+    private void SetHover()
     {
-        _backgroundSet.Clear();
-        _backgroundSet.AddRange(_context.Background);
+        if (_renderer == null) return;
+        _hoverSet.Clear();
+        if (SetBlendShapeTo100OnHover && _currentAppliedHoverIndex != -1)
+        {
+            var key = DataManager.AllKeys[_currentAppliedHoverIndex];
+            _hoverSet.Add(new BlendShapeWeight(key, 100));
+        }
+        Preview.SetHover(new BlendShapeApply(
+            new ImmutableBlendShapeWeightSet(_hoverSet),
+            IgnoredNames: IgnoredNames));
+    }
+
+    private void BuildPreviewSet()
+    {
         _previewSet.Clear();
         _previewOpacity = 1f;
         switch (_context.Mode)
@@ -216,8 +219,14 @@ internal class PreviewManager : IDisposable
                 break;
             case ShapesEditorMode.LipSync:
                 AddTargetValues(_previewSet, _context.DataManagers[0]);
-                if (_previewListIndex > 0)
-                    AddTargetValues(_previewSet, _context.DataManagers[_previewListIndex]);
+                if (_context.PreviewLipSync is { } lipSync)
+                {
+                    foreach (var shape in lipSync.GetOrderedShapes()[_context.PreviewViseme])
+                    {
+                        if (!_context.LipSyncUnavailableNames.Contains(shape.Name))
+                            _previewSet.Add(shape);
+                    }
+                }
                 break;
         }
     }
@@ -239,7 +248,8 @@ internal class PreviewManager : IDisposable
         _isEnabled = false;
         foreach (var dataManager in _context.DataManagers)
             dataManager.OnAnyDataChange -= RequestShapeRefresh;
-        _context.ActiveListChanged -= OnActiveListChanged;
+        _context.ActiveListChanged -= RequestShapeRefresh;
+        _context.LipSyncChanged -= RequestShapeRefresh;
         _updateScheduler?.Pause();
         Preview.Stop();
     }

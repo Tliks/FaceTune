@@ -17,6 +17,9 @@ internal class FacialShapeUI : IDisposable
     private readonly VisualElement _unselectedContainer;
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
     private readonly List<SimpleToggle> _listButtons = new();
+    private LipSyncPanel? _lipSyncPanel;
+    private SimpleToggle? _lipSyncButton;
+    private SimpleToggle? _cancellerButton;
     private GeneralControls _generalControls;
 
     public FacialShapeUI(
@@ -38,9 +41,12 @@ internal class FacialShapeUI : IDisposable
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
         _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
+        if (context.Mode == ShapesEditorMode.LipSync)
+            _lipSyncPanel = new LipSyncPanel(context);
         SetupListSelector(root);
 
-        ShowActiveList();
+        if (_lipSyncPanel == null) ShowActiveList();
+        else ShowLipSync();
         context.ActiveListChanged += ShowActiveList;
     }
 
@@ -69,19 +75,61 @@ internal class FacialShapeUI : IDisposable
                 AddTimeSlider(container, 0f);
                 break;
             case ShapesEditorMode.LipSync:
-                AddListButtons(
-                    container,
-                    new[] { "lipSync.cancellerBlendShapes.label".LS() }
-                        .Concat(VrcVisemeLipSyncShapes.Names),
-                    compactAfterFirst: true);
+                SetupLipSyncToolbar(container);
                 break;
         }
     }
 
+    private void SetupLipSyncToolbar(VisualElement container)
+    {
+        _lipSyncButton = new SimpleToggle
+        {
+            text = "previewOverlay.lipSync.label".LS(),
+            value = true
+        };
+        _cancellerButton = new SimpleToggle
+        {
+            text = "lipSync.cancellerBlendShapes.label".LS()
+        };
+        _lipSyncButton.RegisterValueChangedCallback(evt =>
+        {
+            if (evt.newValue) ShowLipSync();
+            else if (_cancellerButton?.value != true)
+                _lipSyncButton.SetValueWithoutNotify(true);
+        });
+        _cancellerButton.RegisterValueChangedCallback(evt =>
+        {
+            if (evt.newValue) ShowCanceller();
+            else if (_lipSyncButton?.value != true)
+                _cancellerButton.SetValueWithoutNotify(true);
+        });
+        _lipSyncButton.style.flexGrow = 1f;
+        _cancellerButton.style.flexGrow = 1f;
+        container.Add(_lipSyncButton);
+        container.Add(_cancellerButton);
+    }
+
+    private void ShowLipSync()
+    {
+        if (_lipSyncPanel == null) return;
+        _lipSyncButton?.SetValueWithoutNotify(true);
+        _cancellerButton?.SetValueWithoutNotify(false);
+        _selectedContainer.Clear();
+        _unselectedContainer.Clear();
+        _selectedContainer.Add(_lipSyncPanel.SelectedElement);
+        _unselectedContainer.Add(_lipSyncPanel.AvailableElement);
+    }
+
+    private void ShowCanceller()
+    {
+        _lipSyncButton?.SetValueWithoutNotify(false);
+        _cancellerButton?.SetValueWithoutNotify(true);
+        ShowActiveList();
+    }
+
     private void AddListButtons(
         VisualElement container,
-        IEnumerable<string> labels,
-        bool compactAfterFirst = false)
+        IEnumerable<string> labels)
     {
         var labelArray = labels.ToArray();
         for (var index = 0; index < labelArray.Length; index++)
@@ -93,7 +141,7 @@ internal class FacialShapeUI : IDisposable
                 if (evt.newValue) _context.SetActiveList(listIndex);
             });
             button.AddToClassList("compact-control");
-            button.style.minWidth = compactAfterFirst && index > 0 ? 48f : 120f;
+            button.style.minWidth = 120f;
             button.style.marginRight = Spacing;
             button.style.marginBottom = Spacing;
             container.Add(button);
@@ -143,6 +191,8 @@ internal class FacialShapeUI : IDisposable
         _selectedContainer.Add(panels.Selected.Element);
         _unselectedContainer.Add(panels.Unselected.Element);
     }
+
+    public void RefreshLipSync() => _lipSyncPanel?.Rebuild();
 
     public void Dispose()
     {

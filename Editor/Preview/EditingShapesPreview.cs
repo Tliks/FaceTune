@@ -31,16 +31,19 @@ internal class EditingShapesPreview
         _target = target;
     }
 
-    public void Refresh(
-        BlendShapeApply background,
-        BlendShapeApply preview,
-        float previewOpacity,
-        BlendShapeApply hover)
+    public void SetBackground(BlendShapeApply apply)
     {
-        if (_target == null) return;
-        _background.Set(_target, background);
-        _preview.Set(_target, preview, previewOpacity);
-        _hover.Set(_target, hover);
+        if (_target != null) _background.Set(_target, apply);
+    }
+
+    public void SetPreview(BlendShapeApply apply, float opacity = 1f)
+    {
+        if (_target != null) _preview.Set(_target, apply, opacity);
+    }
+
+    public void SetHover(BlendShapeApply apply)
+    {
+        if (_target != null) _hover.Set(_target, apply);
     }
 
     public void Stop()

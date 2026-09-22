@@ -405,6 +405,14 @@ internal sealed class LipSyncSettings : IEquatable<LipSyncSettings>
     public override bool Equals(object? obj)
         => obj is LipSyncSettings other && Equals(other);
 
+    internal LipSyncSettings Clone()
+        => new()
+        {
+            Mode = Mode,
+            CancellerBlendShapes = CancellerBlendShapes.ToList(),
+            Shapes = Shapes.Clone()
+        };
+
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -464,6 +472,16 @@ internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes
             Sil, PP, FF, TH, DD,
             KK, CH, SS, NN, RR,
             AA, E, IH, OH, OU
+        };
+
+    internal VrcVisemeLipSyncShapes Clone()
+        => new()
+        {
+            Sil = Sil.ToList(), PP = PP.ToList(), FF = FF.ToList(),
+            TH = TH.ToList(), DD = DD.ToList(), KK = KK.ToList(),
+            CH = CH.ToList(), SS = SS.ToList(), NN = NN.ToList(),
+            RR = RR.ToList(), AA = AA.ToList(), E = E.ToList(),
+            IH = IH.ToList(), OH = OH.ToList(), OU = OU.ToList()
         };
 
     public bool Equals(VrcVisemeLipSyncShapes? other)

@@ -6,6 +6,10 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 internal partial class FacialShapesEditor : EditorWindow
 {
     [SerializeField] private BlendShapeOverrideManager[] _dataManagers = null!;
+    [SerializeField] private LipSyncSettings _lipSyncDraft = new();
+
+    private LipSyncSettings? _initialLipSyncDraft;
+    private LipSyncSettings? _observedLipSyncDraft;
 
     private FacialShapesEditorContext? _context;
     private bool _unsavedStateSyncPending;
@@ -121,10 +125,14 @@ internal partial class FacialShapesEditor : EditorWindow
             null,
             null,
             ImmutableHashSet<string>.Empty,
+            ImmutableHashSet<string>.Empty,
             1,
             _ => { },
+            null,
+            null,
             TryChangeRenderer,
             SaveChanges);
+        _context.LipSyncChanged += OnLipSyncChanged;
 
         titleContent = "facialEditor.title".LG();
         _unsavedStateSyncPending = false;
@@ -172,11 +180,18 @@ internal partial class FacialShapesEditor : EditorWindow
         {
             foreach (var dataManager in _context.DataManagers)
                 dataManager.OnAnyDataChange -= SyncUnsavedChangesFromData;
+            _context.LipSyncChanged -= OnLipSyncChanged;
             _context.Dispose();
             _context = null;
             _dataManagers = null!;
         }
         _unsavedStateSyncPending = false;
+    }
+
+    private void OnLipSyncChanged()
+    {
+        _observedLipSyncDraft = _context?.LipSync?.Clone();
+        SyncUnsavedChangesFromData();
     }
 
     private void SyncUnsavedChangesFromData()
@@ -198,8 +213,10 @@ internal partial class FacialShapesEditor : EditorWindow
     private void SyncUnsavedChangesNow()
     {
         _unsavedStateSyncPending = false;
-        hasUnsavedChanges = _context?.DataManagers.Any(
-            dataManager => dataManager.IsChangedFromInitialState) == true;
+        hasUnsavedChanges = _context != null
+            && (_context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState)
+                || _initialLipSyncDraft != null
+                && !_lipSyncDraft.Equals(_initialLipSyncDraft));
     }
 
     private bool CanDiscardCurrentContext()
@@ -325,6 +342,8 @@ internal partial class FacialShapesEditor : EditorWindow
             if (dataManager.IsInitialized)
                 dataManager.MarkCurrentAsInitialState();
         }
+        _initialLipSyncDraft = _context.LipSync?.Clone();
+        _observedLipSyncDraft = _initialLipSyncDraft?.Clone();
         SyncUnsavedChangesNow();
     }
 
@@ -333,6 +352,13 @@ internal partial class FacialShapesEditor : EditorWindow
         if (_context == null) return;
         foreach (var dataManager in _context.DataManagers)
             dataManager.SynchronizeSerializedState();
+        if (_context.LipSync != null
+            && (_observedLipSyncDraft == null
+                || !_context.LipSync.Equals(_observedLipSyncDraft)))
+        {
+            _context.UI.RefreshLipSync();
+            _context.NotifyLipSyncChanged();
+        }
     }
 
     private void OnDisable()
