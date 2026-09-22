@@ -42,10 +42,13 @@ internal class BlendShapeOverrideManager : IDisposable
     private bool _hasChangedStateCache;
     private bool _changedFromInitialState;
 
+    public bool IsInitialized { get; private set; }
+
     public bool IsChangedFromInitialState
     {
         get
         {
+            if (!IsInitialized) return false;
             var currentVersion = _stateVersionProperty.intValue;
             if (!_hasChangedStateCache || _changedStateVersion != currentVersion)
             {
@@ -58,9 +61,10 @@ internal class BlendShapeOverrideManager : IDisposable
         }
     }
 
-    public bool CanUndo => _stateVersionProperty.intValue > _initialStateVersion;
-    public bool CanRedo => _canRedo;
-    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue
+    public bool CanUndo => IsInitialized && _stateVersionProperty.intValue > _initialStateVersion;
+    public bool CanRedo => IsInitialized && _canRedo;
+    public bool CanRestoreEditedOverrides => IsInitialized
+                                            && _editedSnapshotBeforeRestoreInitial.HasValue
                                             && _restoreStateVersion == _stateVersionProperty.intValue;
 
     private string[] _allKeysArray = new string[0];
@@ -121,6 +125,7 @@ internal class BlendShapeOverrideManager : IDisposable
         ISet<string> explicitlyExcluded,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null)
     {
+        IsInitialized = true;
         _explicitlyExcluded = explicitlyExcluded;
         InitializeTargetRenderer(targetRenderer, targetSet, explicitlyExcluded);
         InitializeSourceSets(facialSet, baseSet, targetSet, initialCurves);
@@ -338,6 +343,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public bool SynchronizeSerializedState()
     {
+        if (!IsInitialized) return false;
         _serializedObject.UpdateIfRequiredOrScript();
         var currentVersion = _stateVersionProperty.intValue;
         if (currentVersion == _lastObservedStateVersion)

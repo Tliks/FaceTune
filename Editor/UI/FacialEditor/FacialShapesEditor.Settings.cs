@@ -38,11 +38,7 @@ internal partial class FacialShapesEditor
             }
         }
 
-        var unavailable = lists
-            .Select((_, index) => AvatarContext.GetUnavailableBlendShapeNames(
-                avatar.Root,
-                GetWriteKind(mode, index)))
-            .ToArray();
+        var unavailable = GetUnavailableNames(avatar, mode, lists.Length);
         var resolver = new FacialAnimationResolver(avatar.Root);
         var background = resolver.ResolveIncoming(component.transform).ToList();
         if (resolver.TryResolve(component, out var local)) background.AddRange(local);
@@ -72,6 +68,7 @@ internal partial class FacialShapesEditor
         bool readOnlyVisemes)
     {
         EndContext();
+        activeListIndex = Mathf.Clamp(activeListIndex, 0, initialLists.Length - 1);
 
         _dataManagers = new BlendShapeOverrideManager[initialLists.Length];
         var serializedObject = new SerializedObject(this);
@@ -84,6 +81,14 @@ internal partial class FacialShapesEditor
                 serializedObject,
                 managerProperties.GetArrayElementAtIndex(index),
                 usesAnimations);
+            manager.OnAnyDataChange += SyncUnsavedChangesFromData;
+            _dataManagers[index] = manager;
+        }
+
+        void InitializeList(int index)
+        {
+            var manager = _dataManagers[index];
+            if (manager.IsInitialized) return;
             var initial = initialLists[index];
             manager.SetInitialState(
                 renderer,
@@ -91,12 +96,14 @@ internal partial class FacialShapesEditor
                 null,
                 ToFirstFrameSet(initial),
                 unavailableNames[index],
-                usesAnimations
-                    ? GetInitialCurves(initial)
-                    : null);
-            manager.OnAnyDataChange += SyncUnsavedChangesFromData;
-            _dataManagers[index] = manager;
+                usesAnimations ? GetInitialCurves(initial) : null);
         }
+
+        InitializeList(0);
+        if (mode == ShapesEditorMode.EyeBlinkSimple)
+            InitializeList(1);
+        else if (mode == ShapesEditorMode.LipSync && _dataManagers.Length > 1)
+            InitializeList(Mathf.Max(1, activeListIndex));
 
         _context = new FacialShapesEditorContext(
             serializedObject,
@@ -108,9 +115,10 @@ internal partial class FacialShapesEditor
             settingsPropertyPath,
             background,
             readOnlyVisemes ? 1 : _dataManagers.Length,
+            InitializeList,
             TryChangeRenderer,
             SaveChanges);
-        _context.SetActiveList(Mathf.Clamp(activeListIndex, 0, _dataManagers.Length - 1));
+        _context.SetActiveList(activeListIndex);
         titleContent = (mode == ShapesEditorMode.LipSync
             ? "lipSync.section.label"
             : "eyeBlink.section.label").LG();
@@ -133,7 +141,8 @@ internal partial class FacialShapesEditor
         var usesAnimations = UsesAnimations(context.Mode);
         for (var index = 0; index < lists.Length; index++)
         {
-            if (!context.IsListEditable(index)) continue;
+            if (!context.IsListEditable(index)
+                || !context.DataManagers[index].IsInitialized) continue;
             ShapeListSerialization.Save(
                 lists[index],
                 context.DataManagers[index],
@@ -174,16 +183,29 @@ internal partial class FacialShapesEditor
     private static bool UsesAnimations(ShapesEditorMode mode)
         => mode == ShapesEditorMode.EyeBlinkCustom;
 
-    private static FaceTuneWriteKind GetWriteKind(ShapesEditorMode mode, int index)
-        => mode switch
-        {
-            ShapesEditorMode.EyeBlinkSimple when index == 0 => FaceTuneWriteKind.EyeBlinkAnimation,
-            ShapesEditorMode.EyeBlinkSimple => FaceTuneWriteKind.FacialData,
-            ShapesEditorMode.EyeBlinkCustom => FaceTuneWriteKind.EyeBlinkAnimation,
-            ShapesEditorMode.LipSync when index == 0 => FaceTuneWriteKind.FacialData,
-            ShapesEditorMode.LipSync => FaceTuneWriteKind.LipSyncAnimation,
-            _ => throw new ArgumentOutOfRangeException(nameof(mode))
-        };
+    private static ISet<string>[] GetUnavailableNames(
+        AvatarContext avatar,
+        ShapesEditorMode mode,
+        int count)
+    {
+        var animationKind = mode == ShapesEditorMode.LipSync
+            ? FaceTuneWriteKind.LipSyncAnimation
+            : FaceTuneWriteKind.EyeBlinkAnimation;
+        var animation = AvatarContext.GetUnavailableBlendShapeNames(
+            avatar.Root,
+            animationKind);
+        if (count == 1) return new[] { animation };
+
+        var facial = AvatarContext.GetUnavailableBlendShapeNames(
+            avatar.Root,
+            FaceTuneWriteKind.FacialData);
+        var result = Enumerable.Repeat(animation, count).ToArray();
+        if (mode == ShapesEditorMode.LipSync)
+            result[0] = facial;
+        else
+            result[1] = facial;
+        return result;
+    }
 
     private static IReadOnlyList<BlendShapeWeightAnimation>[] ReadVisemes(
         VrcVisemeLipSyncShapes shapes)

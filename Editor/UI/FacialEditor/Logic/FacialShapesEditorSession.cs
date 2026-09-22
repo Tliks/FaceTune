@@ -26,6 +26,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
     public bool ZeroUnavailableBlendShapes { get; set; } = true;
     public ImmutableBlendShapeWeightSet Background { get; }
     public int EditableListCount { get; }
+    private readonly Action<int> _initializeList;
 
     public SerializedObject SerializedObject { get; }
     public IReadOnlyList<BlendShapeOverrideManager> DataManagers { get; }
@@ -47,6 +48,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
         string? animationPropertyPath,
         IEnumerable<BlendShapeWeightAnimation>? background,
         int editableListCount,
+        Action<int> initializeList,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
         Action save)
     {
@@ -60,6 +62,7 @@ internal sealed class FacialShapesEditorContext : IDisposable
         AnimationPropertyPath = animationPropertyPath;
         CanChangeTarget = target is AnimationClip;
         EditableListCount = Mathf.Clamp(editableListCount, 0, dataManagers.Count);
+        _initializeList = initializeList;
         var backgroundShapes = background?.Select(animation => animation.ToFirstFrameBlendShape())
             ?? Enumerable.Empty<BlendShapeWeight>();
         Background = new ImmutableBlendShapeWeightSet(
@@ -76,7 +79,9 @@ internal sealed class FacialShapesEditorContext : IDisposable
 
     public void SetActiveList(int index)
     {
-        if ((uint)index >= (uint)DataManagers.Count || ActiveListIndex == index) return;
+        if ((uint)index >= (uint)DataManagers.Count) return;
+        _initializeList(index);
+        if (ActiveListIndex == index) return;
         ActiveListIndex = index;
         ActiveListChanged?.Invoke();
     }

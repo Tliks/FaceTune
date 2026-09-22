@@ -120,6 +120,7 @@ internal partial class FacialShapesEditor : EditorWindow
             animationPropertyPath,
             null,
             1,
+            _ => { },
             TryChangeRenderer,
             SaveChanges);
 
@@ -318,7 +319,10 @@ internal partial class FacialShapesEditor : EditorWindow
             SaveSettings(_context);
         }
         foreach (var dataManager in _context.DataManagers)
-            dataManager.MarkCurrentAsInitialState();
+        {
+            if (dataManager.IsInitialized)
+                dataManager.MarkCurrentAsInitialState();
+        }
         SyncUnsavedChangesNow();
     }
 
