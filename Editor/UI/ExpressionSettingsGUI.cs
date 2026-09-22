@@ -280,21 +280,11 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         Header: ReorderableListOptions.HeaderMode.Label,
         MaxVisibleHeight: ListMaxVisibleHeight,
         InitializeElement: element => element.CopyFrom(EyeBlinkSettings.CreateDefaultBlinkBlendShape()),
-        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(
-            position,
-            list,
-            100f,
-            FaceTuneWriteKind.EyeBlinkAnimation),
         ElementHeight: GUIHelper.LineHeight);
     private static readonly ReorderableListOptions ConflictBlendShapesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
         MaxVisibleHeight: ListMaxVisibleHeight,
         InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
-        DrawHeaderAction: (position, list) => DrawBlendShapeWeightPicker(
-            position,
-            list,
-            0f,
-            FaceTuneWriteKind.FacialData),
         ElementHeight: GUIHelper.LineHeight);
     private static GUIStyle? _columnLabelStyle;
     private static GUIStyle ColumnLabelStyle => _columnLabelStyle ??= new GUIStyle(EditorStyles.label)
@@ -418,12 +408,14 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
                 ConflictBlendShapesOptions);
         position.NewLine();
 
-        DrawInterval(ref position, property);
+        DrawEditorRow(position, property, ShapesEditorMode.EyeBlinkSimple);
+        position.NewLine();
 
         position.height = GUIHelper.GetLinesHeight(2);
         DrawDurations(position, property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleDurationsSeconds)));
         position.NewLine();
-        DrawEditorRow(position, property, ShapesEditorMode.EyeBlinkSimple);
+
+        DrawInterval(ref position, property);
     }
 
     private static void DrawDurations(Rect position, SerializedProperty property)
@@ -521,18 +513,6 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
 
     private static void InitializeAnimation(SerializedProperty property)
         => property.CopyFrom(EyeBlinkSettings.CreateDefaultAnimation());
-
-    private static void DrawBlendShapeWeightPicker(
-        Rect position,
-        SerializedProperty list,
-        float weight,
-        FaceTuneWriteKind writeKind)
-        => BlendShapeNameGUI.DrawListPicker(
-            position,
-            list,
-            element => element.FindPropertyRelative(BlendShapeWeight.NamePropName),
-            (element, name) => element.CopyFrom(new BlendShapeWeight(name, weight)),
-            writeKind);
 
     private static void DrawClipImport(Rect position, SerializedProperty animations)
     {
