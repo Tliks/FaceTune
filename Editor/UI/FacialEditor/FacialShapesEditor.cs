@@ -119,6 +119,8 @@ internal partial class FacialShapesEditor : EditorWindow
             target,
             animationPropertyPath,
             null,
+            null,
+            ImmutableHashSet<string>.Empty,
             1,
             _ => { },
             TryChangeRenderer,

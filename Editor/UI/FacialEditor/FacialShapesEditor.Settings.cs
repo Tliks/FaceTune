@@ -1,4 +1,6 @@
 using Aoyon.FaceTune.Platforms;
+using Aoyon.FaceTune.Preview;
+using nadena.dev.ndmf.preview;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
@@ -10,7 +12,7 @@ internal partial class FacialShapesEditor
         int activeListIndex = 0)
     {
         if (settings.serializedObject.targetObjects.Length != 1
-            || settings.serializedObject.targetObject is not Component component
+            || settings.serializedObject.targetObject is not FaceTuneTagComponent component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)
             || TryOpenEditor() is not FacialShapesEditor window)
             return null;
@@ -39,9 +41,11 @@ internal partial class FacialShapesEditor
         }
 
         var unavailable = GetUnavailableNames(avatar, mode, lists.Length);
-        var resolver = new FacialAnimationResolver(avatar.Root);
-        var background = resolver.ResolveIncoming(component.transform).ToList();
-        if (resolver.TryResolve(component, out var local)) background.AddRange(local);
+        var facial = SelectedPreviewResolver.ResolveFacial(
+            component,
+            avatar,
+            ComputeContext.NullContext);
+        var ignoredNames = AvatarContext.GetExplicitlyExcludedBlendShapeNames(avatar.Root);
 
         window.StartSettingsContext(
             avatar.FaceRenderer,
@@ -50,7 +54,9 @@ internal partial class FacialShapesEditor
             mode,
             initial,
             unavailable,
-            background,
+            facial?.Animations,
+            facial?.DefaultWeight,
+            ignoredNames,
             activeListIndex,
             readOnlyVisemes);
         return window;
@@ -63,7 +69,9 @@ internal partial class FacialShapesEditor
         ShapesEditorMode mode,
         IReadOnlyList<BlendShapeWeightAnimation>[] initialLists,
         ISet<string>[] unavailableNames,
-        IReadOnlyList<BlendShapeWeightAnimation> background,
+        IReadOnlyList<BlendShapeWeightAnimation>? background,
+        float? backgroundDefaultValue,
+        ImmutableHashSet<string> ignoredNames,
         int activeListIndex,
         bool readOnlyVisemes)
     {
@@ -114,6 +122,8 @@ internal partial class FacialShapesEditor
             target,
             settingsPropertyPath,
             background,
+            backgroundDefaultValue,
+            ignoredNames,
             readOnlyVisemes ? 1 : _dataManagers.Length,
             InitializeList,
             TryChangeRenderer,

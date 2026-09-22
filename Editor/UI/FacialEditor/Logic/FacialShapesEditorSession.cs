@@ -19,12 +19,13 @@ internal sealed class FacialShapesEditorContext : IDisposable
     public bool CanChangeTarget { get; }
     public bool CanChangeRenderer => CanChangeTarget;
     public bool CanImportClip => Mode is ShapesEditorMode.Facial or ShapesEditorMode.EyeBlinkCustom;
-    public bool UsesRendererBackground => Mode != ShapesEditorMode.Facial;
     public bool UsesFacialIgnoredNames => Mode == ShapesEditorMode.Facial;
     public float InitialPreviewTime => Mode == ShapesEditorMode.EyeBlinkSimple ? 1f : 0f;
     public bool ZeroUnspecifiedBlendShapes { get; set; } = true;
     public bool ZeroUnavailableBlendShapes { get; set; } = true;
     public ImmutableBlendShapeWeightSet Background { get; }
+    public float? BackgroundDefaultValue { get; }
+    public ImmutableHashSet<string> IgnoredNames { get; }
     public int EditableListCount { get; }
     private readonly Action<int> _initializeList;
 
@@ -47,6 +48,8 @@ internal sealed class FacialShapesEditorContext : IDisposable
         Object? target,
         string? animationPropertyPath,
         IEnumerable<BlendShapeWeightAnimation>? background,
+        float? backgroundDefaultValue,
+        ImmutableHashSet<string> ignoredNames,
         int editableListCount,
         Action<int> initializeList,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
@@ -63,12 +66,11 @@ internal sealed class FacialShapesEditorContext : IDisposable
         CanChangeTarget = target is AnimationClip;
         EditableListCount = Mathf.Clamp(editableListCount, 0, dataManagers.Count);
         _initializeList = initializeList;
-        var backgroundShapes = background?.Select(animation => animation.ToFirstFrameBlendShape())
-            ?? Enumerable.Empty<BlendShapeWeight>();
         Background = new ImmutableBlendShapeWeightSet(
-            !UsesRendererBackground || renderer == null
-                ? backgroundShapes
-                : renderer.GetBlendShapeWeights(renderer.sharedMesh).Concat(backgroundShapes));
+            background?.Select(animation => animation.ToFirstFrameBlendShape())
+            ?? Enumerable.Empty<BlendShapeWeight>());
+        BackgroundDefaultValue = backgroundDefaultValue;
+        IgnoredNames = ignoredNames;
 
         GroupManager = new BlendShapeGrouping(dataManagers[0]);
         PreviewManager = new PreviewManager(this, root);

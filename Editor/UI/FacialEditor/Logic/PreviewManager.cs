@@ -12,7 +12,10 @@ internal class PreviewManager : IDisposable
     private readonly SkinnedMeshRenderer? _renderer;
     private IVisualElementScheduledItem _updateScheduler;
     private const int UpdateIntervalMs = 33; // 約30fps
+    private readonly BlendShapeWeightSet _backgroundSet;
     private readonly BlendShapeWeightSet _previewSet;
+    private readonly BlendShapeWeightSet _hoverSet;
+    private float _previewOpacity = 1f;
 
     private bool _setBlendShapeTo100OnHover;
     public bool SetBlendShapeTo100OnHover
@@ -73,7 +76,9 @@ internal class PreviewManager : IDisposable
         _context = context;
         _rootElement = rootElement;
         _renderer = context.Renderer;
+        _backgroundSet = new();
         _previewSet = new();
+        _hoverSet = new();
         _normalizedTime = context.InitialPreviewTime;
         _previewListIndex = context.DataManagers.Count > 1 ? 1 : 0;
         SetBlendShapeTo100OnHover = true;
@@ -105,7 +110,7 @@ internal class PreviewManager : IDisposable
         {
             _isEnabled = true;
             Preview.Start(renderer);
-            GetCurrentSet(_previewSet);
+            BuildPreviewSets();
             RefreshPreview();
             RequestShapeRefresh();
         }
@@ -141,11 +146,12 @@ internal class PreviewManager : IDisposable
             _currentAppliedHoverIndex = _currentHoveredIndex;
             var index = _currentAppliedHoverIndex;
 
-            GetCurrentSet(_previewSet);
+            BuildPreviewSets();
+            _hoverSet.Clear();
             if (SetBlendShapeTo100OnHover && index != -1)
             {
                 var key = DataManager.AllKeys[index];
-                _previewSet.Add(new BlendShapeWeight(key, 100));
+                _hoverSet.Add(new BlendShapeWeight(key, 100));
             }
             RefreshPreview();
         }
@@ -160,36 +166,41 @@ internal class PreviewManager : IDisposable
         if (_renderer == null) return;
         var ignoredNames = _context.UsesFacialIgnoredNames
             ? DataManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal)
-            : ImmutableHashSet<string>.Empty;
-        Preview.Refresh(new BlendShapeApply(
-            new ImmutableBlendShapeWeightSet(_previewSet),
-            0f,
-            ignoredNames));
+            : _context.IgnoredNames;
+        var background = _context.UsesFacialIgnoredNames
+            ? BlendShapeApply.Empty
+            : new BlendShapeApply(
+                new ImmutableBlendShapeWeightSet(_backgroundSet),
+                _context.BackgroundDefaultValue,
+                ignoredNames);
+        Preview.Refresh(
+            background,
+            new BlendShapeApply(
+                new ImmutableBlendShapeWeightSet(_previewSet),
+                _context.UsesFacialIgnoredNames ? 0f : null,
+                ignoredNames),
+            _previewOpacity,
+            new BlendShapeApply(
+                new ImmutableBlendShapeWeightSet(_hoverSet),
+                IgnoredNames: ignoredNames));
     }
 
-    private void GetCurrentSet(BlendShapeWeightSet result)
+    private void BuildPreviewSets()
     {
-        result.Clear();
-        result.AddRange(_context.Background);
+        _backgroundSet.Clear();
+        _backgroundSet.AddRange(_context.Background);
+        _previewSet.Clear();
+        _previewOpacity = 1f;
         switch (_context.Mode)
         {
             case ShapesEditorMode.Facial:
-                result.AddRange(DataManager.EffectiveBaseSet);
-                DataManager.GetTargetValues(result);
+                _previewSet.AddRange(DataManager.EffectiveBaseSet);
+                DataManager.GetTargetValues(_previewSet);
                 break;
             case ShapesEditorMode.EyeBlinkSimple:
-                var closed = new BlendShapeWeightSet();
-                AddTargetValues(closed, _context.DataManagers[1]);
-                AddTargetValues(closed, _context.DataManagers[0]);
-                foreach (var shape in closed)
-                {
-                    var openWeight = result.TryGetValue(shape.Name, out var open)
-                        ? open.Weight
-                        : 0f;
-                    result.Add(new BlendShapeWeight(
-                        shape.Name,
-                        Mathf.Lerp(openWeight, shape.Weight, _normalizedTime)));
-                }
+                AddTargetValues(_previewSet, _context.DataManagers[1]);
+                AddTargetValues(_previewSet, _context.DataManagers[0]);
+                _previewOpacity = _normalizedTime;
                 break;
             case ShapesEditorMode.EyeBlinkCustom:
                 var animations = new List<BlendShapeWeightAnimation>();
@@ -199,14 +210,14 @@ internal class PreviewManager : IDisposable
                     var index = DataManager.GetIndexForShape(animation.Name);
                     return index < 0 || DataManager.IsUnavailable(index);
                 });
-                result.AddRange(BlendShapeAnimationPreview.Evaluate(
+                _previewSet.AddRange(BlendShapeAnimationPreview.Evaluate(
                     animations,
                     BlendShapeAnimationPreview.GetDuration(animations) * _normalizedTime));
                 break;
             case ShapesEditorMode.LipSync:
-                AddTargetValues(result, _context.DataManagers[0]);
+                AddTargetValues(_previewSet, _context.DataManagers[0]);
                 if (_previewListIndex > 0)
-                    AddTargetValues(result, _context.DataManagers[_previewListIndex]);
+                    AddTargetValues(_previewSet, _context.DataManagers[_previewListIndex]);
                 break;
         }
     }

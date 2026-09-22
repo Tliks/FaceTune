@@ -118,22 +118,55 @@ internal static class SelectedPreviewResolver
         return components.FirstOrDefault();
     }
 
+    internal static FacialPreviewData? ResolveFacial(
+        FaceTuneTagComponent source,
+        AvatarContext avatar,
+        ComputeContext context)
+    {
+        var resolver = new FacialAnimationResolver(avatar.Root, context);
+        switch (source)
+        {
+            case ExpressionComponent expression:
+            {
+                var animations = resolver.ResolveIncoming(expression.transform);
+                if (resolver.TryResolve(expression, out var local)) animations.AddRange(local);
+                var multiFrame = new MultiFrameResolver(context).Resolve(expression);
+                return new FacialPreviewData(
+                    animations,
+                    0f,
+                    multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop);
+            }
+            case SettingsComponent settings:
+            {
+                return resolver.TryResolve(settings, out var animations)
+                    ? new FacialPreviewData(animations, 0f, false)
+                    : null;
+            }
+            case ExpressionDataComponent data:
+            {
+                var animations = resolver.ResolveIncoming(data.transform);
+                var hasFacial = resolver.TryResolve(data, out var local);
+                if (hasFacial) animations.AddRange(local);
+                if (!hasFacial && animations.Count == 0) return null;
+                var multiFrame = new MultiFrameResolver(context).ResolveProvider(data)
+                                 ?? new MultiFrameSettings();
+                return new FacialPreviewData(
+                    animations,
+                    0f,
+                    multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop);
+            }
+            default:
+                return null;
+        }
+    }
+
     private static AvatarPreviewData ResolveExpression(
         ExpressionComponent expression,
         AvatarContext avatar,
         ImmutableHashSet<string> ignoredNames,
         ComputeContext context)
     {
-        var facialResolver = new FacialAnimationResolver(avatar.Root, context);
-        var animations = facialResolver.ResolveIncoming(expression.transform);
-        if (facialResolver.TryResolve(expression, out var expressionAnimations))
-            animations.AddRange(expressionAnimations);
-
-        var multiFrame = new MultiFrameResolver(context).Resolve(expression);
-        var facial = new FacialPreviewData(
-            animations,
-            0f,
-            multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop);
+        var facial = ResolveFacial(expression, avatar, context)!;
         var behavior = new ExpressionBehaviorResolver(context).Resolve(expression);
         var eyeBlinkSettings = new EyeBlinkResolver(avatar.Root, context).Resolve(expression);
         var lipSyncSettings = new LipSyncResolver(avatar.Root, context).Resolve(expression);
@@ -157,10 +190,7 @@ internal static class SelectedPreviewResolver
         ImmutableHashSet<string> ignoredNames,
         ComputeContext context)
     {
-        var facialResolver = new FacialAnimationResolver(avatar.Root, context);
-        FacialPreviewData? facial = null;
-        if (facialResolver.TryResolve(settings, out var animations))
-            facial = new FacialPreviewData(animations, 0f, false);
+        var facial = ResolveFacial(settings, avatar, context);
 
         var enabled = context.Observe(
             settings,
@@ -202,19 +232,7 @@ internal static class SelectedPreviewResolver
         ImmutableHashSet<string> ignoredNames,
         ComputeContext context)
     {
-        var facialResolver = new FacialAnimationResolver(avatar.Root, context);
-        var animations = facialResolver.ResolveIncoming(data.transform);
-        var hasFacial = facialResolver.TryResolve(data, out var dataAnimations);
-        if (hasFacial) animations.AddRange(dataAnimations);
-
-        var multiFrameResolver = new MultiFrameResolver(context);
-        var multiFrame = multiFrameResolver.ResolveProvider(data) ?? new MultiFrameSettings();
-        var facial = hasFacial || animations.Count > 0
-            ? new FacialPreviewData(
-                animations,
-                0f,
-                multiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop)
-            : null;
+        var facial = ResolveFacial(data, avatar, context);
 
         var options = context.Observe(
             data,
