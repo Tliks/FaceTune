@@ -148,21 +148,53 @@ internal sealed class LipSyncEditing
         if (changed) Apply(structureChanged: true);
     }
 
-    public void SetWeights(int visemeIndex, IEnumerable<string> names, float weight)
+    public bool HasZeroWeight()
     {
-        var targets = names.ToHashSet(StringComparer.Ordinal);
-        if (targets.Count == 0) return;
-        var property = GetVisemeProperty(visemeIndex);
-        var changed = false;
-        for (var index = 0; index < property.arraySize; index++)
+        for (var index = 0; index < VrcVisemeLipSyncShapes.Count; index++)
         {
-            var element = property.GetArrayElementAtIndex(index);
-            var name = element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
-            if (!targets.Contains(name)) continue;
-            element.FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
-            changed = true;
+            if (Draft.Shapes.GetShapes(index)
+                .Any(shape => Mathf.Approximately(shape.Weight, 0f)))
+                return true;
+        }
+        return false;
+    }
+
+    public void SetAllWeights(float weight)
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        var changed = false;
+        for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
+        {
+            var property = GetVisemePropertyWithoutUpdate(visemeIndex);
+            for (var index = 0; index < property.arraySize; index++)
+            {
+                property.GetArrayElementAtIndex(index)
+                    .FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
+                changed = true;
+            }
         }
         if (changed) Apply(structureChanged: false);
+    }
+
+    public void RemoveAllShapes(bool zeroOnly)
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        var changed = false;
+        for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
+        {
+            var property = GetVisemePropertyWithoutUpdate(visemeIndex);
+            for (var index = property.arraySize - 1; index >= 0; index--)
+            {
+                if (zeroOnly && !Mathf.Approximately(
+                        property.GetArrayElementAtIndex(index)
+                            .FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue,
+                        0f))
+                    continue;
+                property.DeleteArrayElementAtIndex(index);
+                changed = true;
+            }
+        }
+        if (changed) Apply(structureChanged: true);
     }
 
     public void Add(string name)
@@ -244,10 +276,13 @@ internal sealed class LipSyncEditing
     private SerializedProperty GetVisemeProperty(int index)
     {
         _serializedObject.UpdateIfRequiredOrScript();
-        return _property
+        return GetVisemePropertyWithoutUpdate(index);
+    }
+
+    private SerializedProperty GetVisemePropertyWithoutUpdate(int index)
+        => _property
             .FindPropertyRelative(nameof(LipSyncSettings.Shapes))
             .FindPropertyRelative(VrcVisemeLipSyncShapes.PropertyNames[index]);
-    }
 
     private void Apply(bool structureChanged)
     {

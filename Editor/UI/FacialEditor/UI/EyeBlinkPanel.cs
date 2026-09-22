@@ -31,6 +31,9 @@ internal sealed class EyeBlinkPanel : IDisposable
             .ToArray();
 
         SelectedElement.Add(timeline);
+        var timelineGap = new VisualElement();
+        timelineGap.style.height = FacialShapeUI.RowHeight;
+        SelectedElement.Add(timelineGap);
         SelectedElement.Add(_selected);
 
         _selected.fixedItemHeight = FacialShapeUI.ListItemHeight;

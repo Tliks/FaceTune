@@ -23,7 +23,17 @@ internal sealed class PreviewTimelineElement : IDisposable
         Element.style.flexDirection = FlexDirection.Row;
         Element.style.alignItems = Align.Center;
         Element.style.width = Length.Percent(100f);
-        _play = CreateButton("▶", TogglePlayback);
+        _play = new Button(TogglePlayback) { text = "▶" };
+        _play.style.width = 20f;
+        _play.style.height = 20f;
+        _play.style.flexShrink = 0f;
+        _play.style.fontSize = 12f;
+        _play.style.unityFontStyleAndWeight = FontStyle.Bold;
+        _play.style.unityTextAlign = TextAnchor.MiddleCenter;
+        _play.style.paddingLeft = 0f;
+        _play.style.paddingRight = 0f;
+        _play.style.paddingTop = 0f;
+        _play.style.paddingBottom = 0f;
         _slider = new Slider(0f, 1f) { value = initialValue };
         _slider.style.flexGrow = 1f;
         _slider.style.flexShrink = 1f;
@@ -37,23 +47,6 @@ internal sealed class PreviewTimelineElement : IDisposable
         });
         Element.Add(_play);
         Element.Add(_slider);
-        Element.Add(CreateButton("■", Stop));
-    }
-
-    private static Button CreateButton(string text, Action clicked)
-    {
-        var button = new Button(clicked) { text = text };
-        button.style.width = 20f;
-        button.style.height = 20f;
-        button.style.flexShrink = 0f;
-        button.style.fontSize = 12f;
-        button.style.unityFontStyleAndWeight = FontStyle.Bold;
-        button.style.unityTextAlign = TextAnchor.MiddleCenter;
-        button.style.paddingLeft = 0f;
-        button.style.paddingRight = 0f;
-        button.style.paddingTop = 0f;
-        button.style.paddingBottom = 0f;
-        return button;
     }
 
     private void TogglePlayback()
@@ -77,7 +70,9 @@ internal sealed class PreviewTimelineElement : IDisposable
                     / PlaybackDurationSeconds;
         if (value >= 1f)
         {
-            Stop();
+            Pause();
+            _slider.SetValueWithoutNotify(0f);
+            _seek(0f);
             return;
         }
         _slider.SetValueWithoutNotify(value);
@@ -90,13 +85,6 @@ internal sealed class PreviewTimelineElement : IDisposable
         _playing = false;
         _play.text = "▶";
         _schedule?.Pause();
-    }
-
-    private void Stop()
-    {
-        Pause();
-        _slider.SetValueWithoutNotify(0f);
-        _seek(0f);
     }
 
     public void Dispose()

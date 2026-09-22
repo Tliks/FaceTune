@@ -221,8 +221,10 @@ internal sealed class LipSyncPanel
                                && (row.Canceller
                                    || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
         if (row.Kind == RowKind.Controls)
-            bulk.SetRemoveZeroVisible(SectionShapeRows(row)
-                .Any(shapeRow => Mathf.Approximately(GetWeight(shapeRow), 0f)));
+            bulk.SetRemoveZeroVisible(!row.Canceller && row.SectionIndex < 0
+                ? _editing.HasZeroWeight()
+                : SectionShapeRows(row)
+                    .Any(shapeRow => Mathf.Approximately(GetWeight(shapeRow), 0f)));
         empty.SetVisible(row.Kind == RowKind.Empty);
         empty.SetEnabled(sectionSelected
                          && (row.Canceller || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
@@ -311,39 +313,40 @@ internal sealed class LipSyncPanel
 
     private void SetSectionWeights(RowData section, float weight)
     {
-        var rows = SectionShapeRows(section);
         if (section.Canceller)
-            _canceller.SetShapesWeight(rows.Select(row => row.ManagerIndex), weight);
-        else
-            _editing.SetWeights(
-                section.SectionIndex >= 0 ? section.SectionIndex : _editing.SelectedViseme,
-                rows.Select(row => row.ShapeName),
+        {
+            _canceller.SetShapesWeight(
+                SectionShapeRows(section).Select(row => row.ManagerIndex),
                 weight);
+        }
+        else
+        {
+            _editing.SetAllWeights(weight);
+        }
         _selected.RefreshItems();
     }
 
     private void RemoveSectionZeros(RowData section)
     {
-        var rows = SectionShapeRows(section)
-            .Where(row => Mathf.Approximately(GetWeight(row), 0f))
-            .ToArray();
         if (section.Canceller)
+        {
+            var rows = SectionShapeRows(section)
+                .Where(row => Mathf.Approximately(GetWeight(row), 0f));
             _canceller.RemoveShapes(rows.Select(row => row.ManagerIndex));
+        }
         else
-            _editing.RemoveShapes(
-                section.SectionIndex >= 0 ? section.SectionIndex : _editing.SelectedViseme,
-                rows.Select(row => row.ShapeName));
+        {
+            _editing.RemoveAllShapes(zeroOnly: true);
+        }
     }
 
     private void RemoveSectionShapes(RowData section)
     {
-        var rows = SectionShapeRows(section);
         if (section.Canceller)
-            _canceller.RemoveShapes(rows.Select(row => row.ManagerIndex));
+            _canceller.RemoveShapes(SectionShapeRows(section)
+                .Select(row => row.ManagerIndex));
         else
-            _editing.RemoveShapes(
-                section.SectionIndex >= 0 ? section.SectionIndex : _editing.SelectedViseme,
-                rows.Select(row => row.ShapeName));
+            _editing.RemoveAllShapes(zeroOnly: false);
     }
 
     private float GetWeight(RowData row)
@@ -365,8 +368,10 @@ internal sealed class LipSyncPanel
             if (root.userData is not RowData { Kind: RowKind.Controls } section
                 || section.Canceller != changedRow.Canceller)
                 continue;
-            controls.SetRemoveZeroVisible(SectionShapeRows(section)
-                .Any(row => Mathf.Approximately(GetWeight(row), 0f)));
+            controls.SetRemoveZeroVisible(section.Canceller
+                ? SectionShapeRows(section)
+                    .Any(row => Mathf.Approximately(GetWeight(row), 0f))
+                : _editing.HasZeroWeight());
         }
     }
 
