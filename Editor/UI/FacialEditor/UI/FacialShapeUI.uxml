@@ -2,6 +2,8 @@
     <components:HorizontalElement name="root">
         <components:VerticalElement name="left-panel">
             <ui:VisualElement name="general-controls-container" class="section-frame" />
+            <ui:VisualElement name="mode-controls-gap" class="frame-layout-gap" />
+            <ui:VisualElement name="mode-controls-container" />
             <ui:VisualElement class="frame-layout-gap" />
             <ui:VisualElement name="selected-content-container" class="section-frame" />
         </components:VerticalElement>

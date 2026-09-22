@@ -11,7 +11,6 @@ internal class GeneralControls : IDisposable
     private readonly FacialShapesEditorContext _context;
     private readonly Func<SkinnedMeshRenderer?, bool> _tryChangeRenderer;
     private readonly Action _save;
-    private readonly BlendShapeOverrideManager _blendShapeManager;
     private readonly BlendShapeGrouping _groupManager;
 
     private static VisualTreeAsset? _uxml;
@@ -49,7 +48,6 @@ internal class GeneralControls : IDisposable
         _context = context;
         _tryChangeRenderer = tryChangeRenderer;
         _save = save;
-        _blendShapeManager = context.DataManager;
         _groupManager = context.GroupManager;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
@@ -64,8 +62,8 @@ internal class GeneralControls : IDisposable
 
     private void UpdateUndoRedoState()
     {
-        _undoButton?.SetEnabled(_blendShapeManager.CanUndo);
-        _redoButton?.SetEnabled(_blendShapeManager.CanRedo);
+        _undoButton?.SetEnabled(_context.DataManagers.Any(dataManager => dataManager.CanUndo));
+        _redoButton?.SetEnabled(_context.DataManagers.Any(dataManager => dataManager.CanRedo));
     }
 
     private void SetupControls()
@@ -90,20 +88,35 @@ internal class GeneralControls : IDisposable
         }
 
         var targetingField = _element.Q<ObjectField>("targeting-object-field");
-        targetingField.objectType = _context.Targeting.GetObjectType();
-        targetingField.SetValueWithoutNotify(_context.Targeting.GetTarget());
-        targetingField.SetEnabled(_context.Targeting is AnimationClipTargeting);
+        targetingField.objectType = _context.CanChangeTarget
+            ? typeof(AnimationClip)
+            : _context.Target?.GetType() ?? typeof(Object);
+        targetingField.SetValueWithoutNotify(_context.Target);
+        targetingField.SetEnabled(_context.CanChangeTarget);
         targetingField.RegisterValueChangedCallback(evt =>
         {
-            if (_context.Targeting is not AnimationClipTargeting) return;
-            _context.Targeting.SetTarget(evt.newValue);
+            _context.SetTarget(evt.newValue);
+            targetingField.SetValueWithoutNotify(_context.Target);
             UpdateActionButtonStates();
         });
 
         var targetingOptionsContainer = _element.Q<VisualElement>("targeting-options-container");
-        if (_context.Targeting.DrawOptions() is { } options)
+        if (_context.CanChangeTarget)
         {
-            targetingOptionsContainer.Add(options);
+            var menu = new ToolbarMenu { text = "facialEditor.clipOptions.label".LS() };
+            menu.menu.AppendAction(
+                "facialEditor.zeroUnspecifiedBlendShapes.option".LS(),
+                _ => _context.ZeroUnspecifiedBlendShapes = !_context.ZeroUnspecifiedBlendShapes,
+                _ => _context.ZeroUnspecifiedBlendShapes
+                    ? DropdownMenuAction.Status.Checked
+                    : DropdownMenuAction.Status.Normal);
+            menu.menu.AppendAction(
+                "facialEditor.zeroUnavailableBlendShapes.option".LS(),
+                _ => _context.ZeroUnavailableBlendShapes = !_context.ZeroUnavailableBlendShapes,
+                _ => _context.ZeroUnavailableBlendShapes
+                    ? DropdownMenuAction.Status.Checked
+                    : DropdownMenuAction.Status.Normal);
+            targetingOptionsContainer.Add(menu);
         }
         else
         {
@@ -125,7 +138,7 @@ internal class GeneralControls : IDisposable
         _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
         _restoreInitialOverridesButton.clicked += () =>
         {
-            _blendShapeManager.TryRestoreInitialOverrides();
+            _context.ModeSession.RestoreInitial();
             UpdateActionButtonStates();
         };
 
@@ -133,15 +146,21 @@ internal class GeneralControls : IDisposable
         _restoreEditedOverridesButton.Add(new Image { image = _restoreEditedOverridesIcon });
         _restoreEditedOverridesButton.clicked += () =>
         {
-            _blendShapeManager.TryRestoreEditedOverrides();
+            _context.ModeSession.RestoreEdited();
             UpdateActionButtonStates();
         };
 
         UpdateUndoRedoState();
         UpdateActionButtonStates();
 
-        _blendShapeManager.OnAnyDataChange += UpdateUndoRedoState;
-        _blendShapeManager.OnAnyDataChange += RequestActionButtonStateUpdate;
+        foreach (var dataManager in _context.DataManagers)
+        {
+            dataManager.OnAnyDataChange += UpdateUndoRedoState;
+            dataManager.OnAnyDataChange += RequestActionButtonStateUpdate;
+        }
+        _context.ActiveListChanged += UpdateUndoRedoState;
+        _context.ActiveListChanged += UpdateActionButtonStates;
+        _context.ModeSession.Changed += RequestActionButtonStateUpdate;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
         clipField.AddToClassList("compact-field");
@@ -169,6 +188,7 @@ internal class GeneralControls : IDisposable
             _clipImportOption = evt.newValue == clipImportOptions[0] ? ClipImportOption.All : ClipImportOption.NonZero;
         });
         _element.Q<VisualElement>("import-option-field-container").Add(clipImportOptionField);
+        _element.Q<VisualElement>("clip-import-container").SetVisible(_context.CanImportClip);
 
         _filterContent = _element.Q<VisualElement>("filter-content");
         _groupTogglesContainer = _filterContent.Q<VisualElement>("group-toggles-container");
@@ -217,7 +237,7 @@ internal class GeneralControls : IDisposable
     {
         var animations = new List<BlendShapeWeightAnimation>();
         clip.GetBlendShapeAnimations(_clipImportOption, animations, string.Empty);
-        _blendShapeManager.AddShapesWithAnimations(animations);
+        _context.ModeSession.ImportClip(animations, _context.ActiveListIndex);
     }
 
     private void RequestActionButtonStateUpdate()
@@ -235,15 +255,25 @@ internal class GeneralControls : IDisposable
     private void UpdateActionButtonStates()
     {
         var hasRenderer = _context.Renderer != null;
-        _saveButton?.SetEnabled(hasRenderer && _context.Targeting.GetTarget() != null && _blendShapeManager.IsChangedFromInitialState);
-        _restoreInitialOverridesButton?.SetEnabled(hasRenderer && _blendShapeManager.IsChangedFromInitialState);
-        _restoreEditedOverridesButton?.SetEnabled(hasRenderer && _blendShapeManager.CanRestoreEditedOverrides);
+        var hasChanges = _context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState)
+                         || _context.ModeSession.HasChanges;
+        _saveButton?.SetEnabled(hasRenderer && _context.Target != null && hasChanges);
+        _restoreInitialOverridesButton?.SetEnabled(
+            hasRenderer && _context.ModeSession.CanRestoreInitial);
+        _restoreEditedOverridesButton?.SetEnabled(
+            hasRenderer && _context.ModeSession.CanRestoreEdited);
     }
 
     public void Dispose()
     {
-        _blendShapeManager.OnAnyDataChange -= UpdateUndoRedoState;
-        _blendShapeManager.OnAnyDataChange -= RequestActionButtonStateUpdate;
+        foreach (var dataManager in _context.DataManagers)
+        {
+            dataManager.OnAnyDataChange -= UpdateUndoRedoState;
+            dataManager.OnAnyDataChange -= RequestActionButtonStateUpdate;
+        }
+        _context.ActiveListChanged -= UpdateUndoRedoState;
+        _context.ActiveListChanged -= UpdateActionButtonStates;
+        _context.ModeSession.Changed -= RequestActionButtonStateUpdate;
     }
 
     private void RebuildGroupToggles()

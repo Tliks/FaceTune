@@ -19,6 +19,7 @@ internal class BlendShapeOverrideManager : IDisposable
         }
     }
 
+    private readonly bool _allowsCurves;
     private SerializedObject _serializedObject;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
@@ -41,10 +42,13 @@ internal class BlendShapeOverrideManager : IDisposable
     private bool _hasChangedStateCache;
     private bool _changedFromInitialState;
 
+    public bool IsInitialized { get; private set; }
+
     public bool IsChangedFromInitialState
     {
         get
         {
+            if (!IsInitialized) return false;
             var currentVersion = _stateVersionProperty.intValue;
             if (!_hasChangedStateCache || _changedStateVersion != currentVersion)
             {
@@ -57,9 +61,10 @@ internal class BlendShapeOverrideManager : IDisposable
         }
     }
 
-    public bool CanUndo => _stateVersionProperty.intValue > _initialStateVersion;
-    public bool CanRedo => _canRedo;
-    public bool CanRestoreEditedOverrides => _editedSnapshotBeforeRestoreInitial.HasValue
+    public bool CanUndo => IsInitialized && _stateVersionProperty.intValue > _initialStateVersion;
+    public bool CanRedo => IsInitialized && _canRedo;
+    public bool CanRestoreEditedOverrides => IsInitialized
+                                            && _editedSnapshotBeforeRestoreInitial.HasValue
                                             && _restoreStateVersion == _stateVersionProperty.intValue;
 
     private string[] _allKeysArray = new string[0];
@@ -94,8 +99,12 @@ internal class BlendShapeOverrideManager : IDisposable
     public event Action? OnUnknownChange;
     public event Action? OnAnyDataChange;
 
-    public BlendShapeOverrideManager(SerializedObject serializedObject, SerializedProperty baseProperty)
+    public BlendShapeOverrideManager(
+        SerializedObject serializedObject,
+        SerializedProperty baseProperty,
+        bool allowsCurves = true)
     {
+        _allowsCurves = allowsCurves;
         _serializedObject = serializedObject;
         _overrideFlagsProperty = baseProperty.FindPropertyRelative(nameof(_overrideFlags));
         _overrideWeightsProperty = baseProperty.FindPropertyRelative(nameof(_overrideWeights));
@@ -116,6 +125,7 @@ internal class BlendShapeOverrideManager : IDisposable
         ISet<string> explicitlyExcluded,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null)
     {
+        IsInitialized = true;
         _explicitlyExcluded = explicitlyExcluded;
         InitializeTargetRenderer(targetRenderer, targetSet, explicitlyExcluded);
         InitializeSourceSets(facialSet, baseSet, targetSet, initialCurves);
@@ -136,7 +146,6 @@ internal class BlendShapeOverrideManager : IDisposable
             ?? Enumerable.Empty<string>();
         _allKeysArray = rendererBlendShapes
             .Select(shape => shape.Name)
-            .Where(name => !explicitlyExcluded.Contains(name))
             .Concat(retainedNames)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
@@ -333,6 +342,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public bool SynchronizeSerializedState()
     {
+        if (!IsInitialized) return false;
         _serializedObject.UpdateIfRequiredOrScript();
         var currentVersion = _stateVersionProperty.intValue;
         if (currentVersion == _lastObservedStateVersion)
@@ -404,7 +414,8 @@ internal class BlendShapeOverrideManager : IDisposable
     /// <summary>この行がeditorで編集対象として管理されているか。falseのshape名は保存時にオリジナルのカーブが保持される。</summary>
     public bool Manages(string shapeName) => _shapeNameToIndexMap.ContainsKey(shapeName);
 
-    public bool IsCurveMode(int index) => IsCurveModeAt(index);
+    public bool AllowsCurves => _allowsCurves;
+    public bool IsCurveMode(int index) => _allowsCurves && IsCurveModeAt(index);
 
     public SerializedProperty GetCurveProperty(int index)
         => _overrideCurvesProperty.GetArrayElementAtIndex(index);
@@ -418,6 +429,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void ToggleCurveMode(int index)
     {
+        if (!_allowsCurves) return;
         if (IsCurveModeAt(index))
         {
             if (!ExecuteModification(() =>

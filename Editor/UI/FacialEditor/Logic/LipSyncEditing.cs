@@ -1,0 +1,296 @@
+namespace Aoyon.FaceTune.Gui.ShapesEditor;
+
+internal sealed class LipSyncEditing
+{
+    private readonly SerializedObject _serializedObject;
+    private readonly SerializedProperty _property;
+    private LipSyncSettings _initial;
+    private LipSyncSettings _observed;
+    private LipSyncSettings? _editedBeforeRestore;
+
+    public LipSyncSettings Draft { get; }
+    public VrcVisemeLipSyncShapes? BuiltIn { get; }
+    public ISet<string> UnavailableNames { get; }
+    public int SelectedViseme { get; private set; }
+    public bool CancellerSelected { get; private set; }
+    public int HoveredViseme { get; private set; } = -1;
+    public int PreviewViseme => HoveredViseme >= 0 ? HoveredViseme : SelectedViseme;
+    public VrcVisemeLipSyncShapes? PreviewShapes
+        => Draft.Mode == LipSyncSettings.Kind.Custom ? Draft.Shapes : BuiltIn;
+    public bool HasChanges => !Draft.Equals(_initial);
+    public bool CanRestoreEdited => _editedBeforeRestore != null;
+
+    public event Action? DataChanged;
+    public event Action? StructureChanged;
+    public event Action? PreviewChanged;
+
+    public LipSyncEditing(
+        SerializedObject serializedObject,
+        LipSyncSettings draft,
+        VrcVisemeLipSyncShapes? builtIn,
+        ISet<string> unavailableNames)
+    {
+        _serializedObject = serializedObject;
+        _property = serializedObject.FindProperty("_lipSyncDraft");
+        Draft = draft;
+        BuiltIn = builtIn;
+        UnavailableNames = unavailableNames;
+        _initial = draft.Clone();
+        _observed = draft.Clone();
+    }
+
+    public void SetSelectedViseme(int index)
+    {
+        index = Mathf.Clamp(index, 0, VrcVisemeLipSyncShapes.Count - 1);
+        if (SelectedViseme == index && !CancellerSelected) return;
+        SelectedViseme = index;
+        CancellerSelected = false;
+        PreviewChanged?.Invoke();
+    }
+
+    public void SelectCanceller()
+    {
+        if (CancellerSelected) return;
+        CancellerSelected = true;
+        PreviewChanged?.Invoke();
+    }
+
+    public void SetHoveredViseme(int index)
+    {
+        index = Mathf.Clamp(index, -1, VrcVisemeLipSyncShapes.Count - 1);
+        if (HoveredViseme == index) return;
+        HoveredViseme = index;
+        PreviewChanged?.Invoke();
+    }
+
+    public void SetMode(LipSyncSettings.Kind mode)
+    {
+        var previous = Draft.Mode;
+        if (previous == mode) return;
+        _serializedObject.UpdateIfRequiredOrScript();
+        _property.FindPropertyRelative(nameof(LipSyncSettings.Mode)).intValue = (int)mode;
+        if (mode == LipSyncSettings.Kind.Custom
+            && previous == LipSyncSettings.Kind.BuiltIn
+            && BuiltIn != null)
+        {
+            _property.FindPropertyRelative(nameof(LipSyncSettings.Shapes)).CopyFrom(BuiltIn);
+        }
+        Apply(structureChanged: true);
+    }
+
+    public bool TryGetInitialShape(int visemeIndex, string name, out BlendShapeWeight shape)
+    {
+        foreach (var candidate in _initial.Shapes.GetShapes(visemeIndex))
+        {
+            if (candidate.Name != name) continue;
+            shape = candidate;
+            return true;
+        }
+        shape = default;
+        return false;
+    }
+
+    public bool Contains(int visemeIndex, string name)
+        => Draft.Shapes.GetShapes(visemeIndex).Any(shape => shape.Name == name);
+
+    public float GetWeight(int visemeIndex, string name)
+    {
+        foreach (var shape in Draft.Shapes.GetShapes(visemeIndex))
+        {
+            if (shape.Name == name) return shape.Weight;
+        }
+        return 0f;
+    }
+
+    public bool IsChanged(int visemeIndex, BlendShapeWeight shape)
+        => !TryGetInitialShape(visemeIndex, shape.Name, out var initial)
+           || !Mathf.Approximately(initial.Weight, shape.Weight);
+
+    public void Restore(int visemeIndex, string name)
+    {
+        if (TryGetInitialShape(visemeIndex, name, out var initial))
+            SetWeight(visemeIndex, name, initial.Weight);
+        else
+            Remove(visemeIndex, name);
+    }
+
+    public void SetWeight(int visemeIndex, string name, float weight)
+    {
+        var property = GetVisemeProperty(visemeIndex);
+        for (var index = 0; index < property.arraySize; index++)
+        {
+            var element = property.GetArrayElementAtIndex(index);
+            if (element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue != name)
+                continue;
+            element.FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
+            Apply(structureChanged: false);
+            return;
+        }
+    }
+
+    public void Remove(int visemeIndex, string name)
+        => RemoveShapes(visemeIndex, new[] { name });
+
+    public void RemoveShapes(int visemeIndex, IEnumerable<string> names)
+    {
+        var targets = names.ToHashSet(StringComparer.Ordinal);
+        if (targets.Count == 0) return;
+        var property = GetVisemeProperty(visemeIndex);
+        var changed = false;
+        for (var index = property.arraySize - 1; index >= 0; index--)
+        {
+            var name = property.GetArrayElementAtIndex(index)
+                .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
+            if (!targets.Contains(name)) continue;
+            property.DeleteArrayElementAtIndex(index);
+            changed = true;
+        }
+        if (changed) Apply(structureChanged: true);
+    }
+
+    public bool HasZeroWeight()
+    {
+        for (var index = 0; index < VrcVisemeLipSyncShapes.Count; index++)
+        {
+            if (Draft.Shapes.GetShapes(index)
+                .Any(shape => Mathf.Approximately(shape.Weight, 0f)))
+                return true;
+        }
+        return false;
+    }
+
+    public void SetAllWeights(float weight)
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        var changed = false;
+        for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
+        {
+            var property = GetVisemePropertyWithoutUpdate(visemeIndex);
+            for (var index = 0; index < property.arraySize; index++)
+            {
+                property.GetArrayElementAtIndex(index)
+                    .FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
+                changed = true;
+            }
+        }
+        if (changed) Apply(structureChanged: false);
+    }
+
+    public void RemoveAllShapes(bool zeroOnly)
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        var changed = false;
+        for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
+        {
+            var property = GetVisemePropertyWithoutUpdate(visemeIndex);
+            for (var index = property.arraySize - 1; index >= 0; index--)
+            {
+                if (zeroOnly && !Mathf.Approximately(
+                        property.GetArrayElementAtIndex(index)
+                            .FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue,
+                        0f))
+                    continue;
+                property.DeleteArrayElementAtIndex(index);
+                changed = true;
+            }
+        }
+        if (changed) Apply(structureChanged: true);
+    }
+
+    public void Add(string name)
+    {
+        SetShapes(new[] { new BlendShapeWeight(name, 100f) }, replaceExisting: false);
+    }
+
+    public void SetShapes(
+        IEnumerable<BlendShapeWeight> shapes,
+        bool replaceExisting)
+    {
+        if (Draft.Mode != LipSyncSettings.Kind.Custom) return;
+        var property = GetVisemeProperty(SelectedViseme);
+        var values = shapes
+            .Where(shape => !UnavailableNames.Contains(shape.Name))
+            .GroupBy(shape => shape.Name, StringComparer.Ordinal)
+            .Select(group => group.Last())
+            .ToArray();
+        if (replaceExisting) property.ClearArray();
+        var indices = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var index = 0; index < property.arraySize; index++)
+        {
+            var name = property.GetArrayElementAtIndex(index)
+                .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
+            indices[name] = index;
+        }
+        foreach (var shape in values)
+        {
+            if (!indices.TryGetValue(shape.Name, out var index))
+            {
+                index = property.arraySize;
+                property.InsertArrayElementAtIndex(index);
+                indices.Add(shape.Name, index);
+            }
+            property.GetArrayElementAtIndex(index).CopyFrom(shape);
+        }
+        Apply(structureChanged: true);
+    }
+
+    public bool TryRestoreInitial()
+    {
+        if (!HasChanges) return false;
+        var edited = Draft.Clone();
+        _serializedObject.UpdateIfRequiredOrScript();
+        _property.CopyFrom(_initial);
+        Apply(structureChanged: true);
+        _editedBeforeRestore = edited;
+        return true;
+    }
+
+    public bool TryRestoreEdited()
+    {
+        if (_editedBeforeRestore == null) return false;
+        var edited = _editedBeforeRestore;
+        _serializedObject.UpdateIfRequiredOrScript();
+        _property.CopyFrom(edited);
+        Apply(structureChanged: true);
+        return true;
+    }
+
+    public bool SynchronizeAfterUndo()
+    {
+        if (Draft.Equals(_observed)) return false;
+        _observed = Draft.Clone();
+        DataChanged?.Invoke();
+        StructureChanged?.Invoke();
+        PreviewChanged?.Invoke();
+        return true;
+    }
+
+    public void MarkSaved()
+    {
+        _initial = Draft.Clone();
+        _observed = Draft.Clone();
+        _editedBeforeRestore = null;
+        DataChanged?.Invoke();
+    }
+
+    private SerializedProperty GetVisemeProperty(int index)
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        return GetVisemePropertyWithoutUpdate(index);
+    }
+
+    private SerializedProperty GetVisemePropertyWithoutUpdate(int index)
+        => _property
+            .FindPropertyRelative(nameof(LipSyncSettings.Shapes))
+            .FindPropertyRelative(VrcVisemeLipSyncShapes.PropertyNames[index]);
+
+    private void Apply(bool structureChanged)
+    {
+        _serializedObject.ApplyModifiedProperties();
+        _observed = Draft.Clone();
+        _editedBeforeRestore = null;
+        DataChanged?.Invoke();
+        if (structureChanged) StructureChanged?.Invoke();
+        PreviewChanged?.Invoke();
+    }
+}

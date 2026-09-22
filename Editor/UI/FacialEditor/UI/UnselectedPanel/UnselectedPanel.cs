@@ -8,12 +8,12 @@ internal class UnselectedPanel
     private readonly BlendShapeOverrideManager _blendShapeManager;
     private readonly BlendShapeGrouping _groupManager;
     private readonly PreviewManager _previewManager;
+    private readonly float _addWeight;
 
     private readonly VisualElement _element;
     public VisualElement Element => _element;
 
     private static VisualTreeAsset? _uxml;
-    private static VisualTreeAsset? _unselectedItemUxml;
     private static StyleSheet? _uss;
 
     private TextField _unselectedSearchField = null!;
@@ -30,14 +30,18 @@ internal class UnselectedPanel
     private IReadOnlyList<ListViewItem> _allSource = null!;
     private List<ListViewItem> _currentSource = null!;
     
-    public UnselectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager, PreviewManager previewManager)
+    public UnselectedPanel(
+        BlendShapeOverrideManager blendShapeManager,
+        BlendShapeGrouping groupManager,
+        PreviewManager previewManager,
+        float addWeight = 100f)
     {
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
         _previewManager = previewManager;
+        _addWeight = addWeight;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "736ebf000f485f041ac2becabbde48d3");
-        var unselectedItemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _unselectedItemUxml, "3efe7e91dce1d544b873dd133a44039d");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "b9dfe6425f70d0544a5939a176bdf3b0");
         
         _element = uxml.CloneTree();
@@ -68,7 +72,7 @@ internal class UnselectedPanel
         {
             _blendShapeManager.AddShapesWithWeight(_currentSource
                 .Where(item => !_blendShapeManager.IsInTarget(item.KeyIndex))
-                .Select(item => (item.KeyIndex, 100f)));
+                .Select(item => (item.KeyIndex, _addWeight)));
             RebuildListViewSlow();
         };
     }
@@ -93,14 +97,13 @@ internal class UnselectedPanel
 
         VisualElement MakeUnselectedElement()
         {
-            var element = _unselectedItemUxml!.CloneTree();
-            Localization.LocalizeUIElements(element);
+            var element = UnselectedShapeRowUI.Create();
             
             element.RegisterCallback<ClickEvent>(evt =>
             {
                 if (element.userData is ListViewItem data)
                 {
-                    _blendShapeManager.AddShapeWithWeight(data.KeyIndex, 100f);
+                    _blendShapeManager.AddShapeWithWeight(data.KeyIndex, _addWeight);
                 }
             });
             

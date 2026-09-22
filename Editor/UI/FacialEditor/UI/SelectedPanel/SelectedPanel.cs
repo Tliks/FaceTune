@@ -13,9 +13,7 @@ internal class SelectedPanel
     public VisualElement Element => _element;
 
     private static VisualTreeAsset? _uxml;
-    private static VisualTreeAsset? _itemUxml;
     private static StyleSheet? _uss;
-    private static StyleSheet? _itemUss;
 
     private TextField _searchField = null!;
     private SimpleToggle _styleToggle = null!;
@@ -24,7 +22,7 @@ internal class SelectedPanel
 
     private ListView _selectedListView = null!;
     
-    private Button _selectedRemoveAll0Button = null!;
+    private BulkShapeControls _bulkControls = null!;
     private bool _controlsRefreshPending;
     private readonly Dictionary<int, double> _flashExpiryByKeyIndex = new();
     private IVisualElementScheduledItem? _flashCleanupSchedule;
@@ -38,27 +36,25 @@ internal class SelectedPanel
     private IReadOnlyList<ElementData> _allSource = null!;
     private List<ElementData> _currentSource = null!;
 
-    private static readonly Texture _toggleIcon = EditorGUIUtility.IconContent("d_preAudioLoopOff").image;
-    private static readonly Texture _removeIcon = EditorGUIUtility.IconContent("d_Toolbar Minus").image;
-    private static readonly Texture _warningIcon = EditorGUIUtility.IconContent("console.warnicon.sml").image;
-
 	public event Action<int>? OnSelectedItemNameClicked;
 
-    public SelectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager)
+    public SelectedPanel(
+        BlendShapeOverrideManager blendShapeManager,
+        BlendShapeGrouping groupManager,
+        bool showSearch)
     {
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
         
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "ccc8142fd21b4034aab76f2ac215b67e");
-        var itemUxml = UIAssetHelper.EnsureUxmlWithGuid(ref _itemUxml, "fc51e445111d2074091e2fef5d3565f9");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "1adda987d131ce34c8d57981b20ac1f8");
-        var itemUss = UIAssetHelper.EnsureUssWithGuid(ref _itemUss, "a00c7162d21d9e34ab15764bdb0d1173");
         
         _element = uxml.CloneTree();
         _element.styleSheets.Add(uss);
         Localization.LocalizeUIElements(_element);
         
         SetupControls();
+        _searchField.SetVisible(showSearch);
         SetupListViews();
         
         // rebuild sourcce
@@ -82,7 +78,6 @@ internal class SelectedPanel
         _blendShapeManager.OnAnyDataChange += RequestControlsVisibilityUpdate;
     }
 
-    private bool _selectedZero = true;
     private void SetupControls()
     {
         _searchField = _element.Q<TextField>("search-field");
@@ -96,33 +91,19 @@ internal class SelectedPanel
         _styleToggle.SetValueWithoutNotify(false);
         _styleToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 
-        _selectedRemoveAll0Button = _control.Q<Button>("selected-remove-all-0-button");
-        _selectedRemoveAll0Button.clicked += () =>
-        {
-            var indices = _currentSource
+        _bulkControls = new BulkShapeControls(
+            weight => _blendShapeManager.SetShapesWeight(
+                _currentSource.Select(item => item.KeyIndex),
+                weight),
+            () => _blendShapeManager.RemoveShapes(_currentSource
                 .Where(item => IsExplicitZeroTarget(item.KeyIndex))
-                .Select(item => item.KeyIndex);
-            _blendShapeManager.RemoveShapes(indices);
-        };
-
-        var selected0100Toggle = _control.Q<Button>("selected-0-100-toggle");
-        selected0100Toggle.Add(new Image { image = _toggleIcon });
-        selected0100Toggle.clicked += () =>
-        {
-            var indices = _currentSource.Select(item => item.KeyIndex);
-            _blendShapeManager.SetShapesWeight(indices, _selectedZero ? 100f : 0f);
-            _selectedZero = !_selectedZero;
-        };
-
-        var removeAllButton = _control.Q<Button>("remove-all-button");
-        removeAllButton.Add(new Image { image = _removeIcon });
-        removeAllButton.clicked += () =>
-        {
-            var indices = _currentSource
+                .Select(item => item.KeyIndex)),
+            () => _blendShapeManager.RemoveShapes(_currentSource
                 .Select(item => item.KeyIndex)
-                .Where(index => _blendShapeManager.IsInTarget(index));
-            _blendShapeManager.RemoveShapes(indices);
-        };
+                .Where(index => _blendShapeManager.IsInTarget(index))));
+        var bulkContainer = _control.Q<VisualElement>("bulk-controls");
+        bulkContainer.style.flexGrow = 1f;
+        bulkContainer.Add(_bulkControls.Element);
     }
 
     private void SetupListViews()
@@ -140,9 +121,7 @@ internal class SelectedPanel
 
         VisualElement MakeElement()
         {
-            var element = _itemUxml!.CloneTree();
-            element.styleSheets.Add(_itemUss!);
-            Localization.LocalizeUIElements(element);
+            var element = new SelectedShapeRow();
 
             var flashOverlay = new VisualElement { name = "flash-overlay", pickingMode = PickingMode.Ignore };
             flashOverlay.AddToClassList("flash-overlay");
@@ -153,7 +132,6 @@ internal class SelectedPanel
             var facialRail = element.Q<VisualElement>("facial-rail");
             var nameLabel = element.Q<Label>("name");
             var warningIcon = element.Q<Image>("validation-warning");
-            warningIcon.image = _warningIcon;
             var sliderFloatField = element.Q<SliderFloatField>("slider-float-field");
             var curveField = element.Q<IMGUIContainer>("curve-field");
             var curveToggle = element.Q<Button>("curve-toggle");
@@ -195,13 +173,6 @@ internal class SelectedPanel
                 }
             };
              
-            toggleButton.text = "";
-            toggleButton.Add(new Image { image = _toggleIcon });
-            actionButton.text = "";
-            actionButton.Add(new Image { image = _removeIcon });
-
-            curveToggle.text = "M";
-            curveToggle.tooltip = "blendShapeAnimation.multiFrame.label".LS();
             curveToggle.clicked += () =>
             {
                 if (element.userData is ElementData item)
@@ -277,7 +248,8 @@ internal class SelectedPanel
             var isCurveMode = _blendShapeManager.IsCurveMode(item.KeyIndex);
             sliderFloatField.SetVisible(!isCurveMode);
             curveField.SetVisible(isCurveMode);
-            curveToggle.SetEnabled(true);
+            curveToggle.SetVisible(_blendShapeManager.AllowsCurves);
+            curveToggle.SetEnabled(_blendShapeManager.AllowsCurves);
             curveToggle.style.unityFontStyleAndWeight = isCurveMode ? FontStyle.Bold : FontStyle.Normal;
             toggleButton.SetEnabled(!isCurveMode);
 
@@ -402,7 +374,7 @@ internal class SelectedPanel
         if (_allSource == null) return;
 
         var hasExplicitZeroTarget = _currentSource.Any(item => IsExplicitZeroTarget(item.KeyIndex));
-        _selectedRemoveAll0Button.SetVisible(hasExplicitZeroTarget);
+        _bulkControls.SetRemoveZeroVisible(hasExplicitZeroTarget);
     }
 
     private bool IsExplicitZeroTarget(int index)

@@ -405,6 +405,14 @@ internal sealed class LipSyncSettings : IEquatable<LipSyncSettings>
     public override bool Equals(object? obj)
         => obj is LipSyncSettings other && Equals(other);
 
+    internal LipSyncSettings Clone()
+        => new()
+        {
+            Mode = Mode,
+            CancellerBlendShapes = CancellerBlendShapes.ToList(),
+            Shapes = Shapes.Clone()
+        };
+
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -424,6 +432,22 @@ internal sealed class LipSyncSettings : IEquatable<LipSyncSettings>
 [Serializable]
 internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes>
 {
+    internal static IReadOnlyList<string> Names { get; } = new[]
+    {
+        "sil", "PP", "FF", "TH", "DD",
+        "kk", "CH", "SS", "nn", "RR",
+        "aa", "E", "ih", "oh", "ou"
+    };
+
+    internal static IReadOnlyList<string> PropertyNames { get; } = new[]
+    {
+        nameof(Sil), nameof(PP), nameof(FF), nameof(TH), nameof(DD),
+        nameof(KK), nameof(CH), nameof(SS), nameof(NN), nameof(RR),
+        nameof(AA), nameof(E), nameof(IH), nameof(OH), nameof(OU)
+    };
+
+    internal static int Count => Names.Count;
+
     public List<BlendShapeWeight> Sil = new();
 
     public List<BlendShapeWeight> PP = new();
@@ -441,6 +465,33 @@ internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes
     public List<BlendShapeWeight> IH = new();
     public List<BlendShapeWeight> OH = new();
     public List<BlendShapeWeight> OU = new();
+
+    internal List<BlendShapeWeight> GetShapes(int index)
+        => index switch
+        {
+            0 => Sil, 1 => PP, 2 => FF, 3 => TH, 4 => DD,
+            5 => KK, 6 => CH, 7 => SS, 8 => NN, 9 => RR,
+            10 => AA, 11 => E, 12 => IH, 13 => OH, 14 => OU,
+            _ => throw new ArgumentOutOfRangeException(nameof(index))
+        };
+
+    internal IReadOnlyList<List<BlendShapeWeight>> GetOrderedShapes()
+        => new[]
+        {
+            Sil, PP, FF, TH, DD,
+            KK, CH, SS, NN, RR,
+            AA, E, IH, OH, OU
+        };
+
+    internal VrcVisemeLipSyncShapes Clone()
+        => new()
+        {
+            Sil = Sil.ToList(), PP = PP.ToList(), FF = FF.ToList(),
+            TH = TH.ToList(), DD = DD.ToList(), KK = KK.ToList(),
+            CH = CH.ToList(), SS = SS.ToList(), NN = NN.ToList(),
+            RR = RR.ToList(), AA = AA.ToList(), E = E.ToList(),
+            IH = IH.ToList(), OH = OH.ToList(), OU = OU.ToList()
+        };
 
     public bool Equals(VrcVisemeLipSyncShapes? other)
     {

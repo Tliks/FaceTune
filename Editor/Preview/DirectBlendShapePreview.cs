@@ -55,14 +55,20 @@ internal sealed class DirectBlendShapePreview : IRenderFilter
         var eyeBlink = CreateLayer();
         var lipSyncCanceller = CreateLayer();
         var lipSyncViseme = CreateLayer();
+        var editingBackground = CreateLayer();
         var editing = CreateLayer();
+        var editingHover = CreateLayer();
 
         Selected = new SelectedShapesPreview(
             expression,
             eyeBlink,
             lipSyncCanceller,
             lipSyncViseme);
-        Editing = new EditingShapesPreview(editing, Selected);
+        Editing = new EditingShapesPreview(
+            editingBackground,
+            editing,
+            editingHover,
+            Selected);
     }
 
     private DirectBlendShapePreviewLayer CreateLayer()

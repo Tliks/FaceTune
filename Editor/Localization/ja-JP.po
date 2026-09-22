@@ -667,6 +667,18 @@ msgstr "発話時のリセット（おすすめ）"
 msgid "lipSync.cancellerBlendShapes.tooltip"
 msgstr "ほぼ全ての表情で、リップシンクが干渉しなくなります。編集画面から、口のブレンドシェイプを全て選択すると、殆どのケースで綺麗になります。"
 
+msgid "facialEditor.list.empty"
+msgstr "リストは空です"
+
+msgid "shapesEditor.lipSync.label"
+msgstr "リップシンク"
+
+msgid "shapesEditor.eyeBlink.label"
+msgstr "まばたき"
+
+msgid "shapesEditor.conflictCorrection.label"
+msgstr "干渉補正"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"
 

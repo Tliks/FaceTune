@@ -5,13 +5,18 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal class PreviewManager : IDisposable
 {
-    private readonly BlendShapeOverrideManager _blendShapeOverrideManager;
-    
+    private readonly FacialShapesEditorContext _context;
+    private BlendShapeOverrideManager DataManager => _context.DataManager;
+
     private readonly VisualElement _rootElement;
     private readonly SkinnedMeshRenderer? _renderer;
-    private IVisualElementScheduledItem _updateScheduler;
-    private const int UpdateIntervalMs = 33; // 約30fps
+    private IVisualElementScheduledItem? _updateScheduler;
+    private const int UpdateDelayMs = 16;
+    private bool _updateScheduled;
+    private readonly BlendShapeWeightSet _backgroundSet;
     private readonly BlendShapeWeightSet _previewSet;
+    private readonly BlendShapeWeightSet _hoverSet;
+    private float _previewOpacity = 1f;
 
     private bool _setBlendShapeTo100OnHover;
     public bool SetBlendShapeTo100OnHover
@@ -45,6 +50,7 @@ internal class PreviewManager : IDisposable
             if (_currentHoveredIndex == value) return;
             _currentHoveredIndex = value;
             OnHoveredIndexChanged?.Invoke(_currentHoveredIndex);
+            ScheduleUpdate();
         }
     }
 
@@ -53,32 +59,43 @@ internal class PreviewManager : IDisposable
     public event Action<int>? OnHoveredIndexChanged;
 
     private bool _isEnabled = false;
+    private float _normalizedTime;
+
+    public void SetNormalizedTime(float value)
+    {
+        _normalizedTime = Mathf.Clamp01(value);
+        RequestShapeRefresh();
+    }
 
     private int _currentAppliedHoverIndex = -1;
-    private bool _needsShapeRefresh = false;
+    private bool _previewDirty;
 
     private EditingShapesPreview Preview => DirectBlendShapePreview.Instance.Editing;
 
-    public PreviewManager(BlendShapeOverrideManager blendShapeOverrideManager, VisualElement rootElement, SkinnedMeshRenderer? renderer)
+    public PreviewManager(FacialShapesEditorContext context, VisualElement rootElement)
     {
-        _blendShapeOverrideManager = blendShapeOverrideManager;
+        _context = context;
         _rootElement = rootElement;
-        _renderer = renderer;
+        _renderer = context.Renderer;
+        _backgroundSet = new();
         _previewSet = new();
+        _hoverSet = new();
+        _normalizedTime = context.InitialPreviewTime;
         SetBlendShapeTo100OnHover = true;
         HighlightBlendShapeVerticesOnHover = false;
 
         
-        _blendShapeOverrideManager.OnAnyDataChange += RequestShapeRefresh;
-        OnSetBlendShapeTo100OnHoverChanged += (value) => { RequestShapeRefresh(); };
+        foreach (var dataManager in context.DataManagers)
+            dataManager.OnAnyDataChange += RequestShapeRefresh;
+        context.ActiveListChanged += RequestShapeRefresh;
+        context.ModeSession.PreviewChanged += RequestShapeRefresh;
+        OnSetBlendShapeTo100OnHoverChanged += _ =>
+        {
+            _currentAppliedHoverIndex = int.MinValue;
+            ScheduleUpdate();
+        };
         
-        // UI Elementsスケジューラーで定期的に両方の更新をチェック
-        // UpdateIntervalMsで更新の頻度を制限する
-        _updateScheduler = _rootElement.schedule
-            .Execute(CheckAndApplyUpdates)
-            .Every(UpdateIntervalMs);
-
-        InitializeTargetRenderer(renderer);
+        InitializeTargetRenderer(_renderer);
     }
 
     private void InitializeTargetRenderer(SkinnedMeshRenderer? renderer)
@@ -92,42 +109,46 @@ internal class PreviewManager : IDisposable
         {
             _isEnabled = true;
             Preview.Start(renderer);
-            GetCurrentSet(_previewSet);
-            RefreshPreview();
-            RequestShapeRefresh();
+            SetBackground();
+            BuildPreviewSet();
+            SetPreview();
+            SetHover();
         }
     }
 
     private void RequestShapeRefresh()
     {
-        _needsShapeRefresh = true;
+        _previewDirty = true;
+        ScheduleUpdate();
+    }
+
+    private void ScheduleUpdate()
+    {
+        if (_updateScheduled || !_isEnabled) return;
+        _updateScheduled = true;
+        _updateScheduler = _rootElement.schedule.Execute(CheckAndApplyUpdates);
+        _updateScheduler.ExecuteLater(UpdateDelayMs);
     }
 
     private void CheckAndApplyUpdates()
     {
+        _updateScheduled = false;
         try
         {
             if (!_isEnabled) return;
 
-            var hoverIndexChanged = _currentHoveredIndex != _currentAppliedHoverIndex;
-            var shouldRefresh = hoverIndexChanged || _needsShapeRefresh;
-
-            if (!shouldRefresh)
+            if (_previewDirty)
             {
-                return;
+                _previewDirty = false;
+                BuildPreviewSet();
+                SetPreview();
             }
-            
-            _needsShapeRefresh = false;
-            _currentAppliedHoverIndex = _currentHoveredIndex;
-            var index = _currentAppliedHoverIndex;
 
-            GetCurrentSet(_previewSet);
-            if (SetBlendShapeTo100OnHover && index != -1)
+            if (_currentHoveredIndex != _currentAppliedHoverIndex)
             {
-                var key = _blendShapeOverrideManager.AllKeys[index];
-                _previewSet.Add(new BlendShapeWeight(key, 100));
+                _currentAppliedHoverIndex = _currentHoveredIndex;
+                SetHover();
             }
-            RefreshPreview();
         }
         catch (Exception e)
         {
@@ -135,28 +156,65 @@ internal class PreviewManager : IDisposable
         }
     }
 
-    private void RefreshPreview()
+    private ImmutableHashSet<string> IgnoredNames
+        => _context.UsesFacialIgnoredNames
+            ? DataManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal)
+            : _context.IgnoredNames;
+
+    private void SetBackground()
     {
         if (_renderer == null) return;
-        var ignoredNames = _blendShapeOverrideManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal);
-        Preview.Refresh(new BlendShapeApply(
-            new ImmutableBlendShapeWeightSet(_previewSet),
-            0f,
-            ignoredNames));
+        _backgroundSet.Clear();
+        _backgroundSet.AddRange(_context.Background);
+        Preview.SetBackground(_context.UsesFacialIgnoredNames
+            ? BlendShapeApply.Empty
+            : new BlendShapeApply(
+                new ImmutableBlendShapeWeightSet(_backgroundSet),
+                _context.BackgroundDefaultValue,
+                IgnoredNames));
     }
 
-    private void GetCurrentSet(BlendShapeWeightSet result)
+    private void SetPreview()
     {
-        result.Clear();
-        result.AddRange(_blendShapeOverrideManager.EffectiveBaseSet);
-        _blendShapeOverrideManager.GetTargetValues(result);
+        if (_renderer == null) return;
+        Preview.SetPreview(
+            new BlendShapeApply(
+                new ImmutableBlendShapeWeightSet(_previewSet),
+                _context.UsesFacialIgnoredNames ? 0f : null,
+                IgnoredNames),
+            _previewOpacity);
+    }
+
+    private void SetHover()
+    {
+        if (_renderer == null) return;
+        _hoverSet.Clear();
+        if (SetBlendShapeTo100OnHover && _currentAppliedHoverIndex != -1)
+        {
+            var key = DataManager.AllKeys[_currentAppliedHoverIndex];
+            _hoverSet.Add(new BlendShapeWeight(key, 100));
+        }
+        Preview.SetHover(new BlendShapeApply(
+            new ImmutableBlendShapeWeightSet(_hoverSet),
+            IgnoredNames: IgnoredNames));
+    }
+
+    private void BuildPreviewSet()
+    {
+        _previewSet.Clear();
+        _context.ModeSession.BuildPreview(_previewSet, _normalizedTime);
+        _previewOpacity = _context.ModeSession.GetPreviewOpacity(_normalizedTime);
     }
 
     public void Dispose()
     {
         _isEnabled = false;
-        _blendShapeOverrideManager.OnAnyDataChange -= RequestShapeRefresh;
+        foreach (var dataManager in _context.DataManagers)
+            dataManager.OnAnyDataChange -= RequestShapeRefresh;
+        _context.ActiveListChanged -= RequestShapeRefresh;
+        _context.ModeSession.PreviewChanged -= RequestShapeRefresh;
         _updateScheduler?.Pause();
+        _updateScheduled = false;
         Preview.Stop();
     }
 }

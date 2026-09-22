@@ -1,12 +1,12 @@
-using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.runtime;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-internal class FacialShapesEditor : EditorWindow
+internal partial class FacialShapesEditor : EditorWindow
 {
-    [SerializeField] private BlendShapeOverrideManager _dataManager = null!;
+    [SerializeField] private BlendShapeOverrideManager[] _dataManagers = null!;
+    [SerializeField] private LipSyncSettings _lipSyncDraft = new();
 
     private FacialShapesEditorContext? _context;
     private bool _unsavedStateSyncPending;
@@ -42,7 +42,8 @@ internal class FacialShapesEditor : EditorWindow
 
     public static FacialShapesEditor? TryOpenEditor(
         SkinnedMeshRenderer? renderer = null,
-        IShapesEditorTargeting? targeting = null,
+        Object? target = null,
+        string? animationPropertyPath = null,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null,
         IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations = null,
         IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations = null,
@@ -53,7 +54,8 @@ internal class FacialShapesEditor : EditorWindow
         window._resolveUnavailableBlendShapeNames = resolveUnavailableBlendShapeNames;
         window.StartContext(
             renderer,
-            targeting,
+            target,
+            animationPropertyPath,
             facialAnimations,
             baseAnimations,
             initialOverrideAnimations,
@@ -79,7 +81,8 @@ internal class FacialShapesEditor : EditorWindow
 
     private void StartContext(
         SkinnedMeshRenderer? renderer,
-        IShapesEditorTargeting? targeting,
+        Object? target,
+        string? animationPropertyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations,
         IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations,
         IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations,
@@ -87,36 +90,44 @@ internal class FacialShapesEditor : EditorWindow
     {
         EndContext();
 
-        targeting ??= new AnimationClipTargeting();
-        initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, targeting);
+        initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, target);
 
+        _dataManagers = new BlendShapeOverrideManager[1];
         var serializedObject = new SerializedObject(this);
-        _dataManager = new BlendShapeOverrideManager(
-            serializedObject,
-            serializedObject.FindProperty(nameof(_dataManager)));
         serializedObject.Update();
+        _dataManagers[0] = new BlendShapeOverrideManager(
+            serializedObject,
+            serializedObject.FindProperty(nameof(_dataManagers)).GetArrayElementAtIndex(0));
         unavailableBlendShapeNames ??= renderer == null
             ? null
             : _resolveUnavailableBlendShapeNames?.Invoke(renderer);
-        _dataManager.SetInitialState(
+        var dataManager = _dataManagers[0];
+        dataManager.SetInitialState(
             renderer,
             ToFirstFrameSet(facialAnimations),
             ToFirstFrameSet(baseAnimations),
             ToFirstFrameSet(initialOverrideAnimations),
             unavailableBlendShapeNames ?? ImmutableHashSet<string>.Empty,
             GetInitialCurves(initialOverrideAnimations));
-        _dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
+        dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
             serializedObject,
-            _dataManager,
+            _dataManagers,
+            new FacialModeSession(dataManager),
             rootVisualElement,
             renderer,
-            targeting,
-            targeting is AnimationClipTargeting,
+            target,
+            animationPropertyPath,
+            null,
+            null,
+            ImmutableHashSet<string>.Empty,
+            1,
+            _ => { },
             TryChangeRenderer,
             SaveChanges);
-
+        _context.ModeSession.Changed += SyncUnsavedChangesFromData;
+        titleContent = "facialEditor.title".LG();
         _unsavedStateSyncPending = false;
         hasUnsavedChanges = false;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");
@@ -124,10 +135,9 @@ internal class FacialShapesEditor : EditorWindow
 
     private static IReadOnlyList<BlendShapeWeightAnimation>? GetClipInitialOverrideAnimations(
         SkinnedMeshRenderer? renderer,
-        IShapesEditorTargeting targeting)
+        Object? target)
     {
-        if (renderer == null
-            || targeting is not AnimationClipTargeting { Target: { } clip })
+        if (renderer == null || target is not AnimationClip clip)
             return null;
 
         var animations = new List<BlendShapeWeightAnimation>();
@@ -161,10 +171,12 @@ internal class FacialShapesEditor : EditorWindow
     {
         if (_context != null)
         {
-            _context.DataManager.OnAnyDataChange -= SyncUnsavedChangesFromData;
+            foreach (var dataManager in _context.DataManagers)
+                dataManager.OnAnyDataChange -= SyncUnsavedChangesFromData;
+            _context.ModeSession.Changed -= SyncUnsavedChangesFromData;
             _context.Dispose();
             _context = null;
-            _dataManager = null!;
+            _dataManagers = null!;
         }
         _unsavedStateSyncPending = false;
     }
@@ -188,7 +200,9 @@ internal class FacialShapesEditor : EditorWindow
     private void SyncUnsavedChangesNow()
     {
         _unsavedStateSyncPending = false;
-        hasUnsavedChanges = _context?.DataManager.IsChangedFromInitialState == true;
+        hasUnsavedChanges = _context != null
+            && (_context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState)
+                || _context.ModeSession.HasChanges);
     }
 
     private bool CanDiscardCurrentContext()
@@ -204,13 +218,28 @@ internal class FacialShapesEditor : EditorWindow
         if (_context.Renderer == renderer) return false;
         if (!CanDiscardCurrentContext()) return false;
 
-        var targeting = _context.Targeting;
+        var target = _context.Target;
+        var animationPropertyPath = _context.AnimationPropertyPath;
+        var zeroUnspecified = _context.ZeroUnspecifiedBlendShapes;
+        var zeroUnavailable = _context.ZeroUnavailableBlendShapes;
         EditorApplication.delayCall += () =>
         {
             var nextWindow = CreateInstance<FacialShapesEditor>();
             nextWindow.Show();
             nextWindow._resolveUnavailableBlendShapeNames = _resolveUnavailableBlendShapeNames;
-            nextWindow.StartContext(renderer, targeting, null, null, null, null);
+            nextWindow.StartContext(
+                renderer,
+                target,
+                animationPropertyPath,
+                null,
+                null,
+                null,
+                null);
+            if (nextWindow._context != null)
+            {
+                nextWindow._context.ZeroUnspecifiedBlendShapes = zeroUnspecified;
+                nextWindow._context.ZeroUnavailableBlendShapes = zeroUnavailable;
+            }
             Close();
         };
         return true;
@@ -237,7 +266,11 @@ internal class FacialShapesEditor : EditorWindow
                 processed = true;
                 break;
             case 1: // Discard
-                _context?.DataManager.TryDiscardToInitialOverrides();
+                if (_context != null)
+                {
+                    foreach (var dataManager in _context.DataManagers)
+                        dataManager.TryDiscardToInitialOverrides();
+                }
                 window.hasUnsavedChanges = false;
                 processed = true;
                 break;
@@ -274,14 +307,39 @@ internal class FacialShapesEditor : EditorWindow
         var targetRoot = RuntimeUtil.FindAvatarInParents(_context.Renderer.transform);
         if (targetRoot == null) throw new Exception("TargetRenderer is not a child of an avatar");
 
-        _context.Targeting.Save(targetRoot.gameObject, _context.Renderer, _context.DataManager);
-        _context.DataManager.MarkCurrentAsInitialState();
+        if (_context.Target == null) throw new Exception("Target is not set");
+        if (_context.Mode == ShapesEditorMode.Facial)
+        {
+            FacialShapeSaver.Save(
+                _context.Target,
+                _context.AnimationPropertyPath,
+                targetRoot.gameObject,
+                _context.Renderer,
+                _context.DataManager,
+                _context.ZeroUnspecifiedBlendShapes,
+                _context.ZeroUnavailableBlendShapes);
+        }
+        else
+        {
+            SaveSettings(_context);
+        }
+        foreach (var dataManager in _context.DataManagers)
+        {
+            if (dataManager.IsInitialized)
+                dataManager.MarkCurrentAsInitialState();
+        }
+        _context.ModeSession.MarkSaved();
+        _context.UI.RefreshLipSync();
         SyncUnsavedChangesNow();
     }
 
     private void OnInspectorUpdate()
     {
-        _context?.DataManager.SynchronizeSerializedState();
+        if (_context == null) return;
+        foreach (var dataManager in _context.DataManagers)
+            dataManager.SynchronizeSerializedState();
+        if (_context.ModeSession.SynchronizeAfterUndo())
+            _context.UI.RefreshLipSync();
     }
 
     private void OnDisable()

@@ -50,7 +50,7 @@ internal static class AssetsMenu
     {
         if (Selection.activeObject is not AnimationClip clip) return;
         FacialShapesEditor.TryOpenEditor(
-            targeting: new AnimationClipTargeting { Target = clip },
+            target: clip,
             resolveUnavailableBlendShapeNames: ResolveUnavailableBlendShapeNames);
     }
 
