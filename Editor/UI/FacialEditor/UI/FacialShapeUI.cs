@@ -48,7 +48,7 @@ internal class FacialShapeUI : IDisposable
         if (context.ModeSession is LipSyncModeSession lipSync)
             _lipSyncPanel = new LipSyncPanel(context, lipSync.Editing);
         else if (context.Mode == ShapesEditorMode.EyeBlinkSimple)
-            _eyeBlinkPanel = new EyeBlinkPanel(context, _previewTimeline!.Element);
+            _eyeBlinkPanel = new EyeBlinkPanel(context);
         SetupListSelector(root);
 
         if (_lipSyncPanel != null) ShowLipSync();
@@ -75,8 +75,8 @@ internal class FacialShapeUI : IDisposable
                 break;
             case ShapesEditorMode.EyeBlinkSimple:
             case ShapesEditorMode.EyeBlinkCustom:
-                container.SetVisible(false);
-                gap.SetVisible(false);
+                if (_previewTimeline != null)
+                    container.Add(_previewTimeline.Element);
                 break;
             case ShapesEditorMode.LipSync:
                 container.SetVisible(false);
@@ -129,8 +129,6 @@ internal class FacialShapeUI : IDisposable
         panels.Unselected.Element.SetEnabled(editable);
         _selectedContainer.Clear();
         _unselectedContainer.Clear();
-        if (_context.Mode == ShapesEditorMode.EyeBlinkCustom && _previewTimeline != null)
-            _selectedContainer.Add(_previewTimeline.Element);
         _selectedContainer.Add(panels.Selected.Element);
         _unselectedContainer.Add(panels.Unselected.Element);
     }

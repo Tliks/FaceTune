@@ -17,9 +17,7 @@ internal sealed class EyeBlinkPanel : IDisposable
     public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
     public VisualElement AvailableElement { get; } = new VisualElement();
 
-    public EyeBlinkPanel(
-        FacialShapesEditorContext context,
-        VisualElement timeline)
+    public EyeBlinkPanel(FacialShapesEditorContext context)
     {
         _context = context;
         _availablePanels = context.DataManagers
@@ -30,10 +28,6 @@ internal sealed class EyeBlinkPanel : IDisposable
                 index == 1 ? 0f : 100f))
             .ToArray();
 
-        SelectedElement.Add(timeline);
-        var timelineGap = new VisualElement();
-        timelineGap.style.height = FacialShapeUI.RowHeight;
-        SelectedElement.Add(timelineGap);
         SelectedElement.Add(_selected);
 
         _selected.fixedItemHeight = FacialShapeUI.ListItemHeight;
