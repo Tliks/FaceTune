@@ -160,7 +160,7 @@ internal static class SelectedPreviewResolver
         var facialResolver = new FacialAnimationResolver(avatar.Root, context);
         FacialPreviewData? facial = null;
         if (facialResolver.TryResolve(settings, out var animations))
-            facial = new FacialPreviewData(animations, null, false);
+            facial = new FacialPreviewData(animations, 0f, false);
 
         var enabled = context.Observe(
             settings,
