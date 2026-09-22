@@ -42,8 +42,8 @@ internal class FacialShapeUI : IDisposable
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
         _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
-        if (context.Mode == ShapesEditorMode.LipSync)
-            _lipSyncPanel = new LipSyncPanel(context);
+        if (context.ModeSession is LipSyncModeSession lipSync)
+            _lipSyncPanel = new LipSyncPanel(context, lipSync.Editing);
         SetupListSelector(root);
 
         if (_lipSyncPanel == null) ShowActiveList();

@@ -74,13 +74,18 @@ internal partial class FacialShapesEditor
         var managerCount = mode == ShapesEditorMode.LipSync ? 1 : initialLists.Length;
         activeListIndex = Mathf.Clamp(activeListIndex, 0, managerCount - 1);
         _lipSyncDraft = lipSync ?? new LipSyncSettings();
-        _initialLipSyncDraft = lipSync?.Clone();
-        _observedLipSyncDraft = lipSync?.Clone();
 
         _dataManagers = new BlendShapeOverrideManager[managerCount];
         var serializedObject = new SerializedObject(this);
         serializedObject.Update();
         var managerProperties = serializedObject.FindProperty(nameof(_dataManagers));
+        var lipSyncEditing = mode == ShapesEditorMode.LipSync
+            ? new LipSyncEditing(
+                serializedObject,
+                _lipSyncDraft,
+                builtInLipSync,
+                unavailableNames[1])
+            : null;
         var usesAnimations = UsesAnimations(mode);
         for (var index = 0; index < managerCount; index++)
         {
@@ -110,10 +115,19 @@ internal partial class FacialShapesEditor
         if (mode == ShapesEditorMode.EyeBlinkSimple)
             InitializeList(1);
 
+        ShapesEditorModeSession modeSession = mode switch
+        {
+            ShapesEditorMode.EyeBlinkSimple => new EyeBlinkModeSession(_dataManagers, true),
+            ShapesEditorMode.EyeBlinkCustom => new EyeBlinkModeSession(_dataManagers, false),
+            ShapesEditorMode.LipSync => new LipSyncModeSession(
+                _dataManagers[0],
+                lipSyncEditing ?? throw new InvalidOperationException()),
+            _ => throw new ArgumentOutOfRangeException(nameof(mode))
+        };
         _context = new FacialShapesEditorContext(
             serializedObject,
             _dataManagers,
-            mode,
+            modeSession,
             rootVisualElement,
             renderer,
             target,
@@ -121,17 +135,11 @@ internal partial class FacialShapesEditor
             background,
             backgroundDefaultValue,
             ignoredNames,
-            mode == ShapesEditorMode.LipSync && unavailableNames.Length > 1
-                ? unavailableNames[1]
-                : ImmutableHashSet<string>.Empty,
             _dataManagers.Length,
             InitializeList,
-            _lipSyncDraft,
-            _initialLipSyncDraft,
-            builtInLipSync,
             TryChangeRenderer,
             SaveChanges);
-        _context.LipSyncChanged += OnLipSyncChanged;
+        _context.ModeSession.Changed += SyncUnsavedChangesFromData;
         _context.SetActiveList(activeListIndex);
         titleContent = (mode == ShapesEditorMode.LipSync
             ? "lipSync.section.label"
@@ -151,27 +159,7 @@ internal partial class FacialShapesEditor
         using var serialized = new SerializedObject(component);
         serialized.Update();
         var settings = serialized.FindProperty(context.AnimationPropertyPath);
-        var lists = GetShapeLists(settings, context.Mode);
-        if (context.Mode == ShapesEditorMode.LipSync && context.LipSync != null)
-        {
-            settings.FindPropertyRelative(nameof(LipSyncSettings.Mode)).intValue =
-                (int)context.LipSync.Mode;
-            settings.FindPropertyRelative(nameof(LipSyncSettings.Shapes))
-                .CopyFrom(context.LipSync.Shapes);
-            ShapeListSerialization.Save(lists[0], context.DataManagers[0], animations: false);
-        }
-        else
-        {
-            var usesAnimations = UsesAnimations(context.Mode);
-            for (var index = 0; index < lists.Length; index++)
-            {
-                if (!context.DataManagers[index].IsInitialized) continue;
-                ShapeListSerialization.Save(
-                    lists[index],
-                    context.DataManagers[index],
-                    usesAnimations);
-            }
-        }
+        context.ModeSession.SaveSettings(settings);
         serialized.ApplyModifiedProperties();
     }
 

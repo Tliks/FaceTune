@@ -135,7 +135,7 @@ internal class SelectedPanel
 
         VisualElement MakeElement()
         {
-            var element = SelectedShapeRowUI.Create();
+            var element = new SelectedShapeRow();
 
             var flashOverlay = new VisualElement { name = "flash-overlay", pickingMode = PickingMode.Ignore };
             flashOverlay.AddToClassList("flash-overlay");

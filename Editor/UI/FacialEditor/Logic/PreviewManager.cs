@@ -10,8 +10,9 @@ internal class PreviewManager : IDisposable
 
     private readonly VisualElement _rootElement;
     private readonly SkinnedMeshRenderer? _renderer;
-    private IVisualElementScheduledItem _updateScheduler;
-    private const int UpdateIntervalMs = 33; // 約30fps
+    private IVisualElementScheduledItem? _updateScheduler;
+    private const int UpdateDelayMs = 16;
+    private bool _updateScheduled;
     private readonly BlendShapeWeightSet _backgroundSet;
     private readonly BlendShapeWeightSet _previewSet;
     private readonly BlendShapeWeightSet _hoverSet;
@@ -49,6 +50,7 @@ internal class PreviewManager : IDisposable
             if (_currentHoveredIndex == value) return;
             _currentHoveredIndex = value;
             OnHoveredIndexChanged?.Invoke(_currentHoveredIndex);
+            ScheduleUpdate();
         }
     }
 
@@ -86,16 +88,13 @@ internal class PreviewManager : IDisposable
         foreach (var dataManager in context.DataManagers)
             dataManager.OnAnyDataChange += RequestShapeRefresh;
         context.ActiveListChanged += RequestShapeRefresh;
-        context.LipSyncChanged += RequestShapeRefresh;
+        context.ModeSession.Changed += RequestShapeRefresh;
         OnSetBlendShapeTo100OnHoverChanged += _ =>
+        {
             _currentAppliedHoverIndex = int.MinValue;
+            ScheduleUpdate();
+        };
         
-        // UI Elementsスケジューラーで定期的に両方の更新をチェック
-        // UpdateIntervalMsで更新の頻度を制限する
-        _updateScheduler = _rootElement.schedule
-            .Execute(CheckAndApplyUpdates)
-            .Every(UpdateIntervalMs);
-
         InitializeTargetRenderer(_renderer);
     }
 
@@ -120,10 +119,20 @@ internal class PreviewManager : IDisposable
     private void RequestShapeRefresh()
     {
         _previewDirty = true;
+        ScheduleUpdate();
+    }
+
+    private void ScheduleUpdate()
+    {
+        if (_updateScheduled || !_isEnabled) return;
+        _updateScheduled = true;
+        _updateScheduler = _rootElement.schedule.Execute(CheckAndApplyUpdates);
+        _updateScheduler.ExecuteLater(UpdateDelayMs);
     }
 
     private void CheckAndApplyUpdates()
     {
+        _updateScheduled = false;
         try
         {
             if (!_isEnabled) return;
@@ -193,54 +202,8 @@ internal class PreviewManager : IDisposable
     private void BuildPreviewSet()
     {
         _previewSet.Clear();
-        _previewOpacity = 1f;
-        switch (_context.Mode)
-        {
-            case ShapesEditorMode.Facial:
-                _previewSet.AddRange(DataManager.EffectiveBaseSet);
-                DataManager.GetTargetValues(_previewSet);
-                break;
-            case ShapesEditorMode.EyeBlinkSimple:
-                AddTargetValues(_previewSet, _context.DataManagers[1]);
-                AddTargetValues(_previewSet, _context.DataManagers[0]);
-                _previewOpacity = _normalizedTime;
-                break;
-            case ShapesEditorMode.EyeBlinkCustom:
-                var animations = new List<BlendShapeWeightAnimation>();
-                DataManager.GetTargetAnimations(animations);
-                animations.RemoveAll(animation =>
-                {
-                    var index = DataManager.GetIndexForShape(animation.Name);
-                    return index < 0 || DataManager.IsUnavailable(index);
-                });
-                _previewSet.AddRange(BlendShapeAnimationPreview.Evaluate(
-                    animations,
-                    BlendShapeAnimationPreview.GetDuration(animations) * _normalizedTime));
-                break;
-            case ShapesEditorMode.LipSync:
-                AddTargetValues(_previewSet, _context.DataManagers[0]);
-                if (_context.PreviewLipSync is { } lipSync)
-                {
-                    foreach (var shape in lipSync.GetOrderedShapes()[_context.PreviewViseme])
-                    {
-                        if (!_context.LipSyncUnavailableNames.Contains(shape.Name))
-                            _previewSet.Add(shape);
-                    }
-                }
-                break;
-        }
-    }
-
-    private static void AddTargetValues(
-        BlendShapeWeightSet result,
-        BlendShapeOverrideManager dataManager)
-    {
-        foreach (var index in dataManager.GetTargetIndices(i => !dataManager.IsUnavailable(i)))
-        {
-            result.Add(new BlendShapeWeight(
-                dataManager.AllKeys[index],
-                dataManager.GetShapeWeight(index)));
-        }
+        _context.ModeSession.BuildPreview(_previewSet, _normalizedTime);
+        _previewOpacity = _context.ModeSession.GetPreviewOpacity(_normalizedTime);
     }
 
     public void Dispose()
@@ -249,8 +212,9 @@ internal class PreviewManager : IDisposable
         foreach (var dataManager in _context.DataManagers)
             dataManager.OnAnyDataChange -= RequestShapeRefresh;
         _context.ActiveListChanged -= RequestShapeRefresh;
-        _context.LipSyncChanged -= RequestShapeRefresh;
+        _context.ModeSession.Changed -= RequestShapeRefresh;
         _updateScheduler?.Pause();
+        _updateScheduled = false;
         Preview.Stop();
     }
 }

@@ -6,6 +6,7 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 internal sealed class LipSyncPanel
 {
     private readonly FacialShapesEditorContext _context;
+    private readonly LipSyncEditing _editing;
     private readonly TextField _selectedSearch = new PlaceholderTextField();
     private readonly TextField _availableSearch = new PlaceholderTextField();
     private readonly ScrollView _sections = new();
@@ -17,9 +18,12 @@ internal sealed class LipSyncPanel
     public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
     public VisualElement AvailableElement { get; } = new SpacedVerticalElement();
 
-    public LipSyncPanel(FacialShapesEditorContext context)
+    public LipSyncPanel(
+        FacialShapesEditorContext context,
+        LipSyncEditing editing)
     {
         _context = context;
+        _editing = editing;
         _selectedSearch.value = string.Empty;
         _availableSearch.value = string.Empty;
         if (_selectedSearch is PlaceholderTextField selected)
@@ -57,7 +61,7 @@ internal sealed class LipSyncPanel
             "lipSync.mode.option.builtIn".LS(),
             "lipSync.mode.option.custom".LS()
         };
-        var selected = _context.LipSync?.Mode == LipSyncSettings.Kind.Custom ? 1 : 0;
+        var selected = _editing.Draft.Mode == LipSyncSettings.Kind.Custom ? 1 : 0;
         var field = new PopupField<string>(
             "lipSync.mode.label".LS(),
             labels.ToList(),
@@ -72,21 +76,8 @@ internal sealed class LipSyncPanel
 
     private void SetMode(LipSyncSettings.Kind mode)
     {
-        if (_context.LipSyncProperty == null || _context.LipSync?.Mode == mode) return;
-        var serialized = _context.SerializedObject;
-        serialized.UpdateIfRequiredOrScript();
-        var modeProperty = _context.LipSyncProperty.FindPropertyRelative(nameof(LipSyncSettings.Mode));
-        modeProperty.intValue = (int)mode;
-        if (mode == LipSyncSettings.Kind.Custom
-            && _context.LipSync?.Mode == LipSyncSettings.Kind.BuiltIn
-            && _context.BuiltInLipSync != null)
-        {
-            _context.LipSyncProperty
-                .FindPropertyRelative(nameof(LipSyncSettings.Shapes))
-                .CopyFrom(_context.BuiltInLipSync);
-        }
-        serialized.ApplyModifiedProperties();
-        _context.NotifyLipSyncChanged();
+        if (_editing.Draft.Mode == mode) return;
+        _editing.SetMode(mode);
         Rebuild();
     }
 
@@ -101,7 +92,7 @@ internal sealed class LipSyncPanel
         _sections.Clear();
         _visemeButtons.Clear();
         _visemeContents.Clear();
-        var values = (_context.PreviewLipSync ?? new VrcVisemeLipSyncShapes())
+        var values = (_editing.PreviewShapes ?? new VrcVisemeLipSyncShapes())
             .GetOrderedShapes();
         var search = _selectedSearch.value ?? string.Empty;
         for (var index = 0; index < VrcVisemeLipSyncShapes.Count; index++)
@@ -113,7 +104,7 @@ internal sealed class LipSyncPanel
             var button = new SimpleToggle
             {
                 text = VrcVisemeLipSyncShapes.Names[index],
-                value = index == _context.SelectedViseme
+                value = index == _editing.SelectedViseme
             };
             button.style.width = 44f;
             button.style.minWidth = 44f;
@@ -127,20 +118,21 @@ internal sealed class LipSyncPanel
                     button.SetValueWithoutNotify(true);
                     return;
                 }
-                _context.SetSelectedViseme(visemeIndex);
+                _editing.SetSelectedViseme(visemeIndex);
                 UpdateSelection();
+                _available.RefreshItems();
             });
             button.RegisterCallback<MouseEnterEvent>(_ =>
-                _context.SetHoveredViseme(visemeIndex));
+                _editing.SetHoveredViseme(visemeIndex));
             button.RegisterCallback<MouseLeaveEvent>(_ =>
-                _context.SetHoveredViseme(-1));
+                _editing.SetHoveredViseme(-1));
             section.Add(button);
             _visemeButtons.Add(button);
 
             var content = new SpacedVerticalElement();
             content.style.flexGrow = 1f;
-            content.SetEnabled(_context.LipSync?.Mode == LipSyncSettings.Kind.Custom
-                               && index == _context.SelectedViseme);
+            content.SetEnabled(_editing.Draft.Mode == LipSyncSettings.Kind.Custom
+                               && index == _editing.SelectedViseme);
             foreach (var shape in values[index])
             {
                 var shapeIndex = _context.Catalog.IndexOf(shape.Name);
@@ -165,150 +157,47 @@ internal sealed class LipSyncPanel
 
     private void UpdateSelection()
     {
-        var editable = _context.LipSync?.Mode == LipSyncSettings.Kind.Custom;
+        var editable = _editing.Draft.Mode == LipSyncSettings.Kind.Custom;
         for (var index = 0; index < _visemeButtons.Count; index++)
         {
-            _visemeButtons[index].SetValueWithoutNotify(index == _context.SelectedViseme);
-            _visemeContents[index].SetEnabled(editable && index == _context.SelectedViseme);
+            _visemeButtons[index].SetValueWithoutNotify(index == _editing.SelectedViseme);
+            _visemeContents[index].SetEnabled(editable && index == _editing.SelectedViseme);
         }
     }
 
     private VisualElement CreateShapeRow(int visemeIndex, BlendShapeWeight shape)
     {
-        var row = SelectedShapeRowUI.Create();
-        var metadata = row.Q<VisualElement>("metadata-gutter");
-        var changed = row.Q<VisualElement>("changed-marker");
-        var facialRail = row.Q<VisualElement>("facial-rail");
-        var warning = row.Q<Image>("validation-warning");
-        var name = row.Q<Label>("name");
-        var weight = row.Q<SliderFloatField>("slider-float-field");
-        var curve = row.Q<IMGUIContainer>("curve-field");
-        var curveToggle = row.Q<Button>("curve-toggle");
-        var toggle = row.Q<Button>("toggle-button");
-        var remove = row.Q<Button>("action");
-
-        var initial = GetInitialShape(visemeIndex, shape.Name);
-        changed.EnableInClassList(
-            "changed-marker--visible",
-            initial == null || !Mathf.Approximately(initial.Value.Weight, shape.Weight));
-        facialRail.style.opacity = 0f;
-        metadata.RegisterCallback<ClickEvent>(_ => Restore(visemeIndex, shape.Name));
-        name.text = shape.Name;
+        var row = new SelectedShapeRow();
+        row.SetChanged(_editing.IsChanged(visemeIndex, shape));
+        row.FacialRail.style.opacity = 0f;
+        row.Metadata.RegisterCallback<ClickEvent>(_ =>
+        {
+            _editing.Restore(visemeIndex, shape.Name);
+            Rebuild();
+        });
+        row.NameLabel.text = shape.Name;
         var shapeIndex = _context.Catalog.IndexOf(shape.Name);
-        var missing = shapeIndex < 0;
-        var unavailable = _context.LipSyncUnavailableNames.Contains(shape.Name);
-        warning.SetVisible(missing || unavailable);
-        warning.tooltip = missing
-            ? "blendShape.validation.missing.tooltip".LS()
-            : unavailable
-                ? "blendShape.validation.unavailable.tooltip".LS()
-                : string.Empty;
+        row.SetWarning(shapeIndex < 0, _editing.UnavailableNames.Contains(shape.Name));
         void ApplyWeight(float value)
         {
-            SetWeight(visemeIndex, shape.Name, value);
-            weight.SetValueWithoutNotify(value);
-            var original = GetInitialShape(visemeIndex, shape.Name);
-            changed.EnableInClassList(
-                "changed-marker--visible",
-                original == null || !Mathf.Approximately(original.Value.Weight, value));
+            _editing.SetWeight(visemeIndex, shape.Name, value);
+            row.Weight.SetValueWithoutNotify(value);
+            row.SetChanged(
+                _editing.IsChanged(visemeIndex, new BlendShapeWeight(shape.Name, value)));
         }
 
-        weight.SetValueWithoutNotify(shape.Weight);
-        weight.RegisterValueChangedCallback(evt => ApplyWeight(evt.newValue));
-        curve.SetVisible(false);
-        curveToggle.SetVisible(false);
-        toggle.clicked += () => ApplyWeight(
-            Mathf.Approximately(GetWeight(visemeIndex, shape.Name), 0f) ? 100f : 0f);
-        remove.clicked += () => Remove(visemeIndex, shape.Name);
-        return row;
-    }
-
-    private BlendShapeWeight? GetInitialShape(int visemeIndex, string name)
-    {
-        if (_context.InitialLipSync == null) return null;
-        foreach (var shape in _context.InitialLipSync.Shapes.GetOrderedShapes()[visemeIndex])
+        row.Weight.SetValueWithoutNotify(shape.Weight);
+        row.Weight.RegisterValueChangedCallback(evt => ApplyWeight(evt.newValue));
+        row.Curve.SetVisible(false);
+        row.CurveToggle.SetVisible(false);
+        row.WeightToggle.clicked += () => ApplyWeight(
+            Mathf.Approximately(_editing.GetWeight(visemeIndex, shape.Name), 0f) ? 100f : 0f);
+        row.Remove.clicked += () =>
         {
-            if (shape.Name == name) return shape;
-        }
-        return null;
-    }
-
-    private float GetWeight(int visemeIndex, string name)
-    {
-        if (_context.LipSync == null) return 0f;
-        foreach (var shape in _context.LipSync.Shapes.GetOrderedShapes()[visemeIndex])
-        {
-            if (shape.Name == name) return shape.Weight;
-        }
-        return 0f;
-    }
-
-    private void Restore(int visemeIndex, string name)
-    {
-        if (GetInitialShape(visemeIndex, name) is { } initial)
-            SetWeight(visemeIndex, name, initial.Weight);
-        else
-            Remove(visemeIndex, name);
-        Rebuild();
-    }
-
-    private void SetWeight(int visemeIndex, string name, float weight)
-    {
-        if (GetVisemeProperty(visemeIndex) is not { } property) return;
-        for (var index = 0; index < property.arraySize; index++)
-        {
-            var element = property.GetArrayElementAtIndex(index);
-            if (element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue != name)
-                continue;
-            element.FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue = weight;
-            property.serializedObject.ApplyModifiedProperties();
-            _context.NotifyLipSyncChanged();
-            return;
-        }
-    }
-
-    private void Remove(int visemeIndex, string name)
-    {
-        if (GetVisemeProperty(visemeIndex) is not { } property) return;
-        for (var index = 0; index < property.arraySize; index++)
-        {
-            if (property.GetArrayElementAtIndex(index)
-                    .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue != name)
-                continue;
-            property.DeleteArrayElementAtIndex(index);
-            property.serializedObject.ApplyModifiedProperties();
-            _context.NotifyLipSyncChanged();
+            _editing.Remove(visemeIndex, shape.Name);
             Rebuild();
-            return;
-        }
-    }
-
-    private void Add(string name)
-    {
-        if (_context.LipSync?.Mode != LipSyncSettings.Kind.Custom
-            || GetVisemeProperty(_context.SelectedViseme) is not { } property)
-            return;
-        for (var index = 0; index < property.arraySize; index++)
-        {
-            if (property.GetArrayElementAtIndex(index)
-                    .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue == name)
-                return;
-        }
-        property.InsertArrayElementAtIndex(property.arraySize);
-        property.GetArrayElementAtIndex(property.arraySize - 1)
-            .CopyFrom(new BlendShapeWeight(name, 100f));
-        property.serializedObject.ApplyModifiedProperties();
-        _context.NotifyLipSyncChanged();
-        Rebuild();
-    }
-
-    private SerializedProperty? GetVisemeProperty(int index)
-    {
-        if (_context.LipSyncProperty == null) return null;
-        _context.SerializedObject.UpdateIfRequiredOrScript();
-        return _context.LipSyncProperty
-            .FindPropertyRelative(nameof(LipSyncSettings.Shapes))
-            .FindPropertyRelative(VrcVisemeLipSyncShapes.PropertyNames[index]);
+        };
+        return row;
     }
 
     private void RebuildAvailable()
@@ -318,7 +207,7 @@ internal sealed class LipSyncPanel
         foreach (var name in _context.Catalog.Names)
         {
             var shapeIndex = _context.Catalog.IndexOf(name);
-            if (_context.LipSyncUnavailableNames.Contains(name)
+            if (_editing.UnavailableNames.Contains(name)
                 || search.Length > 0
                 && name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
                 || _context.GroupManager.IsRightSelected
@@ -335,7 +224,9 @@ internal sealed class LipSyncPanel
         var element = UnselectedShapeRowUI.Create();
         element.RegisterCallback<ClickEvent>(_ =>
         {
-            if (element.userData is string name) Add(name);
+            if (element.userData is not string name) return;
+            _editing.Add(name);
+            Rebuild();
         });
         element.RegisterCallback<MouseEnterEvent>(_ =>
         {
@@ -351,6 +242,8 @@ internal sealed class LipSyncPanel
         var name = _availableNames[index];
         element.userData = name;
         element.Q<Label>("name").text = name;
-        element.SetEnabled(_context.LipSync?.Mode == LipSyncSettings.Kind.Custom);
+        element.SetEnabled(
+            _editing.Draft.Mode == LipSyncSettings.Kind.Custom
+            && !_editing.Contains(_editing.SelectedViseme, name));
     }
 }
