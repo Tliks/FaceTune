@@ -1,4 +1,3 @@
-using Aoyon.FaceTune.Gui.Components;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
@@ -16,8 +15,8 @@ internal class FacialShapeUI : IDisposable
     private readonly VisualElement _selectedContainer;
     private readonly VisualElement _unselectedContainer;
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
-    private readonly List<SimpleToggle> _listButtons = new();
     private LipSyncPanel? _lipSyncPanel;
+    private EyeBlinkPanel? _eyeBlinkPanel;
     private GeneralControls _generalControls;
 
     public FacialShapeUI(
@@ -41,11 +40,17 @@ internal class FacialShapeUI : IDisposable
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
         if (context.ModeSession is LipSyncModeSession lipSync)
             _lipSyncPanel = new LipSyncPanel(context, lipSync.Editing);
+        else if (context.Mode == ShapesEditorMode.EyeBlinkSimple)
+            _eyeBlinkPanel = new EyeBlinkPanel(context);
         SetupListSelector(root);
 
-        if (_lipSyncPanel == null) ShowActiveList();
-        else ShowLipSync();
-        context.ActiveListChanged += ShowActiveList;
+        if (_lipSyncPanel != null) ShowLipSync();
+        else if (_eyeBlinkPanel != null) ShowEyeBlink();
+        else
+        {
+            ShowActiveList();
+            context.ActiveListChanged += ShowActiveList;
+        }
     }
 
     private void SetupListSelector(VisualElement root)
@@ -62,11 +67,6 @@ internal class FacialShapeUI : IDisposable
                 gap.SetVisible(false);
                 break;
             case ShapesEditorMode.EyeBlinkSimple:
-                AddListButtons(container, new[]
-                {
-                    "eyeBlink.simple.blinkBlendShapes.label".LS(),
-                    "eyeBlink.simple.conflictBlendShapes.label".LS()
-                });
                 AddTimeSlider(container, 1f);
                 break;
             case ShapesEditorMode.EyeBlinkCustom:
@@ -88,26 +88,13 @@ internal class FacialShapeUI : IDisposable
         _unselectedContainer.Add(_lipSyncPanel.AvailableElement);
     }
 
-    private void AddListButtons(
-        VisualElement container,
-        IEnumerable<string> labels)
+    private void ShowEyeBlink()
     {
-        var labelArray = labels.ToArray();
-        for (var index = 0; index < labelArray.Length; index++)
-        {
-            var listIndex = index;
-            var button = new SimpleToggle { text = labelArray[index] };
-            button.RegisterValueChangedCallback(evt =>
-            {
-                if (evt.newValue)
-                    _context.SetActiveList(listIndex);
-                else if (_context.ActiveListIndex == listIndex)
-                    button.SetValueWithoutNotify(true);
-            });
-            button.style.marginRight = Spacing;
-            container.Add(button);
-            _listButtons.Add(button);
-        }
+        if (_eyeBlinkPanel == null) return;
+        _selectedContainer.Clear();
+        _unselectedContainer.Clear();
+        _selectedContainer.Add(_eyeBlinkPanel.SelectedElement);
+        _unselectedContainer.Add(_eyeBlinkPanel.AvailableElement);
     }
 
     private void AddTimeSlider(VisualElement container, float initialValue)
@@ -127,8 +114,6 @@ internal class FacialShapeUI : IDisposable
     private void ShowActiveList()
     {
         var index = _context.ActiveListIndex;
-        for (var buttonIndex = 0; buttonIndex < _listButtons.Count; buttonIndex++)
-            _listButtons[buttonIndex].SetValueWithoutNotify(buttonIndex == index);
         if (!_panels.TryGetValue(index, out var panels))
         {
             var dataManager = _context.DataManagers[index];
@@ -161,6 +146,7 @@ internal class FacialShapeUI : IDisposable
     public void Dispose()
     {
         _context.ActiveListChanged -= ShowActiveList;
+        _eyeBlinkPanel?.Dispose();
         _generalControls.Dispose();
     }
 }

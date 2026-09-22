@@ -670,6 +670,9 @@ msgstr "ほぼ全ての表情で、リップシンクが干渉しなくなりま
 msgid "lipSync.canceller.shortLabel"
 msgstr "リセット"
 
+msgid "facialEditor.list.empty"
+msgstr "リストは空です"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"
 

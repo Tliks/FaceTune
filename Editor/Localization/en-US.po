@@ -670,6 +670,9 @@ msgstr "Prevents lip sync interference in almost all expressions. Select all mou
 msgid "lipSync.canceller.shortLabel"
 msgstr "Reset"
 
+msgid "facialEditor.list.empty"
+msgstr "List is Empty"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"
 
