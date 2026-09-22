@@ -19,6 +19,7 @@ internal class BlendShapeOverrideManager : IDisposable
         }
     }
 
+    private readonly bool _allowsCurves;
     private SerializedObject _serializedObject;
     [SerializeField] private bool[] _overrideFlags = null!;
     [SerializeField] private float[] _overrideWeights = null!;
@@ -94,8 +95,12 @@ internal class BlendShapeOverrideManager : IDisposable
     public event Action? OnUnknownChange;
     public event Action? OnAnyDataChange;
 
-    public BlendShapeOverrideManager(SerializedObject serializedObject, SerializedProperty baseProperty)
+    public BlendShapeOverrideManager(
+        SerializedObject serializedObject,
+        SerializedProperty baseProperty,
+        bool allowsCurves = true)
     {
+        _allowsCurves = allowsCurves;
         _serializedObject = serializedObject;
         _overrideFlagsProperty = baseProperty.FindPropertyRelative(nameof(_overrideFlags));
         _overrideWeightsProperty = baseProperty.FindPropertyRelative(nameof(_overrideWeights));
@@ -404,7 +409,8 @@ internal class BlendShapeOverrideManager : IDisposable
     /// <summary>この行がeditorで編集対象として管理されているか。falseのshape名は保存時にオリジナルのカーブが保持される。</summary>
     public bool Manages(string shapeName) => _shapeNameToIndexMap.ContainsKey(shapeName);
 
-    public bool IsCurveMode(int index) => IsCurveModeAt(index);
+    public bool AllowsCurves => _allowsCurves;
+    public bool IsCurveMode(int index) => _allowsCurves && IsCurveModeAt(index);
 
     public SerializedProperty GetCurveProperty(int index)
         => _overrideCurvesProperty.GetArrayElementAtIndex(index);
@@ -418,6 +424,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     public void ToggleCurveMode(int index)
     {
+        if (!_allowsCurves) return;
         if (IsCurveModeAt(index))
         {
             if (!ExecuteModification(() =>

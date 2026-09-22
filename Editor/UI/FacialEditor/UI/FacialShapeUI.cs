@@ -1,3 +1,4 @@
+using Aoyon.FaceTune.Gui.Components;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
@@ -15,6 +16,7 @@ internal class FacialShapeUI : IDisposable
     private readonly VisualElement _selectedContainer;
     private readonly VisualElement _unselectedContainer;
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
+    private readonly List<SimpleToggle> _listButtons = new();
     private GeneralControls _generalControls;
 
     public FacialShapeUI(
@@ -36,14 +38,88 @@ internal class FacialShapeUI : IDisposable
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
         _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
+        SetupListSelector(root);
 
         ShowActiveList();
         context.ActiveListChanged += ShowActiveList;
     }
 
+    private void SetupListSelector(VisualElement root)
+    {
+        var container = root.Q<VisualElement>("mode-controls-container");
+        var gap = root.Q<VisualElement>("mode-controls-gap");
+        container.style.flexDirection = FlexDirection.Row;
+        container.style.flexWrap = Wrap.Wrap;
+
+        switch (_context.Mode)
+        {
+            case ShapesEditorMode.Facial:
+                container.SetVisible(false);
+                gap.SetVisible(false);
+                break;
+            case ShapesEditorMode.EyeBlinkSimple:
+                AddListButtons(container, new[]
+                {
+                    "eyeBlink.simple.blinkBlendShapes.label".LS(),
+                    "eyeBlink.simple.conflictBlendShapes.label".LS()
+                });
+                AddTimeSlider(container, 1f);
+                break;
+            case ShapesEditorMode.EyeBlinkCustom:
+                AddTimeSlider(container, 0f);
+                break;
+            case ShapesEditorMode.LipSync:
+                AddListButtons(
+                    container,
+                    new[] { "lipSync.cancellerBlendShapes.label".LS() }
+                        .Concat(VrcVisemeLipSyncShapes.Names),
+                    compactAfterFirst: true);
+                break;
+        }
+    }
+
+    private void AddListButtons(
+        VisualElement container,
+        IEnumerable<string> labels,
+        bool compactAfterFirst = false)
+    {
+        var labelArray = labels.ToArray();
+        for (var index = 0; index < labelArray.Length; index++)
+        {
+            var listIndex = index;
+            var button = new SimpleToggle { text = labelArray[index] };
+            button.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.newValue) _context.SetActiveList(listIndex);
+            });
+            button.AddToClassList("compact-control");
+            button.style.minWidth = compactAfterFirst && index > 0 ? 48f : 120f;
+            button.style.marginRight = Spacing;
+            button.style.marginBottom = Spacing;
+            container.Add(button);
+            _listButtons.Add(button);
+        }
+    }
+
+    private void AddTimeSlider(VisualElement container, float initialValue)
+    {
+        var time = new Slider(0f, 1f)
+        {
+            value = initialValue,
+            showInputField = true,
+            tooltip = "eyeBlink.animations.label".LS()
+        };
+        time.style.flexGrow = 1f;
+        time.RegisterValueChangedCallback(evt =>
+            _context.PreviewManager.SetNormalizedTime(evt.newValue));
+        container.Add(time);
+    }
+
     private void ShowActiveList()
     {
         var index = _context.ActiveListIndex;
+        for (var buttonIndex = 0; buttonIndex < _listButtons.Count; buttonIndex++)
+            _listButtons[buttonIndex].SetValueWithoutNotify(buttonIndex == index);
         if (!_panels.TryGetValue(index, out var panels))
         {
             var dataManager = _context.DataManagers[index];
@@ -59,6 +135,9 @@ internal class FacialShapeUI : IDisposable
             _panels.Add(index, panels);
         }
 
+        var editable = _context.IsListEditable(index);
+        panels.Selected.Element.SetEnabled(editable);
+        panels.Unselected.Element.SetEnabled(editable);
         _selectedContainer.Clear();
         _unselectedContainer.Clear();
         _selectedContainer.Add(panels.Selected.Element);

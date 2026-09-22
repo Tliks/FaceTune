@@ -277,7 +277,8 @@ internal class SelectedPanel
             var isCurveMode = _blendShapeManager.IsCurveMode(item.KeyIndex);
             sliderFloatField.SetVisible(!isCurveMode);
             curveField.SetVisible(isCurveMode);
-            curveToggle.SetEnabled(true);
+            curveToggle.SetVisible(_blendShapeManager.AllowsCurves);
+            curveToggle.SetEnabled(_blendShapeManager.AllowsCurves);
             curveToggle.style.unityFontStyleAndWeight = isCurveMode ? FontStyle.Bold : FontStyle.Normal;
             toggleButton.SetEnabled(!isCurveMode);
 

@@ -278,7 +278,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
             fontSize = 10
         };
         var hovered = -1;
-        var rowCount = LipSyncPreviewData.VisemeCount / VisemeColumns;
+        var rowCount = VrcVisemeLipSyncShapes.Count / VisemeColumns;
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
         {
             using var row = new GUILayout.HorizontalScope();
@@ -286,7 +286,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
             {
                 var index = rowIndex * VisemeColumns + column;
                 var selected = preview.SelectedViseme == index;
-                var visemeName = LipSyncPreviewData.VisemeNames[index];
+                var visemeName = VrcVisemeLipSyncShapes.Names[index];
                 var next = GUILayout.Toggle(
                     selected,
                     visemeName,

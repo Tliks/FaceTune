@@ -63,8 +63,8 @@ internal class GeneralControls : IDisposable
 
     private void UpdateUndoRedoState()
     {
-        _undoButton?.SetEnabled(DataManager.CanUndo);
-        _redoButton?.SetEnabled(DataManager.CanRedo);
+        _undoButton?.SetEnabled(_context.DataManagers.Any(dataManager => dataManager.CanUndo));
+        _redoButton?.SetEnabled(_context.DataManagers.Any(dataManager => dataManager.CanRedo));
     }
 
     private void SetupControls()
@@ -159,6 +159,7 @@ internal class GeneralControls : IDisposable
             dataManager.OnAnyDataChange += UpdateUndoRedoState;
             dataManager.OnAnyDataChange += RequestActionButtonStateUpdate;
         }
+        _context.ActiveListChanged += UpdateUndoRedoState;
         _context.ActiveListChanged += UpdateActionButtonStates;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
@@ -187,6 +188,7 @@ internal class GeneralControls : IDisposable
             _clipImportOption = evt.newValue == clipImportOptions[0] ? ClipImportOption.All : ClipImportOption.NonZero;
         });
         _element.Q<VisualElement>("import-option-field-container").Add(clipImportOptionField);
+        _element.Q<VisualElement>("clip-import-container").SetVisible(_context.CanImportClip);
 
         _filterContent = _element.Q<VisualElement>("filter-content");
         _groupTogglesContainer = _filterContent.Q<VisualElement>("group-toggles-container");
@@ -266,6 +268,7 @@ internal class GeneralControls : IDisposable
             dataManager.OnAnyDataChange -= UpdateUndoRedoState;
             dataManager.OnAnyDataChange -= RequestActionButtonStateUpdate;
         }
+        _context.ActiveListChanged -= UpdateUndoRedoState;
         _context.ActiveListChanged -= UpdateActionButtonStates;
     }
 

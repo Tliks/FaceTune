@@ -424,6 +424,22 @@ internal sealed class LipSyncSettings : IEquatable<LipSyncSettings>
 [Serializable]
 internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes>
 {
+    internal static IReadOnlyList<string> Names { get; } = new[]
+    {
+        "sil", "PP", "FF", "TH", "DD",
+        "kk", "CH", "SS", "nn", "RR",
+        "aa", "E", "ih", "oh", "ou"
+    };
+
+    internal static IReadOnlyList<string> PropertyNames { get; } = new[]
+    {
+        nameof(Sil), nameof(PP), nameof(FF), nameof(TH), nameof(DD),
+        nameof(KK), nameof(CH), nameof(SS), nameof(NN), nameof(RR),
+        nameof(AA), nameof(E), nameof(IH), nameof(OH), nameof(OU)
+    };
+
+    internal static int Count => Names.Count;
+
     public List<BlendShapeWeight> Sil = new();
 
     public List<BlendShapeWeight> PP = new();
@@ -441,6 +457,14 @@ internal sealed class VrcVisemeLipSyncShapes : IEquatable<VrcVisemeLipSyncShapes
     public List<BlendShapeWeight> IH = new();
     public List<BlendShapeWeight> OH = new();
     public List<BlendShapeWeight> OU = new();
+
+    internal IReadOnlyList<List<BlendShapeWeight>> GetOrderedShapes()
+        => new[]
+        {
+            Sil, PP, FF, TH, DD,
+            KK, CH, SS, NN, RR,
+            AA, E, IH, OH, OU
+        };
 
     public bool Equals(VrcVisemeLipSyncShapes? other)
     {

@@ -201,7 +201,7 @@ internal sealed class SelectedShapesPreview
 
     internal void SetVisemeSelection(int index)
     {
-        index = Mathf.Clamp(index, -1, LipSyncPreviewData.VisemeCount - 1);
+        index = Mathf.Clamp(index, -1, VrcVisemeLipSyncShapes.Count - 1);
         if (_selectedViseme == index) return;
         _selectedViseme = index;
         ApplyLipSync();
@@ -210,7 +210,7 @@ internal sealed class SelectedShapesPreview
 
     internal void SetVisemeHover(VisemeHoverSource source, int index)
     {
-        index = Mathf.Clamp(index, -1, LipSyncPreviewData.VisemeCount - 1);
+        index = Mathf.Clamp(index, -1, VrcVisemeLipSyncShapes.Count - 1);
         var sameSource = _visemeHoverSource == source;
         if (index < 0 && !sameSource) return;
         if (index == _hoveredViseme && sameSource) return;

@@ -1,10 +1,9 @@
-using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.runtime;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
-internal class FacialShapesEditor : EditorWindow
+internal partial class FacialShapesEditor : EditorWindow
 {
     [SerializeField] private BlendShapeOverrideManager[] _dataManagers = null!;
 
@@ -114,13 +113,17 @@ internal class FacialShapesEditor : EditorWindow
         _context = new FacialShapesEditorContext(
             serializedObject,
             _dataManagers,
+            ShapesEditorMode.Facial,
             rootVisualElement,
             renderer,
             target,
             animationPropertyPath,
+            null,
+            1,
             TryChangeRenderer,
             SaveChanges);
 
+        titleContent = "facialEditor.title".LG();
         _unsavedStateSyncPending = false;
         hasUnsavedChanges = false;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer?.name}");
@@ -211,6 +214,8 @@ internal class FacialShapesEditor : EditorWindow
 
         var target = _context.Target;
         var animationPropertyPath = _context.AnimationPropertyPath;
+        var zeroUnspecified = _context.ZeroUnspecifiedBlendShapes;
+        var zeroUnavailable = _context.ZeroUnavailableBlendShapes;
         EditorApplication.delayCall += () =>
         {
             var nextWindow = CreateInstance<FacialShapesEditor>();
@@ -224,6 +229,11 @@ internal class FacialShapesEditor : EditorWindow
                 null,
                 null,
                 null);
+            if (nextWindow._context != null)
+            {
+                nextWindow._context.ZeroUnspecifiedBlendShapes = zeroUnspecified;
+                nextWindow._context.ZeroUnavailableBlendShapes = zeroUnavailable;
+            }
             Close();
         };
         return true;
@@ -292,14 +302,21 @@ internal class FacialShapesEditor : EditorWindow
         if (targetRoot == null) throw new Exception("TargetRenderer is not a child of an avatar");
 
         if (_context.Target == null) throw new Exception("Target is not set");
-        FacialShapeSaver.Save(
-            _context.Target,
-            _context.AnimationPropertyPath,
-            targetRoot.gameObject,
-            _context.Renderer,
-            _context.DataManager,
-            _context.ZeroUnspecifiedBlendShapes,
-            _context.ZeroUnavailableBlendShapes);
+        if (_context.Mode == ShapesEditorMode.Facial)
+        {
+            FacialShapeSaver.Save(
+                _context.Target,
+                _context.AnimationPropertyPath,
+                targetRoot.gameObject,
+                _context.Renderer,
+                _context.DataManager,
+                _context.ZeroUnspecifiedBlendShapes,
+                _context.ZeroUnavailableBlendShapes);
+        }
+        else
+        {
+            SaveSettings(_context);
+        }
         foreach (var dataManager in _context.DataManagers)
             dataManager.MarkCurrentAsInitialState();
         SyncUnsavedChangesNow();

@@ -30,9 +30,10 @@ internal static class FacialShapeSaver
 
         using var serialized = new SerializedObject(component);
         serialized.Update();
-        FacialShapeAnimationSaver.Save(
+        ShapeListSerialization.Save(
             serialized.FindProperty(animationPropertyPath),
-            dataManager);
+            dataManager,
+            animations: true);
         serialized.ApplyModifiedProperties();
     }
 
@@ -106,36 +107,64 @@ internal static class FacialShapeSaver
     }
 }
 
-internal static class FacialShapeAnimationSaver
+internal static class ShapeListSerialization
 {
-    internal static void Save(
-        SerializedProperty animations,
-        BlendShapeOverrideManager dataManager)
+    internal static List<BlendShapeWeightAnimation> Read(
+        SerializedProperty property,
+        bool animations)
     {
-        var originalAnimations = ReadAnimations(animations).ToArray();
+        var result = new List<BlendShapeWeightAnimation>(property.arraySize);
+        for (var index = 0; index < property.arraySize; index++)
+        {
+            var element = property.GetArrayElementAtIndex(index);
+            var name = element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
+            result.Add(animations
+                ? new BlendShapeWeightAnimation(
+                    name,
+                    element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName)
+                        .animationCurveValue)
+                : BlendShapeWeightAnimation.SingleFrame(
+                    name,
+                    element.FindPropertyRelative(BlendShapeWeight.WeightPropName).floatValue));
+        }
+        return result;
+    }
+
+    internal static void Save(
+        SerializedProperty property,
+        BlendShapeOverrideManager dataManager,
+        bool animations)
+    {
+        if (!animations)
+        {
+            var original = Read(property, false);
+            var target = new BlendShapeWeightSet();
+            dataManager.GetTargetValues(target);
+            var values = original
+                .Select(animation => animation.ToFirstFrameBlendShape())
+                .Where(shape => !dataManager.Manages(shape.Name))
+                .Concat(target);
+            property.SynchronizeArrayByKey(
+                values,
+                element => element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue,
+                shape => shape.Name,
+                (element, shape) => element.CopyFrom(shape),
+                overwrite: true);
+            return;
+        }
+
+        var originalAnimations = Read(property, true);
         var targetAnimations = new List<BlendShapeWeightAnimation>();
         dataManager.GetTargetAnimations(targetAnimations);
 
         var preservedAnimations = originalAnimations
             .Where(animation => !dataManager.Manages(animation.Name));
 
-        animations.SynchronizeArrayByKey(
+        property.SynchronizeArrayByKey(
             preservedAnimations.Concat(targetAnimations),
             element => element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
             animation => animation.Name,
             (element, animation) => element.CopyFrom(animation),
             overwrite: true);
-    }
-
-    private static IEnumerable<BlendShapeWeightAnimation> ReadAnimations(SerializedProperty property)
-    {
-        for (var index = 0; index < property.arraySize; index++)
-        {
-            var element = property.GetArrayElementAtIndex(index);
-            yield return new BlendShapeWeightAnimation(
-                element.FindPropertyRelative(BlendShapeWeightAnimation.NamePropName).stringValue,
-                element.FindPropertyRelative(BlendShapeWeightAnimation.CurvePropName)
-                    .animationCurveValue);
-        }
     }
 }

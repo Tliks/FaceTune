@@ -149,27 +149,12 @@ internal sealed class EyeBlinkPreviewData
 
 internal sealed class LipSyncPreviewData
 {
-    internal static IReadOnlyList<string> VisemeNames { get; } = new[]
-    {
-        "sil", "PP", "FF", "TH", "DD",
-        "kk", "CH", "SS", "nn", "RR",
-        "aa", "E", "ih", "oh", "ou"
-    };
-
-    internal static int VisemeCount => VisemeNames.Count;
-
     internal LipSyncPreviewData(
         IEnumerable<BlendShapeWeight> canceller,
         VrcVisemeLipSyncShapes shapes)
     {
         Canceller = new ImmutableBlendShapeWeightSet(canceller);
-        var visemes = new[]
-        {
-            shapes.Sil, shapes.PP, shapes.FF, shapes.TH, shapes.DD,
-            shapes.KK, shapes.CH, shapes.SS, shapes.NN, shapes.RR,
-            shapes.AA, shapes.E, shapes.IH, shapes.OH, shapes.OU
-        };
-        Visemes = visemes
+        Visemes = shapes.GetOrderedShapes()
             .Select(values => new ImmutableBlendShapeWeightSet(values))
             .ToArray();
     }

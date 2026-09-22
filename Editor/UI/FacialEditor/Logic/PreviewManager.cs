@@ -54,6 +54,14 @@ internal class PreviewManager : IDisposable
     public event Action<int>? OnHoveredIndexChanged;
 
     private bool _isEnabled = false;
+    private float _normalizedTime;
+    private int _previewListIndex;
+
+    public void SetNormalizedTime(float value)
+    {
+        _normalizedTime = Mathf.Clamp01(value);
+        RequestShapeRefresh();
+    }
 
     private int _currentAppliedHoverIndex = -1;
     private bool _needsShapeRefresh = false;
@@ -66,13 +74,15 @@ internal class PreviewManager : IDisposable
         _rootElement = rootElement;
         _renderer = context.Renderer;
         _previewSet = new();
+        _normalizedTime = context.InitialPreviewTime;
+        _previewListIndex = context.DataManagers.Count > 1 ? 1 : 0;
         SetBlendShapeTo100OnHover = true;
         HighlightBlendShapeVerticesOnHover = false;
 
         
         foreach (var dataManager in context.DataManagers)
             dataManager.OnAnyDataChange += RequestShapeRefresh;
-        context.ActiveListChanged += RequestShapeRefresh;
+        context.ActiveListChanged += OnActiveListChanged;
         OnSetBlendShapeTo100OnHoverChanged += _ => RequestShapeRefresh();
         
         // UI Elementsスケジューラーで定期的に両方の更新をチェック
@@ -104,6 +114,13 @@ internal class PreviewManager : IDisposable
     private void RequestShapeRefresh()
     {
         _needsShapeRefresh = true;
+    }
+
+    private void OnActiveListChanged()
+    {
+        if (_context.ActiveListIndex > 0)
+            _previewListIndex = _context.ActiveListIndex;
+        RequestShapeRefresh();
     }
 
     private void CheckAndApplyUpdates()
@@ -141,7 +158,9 @@ internal class PreviewManager : IDisposable
     private void RefreshPreview()
     {
         if (_renderer == null) return;
-        var ignoredNames = DataManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal);
+        var ignoredNames = _context.UsesFacialIgnoredNames
+            ? DataManager.ExplicitlyExcluded.ToImmutableHashSet(StringComparer.Ordinal)
+            : ImmutableHashSet<string>.Empty;
         Preview.Refresh(new BlendShapeApply(
             new ImmutableBlendShapeWeightSet(_previewSet),
             0f,
@@ -151,8 +170,57 @@ internal class PreviewManager : IDisposable
     private void GetCurrentSet(BlendShapeWeightSet result)
     {
         result.Clear();
-        result.AddRange(DataManager.EffectiveBaseSet);
-        DataManager.GetTargetValues(result);
+        result.AddRange(_context.Background);
+        switch (_context.Mode)
+        {
+            case ShapesEditorMode.Facial:
+                result.AddRange(DataManager.EffectiveBaseSet);
+                DataManager.GetTargetValues(result);
+                break;
+            case ShapesEditorMode.EyeBlinkSimple:
+                var closed = new BlendShapeWeightSet();
+                AddTargetValues(closed, _context.DataManagers[1]);
+                AddTargetValues(closed, _context.DataManagers[0]);
+                foreach (var shape in closed)
+                {
+                    var openWeight = result.TryGetValue(shape.Name, out var open)
+                        ? open.Weight
+                        : 0f;
+                    result.Add(new BlendShapeWeight(
+                        shape.Name,
+                        Mathf.Lerp(openWeight, shape.Weight, _normalizedTime)));
+                }
+                break;
+            case ShapesEditorMode.EyeBlinkCustom:
+                var animations = new List<BlendShapeWeightAnimation>();
+                DataManager.GetTargetAnimations(animations);
+                animations.RemoveAll(animation =>
+                {
+                    var index = DataManager.GetIndexForShape(animation.Name);
+                    return index < 0 || DataManager.IsUnavailable(index);
+                });
+                result.AddRange(BlendShapeAnimationPreview.Evaluate(
+                    animations,
+                    BlendShapeAnimationPreview.GetDuration(animations) * _normalizedTime));
+                break;
+            case ShapesEditorMode.LipSync:
+                AddTargetValues(result, _context.DataManagers[0]);
+                if (_previewListIndex > 0)
+                    AddTargetValues(result, _context.DataManagers[_previewListIndex]);
+                break;
+        }
+    }
+
+    private static void AddTargetValues(
+        BlendShapeWeightSet result,
+        BlendShapeOverrideManager dataManager)
+    {
+        foreach (var index in dataManager.GetTargetIndices(i => !dataManager.IsUnavailable(i)))
+        {
+            result.Add(new BlendShapeWeight(
+                dataManager.AllKeys[index],
+                dataManager.GetShapeWeight(index)));
+        }
     }
 
     public void Dispose()
@@ -160,7 +228,7 @@ internal class PreviewManager : IDisposable
         _isEnabled = false;
         foreach (var dataManager in _context.DataManagers)
             dataManager.OnAnyDataChange -= RequestShapeRefresh;
-        _context.ActiveListChanged -= RequestShapeRefresh;
+        _context.ActiveListChanged -= OnActiveListChanged;
         _updateScheduler?.Pause();
         Preview.Stop();
     }

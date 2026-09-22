@@ -1,5 +1,6 @@
 using Aoyon.FaceTune.Platforms;
 using Aoyon.FaceTune.Preview;
+using Aoyon.FaceTune.Gui.ShapesEditor;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -393,7 +394,8 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         return GUIHelper.GetListHeight(blink, BlinkBlendShapesOptions)
              + GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(conflicts, ConflictBlendShapesOptions)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
-             + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
+             + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
+             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
     }
 
     private static void DrawSimple(Rect position, SerializedProperty property)
@@ -421,6 +423,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         position.height = GUIHelper.GetLinesHeight(2);
         DrawDurations(position, property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleDurationsSeconds)));
         position.NewLine();
+        DrawEditorRow(position, property, ShapesEditorMode.EyeBlinkSimple);
     }
 
     private static void DrawDurations(Rect position, SerializedProperty property)
@@ -440,7 +443,8 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         => GUIHelper.GetListHeight(
                property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations)),
                AnimationsOptions)
-         + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
+         + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
+         + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
 
     private static void DrawCustom(Rect position, SerializedProperty property)
     {
@@ -450,6 +454,21 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
             GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
         position.NewLine();
         DrawInterval(ref position, property);
+        DrawEditorRow(position, property, ShapesEditorMode.EyeBlinkCustom);
+    }
+
+    private static void DrawEditorRow(
+        Rect position,
+        SerializedProperty property,
+        ShapesEditorMode mode)
+    {
+        var button = EditorGUI.PrefixLabel(position.SetSingleHeight(), "facialEditor.edit.button".LG());
+        using var disabled = new EditorGUI.DisabledScope(
+            property.serializedObject.targetObjects.Length != 1
+            || property.serializedObject.targetObject is not Component);
+        if (!GUI.Button(button, "facialEditor.open.button".LG())) return;
+        property.serializedObject.ApplyModifiedProperties();
+        FacialShapesEditor.TryOpenSettingsEditor(property, mode);
     }
 
     private static void DrawInterval(ref Rect position, SerializedProperty property)
@@ -615,13 +634,20 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
                     "lipSync.cancellerBlendShapes.tooltip".LS()),
                 CancellerOptions);
 
-        if ((LipSyncSettings.Kind)mode.intValue != LipSyncSettings.Kind.BuiltIn
-            || !CannotResolveBuiltIn(property)) return;
         position.NewLine();
-        GUIHelper.HelpBox(
-            position,
-            "lipSync.builtIn.unavailable.message".LS(),
-            MessageType.Warning);
+        if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.BuiltIn
+            && CannotResolveBuiltIn(property))
+        {
+            position.height = GUIHelper.GetHelpBoxHeight(
+                "lipSync.builtIn.unavailable.message".LS(),
+                MessageType.Warning);
+            GUIHelper.HelpBox(
+                position,
+                "lipSync.builtIn.unavailable.message".LS(),
+                MessageType.Warning);
+            position.NewLine();
+        }
+        DrawEditorRow(position, property);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -648,7 +674,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
                     + GUIHelper.GetHelpBoxHeight(
                         "lipSync.builtIn.unavailable.message".LS(),
                         MessageType.Warning);
-        return height;
+        return height + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
     }
 
     private static bool CannotResolveBuiltIn(SerializedProperty property)
@@ -695,6 +721,24 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             .FirstOrDefault(value => value != null);
         if (shapes != null)
             settings.FindPropertyRelative(nameof(LipSyncSettings.Shapes)).CopyFrom(shapes);
+    }
+
+    private static void DrawEditorRow(Rect position, SerializedProperty property)
+    {
+        var button = EditorGUI.PrefixLabel(position.SetSingleHeight(), "facialEditor.edit.button".LG());
+        using var disabled = new EditorGUI.DisabledScope(
+            property.serializedObject.targetObjects.Length != 1
+            || property.serializedObject.targetObject is not Component);
+        if (!GUI.Button(button, "facialEditor.open.button".LG())) return;
+        property.serializedObject.ApplyModifiedProperties();
+        var selection = (LipSyncSettings.Kind)property
+            .FindPropertyRelative(nameof(LipSyncSettings.Mode)).intValue == LipSyncSettings.Kind.Custom
+            ? GetVisemeSelection(property) + 1
+            : 0;
+        FacialShapesEditor.TryOpenSettingsEditor(
+            property,
+            ShapesEditorMode.LipSync,
+            Mathf.Max(0, selection));
     }
 
     private static ReorderableListOptions CreateBlendShapeOptions(
@@ -808,25 +852,9 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         SerializedProperty property)
     {
         var shapes = property.FindPropertyRelative(nameof(LipSyncSettings.Shapes));
-        var properties = new[]
-        {
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.Sil)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.PP)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.FF)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.TH)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.DD)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.KK)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.CH)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.SS)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.NN)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.RR)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.AA)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.E)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.IH)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OH)),
-            shapes.FindPropertyRelative(nameof(VrcVisemeLipSyncShapes.OU))
-        };
-        return LipSyncPreviewData.VisemeNames
+        var properties = VrcVisemeLipSyncShapes.PropertyNames
+            .Select(shapes.FindPropertyRelative);
+        return VrcVisemeLipSyncShapes.Names
             .Zip(properties, (name, shapesProperty) => (name, shapesProperty))
             .ToArray();
     }
