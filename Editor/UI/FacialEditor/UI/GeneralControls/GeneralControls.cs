@@ -90,20 +90,35 @@ internal class GeneralControls : IDisposable
         }
 
         var targetingField = _element.Q<ObjectField>("targeting-object-field");
-        targetingField.objectType = _context.Targeting.GetObjectType();
-        targetingField.SetValueWithoutNotify(_context.Targeting.GetTarget());
-        targetingField.SetEnabled(_context.Targeting is AnimationClipTargeting);
+        targetingField.objectType = _context.CanChangeTarget
+            ? typeof(AnimationClip)
+            : _context.Target?.GetType() ?? typeof(Object);
+        targetingField.SetValueWithoutNotify(_context.Target);
+        targetingField.SetEnabled(_context.CanChangeTarget);
         targetingField.RegisterValueChangedCallback(evt =>
         {
-            if (_context.Targeting is not AnimationClipTargeting) return;
-            _context.Targeting.SetTarget(evt.newValue);
+            _context.SetTarget(evt.newValue);
+            targetingField.SetValueWithoutNotify(_context.Target);
             UpdateActionButtonStates();
         });
 
         var targetingOptionsContainer = _element.Q<VisualElement>("targeting-options-container");
-        if (_context.Targeting.DrawOptions() is { } options)
+        if (_context.CanChangeTarget)
         {
-            targetingOptionsContainer.Add(options);
+            var menu = new ToolbarMenu { text = "facialEditor.clipOptions.label".LS() };
+            menu.menu.AppendAction(
+                "facialEditor.zeroUnspecifiedBlendShapes.option".LS(),
+                _ => _context.ZeroUnspecifiedBlendShapes = !_context.ZeroUnspecifiedBlendShapes,
+                _ => _context.ZeroUnspecifiedBlendShapes
+                    ? DropdownMenuAction.Status.Checked
+                    : DropdownMenuAction.Status.Normal);
+            menu.menu.AppendAction(
+                "facialEditor.zeroUnavailableBlendShapes.option".LS(),
+                _ => _context.ZeroUnavailableBlendShapes = !_context.ZeroUnavailableBlendShapes,
+                _ => _context.ZeroUnavailableBlendShapes
+                    ? DropdownMenuAction.Status.Checked
+                    : DropdownMenuAction.Status.Normal);
+            targetingOptionsContainer.Add(menu);
         }
         else
         {
@@ -235,7 +250,7 @@ internal class GeneralControls : IDisposable
     private void UpdateActionButtonStates()
     {
         var hasRenderer = _context.Renderer != null;
-        _saveButton?.SetEnabled(hasRenderer && _context.Targeting.GetTarget() != null && _blendShapeManager.IsChangedFromInitialState);
+        _saveButton?.SetEnabled(hasRenderer && _context.Target != null && _blendShapeManager.IsChangedFromInitialState);
         _restoreInitialOverridesButton?.SetEnabled(hasRenderer && _blendShapeManager.IsChangedFromInitialState);
         _restoreEditedOverridesButton?.SetEnabled(hasRenderer && _blendShapeManager.CanRestoreEditedOverrides);
     }

@@ -42,7 +42,8 @@ internal class FacialShapesEditor : EditorWindow
 
     public static FacialShapesEditor? TryOpenEditor(
         SkinnedMeshRenderer? renderer = null,
-        IShapesEditorTargeting? targeting = null,
+        Object? target = null,
+        string? animationPropertyPath = null,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations = null,
         IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations = null,
         IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations = null,
@@ -53,7 +54,8 @@ internal class FacialShapesEditor : EditorWindow
         window._resolveUnavailableBlendShapeNames = resolveUnavailableBlendShapeNames;
         window.StartContext(
             renderer,
-            targeting,
+            target,
+            animationPropertyPath,
             facialAnimations,
             baseAnimations,
             initialOverrideAnimations,
@@ -79,7 +81,8 @@ internal class FacialShapesEditor : EditorWindow
 
     private void StartContext(
         SkinnedMeshRenderer? renderer,
-        IShapesEditorTargeting? targeting,
+        Object? target,
+        string? animationPropertyPath,
         IReadOnlyList<BlendShapeWeightAnimation>? facialAnimations,
         IReadOnlyList<BlendShapeWeightAnimation>? baseAnimations,
         IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations,
@@ -87,8 +90,7 @@ internal class FacialShapesEditor : EditorWindow
     {
         EndContext();
 
-        targeting ??= new AnimationClipTargeting();
-        initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, targeting);
+        initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, target);
 
         var serializedObject = new SerializedObject(this);
         _dataManager = new BlendShapeOverrideManager(
@@ -112,8 +114,8 @@ internal class FacialShapesEditor : EditorWindow
             _dataManager,
             rootVisualElement,
             renderer,
-            targeting,
-            targeting is AnimationClipTargeting,
+            target,
+            animationPropertyPath,
             TryChangeRenderer,
             SaveChanges);
 
@@ -124,10 +126,9 @@ internal class FacialShapesEditor : EditorWindow
 
     private static IReadOnlyList<BlendShapeWeightAnimation>? GetClipInitialOverrideAnimations(
         SkinnedMeshRenderer? renderer,
-        IShapesEditorTargeting targeting)
+        Object? target)
     {
-        if (renderer == null
-            || targeting is not AnimationClipTargeting { Target: { } clip })
+        if (renderer == null || target is not AnimationClip clip)
             return null;
 
         var animations = new List<BlendShapeWeightAnimation>();
@@ -204,13 +205,21 @@ internal class FacialShapesEditor : EditorWindow
         if (_context.Renderer == renderer) return false;
         if (!CanDiscardCurrentContext()) return false;
 
-        var targeting = _context.Targeting;
+        var target = _context.Target;
+        var animationPropertyPath = _context.AnimationPropertyPath;
         EditorApplication.delayCall += () =>
         {
             var nextWindow = CreateInstance<FacialShapesEditor>();
             nextWindow.Show();
             nextWindow._resolveUnavailableBlendShapeNames = _resolveUnavailableBlendShapeNames;
-            nextWindow.StartContext(renderer, targeting, null, null, null, null);
+            nextWindow.StartContext(
+                renderer,
+                target,
+                animationPropertyPath,
+                null,
+                null,
+                null,
+                null);
             Close();
         };
         return true;
@@ -274,7 +283,15 @@ internal class FacialShapesEditor : EditorWindow
         var targetRoot = RuntimeUtil.FindAvatarInParents(_context.Renderer.transform);
         if (targetRoot == null) throw new Exception("TargetRenderer is not a child of an avatar");
 
-        _context.Targeting.Save(targetRoot.gameObject, _context.Renderer, _context.DataManager);
+        if (_context.Target == null) throw new Exception("Target is not set");
+        FacialShapeSaver.Save(
+            _context.Target,
+            _context.AnimationPropertyPath,
+            targetRoot.gameObject,
+            _context.Renderer,
+            _context.DataManager,
+            _context.ZeroUnspecifiedBlendShapes,
+            _context.ZeroUnavailableBlendShapes);
         _context.DataManager.MarkCurrentAsInitialState();
         SyncUnsavedChangesNow();
     }

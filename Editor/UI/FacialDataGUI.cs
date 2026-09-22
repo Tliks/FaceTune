@@ -309,15 +309,9 @@ internal static class FacialDataGUI
             return;
         if (!AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
 
-        IShapesEditorTargeting? targeting = component switch
-        {
-            ExpressionComponent expressionComponent => new FaceTuneDataTargeting { Target = expressionComponent },
-            ExpressionDataComponent dataComponent => new ExpressionDataTargeting { Target = dataComponent },
-            SettingsComponent settingsComponent => new SettingsFacialTargeting { Target = settingsComponent },
-            _ => null
-        };
-        if (targeting is not IFacialSourceTargeting targetingSource) return;
-        targetingSource.AnimationPropertyPath = animations.propertyPath;
+        if (component is not ExpressionComponent
+            and not ExpressionDataComponent
+            and not SettingsComponent) return;
 
         var resolver = new FacialAnimationResolver(avatar.Root);
         var incoming = resolver.ResolveIncoming(component.transform).ToList();
@@ -327,7 +321,8 @@ internal static class FacialDataGUI
             : resolver.TryResolveBase(component, out resolvedBase);
         FacialShapesEditor.TryOpenEditor(
             avatar.FaceRenderer,
-            targeting,
+            component,
+            animations.propertyPath,
             incoming,
             hasBase ? resolvedBase!.ToList() : Array.Empty<BlendShapeWeightAnimation>(),
             ReadAnimations(animations).ToList(),
