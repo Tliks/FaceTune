@@ -46,8 +46,8 @@ internal sealed class BulkShapeControls
             button.style.width = 30f;
         }
         Element.Add(spacer);
-        Element.Add(weight);
         Element.Add(_removeZero);
+        Element.Add(weight);
         Element.Add(toggle);
         Element.Add(remove);
     }

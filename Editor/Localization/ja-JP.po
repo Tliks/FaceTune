@@ -670,7 +670,13 @@ msgstr "ほぼ全ての表情で、リップシンクが干渉しなくなりま
 msgid "facialEditor.list.empty"
 msgstr "リストは空です"
 
-msgid "eyeBlink.simple.conflict.shortLabel"
+msgid "shapesEditor.lipSync.label"
+msgstr "リップシンク"
+
+msgid "shapesEditor.eyeBlink.label"
+msgstr "まばたき"
+
+msgid "shapesEditor.conflictCorrection.label"
 msgstr "干渉補正"
 
 msgid "expressionSet.defaultSelected.label"

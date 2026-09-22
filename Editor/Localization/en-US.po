@@ -670,7 +670,13 @@ msgstr "Prevents lip sync interference in almost all expressions. Select all mou
 msgid "facialEditor.list.empty"
 msgstr "List is Empty"
 
-msgid "eyeBlink.simple.conflict.shortLabel"
+msgid "shapesEditor.lipSync.label"
+msgstr "Lip Sync"
+
+msgid "shapesEditor.eyeBlink.label"
+msgstr "Eye Blink"
+
+msgid "shapesEditor.conflictCorrection.label"
 msgstr "Conflict Correction"
 
 msgid "expressionSet.defaultSelected.label"

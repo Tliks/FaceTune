@@ -14,13 +14,15 @@ internal sealed class LipSyncPanel
         int SectionIndex,
         string ShapeName,
         int ManagerIndex,
-        bool Canceller);
+        bool Canceller,
+        bool ShowHeader);
 
     private readonly FacialShapesEditorContext _context;
     private readonly LipSyncEditing _editing;
     private readonly BlendShapeOverrideManager _canceller;
     private readonly ListView _selected = new();
     private readonly List<RowData> _rows = new();
+    private readonly List<(VisualElement Root, BulkShapeControls Controls)> _bulkRows = new();
     private readonly LipSyncAvailablePanel _available;
 
     public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
@@ -74,25 +76,38 @@ internal sealed class LipSyncPanel
         header.style.marginRight = FacialShapeUI.Spacing;
         header.RegisterValueChangedCallback(evt =>
         {
-            if (root.userData is not RowData { Kind: RowKind.Controls } row) return;
+            if (root.userData is not RowData { ShowHeader: true } row) return;
             if (!evt.newValue)
             {
                 header.SetValueWithoutNotify(true);
                 return;
             }
-            if (row.Canceller) _editing.SelectCanceller();
-            else _editing.SetSelectedViseme(row.SectionIndex);
+            if (row.Canceller)
+                _editing.SelectCanceller();
+            else
+                _editing.SetSelectedViseme(
+                    row.SectionIndex >= 0 ? row.SectionIndex : _editing.SelectedViseme);
             _selected.RefreshItems();
             _available.Rebuild();
         });
         header.RegisterCallback<MouseEnterEvent>(_ =>
         {
-            if (root.userData is RowData { Kind: RowKind.Controls, Canceller: false } row)
+            if (root.userData is RowData
+                {
+                    ShowHeader: true,
+                    Canceller: false,
+                    SectionIndex: >= 0
+                } row)
                 _editing.SetHoveredViseme(row.SectionIndex);
         });
         header.RegisterCallback<MouseLeaveEvent>(_ =>
         {
-            if (root.userData is RowData { Kind: RowKind.Controls, Canceller: false })
+            if (root.userData is RowData
+                {
+                    ShowHeader: true,
+                    Canceller: false,
+                    SectionIndex: >= 0
+                })
                 _editing.SetHoveredViseme(-1);
         });
 
@@ -113,6 +128,8 @@ internal sealed class LipSyncPanel
                     RemoveSectionShapes(row);
             });
         bulk.Element.name = "bulk";
+        bulk.Element.userData = bulk;
+        _bulkRows.Add((root, bulk));
 
         var shape = new SelectedShapeRow { name = "shape" };
         shape.style.flexGrow = 1f;
@@ -167,6 +184,7 @@ internal sealed class LipSyncPanel
         element.userData = row;
         var header = element.Q<SimpleToggle>("header");
         var bulkElement = element.Q<VisualElement>("bulk");
+        var bulk = (BulkShapeControls)bulkElement.userData;
         var shape = element.Q<SelectedShapeRow>("shape");
         var empty = element.Q<Label>("empty");
 
@@ -180,18 +198,21 @@ internal sealed class LipSyncPanel
         }
 
         header.SetVisible(true);
-        header.style.visibility = row.Kind == RowKind.Controls
+        header.style.visibility = row.ShowHeader
             ? Visibility.Visible
             : Visibility.Hidden;
         header.text = row.Canceller
-            ? "eyeBlink.simple.conflict.shortLabel".LS()
-            : VrcVisemeLipSyncShapes.Names[row.SectionIndex];
+            ? "shapesEditor.conflictCorrection.label".LS()
+            : row.Kind == RowKind.Controls
+                ? "shapesEditor.lipSync.label".LS()
+                : VrcVisemeLipSyncShapes.Names[row.SectionIndex];
         header.tooltip = row.Canceller
             ? "lipSync.cancellerBlendShapes.tooltip".LS()
             : string.Empty;
         var sectionSelected = row.Canceller
             ? _editing.CancellerSelected
-            : !_editing.CancellerSelected && row.SectionIndex == _editing.SelectedViseme;
+            : !_editing.CancellerSelected
+              && (row.SectionIndex < 0 || row.SectionIndex == _editing.SelectedViseme);
         header.SetValueWithoutNotify(sectionSelected);
         header.SetEnabled(row.Canceller || _editing.Draft.Mode == LipSyncSettings.Kind.Custom);
 
@@ -199,6 +220,9 @@ internal sealed class LipSyncPanel
         bulkElement.SetEnabled(sectionSelected
                                && (row.Canceller
                                    || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
+        if (row.Kind == RowKind.Controls)
+            bulk.SetRemoveZeroVisible(SectionShapeRows(row)
+                .Any(shapeRow => Mathf.Approximately(GetWeight(shapeRow), 0f)));
         empty.SetVisible(row.Kind == RowKind.Empty);
         empty.SetEnabled(sectionSelected
                          && (row.Canceller || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
@@ -222,14 +246,9 @@ internal sealed class LipSyncPanel
     {
         _rows.Clear();
         var shapes = _editing.PreviewShapes ?? new VrcVisemeLipSyncShapes();
+        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, false, true));
         for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
         {
-            _rows.Add(new RowData(
-                RowKind.Controls,
-                visemeIndex,
-                string.Empty,
-                -1,
-                false));
             var visible = shapes.GetShapes(visemeIndex)
                 .Where(shape => !_context.GroupManager.IsLeftSelected
                                 || _context.GroupManager.IsBlendShapeVisible(
@@ -237,7 +256,7 @@ internal sealed class LipSyncPanel
                 .ToArray();
             if (visible.Length == 0)
             {
-                _rows.Add(new RowData(RowKind.Empty, visemeIndex, string.Empty, -1, false));
+                _rows.Add(new RowData(RowKind.Empty, visemeIndex, string.Empty, -1, false, true));
                 continue;
             }
             for (var index = 0; index < visible.Length; index++)
@@ -247,19 +266,20 @@ internal sealed class LipSyncPanel
                     visemeIndex,
                     visible[index].Name,
                     -1,
-                    false));
+                    false,
+                    index == 0));
             }
         }
 
-        _rows.Add(new RowData(RowKind.Spacer, -1, string.Empty, -1, false));
-        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, true));
+        _rows.Add(new RowData(RowKind.Spacer, -1, string.Empty, -1, false, false));
+        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, true, true));
         var cancellerIndices = _canceller.GetTargetIndices(index =>
                 !_context.GroupManager.IsLeftSelected
                 || _context.GroupManager.IsBlendShapeVisible(index))
             .ToArray();
         if (cancellerIndices.Length == 0)
         {
-            _rows.Add(new RowData(RowKind.Empty, -1, string.Empty, -1, true));
+            _rows.Add(new RowData(RowKind.Empty, -1, string.Empty, -1, true, false));
         }
         else
         {
@@ -271,17 +291,23 @@ internal sealed class LipSyncPanel
                     -1,
                     _canceller.AllKeys[managerIndex],
                     managerIndex,
-                    true));
+                    true,
+                    false));
             }
         }
         _selected.RefreshItems();
     }
 
     private RowData[] SectionShapeRows(RowData section)
-        => _rows.Where(row => row.Kind == RowKind.Shape
-                              && row.Canceller == section.Canceller
-                              && (row.Canceller || row.SectionIndex == section.SectionIndex))
+    {
+        var visemeIndex = section.SectionIndex >= 0
+            ? section.SectionIndex
+            : _editing.SelectedViseme;
+        return _rows.Where(row => row.Kind == RowKind.Shape
+                                  && row.Canceller == section.Canceller
+                                  && (row.Canceller || row.SectionIndex == visemeIndex))
             .ToArray();
+    }
 
     private void SetSectionWeights(RowData section, float weight)
     {
@@ -290,7 +316,7 @@ internal sealed class LipSyncPanel
             _canceller.SetShapesWeight(rows.Select(row => row.ManagerIndex), weight);
         else
             _editing.SetWeights(
-                section.SectionIndex,
+                section.SectionIndex >= 0 ? section.SectionIndex : _editing.SelectedViseme,
                 rows.Select(row => row.ShapeName),
                 weight);
         _selected.RefreshItems();
@@ -305,7 +331,7 @@ internal sealed class LipSyncPanel
             _canceller.RemoveShapes(rows.Select(row => row.ManagerIndex));
         else
             _editing.RemoveShapes(
-                section.SectionIndex,
+                section.SectionIndex >= 0 ? section.SectionIndex : _editing.SelectedViseme,
                 rows.Select(row => row.ShapeName));
     }
 
@@ -316,7 +342,7 @@ internal sealed class LipSyncPanel
             _canceller.RemoveShapes(rows.Select(row => row.ManagerIndex));
         else
             _editing.RemoveShapes(
-                section.SectionIndex,
+                section.SectionIndex >= 0 ? section.SectionIndex : _editing.SelectedViseme,
                 rows.Select(row => row.ShapeName));
     }
 
@@ -329,6 +355,19 @@ internal sealed class LipSyncPanel
     {
         if (row.Canceller) _canceller.SetShapeWeight(row.ManagerIndex, weight);
         else _editing.SetWeight(row.SectionIndex, row.ShapeName, weight);
+        RefreshBulkControl(row);
+    }
+
+    private void RefreshBulkControl(RowData changedRow)
+    {
+        foreach (var (root, controls) in _bulkRows)
+        {
+            if (root.userData is not RowData { Kind: RowKind.Controls } section
+                || section.Canceller != changedRow.Canceller)
+                continue;
+            controls.SetRemoveZeroVisible(SectionShapeRows(section)
+                .Any(row => Mathf.Approximately(GetWeight(row), 0f)));
+        }
     }
 
     private bool IsChanged(RowData row, float weight)
