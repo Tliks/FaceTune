@@ -12,37 +12,40 @@ namespace Aoyon.FaceTune
         internal const string ComponentName = ComponentNamePrefix + "Settings";
 
         // このGameObjectより下のExpressionへ、親側から順に重ねる。
-        public bool HasFacialBlendShapes = false;
+        public bool HasFacialBlendShapes;
         public FacialBlendShapeData FacialBlendShapes = new();
-        public bool ApplyToRenderer = DefaultApplyToRenderer;
+        public bool ApplyToRenderer;
 
         // Menuと、選択中だけこのGameObjectより下を有効にする条件の組。
-        public bool ExpressionSetEnabled = false;
+        public bool ExpressionSetEnabled;
         public ExpressionSetSettings ExpressionSet = new();
 
         // このGameObjectより下にあるExpressionの通常条件へANDする。
-        public bool HasCondition = false;
-        public Condition Condition = CreateDefaultCondition();
+        public bool HasCondition;
+        public Condition Condition = new();
 
         // このGameObject自身と配下で、最も近いSettingsの値を使う。
-        public bool HasEyeBlink = false;
+        public bool HasEyeBlink;
         public SettingsReference EyeBlinkReference = new();
         public EyeBlinkSettings EyeBlink = new();
 
-        public bool HasLipSync = false;
+        public bool HasLipSync;
         public SettingsReference LipSyncReference = new();
         public LipSyncSettings LipSync = new();
 
-        public bool HasTransition = false;
+        public bool HasTransition;
         public TransitionSettings Transition = new();
 
-        public bool HasPriority = false;
+        public bool HasPriority;
         public PrioritySettings Priority = new();
 
 
 #region Defaults
 
-        internal const bool DefaultApplyToRenderer = false;
+        private void Reset()
+        {
+            Condition = CreateDefaultCondition();
+        }
 
         internal static Condition CreateDefaultCondition()
             => new(new ConditionCase());

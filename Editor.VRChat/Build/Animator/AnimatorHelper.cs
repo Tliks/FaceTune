@@ -209,6 +209,8 @@ internal static class AnimatorHelper
         GameObject root,
         IEnumerable<EditorCurveBinding> curveBindings)
     {
+        using var _ = new Utils.ProfilingSampleScope(
+            "Animator.ResolveNonFacialDefaults");
         var result = new ResolvedNonFacialAnimationSet();
         foreach (var binding in curveBindings.Distinct())
         {

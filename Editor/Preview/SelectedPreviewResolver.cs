@@ -36,6 +36,8 @@ internal static class SelectedPreviewResolver
                 ClipImportOption.NonZero,
                 animations,
                 avatar.BodyPath);
+            if (animations.Count == 0) continue;
+
             var facial = new FacialPreviewData(
                 animations,
                 null,
@@ -43,7 +45,7 @@ internal static class SelectedPreviewResolver
             avatars.Add(new AvatarPreviewData(
                 avatar.Root,
                 avatar.FaceRenderer,
-                null,
+                clip,
                 ignoredNames,
                 facial,
                 TrackingBehaviorDisplay.NotApplicable,
@@ -158,7 +160,7 @@ internal static class SelectedPreviewResolver
         var facialResolver = new FacialAnimationResolver(avatar.Root, context);
         FacialPreviewData? facial = null;
         if (facialResolver.TryResolve(settings, out var animations))
-            facial = new FacialPreviewData(animations, null, false);
+            facial = new FacialPreviewData(animations, 0f, false);
 
         var enabled = context.Observe(
             settings,

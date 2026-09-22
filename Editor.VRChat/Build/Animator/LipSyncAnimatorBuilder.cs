@@ -58,7 +58,6 @@ internal sealed class LipSyncAnimatorBuilder
         var initial = _graph.AddInitialDelayState(
             layer,
             LayoutOrigin + new Vector3(0, yStep * 2, 0));
-        SetLipSyncTracking(initial, false);
         _graph.AddExitTimeTransition(initial, evaluation);
 
         var disabled = _graph.AddState(

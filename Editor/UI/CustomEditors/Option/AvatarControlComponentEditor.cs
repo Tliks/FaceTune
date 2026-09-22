@@ -31,7 +31,7 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
             serializedObject,
             new[]
             {
-                SectionActionField.From(_kind, () => AvatarControlComponent.DefaultControlKind),
+                SectionActionField.From(_kind, () => default(AvatarControlComponent.Kind)),
                 SectionActionField.From(_mmd, () => new MMDSupportSettings())
             });
     }

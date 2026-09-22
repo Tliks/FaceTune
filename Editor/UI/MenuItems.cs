@@ -37,7 +37,7 @@ internal static class MenuItems
     public const string ExpressionPath = GameObjectPath + "Expression";
     public const int ExpressionPriority = 200;
 
-    public const string ExpressionDataPath = GameObjectPath + "Expression Data";
+    public const string ExpressionDataPath = GameObjectPath + "Data";
     public const int ExpressionDataPriority = 201;
 
 }

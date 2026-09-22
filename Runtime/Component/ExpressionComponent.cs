@@ -17,12 +17,12 @@ namespace Aoyon.FaceTune
 #region Condition
 
         // falseなら通常条件では発動しない。Alwaysでも親scopeの条件は受ける。
-        public bool HasCondition = false;
-        public ConditionSelection Condition = CreateDefaultCondition();
+        public bool HasCondition;
+        public ConditionSelection Condition = new();
 
         // 通常条件を迂回し、メニューを条件とする高優先度proxyを生成する。
-        public bool DirectMenuEnabled = false;
-        public DirectMenuSettings DirectMenuSettings = CreateDefaultDirectMenuSettings();
+        public bool DirectMenuEnabled;
+        public DirectMenuSettings DirectMenuSettings = new();
 
 #endregion
 
@@ -35,18 +35,18 @@ namespace Aoyon.FaceTune
         public FacialBlendShapeData FacialBlendShapes = new();
 
         // 下位の表情に対し、Replaceは上書し、Blendは同時に重ねる。
-        public ExpressionWriteMode WriteMode = ExpressionBehavior.Default.WriteMode;
+        public ExpressionWriteMode WriteMode;
         public MultiFrameSettings MultiFrame = new();
         // この表情再生中におけるまばたき/リップシンクの扱い。
-        public TrackingPermission AllowEyeBlink = ExpressionBehavior.Default.AllowEyeBlink;
-        public TrackingPermission AllowLipSync = ExpressionBehavior.Default.AllowLipSync;
+        public TrackingPermission AllowEyeBlink;
+        public TrackingPermission AllowLipSync;
 
         // trueなら、このExpressionの値を親のSettingsより優先する。
-        public bool HasEyeBlink = false;
+        public bool HasEyeBlink;
         public SettingsReference EyeBlinkReference = new();
         public EyeBlinkSettings EyeBlink = new();
 
-        public bool HasLipSync = false;
+        public bool HasLipSync;
         public SettingsReference LipSyncReference = new();
         public LipSyncSettings LipSync = new();
 
@@ -56,20 +56,24 @@ namespace Aoyon.FaceTune
 
 #region Other Expression Settings
 
-        public bool HasTransition = false;
+        public bool HasTransition;
         public TransitionSettings Transition = new();
 
-        public bool HasPriority = false;
+        public bool HasPriority;
         public PrioritySettings Priority = new();
 
         [ToggleLeft]
-        public bool AlwaysOnPreviewEnabled = DefaultAlwaysOnPreviewEnabled;
+        public bool AlwaysOnPreviewEnabled;
 
 #endregion
 
 #region Defaults
 
-        internal const bool DefaultAlwaysOnPreviewEnabled = false;
+        private void Reset()
+        {
+            Condition = CreateDefaultCondition();
+            DirectMenuSettings = CreateDefaultDirectMenuSettings();
+        }
 
         internal static DirectMenuSettings CreateDefaultDirectMenuSettings()
         {
@@ -89,8 +93,7 @@ namespace Aoyon.FaceTune
 
 #region Interfaces
 
-        SettingsReferenceMode IExpressionDefinitionProviderWithReference.DefinitionMode => ExpressionDataReference.Mode;
-        FaceTuneTagComponent? IExpressionDefinitionProviderWithReference.DefinitionSource => ExpressionDataReference.ComponentSource;
+        (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) IExpressionDefinitionProviderWithReference.Reference => (ExpressionDataReference.Mode, ExpressionDataReference.ComponentSource);
 
         (bool Enabled, FacialBlendShapeData Value) ISettingProvider<FacialBlendShapeData>.Setting => (true, FacialBlendShapes);
         (bool Enabled, NonFacialAnimationData Value) ISettingProvider<NonFacialAnimationData>.Setting => (true, NonFacialAnimations);

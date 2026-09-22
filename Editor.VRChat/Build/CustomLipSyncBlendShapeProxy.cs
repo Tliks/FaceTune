@@ -18,6 +18,8 @@ internal static class CustomLipSyncBlendShapeProxy
         ExpressionPlan expressions,
         ISet<string> builtInLipSyncBlendShapes)
     {
+        using var _ = new Utils.ProfilingSampleScope(
+            "Animator.ResolveCustomLipSyncProxy");
         var usedNames = expressions.Items
             .Select(item => item.LipSync)
             .Where(lipSync => lipSync.Mode == LipSyncSettings.Kind.Custom)
@@ -37,16 +39,30 @@ internal static class CustomLipSyncBlendShapeProxy
             .Select(mesh.GetBlendShapeName)
             .ToHashSet(StringComparer.Ordinal);
         var mapping = new Dictionary<string, string>(StringComparer.Ordinal);
+        var deltaVertices = new Vector3[sourceMesh.vertexCount];
+        var deltaNormals = new Vector3[sourceMesh.vertexCount];
+        var deltaTangents = new Vector3[sourceMesh.vertexCount];
 
-        foreach (var sourceName in usedNames)
+        using (new Utils.ProfilingSampleScope(
+                   "Animator.CustomLipSyncProxy.DuplicateBlendShapes"))
         {
-            var sourceIndex = sourceMesh.GetBlendShapeIndex(sourceName);
-            if (sourceIndex < 0) continue;
+            foreach (var sourceName in usedNames)
+            {
+                var sourceIndex = sourceMesh.GetBlendShapeIndex(sourceName);
+                if (sourceIndex < 0) continue;
 
-            var proxyName = CreateProxyName(sourceName, existingNames);
-            DuplicateBlendShape(sourceMesh, sourceIndex, mesh, proxyName);
-            existingNames.Add(proxyName);
-            mapping.Add(sourceName, proxyName);
+                var proxyName = CreateProxyName(sourceName, existingNames);
+                DuplicateBlendShape(
+                    sourceMesh,
+                    sourceIndex,
+                    mesh,
+                    proxyName,
+                    deltaVertices,
+                    deltaNormals,
+                    deltaTangents);
+                existingNames.Add(proxyName);
+                mapping.Add(sourceName, proxyName);
+            }
         }
 
         if (mapping.Count == 0)
@@ -55,18 +71,22 @@ internal static class CustomLipSyncBlendShapeProxy
             return new Result(settings, expressions, ImmutableHashSet<string>.Empty);
         }
 
-        settings.AvatarContext.FaceRenderer.sharedMesh = mesh;
+        using (new Utils.ProfilingSampleScope(
+                   "Animator.CustomLipSyncProxy.RewritePlan"))
+        {
+            settings.AvatarContext.FaceRenderer.sharedMesh = mesh;
 
-        var avatarContext = settings.AvatarContext with { FaceMesh = mesh };
-        var rewrittenSettings = settings with { AvatarContext = avatarContext };
-        var rewrittenExpressions = new ExpressionPlan(expressions.Items.Select(item =>
-            item.LipSync.Mode == LipSyncSettings.Kind.Custom
-                ? item with { LipSync = Rewrite(item.LipSync, mapping) }
-                : item));
-        return new Result(
-            rewrittenSettings,
-            rewrittenExpressions,
-            mapping.Values.ToImmutableHashSet(StringComparer.Ordinal));
+            var avatarContext = settings.AvatarContext with { FaceMesh = mesh };
+            var rewrittenSettings = settings with { AvatarContext = avatarContext };
+            var rewrittenExpressions = new ExpressionPlan(expressions.Items.Select(item =>
+                item.LipSync.Mode == LipSyncSettings.Kind.Custom
+                    ? item with { LipSync = Rewrite(item.LipSync, mapping) }
+                    : item));
+            return new Result(
+                rewrittenSettings,
+                rewrittenExpressions,
+                mapping.Values.ToImmutableHashSet(StringComparer.Ordinal));
+        }
     }
 
     private static string CreateProxyName(string sourceName, ISet<string> existingNames)
@@ -82,11 +102,11 @@ internal static class CustomLipSyncBlendShapeProxy
         Mesh source,
         int sourceIndex,
         Mesh destination,
-        string destinationName)
+        string destinationName,
+        Vector3[] deltaVertices,
+        Vector3[] deltaNormals,
+        Vector3[] deltaTangents)
     {
-        var deltaVertices = new Vector3[source.vertexCount];
-        var deltaNormals = new Vector3[source.vertexCount];
-        var deltaTangents = new Vector3[source.vertexCount];
         for (var frame = 0; frame < source.GetBlendShapeFrameCount(sourceIndex); frame++)
         {
             source.GetBlendShapeFrameVertices(

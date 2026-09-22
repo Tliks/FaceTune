@@ -48,6 +48,7 @@ internal sealed class SelectedShapesPreviewSession : IDisposable
     public void Dispose()
     {
         _disposed = true;
+        _context.Invalidate();
     }
 }
 
@@ -131,8 +132,7 @@ internal sealed class SelectedShapesPreview
         => CurrentAvatar?.LipSyncSetting ?? TrackingSettingDisplay.Hidden;
     internal bool CanPreviewLipSync => CurrentAvatar?.LipSync != null;
     internal int SelectedViseme => _selectedViseme;
-    internal Object? CurrentSource
-        => (Object?)CurrentAvatar?.Source ?? (_selection as AnimationClip);
+    internal Object? CurrentSource => CurrentAvatar?.Source;
 
     internal string GetAvatarName(int index)
         => Data?.Avatars[index].Root.name ?? string.Empty;

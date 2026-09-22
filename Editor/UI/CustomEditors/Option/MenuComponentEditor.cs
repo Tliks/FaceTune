@@ -40,7 +40,7 @@ internal sealed class MenuModeSectionDrawer : ISectionDrawer
             serializedObject,
             new[] { SectionActionField.From(
                 _kind,
-                () => MenuComponent.DefaultMenuKind) });
+                () => default(MenuComponent.Kind)) });
     }
 
     public SectionActionSet Actions { get; }
@@ -108,16 +108,16 @@ internal sealed class MenuParameterSettingsSectionDrawer : ISectionDrawer
             serializedObject,
             new[]
             {
-                SectionActionField.From(_useExistingParameter, () => MenuComponent.DefaultUseExistingParameter),
+                SectionActionField.From(_useExistingParameter, () => false),
                 SectionActionField.From(
                     _existingToggleParameterType,
-                    () => MenuComponent.DefaultExistingToggleParameterType),
-                SectionActionField.From(_generateParameterGroup, () => MenuComponent.DefaultGenerateParameterGroup),
-                SectionActionField.From(_parameterName, () => MenuComponent.DefaultParameterName),
-                SectionActionField.From(_groupName, () => MenuComponent.DefaultGroupName),
+                    () => default(MenuComponent.ToggleParameterType)),
+                SectionActionField.From(_generateParameterGroup, () => false),
+                SectionActionField.From(_parameterName, () => string.Empty),
+                SectionActionField.From(_groupName, () => string.Empty),
                 SectionActionField.From(_synced, () => MenuComponent.DefaultSynced),
                 SectionActionField.From(_saved, () => MenuComponent.DefaultSaved),
-                SectionActionField.From(_initialValue, () => MenuComponent.DefaultParameterValue),
+                SectionActionField.From(_initialValue, () => 0f),
                 SectionActionField.From(_selectedValue, () => MenuComponent.DefaultSelectedValue)
             });
     }

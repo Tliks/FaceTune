@@ -224,7 +224,7 @@ internal sealed class SettingsFacialSectionDrawer
             {
                 SectionActionField.From(
                     _applyToRenderer,
-                    () => SettingsComponent.DefaultApplyToRenderer)
+                    () => false)
             }));
     }
 
