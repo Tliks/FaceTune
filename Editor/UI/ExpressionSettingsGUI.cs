@@ -408,7 +408,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
                 ConflictBlendShapesOptions);
         position.NewLine();
 
-        DrawEditorRow(position, property, ShapesEditorMode.EyeBlinkSimple);
+        DrawEditorRow(ref position, property, ShapesEditorMode.EyeBlinkSimple);
         position.NewLine();
 
         position.height = GUIHelper.GetLinesHeight(2);
@@ -446,11 +446,11 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
             GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
         position.NewLine();
         DrawInterval(ref position, property);
-        DrawEditorRow(position, property, ShapesEditorMode.EyeBlinkCustom);
+        DrawEditorRow(ref position, property, ShapesEditorMode.EyeBlinkCustom);
     }
 
     private static void DrawEditorRow(
-        Rect position,
+        ref Rect position,
         SerializedProperty property,
         ShapesEditorMode mode)
     {
@@ -627,7 +627,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
                 MessageType.Warning);
             position.NewLine();
         }
-        DrawEditorRow(position, property);
+        DrawEditorRow(ref position, property);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -703,7 +703,7 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
             settings.FindPropertyRelative(nameof(LipSyncSettings.Shapes)).CopyFrom(shapes);
     }
 
-    private static void DrawEditorRow(Rect position, SerializedProperty property)
+    private static void DrawEditorRow(ref Rect position, SerializedProperty property)
     {
         var button = EditorGUI.PrefixLabel(position.SetSingleHeight(), "facialEditor.edit.button".LG());
         using var disabled = new EditorGUI.DisabledScope(
