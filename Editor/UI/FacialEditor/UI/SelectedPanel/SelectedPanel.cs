@@ -41,7 +41,10 @@ internal class SelectedPanel
 
 	public event Action<int>? OnSelectedItemNameClicked;
 
-    public SelectedPanel(BlendShapeOverrideManager blendShapeManager, BlendShapeGrouping groupManager)
+    public SelectedPanel(
+        BlendShapeOverrideManager blendShapeManager,
+        BlendShapeGrouping groupManager,
+        bool showSearch)
     {
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
@@ -54,6 +57,7 @@ internal class SelectedPanel
         Localization.LocalizeUIElements(_element);
         
         SetupControls();
+        _searchField.SetVisible(showSearch);
         SetupListViews();
         
         // rebuild sourcce

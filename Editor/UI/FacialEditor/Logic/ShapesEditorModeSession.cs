@@ -5,7 +5,7 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 internal abstract class ShapesEditorModeSession
 {
     public abstract ShapesEditorMode Kind { get; }
-    public virtual bool CanImportClip => false;
+    public virtual bool CanImportClip => true;
     public virtual bool UsesFacialIgnoredNames => false;
     public virtual float InitialPreviewTime => 0f;
     public virtual bool HasChanges => false;
@@ -15,6 +15,9 @@ internal abstract class ShapesEditorModeSession
     protected void NotifyChanged() => Changed?.Invoke();
 
     public abstract void BuildPreview(BlendShapeWeightSet result, float normalizedTime);
+    public abstract void ImportClip(
+        IReadOnlyList<BlendShapeWeightAnimation> animations,
+        int activeListIndex);
     public virtual void SaveSettings(SerializedProperty settings)
         => throw new InvalidOperationException("This mode does not edit component settings.");
     public virtual bool SynchronizeAfterUndo() => false;
@@ -38,7 +41,6 @@ internal sealed class FacialModeSession : ShapesEditorModeSession
     private readonly BlendShapeOverrideManager _manager;
 
     public override ShapesEditorMode Kind => ShapesEditorMode.Facial;
-    public override bool CanImportClip => true;
     public override bool UsesFacialIgnoredNames => true;
 
     public FacialModeSession(BlendShapeOverrideManager manager) => _manager = manager;
@@ -48,6 +50,11 @@ internal sealed class FacialModeSession : ShapesEditorModeSession
         result.AddRange(_manager.EffectiveBaseSet);
         _manager.GetTargetValues(result);
     }
+
+    public override void ImportClip(
+        IReadOnlyList<BlendShapeWeightAnimation> animations,
+        int activeListIndex)
+        => _manager.AddShapesWithAnimations(animations);
 }
 
 internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
@@ -57,7 +64,6 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
 
     public override ShapesEditorMode Kind
         => _simple ? ShapesEditorMode.EyeBlinkSimple : ShapesEditorMode.EyeBlinkCustom;
-    public override bool CanImportClip => !_simple;
     public override float InitialPreviewTime => _simple ? 1f : 0f;
     public override float GetPreviewOpacity(float normalizedTime)
         => _simple ? normalizedTime : 1f;
@@ -88,6 +94,20 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
         result.AddRange(BlendShapeAnimationPreview.Evaluate(
             animations,
             BlendShapeAnimationPreview.GetDuration(animations) * normalizedTime));
+    }
+
+    public override void ImportClip(
+        IReadOnlyList<BlendShapeWeightAnimation> animations,
+        int activeListIndex)
+    {
+        var manager = _managers[Mathf.Clamp(activeListIndex, 0, _managers.Length - 1)];
+        if (!_simple)
+        {
+            manager.AddShapesWithAnimations(animations);
+            return;
+        }
+        manager.AddShapesWithWeight(animations.Select(animation =>
+            (manager.GetIndexForShape(animation.Name), animation.Weight(0f))));
     }
 
     public override void SaveSettings(SerializedProperty settings)
@@ -137,6 +157,26 @@ internal sealed class LipSyncModeSession : ShapesEditorModeSession
             if (!Editing.UnavailableNames.Contains(shape.Name))
                 result.Add(shape);
         }
+    }
+
+    public override void ImportClip(
+        IReadOnlyList<BlendShapeWeightAnimation> animations,
+        int activeListIndex)
+    {
+        if (Editing.CancellerSelected)
+        {
+            _canceller.AddShapesWithWeight(animations
+                .Select(animation =>
+                    (_canceller.GetIndexForShape(animation.Name), animation.Weight(0f)))
+                .Where(value => value.Item1 >= 0 && !_canceller.IsUnavailable(value.Item1)));
+            return;
+        }
+        Editing.SetShapes(
+            animations
+                .Where(animation => _canceller.GetIndexForShape(animation.Name) >= 0)
+                .Select(animation =>
+                    new BlendShapeWeight(animation.Name, animation.Weight(0f))),
+            replaceExisting: false);
     }
 
     public override void SaveSettings(SerializedProperty settings)

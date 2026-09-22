@@ -161,6 +161,7 @@ internal class GeneralControls : IDisposable
         }
         _context.ActiveListChanged += UpdateUndoRedoState;
         _context.ActiveListChanged += UpdateActionButtonStates;
+        _context.ModeSession.Changed += RequestActionButtonStateUpdate;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
         clipField.AddToClassList("compact-field");
@@ -237,7 +238,7 @@ internal class GeneralControls : IDisposable
     {
         var animations = new List<BlendShapeWeightAnimation>();
         clip.GetBlendShapeAnimations(_clipImportOption, animations, string.Empty);
-        DataManager.AddShapesWithAnimations(animations);
+        _context.ModeSession.ImportClip(animations, _context.ActiveListIndex);
     }
 
     private void RequestActionButtonStateUpdate()
@@ -255,7 +256,8 @@ internal class GeneralControls : IDisposable
     private void UpdateActionButtonStates()
     {
         var hasRenderer = _context.Renderer != null;
-        var hasChanges = _context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState);
+        var hasChanges = _context.DataManagers.Any(dataManager => dataManager.IsChangedFromInitialState)
+                         || _context.ModeSession.HasChanges;
         _saveButton?.SetEnabled(hasRenderer && _context.Target != null && hasChanges);
         _restoreInitialOverridesButton?.SetEnabled(hasRenderer && DataManager.IsChangedFromInitialState);
         _restoreEditedOverridesButton?.SetEnabled(hasRenderer && DataManager.CanRestoreEditedOverrides);
@@ -270,6 +272,7 @@ internal class GeneralControls : IDisposable
         }
         _context.ActiveListChanged -= UpdateUndoRedoState;
         _context.ActiveListChanged -= UpdateActionButtonStates;
+        _context.ModeSession.Changed -= RequestActionButtonStateUpdate;
     }
 
     private void RebuildGroupToggles()

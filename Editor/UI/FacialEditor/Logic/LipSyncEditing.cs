@@ -11,6 +11,7 @@ internal sealed class LipSyncEditing
     public VrcVisemeLipSyncShapes? BuiltIn { get; }
     public ISet<string> UnavailableNames { get; }
     public int SelectedViseme { get; private set; }
+    public bool CancellerSelected { get; private set; }
     public int HoveredViseme { get; private set; } = -1;
     public int PreviewViseme => HoveredViseme >= 0 ? HoveredViseme : SelectedViseme;
     public VrcVisemeLipSyncShapes? PreviewShapes
@@ -37,8 +38,16 @@ internal sealed class LipSyncEditing
     public void SetSelectedViseme(int index)
     {
         index = Mathf.Clamp(index, 0, VrcVisemeLipSyncShapes.Count - 1);
-        if (SelectedViseme == index) return;
+        if (SelectedViseme == index && !CancellerSelected) return;
         SelectedViseme = index;
+        CancellerSelected = false;
+        NotifyChanged();
+    }
+
+    public void SelectCanceller()
+    {
+        if (CancellerSelected) return;
+        CancellerSelected = true;
         NotifyChanged();
     }
 
@@ -132,17 +141,38 @@ internal sealed class LipSyncEditing
 
     public void Add(string name)
     {
+        SetShapes(new[] { new BlendShapeWeight(name, 100f) }, replaceExisting: false);
+    }
+
+    public void SetShapes(
+        IEnumerable<BlendShapeWeight> shapes,
+        bool replaceExisting)
+    {
         if (Draft.Mode != LipSyncSettings.Kind.Custom) return;
         var property = GetVisemeProperty(SelectedViseme);
+        var values = shapes
+            .Where(shape => !UnavailableNames.Contains(shape.Name))
+            .GroupBy(shape => shape.Name, StringComparer.Ordinal)
+            .Select(group => group.Last())
+            .ToArray();
+        if (replaceExisting) property.ClearArray();
+        var indices = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var index = 0; index < property.arraySize; index++)
         {
-            if (property.GetArrayElementAtIndex(index)
-                    .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue == name)
-                return;
+            var name = property.GetArrayElementAtIndex(index)
+                .FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue;
+            indices[name] = index;
         }
-        property.InsertArrayElementAtIndex(property.arraySize);
-        property.GetArrayElementAtIndex(property.arraySize - 1)
-            .CopyFrom(new BlendShapeWeight(name, 100f));
+        foreach (var shape in values)
+        {
+            if (!indices.TryGetValue(shape.Name, out var index))
+            {
+                index = property.arraySize;
+                property.InsertArrayElementAtIndex(index);
+                indices.Add(shape.Name, index);
+            }
+            property.GetArrayElementAtIndex(index).CopyFrom(shape);
+        }
         Apply();
     }
 

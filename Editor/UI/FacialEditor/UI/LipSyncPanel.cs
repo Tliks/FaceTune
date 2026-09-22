@@ -5,15 +5,18 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal sealed class LipSyncPanel
 {
+    private const float HeaderWidth = 56f;
     private readonly FacialShapesEditorContext _context;
     private readonly LipSyncEditing _editing;
-    private readonly TextField _selectedSearch = new PlaceholderTextField();
+    private readonly BlendShapeOverrideManager _canceller;
     private readonly TextField _availableSearch = new PlaceholderTextField();
     private readonly ScrollView _sections = new();
     private readonly ListView _available = new();
     private readonly List<string> _availableNames = new();
     private readonly List<SimpleToggle> _visemeButtons = new();
     private readonly List<VisualElement> _visemeContents = new();
+    private SimpleToggle? _cancellerButton;
+    private VisualElement? _cancellerContent;
 
     public VisualElement SelectedElement { get; } = new SpacedVerticalElement();
     public VisualElement AvailableElement { get; } = new SpacedVerticalElement();
@@ -24,19 +27,15 @@ internal sealed class LipSyncPanel
     {
         _context = context;
         _editing = editing;
-        _selectedSearch.value = string.Empty;
+        _canceller = context.DataManagers[0];
         _availableSearch.value = string.Empty;
-        if (_selectedSearch is PlaceholderTextField selected)
-            selected.Placeholder = "facialEditor.search.placeholder".LS();
         if (_availableSearch is PlaceholderTextField available)
             available.Placeholder = "facialEditor.search.placeholder".LS();
-        _selectedSearch.RegisterValueChangedCallback(_ => RebuildSections());
         _availableSearch.RegisterValueChangedCallback(_ => RebuildAvailable());
 
         _sections.style.flexGrow = 1f;
         _available.style.flexGrow = 1f;
         SelectedElement.Add(CreateModeField());
-        SelectedElement.Add(_selectedSearch);
         SelectedElement.Add(_sections);
         AvailableElement.Add(_availableSearch);
         AvailableElement.Add(_available);
@@ -50,6 +49,11 @@ internal sealed class LipSyncPanel
         context.GroupManager.OnGroupSelectionChanged += _ => Rebuild();
         context.GroupManager.OnLeftSelectionChanged += _ => RebuildSections();
         context.GroupManager.OnRightSelectionChanged += _ => RebuildAvailable();
+        _canceller.OnSingleShapeAdded += _ => RebuildSections();
+        _canceller.OnMultipleShapesAdded += _ => RebuildSections();
+        _canceller.OnSingleShapeRemoved += _ => RebuildSections();
+        _canceller.OnMultipleShapesRemoved += _ => RebuildSections();
+        _canceller.OnUnknownChange += RebuildSections;
 
         Rebuild();
     }
@@ -92,9 +96,10 @@ internal sealed class LipSyncPanel
         _sections.Clear();
         _visemeButtons.Clear();
         _visemeContents.Clear();
+        _cancellerButton = null;
+        _cancellerContent = null;
         var values = (_editing.PreviewShapes ?? new VrcVisemeLipSyncShapes())
             .GetOrderedShapes();
-        var search = _selectedSearch.value ?? string.Empty;
         for (var index = 0; index < VrcVisemeLipSyncShapes.Count; index++)
         {
             var visemeIndex = index;
@@ -104,11 +109,11 @@ internal sealed class LipSyncPanel
             var button = new SimpleToggle
             {
                 text = VrcVisemeLipSyncShapes.Names[index],
-                value = index == _editing.SelectedViseme
+                value = !_editing.CancellerSelected && index == _editing.SelectedViseme
             };
-            button.style.width = 44f;
-            button.style.minWidth = 44f;
-            button.style.maxWidth = 44f;
+            button.style.width = HeaderWidth;
+            button.style.minWidth = HeaderWidth;
+            button.style.maxWidth = HeaderWidth;
             button.style.height = FacialShapeUI.RowHeight;
             button.style.marginRight = FacialShapeUI.Spacing;
             button.RegisterValueChangedCallback(evt =>
@@ -120,7 +125,7 @@ internal sealed class LipSyncPanel
                 }
                 _editing.SetSelectedViseme(visemeIndex);
                 UpdateSelection();
-                _available.RefreshItems();
+                RebuildAvailable();
             });
             button.RegisterCallback<MouseEnterEvent>(_ =>
                 _editing.SetHoveredViseme(visemeIndex));
@@ -132,13 +137,12 @@ internal sealed class LipSyncPanel
             var content = new SpacedVerticalElement();
             content.style.flexGrow = 1f;
             content.SetEnabled(_editing.Draft.Mode == LipSyncSettings.Kind.Custom
+                               && !_editing.CancellerSelected
                                && index == _editing.SelectedViseme);
             foreach (var shape in values[index])
             {
                 var shapeIndex = _context.Catalog.IndexOf(shape.Name);
-                if (search.Length > 0
-                    && shape.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
-                    || _context.GroupManager.IsLeftSelected
+                if (_context.GroupManager.IsLeftSelected
                     && !_context.GroupManager.IsBlendShapeVisible(shapeIndex))
                     continue;
                 content.Add(CreateShapeRow(index, shape));
@@ -153,6 +157,91 @@ internal sealed class LipSyncPanel
             _visemeContents.Add(content);
             _sections.Add(section);
         }
+        AddCancellerSection();
+    }
+
+    private void AddCancellerSection()
+    {
+        var section = new HorizontalElement();
+        section.style.alignItems = Align.FlexStart;
+        var button = new SimpleToggle
+        {
+            text = "lipSync.canceller.shortLabel".LS(),
+            tooltip = "lipSync.cancellerBlendShapes.label".LS(),
+            value = _editing.CancellerSelected
+        };
+        button.style.width = HeaderWidth;
+        button.style.minWidth = HeaderWidth;
+        button.style.maxWidth = HeaderWidth;
+        button.style.height = FacialShapeUI.RowHeight;
+        button.style.marginRight = FacialShapeUI.Spacing;
+        button.RegisterValueChangedCallback(evt =>
+        {
+            if (!evt.newValue)
+            {
+                button.SetValueWithoutNotify(true);
+                return;
+            }
+            _editing.SelectCanceller();
+            UpdateSelection();
+            RebuildAvailable();
+        });
+        section.Add(button);
+        _cancellerButton = button;
+
+        var content = new SpacedVerticalElement();
+        content.style.flexGrow = 1f;
+        content.SetEnabled(_editing.CancellerSelected);
+        foreach (var index in _canceller.GetTargetIndices(shapeIndex =>
+                     !_context.GroupManager.IsLeftSelected
+                     || _context.GroupManager.IsBlendShapeVisible(shapeIndex)))
+        {
+            content.Add(CreateCancellerRow(index));
+        }
+        if (content.childCount == 0)
+        {
+            var empty = new VisualElement();
+            empty.style.height = FacialShapeUI.RowHeight;
+            content.Add(empty);
+        }
+        section.Add(content);
+        _cancellerContent = content;
+        _sections.Add(section);
+    }
+
+    private VisualElement CreateCancellerRow(int index)
+    {
+        var row = new SelectedShapeRow();
+        var name = _canceller.AllKeys[index];
+        row.NameLabel.text = name;
+        row.FacialRail.style.opacity = 0f;
+        row.SetChanged(_canceller.IsShapeChangedFromInitialState(index));
+        row.SetWarning(_canceller.IsMissing(index), _canceller.IsExplicitlyExcluded(name));
+        row.Curve.SetVisible(false);
+        row.CurveToggle.SetVisible(false);
+        row.Weight.SetValueWithoutNotify(_canceller.GetEffectiveShapeWeight(index));
+        row.Weight.RegisterValueChangedCallback(evt =>
+        {
+            _canceller.SetShapeWeight(index, evt.newValue);
+            row.SetChanged(_canceller.IsShapeChangedFromInitialState(index));
+        });
+        row.WeightToggle.clicked += () =>
+        {
+            var weight = Mathf.Approximately(_canceller.GetEffectiveShapeWeight(index), 0f)
+                ? 100f
+                : 0f;
+            _canceller.SetShapeWeight(index, weight);
+            row.Weight.SetValueWithoutNotify(weight);
+            row.SetChanged(_canceller.IsShapeChangedFromInitialState(index));
+        };
+        row.RemoveButton.clicked += () => _canceller.RemoveShape(index);
+        row.Metadata.RegisterCallback<ClickEvent>(_ =>
+        {
+            if (!_canceller.TryRestoreShapeToInitialState(index)) return;
+            row.Weight.SetValueWithoutNotify(_canceller.GetEffectiveShapeWeight(index));
+            row.SetChanged(false);
+        });
+        return row;
     }
 
     private void UpdateSelection()
@@ -160,9 +249,13 @@ internal sealed class LipSyncPanel
         var editable = _editing.Draft.Mode == LipSyncSettings.Kind.Custom;
         for (var index = 0; index < _visemeButtons.Count; index++)
         {
-            _visemeButtons[index].SetValueWithoutNotify(index == _editing.SelectedViseme);
-            _visemeContents[index].SetEnabled(editable && index == _editing.SelectedViseme);
+            _visemeButtons[index].SetValueWithoutNotify(
+                !_editing.CancellerSelected && index == _editing.SelectedViseme);
+            _visemeContents[index].SetEnabled(
+                editable && !_editing.CancellerSelected && index == _editing.SelectedViseme);
         }
+        _cancellerButton?.SetValueWithoutNotify(_editing.CancellerSelected);
+        _cancellerContent?.SetEnabled(_editing.CancellerSelected);
     }
 
     private VisualElement CreateShapeRow(int visemeIndex, BlendShapeWeight shape)
@@ -192,7 +285,7 @@ internal sealed class LipSyncPanel
         row.CurveToggle.SetVisible(false);
         row.WeightToggle.clicked += () => ApplyWeight(
             Mathf.Approximately(_editing.GetWeight(visemeIndex, shape.Name), 0f) ? 100f : 0f);
-        row.Remove.clicked += () =>
+        row.RemoveButton.clicked += () =>
         {
             _editing.Remove(visemeIndex, shape.Name);
             Rebuild();
@@ -207,7 +300,10 @@ internal sealed class LipSyncPanel
         foreach (var name in _context.Catalog.Names)
         {
             var shapeIndex = _context.Catalog.IndexOf(name);
-            if (_editing.UnavailableNames.Contains(name)
+            var unavailable = _editing.CancellerSelected
+                ? _canceller.IsUnavailable(shapeIndex)
+                : _editing.UnavailableNames.Contains(name);
+            if (unavailable
                 || search.Length > 0
                 && name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
                 || _context.GroupManager.IsRightSelected
@@ -225,8 +321,16 @@ internal sealed class LipSyncPanel
         element.RegisterCallback<ClickEvent>(_ =>
         {
             if (element.userData is not string name) return;
-            _editing.Add(name);
-            Rebuild();
+            if (_editing.CancellerSelected)
+            {
+                _canceller.AddShapeWithWeight(_context.Catalog.IndexOf(name), 100f);
+            }
+            else
+            {
+                _editing.Add(name);
+                RebuildSections();
+            }
+            _available.RefreshItems();
         });
         element.RegisterCallback<MouseEnterEvent>(_ =>
         {
@@ -242,8 +346,12 @@ internal sealed class LipSyncPanel
         var name = _availableNames[index];
         element.userData = name;
         element.Q<Label>("name").text = name;
+        var selected = _editing.CancellerSelected
+            ? _canceller.IsInTarget(_context.Catalog.IndexOf(name))
+            : _editing.Contains(_editing.SelectedViseme, name);
         element.SetEnabled(
-            _editing.Draft.Mode == LipSyncSettings.Kind.Custom
-            && !_editing.Contains(_editing.SelectedViseme, name));
+            !selected
+            && (_editing.CancellerSelected
+                || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
     }
 }

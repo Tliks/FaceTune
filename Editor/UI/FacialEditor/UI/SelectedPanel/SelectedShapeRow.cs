@@ -23,7 +23,7 @@ internal sealed class SelectedShapeRow : VisualElement
     public IMGUIContainer Curve => this.Q<IMGUIContainer>("curve-field");
     public Button CurveToggle => this.Q<Button>("curve-toggle");
     public Button WeightToggle => this.Q<Button>("toggle-button");
-    public Button Remove => this.Q<Button>("action");
+    public Button RemoveButton => this.Q<Button>("action");
 
     public SelectedShapeRow()
     {
@@ -40,7 +40,7 @@ internal sealed class SelectedShapeRow : VisualElement
         CurveToggle.text = "M";
         CurveToggle.tooltip = "blendShapeAnimation.multiFrame.label".LS();
         WeightToggle.Add(new Image { image = ToggleIcon });
-        Remove.Add(new Image { image = RemoveIcon });
+        RemoveButton.Add(new Image { image = RemoveIcon });
         Warning.image = WarningIcon;
     }
 

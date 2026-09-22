@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Gui.Components;
-using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Gui.ShapesEditor;
@@ -17,10 +16,8 @@ internal class FacialShapeUI : IDisposable
     private readonly VisualElement _selectedContainer;
     private readonly VisualElement _unselectedContainer;
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
-    private readonly List<ToolbarToggle> _listButtons = new();
+    private readonly List<SimpleToggle> _listButtons = new();
     private LipSyncPanel? _lipSyncPanel;
-    private ToolbarToggle? _lipSyncButton;
-    private ToolbarToggle? _cancellerButton;
     private GeneralControls _generalControls;
 
     public FacialShapeUI(
@@ -76,68 +73,30 @@ internal class FacialShapeUI : IDisposable
                 AddTimeSlider(container, 0f);
                 break;
             case ShapesEditorMode.LipSync:
-                SetupLipSyncToolbar(container);
+                container.SetVisible(false);
+                gap.SetVisible(false);
                 break;
         }
-    }
-
-    private void SetupLipSyncToolbar(VisualElement container)
-    {
-        var toolbar = new Toolbar();
-        _lipSyncButton = new ToolbarToggle
-        {
-            text = "previewOverlay.lipSync.label".LS(),
-            value = true
-        };
-        _cancellerButton = new ToolbarToggle
-        {
-            text = "lipSync.cancellerBlendShapes.label".LS()
-        };
-        _lipSyncButton.RegisterValueChangedCallback(evt =>
-        {
-            if (evt.newValue) ShowLipSync();
-            else if (_cancellerButton?.value != true)
-                _lipSyncButton.SetValueWithoutNotify(true);
-        });
-        _cancellerButton.RegisterValueChangedCallback(evt =>
-        {
-            if (evt.newValue) ShowCanceller();
-            else if (_lipSyncButton?.value != true)
-                _cancellerButton.SetValueWithoutNotify(true);
-        });
-        toolbar.Add(_lipSyncButton);
-        toolbar.Add(_cancellerButton);
-        container.Add(toolbar);
     }
 
     private void ShowLipSync()
     {
         if (_lipSyncPanel == null) return;
-        _lipSyncButton?.SetValueWithoutNotify(true);
-        _cancellerButton?.SetValueWithoutNotify(false);
         _selectedContainer.Clear();
         _unselectedContainer.Clear();
         _selectedContainer.Add(_lipSyncPanel.SelectedElement);
         _unselectedContainer.Add(_lipSyncPanel.AvailableElement);
     }
 
-    private void ShowCanceller()
-    {
-        _lipSyncButton?.SetValueWithoutNotify(false);
-        _cancellerButton?.SetValueWithoutNotify(true);
-        ShowActiveList();
-    }
-
     private void AddListButtons(
         VisualElement container,
         IEnumerable<string> labels)
     {
-        var toolbar = new Toolbar();
         var labelArray = labels.ToArray();
         for (var index = 0; index < labelArray.Length; index++)
         {
             var listIndex = index;
-            var button = new ToolbarToggle { text = labelArray[index] };
+            var button = new SimpleToggle { text = labelArray[index] };
             button.RegisterValueChangedCallback(evt =>
             {
                 if (evt.newValue)
@@ -145,10 +104,10 @@ internal class FacialShapeUI : IDisposable
                 else if (_context.ActiveListIndex == listIndex)
                     button.SetValueWithoutNotify(true);
             });
-            toolbar.Add(button);
+            button.style.marginRight = Spacing;
+            container.Add(button);
             _listButtons.Add(button);
         }
-        container.Add(toolbar);
     }
 
     private void AddTimeSlider(VisualElement container, float initialValue)
@@ -173,7 +132,10 @@ internal class FacialShapeUI : IDisposable
         if (!_panels.TryGetValue(index, out var panels))
         {
             var dataManager = _context.DataManagers[index];
-            var selected = new SelectedPanel(dataManager, _context.GroupManager);
+            var selected = new SelectedPanel(
+                dataManager,
+                _context.GroupManager,
+                _context.Mode == ShapesEditorMode.Facial);
             var unselected = new UnselectedPanel(
                 dataManager,
                 _context.GroupManager,
