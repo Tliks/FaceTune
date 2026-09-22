@@ -243,7 +243,7 @@ internal sealed class LipSyncPanel
                     index == 0));
             }
         }
-        _selected.Rebuild();
+        _selected.RefreshItems();
     }
 
     private float GetWeight(RowData row)

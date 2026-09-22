@@ -161,7 +161,7 @@ internal sealed class EyeBlinkPanel : IDisposable
             foreach (var managerIndex in indices)
                 _rows.Add(new RowData(RowKind.Shape, listIndex, managerIndex));
         }
-        _selected.Rebuild();
+        _selected.RefreshItems();
     }
 
     private void UpdateSelection()

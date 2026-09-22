@@ -124,7 +124,7 @@ internal sealed class LipSyncAvailablePanel
                 continue;
             _names.Add(name);
         }
-        _list.Rebuild();
+        _list.RefreshItems();
         _addAll.SetEnabled(
             _names.Any(name => !IsSelected(name))
             && (_editing.CancellerSelected
