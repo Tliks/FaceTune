@@ -221,10 +221,7 @@ internal sealed class LipSyncPanel
                                && (row.Canceller
                                    || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
         if (row.Kind == RowKind.Controls)
-            bulk.SetRemoveZeroVisible(!row.Canceller && row.SectionIndex < 0
-                ? _editing.HasZeroWeight()
-                : SectionShapeRows(row)
-                    .Any(shapeRow => Mathf.Approximately(GetWeight(shapeRow), 0f)));
+            bulk.SetRemoveZeroVisible(!row.Canceller && _editing.HasZeroWeight());
         empty.SetVisible(row.Kind == RowKind.Empty);
         empty.SetEnabled(sectionSelected
                          && (row.Canceller || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
@@ -358,20 +355,16 @@ internal sealed class LipSyncPanel
     {
         if (row.Canceller) _canceller.SetShapeWeight(row.ManagerIndex, weight);
         else _editing.SetWeight(row.SectionIndex, row.ShapeName, weight);
-        RefreshBulkControl(row);
+        RefreshBulkControl();
     }
 
-    private void RefreshBulkControl(RowData changedRow)
+    private void RefreshBulkControl()
     {
         foreach (var (root, controls) in _bulkRows)
         {
-            if (root.userData is not RowData { Kind: RowKind.Controls } section
-                || section.Canceller != changedRow.Canceller)
+            if (root.userData is not RowData { Kind: RowKind.Controls, Canceller: false })
                 continue;
-            controls.SetRemoveZeroVisible(section.Canceller
-                ? SectionShapeRows(section)
-                    .Any(row => Mathf.Approximately(GetWeight(row), 0f))
-                : _editing.HasZeroWeight());
+            controls.SetRemoveZeroVisible(_editing.HasZeroWeight());
         }
     }
 
