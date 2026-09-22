@@ -246,7 +246,7 @@ internal sealed class LipSyncPanel
     {
         _rows.Clear();
         var shapes = _editing.PreviewShapes ?? new VrcVisemeLipSyncShapes();
-        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, false, true));
+        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, false, false));
         for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
         {
             var visible = shapes.GetShapes(visemeIndex)
@@ -385,7 +385,10 @@ internal sealed class LipSyncPanel
             "lipSync.mode.option.custom".LS()
         };
         var selected = _editing.Draft.Mode == LipSyncSettings.Kind.Custom ? 1 : 0;
-        var field = new PopupField<string>("lipSync.mode.label".LS(), labels.ToList(), selected);
+        var field = new PopupField<string>(
+            "shapesEditor.lipSync.label".LS(),
+            labels.ToList(),
+            selected);
         field.RegisterValueChangedCallback(evt =>
         {
             var mode = evt.newValue == labels[1]

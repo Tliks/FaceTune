@@ -4,6 +4,8 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal sealed class PreviewTimelineElement : IDisposable
 {
+    private const float PlaybackDurationSeconds = 0.5f;
+
     private readonly Button _play;
     private readonly Slider _slider;
     private readonly Action<float> _seek;
@@ -20,10 +22,7 @@ internal sealed class PreviewTimelineElement : IDisposable
         Element.style.flexDirection = FlexDirection.Row;
         Element.style.alignItems = Align.Center;
         Element.style.width = Length.Percent(100f);
-        _play = new Button(TogglePlayback) { text = "▶" };
-        _play.style.width = 24f;
-        _play.style.height = 20f;
-        _play.style.flexShrink = 0f;
+        _play = CreateButton("▶", TogglePlayback);
         _slider = new Slider(0f, 1f) { value = initialValue };
         _slider.style.flexGrow = 1f;
         _slider.style.flexShrink = 1f;
@@ -32,18 +31,28 @@ internal sealed class PreviewTimelineElement : IDisposable
         _slider.style.height = 18f;
         _slider.RegisterValueChangedCallback(evt =>
         {
-            Stop();
+            Pause();
             _seek(evt.newValue);
         });
         Element.Add(_play);
         Element.Add(_slider);
+        Element.Add(CreateButton("■", Stop));
+    }
+
+    private static Button CreateButton(string text, Action clicked)
+    {
+        var button = new Button(clicked) { text = text };
+        button.style.width = 24f;
+        button.style.height = 20f;
+        button.style.flexShrink = 0f;
+        return button;
     }
 
     private void TogglePlayback()
     {
         if (_playing)
         {
-            Stop();
+            Pause();
             return;
         }
         _playing = true;
@@ -55,17 +64,19 @@ internal sealed class PreviewTimelineElement : IDisposable
 
     private void Tick()
     {
-        var value = _startValue + (float)(EditorApplication.timeSinceStartup - _startedAt);
+        var value = _startValue
+                    + (float)(EditorApplication.timeSinceStartup - _startedAt)
+                    / PlaybackDurationSeconds;
         if (value >= 1f)
         {
             value = 1f;
-            Stop();
+            Pause();
         }
         _slider.SetValueWithoutNotify(value);
         _seek(value);
     }
 
-    private void Stop()
+    private void Pause()
     {
         if (!_playing) return;
         _playing = false;
@@ -73,9 +84,16 @@ internal sealed class PreviewTimelineElement : IDisposable
         _schedule?.Pause();
     }
 
+    private void Stop()
+    {
+        Pause();
+        _slider.SetValueWithoutNotify(0f);
+        _seek(0f);
+    }
+
     public void Dispose()
     {
-        Stop();
+        Pause();
         _schedule = null;
     }
 }
