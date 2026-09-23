@@ -96,9 +96,11 @@ internal static class VRChatAnimatorBuilder
             MetaversePlatformSupport.GetForBuild(buildContext),
             settings.ParameterDomains,
             analyzedWriteDefaults);
-        var useInactiveAap = !mmdSupport.LayerPlaybackWhen.IsNever
-            && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer);
-        var aap = new AapProtocol(trackingPlan, useInactiveAap);
+        var afkSupport = new AfkSupport(avatarControlSettings.SupportAfk);
+        var useInactiveAap = (!mmdSupport.LayerPlaybackWhen.IsNever
+            && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
+            || !afkSupport.PlaybackWhen.IsNever;
+        var aap = new AapProtocol(trackingPlan, useInactiveAap, afkSupport.PlaybackWhen);
 
         if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
             || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
@@ -132,7 +134,8 @@ internal static class VRChatAnimatorBuilder
                 proxy.ProxyNames,
                 nonFacialDefaults,
                 mmdSupport,
-                aap);
+                aap,
+                afkSupport);
         }
 
         var expressionBuilder = new ExpressionAnimatorBuilder(
@@ -200,7 +203,8 @@ internal static class VRChatAnimatorBuilder
         ISet<string> generatedLipSyncBlendShapes,
         ResolvedNonFacialAnimationSet nonFacialDefaults,
         MmdSupport mmdSupport,
-        AapProtocol aap)
+        AapProtocol aap,
+        AfkSupport afkSupport)
     {
         AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
         aap.EnsureExpressionInactiveParameter(controller);
@@ -229,6 +233,12 @@ internal static class VRChatAnimatorBuilder
             blendShapes,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
             settings.AvatarContext.BodyPath);
+        afkSupport.AddInitialState(
+            controller,
+            graph,
+            layer,
+            defaultState,
+            origin + new Vector3(0, AnimatorGraph.PositionYStep * 4, 0));
     }
 
     private static void SetInitialClip(
