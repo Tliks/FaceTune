@@ -947,6 +947,9 @@ msgstr "Avatar"
 msgid "previewOverlay.target.label"
 msgstr "Target"
 
+msgid "previewOverlay.details.label"
+msgstr "Detailed Preview"
+
 msgid "previewOverlay.status.present"
 msgstr "Present"
 

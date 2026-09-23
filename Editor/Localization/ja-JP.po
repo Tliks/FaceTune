@@ -947,6 +947,9 @@ msgstr "アバター"
 msgid "previewOverlay.target.label"
 msgstr "対象"
 
+msgid "previewOverlay.details.label"
+msgstr "詳細プレビュー"
+
 msgid "previewOverlay.status.present"
 msgstr "あり"
 

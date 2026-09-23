@@ -1,20 +1,27 @@
 using UnityEditor.Overlays;
+using UnityEngine.UIElements;
 
 namespace Aoyon.FaceTune.Preview;
 
-[Overlay(typeof(SceneView), FaceTuneConstants.Name + " Preview", false)]
-internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
+[Overlay(typeof(SceneView), FaceTuneConstants.Name, false)]
+internal sealed class FaceTunePreviewOverlay : Overlay
 {
     private const float PlayButtonSize = 20f;
     private const int PlayButtonIconSize = 12;
     private const float AvatarFieldWidth = 130f;
     private const float TimelineWidth = 130f;
     private const float ContentWidth = 154f;
+    private const float CompactWindowMargin = 32f;
+    private const int CloseDelayMilliseconds = 300;
     private const float VisemeButtonWidth = 30f;
     private const float SectionLabelHeight = 10f;
     private const int VisemeColumns = 5;
 
     private SelectedShapesPreview? _preview;
+    private bool _expanded;
+    private bool _pointerInside;
+    private IVisualElementScheduledItem? _closeSchedule;
+    private GUIStyle? _compactStyle;
     private GUIStyle? _playButtonStyle;
     private GUIStyle? _visemeButtonStyle;
     private GUIStyle? _sectionLabelStyle;
@@ -28,13 +35,60 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
 
     public override void OnWillBeDestroyed()
     {
+        _closeSchedule?.Pause();
         if (_preview != null)
+        {
             _preview.TargetsChanged -= UpdateVisibility;
+            _preview.SetVisemeHover(VisemeHoverSource.Overlay, -1);
+        }
     }
 
-    public override void OnGUI()
+    public override VisualElement CreatePanelContent()
+    {
+        var content = new IMGUIContainer(OnGUI);
+        content.RegisterCallback<MouseEnterEvent>(_ =>
+        {
+            _closeSchedule?.Pause();
+            _closeSchedule = null;
+            _pointerInside = true;
+            _expanded = true;
+            content.MarkDirtyRepaint();
+        });
+        content.RegisterCallback<MouseLeaveEvent>(_ =>
+        {
+            _pointerInside = false;
+            _preview?.SetVisemeHover(VisemeHoverSource.Overlay, -1);
+            _closeSchedule?.Pause();
+            _closeSchedule = content.schedule.Execute(() =>
+            {
+                _closeSchedule = null;
+                _expanded = false;
+                content.MarkDirtyRepaint();
+            }).StartingIn(CloseDelayMilliseconds);
+        });
+        return content;
+    }
+
+    private void OnGUI()
     {
         var preview = _preview ?? DirectBlendShapePreview.Instance.Selected;
+        if (!_expanded)
+        {
+            _compactStyle ??= new GUIStyle(EditorStyles.helpBox)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 12,
+                padding = new RectOffset(6, 6, 4, 4)
+            };
+            var label = "previewOverlay.details.label".LS();
+            var textWidth = _compactStyle.CalcSize(new GUIContent(label)).x;
+            var headerWidth = EditorStyles.label.CalcSize(new GUIContent(displayName)).x + 20f;
+            var maxWidth = Mathf.Max(1f, containerWindow.position.width - CompactWindowMargin);
+            GUILayout.Label(label, _compactStyle,
+                GUILayout.Width(Mathf.Min(Mathf.Max(textWidth, headerWidth), maxWidth)));
+            return;
+        }
+
         DrawSectionLabel("previewOverlay.target.label".LS());
         DrawAvatarSelector(preview);
         DrawSource(preview);
@@ -305,7 +359,7 @@ internal sealed class FaceTunePreviewOverlay : IMGUIOverlay
             && eventType != EventType.MouseLeaveWindow)
             return;
 
-        var nextHover = enabled && eventType != EventType.MouseLeaveWindow
+        var nextHover = enabled && _pointerInside && eventType != EventType.MouseLeaveWindow
             ? hovered
             : -1;
         preview.SetVisemeHover(VisemeHoverSource.Overlay, nextHover);
