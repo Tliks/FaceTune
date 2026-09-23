@@ -37,7 +37,7 @@ internal record struct BuildSettings(
                && !IsBlendShapeProhibited(writeKind, name);
     }
 
-    public BlendShapeWeight[] GetManagedZeroBlendShapes()
+    public BlendShapeWeight[] GetManagedBlendShapes()
     {
         var avatarContext = AvatarContext;
         var explicitlyExcluded = ExplicitlyExcludedBlendShapeNames;
@@ -46,7 +46,11 @@ internal record struct BuildSettings(
             .GetBlendShapeWeights(avatarContext.FaceMesh)
             .Where(shape => !explicitlyExcluded.Contains(shape.Name)
                 && !prohibited.Contains(shape.Name))
-            .Select(shape => shape with { Weight = 0f })
             .ToArray();
     }
+
+    public BlendShapeWeight[] GetManagedZeroBlendShapes()
+        => GetManagedBlendShapes()
+            .Select(shape => shape with { Weight = 0f })
+            .ToArray();
 }
