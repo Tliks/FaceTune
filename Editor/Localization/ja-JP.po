@@ -742,6 +742,9 @@ msgstr "リップシンクを無効化"
 msgid "avatarControl.kind.supportMmd.label"
 msgstr "MMD対応"
 
+msgid "avatarControl.kind.supportAfk.label"
+msgstr "AFK対応"
+
 msgid "avatarSettings.faceMesh.empty.message"
 msgstr "顔メッシュのオブジェクトを選択してください。"
 

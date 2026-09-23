@@ -13,6 +13,7 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
 
         var controls = root.GetComponentsInChildren<AvatarControlComponent>(true);
         var mmdSupport = FindSingle(controls, AvatarControlComponent.Kind.SupportMMD);
+        var supportAfk = FindSingle(controls, AvatarControlComponent.Kind.SupportAFK) != null;
         var eyeBlink = FindSingle(controls, AvatarControlComponent.Kind.DisableEyeBlink);
         var lipSync = FindSingle(controls, AvatarControlComponent.Kind.DisableLipSync);
         var lockFacial = FindSingle(controls, AvatarControlComponent.Kind.LockFacial);
@@ -28,7 +29,8 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
             mmdPlayback,
             conditionResolver.Resolve(eyeBlink?.Condition),
             conditionResolver.Resolve(lipSync?.Condition),
-            conditionResolver.Resolve(lockFacial?.Condition)));
+            conditionResolver.Resolve(lockFacial?.Condition),
+            supportAfk));
     }
 
     private static AvatarControlComponent? FindSingle(

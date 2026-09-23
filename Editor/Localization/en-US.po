@@ -742,6 +742,9 @@ msgstr "Disable Lip Sync"
 msgid "avatarControl.kind.supportMmd.label"
 msgstr "Support MMD"
 
+msgid "avatarControl.kind.supportAfk.label"
+msgstr "AFK Support"
+
 msgid "avatarSettings.faceMesh.empty.message"
 msgstr "Select the face mesh object."
 

@@ -11,11 +11,16 @@ internal sealed class AvatarControlComponentEditor : FaceTuneSectionEditorBase<A
         => CreateSection("avatarControl.section.label", new AvatarControlSectionDrawer(serializedObject), true);
 
     private FaceTuneSection CreateConditionSection()
-        => CreateSection("expression.condition.section.label", new PropertiesSectionDrawer(
+    {
+        var kind = serializedObject.FindProperty(nameof(AvatarControlComponent.ControlKind));
+        return CreateSection("expression.condition.section.label", new PropertiesSectionDrawer(
             new PropertiesSectionDrawer.Entry(
                 serializedObject.FindProperty(nameof(AvatarControlComponent.Condition)),
                 null,
-                AvatarControlComponent.CreateDefaultCondition)), false);
+                AvatarControlComponent.CreateDefaultCondition)), false,
+            isVisible: () => kind.hasMultipleDifferentValues
+                || kind.intValue != (int)AvatarControlComponent.Kind.SupportAFK);
+    }
 }
 
 internal sealed class AvatarControlSectionDrawer : ISectionDrawer
@@ -50,7 +55,8 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
             "avatarControl.kind.lockFacial.label",
             "avatarControl.kind.disableEyeBlink.label",
             "avatarControl.kind.disableLipSync.label",
-            "avatarControl.kind.supportMmd.label"
+            "avatarControl.kind.supportMmd.label",
+            "avatarControl.kind.supportAfk.label"
         });
         if (!ShowsMmd) return;
         position.NewLine();
