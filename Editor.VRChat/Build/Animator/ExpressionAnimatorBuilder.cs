@@ -13,7 +13,7 @@ internal sealed class ExpressionAnimatorBuilder
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _managedZeroAnimations;
     private readonly AnimatorGraph _graph;
     private readonly DnfCondition? _lockFacialInactiveWhen;
-    private readonly DnfCondition? _expressionInactiveWhen;
+    private readonly DnfCondition _expressionInactiveWhen;
     private readonly AapProtocol _aap;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _clips = new();
 
@@ -111,15 +111,15 @@ internal sealed class ExpressionAnimatorBuilder
         var defaultState = _graph.AddInitialDelayState(layer, origin);
         _graph.AddExitTimeExitTransition(defaultState);
 
-        if (_expressionInactiveWhen is { IsNever: false } inactiveWhen)
+        if (!_expressionInactiveWhen.IsNever)
         {
             var inactive = _graph.AddState(
                 layer,
                 "Inactive",
                 origin - new Vector3(0, yStep * 2, 0));
             _graph.AsPassThrough(inactive);
-            _graph.SetAnyStateTransition(layer, inactive, inactiveWhen, 0f);
-            _graph.SetExitTransitions(inactive, inactiveWhen.Complement(), 0f);
+            _graph.SetAnyStateTransition(layer, inactive, _expressionInactiveWhen, 0f);
+            _graph.SetExitTransitions(inactive, _expressionInactiveWhen.Complement(), 0f);
         }
 
         var passThroughWhen = expressionWhen.Complement();

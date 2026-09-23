@@ -10,8 +10,8 @@ internal sealed class MmdSupport
     private readonly AnimatorGraph _graph;
     private readonly MmdPlaybackSettings _settings;
 
-    public DnfCondition? PlaybackWhen { get; }
-    public DnfCondition? LayerPlaybackWhen { get; }
+    public DnfCondition PlaybackWhen { get; }
+    public DnfCondition LayerPlaybackWhen { get; }
     public bool DisableFxLayer { get; }
 
     public MmdSupport(
@@ -30,7 +30,7 @@ internal sealed class MmdSupport
             .Resolve(settings.Condition);
         var playbackWhen = settings.Enabled
             ? disableWhen ?? DnfCondition.Always
-            : null;
+            : DnfCondition.Never;
         var disableLayers = false;
         var disableFxLayer = false;
         if (settings.Enabled && settings.Condition != null)
@@ -55,7 +55,7 @@ internal sealed class MmdSupport
         }
 
         PlaybackWhen = playbackWhen;
-        LayerPlaybackWhen = disableLayers ? playbackWhen : null;
+        LayerPlaybackWhen = disableLayers ? playbackWhen : DnfCondition.Never;
         DisableFxLayer = disableFxLayer;
     }
 
@@ -64,30 +64,29 @@ internal sealed class MmdSupport
         VirtualState defaultState,
         IEnumerable<BlendShapeWeight> blendShapes,
         Vector3 position,
-        string bodyPath,
-        string? inactiveParameterName)
+        string bodyPath)
     {
         _graph.SetExitTransitions(
             defaultState,
-            PlaybackWhen ?? DnfCondition.Never,
+            PlaybackWhen,
             0f);
-        if (PlaybackWhen is not { IsNever: false } playbackWhen) return;
+        if (PlaybackWhen.IsNever) return;
 
         var state = _graph.AddState(layer, "MMD Playback", position);
         var mmdBlendShapes = blendShapes
             .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
         var clip = state.SetNewClip("MMD Playback");
         clip.AddBlendShapeAnimations(bodyPath, mmdBlendShapes.ToBlendShapeAnimations());
-        if (inactiveParameterName != null)
+        if (!LayerPlaybackWhen.IsNever)
         {
             clip.SetFloatCurve(
                 "",
                 typeof(UnityEngine.Animator),
-                inactiveParameterName,
+                AapProtocol.ExpressionInactiveName,
                 new AnimationCurve(new Keyframe(0f, 1f)));
         }
-        _graph.AddEntryTransition(layer, state, playbackWhen);
-        _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
+        _graph.AddEntryTransition(layer, state, PlaybackWhen);
+        _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
 
         if (DisableFxLayer)
         {

@@ -12,25 +12,25 @@ internal sealed class AapProtocol
         FaceTuneConstants.InternalParameterPrefix + "/Blink/ModeAAP/";
     private const string LipSyncModePrefix =
         FaceTuneConstants.InternalParameterPrefix + "/LipSync/ModeAAP/";
-    private const string ExpressionInactiveName =
+    internal const string ExpressionInactiveName =
         FaceTuneConstants.InternalParameterPrefix + "/Expression/InactiveAAP";
 
     private readonly VRChatTrackingPlan _plan;
     private readonly ImmutableList<string> _eyeBlinkModeNames;
     private readonly ImmutableList<string> _lipSyncModeNames;
 
-    public string? ExpressionInactiveParameterName { get; }
-    public DnfCondition? ExpressionInactiveWhen { get; }
+    private readonly bool _useInactiveAap;
+    public DnfCondition ExpressionInactiveWhen { get; }
 
     public AapProtocol(VRChatTrackingPlan plan, bool useInactiveAap)
     {
         _plan = plan;
         _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
         _lipSyncModeNames = CreateModeNames(plan.GeneratedLipSyncSettings.Count, LipSyncModeName);
-        ExpressionInactiveParameterName = useInactiveAap ? ExpressionInactiveName : null;
-        ExpressionInactiveWhen = ExpressionInactiveParameterName == null
-            ? null
-            : ParameterIsActive(ExpressionInactiveParameterName);
+        _useInactiveAap = useInactiveAap;
+        ExpressionInactiveWhen = useInactiveAap
+            ? ParameterIsActive(ExpressionInactiveName)
+            : DnfCondition.Never;
     }
 
     public ImmutableList<(string ParameterName, float Value)> BuildTrackingReplacementWrites(
@@ -168,8 +168,8 @@ internal sealed class AapProtocol
 
     public void EnsureExpressionInactiveParameter(VirtualAnimatorController controller)
     {
-        if (ExpressionInactiveParameterName != null)
-            controller.EnsureFloatParameterExists(ExpressionInactiveParameterName);
+        if (_useInactiveAap)
+            controller.EnsureFloatParameterExists(ExpressionInactiveName);
     }
 
     private static DnfCondition ParameterIsActive(string parameterName)

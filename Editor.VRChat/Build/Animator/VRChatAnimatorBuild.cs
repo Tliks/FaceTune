@@ -96,7 +96,7 @@ internal static class VRChatAnimatorBuilder
             MetaversePlatformSupport.GetForBuild(buildContext),
             settings.ParameterDomains,
             analyzedWriteDefaults);
-        var useInactiveAap = mmdSupport.LayerPlaybackWhen is { IsNever: false }
+        var useInactiveAap = !mmdSupport.LayerPlaybackWhen.IsNever
             && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer);
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
 
@@ -228,8 +228,7 @@ internal static class VRChatAnimatorBuilder
             defaultState,
             blendShapes,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
-            settings.AvatarContext.BodyPath,
-            aap.ExpressionInactiveParameterName);
+            settings.AvatarContext.BodyPath);
     }
 
     private static void SetInitialClip(
