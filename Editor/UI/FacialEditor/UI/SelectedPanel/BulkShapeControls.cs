@@ -12,13 +12,16 @@ internal sealed class BulkShapeControls
     private bool _setToZero;
     private readonly Button _removeZero;
 
-    public VisualElement Element { get; } = new SpacedHorizontalElement();
+    public VisualElement Element { get; }
 
     public BulkShapeControls(
         Action<float> setWeights,
         Action removeZeros,
-        Action removeAll)
+        Action removeAll,
+        bool trackingColumns = false)
     {
+        Element = trackingColumns ? new HorizontalElement() : new SpacedHorizontalElement();
+        if (trackingColumns) Element.name = "list-item-container";
         Element.style.alignItems = Align.Center;
         Element.style.flexGrow = 1f;
         var weight = new TextField { isDelayed = true };
@@ -51,9 +54,24 @@ internal sealed class BulkShapeControls
             button.AddToClassList("compact-control");
             button.style.width = 30f;
         }
-        Element.Add(spacer);
-        Element.Add(_removeZero);
-        Element.Add(weight);
+        if (trackingColumns)
+        {
+            var weightColumn = new HorizontalElement { name = "slider-float-field" };
+            weightColumn.style.alignItems = Align.Center;
+            weightColumn.Add(spacer);
+            weightColumn.Add(_removeZero);
+            weightColumn.Add(weight);
+            Element.Add(new VisualElement { name = "metadata-gutter" });
+            Element.Add(new VisualElement { name = "validation-warning" });
+            Element.Add(new VisualElement { name = "name" });
+            Element.Add(weightColumn);
+        }
+        else
+        {
+            Element.Add(spacer);
+            Element.Add(_removeZero);
+            Element.Add(weight);
+        }
         Element.Add(toggle);
         Element.Add(remove);
     }

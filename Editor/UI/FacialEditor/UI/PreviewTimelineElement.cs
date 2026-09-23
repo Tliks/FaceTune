@@ -5,21 +5,23 @@ namespace Aoyon.FaceTune.Gui.ShapesEditor;
 
 internal sealed class PreviewTimelineElement : IDisposable
 {
-    private const float PlaybackDurationSeconds = 0.5f;
-
+    private readonly Func<float> _getPlaybackDurationSeconds;
     private readonly Button _play;
     private readonly Slider _slider;
     private readonly Action<float> _seek;
     private IVisualElementScheduledItem? _schedule;
     private double _startedAt;
     private float _startValue;
+    private float _playbackDurationSeconds;
     private bool _playing;
 
     public VisualElement Element { get; } = new SpacedHorizontalElement();
 
-    public PreviewTimelineElement(float initialValue, Action<float> seek)
+    public PreviewTimelineElement(
+        float initialValue, Action<float> seek, Func<float> getPlaybackDurationSeconds)
     {
         _seek = seek;
+        _getPlaybackDurationSeconds = getPlaybackDurationSeconds;
         Element.style.flexDirection = FlexDirection.Row;
         Element.style.alignItems = Align.Center;
         Element.style.width = Length.Percent(100f);
@@ -56,6 +58,13 @@ internal sealed class PreviewTimelineElement : IDisposable
             Pause();
             return;
         }
+        _playbackDurationSeconds = _getPlaybackDurationSeconds();
+        if (_playbackDurationSeconds <= 0f || float.IsNaN(_playbackDurationSeconds)
+            || float.IsInfinity(_playbackDurationSeconds))
+        {
+            Seek(1f);
+            return;
+        }
         _playing = true;
         _play.text = "Ⅱ";
         _startValue = _slider.value >= 1f ? 0f : _slider.value;
@@ -67,14 +76,21 @@ internal sealed class PreviewTimelineElement : IDisposable
     {
         var value = _startValue
                     + (float)(EditorApplication.timeSinceStartup - _startedAt)
-                    / PlaybackDurationSeconds;
+                    / _playbackDurationSeconds;
         if (value >= 1f)
         {
+            _slider.SetValueWithoutNotify(1f);
+            _seek(1f);
             Pause();
-            _slider.SetValueWithoutNotify(0f);
-            _seek(0f);
             return;
         }
+        _slider.SetValueWithoutNotify(value);
+        _seek(value);
+    }
+
+    public void Seek(float value)
+    {
+        Pause();
         _slider.SetValueWithoutNotify(value);
         _seek(value);
     }

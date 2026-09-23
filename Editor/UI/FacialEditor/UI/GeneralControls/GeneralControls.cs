@@ -23,6 +23,7 @@ internal class GeneralControls : IDisposable
     private const float GroupToggleHorizontalPadding = 8f;
 
     private VisualElement _filterContent = null!;
+    private VisualElement _clipImport = null!;
 
     private Button _saveButton = null!;
     private Button _undoButton = null!;
@@ -62,8 +63,10 @@ internal class GeneralControls : IDisposable
 
     private void UpdateUndoRedoState()
     {
-        _undoButton?.SetEnabled(_context.DataManagers.Any(dataManager => dataManager.CanUndo));
-        _redoButton?.SetEnabled(_context.DataManagers.Any(dataManager => dataManager.CanRedo));
+        _undoButton?.SetEnabled(_context.ModeSession.HasChanges
+                                || _context.DataManagers.Any(dataManager => dataManager.CanUndo));
+        _redoButton?.SetEnabled(_context.ModeSession.CanRedoDraft
+                                || _context.DataManagers.Any(dataManager => dataManager.CanRedo));
     }
 
     private void SetupControls()
@@ -161,6 +164,7 @@ internal class GeneralControls : IDisposable
         _context.ActiveListChanged += UpdateUndoRedoState;
         _context.ActiveListChanged += UpdateActionButtonStates;
         _context.ModeSession.Changed += RequestActionButtonStateUpdate;
+        _context.ModeSession.Changed += UpdateUndoRedoState;
 
         var clipField = new ObjectField { objectType = typeof(AnimationClip) };
         clipField.AddToClassList("compact-field");
@@ -188,7 +192,10 @@ internal class GeneralControls : IDisposable
             _clipImportOption = evt.newValue == clipImportOptions[0] ? ClipImportOption.All : ClipImportOption.NonZero;
         });
         _element.Q<VisualElement>("import-option-field-container").Add(clipImportOptionField);
-        _element.Q<VisualElement>("clip-import-container").SetVisible(_context.CanImportClip);
+        _clipImport = _element.Q<VisualElement>("clip-import-container");
+        UpdateClipImportState();
+        _context.ModeSession.Changed += UpdateClipImportState;
+        _context.ModeSession.PreviewChanged += UpdateClipImportState;
 
         _filterContent = _element.Q<VisualElement>("filter-content");
         _groupTogglesContainer = _filterContent.Q<VisualElement>("group-toggles-container");
@@ -233,8 +240,12 @@ internal class GeneralControls : IDisposable
         return image;
     }
 
+    private void UpdateClipImportState()
+        => _clipImport.SetEnabled(_context.CanImportClip);
+
     private void ImportClip(AnimationClip clip)
     {
+        if (!_context.CanImportClip) return;
         var animations = new List<BlendShapeWeightAnimation>();
         clip.GetBlendShapeAnimations(_clipImportOption, animations, string.Empty);
         _context.ModeSession.ImportClip(animations, _context.ActiveListIndex);
@@ -274,6 +285,9 @@ internal class GeneralControls : IDisposable
         _context.ActiveListChanged -= UpdateUndoRedoState;
         _context.ActiveListChanged -= UpdateActionButtonStates;
         _context.ModeSession.Changed -= RequestActionButtonStateUpdate;
+        _context.ModeSession.Changed -= UpdateUndoRedoState;
+        _context.ModeSession.Changed -= UpdateClipImportState;
+        _context.ModeSession.PreviewChanged -= UpdateClipImportState;
     }
 
     private void RebuildGroupToggles()

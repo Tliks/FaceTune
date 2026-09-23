@@ -96,7 +96,7 @@ internal class SelectedPanel
                 _currentSource.Select(item => item.KeyIndex),
                 weight),
             () => _blendShapeManager.RemoveShapes(_currentSource
-                .Where(item => IsExplicitZeroTarget(item.KeyIndex))
+                .Where(item => _blendShapeManager.IsExplicitZeroTarget(item.KeyIndex))
                 .Select(item => item.KeyIndex)),
             () => _blendShapeManager.RemoveShapes(_currentSource
                 .Select(item => item.KeyIndex)
@@ -373,13 +373,10 @@ internal class SelectedPanel
     {
         if (_allSource == null) return;
 
-        var hasExplicitZeroTarget = _currentSource.Any(item => IsExplicitZeroTarget(item.KeyIndex));
+        var hasExplicitZeroTarget = _currentSource.Any(item =>
+            _blendShapeManager.IsExplicitZeroTarget(item.KeyIndex));
         _bulkControls.SetRemoveZeroVisible(hasExplicitZeroTarget);
     }
-
-    private bool IsExplicitZeroTarget(int index)
-        => _blendShapeManager.IsInTarget(index)
-           && Mathf.Approximately(_blendShapeManager.GetShapeWeight(index), 0f);
 
     private void BuildCurrentSource()
     {

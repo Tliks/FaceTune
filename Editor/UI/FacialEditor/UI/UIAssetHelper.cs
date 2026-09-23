@@ -6,6 +6,9 @@ internal static class UIAssetHelper
 {
     public static VisualTreeAsset EnsureUxmlWithGuid(ref VisualTreeAsset? uxml, string guid , bool forceUpdate = false)
     {
+        // キャッシュ済みならAssetDatabaseへの問い合わせを省略する
+        if (uxml != null && !forceUpdate) return uxml;
+
         var path = AssetDatabase.GUIDToAssetPath(guid);
         if (string.IsNullOrEmpty(path))
         {
@@ -27,6 +30,9 @@ internal static class UIAssetHelper
     }
     public static StyleSheet EnsureUssWithGuid(ref StyleSheet? uss, string guid, bool forceUpdate = false)
     {
+        // EnsureUxmlWithGuidと同様にGUID解決を省略する
+        if (uss != null && !forceUpdate) return uss;
+
         var path = AssetDatabase.GUIDToAssetPath(guid);
         if (string.IsNullOrEmpty(path))
         {

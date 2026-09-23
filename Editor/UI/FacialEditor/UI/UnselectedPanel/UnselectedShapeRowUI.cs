@@ -12,7 +12,7 @@ internal static class UnselectedShapeRowUI
             ref _uxml,
             "3efe7e91dce1d544b873dd133a44039d");
         var element = uxml.CloneTree();
-        Localization.LocalizeUIElements(element);
+        // テンプレートは空Labelのみのため行ごとのローカライズは不要
         return element;
     }
 }
