@@ -208,10 +208,8 @@ internal static class VRChatAnimatorBuilder
     {
         AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
         aap.EnsureExpressionInactiveParameter(controller);
-        var blendShapes = settings.AvatarContext.FaceRenderer
-            .GetBlendShapeWeights(settings.AvatarContext.FaceMesh)
-            .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name)
-                && !externalLipSyncBlendShapes.Contains(shape.Name))
+        var blendShapes = settings.GetManagedBlendShapes()
+            .Where(shape => !externalLipSyncBlendShapes.Contains(shape.Name))
             .Select(shape => generatedLipSyncBlendShapes.Contains(shape.Name)
                 ? shape with { Weight = 0f }
                 : shape)
