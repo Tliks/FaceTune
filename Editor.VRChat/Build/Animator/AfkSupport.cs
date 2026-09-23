@@ -32,18 +32,10 @@ internal sealed class AfkSupport
         if (PlaybackWhen.IsNever) return;
         AnimatorGraph.EnsureConditionParameters(controller, PlaybackWhen);
         var afkState = graph.AddState(layer, "AFK Playback", position);
-        SetInactiveAap(afkState.SetNewClip("AFK Playback"), 1f);
+        afkState.SetNewClip("AFK Playback")
+            .SetAap(AapProtocol.ExpressionInactiveName, 1f);
         graph.AddEntryTransition(layer, afkState, PlaybackWhen);
         graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
         graph.SetExitTransitions(afkState, PlaybackWhen.Complement(), 0f);
-    }
-
-    private static void SetInactiveAap(VirtualClip clip, float value)
-    {
-        clip.SetFloatCurve(
-            "",
-            typeof(UnityEngine.Animator),
-            AapProtocol.ExpressionInactiveName,
-            new AnimationCurve(new Keyframe(0f, value)));
     }
 }

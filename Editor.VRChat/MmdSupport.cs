@@ -66,30 +66,27 @@ internal sealed class MmdSupport
         Vector3 position,
         string bodyPath)
     {
-        _graph.SetExitTransitions(
-            defaultState,
-            PlaybackWhen,
-            0f);
         if (PlaybackWhen.IsNever) return;
 
+        _graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
+
         var state = _graph.AddState(layer, "MMD Playback", position);
-        var mmdBlendShapes = blendShapes
-            .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
-        var clip = state.SetNewClip("MMD Playback");
-        clip.AddBlendShapeAnimations(bodyPath, mmdBlendShapes.ToBlendShapeAnimations());
-        if (!LayerPlaybackWhen.IsNever)
-        {
-            clip.SetFloatCurve(
-                "",
-                typeof(UnityEngine.Animator),
-                AapProtocol.ExpressionInactiveName,
-                new AnimationCurve(new Keyframe(0f, 1f)));
-        }
         _graph.AddEntryTransition(layer, state, PlaybackWhen);
         _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
 
+        if (!LayerPlaybackWhen.IsNever)
+        {
+            var clip = state.SetNewClip("MMD Playback");
+            var nonMMDBlendShapes = blendShapes
+                .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
+            clip.AddBlendShapeAnimations(bodyPath, nonMMDBlendShapes.ToBlendShapeAnimations());
+
+            clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
+        }
+
         if (DisableFxLayer)
         {
+            _graph.AsPassThrough(state);
             SetFxPlayableWeight(defaultState, 1f);
             SetFxPlayableWeight(state, 0f);
         }

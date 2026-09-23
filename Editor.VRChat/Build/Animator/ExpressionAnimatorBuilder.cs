@@ -280,10 +280,7 @@ internal sealed class ExpressionAnimatorBuilder
             clip.SetObjectCurve(binding, curve);
         clip.AddBlendShapeAnimations(_avatarContext.BodyPath, outputAnimations);
         foreach (var write in aapWrites)
-        {
-            var curve = new AnimationCurve(new Keyframe(0f, write.Value));
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
-        }
+            clip.SetAap(write.ParameterName, write.Value);
         if (expression.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop)
         {
             var settings = clip.Settings;

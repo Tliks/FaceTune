@@ -461,10 +461,7 @@ internal static class VRChatAnimatorBuilder
         foreach (var clip in clips)
         {
             foreach (var write in writes)
-            {
-                var curve = new AnimationCurve(new Keyframe(0f, write.Value));
-                clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
-            }
+                clip.SetAap(write.ParameterName, write.Value);
         }
     }
 
