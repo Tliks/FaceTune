@@ -96,8 +96,10 @@ internal static class VRChatAnimatorBuilder
             MetaversePlatformSupport.GetForBuild(buildContext),
             settings.ParameterDomains,
             analyzedWriteDefaults);
-        var useInactiveAap = mmdSupport.LayerPlaybackWhen is { IsNever: false }
-            && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer);
+        var afkSupport = new AfkSupport(avatarControlSettings.SupportAfk);
+        var useInactiveAap = (!mmdSupport.LayerPlaybackWhen.IsNever
+            && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
+            || !afkSupport.PlaybackWhen.IsNever;
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
 
         if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
@@ -132,7 +134,8 @@ internal static class VRChatAnimatorBuilder
                 proxy.ProxyNames,
                 nonFacialDefaults,
                 mmdSupport,
-                aap);
+                aap,
+                afkSupport);
         }
 
         var expressionBuilder = new ExpressionAnimatorBuilder(
@@ -200,14 +203,13 @@ internal static class VRChatAnimatorBuilder
         ISet<string> generatedLipSyncBlendShapes,
         ResolvedNonFacialAnimationSet nonFacialDefaults,
         MmdSupport mmdSupport,
-        AapProtocol aap)
+        AapProtocol aap,
+        AfkSupport afkSupport)
     {
         AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
         aap.EnsureExpressionInactiveParameter(controller);
-        var blendShapes = settings.AvatarContext.FaceRenderer
-            .GetBlendShapeWeights(settings.AvatarContext.FaceMesh)
-            .Where(shape => !settings.IsBlendShapeExplicitlyExcluded(shape.Name)
-                && !externalLipSyncBlendShapes.Contains(shape.Name))
+        var blendShapes = settings.GetManagedBlendShapes()
+            .Where(shape => !externalLipSyncBlendShapes.Contains(shape.Name))
             .Select(shape => generatedLipSyncBlendShapes.Contains(shape.Name)
                 ? shape with { Weight = 0f }
                 : shape)
@@ -228,8 +230,13 @@ internal static class VRChatAnimatorBuilder
             defaultState,
             blendShapes,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
-            settings.AvatarContext.BodyPath,
-            aap.ExpressionInactiveParameterName);
+            settings.AvatarContext.BodyPath);
+        afkSupport.AddInitialState(
+            controller,
+            graph,
+            layer,
+            defaultState,
+            origin + new Vector3(0, AnimatorGraph.PositionYStep * 4, 0));
     }
 
     private static void SetInitialClip(
@@ -452,10 +459,7 @@ internal static class VRChatAnimatorBuilder
         foreach (var clip in clips)
         {
             foreach (var write in writes)
-            {
-                var curve = new AnimationCurve(new Keyframe(0f, write.Value));
-                clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
-            }
+                clip.SetAap(write.ParameterName, write.Value);
         }
     }
 

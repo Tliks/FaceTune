@@ -38,5 +38,6 @@ internal sealed class VRChatBuildBackend : IPlatformBuildBackend
     public void Finish(FaceTuneContext context)
     {
         VRChatMenuBuilder.Finish(context);
+        VRChatGestureDefaultsBuilder.Build(context);
     }
 }

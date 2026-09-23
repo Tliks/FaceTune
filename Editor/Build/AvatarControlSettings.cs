@@ -2,9 +2,10 @@ namespace Aoyon.FaceTune.Build;
 
 internal record struct AvatarControlSettings(
     MmdPlaybackSettings MmdPlayback,
-    DnfCondition? DisableEyeBlinkWhen,
-    DnfCondition? DisableLipSyncWhen,
-    DnfCondition? LockFacialWhen);
+    DnfCondition DisableEyeBlinkWhen,
+    DnfCondition DisableLipSyncWhen,
+    DnfCondition LockFacialWhen,
+    bool SupportAfk);
 
 internal record struct MmdPlaybackSettings(
     bool Enabled,

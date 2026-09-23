@@ -143,6 +143,7 @@ internal static class EmptyConditionRemover
 
         foreach (var control in root.GetComponentsInChildren<AvatarControlComponent>(true))
         {
+            if (control.ControlKind == AvatarControlComponent.Kind.SupportAFK) continue;
             if (control.Condition.Mode != ConditionSelection.Kind.Conditional) continue;
 
             RemoveEmptyCases(control.Condition.Condition);

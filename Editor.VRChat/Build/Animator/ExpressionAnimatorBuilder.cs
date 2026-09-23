@@ -12,8 +12,8 @@ internal sealed class ExpressionAnimatorBuilder
     private readonly AvatarContext _avatarContext;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _managedZeroAnimations;
     private readonly AnimatorGraph _graph;
-    private readonly DnfCondition? _lockFacialInactiveWhen;
-    private readonly DnfCondition? _expressionInactiveWhen;
+    private readonly DnfCondition _lockFacialWhen;
+    private readonly DnfCondition _expressionInactiveWhen;
     private readonly AapProtocol _aap;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _clips = new();
 
@@ -30,7 +30,7 @@ internal sealed class ExpressionAnimatorBuilder
             .ToBlendShapeAnimations()
             .ToArray();
         _graph = graph;
-        _lockFacialInactiveWhen = avatarControlSettings.LockFacialWhen?.Complement();
+        _lockFacialWhen = avatarControlSettings.LockFacialWhen;
         _expressionInactiveWhen = aap.ExpressionInactiveWhen;
         _aap = aap;
     }
@@ -79,7 +79,7 @@ internal sealed class ExpressionAnimatorBuilder
         AnimatorGraph.EnsureConditionParameters(
             controller,
             expressions.Select(expression => (DnfCondition?)expression.RawWhen)
-                .Append(_lockFacialInactiveWhen)
+                .Append(_lockFacialWhen)
                 .Append(_expressionInactiveWhen)
                 .ToArray());
         foreach (var expression in expressions)
@@ -111,15 +111,15 @@ internal sealed class ExpressionAnimatorBuilder
         var defaultState = _graph.AddInitialDelayState(layer, origin);
         _graph.AddExitTimeExitTransition(defaultState);
 
-        if (_expressionInactiveWhen is { IsNever: false } inactiveWhen)
+        if (!_expressionInactiveWhen.IsNever)
         {
             var inactive = _graph.AddState(
                 layer,
                 "Inactive",
                 origin - new Vector3(0, yStep * 2, 0));
             _graph.AsPassThrough(inactive);
-            _graph.SetAnyStateTransition(layer, inactive, inactiveWhen, 0f);
-            _graph.SetExitTransitions(inactive, inactiveWhen.Complement(), 0f);
+            _graph.SetAnyStateTransition(layer, inactive, _expressionInactiveWhen, 0f);
+            _graph.SetExitTransitions(inactive, _expressionInactiveWhen.Complement(), 0f);
         }
 
         var passThroughWhen = expressionWhen.Complement();
@@ -183,8 +183,8 @@ internal sealed class ExpressionAnimatorBuilder
         {
             var stateCondition = stateConditions[stateIndex];
             var exitWhen = stateCondition.Complement();
-            if (_lockFacialInactiveWhen != null)
-                exitWhen = exitWhen.And(_lockFacialInactiveWhen);
+            if (!_lockFacialWhen.IsNever)
+                exitWhen = exitWhen.And(_lockFacialWhen.Complement());
 
             var name = stateConditions.Length > 1
                 ? $"{baseName} #{stateIndex + 1}"
@@ -280,10 +280,7 @@ internal sealed class ExpressionAnimatorBuilder
             clip.SetObjectCurve(binding, curve);
         clip.AddBlendShapeAnimations(_avatarContext.BodyPath, outputAnimations);
         foreach (var write in aapWrites)
-        {
-            var curve = new AnimationCurve(new Keyframe(0f, write.Value));
-            clip.SetFloatCurve("", typeof(UnityEngine.Animator), write.ParameterName, curve);
-        }
+            clip.SetAap(write.ParameterName, write.Value);
         if (expression.MultiFrame.MultiFrameMode == MultiFrameSettings.Kind.Loop)
         {
             var settings = clip.Settings;

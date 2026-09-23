@@ -10,8 +10,8 @@ internal sealed class MmdSupport
     private readonly AnimatorGraph _graph;
     private readonly MmdPlaybackSettings _settings;
 
-    public DnfCondition? PlaybackWhen { get; }
-    public DnfCondition? LayerPlaybackWhen { get; }
+    public DnfCondition PlaybackWhen { get; }
+    public DnfCondition LayerPlaybackWhen { get; }
     public bool DisableFxLayer { get; }
 
     public MmdSupport(
@@ -30,7 +30,7 @@ internal sealed class MmdSupport
             .Resolve(settings.Condition);
         var playbackWhen = settings.Enabled
             ? disableWhen ?? DnfCondition.Always
-            : null;
+            : DnfCondition.Never;
         var disableLayers = false;
         var disableFxLayer = false;
         if (settings.Enabled && settings.Condition != null)
@@ -55,7 +55,7 @@ internal sealed class MmdSupport
         }
 
         PlaybackWhen = playbackWhen;
-        LayerPlaybackWhen = disableLayers ? playbackWhen : null;
+        LayerPlaybackWhen = disableLayers ? playbackWhen : DnfCondition.Never;
         DisableFxLayer = disableFxLayer;
     }
 
@@ -64,35 +64,44 @@ internal sealed class MmdSupport
         VirtualState defaultState,
         IEnumerable<BlendShapeWeight> blendShapes,
         Vector3 position,
-        string bodyPath,
-        string? inactiveParameterName)
+        string bodyPath)
     {
-        _graph.SetExitTransitions(
-            defaultState,
-            PlaybackWhen ?? DnfCondition.Never,
-            0f);
-        if (PlaybackWhen is not { IsNever: false } playbackWhen) return;
+        if (PlaybackWhen.IsNever) return;
+
+        _graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
 
         var state = _graph.AddState(layer, "MMD Playback", position);
-        var mmdBlendShapes = blendShapes
-            .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
-        var clip = state.SetNewClip("MMD Playback");
-        clip.AddBlendShapeAnimations(bodyPath, mmdBlendShapes.ToBlendShapeAnimations());
-        if (inactiveParameterName != null)
+        _graph.AddEntryTransition(layer, state, PlaybackWhen);
+
+        if (!LayerPlaybackWhen.IsNever)
         {
-            clip.SetFloatCurve(
-                "",
-                typeof(UnityEngine.Animator),
-                inactiveParameterName,
-                new AnimationCurve(new Keyframe(0f, 1f)));
+            var clip = state.SetNewClip("MMD Playback");
+            var nonMMDBlendShapes = blendShapes
+                .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
+            clip.AddBlendShapeAnimations(bodyPath, nonMMDBlendShapes.ToBlendShapeAnimations());
+
+            clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
+
+            _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
+
+            return;
         }
-        _graph.AddEntryTransition(layer, state, playbackWhen);
-        _graph.SetExitTransitions(state, playbackWhen.Complement(), 0f);
 
         if (DisableFxLayer)
         {
-            SetFxPlayableWeight(defaultState, 1f);
+            _graph.AsPassThrough(state);
             SetFxPlayableWeight(state, 0f);
+
+            var restore = _graph.AddState(
+                layer,
+                "Restore FX",
+                position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
+            _graph.AsPassThrough(restore);
+            SetFxPlayableWeight(restore, 1f);
+            _graph.AddStateTransition(state, restore, PlaybackWhen.Complement(), 0f);
+            _graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
+
+            return;
         }
     }
 

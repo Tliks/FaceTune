@@ -155,6 +155,15 @@ internal static class AnimatorHelper
         return clip;
     }
 
+    public static void SetAap(this VirtualClip clip, string parameterName, float value)
+    {
+        clip.SetFloatCurve(
+            "",
+            typeof(UnityEngine.Animator),
+            parameterName,
+            new AnimationCurve(new Keyframe(0f, value)));
+    }
+
     public static VirtualClip CreateCustomEmptyClip(
         string clipName = "FaceTune Custom Empty Clip")
     {

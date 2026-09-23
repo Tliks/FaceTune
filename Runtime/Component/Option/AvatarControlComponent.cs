@@ -10,7 +10,8 @@ namespace Aoyon.FaceTune
             LockFacial = 0,
             DisableEyeBlink = 10,
             DisableLipSync = 20,
-            SupportMMD = 30
+            SupportMMD = 30,
+            SupportAFK = 40
         }
 
         public Kind ControlKind;
@@ -18,7 +19,6 @@ namespace Aoyon.FaceTune
         // SupportMMD
         public MMDSupportSettings MMD = new();
 
-        // for All kind
         public ConditionSelection Condition = new();
 
 #region Defaults
