@@ -88,6 +88,11 @@ internal class SelectedPanel
         _control = _element.Q("selected-shapes-controls");
 
         _styleToggle = _control.Q<SimpleToggle>("style-toggle");
+        _styleToggle.Add(new VisualElement
+        {
+            name = "style-toggle-rail",
+            pickingMode = PickingMode.Ignore
+        });
         _styleToggle.SetValueWithoutNotify(false);
         _styleToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 

@@ -7,6 +7,16 @@
     flex: 0 0 55px;
 }
 
+#style-toggle-rail {
+    position: absolute;
+    left: 7px;
+    top: 2px;
+    width: 2px;
+    height: 14px;
+    opacity: 0.5;
+    background-color: var(--unity-colors-default-text);
+}
+
 #selected-list-view {
     flex: 1 1 auto;
 }
