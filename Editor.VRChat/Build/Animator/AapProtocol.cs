@@ -21,13 +21,13 @@ internal sealed class AapProtocol
 
     public DnfCondition ExpressionInactiveWhen { get; }
 
-    public AapProtocol(VRChatTrackingPlan plan, bool useInactiveAap, DnfCondition afkWhen)
+    public AapProtocol(VRChatTrackingPlan plan, bool useInactiveAap)
     {
         _plan = plan;
         _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
         _lipSyncModeNames = CreateModeNames(plan.GeneratedLipSyncSettings.Count, LipSyncModeName);
         ExpressionInactiveWhen = useInactiveAap
-            ? ParameterIsActive(ExpressionInactiveName).Or(afkWhen)
+            ? ParameterIsActive(ExpressionInactiveName)
             : DnfCondition.Never;
     }
 

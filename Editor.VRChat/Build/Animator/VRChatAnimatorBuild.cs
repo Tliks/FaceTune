@@ -100,7 +100,7 @@ internal static class VRChatAnimatorBuilder
         var useInactiveAap = (!mmdSupport.LayerPlaybackWhen.IsNever
             && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
             || !afkSupport.PlaybackWhen.IsNever;
-        var aap = new AapProtocol(trackingPlan, useInactiveAap, afkSupport.PlaybackWhen);
+        var aap = new AapProtocol(trackingPlan, useInactiveAap);
 
         if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
             || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
