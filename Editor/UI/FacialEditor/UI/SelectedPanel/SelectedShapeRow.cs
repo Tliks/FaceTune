@@ -14,16 +14,17 @@ internal sealed class SelectedShapeRow : VisualElement
     private static readonly Texture WarningIcon =
         EditorGUIUtility.IconContent("console.warnicon.sml").image;
 
-    public VisualElement Metadata => this.Q<VisualElement>("metadata-gutter");
-    public VisualElement ChangedMarker => this.Q<VisualElement>("changed-marker");
-    public VisualElement FacialRail => this.Q<VisualElement>("facial-rail");
-    public Image Warning => this.Q<Image>("validation-warning");
-    public Label NameLabel => this.Q<Label>("name");
-    public SliderFloatField Weight => this.Q<SliderFloatField>("slider-float-field");
-    public IMGUIContainer Curve => this.Q<IMGUIContainer>("curve-field");
-    public Button CurveToggle => this.Q<Button>("curve-toggle");
-    public Button WeightToggle => this.Q<Button>("toggle-button");
-    public Button RemoveButton => this.Q<Button>("action");
+    // getterでQ()を毎回実行しないよう、constructorで一度だけ取得する
+    public VisualElement Metadata { get; }
+    public VisualElement ChangedMarker { get; }
+    public VisualElement FacialRail { get; }
+    public Image Warning { get; }
+    public Label NameLabel { get; }
+    public SliderFloatField Weight { get; }
+    public IMGUIContainer Curve { get; }
+    public Button CurveToggle { get; }
+    public Button WeightToggle { get; }
+    public Button RemoveButton { get; }
 
     public SelectedShapeRow()
     {
@@ -35,7 +36,18 @@ internal sealed class SelectedShapeRow : VisualElement
             "a00c7162d21d9e34ab15764bdb0d1173");
         uxml.CloneTree(this);
         styleSheets.Add(uss);
-        Localization.LocalizeUIElements(this);
+        Metadata = this.Q<VisualElement>("metadata-gutter");
+        ChangedMarker = this.Q<VisualElement>("changed-marker");
+        FacialRail = this.Q<VisualElement>("facial-rail");
+        Warning = this.Q<Image>("validation-warning");
+        NameLabel = this.Q<Label>("name");
+        Weight = this.Q<SliderFloatField>("slider-float-field");
+        Curve = this.Q<IMGUIContainer>("curve-field");
+        CurveToggle = this.Q<Button>("curve-toggle");
+        WeightToggle = this.Q<Button>("toggle-button");
+        RemoveButton = this.Q<Button>("action");
+
+        // テンプレートにローカライズキーを持つ表示文字列がなく、tooltip等はコード側で.LS()済みのため行ごとのLocate処理はしない
 
         CurveToggle.text = "M";
         CurveToggle.tooltip = "blendShapeAnimation.multiFrame.label".LS();

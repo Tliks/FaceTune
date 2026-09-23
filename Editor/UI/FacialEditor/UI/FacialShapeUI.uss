@@ -43,10 +43,12 @@
 
 #left-panel {
     flex: 1 1 65%;
+    min-width: 0px;
 }
 
 #right-panel {
     flex: 1 1 35%;
+    min-width: 0px;
 }
 
 #general-controls-container {
@@ -67,5 +69,6 @@
 
 #selected-content-container {
     flex: 1 1 auto;
+    min-width: 0px;
 }
 

@@ -18,6 +18,7 @@ internal sealed class LipSyncEditing
     public VrcVisemeLipSyncShapes? PreviewShapes
         => Draft.Mode == LipSyncSettings.Kind.Custom ? Draft.Shapes : BuiltIn;
     public bool HasChanges => !Draft.Equals(_initial);
+    public bool CanRedoDraft { get; private set; }
     public bool CanRestoreEdited => _editedBeforeRestore != null;
 
     public event Action? DataChanged;
@@ -259,6 +260,7 @@ internal sealed class LipSyncEditing
     {
         if (Draft.Equals(_observed)) return false;
         _observed = Draft.Clone();
+        CanRedoDraft = !HasChanges;
         DataChanged?.Invoke();
         StructureChanged?.Invoke();
         PreviewChanged?.Invoke();
@@ -270,6 +272,7 @@ internal sealed class LipSyncEditing
         _initial = Draft.Clone();
         _observed = Draft.Clone();
         _editedBeforeRestore = null;
+        CanRedoDraft = false;
         DataChanged?.Invoke();
     }
 
@@ -289,6 +292,7 @@ internal sealed class LipSyncEditing
         _serializedObject.ApplyModifiedProperties();
         _observed = Draft.Clone();
         _editedBeforeRestore = null;
+        CanRedoDraft = false;
         DataChanged?.Invoke();
         if (structureChanged) StructureChanged?.Invoke();
         PreviewChanged?.Invoke();

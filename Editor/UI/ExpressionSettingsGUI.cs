@@ -303,17 +303,24 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         GUIHelper.RegisterPropertyRegion(position, property);
         var mode = property.FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode));
         position.SetSingleHeight();
-        DrawMode(position, mode);
+        DrawMode(position, property, mode);
         position.NewLine();
 
         var kind = (EyeBlinkSettings.Kind)mode.intValue;
         if (kind == EyeBlinkSettings.Kind.BuiltIn)
         {
             if (CannotResolveBuiltIn(property))
+            {
+                position.height = GUIHelper.GetHelpBoxHeight(
+                    "eyeBlink.builtIn.unavailable.message".LS(),
+                    MessageType.Warning);
                 GUIHelper.HelpBox(
                     position,
                     "eyeBlink.builtIn.unavailable.message".LS(),
                     MessageType.Warning);
+                position.NewLine();
+            }
+            DrawEditorRow(ref position, property, ShapesEditorMode.EyeBlinkSimple);
             return;
         }
 
@@ -336,12 +343,13 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
             .FindPropertyRelative(nameof(EyeBlinkSettings.EyeBlinkMode)).intValue;
         if (kind == EyeBlinkSettings.Kind.BuiltIn)
         {
-            if (!CannotResolveBuiltIn(property)) return GUIHelper.LineHeight;
-            return GUIHelper.LineHeight
-                 + GUIHelper.VerticalSpacing
-                 + GUIHelper.GetHelpBoxHeight(
-                     "eyeBlink.builtIn.unavailable.message".LS(),
-                     MessageType.Warning);
+            var height = GUIHelper.GetLinesHeight(2);
+            if (CannotResolveBuiltIn(property))
+                height += GUIHelper.VerticalSpacing
+                        + GUIHelper.GetHelpBoxHeight(
+                            "eyeBlink.builtIn.unavailable.message".LS(),
+                            MessageType.Warning);
+            return height;
         }
         var modeContentHeight = kind switch
         {
@@ -364,7 +372,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
             .All(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer) == null);
     }
 
-    private static void DrawMode(Rect position, SerializedProperty mode)
+    private static void DrawMode(Rect position, SerializedProperty settings, SerializedProperty mode)
     {
         GUIHelper.RegisterPropertyRegion(position, mode);
         using var rightClick = new GUIHelper.RightClickPassthroughScope(position);
@@ -374,7 +382,56 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         EditorGUI.showMixedValue = mode.hasMultipleDifferentValues;
         var next = GUIHelper.LocalizedPopup(position, selected, "eyeBlink.mode.label", ModeKeys);
         EditorGUI.showMixedValue = previousMixed;
-        if (next != selected) mode.intValue = (int)ModeValues[next];
+        if (next == selected) return;
+
+        var from = ModeValues[selected];
+        var to = ModeValues[next];
+        IReadOnlyList<BlendShapeWeightAnimation>? source = from switch
+        {
+            EyeBlinkSettings.Kind.BuiltIn => GetBuiltInAnimations(settings),
+            EyeBlinkSettings.Kind.SimpleAnimation => ShapeListSerialization.Read(
+                settings.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes)), false),
+            EyeBlinkSettings.Kind.CustomAnimation => ShapeListSerialization.Read(
+                settings.FindPropertyRelative(nameof(EyeBlinkSettings.Animations)), true),
+            _ => null
+        };
+        if (source is { Count: > 0 } && to != EyeBlinkSettings.Kind.BuiltIn)
+        {
+            var converted = to == EyeBlinkSettings.Kind.SimpleAnimation
+                ? EyeBlinkModeConversion.ToSimple(source, from == EyeBlinkSettings.Kind.CustomAnimation)
+                : from == EyeBlinkSettings.Kind.SimpleAnimation
+                    ? EyeBlinkModeConversion.ToCustom(source, settings.FindPropertyRelative(
+                        nameof(EyeBlinkSettings.SimpleDurationsSeconds)).vector3Value)
+                    : source;
+            var target = settings.FindPropertyRelative(to == EyeBlinkSettings.Kind.SimpleAnimation
+                ? nameof(EyeBlinkSettings.SimpleBlinkBlendShapes)
+                : nameof(EyeBlinkSettings.Animations));
+            target.SynchronizeArrayByKey(
+                converted,
+                element => element.FindPropertyRelative(BlendShapeWeight.NamePropName).stringValue,
+                animation => animation.Name,
+                (element, animation) =>
+                {
+                    if (to == EyeBlinkSettings.Kind.SimpleAnimation)
+                        element.CopyFrom(animation.ToFirstFrameBlendShape());
+                    else
+                        element.CopyFrom(animation);
+                },
+                overwrite: true);
+        }
+        mode.intValue = (int)to;
+    }
+
+    private static IReadOnlyList<BlendShapeWeightAnimation>? GetBuiltInAnimations(
+        SerializedProperty settings)
+    {
+        if (settings.serializedObject.targetObjects.Length != 1
+            || settings.serializedObject.targetObject is not Component component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _))
+            return null;
+        return MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
+            .Select(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer))
+            .FirstOrDefault(animations => animations != null);
     }
 
     private static float GetSimpleHeight(SerializedProperty property)
@@ -385,7 +442,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
              + GUIHelper.VerticalSpacing + GUIHelper.GetListHeight(conflicts, ConflictBlendShapesOptions)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
              + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
-             + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
+             + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2);
     }
 
     private static void DrawSimple(Rect position, SerializedProperty property)
@@ -409,6 +466,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         position.NewLine();
 
         DrawEditorRow(ref position, property, ShapesEditorMode.EyeBlinkSimple);
+        position.NewLine();
         position.NewLine();
 
         position.height = GUIHelper.GetLinesHeight(2);
@@ -435,8 +493,7 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         => GUIHelper.GetListHeight(
                property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations)),
                AnimationsOptions)
-         + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(2)
-         + GUIHelper.VerticalSpacing + GUIHelper.LineHeight;
+         + GUIHelper.VerticalSpacing + GUIHelper.GetLinesHeight(4);
 
     private static void DrawCustom(Rect position, SerializedProperty property)
     {
@@ -445,8 +502,10 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         using (BlendShapeValidationScope.PushWriteKind(FaceTuneWriteKind.EyeBlinkAnimation))
             GUIHelper.DrawList(position, animations, "eyeBlink.animations.label".LG(), AnimationsOptions);
         position.NewLine();
-        DrawInterval(ref position, property);
         DrawEditorRow(ref position, property, ShapesEditorMode.EyeBlinkCustom);
+        position.NewLine();
+        position.NewLine();
+        DrawInterval(ref position, property);
     }
 
     private static void DrawEditorRow(

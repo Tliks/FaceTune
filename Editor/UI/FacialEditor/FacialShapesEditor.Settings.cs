@@ -18,14 +18,21 @@ internal partial class FacialShapesEditor
             return null;
 
         var lists = GetShapeLists(settings, mode);
-        var usesAnimations = UsesAnimations(mode);
         var editableLists = mode == ShapesEditorMode.LipSync ? lists.Take(1) : lists;
         var initial = editableLists
-            .Select(list => (IReadOnlyList<BlendShapeWeightAnimation>)
-                ShapeListSerialization.Read(list, usesAnimations))
+            .Select((list, index) => (IReadOnlyList<BlendShapeWeightAnimation>)
+                ShapeListSerialization.Read(list, mode != ShapesEditorMode.LipSync && index == 2))
             .ToArray();
         var lipSync = mode == ShapesEditorMode.LipSync
             ? ((ISettingProvider<LipSyncSettings>)component).Setting.Value.Clone()
+            : null;
+        var eyeBlink = mode is ShapesEditorMode.EyeBlinkSimple or ShapesEditorMode.EyeBlinkCustom
+            ? ((ISettingProvider<EyeBlinkSettings>)component).Setting.Value.Clone()
+            : null;
+        var builtInEyeBlink = eyeBlink != null
+            ? MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
+                .Select(support => support.GetBuiltInEyeBlinkAnimations(avatar.FaceRenderer))
+                .FirstOrDefault(value => value != null)
             : null;
         var builtInLipSync = mode == ShapesEditorMode.LipSync
             ? MetaversePlatformSupport.GetForAvatar(avatar.Root.transform)
@@ -52,7 +59,9 @@ internal partial class FacialShapesEditor
             ignoredNames,
             activeListIndex,
             lipSync,
-            builtInLipSync);
+            builtInLipSync,
+            eyeBlink,
+            builtInEyeBlink);
         return window;
     }
 
@@ -68,12 +77,15 @@ internal partial class FacialShapesEditor
         ImmutableHashSet<string> ignoredNames,
         int activeListIndex,
         LipSyncSettings? lipSync,
-        VrcVisemeLipSyncShapes? builtInLipSync)
+        VrcVisemeLipSyncShapes? builtInLipSync,
+        EyeBlinkSettings? eyeBlink,
+        IReadOnlyList<BlendShapeWeightAnimation>? builtInEyeBlink)
     {
         EndContext();
         var managerCount = mode == ShapesEditorMode.LipSync ? 1 : initialLists.Length;
-        activeListIndex = Mathf.Clamp(activeListIndex, 0, managerCount - 1);
+        activeListIndex = mode == ShapesEditorMode.EyeBlinkCustom ? 2 : 0;
         _lipSyncDraft = lipSync ?? new LipSyncSettings();
+        _eyeBlinkDraft = eyeBlink ?? new EyeBlinkSettings();
 
         _dataManagers = new BlendShapeOverrideManager[managerCount];
         var serializedObject = new SerializedObject(this);
@@ -86,13 +98,12 @@ internal partial class FacialShapesEditor
                 builtInLipSync,
                 unavailableNames[1])
             : null;
-        var usesAnimations = UsesAnimations(mode);
         for (var index = 0; index < managerCount; index++)
         {
             var manager = new BlendShapeOverrideManager(
                 serializedObject,
                 managerProperties.GetArrayElementAtIndex(index),
-                usesAnimations);
+                mode != ShapesEditorMode.LipSync && index == 2);
             manager.OnAnyDataChange += SyncUnsavedChangesFromData;
             _dataManagers[index] = manager;
         }
@@ -108,17 +119,18 @@ internal partial class FacialShapesEditor
                 null,
                 ToFirstFrameSet(initial),
                 unavailableNames[index],
-                usesAnimations ? GetInitialCurves(initial) : null);
+                mode != ShapesEditorMode.LipSync && index == 2 ? GetInitialCurves(initial) : null);
         }
 
-        InitializeList(0);
+        InitializeList(activeListIndex);
         if (mode == ShapesEditorMode.EyeBlinkSimple)
             InitializeList(1);
 
         ShapesEditorModeSession modeSession = mode switch
         {
-            ShapesEditorMode.EyeBlinkSimple => new EyeBlinkModeSession(_dataManagers, true),
-            ShapesEditorMode.EyeBlinkCustom => new EyeBlinkModeSession(_dataManagers, false),
+            ShapesEditorMode.EyeBlinkSimple or ShapesEditorMode.EyeBlinkCustom =>
+                new EyeBlinkModeSession(
+                    _dataManagers, _eyeBlinkDraft, builtInEyeBlink, serializedObject, InitializeList),
             ShapesEditorMode.LipSync => new LipSyncModeSession(
                 _dataManagers[0],
                 lipSyncEditing ?? throw new InvalidOperationException()),
@@ -138,7 +150,9 @@ internal partial class FacialShapesEditor
             _dataManagers.Length,
             InitializeList,
             TryChangeRenderer,
-            SaveChanges);
+            SaveChanges,
+            groups => SelectInitialTrackingGroups(
+                groups, renderer, lipSync, builtInLipSync, eyeBlink, builtInEyeBlink));
         _context.ModeSession.Changed += SyncUnsavedChangesFromData;
         _context.SetActiveList(activeListIndex);
         titleContent = (mode == ShapesEditorMode.LipSync
@@ -148,6 +162,69 @@ internal partial class FacialShapesEditor
         _unsavedStateSyncPending = false;
         hasUnsavedChanges = false;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer.name}");
+    }
+
+    private static void SelectInitialTrackingGroups(
+        BlendShapeGrouping groups,
+        SkinnedMeshRenderer renderer,
+        LipSyncSettings? lipSync,
+        VrcVisemeLipSyncShapes? builtInLipSync,
+        EyeBlinkSettings? eyeBlink,
+        IReadOnlyList<BlendShapeWeightAnimation>? builtInEyeBlink)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        if (lipSync != null)
+        {
+            foreach (var shape in lipSync.CancellerBlendShapes)
+                names.Add(shape.Name);
+            var visemes = lipSync.Mode == LipSyncSettings.Kind.Custom
+                ? lipSync.Shapes : builtInLipSync;
+            if (visemes != null)
+                foreach (var shapes in visemes.GetOrderedShapes())
+                    foreach (var shape in shapes)
+                        names.Add(shape.Name);
+        }
+        else if (eyeBlink != null)
+        {
+            switch (eyeBlink.EyeBlinkMode)
+            {
+                case EyeBlinkSettings.Kind.BuiltIn:
+                    if (builtInEyeBlink != null)
+                        foreach (var animation in builtInEyeBlink)
+                            names.Add(animation.Name);
+                    break;
+                case EyeBlinkSettings.Kind.SimpleAnimation:
+                    foreach (var shape in eyeBlink.SimpleBlinkBlendShapes)
+                        names.Add(shape.Name);
+                    foreach (var shape in eyeBlink.SimpleConflictPreventionBlendShapes)
+                        names.Add(shape.Name);
+                    break;
+                case EyeBlinkSettings.Kind.CustomAnimation:
+                    foreach (var animation in eyeBlink.Animations)
+                        names.Add(animation.Name);
+                    break;
+            }
+        }
+
+        var indices = new HashSet<int>();
+        var mesh = renderer.sharedMesh;
+        if (mesh != null)
+            foreach (var name in names)
+            {
+                var index = mesh.GetBlendShapeIndex(name);
+                if (index >= 0) indices.Add(index);
+            }
+        var keywords = lipSync != null
+            ? new[] { "mouth", "lip", "viseme", "口" }
+            : new[] { "eye", "blink", "目", "眼", "瞼", "まばたき" };
+        var selected = groups.Groups.Where(group =>
+            keywords.Any(keyword => group.Name.IndexOf(
+                keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+            || group.BlendShapeIndices.Overlaps(indices)).ToArray();
+        if (selected.Length == 0) return;
+        groups.SelectAll(false);
+        foreach (var group in selected)
+            group.IsSelected = true;
     }
 
     private static void SaveSettings(FacialShapesEditorContext context)
@@ -168,13 +245,10 @@ internal partial class FacialShapesEditor
         ShapesEditorMode mode)
         => mode switch
         {
-            ShapesEditorMode.EyeBlinkSimple => new[]
+            ShapesEditorMode.EyeBlinkSimple or ShapesEditorMode.EyeBlinkCustom => new[]
             {
                 property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes)),
-                property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes))
-            },
-            ShapesEditorMode.EyeBlinkCustom => new[]
-            {
+                property.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleConflictPreventionBlendShapes)),
                 property.FindPropertyRelative(nameof(EyeBlinkSettings.Animations))
             },
             ShapesEditorMode.LipSync => GetLipSyncLists(property),
@@ -191,9 +265,6 @@ internal partial class FacialShapesEditor
                 VrcVisemeLipSyncShapes.PropertyNames[index]);
         return result;
     }
-
-    private static bool UsesAnimations(ShapesEditorMode mode)
-        => mode == ShapesEditorMode.EyeBlinkCustom;
 
     private static ISet<string>[] GetUnavailableNames(
         AvatarContext avatar,

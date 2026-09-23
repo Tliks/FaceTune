@@ -417,6 +417,16 @@ internal class BlendShapeOverrideManager : IDisposable
     public bool AllowsCurves => _allowsCurves;
     public bool IsCurveMode(int index) => _allowsCurves && IsCurveModeAt(index);
 
+    public bool IsExplicitZeroTarget(int index)
+    {
+        if (!IsInTarget(index)) return false;
+        if (!IsCurveModeAt(index)) return Mathf.Approximately(GetShapeWeight(index), 0f);
+        return GetCurveValueAt(index).keys.All(key =>
+            Mathf.Approximately(key.value, 0f)
+            && (Mathf.Approximately(key.inTangent, 0f) || float.IsInfinity(key.inTangent))
+            && (Mathf.Approximately(key.outTangent, 0f) || float.IsInfinity(key.outTangent)));
+    }
+
     public SerializedProperty GetCurveProperty(int index)
         => _overrideCurvesProperty.GetArrayElementAtIndex(index);
 

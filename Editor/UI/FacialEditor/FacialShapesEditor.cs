@@ -7,6 +7,7 @@ internal partial class FacialShapesEditor : EditorWindow
 {
     [SerializeField] private BlendShapeOverrideManager[] _dataManagers = null!;
     [SerializeField] private LipSyncSettings _lipSyncDraft = new();
+    [SerializeField] private EyeBlinkSettings _eyeBlinkDraft = new();
 
     private FacialShapesEditorContext? _context;
     private bool _unsavedStateSyncPending;

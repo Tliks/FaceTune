@@ -53,7 +53,6 @@ internal sealed class LipSyncAvailablePanel
         canceller.OnSingleShapeRemoved += _ => Rebuild();
         canceller.OnMultipleShapesRemoved += _ => Rebuild();
         canceller.OnUnknownChange += Rebuild;
-        Rebuild();
     }
 
     private VisualElement MakeItem()

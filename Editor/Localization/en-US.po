@@ -670,6 +670,9 @@ msgstr "Prevents lip sync interference in almost all expressions. Select all mou
 msgid "facialEditor.list.empty"
 msgstr "List is Empty"
 
+msgid "shapesEditor.mode.label"
+msgstr "Mode"
+
 msgid "shapesEditor.lipSync.label"
 msgstr "Lip Sync"
 

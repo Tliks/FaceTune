@@ -670,6 +670,9 @@ msgstr "ほぼ全ての表情で、リップシンクが干渉しなくなりま
 msgid "facialEditor.list.empty"
 msgstr "リストは空です"
 
+msgid "shapesEditor.mode.label"
+msgstr "モード"
+
 msgid "shapesEditor.lipSync.label"
 msgstr "リップシンク"
 
