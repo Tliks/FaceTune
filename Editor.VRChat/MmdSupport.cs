@@ -72,7 +72,6 @@ internal sealed class MmdSupport
 
         var state = _graph.AddState(layer, "MMD Playback", position);
         _graph.AddEntryTransition(layer, state, PlaybackWhen);
-        _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
 
         if (!LayerPlaybackWhen.IsNever)
         {
@@ -82,13 +81,27 @@ internal sealed class MmdSupport
             clip.AddBlendShapeAnimations(bodyPath, nonMMDBlendShapes.ToBlendShapeAnimations());
 
             clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
+
+            _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
+
+            return;
         }
 
         if (DisableFxLayer)
         {
             _graph.AsPassThrough(state);
-            SetFxPlayableWeight(defaultState, 1f);
             SetFxPlayableWeight(state, 0f);
+
+            var restore = _graph.AddState(
+                layer,
+                "Restore FX",
+                position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
+            _graph.AsPassThrough(restore);
+            SetFxPlayableWeight(restore, 1f);
+            _graph.AddStateTransition(state, restore, PlaybackWhen.Complement(), 0f);
+            _graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
+
+            return;
         }
     }
 

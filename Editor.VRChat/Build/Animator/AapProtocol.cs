@@ -7,7 +7,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 /// <summary>Tracking計画をAnimator Parameter上のAAP表現へ変換する。</summary>
 internal sealed class AapProtocol
 {
-    private const float ActiveThreshold = 0.999f;
     private const string EyeBlinkModePrefix =
         FaceTuneConstants.InternalParameterPrefix + "/Blink/ModeAAP/";
     private const string LipSyncModePrefix =
@@ -27,7 +26,7 @@ internal sealed class AapProtocol
         _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
         _lipSyncModeNames = CreateModeNames(plan.GeneratedLipSyncSettings.Count, LipSyncModeName);
         ExpressionInactiveWhen = useInactiveAap
-            ? ParameterIsActive(ExpressionInactiveName)
+            ? ParameterExceeds(ExpressionInactiveName, 0.01f) // inactive側に寄せる
             : DnfCondition.Never;
     }
 
@@ -94,14 +93,14 @@ internal sealed class AapProtocol
 
     public DnfCondition EyeBlinkModeIs(int mode)
         => ApplyForceDisable(
-            ParameterIsActive(EyeBlinkModeName(mode)),
+            ParameterExceeds(EyeBlinkModeName(mode), 0.99f), // 完全に遷移後に評価Stateから遷移する
             mode,
             _plan.ForceDisableEyeBlinkWhen,
             ExpressionInactiveWhen);
 
     public DnfCondition LipSyncModeIs(int mode)
         => ApplyForceDisable(
-            ParameterIsActive(LipSyncModeName(mode)),
+            ParameterExceeds(LipSyncModeName(mode), 0.99f),
             mode,
             _plan.ForceDisableLipSyncWhen,
             ExpressionInactiveWhen);
@@ -169,12 +168,12 @@ internal sealed class AapProtocol
             controller.EnsureFloatParameterExists(ExpressionInactiveName);
     }
 
-    private static DnfCondition ParameterIsActive(string parameterName)
+    private static DnfCondition ParameterExceeds(string parameterName, float threshold)
     {
         var condition = ParameterCondition.Float(
             parameterName,
             ComparisonType.GreaterThan,
-            ActiveThreshold);
+            threshold);
         return DnfCondition.Single(
             AnimatorConditionRule.FromParameterCondition(condition),
             ParameterDomainRegistry.Empty);
