@@ -27,9 +27,9 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
                 mmdSupport.MMD.SupportMode);
         context.SetAvatarControlSettings(new AvatarControlSettings(
             mmdPlayback,
-            conditionResolver.Resolve(eyeBlink?.Condition),
-            conditionResolver.Resolve(lipSync?.Condition),
-            conditionResolver.Resolve(lockFacial?.Condition),
+            conditionResolver.Resolve(eyeBlink?.Condition) ?? DnfCondition.Never,
+            conditionResolver.Resolve(lipSync?.Condition) ?? DnfCondition.Never,
+            conditionResolver.Resolve(lockFacial?.Condition) ?? DnfCondition.Never,
             supportAfk));
     }
 

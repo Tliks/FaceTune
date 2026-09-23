@@ -12,7 +12,7 @@ internal sealed class ExpressionAnimatorBuilder
     private readonly AvatarContext _avatarContext;
     private readonly IReadOnlyList<BlendShapeWeightAnimation> _managedZeroAnimations;
     private readonly AnimatorGraph _graph;
-    private readonly DnfCondition? _lockFacialInactiveWhen;
+    private readonly DnfCondition _lockFacialWhen;
     private readonly DnfCondition _expressionInactiveWhen;
     private readonly AapProtocol _aap;
     private readonly Dictionary<ExpressionClipKey, VirtualClip> _clips = new();
@@ -30,7 +30,7 @@ internal sealed class ExpressionAnimatorBuilder
             .ToBlendShapeAnimations()
             .ToArray();
         _graph = graph;
-        _lockFacialInactiveWhen = avatarControlSettings.LockFacialWhen?.Complement();
+        _lockFacialWhen = avatarControlSettings.LockFacialWhen;
         _expressionInactiveWhen = aap.ExpressionInactiveWhen;
         _aap = aap;
     }
@@ -79,7 +79,7 @@ internal sealed class ExpressionAnimatorBuilder
         AnimatorGraph.EnsureConditionParameters(
             controller,
             expressions.Select(expression => (DnfCondition?)expression.RawWhen)
-                .Append(_lockFacialInactiveWhen)
+                .Append(_lockFacialWhen)
                 .Append(_expressionInactiveWhen)
                 .ToArray());
         foreach (var expression in expressions)
@@ -183,8 +183,8 @@ internal sealed class ExpressionAnimatorBuilder
         {
             var stateCondition = stateConditions[stateIndex];
             var exitWhen = stateCondition.Complement();
-            if (_lockFacialInactiveWhen != null)
-                exitWhen = exitWhen.And(_lockFacialInactiveWhen);
+            if (!_lockFacialWhen.IsNever)
+                exitWhen = exitWhen.And(_lockFacialWhen.Complement());
 
             var name = stateConditions.Length > 1
                 ? $"{baseName} #{stateIndex + 1}"

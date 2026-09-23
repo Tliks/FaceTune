@@ -19,7 +19,6 @@ internal sealed class AapProtocol
     private readonly ImmutableList<string> _eyeBlinkModeNames;
     private readonly ImmutableList<string> _lipSyncModeNames;
 
-    private readonly bool _useInactiveAap;
     public DnfCondition ExpressionInactiveWhen { get; }
 
     public AapProtocol(VRChatTrackingPlan plan, bool useInactiveAap, DnfCondition afkWhen)
@@ -27,7 +26,6 @@ internal sealed class AapProtocol
         _plan = plan;
         _eyeBlinkModeNames = CreateModeNames(plan.EyeBlinkAnimations.Count, EyeBlinkModeName);
         _lipSyncModeNames = CreateModeNames(plan.GeneratedLipSyncSettings.Count, LipSyncModeName);
-        _useInactiveAap = useInactiveAap;
         ExpressionInactiveWhen = useInactiveAap
             ? ParameterIsActive(ExpressionInactiveName).Or(afkWhen)
             : DnfCondition.Never;
@@ -134,10 +132,9 @@ internal sealed class AapProtocol
     private static DnfCondition ApplyForceDisable(
         DnfCondition modeWhen,
         int mode,
-        params DnfCondition?[] forceDisableConditions)
+        params DnfCondition[] forceDisableConditions)
     {
-        var forceDisableWhen = DnfCondition.Any(
-            forceDisableConditions.OfType<DnfCondition>());
+        var forceDisableWhen = DnfCondition.Any(forceDisableConditions);
         if (forceDisableWhen.IsNever) return modeWhen;
         return mode == VRChatTrackingPlan.DisabledMode
             ? modeWhen.Or(forceDisableWhen)
@@ -168,7 +165,7 @@ internal sealed class AapProtocol
 
     public void EnsureExpressionInactiveParameter(VirtualAnimatorController controller)
     {
-        if (_useInactiveAap)
+        if (!ExpressionInactiveWhen.IsNever)
             controller.EnsureFloatParameterExists(ExpressionInactiveName);
     }
 

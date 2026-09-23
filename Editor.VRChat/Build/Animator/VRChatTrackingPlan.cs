@@ -12,8 +12,8 @@ internal sealed class VRChatTrackingPlan
     public bool ShouldBuildEyeBlinkLayer { get; }
     public bool ShouldBuildLipSyncLayer { get; }
     public bool ShouldBuildAnyLayer => ShouldBuildEyeBlinkLayer || ShouldBuildLipSyncLayer;
-    public DnfCondition? ForceDisableEyeBlinkWhen { get; }
-    public DnfCondition? ForceDisableLipSyncWhen { get; }
+    public DnfCondition ForceDisableEyeBlinkWhen { get; }
+    public DnfCondition ForceDisableLipSyncWhen { get; }
     public ImmutableList<EyeBlinkSettings> EyeBlinkAnimations { get; }
     public ImmutableList<LipSyncSettings> GeneratedLipSyncSettings { get; }
     public bool ShouldBuildLipSyncCancellerLayer => GeneratedLipSyncSettings.Any(
@@ -32,11 +32,11 @@ internal sealed class VRChatTrackingPlan
         GeneratedLipSyncSettings = CollectGeneratedLipSyncSettings(items);
         _eyeBlinkModes = CreateModeMap(EyeBlinkAnimations);
         _lipSyncModes = CreateModeMap(GeneratedLipSyncSettings);
-        ShouldBuildEyeBlinkLayer = ForceDisableEyeBlinkWhen != null
+        ShouldBuildEyeBlinkLayer = !ForceDisableEyeBlinkWhen.IsNever
                                    || EyeBlinkAnimations.Count > 0
                                    || items.Any(item =>
                                        item.AllowEyeBlink == TrackingPermission.Disallow);
-        ShouldBuildLipSyncLayer = ForceDisableLipSyncWhen != null
+        ShouldBuildLipSyncLayer = !ForceDisableLipSyncWhen.IsNever
                                  || GeneratedLipSyncSettings.Count > 0
                                  || items.Any(item =>
                                      item.AllowLipSync == TrackingPermission.Disallow);
