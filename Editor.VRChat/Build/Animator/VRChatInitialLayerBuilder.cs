@@ -1,5 +1,4 @@
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.animator;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;

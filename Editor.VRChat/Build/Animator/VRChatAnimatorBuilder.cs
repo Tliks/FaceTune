@@ -1,6 +1,5 @@
 using nadena.dev.modular_avatar.core;
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
@@ -55,7 +54,7 @@ internal static partial class VRChatAnimatorBuilder
         var afkSupport = new AfkSupport(avatarControlSettings.SupportAfk);
         var useInactiveAap = (!mmdSupport.PlaybackWhen.IsNever
             && !mmdSupport.DisableFxLayer
-            && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
+            && (!expressionPlan.IsEmpty || trackingPlan.ShouldBuildAnyLayer))
             || !afkSupport.PlaybackWhen.IsNever;
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
         var graph = new AnimatorGraph(
@@ -77,13 +76,13 @@ internal static partial class VRChatAnimatorBuilder
                 replaceLipSync);
         }
 
-        if (units.Length > 0 || useInactiveAap)
+        if (!expressionPlan.IsEmpty || useInactiveAap)
         {
             using var _ = new Utils.ProfilingSampleScope(
                 "Build.Animator.BuildInitial");
-            var initialAnchor = units.Length > 0
-                ? units[0].Anchor
-                : buildContext.AvatarRootTransform;
+            var initialAnchor = expressionPlan.IsEmpty
+                ? buildContext.AvatarRootTransform
+                : units[0].Anchor;
             var initialBuilder = new VRChatInitialLayerBuilder(
                 settings, expressionPlan, facialDefaults.BlendShapes, graph);
             var initialController = CreateMergeAnimatorController(

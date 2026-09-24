@@ -1,9 +1,8 @@
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Platforms.VRChat;
 using nadena.dev.ndmf.animator;
 using VRC.SDK3.Avatars.Components;
 
-namespace Aoyon.FaceTune.Platforms;
+namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal sealed class MmdSupport
 {
