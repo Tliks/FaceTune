@@ -207,7 +207,8 @@ internal static class VRChatAnimatorBuilder
         AapProtocol aap,
         AfkSupport afkSupport)
     {
-        AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
+        var mmdWhen = mmdSupport.PlaybackWhen.Except(afkSupport.PlaybackWhen);
+        AnimatorGraph.EnsureConditionParameters(controller, mmdWhen);
         aap.EnsureExpressionInactiveParameter(controller);
 
         var origin = InitialDefaultStatePosition;
@@ -223,6 +224,7 @@ internal static class VRChatAnimatorBuilder
         mmdSupport.AddInitialMmdState(
             layer,
             defaultState,
+            mmdWhen,
             blendShapes,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
             settings.AvatarContext.BodyPath);

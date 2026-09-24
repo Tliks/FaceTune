@@ -36,27 +36,29 @@ internal sealed class MmdSupport
     public void AddInitialMmdState(
         VirtualLayer layer,
         VirtualState defaultState,
+        DnfCondition playbackWhen,
         IReadOnlyList<BlendShapeWeight> blendShapes,
         Vector3 position,
         string bodyPath)
     {
-        if (PlaybackWhen.IsNever) return;
+        if (playbackWhen.IsNever) return;
 
         var root = layer.StateMachine!;
         var machine = _graph.AddStateMachine(root, "MMD", position);
 
         if (DisableFxLayer)
-            BuildFxPlayback(machine);
+            BuildFxPlayback(machine, playbackWhen);
         else
-            BuildLayerPlayback(machine, blendShapes, bodyPath);
+            BuildLayerPlayback(machine, playbackWhen, blendShapes, bodyPath);
 
-        _graph.AddEntryTransition(layer, machine, PlaybackWhen);
+        _graph.AddEntryTransition(layer, machine, playbackWhen);
         _graph.AddStateMachineExitTransition(root, machine);
-        _graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
+        _graph.AddExitTransitions(defaultState, playbackWhen, 0f);
     }
 
     private void BuildLayerPlayback(
         VirtualStateMachine machine,
+        DnfCondition playbackWhen,
         IReadOnlyList<BlendShapeWeight> blendShapes,
         string bodyPath)
     {
@@ -74,12 +76,12 @@ internal sealed class MmdSupport
         clip.AddBlendShapeAnimations(bodyPath, nonMmdShapes.ToBlendShapeAnimations());
         clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
 
-        _graph.AddExitTransitions(initial, PlaybackWhen.Complement(), 0f);
+        _graph.AddExitTransitions(initial, playbackWhen.Complement(), 0f);
         _graph.AddExitTimeTransition(initial, playback);
-        _graph.AddExitTransitions(playback, PlaybackWhen.Complement(), 0f);
+        _graph.AddExitTransitions(playback, playbackWhen.Complement(), 0f);
     }
 
-    private void BuildFxPlayback(VirtualStateMachine machine)
+    private void BuildFxPlayback(VirtualStateMachine machine, DnfCondition playbackWhen)
     {
         var playback = _graph.AddState(machine, "Playback", new Vector3(300, 0, 0));
         _graph.AsPassThrough(playback);
@@ -90,7 +92,7 @@ internal sealed class MmdSupport
         _graph.AsPassThrough(restore);
         SetFxPlayableWeight(restore, 1f);
 
-        _graph.AddStateTransition(playback, restore, PlaybackWhen.Complement(), 0f);
+        _graph.AddStateTransition(playback, restore, playbackWhen.Complement(), 0f);
         _graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
     }
 
