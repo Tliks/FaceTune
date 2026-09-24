@@ -47,7 +47,7 @@ internal sealed class EyeBlinkAnimatorBuilder
         var origin = LayoutOrigin;
         var xStep = AnimatorGraph.PositionXStep;
         var yStep = AnimatorGraph.PositionYStep;
-        var layer = _graph.AddLayer(controller, "Eye Blink", layerPriority);
+        var layer = _graph.AddLayer(controller, "EyeBlink", layerPriority);
         var root = layer.StateMachine!;
 
         var evaluationState = _graph.AddState(layer, "Mode Evaluation", origin);
