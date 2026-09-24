@@ -1,4 +1,3 @@
-using Aoyon.FaceTune.Platforms;
 using nadena.dev.ndmf.animator;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
@@ -8,7 +7,8 @@ internal sealed class LipSyncCancellerAnimatorBuilder
 {
     private static readonly Vector3 LayoutOrigin = new(300, 0, 0);
     private const float TransitionDurationSeconds = 0.05f;
-    private const float VoiceThreshold = 0.01f;
+    private const float VoiceStartThreshold = 0.05f;
+    private const float VoiceEndThreshold = 0.005f;
 
     private readonly AvatarContext _avatarContext;
     private readonly AnimatorGraph _graph;
@@ -54,7 +54,8 @@ internal sealed class LipSyncCancellerAnimatorBuilder
             LayoutOrigin + new Vector3(0, yStep * 2, 0));
         _graph.AddExitTimeTransition(initial, evaluation);
 
-        var voiceActiveWhen = VoiceActiveWhen();
+        var voiceStartWhen = VoiceWhen(ComparisonType.GreaterThan, VoiceStartThreshold);
+        var voiceEndWhen = VoiceWhen(ComparisonType.LessThan, VoiceEndThreshold);
         var position = LayoutOrigin + new Vector3(xStep, -yStep, 0);
         for (var index = 0; index < cancellers.Count; index++)
         {
@@ -79,12 +80,12 @@ internal sealed class LipSyncCancellerAnimatorBuilder
             _graph.AddStateTransition(
                 idle,
                 cancelling,
-                voiceActiveWhen,
+                voiceStartWhen,
                 TransitionDurationSeconds);
             _graph.AddStateTransition(
                 cancelling,
                 idle,
-                voiceActiveWhen.Complement(),
+                voiceEndWhen,
                 TransitionDurationSeconds);
             _graph.AddStateMachineTransition(root, machine, evaluation);
 
@@ -111,12 +112,12 @@ internal sealed class LipSyncCancellerAnimatorBuilder
                 .ToBlendShapeAnimations());
     }
 
-    private static DnfCondition VoiceActiveWhen()
+    private static DnfCondition VoiceWhen(ComparisonType comparison, float threshold)
     {
         var condition = ParameterCondition.Float(
             VRChatSupport.VoiceParameter,
-            ComparisonType.GreaterThan,
-            VoiceThreshold);
+            comparison,
+            threshold);
         return DnfCondition.Single(
             AnimatorConditionRule.FromParameterCondition(condition),
             ParameterDomainRegistry.Empty);

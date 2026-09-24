@@ -145,11 +145,14 @@ internal static class SelectedPreviewResolver
             case ExpressionDataComponent data:
             {
                 var animations = resolver.ResolveIncoming(data.transform);
-                var hasFacial = resolver.TryResolve(data, out var local);
-                if (hasFacial) animations.AddRange(local);
-                if (!hasFacial && animations.Count == 0) return null;
+                if (resolver.TryResolve(data, out var local))
+                    animations.AddRange(local);
+                else if (animations.Count == 0)
+                    return null;
+
                 var multiFrame = new MultiFrameResolver(context).ResolveProvider(data)
-                                 ?? new MultiFrameSettings();
+                    ?? new MultiFrameSettings();
+
                 return new FacialPreviewData(
                     animations,
                     0f,

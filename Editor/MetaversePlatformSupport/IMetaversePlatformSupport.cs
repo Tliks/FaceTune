@@ -17,13 +17,6 @@ internal interface IMetaversePlatformSupport
     VrcVisemeLipSyncShapes? GetBuiltInLipSyncShapes(SkinnedMeshRenderer faceRenderer)
         => null;
 
-    void PostProcessDefaultBlendShapes(
-        BuildSettings settings,
-        AvatarControlSettings avatarControlSettings,
-        BlendShapeWeightSet blendShapes)
-    {
-    }
-
     IEnumerable<GameObject> GetMenuFolderObjects()
     {
         return Array.Empty<GameObject>();

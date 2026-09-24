@@ -12,8 +12,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 // 通常はFXの初期化レイヤーで常に初期値を書くことでこれを回避している
 // 一方で、MMDやAFKが有効な際には、Station/ACtionをパススルーするために、FXの初期値再生を停止するので、3倍バグを引き起こす
 // そのため、Gestureレイヤーで初期値を常に再生することで、3倍バグを回避する
-
-// 本来は、WDの解析を行い追加する条件をより厳格化できるが、実行順序の問題もあるのでMMDやAFK対応が有効な時は、安全寄りに条件なしで追加する
 internal static class VRChatGestureDefaultsBuilder
 {
     private const int MinimumExistingLayerCount = 3;
@@ -21,14 +19,26 @@ internal static class VRChatGestureDefaultsBuilder
 
     public static void Build(FaceTuneContext context)
     {
+        // MMDやAFK対応がないなら、常にFXが初期再生するので3倍バグは起きない。
         var controls = context.RequireAvatarControlSettings();
-        if (!controls.SupportAfk && !controls.MmdPlayback.Enabled) return;
+        if (!controls.AfkPlayback.Enabled && !controls.MmdPlayback.Enabled) return;
 
         var settings = context.RequireSettings();
-        var blendShapes = settings.GetManagedBlendShapes();
-        if (blendShapes.Length == 0) return;
+        var blendShapes = context.BuildContext
+            .GetState<VRChatFacialDefaultsState>().BlendShapes;
+        if (blendShapes.Count == 0) return;
 
         var controllerContext = context.BuildContext.Extension<VirtualControllerContext>();
+
+        if (controllerContext.Controllers.TryGetValue(VRCAvatarDescriptor.AnimLayerType.Additive, out var additive))
+        {
+            if (AnimatorHelper.AnalyzeLayerWriteDefaults(additive) == true)
+            {
+                // AdditiveがWD ONで統一されてるなら3倍バグの根本原因がない
+                return;
+            }
+        }
+
         if (!controllerContext.Controllers.TryGetValue(VRCAvatarDescriptor.AnimLayerType.Gesture, out var gesture))
         {
             Debug.LogWarning("FaceTune: Gesture controller was not found; facial defaults were not added.");

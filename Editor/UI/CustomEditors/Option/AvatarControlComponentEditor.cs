@@ -27,17 +27,20 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
 {
     private readonly SerializedProperty _kind;
     private readonly SerializedProperty _mmd;
+    private readonly SerializedProperty _afk;
 
     public AvatarControlSectionDrawer(SerializedObject serializedObject)
     {
         _kind = serializedObject.FindProperty(nameof(AvatarControlComponent.ControlKind));
         _mmd = serializedObject.FindProperty(nameof(AvatarControlComponent.MMD));
+        _afk = serializedObject.FindProperty(nameof(AvatarControlComponent.AFK));
         Actions = new SectionActionSet(
             serializedObject,
             new[]
             {
                 SectionActionField.From(_kind, () => default(AvatarControlComponent.Kind)),
-                SectionActionField.From(_mmd, () => new MMDSupportSettings())
+                SectionActionField.From(_mmd, () => new MMDSupportSettings()),
+                SectionActionField.From(_afk, () => new AFKSupportSettings())
             });
     }
 
@@ -45,7 +48,8 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
 
     public float GetHeight()
         => GUIHelper.LineHeight
-         + (ShowsMmd ? GUIHelper.VerticalSpacing + EditorGUI.GetPropertyHeight(_mmd, GUIContent.none, true) : 0f);
+         + (ShowsMmd ? GUIHelper.VerticalSpacing + EditorGUI.GetPropertyHeight(_mmd, GUIContent.none, true) : 0f)
+         + (ShowsAfk ? GUIHelper.VerticalSpacing + EditorGUI.GetPropertyHeight(_afk, GUIContent.none, true) : 0f);
 
     public void Draw(Rect position)
     {
@@ -58,12 +62,22 @@ internal sealed class AvatarControlSectionDrawer : ISectionDrawer
             "avatarControl.kind.supportMmd.label",
             "avatarControl.kind.supportAfk.label"
         });
-        if (!ShowsMmd) return;
-        position.NewLine();
-        position.height = EditorGUI.GetPropertyHeight(_mmd, GUIContent.none, true);
-        EditorGUI.PropertyField(position, _mmd, GUIContent.none, true);
+        if (ShowsMmd)
+        {
+            position.NewLine();
+            position.height = EditorGUI.GetPropertyHeight(_mmd, GUIContent.none, true);
+            EditorGUI.PropertyField(position, _mmd, GUIContent.none, true);
+        }
+        if (ShowsAfk)
+        {
+            position.NewLine();
+            position.height = EditorGUI.GetPropertyHeight(_afk, GUIContent.none, true);
+            EditorGUI.PropertyField(position, _afk, GUIContent.none, true);
+        }
     }
 
     private bool ShowsMmd => _kind.hasMultipleDifferentValues
                           || _kind.intValue == (int)AvatarControlComponent.Kind.SupportMMD;
+    private bool ShowsAfk => _kind.hasMultipleDifferentValues
+                          || _kind.intValue == (int)AvatarControlComponent.Kind.SupportAFK;
 }

@@ -748,6 +748,15 @@ msgstr "AFK Support"
 msgid "avatarSettings.faceMesh.empty.message"
 msgstr "Select the face mesh object."
 
+msgid "afkSupport.mode.label"
+msgstr "Support Method"
+
+msgid "afkSupport.mode.option.disableFaceTune"
+msgstr "Disable FaceTune"
+
+msgid "afkSupport.mode.option.disableFxLayer"
+msgstr "Disable FX Layer"
+
 msgid "mmdSupport.mode.label"
 msgstr "Support Method"
 

@@ -18,15 +18,11 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             !settings.CanWriteBlendShape(FaceTuneWriteKind.FacialData, animation.Name));
         if (animations.Count > 0)
         {
-            set.AddRange(settings.GetManagedZeroBlendShapes());
+            set.AddRange(settings.GetManagedBlendShapeNames(FaceTuneWriteKind.FacialData)
+                .Select(name => new BlendShapeWeight(name, 0f)));
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
 
-        context.PlatformSupport.PostProcessDefaultBlendShapes(
-            settings,
-            context.RequireAvatarControlSettings(),
-            set);
-        set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
         if (set.Count == 0) return;
 
         var apply = new BlendShapeApply(

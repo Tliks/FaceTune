@@ -16,8 +16,8 @@ namespace Aoyon.FaceTune
 
         public Kind ControlKind;
 
-        // SupportMMD
         public MMDSupportSettings MMD = new();
+        public AFKSupportSettings AFK = new();
 
         public ConditionSelection Condition = new();
 

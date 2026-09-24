@@ -1,118 +1,67 @@
 using Aoyon.FaceTune.Build;
-using Aoyon.FaceTune.Platforms.VRChat;
 using nadena.dev.ndmf.animator;
-using VRC.SDK3.Avatars.Components;
 
-namespace Aoyon.FaceTune.Platforms;
+namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal sealed class MmdSupport
 {
-    private readonly AnimatorGraph _graph;
-    private readonly MmdPlaybackSettings _settings;
-
     public DnfCondition PlaybackWhen { get; }
-    public DnfCondition LayerPlaybackWhen { get; }
     public bool DisableFxLayer { get; }
 
-    public MmdSupport(
-        GameObject root,
-        AnimatorGraph graph,
-        MmdPlaybackSettings settings,
-        IMetaversePlatformSupport platformSupport,
-        ParameterDomainRegistry parameterDomains,
-        bool? analyzedWriteDefaults)
+    public MmdSupport(MmdPlaybackSettings settings)
     {
         using var _ = new Utils.ProfilingSampleScope("Animator.InitializeMmdSupport");
-        _graph = graph;
-        _settings = settings;
-
-        var disableWhen = new ConditionResolver(root, platformSupport, parameterDomains)
-            .Resolve(settings.Condition);
-        var playbackWhen = settings.Enabled
-            ? disableWhen ?? DnfCondition.Always
-            : DnfCondition.Never;
-        var disableLayers = false;
-        var disableFxLayer = false;
-        if (settings.Enabled && settings.Condition != null)
-        {
-            var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
-                ? MMDSupportSettings.Mode.DisableFXlayer // 解析が膨大なので一旦FX無効化にfallback
-                : settings.DisableMode;
-            switch (mode)
-            {
-                case MMDSupportSettings.Mode.DisableLayers:
-                    disableLayers = true;
-                    break;
-                case MMDSupportSettings.Mode.DisableFXlayer:
-                    disableFxLayer = true;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(settings.DisableMode),
-                        settings.DisableMode,
-                        null);
-            }
-        }
-
-        PlaybackWhen = playbackWhen;
-        LayerPlaybackWhen = disableLayers ? playbackWhen : DnfCondition.Never;
-        DisableFxLayer = disableFxLayer;
-    }
-
-    public void AddInitialMmdState(
-        VirtualLayer layer,
-        VirtualState defaultState,
-        IEnumerable<BlendShapeWeight> blendShapes,
-        Vector3 position,
-        string bodyPath)
-    {
+        PlaybackWhen = settings.PlaybackWhen;
         if (PlaybackWhen.IsNever) return;
 
-        _graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
-
-        var state = _graph.AddState(layer, "MMD Playback", position);
-        _graph.AddEntryTransition(layer, state, PlaybackWhen);
-
-        if (!LayerPlaybackWhen.IsNever)
+        var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
+            ? MMDSupportSettings.Mode.DisableFXlayer // 解析が膨大なので一旦FX無効化にfallback
+            : settings.DisableMode;
+        DisableFxLayer = mode switch
         {
-            var clip = state.SetNewClip("MMD Playback");
-            var nonMMDBlendShapes = blendShapes
-                .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
-            clip.AddBlendShapeAnimations(bodyPath, nonMMDBlendShapes.ToBlendShapeAnimations());
-
-            clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
-
-            _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
-
-            return;
-        }
-
-        if (DisableFxLayer)
-        {
-            _graph.AsPassThrough(state);
-            SetFxPlayableWeight(state, 0f);
-
-            var restore = _graph.AddState(
-                layer,
-                "Restore FX",
-                position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
-            _graph.AsPassThrough(restore);
-            SetFxPlayableWeight(restore, 1f);
-            _graph.AddStateTransition(state, restore, PlaybackWhen.Complement(), 0f);
-            _graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
-
-            return;
-        }
+            MMDSupportSettings.Mode.DisableLayers => false,
+            MMDSupportSettings.Mode.DisableFXlayer => true,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(settings.DisableMode), settings.DisableMode, null)
+        };
     }
 
-    private static void SetFxPlayableWeight(VirtualState state, float weight)
+    public void AddPlaybackStates(
+        AnimatorGraph graph,
+        VirtualLayer layer,
+        VirtualState defaultState,
+        DnfCondition playbackWhen,
+        Vector3 position)
     {
-        var control = state.EnsureBehavior<VRCPlayableLayerControl>();
-        control.layer = VRCPlayableLayerControl.BlendableLayer.FX;
-        control.goalWeight = weight;
-        control.blendDuration = 0f;
+        if (playbackWhen.IsNever) return;
+
+        var playback = graph.AddState(layer, "MMD Playback", position);
+        graph.AddEntryTransition(layer, playback, playbackWhen);
+        graph.AddExitTransitions(defaultState, playbackWhen, 0f);
+
+        if (!DisableFxLayer)
+        {
+            playback.SetNewClip("MMD Playback")
+                .SetAap(AapProtocol.ExpressionInactiveName, 1f);
+            graph.SetExitTransitions(playback, playbackWhen.Complement(), 0f);
+            return;
+        }
+
+        graph.AsPassThrough(playback);
+        playback.SetFxPlayableWeight(0f);
+
+        var restore = graph.AddState(
+            layer,
+            "Restore FX",
+            position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
+        graph.AsPassThrough(restore);
+        restore.SetFxPlayableWeight(1f);
+        graph.AddStateTransition(playback, restore, playbackWhen.Complement(), 0f);
+        graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
     }
 
+    /* MMDシェイプの初期値は上書きせず、アバターの値を保持する。
+       3倍バグの回避はGestureレイヤーの責務として分ける。
     public static void PostProcessDefaultBlendShapes(
         BuildSettings settings,
         AvatarControlSettings avatarControlSettings,
@@ -234,4 +183,5 @@ internal sealed class MmdSupport
         "青ざめ",
     }.Where(x => x != null).Distinct().ToHashSet(); // removed null with Where
 #nullable restore
+    */
 }

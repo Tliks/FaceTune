@@ -748,6 +748,15 @@ msgstr "AFK対応"
 msgid "avatarSettings.faceMesh.empty.message"
 msgstr "顔メッシュのオブジェクトを選択してください。"
 
+msgid "afkSupport.mode.label"
+msgstr "対応方法"
+
+msgid "afkSupport.mode.option.disableFaceTune"
+msgstr "FaceTuneを無効化"
+
+msgid "afkSupport.mode.option.disableFxLayer"
+msgstr "FXレイヤーを無効化"
+
 msgid "mmdSupport.mode.label"
 msgstr "対応方法"
 

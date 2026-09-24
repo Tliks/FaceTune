@@ -13,7 +13,7 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
 
         var controls = root.GetComponentsInChildren<AvatarControlComponent>(true);
         var mmdSupport = FindSingle(controls, AvatarControlComponent.Kind.SupportMMD);
-        var supportAfk = FindSingle(controls, AvatarControlComponent.Kind.SupportAFK) != null;
+        var afkSupport = FindSingle(controls, AvatarControlComponent.Kind.SupportAFK);
         var eyeBlink = FindSingle(controls, AvatarControlComponent.Kind.DisableEyeBlink);
         var lipSync = FindSingle(controls, AvatarControlComponent.Kind.DisableLipSync);
         var lockFacial = FindSingle(controls, AvatarControlComponent.Kind.LockFacial);
@@ -21,16 +21,18 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
         var mmdPlayback = mmdSupport == null
             ? MmdPlaybackSettings.Disabled
             : new MmdPlaybackSettings(
-                true,
+                conditionResolver.Resolve(mmdSupport.Condition) ?? DnfCondition.Never,
                 mmdSupport.MMD.ExplicitBlendShapeNames.ToArray(),
-                mmdSupport.Condition,
                 mmdSupport.MMD.SupportMode);
+        var afkPlayback = afkSupport == null
+            ? AfkPlaybackSettings.Disabled
+            : new AfkPlaybackSettings(true, afkSupport.AFK.SupportMode);
         context.SetAvatarControlSettings(new AvatarControlSettings(
             mmdPlayback,
             conditionResolver.Resolve(eyeBlink?.Condition) ?? DnfCondition.Never,
             conditionResolver.Resolve(lipSync?.Condition) ?? DnfCondition.Never,
             conditionResolver.Resolve(lockFacial?.Condition) ?? DnfCondition.Never,
-            supportAfk));
+            afkPlayback));
     }
 
     private static AvatarControlComponent? FindSingle(

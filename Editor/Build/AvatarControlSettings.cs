@@ -5,17 +5,24 @@ internal record struct AvatarControlSettings(
     DnfCondition DisableEyeBlinkWhen,
     DnfCondition DisableLipSyncWhen,
     DnfCondition LockFacialWhen,
-    bool SupportAfk);
+    AfkPlaybackSettings AfkPlayback);
+
+internal record struct AfkPlaybackSettings(bool Enabled, AFKSupportSettings.Mode DisableMode)
+{
+    public static AfkPlaybackSettings Disabled { get; } = new(
+        false,
+        AFKSupportSettings.Mode.DisableFaceTune);
+}
 
 internal record struct MmdPlaybackSettings(
-    bool Enabled,
+    DnfCondition PlaybackWhen,
     IReadOnlyCollection<string> ExplicitBlendShapeNames,
-    ConditionSelection? Condition,
     MMDSupportSettings.Mode DisableMode)
 {
+    public bool Enabled => !PlaybackWhen.IsNever;
+
     public static MmdPlaybackSettings Disabled { get; } = new(
-        false,
+        DnfCondition.Never,
         Array.Empty<string>(),
-        null,
         MMDSupportSettings.Mode.Auto);
 }
