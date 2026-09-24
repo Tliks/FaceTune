@@ -21,7 +21,7 @@ internal static class VRChatGestureDefaultsBuilder
     {
         // MMDやAFK対応がないなら、常にFXが初期再生するので3倍バグは起きない。
         var controls = context.RequireAvatarControlSettings();
-        if (!controls.SupportAfk && !controls.MmdPlayback.Enabled) return;
+        if (!controls.AfkPlayback.Enabled && !controls.MmdPlayback.Enabled) return;
 
         var settings = context.RequireSettings();
         var blendShapes = context.BuildContext

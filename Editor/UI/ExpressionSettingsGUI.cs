@@ -956,6 +956,26 @@ internal sealed class ExpressionSetSettingsDrawer : PropertyDrawer
 
 }
 
+[CustomPropertyDrawer(typeof(AFKSupportSettings))]
+internal sealed class AFKSupportSettingsDrawer : PropertyDrawer
+{
+    private static readonly string[] SupportModeKeys =
+    {
+        "afkSupport.mode.option.disableFaceTune",
+        "afkSupport.mode.option.disableFxLayer"
+    };
+
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        GUIHelper.RegisterPropertyRegion(position, property);
+        var supportMode = property.FindPropertyRelative(nameof(AFKSupportSettings.SupportMode));
+        GUIHelper.LocalizedEnumPopup(position, supportMode, "afkSupport.mode.label", SupportModeKeys);
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        => GUIHelper.LineHeight;
+}
+
 [CustomPropertyDrawer(typeof(MMDSupportSettings))]
 internal sealed class MMDSupportSettingsDrawer : PropertyDrawer
 {

@@ -7,10 +7,11 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 internal sealed class AfkSupport
 {
     public DnfCondition PlaybackWhen { get; }
+    public bool DisableFxLayer { get; }
 
-    public AfkSupport(bool enabled)
+    public AfkSupport(AfkPlaybackSettings settings)
     {
-        PlaybackWhen = enabled
+        PlaybackWhen = settings.Enabled
             ? DnfCondition.Single(new AnimatorConditionRule(
                 new AnimatorCondition
                 {
@@ -20,6 +21,15 @@ internal sealed class AfkSupport
                 AnimatorControllerParameterType.Bool),
             ParameterDomainRegistry.Empty)
             : DnfCondition.Never;
+        if (PlaybackWhen.IsNever) return;
+
+        DisableFxLayer = settings.DisableMode switch
+        {
+            AFKSupportSettings.Mode.DisableFaceTune => false,
+            AFKSupportSettings.Mode.DisableFXlayer => true,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(settings.DisableMode), settings.DisableMode, null)
+        };
     }
 
     public void AddPlaybackState(
@@ -33,10 +43,27 @@ internal sealed class AfkSupport
         AnimatorGraph.EnsureConditionParameters(controller, PlaybackWhen);
 
         var playback = graph.AddState(layer, "AFK Playback", position);
-        playback.SetNewClip("AFK Playback")
-            .SetAap(AapProtocol.ExpressionInactiveName, 1f);
         graph.AddEntryTransition(layer, playback, PlaybackWhen);
         graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
-        graph.SetExitTransitions(playback, PlaybackWhen.Complement(), 0f);
+
+        if (!DisableFxLayer)
+        {
+            playback.SetNewClip("AFK Playback")
+                .SetAap(AapProtocol.ExpressionInactiveName, 1f);
+            graph.SetExitTransitions(playback, PlaybackWhen.Complement(), 0f);
+            return;
+        }
+
+        graph.AsPassThrough(playback);
+        playback.SetFxPlayableWeight(0f);
+
+        var restore = graph.AddState(
+            layer,
+            "Restore FX",
+            position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
+        graph.AsPassThrough(restore);
+        restore.SetFxPlayableWeight(1f);
+        graph.AddStateTransition(playback, restore, PlaybackWhen.Complement(), 0f);
+        graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
     }
 }

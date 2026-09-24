@@ -1,6 +1,5 @@
 using Aoyon.FaceTune.Build;
 using nadena.dev.ndmf.animator;
-using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
@@ -49,24 +48,16 @@ internal sealed class MmdSupport
         }
 
         graph.AsPassThrough(playback);
-        SetFxPlayableWeight(playback, 0f);
+        playback.SetFxPlayableWeight(0f);
 
         var restore = graph.AddState(
             layer,
             "Restore FX",
             position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
         graph.AsPassThrough(restore);
-        SetFxPlayableWeight(restore, 1f);
+        restore.SetFxPlayableWeight(1f);
         graph.AddStateTransition(playback, restore, playbackWhen.Complement(), 0f);
         graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
-    }
-
-    private static void SetFxPlayableWeight(VirtualState state, float weight)
-    {
-        var control = state.EnsureBehavior<VRCPlayableLayerControl>();
-        control.layer = VRCPlayableLayerControl.BlendableLayer.FX;
-        control.goalWeight = weight;
-        control.blendDuration = 0f;
     }
 
     /* MMDシェイプの初期値は上書きせず、アバターの値を保持する。

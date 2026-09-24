@@ -5,7 +5,14 @@ internal record struct AvatarControlSettings(
     DnfCondition DisableEyeBlinkWhen,
     DnfCondition DisableLipSyncWhen,
     DnfCondition LockFacialWhen,
-    bool SupportAfk);
+    AfkPlaybackSettings AfkPlayback);
+
+internal record struct AfkPlaybackSettings(bool Enabled, AFKSupportSettings.Mode DisableMode)
+{
+    public static AfkPlaybackSettings Disabled { get; } = new(
+        false,
+        AFKSupportSettings.Mode.DisableFaceTune);
+}
 
 internal record struct MmdPlaybackSettings(
     DnfCondition PlaybackWhen,

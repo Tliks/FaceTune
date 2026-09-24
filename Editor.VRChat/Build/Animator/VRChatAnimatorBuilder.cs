@@ -51,11 +51,9 @@ internal static partial class VRChatAnimatorBuilder
         var units = ResolveUnits(settings, expressionPlan, controllerContext);
 
         var mmdSupport = new MmdSupport(avatarControlSettings.MmdPlayback);
-        var afkSupport = new AfkSupport(avatarControlSettings.SupportAfk);
-        var useInactiveAap = (!mmdSupport.PlaybackWhen.IsNever
-            && !mmdSupport.DisableFxLayer
-            && (!expressionPlan.IsEmpty || trackingPlan.ShouldBuildAnyLayer))
-            || !afkSupport.PlaybackWhen.IsNever;
+        var afkSupport = new AfkSupport(avatarControlSettings.AfkPlayback);
+        var useInactiveAap = (!mmdSupport.PlaybackWhen.IsNever && !mmdSupport.DisableFxLayer)
+            || (!afkSupport.PlaybackWhen.IsNever && !afkSupport.DisableFxLayer);
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
         var graph = new AnimatorGraph(
             analyzedWriteDefaults ?? true,
@@ -76,7 +74,8 @@ internal static partial class VRChatAnimatorBuilder
                 replaceLipSync);
         }
 
-        if (!expressionPlan.IsEmpty || useInactiveAap)
+        if (!expressionPlan.IsEmpty || useInactiveAap
+            || mmdSupport.DisableFxLayer || afkSupport.DisableFxLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
                 "Build.Animator.BuildInitial");

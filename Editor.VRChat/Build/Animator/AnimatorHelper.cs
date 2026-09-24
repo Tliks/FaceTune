@@ -1,5 +1,6 @@
 using nadena.dev.ndmf.animator;
 using UnityEditor.Animations;
+using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
@@ -126,6 +127,14 @@ internal static partial class AnimatorHelper
             default:
                 throw new ArgumentException($"Invalid parameter type: {type}");
         }
+    }
+
+    public static void SetFxPlayableWeight(this VirtualState state, float weight)
+    {
+        var control = state.EnsureBehavior<VRCPlayableLayerControl>();
+        control.layer = VRCPlayableLayerControl.BlendableLayer.FX;
+        control.goalWeight = weight;
+        control.blendDuration = 0f;
     }
 
     public static VirtualClip SetNewClip(this VirtualState state, string name)
