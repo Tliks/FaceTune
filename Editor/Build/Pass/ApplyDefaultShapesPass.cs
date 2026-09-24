@@ -18,7 +18,8 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             !settings.CanWriteBlendShape(FaceTuneWriteKind.FacialData, animation.Name));
         if (animations.Count > 0)
         {
-            set.AddRange(settings.GetManagedZeroBlendShapes(FaceTuneWriteKind.FacialData));
+            set.AddRange(settings.GetManagedBlendShapeNames(FaceTuneWriteKind.FacialData)
+                .Select(name => new BlendShapeWeight(name, 0f)));
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
 
