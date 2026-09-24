@@ -7,7 +7,7 @@ using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
-internal static class VRChatAnimatorBuilder
+internal static partial class VRChatAnimatorBuilder
 {
     private static readonly Vector3 InitialDefaultStatePosition = new(300, 0, 0);
     private const int InitialLayerPriority = -1;
@@ -52,40 +52,7 @@ internal static class VRChatAnimatorBuilder
             analyzedWriteDefaults = AnimatorHelper.AnalyzeLayerWriteDefaults(fx);
         }
 
-        ISet<Transform> unitBoundaryTransforms;
-        using (new Utils.ProfilingSampleScope("Build.Animator.FindUnitBoundaries"))
-        {
-            unitBoundaryTransforms = FindUnitBoundaryTransforms(
-                settings,
-                expressionPlan,
-                controllerContext);
-        }
-
-        ExpressionUnit[] units;
-        using (new Utils.ProfilingSampleScope("Build.Animator.ResolveUnits"))
-        {
-            var externalPartitions = FindExternalPartitions(
-                expressionPlan,
-                settings.AvatarContext,
-                unitBoundaryTransforms);
-            var unitGroups = expressionPlan.Items
-                .GroupBy(item => (
-                    Priority: item.Priority.Priority,
-                    ExternalPartition: externalPartitions[item.SourceTransform]))
-                .ToArray();
-            var unitIds = unitGroups
-                .OrderBy(group => group.Key.Priority)
-                .ThenByDescending(group => group.Key.ExternalPartition)
-                .Select((group, id) => (group.Key, Id: id))
-                .ToDictionary(entry => entry.Key, entry => entry.Id);
-            units = unitGroups
-                .Select(group => new ExpressionUnit(
-                    unitIds[group.Key],
-                    group.Key.Priority,
-                    group.First().SourceTransform,
-                    group.ToArray()))
-                .ToArray();
-        }
+        var units = ResolveUnits(settings, expressionPlan, controllerContext);
 
         var nonFacialDefaults = AnimatorHelper.GetDefaultValueAnimations(
             settings.AvatarContext.Root,
@@ -104,18 +71,6 @@ internal static class VRChatAnimatorBuilder
             && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
             || !afkSupport.PlaybackWhen.IsNever;
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
-
-        if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
-            || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
-        {
-            using var _ = new Utils.ProfilingSampleScope(
-                "Build.Animator.ReplaceExternalTrackingControls");
-            ReplaceExternalTrackingControls(
-                controllerContext,
-                aap,
-                settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer,
-                settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
-        }
 
         if (units.Length > 0 || useInactiveAap)
         {
@@ -160,6 +115,18 @@ internal static class VRChatAnimatorBuilder
                     unit.Expressions,
                     unit.Priority);
             }
+        }
+
+        if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
+            || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
+        {
+            using var _ = new Utils.ProfilingSampleScope(
+                "Build.Animator.ReplaceExternalTrackingControls");
+            ReplaceExternalTrackingControls(
+                controllerContext,
+                aap,
+                settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer,
+                settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
         }
 
         var eyeBlinkBuilder = new EyeBlinkAnimatorBuilder(
@@ -278,237 +245,6 @@ internal static class VRChatAnimatorBuilder
         controllerContext.Controllers[merge] = controller;
         return controller;
     }
-
-    private sealed record ExpressionUnit(
-        int Id,
-        int Priority,
-        Transform Anchor,
-        IReadOnlyList<ExpressionItem> Expressions);
-
-    private static IReadOnlyDictionary<Transform, int> FindExternalPartitions(
-        ExpressionPlan expressionPlan,
-        AvatarContext avatarContext,
-        ISet<Transform> unitBoundaryTransforms)
-    {
-        var expressionTransforms = expressionPlan.Items
-            .Select(item => item.SourceTransform)
-            .ToHashSet();
-        var partitions = new Dictionary<Transform, int>();
-        var partition = 0;
-        var hasExpressionAbove = false;
-        var hasBoundarySinceLastExpression = false;
-
-        foreach (var transform in avatarContext.Root.GetComponentsInChildren<Transform>(true))
-        {
-            if (expressionTransforms.Contains(transform))
-            {
-                if (hasExpressionAbove && hasBoundarySinceLastExpression) partition++;
-                partitions[transform] = partition;
-                hasExpressionAbove = true;
-                hasBoundarySinceLastExpression = false;
-                continue;
-            }
-
-            if (hasExpressionAbove && !hasBoundarySinceLastExpression
-                && unitBoundaryTransforms.Contains(transform))
-            {
-                hasBoundarySinceLastExpression = true;
-            }
-        }
-
-        return partitions;
-    }
-
-    private static ISet<Transform> FindUnitBoundaryTransforms(
-        BuildSettings settings,
-        ExpressionPlan expressionPlan,
-        VirtualControllerContext controllerContext)
-    {
-        var managedBindings = CollectManagedBindings(settings, expressionPlan).ToHashSet();
-        if (managedBindings.Count == 0) return new HashSet<Transform>();
-
-        return settings.AvatarContext.Root.GetComponentsInChildren<Transform>(true)
-            .Where(transform => transform.TryGetComponent<ModularAvatarMergeAnimator>(out var merge)
-                && merge.layerType == VRCAvatarDescriptor.AnimLayerType.FX
-                && controllerContext.Controllers.TryGetValue(merge, out var controller)
-                && CollectBindings(controller).Any(managedBindings.Contains))
-            .ToHashSet();
-    }
-
-    private static IEnumerable<EditorCurveBinding> CollectManagedBindings(
-        BuildSettings settings,
-        ExpressionPlan expressionPlan)
-    {
-        foreach (var name in settings.AvatarContext.FaceMesh.GetBlendShapeNames()
-                     .Where(name => !settings.IsBlendShapeExplicitlyExcluded(name)))
-        {
-            yield return EditorCurveBinding.FloatCurve(
-                settings.AvatarContext.BodyPath,
-                typeof(SkinnedMeshRenderer),
-                FaceTuneConstants.BlendShapePropertyPrefix + name);
-        }
-
-        foreach (var item in expressionPlan.Items)
-        {
-            foreach (var (binding, _) in item.NonFacialAnimations.FloatCurves)
-                yield return binding;
-            foreach (var (binding, _) in item.NonFacialAnimations.ObjectCurves)
-                yield return binding;
-        }
-    }
-
-    private static IEnumerable<EditorCurveBinding> CollectBindings(
-        VirtualAnimatorController controller)
-        => controller.Layers
-            .Where(layer => layer.StateMachine != null)
-            .SelectMany(layer => layer.StateMachine!.AllStates())
-            .SelectMany(state => CollectBindings(state.Motion))
-            .Distinct();
-
-    private static IEnumerable<EditorCurveBinding> CollectBindings(VirtualMotion? motion)
-    {
-        return motion switch
-        {
-            VirtualClip clip => clip.GetFloatCurveBindings().Concat(clip.GetObjectCurveBindings()),
-            VirtualBlendTree tree => tree.Children
-                .Where(child => child.Motion != null)
-                .SelectMany(child => CollectBindings(child.Motion)),
-            _ => Array.Empty<EditorCurveBinding>()
-        };
-    }
-
-    private static void ReplaceExternalTrackingControls(
-        VirtualControllerContext controllerContext,
-        AapProtocol aap,
-        bool replaceEyeBlink,
-        bool replaceLipSync)
-    {
-        if (!replaceEyeBlink && !replaceLipSync) return;
-
-        foreach (var (key, controller) in controllerContext.Controllers)
-        {
-            if (!IsFxController(key)) continue;
-
-            foreach (var layer in controller.Layers)
-            {
-                if (layer.StateMachine == null) continue;
-                foreach (var state in layer.StateMachine.AllStates())
-                    ReplaceExternalTrackingControls(
-                        controller,
-                        state,
-                        aap,
-                        replaceEyeBlink,
-                        replaceLipSync);
-            }
-        }
-    }
-
-    private static void ReplaceExternalTrackingControls(
-        VirtualAnimatorController controller,
-        VirtualState state,
-        AapProtocol aap,
-        bool replaceEyeBlink,
-        bool replaceLipSync)
-    {
-        var behaviours = state.Behaviours;
-        var trackingControls = behaviours.OfType<VRCAnimatorTrackingControl>().ToArray();
-        if (trackingControls.Length == 0) return;
-
-        var writes = new List<(string ParameterName, float Value)>();
-        foreach (var control in trackingControls)
-        {
-            var eyeTracking = replaceEyeBlink
-                ? control.trackingEyes
-                : VRCAnimatorTrackingControl.TrackingType.NoChange;
-            var mouthTracking = replaceLipSync
-                ? control.trackingMouth
-                : VRCAnimatorTrackingControl.TrackingType.NoChange;
-            writes.AddRange(aap.BuildTrackingReplacementWrites(eyeTracking, mouthTracking));
-            if (replaceEyeBlink)
-                control.trackingEyes = VRCAnimatorTrackingControl.TrackingType.NoChange;
-            if (replaceLipSync)
-                control.trackingMouth = VRCAnimatorTrackingControl.TrackingType.NoChange;
-        }
-
-        if (writes.Count > 0)
-        {
-            aap.EnsureParameters(
-                controller,
-                writes.Select(write => write.ParameterName));
-            AddAapWritesToClip(state, writes);
-        }
-
-        state.Behaviours = behaviours
-            .Where(behavior => !IsNoOpTrackingControl(behavior))
-            .ToImmutableList();
-    }
-
-    private static void AddAapWritesToClip(
-        VirtualState state,
-        IReadOnlyList<(string ParameterName, float Value)> writes)
-    {
-        var clips = CollectClips(state.Motion).ToArray();
-        if (clips.Length == 0)
-        {
-            var clip = VirtualClip.Create("FaceTune Tracking");
-            state.Motion = clip;
-            clips = new[] { clip };
-        }
-
-        foreach (var clip in clips)
-        {
-            foreach (var write in writes)
-                clip.SetAap(write.ParameterName, write.Value);
-        }
-    }
-
-    private static IEnumerable<VirtualClip> CollectClips(VirtualMotion? motion)
-    {
-        switch (motion)
-        {
-            case VirtualClip clip:
-                yield return clip;
-                break;
-            case VirtualBlendTree tree:
-                foreach (var child in tree.Children)
-                {
-                    foreach (var clip in CollectClips(child.Motion)) yield return clip;
-                }
-                break;
-        }
-    }
-
-    private static bool IsFxController(object key)
-    {
-        return key switch
-        {
-            VRCAvatarDescriptor.AnimLayerType layerType =>
-                layerType == VRCAvatarDescriptor.AnimLayerType.FX,
-            IVirtualizeAnimatorController virtualize
-                when virtualize.TargetControllerKey
-                    is VRCAvatarDescriptor.AnimLayerType targetLayer =>
-                targetLayer == VRCAvatarDescriptor.AnimLayerType.FX,
-            _ => false
-        };
-    }
-
-    private static bool IsNoOpTrackingControl(StateMachineBehaviour behavior)
-    {
-        if (behavior is not VRCAnimatorTrackingControl control) return false;
-
-        var noChange = VRCAnimatorTrackingControl.TrackingType.NoChange;
-        return control.trackingHead == noChange
-            && control.trackingLeftHand == noChange
-            && control.trackingRightHand == noChange
-            && control.trackingHip == noChange
-            && control.trackingLeftFoot == noChange
-            && control.trackingRightFoot == noChange
-            && control.trackingLeftFingers == noChange
-            && control.trackingRightFingers == noChange
-            && control.trackingEyes == noChange
-            && control.trackingMouth == noChange;
-    }
-
 }
 
 internal sealed class VRChatInitialBlendShapeState

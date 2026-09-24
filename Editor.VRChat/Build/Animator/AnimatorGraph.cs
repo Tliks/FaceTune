@@ -72,7 +72,7 @@ internal sealed class AnimatorGraph
 
     public void AddExitTimeExitTransition(VirtualState state)
     {
-        var transition = AnimatorHelper.CreateTransitionWithExitTime();
+        var transition = CreateTransitionWithExitTime();
         transition.SetExitDestination();
         state.Transitions = state.Transitions.Add(transition);
     }
@@ -117,7 +117,7 @@ internal sealed class AnimatorGraph
     {
         var transitions = TransitionCases(when).Select(conditionCase =>
         {
-            var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
+            var transition = CreateTransitionWithDurationSeconds(duration);
             transition.SetDestination(destination);
             transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
             return transition;
@@ -131,7 +131,7 @@ internal sealed class AnimatorGraph
         float exitTime = 1f,
         float duration = 0f)
     {
-        var transition = AnimatorHelper.CreateTransitionWithExitTime(exitTime, duration);
+        var transition = CreateTransitionWithExitTime(exitTime, duration);
         transition.SetDestination(destination);
         source.Transitions = source.Transitions.Add(transition);
     }
@@ -145,7 +145,7 @@ internal sealed class AnimatorGraph
     {
         var transitions = TransitionCases(when).Select(conditionCase =>
         {
-            var transition = AnimatorHelper.CreateTransitionWithExitTime(exitTime, duration);
+            var transition = CreateTransitionWithExitTime(exitTime, duration);
             transition.SetDestination(destination);
             transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
             return transition;
@@ -314,14 +314,14 @@ internal sealed class AnimatorGraph
         VirtualState destination,
         float duration)
     {
-        var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
+        var transition = CreateTransitionWithDurationSeconds(duration);
         transition.SetDestination(destination);
         return transition;
     }
 
     private static VirtualStateTransition CreateExitTransition(float duration)
     {
-        var transition = AnimatorHelper.CreateTransitionWithDurationSeconds(duration);
+        var transition = CreateTransitionWithDurationSeconds(duration);
         transition.SetExitDestination();
         return transition;
     }
@@ -332,6 +332,26 @@ internal sealed class AnimatorGraph
     {
         var transition = CreateStateTransition(destination, duration);
         transition.CanTransitionToSelf = false;
+        return transition;
+    }
+
+    private static VirtualStateTransition CreateTransitionWithDurationSeconds(float duration)
+    {
+        var transition = VirtualStateTransition.Create();
+        transition.ExitTime = null;
+        transition.HasFixedDuration = true;
+        transition.Duration = duration;
+        return transition;
+    }
+
+    private static VirtualStateTransition CreateTransitionWithExitTime(
+        float exitTime = 1f,
+        float duration = 0f)
+    {
+        var transition = VirtualStateTransition.Create();
+        transition.ExitTime = exitTime;
+        transition.HasFixedDuration = true;
+        transition.Duration = duration;
         return transition;
     }
 
