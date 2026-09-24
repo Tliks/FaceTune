@@ -6,15 +6,12 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal sealed class MmdSupport
 {
-    private readonly MmdPlaybackSettings _settings;
-
     public DnfCondition PlaybackWhen { get; }
     public bool DisableFxLayer { get; }
 
     public MmdSupport(MmdPlaybackSettings settings)
     {
         using var _ = new Utils.ProfilingSampleScope("Animator.InitializeMmdSupport");
-        _settings = settings;
         PlaybackWhen = settings.PlaybackWhen;
         if (PlaybackWhen.IsNever) return;
 
@@ -30,70 +27,36 @@ internal sealed class MmdSupport
         };
     }
 
-    public void AddInitialMmdState(
+    public void AddPlaybackStates(
         AnimatorGraph graph,
         VirtualLayer layer,
         VirtualState defaultState,
         DnfCondition playbackWhen,
-        IReadOnlyList<BlendShapeWeight> blendShapes,
-        Vector3 position,
-        string bodyPath)
+        Vector3 position)
     {
         if (playbackWhen.IsNever) return;
 
-        var root = layer.StateMachine!;
-        var machine = graph.AddStateMachine(root, "MMD", position);
-
-        if (DisableFxLayer)
-            BuildFxPlayback(graph, machine, playbackWhen);
-        else
-            BuildLayerPlayback(graph, machine, playbackWhen, blendShapes, bodyPath);
-
-        graph.AddEntryTransition(layer, machine, playbackWhen);
-        graph.AddStateMachineExitTransition(root, machine);
+        var playback = graph.AddState(layer, "MMD Playback", position);
+        graph.AddEntryTransition(layer, playback, playbackWhen);
         graph.AddExitTransitions(defaultState, playbackWhen, 0f);
-    }
 
-    private void BuildLayerPlayback(
-        AnimatorGraph graph,
-        VirtualStateMachine machine,
-        DnfCondition playbackWhen,
-        IReadOnlyList<BlendShapeWeight> blendShapes,
-        string bodyPath)
-    {
-        var initial = graph.AddState(machine, "Initial", new Vector3(300, 0, 0));
-        var initialClip = initial.SetNewClip("MMD Initial");
-        initialClip.AddBlendShapeAnimations(bodyPath, blendShapes.ToBlendShapeAnimations());
-        initialClip.SetAap(AapProtocol.ExpressionInactiveName, 1f, 1f);
-        machine.DefaultState = initial;
+        if (!DisableFxLayer)
+        {
+            playback.SetNewClip("MMD Playback")
+                .SetAap(AapProtocol.ExpressionInactiveName, 1f);
+            graph.SetExitTransitions(playback, playbackWhen.Complement(), 0f);
+            return;
+        }
 
-        var mmdNames = ResolveMmdBlendShapeNames(_settings).ToHashSet(StringComparer.Ordinal);
-        var nonMmdShapes = blendShapes.Where(shape => !mmdNames.Contains(shape.Name));
-
-        var playback = graph.AddState(machine, "Playback", new Vector3(550, 0, 0));
-        var clip = playback.SetNewClip("MMD Playback");
-        clip.AddBlendShapeAnimations(bodyPath, nonMmdShapes.ToBlendShapeAnimations());
-        clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
-
-        graph.AddExitTransitions(initial, playbackWhen.Complement(), 0f);
-        graph.AddExitTimeTransition(initial, playback);
-        graph.AddExitTransitions(playback, playbackWhen.Complement(), 0f);
-    }
-
-    private static void BuildFxPlayback(
-        AnimatorGraph graph,
-        VirtualStateMachine machine,
-        DnfCondition playbackWhen)
-    {
-        var playback = graph.AddState(machine, "Playback", new Vector3(300, 0, 0));
         graph.AsPassThrough(playback);
         SetFxPlayableWeight(playback, 0f);
-        machine.DefaultState = playback;
 
-        var restore = graph.AddState(machine, "Restore FX", new Vector3(550, 0, 0));
+        var restore = graph.AddState(
+            layer,
+            "Restore FX",
+            position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
         graph.AsPassThrough(restore);
         SetFxPlayableWeight(restore, 1f);
-
         graph.AddStateTransition(playback, restore, playbackWhen.Complement(), 0f);
         graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
     }
@@ -106,6 +69,8 @@ internal sealed class MmdSupport
         control.blendDuration = 0f;
     }
 
+    /* MMDシェイプの初期値は上書きせず、アバターの値を保持する。
+       3倍バグの回避はGestureレイヤーの責務として分ける。
     public static void PostProcessDefaultBlendShapes(
         BuildSettings settings,
         AvatarControlSettings avatarControlSettings,
@@ -227,4 +192,5 @@ internal sealed class MmdSupport
         "青ざめ",
     }.Where(x => x != null).Distinct().ToHashSet(); // removed null with Where
 #nullable restore
+    */
 }

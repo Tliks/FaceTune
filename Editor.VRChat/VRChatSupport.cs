@@ -248,15 +248,6 @@ internal sealed class VRChatSupport : IMetaversePlatformSupport
         }
     }
 
-    public void PostProcessDefaultBlendShapes(
-        BuildSettings settings,
-        AvatarControlSettings avatarControlSettings,
-        BlendShapeWeightSet blendShapes)
-        => MmdSupport.PostProcessDefaultBlendShapes(
-            settings,
-            avatarControlSettings,
-            blendShapes);
-
 }
 
 internal static class VRChatGestureMap

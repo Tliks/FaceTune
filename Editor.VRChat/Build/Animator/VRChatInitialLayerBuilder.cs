@@ -53,22 +53,18 @@ internal sealed class VRChatInitialLayerBuilder
             clip.SetObjectCurve(binding, curve);
         clip.AddBlendShapeAnimations(bodyPath, _blendShapes.ToBlendShapeAnimations());
 
-        mmdSupport.AddInitialMmdState(
+        mmdSupport.AddPlaybackStates(
             _graph,
             layer,
             defaultState,
             mmdWhen,
-            _blendShapes,
-            origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
-            bodyPath);
+            origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0));
 
-        afkSupport.AddInitialState(
+        afkSupport.AddPlaybackState(
             controller,
             _graph,
             layer,
             defaultState,
-            _blendShapes,
-            bodyPath,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 4, 0));
     }
 }

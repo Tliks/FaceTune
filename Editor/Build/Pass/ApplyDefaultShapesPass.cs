@@ -23,11 +23,6 @@ internal class ApplyDefaultShapesPass : FaceTunePass<ApplyDefaultShapesPass>
             set.AddRange(animations.ToFirstFrameBlendShapes());
         }
 
-        context.PlatformSupport.PostProcessDefaultBlendShapes(
-            settings,
-            context.RequireAvatarControlSettings(),
-            set);
-        set.RemoveRange(settings.FacialDataProhibitedBlendShapeNames);
         if (set.Count == 0) return;
 
         var apply = new BlendShapeApply(
