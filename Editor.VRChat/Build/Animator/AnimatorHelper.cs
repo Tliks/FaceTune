@@ -155,13 +155,18 @@ internal static class AnimatorHelper
         return clip;
     }
 
-    public static void SetAap(this VirtualClip clip, string parameterName, float value)
+    public static void SetAap(
+        this VirtualClip clip,
+        string parameterName,
+        float value,
+        float durationSeconds = 0f)
     {
-        clip.SetFloatCurve(
-            "",
-            typeof(UnityEngine.Animator),
-            parameterName,
-            new AnimationCurve(new Keyframe(0f, value)));
+        var curve = durationSeconds > 0f
+            ? new AnimationCurve(
+                new Keyframe(0f, value),
+                new Keyframe(durationSeconds, value))
+            : new AnimationCurve(new Keyframe(0f, value));
+        clip.SetFloatCurve("", typeof(UnityEngine.Animator), parameterName, curve);
     }
 
     public static VirtualClip CreateCustomEmptyClip(

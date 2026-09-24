@@ -11,98 +11,87 @@ internal sealed class MmdSupport
     private readonly MmdPlaybackSettings _settings;
 
     public DnfCondition PlaybackWhen { get; }
-    public DnfCondition LayerPlaybackWhen { get; }
     public bool DisableFxLayer { get; }
 
-    public MmdSupport(
-        GameObject root,
-        AnimatorGraph graph,
-        MmdPlaybackSettings settings,
-        IMetaversePlatformSupport platformSupport,
-        ParameterDomainRegistry parameterDomains,
-        bool? analyzedWriteDefaults)
+    public MmdSupport(AnimatorGraph graph, MmdPlaybackSettings settings)
     {
         using var _ = new Utils.ProfilingSampleScope("Animator.InitializeMmdSupport");
         _graph = graph;
         _settings = settings;
+        PlaybackWhen = settings.PlaybackWhen;
+        if (PlaybackWhen.IsNever) return;
 
-        var disableWhen = new ConditionResolver(root, platformSupport, parameterDomains)
-            .Resolve(settings.Condition);
-        var playbackWhen = settings.Enabled
-            ? disableWhen ?? DnfCondition.Always
-            : DnfCondition.Never;
-        var disableLayers = false;
-        var disableFxLayer = false;
-        if (settings.Enabled && settings.Condition != null)
+        var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
+            ? MMDSupportSettings.Mode.DisableFXlayer // 解析が膨大なので一旦FX無効化にfallback
+            : settings.DisableMode;
+        DisableFxLayer = mode switch
         {
-            var mode = settings.DisableMode == MMDSupportSettings.Mode.Auto
-                ? MMDSupportSettings.Mode.DisableFXlayer // 解析が膨大なので一旦FX無効化にfallback
-                : settings.DisableMode;
-            switch (mode)
-            {
-                case MMDSupportSettings.Mode.DisableLayers:
-                    disableLayers = true;
-                    break;
-                case MMDSupportSettings.Mode.DisableFXlayer:
-                    disableFxLayer = true;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(settings.DisableMode),
-                        settings.DisableMode,
-                        null);
-            }
-        }
-
-        PlaybackWhen = playbackWhen;
-        LayerPlaybackWhen = disableLayers ? playbackWhen : DnfCondition.Never;
-        DisableFxLayer = disableFxLayer;
+            MMDSupportSettings.Mode.DisableLayers => false,
+            MMDSupportSettings.Mode.DisableFXlayer => true,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(settings.DisableMode), settings.DisableMode, null)
+        };
     }
 
     public void AddInitialMmdState(
         VirtualLayer layer,
         VirtualState defaultState,
-        IEnumerable<BlendShapeWeight> blendShapes,
+        IReadOnlyList<BlendShapeWeight> blendShapes,
         Vector3 position,
         string bodyPath)
     {
         if (PlaybackWhen.IsNever) return;
 
-        _graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
-
-        var state = _graph.AddState(layer, "MMD Playback", position);
-        _graph.AddEntryTransition(layer, state, PlaybackWhen);
-
-        if (!LayerPlaybackWhen.IsNever)
-        {
-            var clip = state.SetNewClip("MMD Playback");
-            var nonMMDBlendShapes = blendShapes
-                .Where(shape => !ResolveMmdBlendShapeNames(_settings).Contains(shape.Name));
-            clip.AddBlendShapeAnimations(bodyPath, nonMMDBlendShapes.ToBlendShapeAnimations());
-
-            clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
-
-            _graph.SetExitTransitions(state, PlaybackWhen.Complement(), 0f);
-
-            return;
-        }
+        var root = layer.StateMachine!;
+        var machine = _graph.AddStateMachine(root, "MMD", position);
 
         if (DisableFxLayer)
-        {
-            _graph.AsPassThrough(state);
-            SetFxPlayableWeight(state, 0f);
+            BuildFxPlayback(machine);
+        else
+            BuildLayerPlayback(machine, blendShapes, bodyPath);
 
-            var restore = _graph.AddState(
-                layer,
-                "Restore FX",
-                position + new Vector3(AnimatorGraph.PositionXStep, 0, 0));
-            _graph.AsPassThrough(restore);
-            SetFxPlayableWeight(restore, 1f);
-            _graph.AddStateTransition(state, restore, PlaybackWhen.Complement(), 0f);
-            _graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
+        _graph.AddEntryTransition(layer, machine, PlaybackWhen);
+        _graph.AddStateMachineExitTransition(root, machine);
+        _graph.AddExitTransitions(defaultState, PlaybackWhen, 0f);
+    }
 
-            return;
-        }
+    private void BuildLayerPlayback(
+        VirtualStateMachine machine,
+        IReadOnlyList<BlendShapeWeight> blendShapes,
+        string bodyPath)
+    {
+        var initial = _graph.AddState(machine, "Initial", new Vector3(300, 0, 0));
+        var initialClip = initial.SetNewClip("MMD Initial");
+        initialClip.AddBlendShapeAnimations(bodyPath, blendShapes.ToBlendShapeAnimations());
+        initialClip.SetAap(AapProtocol.ExpressionInactiveName, 1f, 1f);
+        machine.DefaultState = initial;
+
+        var mmdNames = ResolveMmdBlendShapeNames(_settings).ToHashSet(StringComparer.Ordinal);
+        var nonMmdShapes = blendShapes.Where(shape => !mmdNames.Contains(shape.Name));
+
+        var playback = _graph.AddState(machine, "Playback", new Vector3(550, 0, 0));
+        var clip = playback.SetNewClip("MMD Playback");
+        clip.AddBlendShapeAnimations(bodyPath, nonMmdShapes.ToBlendShapeAnimations());
+        clip.SetAap(AapProtocol.ExpressionInactiveName, 1f);
+
+        _graph.AddExitTransitions(initial, PlaybackWhen.Complement(), 0f);
+        _graph.AddExitTimeTransition(initial, playback);
+        _graph.AddExitTransitions(playback, PlaybackWhen.Complement(), 0f);
+    }
+
+    private void BuildFxPlayback(VirtualStateMachine machine)
+    {
+        var playback = _graph.AddState(machine, "Playback", new Vector3(300, 0, 0));
+        _graph.AsPassThrough(playback);
+        SetFxPlayableWeight(playback, 0f);
+        machine.DefaultState = playback;
+
+        var restore = _graph.AddState(machine, "Restore FX", new Vector3(550, 0, 0));
+        _graph.AsPassThrough(restore);
+        SetFxPlayableWeight(restore, 1f);
+
+        _graph.AddStateTransition(playback, restore, PlaybackWhen.Complement(), 0f);
+        _graph.AddExitTransitions(restore, DnfCondition.Always, 0f);
     }
 
     private static void SetFxPlayableWeight(VirtualState state, float weight)

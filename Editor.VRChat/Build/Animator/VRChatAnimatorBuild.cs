@@ -32,6 +32,14 @@ internal static class VRChatAnimatorBuilder
             externalLipSyncBlendShapes);
         settings = proxy.Settings;
         expressionPlan = proxy.Expressions;
+        var initialBlendShapes = settings.GetManagedBlendShapesForAnyWriteKind()
+            .Where(shape => !externalLipSyncBlendShapes.Contains(shape.Name))
+            .Select(shape => proxy.ProxyNames.Contains(shape.Name)
+                ? shape with { Weight = 0f }
+                : shape)
+            .ToArray();
+        buildContext.GetState<VRChatInitialBlendShapeState>().BlendShapes =
+            initialBlendShapes;
 
         var trackingPlan = VRChatTrackingPlan.Build(
             expressionPlan.Items,
@@ -89,15 +97,10 @@ internal static class VRChatAnimatorBuilder
         var graph = new AnimatorGraph(
             analyzedWriteDefaults ?? true,
             controllerContext.CloneContext);
-        var mmdSupport = new MmdSupport(
-            settings.AvatarContext.Root,
-            graph,
-            avatarControlSettings.MmdPlayback,
-            MetaversePlatformSupport.GetForBuild(buildContext),
-            settings.ParameterDomains,
-            analyzedWriteDefaults);
+        var mmdSupport = new MmdSupport(graph, avatarControlSettings.MmdPlayback);
         var afkSupport = new AfkSupport(avatarControlSettings.SupportAfk);
-        var useInactiveAap = (!mmdSupport.LayerPlaybackWhen.IsNever
+        var useInactiveAap = (!mmdSupport.PlaybackWhen.IsNever
+            && !mmdSupport.DisableFxLayer
             && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
             || !afkSupport.PlaybackWhen.IsNever;
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
@@ -130,8 +133,7 @@ internal static class VRChatAnimatorBuilder
                 initialController,
                 graph,
                 settings,
-                externalLipSyncBlendShapes,
-                proxy.ProxyNames,
+                initialBlendShapes,
                 nonFacialDefaults,
                 mmdSupport,
                 aap,
@@ -199,8 +201,7 @@ internal static class VRChatAnimatorBuilder
         VirtualAnimatorController controller,
         AnimatorGraph graph,
         BuildSettings settings,
-        ISet<string> externalLipSyncBlendShapes,
-        ISet<string> generatedLipSyncBlendShapes,
+        IReadOnlyList<BlendShapeWeight> blendShapes,
         ResolvedNonFacialAnimationSet nonFacialDefaults,
         MmdSupport mmdSupport,
         AapProtocol aap,
@@ -208,12 +209,6 @@ internal static class VRChatAnimatorBuilder
     {
         AnimatorGraph.EnsureConditionParameters(controller, mmdSupport.PlaybackWhen);
         aap.EnsureExpressionInactiveParameter(controller);
-        var blendShapes = settings.GetManagedBlendShapes()
-            .Where(shape => !externalLipSyncBlendShapes.Contains(shape.Name))
-            .Select(shape => generatedLipSyncBlendShapes.Contains(shape.Name)
-                ? shape with { Weight = 0f }
-                : shape)
-            .ToArray();
 
         var origin = InitialDefaultStatePosition;
         var layer = graph.AddLayer(controller, "Initial", InitialLayerPriority);
@@ -236,6 +231,8 @@ internal static class VRChatAnimatorBuilder
             graph,
             layer,
             defaultState,
+            blendShapes,
+            settings.AvatarContext.BodyPath,
             origin + new Vector3(0, AnimatorGraph.PositionYStep * 4, 0));
     }
 
@@ -510,4 +507,10 @@ internal static class VRChatAnimatorBuilder
             && control.trackingMouth == noChange;
     }
 
+}
+
+internal sealed class VRChatInitialBlendShapeState
+{
+    public IReadOnlyList<BlendShapeWeight> BlendShapes { get; set; } =
+        Array.Empty<BlendShapeWeight>();
 }

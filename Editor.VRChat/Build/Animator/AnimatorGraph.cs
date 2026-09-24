@@ -190,6 +190,22 @@ internal sealed class AnimatorGraph
         => AddEntryTransition(layer.StateMachine!, destination, when);
 
     public void AddEntryTransition(
+        VirtualLayer layer,
+        VirtualStateMachine destination,
+        DnfCondition when)
+    {
+        var transitions = TransitionCases(when).Select(conditionCase =>
+        {
+            var transition = VirtualTransition.Create();
+            transition.SetDestination(destination);
+            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
+            return transition;
+        });
+        var root = layer.StateMachine!;
+        root.EntryTransitions = root.EntryTransitions.AddRange(transitions);
+    }
+
+    public void AddEntryTransition(
         VirtualStateMachine stateMachine,
         VirtualState destination,
         DnfCondition? when = null)
@@ -224,6 +240,12 @@ internal sealed class AnimatorGraph
         VirtualState destination)
         => AddStateMachineTransition(parent, source, transition =>
             transition.SetDestination(destination));
+
+    public void AddStateMachineExitTransition(
+        VirtualStateMachine parent,
+        VirtualStateMachine source)
+        => AddStateMachineTransition(parent, source, transition =>
+            transition.SetExitDestination());
 
     public void AddStateMachineTransition(
         VirtualStateMachine parent,
