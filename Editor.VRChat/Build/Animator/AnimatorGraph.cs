@@ -193,37 +193,32 @@ internal sealed class AnimatorGraph
         VirtualLayer layer,
         VirtualStateMachine destination,
         DnfCondition when)
-    {
-        var transitions = TransitionCases(when).Select(conditionCase =>
-        {
-            var transition = VirtualTransition.Create();
-            transition.SetDestination(destination);
-            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
-            return transition;
-        });
-        var root = layer.StateMachine!;
-        root.EntryTransitions = root.EntryTransitions.AddRange(transitions);
-    }
+        => AddEntryTransitions(layer.StateMachine!, when, transition =>
+            transition.SetDestination(destination));
 
     public void AddEntryTransition(
         VirtualStateMachine stateMachine,
         VirtualState destination,
         DnfCondition? when = null)
     {
-        if (when == null)
+        if (when != null)
         {
-            stateMachine.EntryTransitions = stateMachine.EntryTransitions.Add(
-                CreateEntryTransition(destination));
+            AddEntryTransitions(stateMachine, when, transition =>
+                transition.SetDestination(destination));
             return;
         }
 
-        var transitions = TransitionCases(when).Select(conditionCase =>
-        {
-            var transition = CreateEntryTransition(destination);
-            transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
-            return transition;
-        });
-        stateMachine.EntryTransitions = stateMachine.EntryTransitions.AddRange(transitions);
+        stateMachine.EntryTransitions = stateMachine.EntryTransitions.Add(
+            CreateTransition(transition => transition.SetDestination(destination)));
+    }
+
+    private static void AddEntryTransitions(
+        VirtualStateMachine stateMachine,
+        DnfCondition when,
+        Action<VirtualTransition> setDestination)
+    {
+        stateMachine.EntryTransitions = stateMachine.EntryTransitions.AddRange(
+            CreateTransitions(when, setDestination));
     }
 
     public void AddStateMachineTransition(
@@ -259,26 +254,30 @@ internal sealed class AnimatorGraph
         VirtualStateMachine parent,
         VirtualStateMachine source,
         Action<VirtualTransition> setDestination)
-    {
-        var transition = VirtualTransition.Create();
-        setDestination(transition);
-        AddStateMachineTransitions(parent, source, new[] { transition });
-    }
+        => AddStateMachineTransitions(parent, source, new[] { CreateTransition(setDestination) });
 
     private static void AddStateMachineTransition(
         VirtualStateMachine parent,
         VirtualStateMachine source,
         DnfCondition when,
         Action<VirtualTransition> setDestination)
-    {
-        var transitions = TransitionCases(when).Select(conditionCase =>
+        => AddStateMachineTransitions(parent, source, CreateTransitions(when, setDestination));
+
+    private static IEnumerable<VirtualTransition> CreateTransitions(
+        DnfCondition when,
+        Action<VirtualTransition> setDestination)
+        => TransitionCases(when).Select(conditionCase =>
         {
-            var transition = VirtualTransition.Create();
-            setDestination(transition);
+            var transition = CreateTransition(setDestination);
             transition.Conditions = ToAnimatorConditions(conditionCase).ToImmutableList();
             return transition;
         });
-        AddStateMachineTransitions(parent, source, transitions);
+
+    private static VirtualTransition CreateTransition(Action<VirtualTransition> setDestination)
+    {
+        var transition = VirtualTransition.Create();
+        setDestination(transition);
+        return transition;
     }
 
     private static void AddStateMachineTransitions(
@@ -333,13 +332,6 @@ internal sealed class AnimatorGraph
     {
         var transition = CreateStateTransition(destination, duration);
         transition.CanTransitionToSelf = false;
-        return transition;
-    }
-
-    private static VirtualTransition CreateEntryTransition(VirtualState destination)
-    {
-        var transition = VirtualTransition.Create();
-        transition.SetDestination(destination);
         return transition;
     }
 
