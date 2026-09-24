@@ -26,7 +26,7 @@ internal sealed class ExpressionAnimatorBuilder
         using var _ = new Utils.ProfilingSampleScope(
             "Animator.Expression.InitializeBuilder");
         _avatarContext = settings.AvatarContext;
-        _managedZeroAnimations = settings.GetManagedZeroBlendShapes()
+        _managedZeroAnimations = settings.GetManagedZeroBlendShapes(FaceTuneWriteKind.FacialData)
             .ToBlendShapeAnimations()
             .ToArray();
         _graph = graph;

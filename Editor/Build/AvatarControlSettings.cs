@@ -8,14 +8,14 @@ internal record struct AvatarControlSettings(
     bool SupportAfk);
 
 internal record struct MmdPlaybackSettings(
-    bool Enabled,
+    DnfCondition PlaybackWhen,
     IReadOnlyCollection<string> ExplicitBlendShapeNames,
-    ConditionSelection? Condition,
     MMDSupportSettings.Mode DisableMode)
 {
+    public bool Enabled => !PlaybackWhen.IsNever;
+
     public static MmdPlaybackSettings Disabled { get; } = new(
-        false,
+        DnfCondition.Never,
         Array.Empty<string>(),
-        null,
         MMDSupportSettings.Mode.Auto);
 }

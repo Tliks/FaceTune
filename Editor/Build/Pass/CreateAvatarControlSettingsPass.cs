@@ -21,9 +21,8 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
         var mmdPlayback = mmdSupport == null
             ? MmdPlaybackSettings.Disabled
             : new MmdPlaybackSettings(
-                true,
+                conditionResolver.Resolve(mmdSupport.Condition) ?? DnfCondition.Never,
                 mmdSupport.MMD.ExplicitBlendShapeNames.ToArray(),
-                mmdSupport.Condition,
                 mmdSupport.MMD.SupportMode);
         context.SetAvatarControlSettings(new AvatarControlSettings(
             mmdPlayback,

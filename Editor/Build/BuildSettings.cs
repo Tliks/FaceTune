@@ -15,19 +15,17 @@ internal record struct BuildSettings(
     public bool IsBlendShapeExplicitlyExcluded(string name)
         => ExplicitlyExcludedBlendShapeNames.Contains(name);
 
-    public bool IsBlendShapeProhibited(
-        FaceTuneWriteKind writeKind,
-        string name)
-    {
-        var prohibitedNames = writeKind switch
+    public bool IsBlendShapeProhibited(FaceTuneWriteKind writeKind, string name)
+        => GetProhibitedBlendShapeNames(writeKind).Contains(name);
+
+    private ImmutableHashSet<string> GetProhibitedBlendShapeNames(FaceTuneWriteKind writeKind)
+        => writeKind switch
         {
             FaceTuneWriteKind.FacialData => FacialDataProhibitedBlendShapeNames,
             FaceTuneWriteKind.EyeBlinkAnimation => EyeBlinkAnimationProhibitedBlendShapeNames,
             FaceTuneWriteKind.LipSyncAnimation => LipSyncAnimationProhibitedBlendShapeNames,
             _ => throw new ArgumentOutOfRangeException(nameof(writeKind), writeKind, null)
         };
-        return prohibitedNames.Contains(name);
-    }
 
     public bool CanWriteBlendShape(
         FaceTuneWriteKind writeKind,
@@ -37,20 +35,33 @@ internal record struct BuildSettings(
                && !IsBlendShapeProhibited(writeKind, name);
     }
 
-    public BlendShapeWeight[] GetManagedBlendShapes()
+    public IEnumerable<BlendShapeWeight> GetManagedBlendShapesForAnyWriteKind()
+    {
+        var prohibited = FacialDataProhibitedBlendShapeNames
+            .Intersect(EyeBlinkAnimationProhibitedBlendShapeNames)
+            .Intersect(LipSyncAnimationProhibitedBlendShapeNames);
+        return EnumerateManagedBlendShapes(prohibited, false);
+    }
+
+    public IEnumerable<BlendShapeWeight> GetManagedZeroBlendShapes(FaceTuneWriteKind writeKind)
+        => EnumerateManagedBlendShapes(GetProhibitedBlendShapeNames(writeKind), true);
+
+    private IEnumerable<BlendShapeWeight> EnumerateManagedBlendShapes(
+        ImmutableHashSet<string> prohibited,
+        bool zero)
     {
         var avatarContext = AvatarContext;
         var explicitlyExcluded = ExplicitlyExcludedBlendShapeNames;
-        var prohibited = FacialDataProhibitedBlendShapeNames;
-        return avatarContext.FaceRenderer
-            .GetBlendShapeWeights(avatarContext.FaceMesh)
-            .Where(shape => !explicitlyExcluded.Contains(shape.Name)
-                && !prohibited.Contains(shape.Name))
-            .ToArray();
-    }
+        var mesh = avatarContext.FaceMesh;
+        var renderer = avatarContext.FaceRenderer;
+        for (var index = 0; index < mesh.blendShapeCount; index++)
+        {
+            var name = mesh.GetBlendShapeName(index);
+            if (explicitlyExcluded.Contains(name) || prohibited.Contains(name)) continue;
 
-    public BlendShapeWeight[] GetManagedZeroBlendShapes()
-        => GetManagedBlendShapes()
-            .Select(shape => shape with { Weight = 0f })
-            .ToArray();
+            yield return new BlendShapeWeight(
+                name,
+                zero ? 0f : renderer.GetBlendShapeWeight(index));
+        }
+    }
 }

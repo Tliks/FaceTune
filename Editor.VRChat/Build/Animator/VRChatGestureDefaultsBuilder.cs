@@ -26,8 +26,9 @@ internal static class VRChatGestureDefaultsBuilder
         if (!controls.SupportAfk && !controls.MmdPlayback.Enabled) return;
 
         var settings = context.RequireSettings();
-        var blendShapes = settings.GetManagedBlendShapes();
-        if (blendShapes.Length == 0) return;
+        var blendShapes = context.BuildContext
+            .GetState<VRChatInitialBlendShapeState>().BlendShapes;
+        if (blendShapes.Count == 0) return;
 
         var controllerContext = context.BuildContext.Extension<VirtualControllerContext>();
 
