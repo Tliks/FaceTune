@@ -25,7 +25,7 @@ internal static class VRChatGestureDefaultsBuilder
 
         var settings = context.RequireSettings();
         var blendShapes = context.BuildContext
-            .GetState<VRChatInitialBlendShapeState>().BlendShapes;
+            .GetState<VRChatFacialDefaultsState>().BlendShapes;
         if (blendShapes.Count == 0) return;
 
         var controllerContext = context.BuildContext.Extension<VirtualControllerContext>();

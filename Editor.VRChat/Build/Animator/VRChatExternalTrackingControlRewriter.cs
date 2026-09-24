@@ -3,9 +3,9 @@ using VRC.SDK3.Avatars.Components;
 
 namespace Aoyon.FaceTune.Platforms.VRChat;
 
-internal static partial class VRChatAnimatorBuilder
+internal static class VRChatExternalTrackingControlRewriter
 {
-    private static void ReplaceExternalTrackingControls(
+    public static void Apply(
         VirtualControllerContext controllerContext,
         AapProtocol aap,
         bool replaceEyeBlink,
@@ -21,7 +21,7 @@ internal static partial class VRChatAnimatorBuilder
             {
                 if (layer.StateMachine == null) continue;
                 foreach (var state in layer.StateMachine.AllStates())
-                    ReplaceExternalTrackingControls(
+                    Apply(
                         controller,
                         state,
                         aap,
@@ -31,7 +31,7 @@ internal static partial class VRChatAnimatorBuilder
         }
     }
 
-    private static void ReplaceExternalTrackingControls(
+    private static void Apply(
         VirtualAnimatorController controller,
         VirtualState state,
         AapProtocol aap,

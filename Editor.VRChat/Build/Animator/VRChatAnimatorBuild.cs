@@ -9,8 +9,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 
 internal static partial class VRChatAnimatorBuilder
 {
-    private static readonly Vector3 InitialDefaultStatePosition = new(300, 0, 0);
-    private const int InitialLayerPriority = -1;
     private const int TrackingControlLayerPriority = int.MaxValue - 1;
 
     public static void Build(
@@ -21,6 +19,7 @@ internal static partial class VRChatAnimatorBuilder
     {
         var controllerContext = buildContext.Extension<VirtualControllerContext>();
         var fx = controllerContext.Controllers[VRCAvatarDescriptor.AnimLayerType.FX];
+
         var externalLipSyncBlendShapes = settings.AvatarContext.Root
             .TryGetComponent<VRCAvatarDescriptor>(out var descriptor)
             ? new VRChatSupport(descriptor).GetBuldInLipSyncBlendShapes().ToHashSet(StringComparer.Ordinal)
@@ -32,14 +31,12 @@ internal static partial class VRChatAnimatorBuilder
             externalLipSyncBlendShapes);
         settings = proxy.Settings;
         expressionPlan = proxy.Expressions;
-        var initialBlendShapes = settings.GetManagedBlendShapesForAnyWriteKind()
-            .Where(shape => !externalLipSyncBlendShapes.Contains(shape.Name))
-            .Select(shape => proxy.ProxyNames.Contains(shape.Name)
-                ? shape with { Weight = 0f }
-                : shape)
-            .ToArray();
-        buildContext.GetState<VRChatInitialBlendShapeState>().BlendShapes =
-            initialBlendShapes;
+
+        var facialDefaults = buildContext.GetState<VRChatFacialDefaultsState>();
+        facialDefaults.BlendShapes = VRChatFacialDefaultsState.ResolveBlendShapes(
+            settings,
+            externalLipSyncBlendShapes,
+            proxy.ProxyNames);
 
         var trackingPlan = VRChatTrackingPlan.Build(
             expressionPlan.Items,
@@ -54,23 +51,31 @@ internal static partial class VRChatAnimatorBuilder
 
         var units = ResolveUnits(settings, expressionPlan, controllerContext);
 
-        var nonFacialDefaults = AnimatorHelper.GetDefaultValueAnimations(
-            settings.AvatarContext.Root,
-            expressionPlan.Items
-                .SelectMany(item => item.NonFacialAnimations.FloatCurves
-                    .Select(entry => entry.Key)
-                    .Concat(item.NonFacialAnimations.ObjectCurves.Select(entry => entry.Key))));
-
-        var graph = new AnimatorGraph(
-            analyzedWriteDefaults ?? true,
-            controllerContext.CloneContext);
-        var mmdSupport = new MmdSupport(graph, avatarControlSettings.MmdPlayback);
+        var mmdSupport = new MmdSupport(avatarControlSettings.MmdPlayback);
         var afkSupport = new AfkSupport(avatarControlSettings.SupportAfk);
         var useInactiveAap = (!mmdSupport.PlaybackWhen.IsNever
             && !mmdSupport.DisableFxLayer
             && (units.Length > 0 || trackingPlan.ShouldBuildAnyLayer))
             || !afkSupport.PlaybackWhen.IsNever;
         var aap = new AapProtocol(trackingPlan, useInactiveAap);
+        var graph = new AnimatorGraph(
+            analyzedWriteDefaults ?? true,
+            controllerContext.CloneContext);
+
+        var replaceEyeBlink = settings.AvoidEyeBlinkConflicts
+            && trackingPlan.ShouldBuildEyeBlinkLayer;
+        var replaceLipSync = settings.AvoidLipSyncConflicts
+            && trackingPlan.ShouldBuildLipSyncLayer;
+        if (replaceEyeBlink || replaceLipSync)
+        {
+            using var _ = new Utils.ProfilingSampleScope(
+                "Build.Animator.ReplaceExternalTrackingControls");
+            VRChatExternalTrackingControlRewriter.Apply(
+                controllerContext,
+                aap,
+                replaceEyeBlink,
+                replaceLipSync);
+        }
 
         if (units.Length > 0 || useInactiveAap)
         {
@@ -79,20 +84,14 @@ internal static partial class VRChatAnimatorBuilder
             var initialAnchor = units.Length > 0
                 ? units[0].Anchor
                 : buildContext.AvatarRootTransform;
+            var initialBuilder = new VRChatInitialLayerBuilder(
+                settings, expressionPlan, facialDefaults.BlendShapes, graph);
             var initialController = CreateMergeAnimatorController(
                 controllerContext,
                 initialAnchor,
                 "Initial",
-                InitialLayerPriority);
-            BuildInitialLayer(
-                initialController,
-                graph,
-                settings,
-                initialBlendShapes,
-                nonFacialDefaults,
-                mmdSupport,
-                aap,
-                afkSupport);
+                VRChatInitialLayerBuilder.LayerPriority);
+            initialBuilder.Build(initialController, mmdSupport, afkSupport, aap);
         }
 
         var expressionBuilder = new ExpressionAnimatorBuilder(
@@ -117,33 +116,6 @@ internal static partial class VRChatAnimatorBuilder
             }
         }
 
-        if (settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer
-            || settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer)
-        {
-            using var _ = new Utils.ProfilingSampleScope(
-                "Build.Animator.ReplaceExternalTrackingControls");
-            ReplaceExternalTrackingControls(
-                controllerContext,
-                aap,
-                settings.AvoidEyeBlinkConflicts && trackingPlan.ShouldBuildEyeBlinkLayer,
-                settings.AvoidLipSyncConflicts && trackingPlan.ShouldBuildLipSyncLayer);
-        }
-
-        var eyeBlinkBuilder = new EyeBlinkAnimatorBuilder(
-            settings.AvatarContext,
-            graph,
-            trackingPlan,
-            aap);
-        var lipSyncCancellerBuilder = new LipSyncCancellerAnimatorBuilder(
-            settings.AvatarContext,
-            graph,
-            trackingPlan,
-            aap);
-        var lipSyncBuilder = new LipSyncAnimatorBuilder(
-            settings.AvatarContext,
-            graph,
-            trackingPlan,
-            aap);
         if (trackingPlan.ShouldBuildAnyLayer)
         {
             using var _ = new Utils.ProfilingSampleScope(
@@ -155,6 +127,14 @@ internal static partial class VRChatAnimatorBuilder
                 controlAnchor.transform,
                 "Tracking Controls",
                 TrackingControlLayerPriority);
+
+            var eyeBlinkBuilder = new EyeBlinkAnimatorBuilder(
+                settings.AvatarContext, graph, trackingPlan, aap);
+            var lipSyncCancellerBuilder = new LipSyncCancellerAnimatorBuilder(
+                settings.AvatarContext, graph, trackingPlan, aap);
+            var lipSyncBuilder = new LipSyncAnimatorBuilder(
+                settings.AvatarContext, graph, trackingPlan, aap);
+
             if (trackingPlan.ShouldBuildEyeBlinkLayer)
                 eyeBlinkBuilder.Build(controlController, TrackingControlLayerPriority);
             if (trackingPlan.ShouldBuildLipSyncCancellerLayer)
@@ -162,65 +142,6 @@ internal static partial class VRChatAnimatorBuilder
             if (trackingPlan.ShouldBuildLipSyncLayer)
                 lipSyncBuilder.Build(controlController, TrackingControlLayerPriority);
         }
-    }
-
-    private static void BuildInitialLayer(
-        VirtualAnimatorController controller,
-        AnimatorGraph graph,
-        BuildSettings settings,
-        IReadOnlyList<BlendShapeWeight> blendShapes,
-        ResolvedNonFacialAnimationSet nonFacialDefaults,
-        MmdSupport mmdSupport,
-        AapProtocol aap,
-        AfkSupport afkSupport)
-    {
-        var mmdWhen = mmdSupport.PlaybackWhen.Except(afkSupport.PlaybackWhen);
-        AnimatorGraph.EnsureConditionParameters(controller, mmdWhen);
-        aap.EnsureExpressionInactiveParameter(controller);
-
-        var origin = InitialDefaultStatePosition;
-        var layer = graph.AddLayer(controller, "Initial", InitialLayerPriority);
-        var defaultState = graph.AddState(layer, "Default", origin);
-        layer.StateMachine!.DefaultState = defaultState;
-        SetInitialClip(
-            defaultState,
-            "Default",
-            blendShapes,
-            settings.AvatarContext.BodyPath,
-            nonFacialDefaults);
-        mmdSupport.AddInitialMmdState(
-            layer,
-            defaultState,
-            mmdWhen,
-            blendShapes,
-            origin + new Vector3(0, AnimatorGraph.PositionYStep * 2, 0),
-            settings.AvatarContext.BodyPath);
-        afkSupport.AddInitialState(
-            controller,
-            graph,
-            layer,
-            defaultState,
-            blendShapes,
-            settings.AvatarContext.BodyPath,
-            origin + new Vector3(0, AnimatorGraph.PositionYStep * 4, 0));
-    }
-
-    private static void SetInitialClip(
-        VirtualState state,
-        string name,
-        IEnumerable<BlendShapeWeight> blendShapes,
-        string bodyPath,
-        ResolvedNonFacialAnimationSet? nonFacialAnimations = null)
-    {
-        var clip = state.SetNewClip(name);
-        if (nonFacialAnimations != null)
-        {
-            foreach (var (binding, curve) in nonFacialAnimations.FloatCurves)
-                clip.SetFloatCurve(binding, curve);
-            foreach (var (binding, curve) in nonFacialAnimations.ObjectCurves)
-                clip.SetObjectCurve(binding, curve);
-        }
-        clip.AddBlendShapeAnimations(bodyPath, blendShapes.ToBlendShapeAnimations());
     }
 
     private static VirtualAnimatorController CreateMergeAnimatorController(
@@ -247,8 +168,19 @@ internal static partial class VRChatAnimatorBuilder
     }
 }
 
-internal sealed class VRChatInitialBlendShapeState
+internal sealed class VRChatFacialDefaultsState
 {
     public IReadOnlyList<BlendShapeWeight> BlendShapes { get; set; } =
         Array.Empty<BlendShapeWeight>();
+
+    public static BlendShapeWeight[] ResolveBlendShapes(
+        BuildSettings settings,
+        ISet<string> externalLipSyncBlendShapes,
+        ISet<string> proxyNames)
+        => settings.GetManagedBlendShapesForAnyWriteKind()
+            .Where(shape => !externalLipSyncBlendShapes.Contains(shape.Name))
+            .Select(shape => proxyNames.Contains(shape.Name)
+                ? shape with { Weight = 0f }
+                : shape)
+            .ToArray();
 }
