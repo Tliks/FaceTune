@@ -42,7 +42,7 @@ internal sealed class VRChatInitialLayerBuilder
 
         var origin = DefaultStatePosition;
         var bodyPath = _settings.AvatarContext.BodyPath;
-        var layer = _graph.AddLayer(controller, "Initial", LayerPriority);
+        var layer = _graph.AddLayer(controller, "Default", LayerPriority);
         var defaultState = _graph.AddState(layer, "Default", origin);
         layer.StateMachine!.DefaultState = defaultState;
 
