@@ -12,8 +12,6 @@ namespace Aoyon.FaceTune.Platforms.VRChat;
 // 通常はFXの初期化レイヤーで常に初期値を書くことでこれを回避している
 // 一方で、MMDやAFKが有効な際には、Station/ACtionをパススルーするために、FXの初期値再生を停止するので、3倍バグを引き起こす
 // そのため、Gestureレイヤーで初期値を常に再生することで、3倍バグを回避する
-
-// 本来は、WDの解析を行い追加する条件をより厳格化できるが、実行順序の問題もあるので、安全寄りに条件なしで追加する
 internal static class VRChatGestureDefaultsBuilder
 {
     private const int MinimumExistingLayerCount = 3;
