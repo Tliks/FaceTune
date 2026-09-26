@@ -27,7 +27,7 @@ internal abstract class ShapesEditorModeSession
     public abstract void RestoreEdited();
     public virtual void SaveSettings(SerializedProperty settings)
         => throw new InvalidOperationException("This mode does not edit component settings.");
-    public virtual bool SynchronizeAfterUndo() => false;
+    public virtual bool SynchronizeExternalState() => false;
     public virtual void MarkSaved() { }
 
     protected static void AddTargetValues(
@@ -280,9 +280,8 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
         NotifyChanged();
     }
 
-    public override bool SynchronizeAfterUndo()
+    public override bool SynchronizeExternalState()
     {
-        _serializedObject.UpdateIfRequiredOrScript();
         var current = (EyeBlinkSettings.Kind)_modeProperty.intValue;
         if (_mode == current) return false;
         var previous = _mode;
@@ -455,6 +454,6 @@ internal sealed class LipSyncModeSession : ShapesEditorModeSession
             animations: false);
     }
 
-    public override bool SynchronizeAfterUndo() => Editing.SynchronizeAfterUndo();
+    public override bool SynchronizeExternalState() => Editing.SynchronizeExternalState();
     public override void MarkSaved() => Editing.MarkSaved();
 }

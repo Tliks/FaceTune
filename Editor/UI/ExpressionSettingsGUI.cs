@@ -285,7 +285,18 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
         Header: ReorderableListOptions.HeaderMode.Label,
         MaxVisibleHeight: ListMaxVisibleHeight,
         InitializeElement: element => element.CopyFrom(new BlendShapeWeight()),
+        DrawHeaderAction: (rect, list) =>
+        {
+            using var disabled = new EditorGUI.DisabledScope(list.serializedObject.targetObjects.Length != 1);
+            if (GUI.Button(rect, "conflictAutoSetup.button".LG(), AutoSetupStyle))
+                ConflictShapeAutoSetup.SetupBlink(list);
+        },
         ElementHeight: GUIHelper.LineHeight);
+    private static GUIStyle? _autoSetupStyle;
+    private static GUIStyle AutoSetupStyle => _autoSetupStyle ??= new GUIStyle(GUI.skin.button)
+    {
+        padding = new RectOffset(5, 5, GUI.skin.button.padding.top, GUI.skin.button.padding.bottom)
+    };
     private static GUIStyle? _columnLabelStyle;
     private static GUIStyle ColumnLabelStyle => _columnLabelStyle ??= new GUIStyle(EditorStyles.label)
     {
@@ -462,7 +473,10 @@ internal sealed class EyeBlinkSettingsDrawer : PropertyDrawer
                 new GUIContent(
                     "eyeBlink.simple.conflictBlendShapes.label".LS(),
                     "eyeBlink.simple.conflictBlendShapes.tooltip".LS()),
-                ConflictBlendShapesOptions);
+                ConflictBlendShapesOptions with
+                {
+                    HeaderActionWidth = AutoSetupStyle.CalcSize("conflictAutoSetup.button".LG()).x
+                });
         position.NewLine();
 
         DrawEditorRow(ref position, property, ShapesEditorMode.EyeBlinkSimple);
@@ -605,7 +619,20 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
         "lipSync.mode.option.custom"
     };
     private static readonly ReorderableListOptions CancellerOptions =
-        CreateBlendShapeOptions(ReorderableListOptions.HeaderMode.Label);
+        CreateBlendShapeOptions(ReorderableListOptions.HeaderMode.Label) with
+        {
+            DrawHeaderAction = (rect, list) =>
+            {
+                using var disabled = new EditorGUI.DisabledScope(list.serializedObject.targetObjects.Length != 1);
+                if (GUI.Button(rect, "conflictAutoSetup.button".LG(), AutoSetupStyle))
+                    ConflictShapeAutoSetup.SetupLipSync(list);
+            }
+        };
+    private static GUIStyle? _autoSetupStyle;
+    private static GUIStyle AutoSetupStyle => _autoSetupStyle ??= new GUIStyle(GUI.skin.button)
+    {
+        padding = new RectOffset(5, 5, GUI.skin.button.padding.top, GUI.skin.button.padding.bottom)
+    };
     private static readonly ReorderableListOptions VisemeOptions =
         CreateBlendShapeOptions(ReorderableListOptions.HeaderMode.Label) with
         {
@@ -667,7 +694,10 @@ internal sealed class LipSyncSettingsDrawer : PropertyDrawer
                 new GUIContent(
                     "lipSync.cancellerBlendShapes.label".LS(),
                     "lipSync.cancellerBlendShapes.tooltip".LS()),
-                CancellerOptions);
+                CancellerOptions with
+                {
+                    HeaderActionWidth = AutoSetupStyle.CalcSize("conflictAutoSetup.button".LG()).x
+                });
 
         position.NewLine();
         if ((LipSyncSettings.Kind)mode.intValue == LipSyncSettings.Kind.BuiltIn

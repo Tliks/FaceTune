@@ -682,6 +682,9 @@ msgstr "まばたき"
 msgid "shapesEditor.conflictCorrection.label"
 msgstr "干渉補正"
 
+msgid "conflictAutoSetup.button"
+msgstr "自動設定"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "初期状態で選択"
 

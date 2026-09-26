@@ -19,6 +19,12 @@
     padding: 0px;
 }
 
+#auto-setup {
+    padding-left: 5px;
+    padding-right: 5px;
+    flex-shrink: 0;
+}
+
 .compact-field {
     height: var(--row-height);
     min-height: 0px;

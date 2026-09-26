@@ -39,7 +39,6 @@ internal class BlendShapeOverrideManager : IDisposable
     private int _lastObservedStateVersion;
     private bool _canRedo;
     private int _changedStateVersion;
-    private bool _hasChangedStateCache;
     private bool _changedFromInitialState;
 
     public bool IsInitialized { get; private set; }
@@ -50,12 +49,11 @@ internal class BlendShapeOverrideManager : IDisposable
         {
             if (!IsInitialized) return false;
             var currentVersion = _stateVersionProperty.intValue;
-            if (!_hasChangedStateCache || _changedStateVersion != currentVersion)
+            if (_changedStateVersion != currentVersion)
             {
                 _changedStateVersion = currentVersion;
                 _changedFromInitialState = _initialSnapshot.HasValue
                     && !IsSameAsSnapshot(_initialSnapshot.Value);
-                _hasChangedStateCache = true;
             }
             return _changedFromInitialState;
         }
@@ -205,7 +203,7 @@ internal class BlendShapeOverrideManager : IDisposable
         _initialSnapshot = CaptureCurrentSnapshot();
         _editedSnapshotBeforeRestoreInitial = null;
         _restoreStateVersion = null;
-        _hasChangedStateCache = false;
+        _changedStateVersion = int.MinValue;
 
         OnAnyDataChange?.Invoke();
     }
@@ -326,7 +324,7 @@ internal class BlendShapeOverrideManager : IDisposable
         _initialSnapshot = CaptureCurrentSnapshot();
         _editedSnapshotBeforeRestoreInitial = null;
         _restoreStateVersion = null;
-        _hasChangedStateCache = false;
+        _changedStateVersion = int.MinValue;
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
@@ -340,23 +338,11 @@ internal class BlendShapeOverrideManager : IDisposable
         return true;
     }
 
-    public bool SynchronizeSerializedState()
+    public bool SynchronizeExternalState()
     {
         if (!IsInitialized) return false;
-        _serializedObject.UpdateIfRequiredOrScript();
         var currentVersion = _stateVersionProperty.intValue;
-        if (currentVersion == _lastObservedStateVersion)
-        {
-            // フローティングのカーブ編集ウィンドウはversionを進めずに適用するため、変化状態を再確認する。
-            if (!_hasChangedStateCache) return false;
-            var cached = _changedFromInitialState;
-            _hasChangedStateCache = false;
-            if (IsChangedFromInitialState == cached) return false;
-
-            OnUnknownChange?.Invoke();
-            OnAnyDataChange?.Invoke();
-            return true;
-        }
+        if (currentVersion == _lastObservedStateVersion) return false;
 
         if (currentVersion < _lastObservedStateVersion)
             _canRedo = true;
@@ -364,7 +350,7 @@ internal class BlendShapeOverrideManager : IDisposable
             _canRedo = currentVersion < _maximumStateVersion;
 
         _lastObservedStateVersion = currentVersion;
-        _hasChangedStateCache = false;
+        _changedStateVersion = int.MinValue;
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
         return true;
@@ -467,17 +453,16 @@ internal class BlendShapeOverrideManager : IDisposable
         OnAnyDataChange?.Invoke();
     }
 
-    /// <summary>カーブ編集UIの確定。フローティングウィンドウ側が先にpropertyを適用しているケースがあるため、常に状態を再評価する。</summary>
+    /// <summary>カーブ編集UIの確定。カーブ変更も通常の変更世代として記録する。</summary>
     public void CommitCurveEdit(int index, AnimationCurve curve)
     {
         var isCurveMode = curve.keys.Length >= 2;
-        ExecuteModification(() =>
+        if (!ExecuteModification(() =>
         {
             _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
                 = isCurveMode ? curve : new AnimationCurve();
             _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = curve.Evaluate(0f);
-        });
-        _hasChangedStateCache = false;
+        }, forceUndoRecord: true)) return;
         OnSingleShapeWeightChanged?.Invoke(index);
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
@@ -525,12 +510,15 @@ internal class BlendShapeOverrideManager : IDisposable
         }
     }
 
-    private bool ExecuteModification(Action action, bool registerUndo = true)
+    private bool ExecuteModification(
+        Action action,
+        bool registerUndo = true,
+        bool forceUndoRecord = false)
     {
         _serializedObject.UpdateIfRequiredOrScript();
         ValidateData();
         action();
-        if (!_serializedObject.hasModifiedProperties)
+        if (!_serializedObject.hasModifiedProperties && !forceUndoRecord)
         {
             _serializedObject.UpdateIfRequiredOrScript();
             return false;
@@ -548,7 +536,7 @@ internal class BlendShapeOverrideManager : IDisposable
         {
             _serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
-        _hasChangedStateCache = false;
+        _changedStateVersion = int.MinValue;
         return true;
     }
     
@@ -577,6 +565,35 @@ internal class BlendShapeOverrideManager : IDisposable
             foreach (var (index, weight) in list) AddShapeWithWeightWithoutApply(index, weight);
         })) return;
         OnMultipleShapesAdded?.Invoke(list.Select(x => x.Key).ToArray());
+        OnAnyDataChange?.Invoke();
+    }
+
+    /// <summary>Replaces the entire target set with the supplied weights (curves are discarded).</summary>
+    public void ReplaceTargetValues(IEnumerable<(int Index, float Weight)> values)
+    {
+        var targets = new Dictionary<int, float>();
+        foreach (var (index, weight) in values)
+            if ((uint)index < (uint)_allKeysArray.Length) targets[index] = weight;
+
+        if (!ExecuteModification(() =>
+        {
+            for (var index = 0; index < _allKeysArray.Length; index++)
+            {
+                if (!targets.TryGetValue(index, out var weight))
+                {
+                    if (IsInTarget(index)) RemoveShapeWithoutApply(index);
+                    continue;
+                }
+                // An index not previously in the target is added here as well.
+                if (IsInTarget(index) && !IsCurveModeAt(index)
+                    && Mathf.Approximately(GetShapeWeight(index), weight)) continue;
+                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
+                _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
+                    = new AnimationCurve();
+            }
+        })) return;
+        OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
 

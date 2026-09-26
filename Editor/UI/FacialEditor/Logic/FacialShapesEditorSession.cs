@@ -84,6 +84,14 @@ internal sealed class FacialShapesEditorContext : IDisposable
 
     public bool IsListEditable(int index) => index < EditableListCount;
 
+    public void SynchronizeExternalState()
+    {
+        _serializedObject.UpdateIfRequiredOrScript();
+        foreach (var dataManager in DataManagers)
+            dataManager.SynchronizeExternalState();
+        if (ModeSession.SynchronizeExternalState())
+            UI.RefreshLipSync();
+    }
 
     public void SetActiveList(int index)
     {

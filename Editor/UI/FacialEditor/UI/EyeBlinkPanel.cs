@@ -139,6 +139,15 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private void BuildControlsRow(RowElement root)
     {
+        var autoSetup = new Button(() => ConflictShapeAutoSetup.SetupBlink(_context))
+        {
+            name = "auto-setup",
+            text = "conflictAutoSetup.button".LS()
+        };
+        autoSetup.AddToClassList("compact-control");
+        autoSetup.style.marginRight = FacialShapeUI.Spacing;
+        root.Add(autoSetup);
+
         var bulk = new BulkShapeControls(
             weight =>
             {
@@ -237,6 +246,7 @@ internal sealed class EyeBlinkPanel : IDisposable
                 var bulk = (BulkShapeControls)bulkElement.userData;
                 // 干渉補正はWeight 0で追加する列表のため、0-を出さない
                 bulk.SetRemoveZeroVisible(row.ListIndex == 0 && HasZeroShape(row.ListIndex));
+                root.Q<Button>("auto-setup").SetVisible(row.ListIndex == 1);
                 break;
             }
 

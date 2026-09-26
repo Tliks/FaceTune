@@ -301,6 +301,9 @@ internal partial class FacialShapesEditor : EditorWindow
         }
     }
 
+    private void OnInspectorUpdate()
+        => _context?.SynchronizeExternalState();
+
     public override void SaveChanges()
     {
         if (_context?.Renderer == null) throw new Exception("TargetRenderer is not set");
@@ -332,15 +335,6 @@ internal partial class FacialShapesEditor : EditorWindow
         _context.ModeSession.MarkSaved();
         _context.UI.RefreshLipSync();
         SyncUnsavedChangesNow();
-    }
-
-    private void OnInspectorUpdate()
-    {
-        if (_context == null) return;
-        foreach (var dataManager in _context.DataManagers)
-            dataManager.SynchronizeSerializedState();
-        if (_context.ModeSession.SynchronizeAfterUndo())
-            _context.UI.RefreshLipSync();
     }
 
     private void OnDisable()
