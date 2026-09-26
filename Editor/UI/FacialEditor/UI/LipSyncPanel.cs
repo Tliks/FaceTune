@@ -151,6 +151,15 @@ internal sealed class LipSyncPanel
 
     private void BuildControlsRow(RowElement root)
     {
+        var autoSetup = new Button(() => ConflictShapeAutoSetup.SetupLipSync(_context, _editing))
+        {
+            name = "auto-setup",
+            text = "conflictAutoSetup.button".LS()
+        };
+        autoSetup.AddToClassList("compact-control");
+        autoSetup.style.marginRight = FacialShapeUI.Spacing;
+        root.Add(autoSetup);
+
         var header = BuildHeader(root);
         var bulk = new BulkShapeControls(
             weight =>
@@ -268,6 +277,7 @@ internal sealed class LipSyncPanel
                                    && (row.Canceller
                                        || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
             bulk.SetRemoveZeroVisible(!row.Canceller && _editing.HasZeroWeight());
+            root.Q<Button>("auto-setup").SetVisible(row.Canceller);
             return;
         }
 

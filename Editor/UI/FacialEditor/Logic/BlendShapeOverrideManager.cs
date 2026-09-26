@@ -580,6 +580,35 @@ internal class BlendShapeOverrideManager : IDisposable
         OnAnyDataChange?.Invoke();
     }
 
+    /// <summary>Replaces the entire target set with the supplied weights (curves are discarded).</summary>
+    public void ReplaceTargetValues(IEnumerable<(int Index, float Weight)> values)
+    {
+        var targets = new Dictionary<int, float>();
+        foreach (var (index, weight) in values)
+            if ((uint)index < (uint)_allKeysArray.Length) targets[index] = weight;
+
+        if (!ExecuteModification(() =>
+        {
+            for (var index = 0; index < _allKeysArray.Length; index++)
+            {
+                if (!targets.TryGetValue(index, out var weight))
+                {
+                    if (IsInTarget(index)) RemoveShapeWithoutApply(index);
+                    continue;
+                }
+                // An index not previously in the target is added here as well.
+                if (IsInTarget(index) && !IsCurveModeAt(index)
+                    && Mathf.Approximately(GetShapeWeight(index), weight)) continue;
+                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
+                _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
+                    = new AnimationCurve();
+            }
+        })) return;
+        OnUnknownChange?.Invoke();
+        OnAnyDataChange?.Invoke();
+    }
+
     public void RemoveShapeWithoutApply(int index)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
