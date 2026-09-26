@@ -52,7 +52,7 @@ internal static class ConflictShapeAutoSetup
                                 && !Mathf.Approximately(shape.Weight, 0f))
                 .Select(shape => shape.Name);
         }
-        if (TryDetect(avatar, source, out var names)) ReplaceSerialized(target, names);
+        if (TryDetectLipSync(avatar, source, out var names)) ReplaceSerialized(target, names);
     }
 
     internal static void SetupBlink(FacialShapesEditorContext context)
@@ -90,10 +90,13 @@ internal static class ConflictShapeAutoSetup
             .GroupBy(shape => shape.Name, StringComparer.Ordinal)
             .Select(group => group.First()).ToArray();
         if (shapes.Length == 0) return false;
-        var detected = ConflictShapeDetector.DetectBlink(mesh, shapes,
-            AvatarContext.GetUnavailableBlendShapeNames(avatar.Root, FaceTuneWriteKind.FacialData));
+        var unavailable = AvatarContext.GetUnavailableBlendShapeNames(
+            avatar.Root, FaceTuneWriteKind.FacialData);
+        var detected = ConflictShapeDetector.DetectBlink(mesh, shapes, unavailable);
         if (detected == null) return false;
-        result = detected;
+        result = shapes.Select(shape => shape.Name)
+            .Where(name => !unavailable.Contains(name))
+            .Concat(detected).ToArray();
         return true;
     }
 
@@ -103,7 +106,7 @@ internal static class ConflictShapeAutoSetup
         return property.serializedObject.FindProperty(path.Substring(0, path.LastIndexOf('.')));
     }
 
-    private static bool TryDetect(AvatarContext avatar, IEnumerable<string> source, out IReadOnlyList<string> result)
+    private static bool TryDetectLipSync(AvatarContext avatar, IEnumerable<string> source, out IReadOnlyList<string> result)
     {
         result = Array.Empty<string>();
         var mesh = avatar.FaceRenderer.sharedMesh;
@@ -112,7 +115,7 @@ internal static class ConflictShapeAutoSetup
                                          && mesh.GetBlendShapeIndex(name) >= 0)
             .Distinct(StringComparer.Ordinal).ToArray();
         if (names.Length == 0) return false;
-        var detected = ConflictShapeDetector.Detect(mesh, names,
+        var detected = ConflictShapeDetector.DetectLipSync(mesh, names,
             AvatarContext.GetUnavailableBlendShapeNames(avatar.Root, FaceTuneWriteKind.FacialData));
         if (detected == null) return false;
         result = detected;
@@ -124,7 +127,7 @@ internal static class ConflictShapeAutoSetup
     {
         if (context.Target is not Component component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)
-            || !TryDetect(avatar, source, out var names)) return;
+            || !TryDetectLipSync(avatar, source, out var names)) return;
         ReplaceEditorTarget(target, names);
     }
 

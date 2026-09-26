@@ -1,164 +1,202 @@
 namespace Aoyon.FaceTune.Gui;
 
-/// <summary>Suggests shapes that affect the region controlled by blink or lip sync.</summary>
+/// <summary>基準Shapeの変形範囲に干渉するBlendShapeを検出する。</summary>
 internal static class ConflictShapeDetector
 {
-    private const float RegionThreshold = 0.0000001f;
-    private const float MinimumRmsMotion = 0.00001f;
-    private const float MinimumRegionFraction = 0.03f;
-    private const float TranslationCoverage = 0.9f;
-    private const float MaximumTranslationVariance = 0.01f;
-
-    private readonly record struct ClosurePair(int A, int B);
-
-    // Null means the reference shapes could not define a usable region; do not overwrite the list.
+    // 有効な閉眼範囲を作れない場合はnullを返し、設定を上書きしない。
     public static IReadOnlyList<string>? DetectBlink(
         Mesh mesh,
         IReadOnlyCollection<BlendShapeWeight> blinkShapes,
         ISet<string> unavailableNames)
     {
         if (!mesh.isReadable || mesh.vertexCount == 0) return null;
-        var count = mesh.vertexCount;
-        var vertices = mesh.vertices;
-        var region = new bool[count];
-        var deltas = new Vector3[count];
-        var next = new Vector3[count];
-        var normals = new Vector3[count];
-        var tangents = new Vector3[count];
-        var closed = new Vector3[count];
-        var neighbors = BuildNeighbors(mesh, count);
-        var magnitude = Mathf.Max(mesh.bounds.size.magnitude, 0.001f);
-        var sourceNames = blinkShapes.Select(shape => shape.Name)
-            .ToHashSet(StringComparer.Ordinal);
 
-        foreach (var shape in blinkShapes)
-        {
-            var index = mesh.GetBlendShapeIndex(shape.Name);
-            if (index < 0 || Mathf.Approximately(shape.Weight, 0f)
-                || !ReadBlinkDelta(mesh, index, shape.Weight, deltas, next, normals, tangents))
-                continue;
-            var maximumMotion = 0f;
-            for (var vertex = 0; vertex < count; vertex++)
-            {
-                closed[vertex] = vertices[vertex] + deltas[vertex];
-                maximumMotion = Mathf.Max(maximumMotion, deltas[vertex].magnitude);
-            }
-            var regionThreshold2 = Mathf.Pow(Mathf.Max(
-                maximumMotion * 0.01f, magnitude * 0.00001f), 2f);
-            for (var vertex = 0; vertex < count; vertex++)
-                if (deltas[vertex].sqrMagnitude > regionThreshold2) region[vertex] = true;
-            var radius = Mathf.Max(magnitude * 0.0005f,
-                Mathf.Min(maximumMotion * 0.35f,
-                    Mathf.Max(magnitude * 0.008f, maximumMotion * 0.25f)));
-            if (maximumMotion < radius * 1.5f) continue;
-
-            // Closing counterparts may not move at all; include them in the region.
-            var cells = new Dictionary<Vector3Int, List<int>>();
-            for (var vertex = 0; vertex < count; vertex++)
-            {
-                var cell = Cell(closed[vertex], radius);
-                if (!cells.TryGetValue(cell, out var contents))
-                    cells[cell] = contents = new List<int>();
-                contents.Add(vertex);
-            }
-            var pairs = new List<ClosurePair>();
-            var movementThreshold2 = Mathf.Pow(magnitude * 0.000001f, 2f);
-            for (var vertex = 0; vertex < count; vertex++)
-            {
-                if ((closed[vertex] - vertices[vertex]).sqrMagnitude <= movementThreshold2)
-                    continue;
-                var cell = Cell(closed[vertex], radius);
-                for (var x = -1; x <= 1; x++)
-                for (var y = -1; y <= 1; y++)
-                for (var z = -1; z <= 1; z++)
-                {
-                    if (!cells.TryGetValue(cell + new Vector3Int(x, y, z), out var contents))
-                        continue;
-                    foreach (var other in contents)
-                    {
-                        if (other == vertex || (other < vertex
-                            && (closed[other] - vertices[other]).sqrMagnitude > movementThreshold2))
-                            continue;
-                        if (Array.IndexOf(neighbors[vertex], other) >= 0) continue;
-                        var closedDistance = (closed[vertex] - closed[other]).magnitude;
-                        if (closedDistance > radius) continue;
-                        var openDistance = (vertices[vertex] - vertices[other]).magnitude;
-                        var reduction = openDistance - closedDistance;
-                        if (openDistance < radius * 1.5f
-                            || closedDistance > openDistance * 0.55f
-                            || reduction < radius * 0.75f) continue;
-                        pairs.Add(new ClosurePair(vertex, other));
-                    }
-                }
-            }
-            if (pairs.Count < 4) continue;
-            foreach (var pair in pairs)
-            {
-                region[pair.A] = true;
-                region[pair.B] = true;
-            }
-        }
-
-        if (region.Count(value => value) < 4) return null;
-        return DetectConflicts(mesh, region, sourceNames, unavailableNames, true, blink: true);
+        var region = BuildBlinkRegion(mesh, blinkShapes);
+        var references = blinkShapes.Select(shape => shape.Name).ToHashSet(StringComparer.Ordinal);
+        return FindConflicts(mesh, region, references, unavailableNames);
     }
 
-    public static IReadOnlyList<string>? Detect(
+    public static IReadOnlyList<string>? DetectLipSync(
         Mesh mesh,
         IReadOnlyCollection<string> referenceNames,
         ISet<string> unavailableNames)
     {
         if (!mesh.isReadable || mesh.vertexCount == 0) return null;
+
+        var region = BuildLipSyncRegion(mesh, referenceNames);
+        var references = referenceNames.ToHashSet(StringComparer.Ordinal);
+        return FindConflicts(mesh, region, references, unavailableNames);
+    }
+
+    // 最大Blink移動量の5%未満は起点にしない。
+    private const float MinimumBlinkMotionFraction = 0.05f;
+
+    private static bool[] BuildBlinkRegion(
+        Mesh mesh, IReadOnlyCollection<BlendShapeWeight> blinkShapes)
+    {
+        var count = mesh.vertexCount;
+        var vertices = mesh.vertices;
+        var region = new bool[count];
+        var closed = new Vector3[count];
+        var deltas = new Vector3[count];
+        var next = new Vector3[count];
+        var normals = new Vector3[count];
+        var tangents = new Vector3[count];
+
+        foreach (var shape in blinkShapes)
+        {
+            var index = mesh.GetBlendShapeIndex(shape.Name);
+            if (index < 0 || Mathf.Approximately(shape.Weight, 0f)
+                || !ReadBlinkDelta(index, shape.Weight))
+                continue;
+
+            var (moving, maximum) = FindBlinkSeeds();
+            if (moving.Count > 0)
+                ExpandClosedRegion(closed, deltas, moving, maximum, region);
+        }
+        return region;
+
+        (List<int> Moving, float Maximum) FindBlinkSeeds()
+        {
+            var maximumSquared = 0f;
+            for (var vertex = 0; vertex < count; vertex++)
+            {
+                closed[vertex] = vertices[vertex] + deltas[vertex];
+                maximumSquared = Mathf.Max(maximumSquared, deltas[vertex].sqrMagnitude);
+            }
+            var moving = new List<int>();
+            if (maximumSquared <= 0f) return (moving, 0f);
+
+            var thresholdSquared = maximumSquared
+                * MinimumBlinkMotionFraction * MinimumBlinkMotionFraction;
+            for (var vertex = 0; vertex < count; vertex++)
+                if (deltas[vertex].sqrMagnitude >= thresholdSquared) moving.Add(vertex);
+            return (moving, Mathf.Sqrt(maximumSquared));
+        }
+
+        bool ReadBlinkDelta(int index, float weight)
+        {
+            var frameCount = mesh.GetBlendShapeFrameCount(index);
+            if (frameCount == 0) return false;
+
+            var lastFrame = frameCount - 1;
+            var lastWeight = mesh.GetBlendShapeFrameWeight(index, lastFrame);
+            if (Mathf.Approximately(lastWeight, 0f)) return false;
+            var targetWeight = Mathf.Min(weight, lastWeight);
+
+            var frame = 0;
+            var frameWeight = mesh.GetBlendShapeFrameWeight(index, frame);
+            while (frame < lastFrame && frameWeight < targetWeight)
+            {
+                frame++;
+                frameWeight = mesh.GetBlendShapeFrameWeight(index, frame);
+            }
+
+            if (frame == 0)
+            {
+                if (Mathf.Approximately(frameWeight, 0f)) return false;
+                mesh.GetBlendShapeFrameVertices(index, frame, deltas, normals, tangents);
+                var scale = targetWeight / frameWeight;
+                for (var vertex = 0; vertex < count; vertex++) deltas[vertex] *= scale;
+                return true;
+            }
+
+            var previousWeight = mesh.GetBlendShapeFrameWeight(index, frame - 1);
+            if (Mathf.Approximately(previousWeight, frameWeight)) return false;
+            mesh.GetBlendShapeFrameVertices(index, frame - 1, deltas, normals, tangents);
+            mesh.GetBlendShapeFrameVertices(index, frame, next, normals, tangents);
+            var t = (targetWeight - previousWeight) / (frameWeight - previousWeight);
+            for (var vertex = 0; vertex < count; vertex++)
+                deltas[vertex] = Vector3.LerpUnclamped(deltas[vertex], next[vertex], t);
+            return true;
+        }
+    }
+
+    // リップシンクの各フレームで最大移動量の5%未満は範囲に含めない。
+    private const float MinimumLipSyncMotionFraction = 0.05f;
+
+    private static bool[] BuildLipSyncRegion(
+        Mesh mesh, IReadOnlyCollection<string> referenceNames)
+    {
         var count = mesh.vertexCount;
         var region = new bool[count];
         var deltas = new Vector3[count];
         var normals = new Vector3[count];
         var tangents = new Vector3[count];
-        var magnitude = Mathf.Max(mesh.bounds.size.magnitude, 0.001f);
-        var threshold2 = Mathf.Pow(magnitude * RegionThreshold, 2f);
-        var references = referenceNames.ToHashSet(StringComparer.Ordinal);
-        foreach (var name in references)
+        foreach (var name in referenceNames)
         {
             var index = mesh.GetBlendShapeIndex(name);
             if (index < 0) continue;
             for (var frame = 0; frame < mesh.GetBlendShapeFrameCount(index); frame++)
             {
-                var weight = Mathf.Abs(mesh.GetBlendShapeFrameWeight(index, frame));
-                if (weight < 0.001f) continue;
+                var weight = mesh.GetBlendShapeFrameWeight(index, frame);
+                if (Mathf.Approximately(weight, 0f)) continue;
                 mesh.GetBlendShapeFrameVertices(index, frame, deltas, normals, tangents);
-                var frameThreshold2 = threshold2 * weight * weight / 10000f;
+                var maximum = 0f;
+                foreach (var delta in deltas) maximum = Mathf.Max(maximum, delta.sqrMagnitude);
+                if (maximum <= 0f) continue;
+                var threshold2 = maximum * MinimumLipSyncMotionFraction * MinimumLipSyncMotionFraction;
                 for (var vertex = 0; vertex < count; vertex++)
-                    if (deltas[vertex].sqrMagnitude > frameThreshold2) region[vertex] = true;
+                    if (deltas[vertex].sqrMagnitude >= threshold2) region[vertex] = true;
             }
         }
-        if (!ExpandRegion(region, BuildNeighbors(mesh, count))) return null;
-        return DetectConflicts(mesh, region, references, unavailableNames, true);
+        return region;
     }
 
-    private static bool ExpandRegion(bool[] region, int[][] neighbors)
+    // 移動方向に直交する範囲はBlinkの移動量の0割にする。
+    private const float PerpendicularMotionWidth = 0f;
+
+    private static void ExpandClosedRegion(
+        Vector3[] closed, Vector3[] deltas, List<int> moving, float maximum, bool[] region)
     {
-        var original = new List<int>();
-        for (var i = 0; i < region.Length; i++)
-            if (region[i]) original.Add(i);
-        if (original.Count < 4) return false;
-        // One hop includes the transition into stationary lower lids / mouth corners.
-        foreach (var vertex in original)
-            foreach (var adjacent in neighbors[vertex]) region[adjacent] = true;
-        return true;
+        // 最大移動量をセル幅にすると、探索対象は隣接セルまでに収まる。
+        var cellSize = maximum;
+        var cells = new Dictionary<Vector3Int, List<int>>();
+        for (var vertex = 0; vertex < closed.Length; vertex++)
+        {
+            var cell = Cell(closed[vertex], cellSize);
+            if (!cells.TryGetValue(cell, out var contents))
+                cells[cell] = contents = new List<int>();
+            contents.Add(vertex);
+        }
+        foreach (var vertex in moving)
+        {
+            region[vertex] = true;
+            var along = deltas[vertex].magnitude;
+            var direction = deltas[vertex] / along;
+            var across = along * PerpendicularMotionWidth;
+            var cell = Cell(closed[vertex], cellSize);
+            for (var x = -1; x <= 1; x++)
+            for (var y = -1; y <= 1; y++)
+            for (var z = -1; z <= 1; z++)
+            {
+                if (!cells.TryGetValue(cell + new Vector3Int(x, y, z), out var contents)) continue;
+                foreach (var other in contents)
+                {
+                    var offset = closed[other] - closed[vertex];
+                    var parallel = Vector3.Dot(offset, direction);
+                    var perpendicular2 = Mathf.Max(0f, offset.sqrMagnitude - parallel * parallel);
+                    if (parallel * parallel / (along * along)
+                        + perpendicular2 / (across * across) <= 1f)
+                        region[other] = true;
+                }
+            }
+        }
     }
 
-    private static IReadOnlyList<string> DetectConflicts(
-        Mesh mesh, bool[] region, ISet<string> references,
-        ISet<string> unavailableNames, bool canExcludeTranslation, bool blink = false)
+    // 変形量の一定以上が基準範囲に集中する候補だけを残す。
+    private const float MinimumRegionFraction = 0.8f;
+    // 共通移動を除いた形状変化が一定未満なら除外する。
+    private const float MinimumResidualFraction = 0.02f;
+
+    private static IReadOnlyList<string>? FindConflicts(
+        Mesh mesh, bool[] region, ISet<string> references, ISet<string> unavailableNames)
     {
-        var count = mesh.vertexCount;
-        var regionIndices = Enumerable.Range(0, count).Where(i => region[i]).ToArray();
-        var regionCount = regionIndices.Length;
-        var deltas = new Vector3[count];
-        var normals = new Vector3[count];
-        var tangents = new Vector3[count];
-        var magnitude = Mathf.Max(mesh.bounds.size.magnitude, 0.001f);
-        var minimumEnergy = regionCount * Mathf.Pow(magnitude * MinimumRmsMotion, 2f);
+        var regionIndices = Enumerable.Range(0, region.Length).Where(vertex => region[vertex]).ToArray();
+        if (regionIndices.Length == 0) return null;
+        var deltas = new Vector3[region.Length];
+        var normals = new Vector3[region.Length];
+        var tangents = new Vector3[region.Length];
         var result = new List<string>();
         for (var index = 0; index < mesh.blendShapeCount; index++)
         {
@@ -166,43 +204,23 @@ internal static class ConflictShapeDetector
             if (references.Contains(name) || unavailableNames.Contains(name)) continue;
             for (var frame = 0; frame < mesh.GetBlendShapeFrameCount(index); frame++)
             {
-                var weight = Mathf.Abs(mesh.GetBlendShapeFrameWeight(index, frame));
-                if (weight < 0.001f) continue;
+                var weight = mesh.GetBlendShapeFrameWeight(index, frame);
+                if (Mathf.Approximately(weight, 0f)) continue;
                 mesh.GetBlendShapeFrameVertices(index, frame, deltas, normals, tangents);
-                var energy = 0f;
-                var maximum = 0f;
-                var sum = Vector3.zero;
-                foreach (var vertex in regionIndices)
-                {
-                    var delta = deltas[vertex];
-                    energy += delta.sqrMagnitude;
-                    maximum = Mathf.Max(maximum, delta.sqrMagnitude);
-                    sum += delta;
-                }
-                var scale = 100f / weight;
-                if (energy * scale * scale < minimumEnergy) continue;
                 var totalEnergy = 0f;
                 foreach (var delta in deltas) totalEnergy += delta.sqrMagnitude;
-                if (energy / totalEnergy < MinimumRegionFraction) continue;
-
-                if (blink)
+                if (totalEnergy <= 0f) continue;
+                var regionEnergy = 0f;
+                var regionMotion = Vector3.zero;
+                foreach (var vertex in regionIndices)
                 {
-                    var residual = Mathf.Max(0f, energy - sum.sqrMagnitude / regionCount);
-                    if (residual / energy <= MaximumTranslationVariance
-                        || residual * scale * scale < minimumEnergy) continue;
+                    regionEnergy += deltas[vertex].sqrMagnitude;
+                    regionMotion += deltas[vertex];
                 }
-                else if (canExcludeTranslation)
-                {
-                    var moving = 0;
-                    var threshold2 = Mathf.Max(maximum * 0.0025f,
-                        Mathf.Pow(magnitude * 0.000001f * weight / 100f, 2f));
-                    foreach (var vertex in regionIndices)
-                        if (deltas[vertex].sqrMagnitude > threshold2) moving++;
-                    var variance = Mathf.Max(0f,
-                        energy - sum.sqrMagnitude / regionCount);
-                    if (moving >= regionCount * TranslationCoverage
-                        && variance / energy <= MaximumTranslationVariance) continue;
-                }
+                if (regionEnergy / totalEnergy < MinimumRegionFraction) continue;
+                var residual = Mathf.Max(0f,
+                    regionEnergy - regionMotion.sqrMagnitude / regionIndices.Length);
+                if (residual / regionEnergy < MinimumResidualFraction) continue;
                 result.Add(name);
                 break;
             }
@@ -210,65 +228,8 @@ internal static class ConflictShapeDetector
         return result;
     }
 
-    private static bool ReadBlinkDelta(
-        Mesh mesh, int index, float weight,
-        Vector3[] deltas, Vector3[] next, Vector3[] normals, Vector3[] tangents)
-    {
-        var frames = mesh.GetBlendShapeFrameCount(index);
-        if (frames == 0) return false;
-        var upper = 0;
-        while (upper < frames && mesh.GetBlendShapeFrameWeight(index, upper) < weight)
-            upper++;
-        if (upper == 0 || upper == frames)
-        {
-            var frame = upper == 0 ? 0 : frames - 1;
-            var frameWeight = mesh.GetBlendShapeFrameWeight(index, frame);
-            if (Mathf.Abs(frameWeight) < 0.001f) return false;
-            mesh.GetBlendShapeFrameVertices(index, frame, deltas, normals, tangents);
-            var scale = weight / frameWeight;
-            for (var vertex = 0; vertex < deltas.Length; vertex++) deltas[vertex] *= scale;
-            return true;
-        }
-        var lowerWeight = mesh.GetBlendShapeFrameWeight(index, upper - 1);
-        var upperWeight = mesh.GetBlendShapeFrameWeight(index, upper);
-        if (Mathf.Approximately(lowerWeight, upperWeight)) return false;
-        mesh.GetBlendShapeFrameVertices(index, upper - 1, deltas, normals, tangents);
-        mesh.GetBlendShapeFrameVertices(index, upper, next, normals, tangents);
-        var t = (weight - lowerWeight) / (upperWeight - lowerWeight);
-        for (var vertex = 0; vertex < deltas.Length; vertex++)
-            deltas[vertex] = Vector3.LerpUnclamped(deltas[vertex], next[vertex], t);
-        return true;
-    }
-
     private static Vector3Int Cell(Vector3 position, float size) => new(
         Mathf.FloorToInt(position.x / size),
         Mathf.FloorToInt(position.y / size),
         Mathf.FloorToInt(position.z / size));
-
-    private static int[][] BuildNeighbors(Mesh mesh, int count)
-    {
-        var lists = new List<int>?[count];
-        void Add(int from, int to)
-        {
-            (lists[from] ??= new List<int>()).Add(to);
-        }
-        for (var submesh = 0; submesh < mesh.subMeshCount; submesh++)
-        {
-            if (mesh.GetTopology(submesh) != MeshTopology.Triangles) continue;
-            var triangles = mesh.GetTriangles(submesh);
-            for (var i = 0; i < triangles.Length; i += 3)
-            {
-                var a = triangles[i];
-                var b = triangles[i + 1];
-                var c = triangles[i + 2];
-                Add(a, b); Add(b, a);
-                Add(b, c); Add(c, b);
-                Add(c, a); Add(a, c);
-            }
-        }
-        var neighbors = new int[count][];
-        for (var vertex = 0; vertex < count; vertex++)
-            neighbors[vertex] = lists[vertex]?.Distinct().ToArray() ?? Array.Empty<int>();
-        return neighbors;
-    }
 }
