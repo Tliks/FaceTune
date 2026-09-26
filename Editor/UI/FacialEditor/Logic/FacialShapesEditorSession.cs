@@ -56,8 +56,6 @@ internal sealed class FacialShapesEditorContext : IDisposable
         Action<int> initializeList,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
         Action save,
-        Action undo,
-        Action redo,
         Action<BlendShapeGrouping>? initializeGroups = null)
     {
         if (dataManagers.Count == 0) throw new ArgumentException("At least one shape list is required.");
@@ -81,17 +79,17 @@ internal sealed class FacialShapesEditorContext : IDisposable
         GroupManager = new BlendShapeGrouping(Catalog.Names);
         initializeGroups?.Invoke(GroupManager);
         PreviewManager = new PreviewManager(this, root);
-        UI = new FacialShapeUI(root, this, tryChangeRenderer, save, undo, redo);
+        UI = new FacialShapeUI(root, this, tryChangeRenderer, save);
     }
 
     public bool IsListEditable(int index) => index < EditableListCount;
 
-    public void SynchronizeAfterUndo()
+    public void SynchronizeExternalState()
     {
         _serializedObject.UpdateIfRequiredOrScript();
         foreach (var dataManager in DataManagers)
-            dataManager.SynchronizeAfterUndo();
-        if (ModeSession.SynchronizeAfterUndo())
+            dataManager.SynchronizeExternalState();
+        if (ModeSession.SynchronizeExternalState())
             UI.RefreshLipSync();
     }
 

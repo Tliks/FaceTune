@@ -16,7 +16,6 @@ internal partial class FacialShapesEditor : EditorWindow
 
     private const int MIN_WINDOW_WIDTH = 570;
     private const int MIN_WINDOW_HEIGHT = 700;
-    private const string UndoRedoCommandName = "UndoRedoPerformed";
 
     public static FacialShapesEditor? TryOpenEditor()
     {
@@ -127,9 +126,7 @@ internal partial class FacialShapesEditor : EditorWindow
             1,
             _ => { },
             TryChangeRenderer,
-            SaveChanges,
-            PerformUndo,
-            PerformRedo);
+            SaveChanges);
         _context.ModeSession.Changed += SyncUnsavedChangesFromData;
         titleContent = "facialEditor.title".LG();
         _unsavedStateSyncPending = false;
@@ -289,8 +286,6 @@ internal partial class FacialShapesEditor : EditorWindow
     private void SetupKeyboardShortcuts()
     {
         rootVisualElement.RegisterCallback<KeyDownEvent>(OnKeyDown);
-        rootVisualElement.RegisterCallback<ValidateCommandEvent>(OnValidateCommand);
-        rootVisualElement.RegisterCallback<ExecuteCommandEvent>(OnExecuteCommand);
         rootVisualElement.focusable = true;
         rootVisualElement.Focus();
 
@@ -304,63 +299,10 @@ internal partial class FacialShapesEditor : EditorWindow
                 evt.PreventDefault();
             }
         }
-
-        void OnValidateCommand(ValidateCommandEvent evt)
-        {
-            if (IsUndoRedoCommand(evt.commandName))
-                RequestUndoSynchronization();
-        }
-
-        void OnExecuteCommand(ExecuteCommandEvent evt)
-        {
-            if (IsUndoRedoCommand(evt.commandName))
-                RequestUndoSynchronization();
-        }
     }
-
-    private static bool IsUndoRedoCommand(string commandName)
-        => commandName == UndoRedoCommandName
-           || commandName == "Undo"
-           || commandName == "Redo";
-
-    private void RequestUndoSynchronization()
-    {
-        EditorApplication.delayCall -= SynchronizeAfterUndo;
-        EditorApplication.delayCall += SynchronizeAfterUndo;
-    }
-
-    private void SynchronizeAfterUndo()
-        => _context?.SynchronizeAfterUndo();
-
-    private void PerformUndo()
-    {
-        try
-        {
-            Undo.PerformUndo();
-        }
-        finally
-        {
-            RequestUndoSynchronization();
-        }
-    }
-
-    private void PerformRedo()
-    {
-        try
-        {
-            Undo.PerformRedo();
-        }
-        finally
-        {
-            RequestUndoSynchronization();
-        }
-    }
-
-    private void OnFocus()
-        => SynchronizeAfterUndo();
 
     private void OnInspectorUpdate()
-        => SynchronizeAfterUndo();
+        => _context?.SynchronizeExternalState();
 
     public override void SaveChanges()
     {
@@ -397,7 +339,6 @@ internal partial class FacialShapesEditor : EditorWindow
 
     private void OnDisable()
     {
-        EditorApplication.delayCall -= SynchronizeAfterUndo;
         EndContext();
         if (_initialUndoGroup >= 0)
             Undo.CollapseUndoOperations(_initialUndoGroup);

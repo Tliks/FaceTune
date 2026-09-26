@@ -338,7 +338,7 @@ internal class BlendShapeOverrideManager : IDisposable
         return true;
     }
 
-    public bool SynchronizeAfterUndo()
+    public bool SynchronizeExternalState()
     {
         if (!IsInitialized) return false;
         var currentVersion = _stateVersionProperty.intValue;

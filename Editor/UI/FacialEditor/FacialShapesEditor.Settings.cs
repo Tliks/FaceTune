@@ -151,8 +151,6 @@ internal partial class FacialShapesEditor
             InitializeList,
             TryChangeRenderer,
             SaveChanges,
-            PerformUndo,
-            PerformRedo,
             groups => SelectInitialTrackingGroups(
                 groups, renderer, lipSync, builtInLipSync, eyeBlink, builtInEyeBlink));
         _context.ModeSession.Changed += SyncUnsavedChangesFromData;
