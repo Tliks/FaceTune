@@ -282,7 +282,6 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
 
     public override bool SynchronizeAfterUndo()
     {
-        _serializedObject.UpdateIfRequiredOrScript();
         var current = (EyeBlinkSettings.Kind)_modeProperty.intValue;
         if (_mode == current) return false;
         var previous = _mode;

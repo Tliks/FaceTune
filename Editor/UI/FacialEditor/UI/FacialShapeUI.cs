@@ -23,7 +23,9 @@ internal class FacialShapeUI : IDisposable
         VisualElement root,
         FacialShapesEditorContext context,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
-        Action save)
+        Action save,
+        Action undo,
+        Action redo)
     {
         _context = context;
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
@@ -34,7 +36,7 @@ internal class FacialShapeUI : IDisposable
         root.styleSheets.Add(uss);
         Localization.LocalizeUIElements(root);
 
-        _generalControls = new GeneralControls(context, tryChangeRenderer, save);
+        _generalControls = new GeneralControls(context, tryChangeRenderer, save, undo, redo);
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
         _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);

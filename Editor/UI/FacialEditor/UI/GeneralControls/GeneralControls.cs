@@ -11,6 +11,8 @@ internal class GeneralControls : IDisposable
     private readonly FacialShapesEditorContext _context;
     private readonly Func<SkinnedMeshRenderer?, bool> _tryChangeRenderer;
     private readonly Action _save;
+    private readonly Action _undo;
+    private readonly Action _redo;
     private readonly BlendShapeGrouping _groupManager;
 
     private static VisualTreeAsset? _uxml;
@@ -44,11 +46,15 @@ internal class GeneralControls : IDisposable
     public GeneralControls(
         FacialShapesEditorContext context,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
-        Action save)
+        Action save,
+        Action undo,
+        Action redo)
     {
         _context = context;
         _tryChangeRenderer = tryChangeRenderer;
         _save = save;
+        _undo = undo;
+        _redo = redo;
         _groupManager = context.GroupManager;
 
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "41adb90607cdad24292515795aeb1680");
@@ -131,11 +137,11 @@ internal class GeneralControls : IDisposable
 
         _undoButton = _element.Q<Button>("undo-button");
         _undoButton.Add(CreateStepIcon(_undoIcon));
-        _undoButton.clicked += Undo.PerformUndo;
+        _undoButton.clicked += _undo;
 
         _redoButton = _element.Q<Button>("redo-button");
         _redoButton.Add(CreateStepIcon(_redoIcon));
-        _redoButton.clicked += Undo.PerformRedo;
+        _redoButton.clicked += _redo;
 
         _restoreInitialOverridesButton = _element.Q<Button>("restore-initial-overrides-button");
         _restoreInitialOverridesButton.Add(new Image { image = _restoreInitialOverridesIcon });
