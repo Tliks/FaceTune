@@ -18,8 +18,8 @@ internal static class ConflictShapeAutoSetup
                 settings.FindPropertyRelative(nameof(EyeBlinkSettings.SimpleBlinkBlendShapes)), false)
             .Where(shape => !unavailable.Contains(shape.Name)
                             && !Mathf.Approximately(shape.Weight(0f), 0f))
-            .Select(shape => shape.Name);
-        if (TryDetect(avatar, source, out var names)) ReplaceSerialized(target, names);
+            .Select(shape => new BlendShapeWeight(shape.Name, shape.Weight(0f)));
+        if (TryDetectBlink(avatar, source, out var names)) ReplaceSerialized(target, names);
     }
 
     internal static void SetupLipSync(SerializedProperty target)
@@ -63,7 +63,8 @@ internal static class ConflictShapeAutoSetup
         var source = sourceManager.GetTargetIndices(index =>
                 !sourceManager.IsUnavailable(index)
                 && !Mathf.Approximately(sourceManager.GetShapeWeight(index), 0f))
-            .Select(index => sourceManager.AllKeys[index]);
+            .Select(index => new BlendShapeWeight(
+                sourceManager.AllKeys[index], sourceManager.GetShapeWeight(index)));
         ReplaceEditor(context, context.DataManagers[1], source);
     }
 
@@ -76,6 +77,24 @@ internal static class ConflictShapeAutoSetup
                             && !editing.UnavailableNames.Contains(shape.Name))
             .Select(shape => shape.Name);
         ReplaceEditor(context, context.DataManagers[0], source);
+    }
+
+    private static bool TryDetectBlink(
+        AvatarContext avatar, IEnumerable<BlendShapeWeight> source, out IReadOnlyList<string> result)
+    {
+        result = Array.Empty<string>();
+        var mesh = avatar.FaceRenderer.sharedMesh;
+        if (mesh == null || !mesh.isReadable) return false;
+        var shapes = source.Where(shape => !string.IsNullOrEmpty(shape.Name)
+                                           && mesh.GetBlendShapeIndex(shape.Name) >= 0)
+            .GroupBy(shape => shape.Name, StringComparer.Ordinal)
+            .Select(group => group.First()).ToArray();
+        if (shapes.Length == 0) return false;
+        var detected = ConflictShapeDetector.DetectBlink(mesh, shapes,
+            AvatarContext.GetUnavailableBlendShapeNames(avatar.Root, FaceTuneWriteKind.FacialData));
+        if (detected == null) return false;
+        result = detected;
+        return true;
     }
 
     private static SerializedProperty Parent(SerializedProperty property)
@@ -104,8 +123,24 @@ internal static class ConflictShapeAutoSetup
         FacialShapesEditorContext context, BlendShapeOverrideManager target, IEnumerable<string> source)
     {
         if (context.Target is not Component component
-            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)) return;
-        if (!TryDetect(avatar, source, out var names)) return;
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)
+            || !TryDetect(avatar, source, out var names)) return;
+        ReplaceEditorTarget(target, names);
+    }
+
+    private static void ReplaceEditor(
+        FacialShapesEditorContext context, BlendShapeOverrideManager target,
+        IEnumerable<BlendShapeWeight> source)
+    {
+        if (context.Target is not Component component
+            || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)
+            || !TryDetectBlink(avatar, source, out var names)) return;
+        ReplaceEditorTarget(target, names);
+    }
+
+    private static void ReplaceEditorTarget(
+        BlendShapeOverrideManager target, IReadOnlyList<string> names)
+    {
         target.ReplaceTargetValues(names.Select(target.GetIndexForShape)
             .Where(index => index >= 0)
             .Select(index => (index, 0f)));
