@@ -46,7 +46,7 @@ internal sealed class LipSyncAnimatorBuilder
                 .Prepend(_aap.LipSyncModeIs(VRChatTrackingPlan.BuiltInMode)));
         EnsureParameters(controller, generated, disabledWhen, builtInWhen);
 
-        var layer = _graph.AddLayer(controller, "Lip Sync", layerPriority);
+        var layer = _graph.AddLayer(controller, "LipSync", layerPriority);
         var root = layer.StateMachine!;
         var xStep = AnimatorGraph.PositionXStep;
         var yStep = AnimatorGraph.PositionYStep;

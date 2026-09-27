@@ -46,6 +46,7 @@ internal class GeneralControls : IDisposable
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
         Action save)
     {
+        using var sample = new Utils.ProfilingSampleScope("GeneralControls.Initialize");
         _context = context;
         _tryChangeRenderer = tryChangeRenderer;
         _save = save;

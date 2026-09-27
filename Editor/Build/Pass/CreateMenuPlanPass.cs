@@ -124,7 +124,7 @@ internal static class MenuPlanBuilder
             return new MenuIconPlan.Manual(settings.ManualIcon.DestroyedAsNull());
         }
 
-        var target = FaceTuneMenuResolver.ResolvePreviewTarget(settings.PreviewExpression, owner);
+        var target = FaceTuneMenuResolver.ResolveIconPreviewTarget(settings.PreviewExpression, owner);
 
         if (target == null)
         {

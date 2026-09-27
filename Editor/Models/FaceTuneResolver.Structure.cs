@@ -1,6 +1,7 @@
 using nadena.dev.ndmf.preview;
 
 namespace Aoyon.FaceTune;
+
 internal readonly record struct ScopedValue<T>(T Value, SettingsComponent? Owner);
 
 internal sealed class ScopedValueResolver<T> where T : class
@@ -24,15 +25,12 @@ internal sealed class ScopedValueResolver<T> where T : class
 
     public ScopedValue<T> GetIncoming(Component target)
     {
-        var value = getDefault();
-        SettingsComponent? owner = null;
-        foreach (var settings in context.GetComponentsInParentExcludingSelf<SettingsComponent>(root, target, true))
+        foreach (var settings in context.GetComponentsInParentExcludingSelf<SettingsComponent>(root, target, true).Reverse())
         {
-            if (getSettings(settings) is not { } resolved) continue;
-            value = resolved;
-            owner = settings;
+            if (getSettings(settings) is { } value)
+                return new ScopedValue<T>(value, settings);
         }
-        return new ScopedValue<T>(value, owner);
+        return new ScopedValue<T>(getDefault(), null);
     }
 }
 
@@ -57,10 +55,11 @@ internal sealed class SettingValueResolver<TValue> where TValue : class
 
     private TValue? Resolve(ISettingProvider<TValue> provider, HashSet<Component> path)
     {
-        var component = (Component)provider;
+        var component = provider.Component;
         if (!path.Add(component)) return null;
         try
         {
+            var createSnapshot = snapshot;
             var value = context.Observe(
                 component,
                 current =>
@@ -69,11 +68,11 @@ internal sealed class SettingValueResolver<TValue> where TValue : class
                     var reference = (current as ISettingProviderWithReference<TValue>)?.Reference;
                     return (
                         setting.Enabled,
-                        Value: snapshot(current, setting.Value),
+                        Value: createSnapshot(current, setting.Value),
                         FollowReference: reference?.Mode == SettingsReferenceMode.Reference,
                         Source: reference?.Source);
                 },
-                (left, right) =>
+                static (left, right) =>
                 {
                     if (left.Enabled != right.Enabled) return false;
                     if (!left.Enabled) return true;

@@ -682,6 +682,9 @@ msgstr "Eye Blink"
 msgid "shapesEditor.conflictCorrection.label"
 msgstr "Conflict Correction"
 
+msgid "conflictAutoSetup.button"
+msgstr "Auto Setup"
+
 msgid "expressionSet.defaultSelected.label"
 msgstr "Selected Initially"
 

@@ -4,6 +4,7 @@ using Aoyon.FaceTune.Settings;
 using Aoyon.FaceTune.Gui.ShapesEditor;
 using nadena.dev.ndmf.runtime;
 using Aoyon.FaceTune.Platforms;
+using Aoyon.FaceTune.Migration;
 
 namespace Aoyon.FaceTune.Gui;
 
@@ -22,6 +23,10 @@ internal static class MenuItems
     private const string ToolsDebugPath = ToolsPath + "Debug/";
     public const string ReloadLocalizationPath = ToolsDebugPath + "Reload Localization";
     public const int ReloadLocalizationPriority = 1200;
+    public const string RunMigrationPath = ToolsDebugPath + "Run Pending Migrations";
+    public const int RunMigrationPriority = 1201;
+    public const string DecrementMigrationVersionPath = ToolsDebugPath + "Decrement Migration Version";
+    public const int DecrementMigrationVersionPriority = 1202;
 
     // Assets
     public const string EditAnimationClipMenuPath = "Assets/Edit Animation Clip by FaceTune";
@@ -126,6 +131,22 @@ internal static class GameObjectMenu
 
 internal static class ToolsMenu
 {
+    [M(MenuItems.RunMigrationPath, false, MenuItems.RunMigrationPriority)]
+    private static void RunPendingMigrations() => FaceTuneProjectMigration.RunPending();
+
+    [M(MenuItems.DecrementMigrationVersionPath, false, MenuItems.DecrementMigrationVersionPriority)]
+    private static void DecrementMigrationVersion()
+    {
+        var version = FaceTuneProjectMigrationState.LastStartedVersion;
+        if (version <= 0)
+        {
+            Debug.Log("FaceTune migration version is already 0.");
+            return;
+        }
+        FaceTuneProjectMigrationState.MarkStarted(version - 1);
+        Debug.Log($"FaceTune migration version: {version} → {version - 1}");
+    }
+
     [MenuItem(MenuItems.SelectedExpressionPreviewPath, true)]
     private static bool ValidateSelectedExpressionPreview()
     {

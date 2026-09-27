@@ -51,6 +51,7 @@ internal partial class FacialShapesEditor : EditorWindow
         ISet<string>? unavailableBlendShapeNames = null,
         Func<SkinnedMeshRenderer, ISet<string>?>? resolveUnavailableBlendShapeNames = null)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.OpenFacial");
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
         window._resolveUnavailableBlendShapeNames = resolveUnavailableBlendShapeNames;
         window.StartContext(
@@ -89,6 +90,7 @@ internal partial class FacialShapesEditor : EditorWindow
         IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations,
         ISet<string>? unavailableBlendShapeNames)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.StartFacialContext");
         EndContext();
 
         initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, target);
@@ -109,7 +111,9 @@ internal partial class FacialShapesEditor : EditorWindow
             ToFirstFrameSet(baseAnimations),
             ToFirstFrameSet(initialOverrideAnimations),
             unavailableBlendShapeNames ?? ImmutableHashSet<string>.Empty,
-            GetInitialCurves(initialOverrideAnimations));
+            GetInitialCurves(initialOverrideAnimations),
+            GetInitialCurves((facialAnimations ?? Array.Empty<BlendShapeWeightAnimation>())
+                .Concat(baseAnimations ?? Array.Empty<BlendShapeWeightAnimation>())));
         dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
@@ -156,7 +160,7 @@ internal partial class FacialShapesEditor : EditorWindow
 
     // MultiFrameのカーブは編集対象行として取り込むため、構造をそのままシードとして渡す。
     private static Dictionary<string, AnimationCurve>? GetInitialCurves(
-        IReadOnlyList<BlendShapeWeightAnimation>? animations)
+        IEnumerable<BlendShapeWeightAnimation>? animations)
     {
         if (animations == null) return null;
         var curves = new Dictionary<string, AnimationCurve>(StringComparer.Ordinal);
@@ -164,6 +168,8 @@ internal partial class FacialShapesEditor : EditorWindow
         {
             if (animation.IsMultiFrame)
                 curves[animation.Name] = animation.Curve;
+            else
+                curves.Remove(animation.Name);
         }
         return curves.Count == 0 ? null : curves;
     }
@@ -301,6 +307,9 @@ internal partial class FacialShapesEditor : EditorWindow
         }
     }
 
+    private void OnInspectorUpdate()
+        => _context?.SynchronizeExternalState();
+
     public override void SaveChanges()
     {
         if (_context?.Renderer == null) throw new Exception("TargetRenderer is not set");
@@ -332,15 +341,6 @@ internal partial class FacialShapesEditor : EditorWindow
         _context.ModeSession.MarkSaved();
         _context.UI.RefreshLipSync();
         SyncUnsavedChangesNow();
-    }
-
-    private void OnInspectorUpdate()
-    {
-        if (_context == null) return;
-        foreach (var dataManager in _context.DataManagers)
-            dataManager.SynchronizeSerializedState();
-        if (_context.ModeSession.SynchronizeAfterUndo())
-            _context.UI.RefreshLipSync();
     }
 
     private void OnDisable()

@@ -256,7 +256,7 @@ internal sealed class LipSyncEditing
         return true;
     }
 
-    public bool SynchronizeAfterUndo()
+    public bool SynchronizeExternalState()
     {
         if (Draft.Equals(_observed)) return false;
         _observed = Draft.Clone();

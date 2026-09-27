@@ -5,7 +5,12 @@ internal interface IHasObjectReferences
     void ResolveReferences();
 }
 
-internal interface ISettingProvider<T> where T : class
+internal interface IFaceTuneProvider
+{
+    Component Component { get; }
+}
+
+internal interface ISettingProvider<T> : IFaceTuneProvider where T : class
 {
     (bool Enabled, T Value) Setting { get; }
 }
@@ -15,7 +20,7 @@ internal interface ISettingProviderWithReference<T> : ISettingProvider<T> where 
     (SettingsReferenceMode Mode, FaceTuneTagComponent? Source) Reference { get; }
 }
 
-internal interface IExpressionDefinitionProvider
+internal interface IExpressionDefinitionProvider : IFaceTuneProvider
 {
 }
 

@@ -25,6 +25,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     public EyeBlinkPanel(FacialShapesEditorContext context)
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkPanel.Initialize");
         _context = context;
 
         SelectedElement.styleSheets.Add(
@@ -60,6 +61,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private VisualElement MakeItem()
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkPanel.MakeItem");
         var root = new RowElement();
         root.style.flexDirection = FlexDirection.Row;
         root.style.alignItems = Align.Center;
@@ -139,6 +141,15 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private void BuildControlsRow(RowElement root)
     {
+        var autoSetup = new Button(() => ConflictShapeAutoSetup.SetupBlink(_context))
+        {
+            name = "auto-setup",
+            text = "conflictAutoSetup.button".LS()
+        };
+        autoSetup.AddToClassList("compact-control");
+        autoSetup.style.position = Position.Absolute;
+        autoSetup.style.left = 0f;
+
         var bulk = new BulkShapeControls(
             weight =>
             {
@@ -162,6 +173,7 @@ internal sealed class EyeBlinkPanel : IDisposable
         bulk.Element.userData = bulk;
 
         root.Add(bulk.Element);
+        root.Add(autoSetup);
     }
 
     private void BuildShapeRow(RowElement root)
@@ -218,6 +230,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private void BindItem(VisualElement element, int index)
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkPanel.BindItem");
         var row = _rows[index];
         var root = (RowElement)element;
         root.userData = row;
@@ -237,6 +250,7 @@ internal sealed class EyeBlinkPanel : IDisposable
                 var bulk = (BulkShapeControls)bulkElement.userData;
                 // 干渉補正はWeight 0で追加する列表のため、0-を出さない
                 bulk.SetRemoveZeroVisible(row.ListIndex == 0 && HasZeroShape(row.ListIndex));
+                root.Q<Button>("auto-setup").SetVisible(row.ListIndex == 1);
                 break;
             }
 

@@ -13,6 +13,8 @@ namespace Aoyon.FaceTune
 
         // このGameObjectより下のExpressionへ、親側から順に重ねる。
         public bool HasFacialBlendShapes;
+        [Obsolete("Only for legacy project migration")]
+        public SettingsReference FacialBlendShapesReference = new();
         public FacialBlendShapeData FacialBlendShapes = new();
         public bool ApplyToRenderer;
 

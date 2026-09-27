@@ -124,7 +124,7 @@ internal sealed class ExpressionItemBuilder
             },
             behavior,
             multiFrame,
-            _conditionResolver.Resolve(directCondition) ?? DnfCondition.Never);
+            _conditionResolver.Resolve(directCondition));
     }
 
     private ExpressionItem BuildItem(

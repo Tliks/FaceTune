@@ -100,6 +100,7 @@ internal class PreviewManager : IDisposable
 
     private void InitializeTargetRenderer(SkinnedMeshRenderer? renderer)
     {
+        using var sample = new Utils.ProfilingSampleScope("PreviewManager.InitializeRenderer");
         Preview.Stop();
         if (renderer == null)
         {
@@ -108,11 +109,15 @@ internal class PreviewManager : IDisposable
         else
         {
             _isEnabled = true;
-            Preview.Start(renderer);
-            SetBackground();
-            BuildPreviewSet();
-            SetPreview();
-            SetHover();
+            using (new Utils.ProfilingSampleScope("PreviewManager.StartPreview"))
+                Preview.Start(renderer);
+            using (new Utils.ProfilingSampleScope("PreviewManager.ApplyInitialLayers"))
+            {
+                SetBackground();
+                BuildPreviewSet();
+                SetPreview();
+                SetHover();
+            }
         }
     }
 
