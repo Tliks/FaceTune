@@ -43,6 +43,7 @@ internal class SelectedPanel
         BlendShapeGrouping groupManager,
         bool showSearch)
     {
+        using var sample = new Utils.ProfilingSampleScope("SelectedPanel.Initialize");
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
         
@@ -137,6 +138,7 @@ internal class SelectedPanel
 
         VisualElement MakeElement()
         {
+            using var sample = new Utils.ProfilingSampleScope("SelectedPanel.MakeItem");
             var element = new SelectedShapeRow();
 
             var flashOverlay = new VisualElement { name = "flash-overlay", pickingMode = PickingMode.Ignore };
@@ -237,6 +239,7 @@ internal class SelectedPanel
 
         void BindElement(VisualElement element, int index)
         {
+            using var sample = new Utils.ProfilingSampleScope("SelectedPanel.BindItem");
             var item = _currentSource[index];
             element.userData = item;
 

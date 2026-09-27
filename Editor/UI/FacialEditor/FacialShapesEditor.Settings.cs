@@ -11,6 +11,7 @@ internal partial class FacialShapesEditor
         ShapesEditorMode mode,
         int activeListIndex = 0)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.OpenSettings");
         if (settings.serializedObject.targetObjects.Length != 1
             || settings.serializedObject.targetObject is not FaceTuneTagComponent component
             || !AvatarContext.TryGet(component.gameObject, out var avatar, out _)
@@ -81,6 +82,7 @@ internal partial class FacialShapesEditor
         EyeBlinkSettings? eyeBlink,
         IReadOnlyList<BlendShapeWeightAnimation>? builtInEyeBlink)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.StartSettingsContext");
         EndContext();
         var managerCount = mode == ShapesEditorMode.LipSync ? 1 : initialLists.Length;
         activeListIndex = mode == ShapesEditorMode.EyeBlinkCustom ? 2 : 0;

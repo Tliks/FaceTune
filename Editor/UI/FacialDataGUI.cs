@@ -304,6 +304,7 @@ internal static class FacialDataGUI
         SerializedProperty animations,
         int? compositeEntryIndex)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.OpenFromFacialData");
         if (component is ExpressionComponent expression
             && expression.ExpressionDataReference.Mode == SettingsReferenceMode.Reference)
             return;

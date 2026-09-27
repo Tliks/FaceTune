@@ -36,6 +36,7 @@ internal class UnselectedPanel
         PreviewManager previewManager,
         float addWeight = 100f)
     {
+        using var sample = new Utils.ProfilingSampleScope("UnselectedPanel.Initialize");
         _blendShapeManager = blendShapeManager;
         _groupManager = groupManager;
         _previewManager = previewManager;
@@ -97,6 +98,7 @@ internal class UnselectedPanel
 
         VisualElement MakeUnselectedElement()
         {
+            using var sample = new Utils.ProfilingSampleScope("UnselectedPanel.MakeItem");
             var element = UnselectedShapeRowUI.Create();
             
             element.RegisterCallback<ClickEvent>(evt =>
@@ -119,6 +121,7 @@ internal class UnselectedPanel
 
         void BindUnselectedElement(VisualElement element, int index)
         {
+            using var sample = new Utils.ProfilingSampleScope("UnselectedPanel.BindItem");
             var item = _currentSource[index];
             element.userData = item;
             element.Q<Label>("name").text = item.ShapeName;

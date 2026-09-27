@@ -33,10 +33,13 @@ internal class FacialShapeUI : IDisposable
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
 
-        root.Clear();
-        root.Add(uxml.CloneTree());
-        root.styleSheets.Add(uss);
-        Localization.LocalizeUIElements(root);
+        using (new Utils.ProfilingSampleScope("FacialShapeUI.CloneAndLocalize"))
+        {
+            root.Clear();
+            root.Add(uxml.CloneTree());
+            root.styleSheets.Add(uss);
+            Localization.LocalizeUIElements(root);
+        }
 
         _generalControls = new GeneralControls(context, tryChangeRenderer, save);
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
@@ -103,6 +106,7 @@ internal class FacialShapeUI : IDisposable
 
     private void ShowActiveList()
     {
+        using var sample = new Utils.ProfilingSampleScope("FacialShapeUI.ShowActiveList");
         var index = _context.ActiveListIndex;
         if (!_panels.TryGetValue(index, out var panels))
         {

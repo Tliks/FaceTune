@@ -125,6 +125,7 @@ internal class BlendShapeOverrideManager : IDisposable
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null,
         IReadOnlyDictionary<string, AnimationCurve>? baseCurves = null)
     {
+        using var sample = new Utils.ProfilingSampleScope("BlendShapeOverrideManager.SetInitialState");
         IsInitialized = true;
         _explicitlyExcluded = explicitlyExcluded;
         _baseCurves = baseCurves ?? new Dictionary<string, AnimationCurve>();
@@ -137,6 +138,7 @@ internal class BlendShapeOverrideManager : IDisposable
         ImmutableBlendShapeWeightSet? targetSet,
         ISet<string> explicitlyExcluded)
     {
+        using var sample = new Utils.ProfilingSampleScope("BlendShapeOverrideManager.InitializeTargetRenderer");
         var rendererBlendShapes = targetRenderer == null
             ? Array.Empty<BlendShapeWeight>()
             : targetRenderer.GetBlendShapeWeights(targetRenderer.sharedMesh).ToArray();
@@ -164,6 +166,7 @@ internal class BlendShapeOverrideManager : IDisposable
         ImmutableBlendShapeWeightSet? targetSet,
         IReadOnlyDictionary<string, AnimationCurve>? initialCurves)
     {
+        using var sample = new Utils.ProfilingSampleScope("BlendShapeOverrideManager.InitializeSourceSets");
         _facialSet = facialSet ?? new ImmutableBlendShapeWeightSet();
         _baseSet = baseSet ?? new ImmutableBlendShapeWeightSet();
         var initialTargetSet = targetSet ?? new ImmutableBlendShapeWeightSet();
@@ -214,6 +217,7 @@ internal class BlendShapeOverrideManager : IDisposable
 
     private OverrideStateSnapshot CaptureCurrentSnapshot()
     {
+        using var sample = new Utils.ProfilingSampleScope("BlendShapeOverrideManager.CaptureSnapshot");
         var length = _overrideFlagsProperty.arraySize;
         var flags = new bool[length];
         var weights = new float[length];

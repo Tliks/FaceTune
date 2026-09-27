@@ -51,6 +51,7 @@ internal partial class FacialShapesEditor : EditorWindow
         ISet<string>? unavailableBlendShapeNames = null,
         Func<SkinnedMeshRenderer, ISet<string>?>? resolveUnavailableBlendShapeNames = null)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.OpenFacial");
         if (TryOpenEditor() is not FacialShapesEditor window) return null;
         window._resolveUnavailableBlendShapeNames = resolveUnavailableBlendShapeNames;
         window.StartContext(
@@ -89,6 +90,7 @@ internal partial class FacialShapesEditor : EditorWindow
         IReadOnlyList<BlendShapeWeightAnimation>? initialOverrideAnimations,
         ISet<string>? unavailableBlendShapeNames)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditor.StartFacialContext");
         EndContext();
 
         initialOverrideAnimations ??= GetClipInitialOverrideAnimations(renderer, target);
