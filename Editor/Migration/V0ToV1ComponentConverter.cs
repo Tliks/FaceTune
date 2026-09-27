@@ -68,14 +68,22 @@ internal static class V0ToV1ComponentConverter
                         AddFacial(entries, facial[child]);
                         AddNonFacial(animations, nonFacial[child]);
                     }
-                    var shapes = children.Length > 0
-                        || expression.FacialBlendShapesReference.Mode == SettingsReferenceMode.Reference
-                            ? new FacialBlendShapeData
-                            {
-                                BlendShapeMode = FacialBlendShapeData.Mode.Composite,
-                                CompositeEntries = entries
-                            }
-                            : facial[expression] ?? new FacialBlendShapeData();
+                    var shapes = new FacialBlendShapeData();
+                    if (entries.Skip(1).Any(entry => entry.EntryKind == FacialBlendShapeData.CompositeEntry.Kind.Clip))
+                    {
+                        shapes.BlendShapeMode = FacialBlendShapeData.Mode.Composite;
+                        shapes.CompositeEntries = entries;
+                    }
+                    else
+                    {
+                        if (entries.Count > 0 && entries[0].EntryKind == FacialBlendShapeData.CompositeEntry.Kind.Clip)
+                        {
+                            shapes.Clip = entries[0].Clip;
+                            shapes.ClipOption = entries[0].ClipOption;
+                        }
+                        foreach (var entry in entries)
+                            shapes.BlendShapeAnimations.AddRange(entry.BlendShapeAnimations);
+                    }
                     plan.Add(() =>
                     {
                         ApplyReference(expression.EyeBlinkReference, eye);
