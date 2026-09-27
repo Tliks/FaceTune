@@ -314,7 +314,11 @@ internal sealed class ExpressionSettingsInheritance : IDisposable
         public ComputeContext Context { get; }
 
         public void Dispose()
-            => _disposed = true;
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Context.Invalidate();
+        }
     }
 }
 
