@@ -55,9 +55,9 @@ internal sealed class FacialShapesEditorContext : IDisposable
         int editableListCount,
         Action<int> initializeList,
         Func<SkinnedMeshRenderer?, bool> tryChangeRenderer,
-        Action save,
-        Action<BlendShapeGrouping>? initializeGroups = null)
+        Action save)
     {
+        using var sample = new Utils.ProfilingSampleScope("ShapesEditorContext.Initialize");
         if (dataManagers.Count == 0) throw new ArgumentException("At least one shape list is required.");
 
         _serializedObject = serializedObject;
@@ -75,11 +75,15 @@ internal sealed class FacialShapesEditorContext : IDisposable
         BackgroundDefaultValue = backgroundDefaultValue;
         IgnoredNames = ignoredNames;
 
-        Catalog = new BlendShapeCatalog(renderer);
-        GroupManager = new BlendShapeGrouping(Catalog.Names);
-        initializeGroups?.Invoke(GroupManager);
-        PreviewManager = new PreviewManager(this, root);
-        UI = new FacialShapeUI(root, this, tryChangeRenderer, save);
+        using (new Utils.ProfilingSampleScope("ShapesEditorContext.BuildCatalog"))
+        {
+            Catalog = new BlendShapeCatalog(renderer);
+            GroupManager = new BlendShapeGrouping(Catalog.Names);
+        }
+        using (new Utils.ProfilingSampleScope("ShapesEditorContext.InitializePreview"))
+            PreviewManager = new PreviewManager(this, root);
+        using (new Utils.ProfilingSampleScope("ShapesEditorContext.BuildUI"))
+            UI = new FacialShapeUI(root, this, tryChangeRenderer, save);
     }
 
     public bool IsListEditable(int index) => index < EditableListCount;

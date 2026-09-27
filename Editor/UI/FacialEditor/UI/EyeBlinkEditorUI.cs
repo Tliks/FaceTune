@@ -24,6 +24,7 @@ internal sealed class EyeBlinkEditorUI : IDisposable
         VisualElement availableContainer,
         VisualElement timelineContainer)
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkEditorUI.Initialize");
         _context = context;
         _session = session;
         _selectedContainer = selectedContainer;

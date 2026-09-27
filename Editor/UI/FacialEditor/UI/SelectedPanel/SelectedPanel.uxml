@@ -2,10 +2,10 @@
     <components:SpacedVerticalElement>
         <components:PlaceholderTextField name="search-field" class="compact-field" />
 
-        <components:SpacedHorizontalElement name="selected-shapes-controls">
-            <components:SimpleToggle text="facialEditor.style.option" name="style-toggle" class="ndmf-tr compact-control shape-filter-toggle filter-toggle" value="false" />
+        <components:HorizontalElement name="selected-shapes-controls">
             <ui:VisualElement name="bulk-controls" />
-        </components:SpacedHorizontalElement>
+            <components:SimpleToggle text="facialEditor.style.option" name="style-toggle" class="ndmf-tr compact-control shape-filter-toggle filter-toggle" value="false" />
+        </components:HorizontalElement>
 
         <ui:ListView name="selected-list-view" />
     </components:SpacedVerticalElement>

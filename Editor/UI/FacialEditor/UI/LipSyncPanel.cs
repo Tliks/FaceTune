@@ -41,6 +41,7 @@ internal sealed class LipSyncPanel
         FacialShapesEditorContext context,
         LipSyncEditing editing)
     {
+        using var sample = new Utils.ProfilingSampleScope("LipSyncPanel.Initialize");
         _context = context;
         _editing = editing;
         _canceller = context.DataManagers[0];
@@ -82,6 +83,7 @@ internal sealed class LipSyncPanel
 
     private VisualElement MakeSelectedItem()
     {
+        using var sample = new Utils.ProfilingSampleScope("LipSyncPanel.MakeItem");
         var root = new RowElement();
         root.style.flexDirection = FlexDirection.Row;
         root.style.alignItems = Align.Center;
@@ -157,8 +159,8 @@ internal sealed class LipSyncPanel
             text = "conflictAutoSetup.button".LS()
         };
         autoSetup.AddToClassList("compact-control");
-        autoSetup.style.marginRight = FacialShapeUI.Spacing;
-        root.Add(autoSetup);
+        autoSetup.style.position = Position.Absolute;
+        autoSetup.style.left = 0f;
 
         var header = BuildHeader(root);
         var bulk = new BulkShapeControls(
@@ -183,6 +185,7 @@ internal sealed class LipSyncPanel
 
         root.Add(header);
         root.Add(bulk.Element);
+        root.Add(autoSetup);
     }
 
     private void BuildShapeRow(RowElement root)
@@ -241,6 +244,7 @@ internal sealed class LipSyncPanel
 
     private void BindSelectedItem(VisualElement element, int index)
     {
+        using var sample = new Utils.ProfilingSampleScope("LipSyncPanel.BindItem");
         var row = _rows[index];
         var root = (RowElement)element;
         root.userData = row;

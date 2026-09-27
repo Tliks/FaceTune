@@ -25,6 +25,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     public EyeBlinkPanel(FacialShapesEditorContext context)
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkPanel.Initialize");
         _context = context;
 
         SelectedElement.styleSheets.Add(
@@ -60,6 +61,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private VisualElement MakeItem()
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkPanel.MakeItem");
         var root = new RowElement();
         root.style.flexDirection = FlexDirection.Row;
         root.style.alignItems = Align.Center;
@@ -145,8 +147,8 @@ internal sealed class EyeBlinkPanel : IDisposable
             text = "conflictAutoSetup.button".LS()
         };
         autoSetup.AddToClassList("compact-control");
-        autoSetup.style.marginRight = FacialShapeUI.Spacing;
-        root.Add(autoSetup);
+        autoSetup.style.position = Position.Absolute;
+        autoSetup.style.left = 0f;
 
         var bulk = new BulkShapeControls(
             weight =>
@@ -171,6 +173,7 @@ internal sealed class EyeBlinkPanel : IDisposable
         bulk.Element.userData = bulk;
 
         root.Add(bulk.Element);
+        root.Add(autoSetup);
     }
 
     private void BuildShapeRow(RowElement root)
@@ -227,6 +230,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private void BindItem(VisualElement element, int index)
     {
+        using var sample = new Utils.ProfilingSampleScope("EyeBlinkPanel.BindItem");
         var row = _rows[index];
         var root = (RowElement)element;
         root.userData = row;

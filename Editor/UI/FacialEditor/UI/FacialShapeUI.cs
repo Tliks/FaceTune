@@ -14,7 +14,11 @@ internal class FacialShapeUI : IDisposable
     private readonly FacialShapesEditorContext _context;
     private readonly VisualElement _selectedContainer;
     private readonly VisualElement _unselectedContainer;
+    private readonly VisualElement _modeControlsContainer;
+    private readonly VisualElement _modeControlsGap;
     private readonly Dictionary<int, (SelectedPanel Selected, UnselectedPanel Unselected)> _panels = new();
+    private PreviewTimelineElement? _facialTimeline;
+    private bool _facialTimelineVisible;
     private LipSyncPanel? _lipSyncPanel;
     private EyeBlinkEditorUI? _eyeBlinkUI;
     private GeneralControls _generalControls;
@@ -29,18 +33,23 @@ internal class FacialShapeUI : IDisposable
         var uxml = UIAssetHelper.EnsureUxmlWithGuid(ref _uxml, "c5be08ef18f5b6e409aa55f3e4cf67a0");
         var uss = UIAssetHelper.EnsureUssWithGuid(ref _uss, "5405c529d1ac1ba478455a85e4b1c771");
 
-        root.Clear();
-        root.Add(uxml.CloneTree());
-        root.styleSheets.Add(uss);
-        Localization.LocalizeUIElements(root);
+        using (new Utils.ProfilingSampleScope("FacialShapeUI.CloneAndLocalize"))
+        {
+            root.Clear();
+            root.Add(uxml.CloneTree());
+            root.styleSheets.Add(uss);
+            Localization.LocalizeUIElements(root);
+        }
 
         _generalControls = new GeneralControls(context, tryChangeRenderer, save);
         _selectedContainer = root.Q<VisualElement>("selected-content-container");
         _unselectedContainer = root.Q<VisualElement>("unselected-content-container");
+        _modeControlsContainer = root.Q<VisualElement>("mode-controls-container");
+        _modeControlsGap = root.Q<VisualElement>("mode-controls-gap");
         root.Q<VisualElement>("general-controls-container").Add(_generalControls.Element);
         if (context.ModeSession is LipSyncModeSession lipSync)
             _lipSyncPanel = new LipSyncPanel(context, lipSync.Editing);
-        SetupListSelector(root);
+        SetupListSelector();
 
         if (_lipSyncPanel != null) ShowLipSync();
         else if (context.ModeSession is EyeBlinkModeSession eyeBlink)
@@ -49,29 +58,41 @@ internal class FacialShapeUI : IDisposable
                 root.Q<VisualElement>("mode-controls-container"));
         else
         {
+            if (context.ModeSession is FacialModeSession facial)
+            {
+                _facialTimeline = new PreviewTimelineElement(
+                    context.InitialPreviewTime,
+                    context.PreviewManager.SetNormalizedTime,
+                    () => facial.PlaybackDurationSeconds);
+                _modeControlsContainer.Add(_facialTimeline.Element);
+                context.DataManager.OnAnyDataChange += UpdateFacialTimeline;
+                UpdateFacialTimeline();
+            }
             ShowActiveList();
             context.ActiveListChanged += ShowActiveList;
         }
     }
 
-    private void SetupListSelector(VisualElement root)
+    private void SetupListSelector()
     {
-        var container = root.Q<VisualElement>("mode-controls-container");
-        var gap = root.Q<VisualElement>("mode-controls-gap");
-        container.style.flexDirection = FlexDirection.Row;
-        container.style.flexWrap = Wrap.Wrap;
+        _modeControlsContainer.style.flexDirection = FlexDirection.Row;
+        _modeControlsContainer.style.flexWrap = Wrap.Wrap;
 
-        switch (_context.Mode)
+        if (_context.Mode == ShapesEditorMode.LipSync)
         {
-            case ShapesEditorMode.Facial:
-                container.SetVisible(false);
-                gap.SetVisible(false);
-                break;
-            case ShapesEditorMode.LipSync:
-                container.SetVisible(false);
-                gap.SetVisible(false);
-                break;
+            _modeControlsContainer.SetVisible(false);
+            _modeControlsGap.SetVisible(false);
         }
+    }
+
+    private void UpdateFacialTimeline()
+    {
+        var visible = _context.DataManager.HasPreviewMultiFrame;
+        if (_facialTimelineVisible && !visible)
+            _facialTimeline?.Seek(0f);
+        _facialTimelineVisible = visible;
+        _modeControlsContainer.SetVisible(visible);
+        _modeControlsGap.SetVisible(visible);
     }
 
     private void ShowLipSync()
@@ -85,6 +106,7 @@ internal class FacialShapeUI : IDisposable
 
     private void ShowActiveList()
     {
+        using var sample = new Utils.ProfilingSampleScope("FacialShapeUI.ShowActiveList");
         var index = _context.ActiveListIndex;
         if (!_panels.TryGetValue(index, out var panels))
         {
@@ -119,6 +141,11 @@ internal class FacialShapeUI : IDisposable
     {
         _context.ActiveListChanged -= ShowActiveList;
         _eyeBlinkUI?.Dispose();
+        if (_facialTimeline != null)
+        {
+            _context.DataManager.OnAnyDataChange -= UpdateFacialTimeline;
+            _facialTimeline.Dispose();
+        }
         _generalControls.Dispose();
     }
 }
