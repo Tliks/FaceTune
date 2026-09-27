@@ -13,6 +13,11 @@ namespace Aoyon.FaceTune
     {
         internal const string ComponentName = ComponentNamePrefix + "Data";
 
+        [Obsolete("Only for legacy project migration")]
+        public SettingsReference FacialBlendShapesReference = new();
+        [Obsolete("Only for legacy project migration")]
+        public SettingsReference NonFacialAnimationsReference = new();
+
         public bool HasFacialBlendShapes;
         public FacialBlendShapeData FacialBlendShapes = new();
 

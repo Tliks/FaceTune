@@ -12,7 +12,7 @@ internal sealed record ExpressionBehavior(
         TrackingPermission.Allow);
 }
 
-/// <summary>値を直接持つか、指定Transform上の同種設定を参照するか。</summary>
+/// <summary>値を直接持つか、指定Component上の同種設定を参照するか。</summary>
 internal enum SettingsReferenceMode
 {
     Direct = 0,
@@ -26,6 +26,9 @@ internal sealed class SettingsReference
     public SettingsReferenceMode Mode = SettingsReferenceMode.Direct;
 
     public FaceTuneTagComponent? ComponentSource;
+
+    [Obsolete("Only for legacy project migration")]
+    public Transform? Source;
 }
 
 /// <summary>
