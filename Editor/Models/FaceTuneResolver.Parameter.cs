@@ -71,6 +71,27 @@ internal static class ParameterResolver
     public static string GetGroupParameterName(string groupName)
         => $"{FaceTuneConstants.GeneratedParameterPrefix}/MenuGroup/{groupName}";
 
+    public static List<string> GetDefinedGroupNames(GameObject root)
+    {
+        var menuGroups = root.GetComponentsInChildren<MenuComponent>(true)
+            .Where(menu => menu.MenuKind == MenuComponent.Kind.Toggle
+                           && !menu.UseExistingParameter
+                           && menu.GenerateParameterGroup)
+            .Select(menu => menu.GroupName);
+
+        var behavior = new ExpressionBehaviorResolver();
+        var expressionGroups = root.GetComponentsInChildren<ExpressionComponent>(true)
+            .Where(expression => expression.DirectMenuEnabled
+                                 && behavior.Resolve(expression).WriteMode == ExpressionWriteMode.Blend)
+            .Select(expression => expression.DirectMenuSettings.GroupName);
+
+        return menuGroups.Concat(expressionGroups)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+    }
+
     private static IReadOnlyList<ParameterSource> ResolveSources(GameObject root)
     {
         var result = new List<ParameterSource>();

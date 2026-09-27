@@ -23,16 +23,14 @@ internal static class SelectedPreviewResolver
         DirectBlendShapePreviewLayer preview,
         ComputeContext context)
     {
-        var isLooping = context.Observe(
-            clip,
-            value => value.isLooping,
-            (left, right) => left == right);
+        var observedClip = context.Observe(clip);
+        var isLooping = observedClip.isLooping;
         var ignoredNames = ImmutableHashSet.Create<string>(StringComparer.Ordinal);
         var avatars = new List<AvatarPreviewData>();
         foreach (var avatar in preview.GetTargets(context))
         {
             var animations = new List<BlendShapeWeightAnimation>();
-            clip.GetBlendShapeAnimations(
+            observedClip.GetBlendShapeAnimations(
                 ClipImportOption.NonZero,
                 animations,
                 avatar.BodyPath);

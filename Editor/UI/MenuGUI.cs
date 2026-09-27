@@ -178,7 +178,7 @@ internal static class MenuGUI
             ? null
             : RuntimeUtil.FindAvatarInParents(owner.transform);
         if (root == null) return new();
-        return new FaceTuneMenuResolver(root.gameObject).GetDefinedGroupNames();
+        return ParameterResolver.GetDefinedGroupNames(root.gameObject);
     }
 }
 
@@ -215,7 +215,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
             return;
         }
 
-        var previewTarget = FaceTuneMenuResolver.ResolvePreviewTarget(
+        var previewTarget = FaceTuneMenuResolver.ResolveIconPreviewTarget(
             preview.objectReferenceValue as Transform,
             property.serializedObject.targetObject as Component);
         var isCurrentExpressionFallback = preview.objectReferenceValue == null
@@ -250,7 +250,7 @@ internal sealed class MenuIconSettingsDrawer : PropertyDrawer
         if (mode == (int)MenuIconSettings.Kind.None) return GUIHelper.LineHeight;
         var height = GUIHelper.GetLinesHeight(2);
         var preview = property.FindPropertyRelative(nameof(MenuIconSettings.PreviewExpression));
-        var previewEmpty = FaceTuneMenuResolver.ResolvePreviewTarget(
+        var previewEmpty = FaceTuneMenuResolver.ResolveIconPreviewTarget(
             preview.objectReferenceValue as Transform,
             property.serializedObject.targetObject as Component) == null;
         var missing = mode == (int)MenuIconSettings.Kind.Manual

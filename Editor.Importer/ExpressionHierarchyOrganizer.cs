@@ -234,8 +234,9 @@ internal static class ExpressionHierarchyOrganizer
         HashSet<ConditionAtom>? required = null;
         foreach (var conditionCase in condition.Cases)
         {
-            var atoms = conditionCase.EnumerateConditions()
-                .Select(ConditionAtom.From)
+            var atoms = conditionCase.HandGestureConditions.Select(ConditionAtom.From)
+                .Concat(conditionCase.MenuConditions.Select(ConditionAtom.From))
+                .Concat(conditionCase.ParameterConditions.Select(ConditionAtom.From))
                 .ToHashSet();
             if (required == null)
                 required = atoms;
@@ -339,56 +340,54 @@ internal static class ExpressionHierarchyOrganizer
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        public static ConditionAtom From(object value) => value switch
-        {
-            HandGestureCondition hand => new ConditionAtom(
-                AtomKind.Hand,
-                hand.Hand,
-                hand.Gesture,
-                hand.Matches,
-                null,
-                default,
-                default,
-                string.Empty,
-                default,
-                default,
-                default,
-                default,
-                default),
-            MenuCondition menu => new ConditionAtom(
-                AtomKind.Menu,
-                default,
-                default,
-                default,
-                menu.MenuSource,
-                menu.Mode,
-                menu.Mode is MenuConditionMode.GreaterThan or MenuConditionMode.LessThan
-                    ? menu.Threshold
-                    : 0f,
-                string.Empty,
-                default,
-                default,
-                default,
-                default,
-                default),
-            ParameterCondition parameter => new ConditionAtom(
-                AtomKind.Parameter,
-                default,
-                default,
-                default,
-                null,
-                default,
-                default,
-                parameter.ParameterName,
-                parameter.ParameterType,
-                parameter.ParameterType == ParameterType.Bool
-                    ? ComparisonType.Equal
-                    : parameter.ComparisonType,
-                parameter.ParameterType == ParameterType.Float ? parameter.FloatValue : 0f,
-                parameter.ParameterType == ParameterType.Int ? parameter.IntValue : 0,
-                parameter.ParameterType == ParameterType.Bool && parameter.BoolValue),
-            _ => throw new InvalidOperationException($"Unsupported condition: {value.GetType().FullName}")
-        };
+        public static ConditionAtom From(HandGestureCondition hand) => new(
+            AtomKind.Hand,
+            hand.Hand,
+            hand.Gesture,
+            hand.Matches,
+            null,
+            default,
+            default,
+            string.Empty,
+            default,
+            default,
+            default,
+            default,
+            default);
+
+        public static ConditionAtom From(MenuCondition menu) => new(
+            AtomKind.Menu,
+            default,
+            default,
+            default,
+            menu.MenuSource,
+            menu.Mode,
+            menu.Mode is MenuConditionMode.GreaterThan or MenuConditionMode.LessThan
+                ? menu.Threshold
+                : 0f,
+            string.Empty,
+            default,
+            default,
+            default,
+            default,
+            default);
+
+        public static ConditionAtom From(ParameterCondition parameter) => new(
+            AtomKind.Parameter,
+            default,
+            default,
+            default,
+            null,
+            default,
+            default,
+            parameter.ParameterName,
+            parameter.ParameterType,
+            parameter.ParameterType == ParameterType.Bool
+                ? ComparisonType.Equal
+                : parameter.ComparisonType,
+            parameter.ParameterType == ParameterType.Float ? parameter.FloatValue : 0f,
+            parameter.ParameterType == ParameterType.Int ? parameter.IntValue : 0,
+            parameter.ParameterType == ParameterType.Bool && parameter.BoolValue);
 
         public void AddTo(ConditionCase conditionCase)
         {
