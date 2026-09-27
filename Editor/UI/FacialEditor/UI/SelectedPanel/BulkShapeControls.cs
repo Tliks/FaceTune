@@ -11,6 +11,7 @@ internal sealed class BulkShapeControls
         EditorGUIUtility.IconContent("d_Toolbar Minus").image;
     private bool _setToZero;
     private readonly Button _removeZero;
+    private readonly Button? _curveToggle;
 
     public VisualElement Element { get; }
 
@@ -18,10 +19,13 @@ internal sealed class BulkShapeControls
         Action<float> setWeights,
         Action removeZeros,
         Action removeAll,
-        bool trackingColumns = false)
+        bool trackingColumns = false,
+        Action? toggleCurveMode = null)
     {
         Element = trackingColumns ? new HorizontalElement() : new SpacedHorizontalElement();
-        if (trackingColumns) Element.name = "list-item-container";
+        Element.name = "list-item-container";
+        Element.AddToClassList("list-item-row");
+        Element.styleSheets.Add(TrackingShapeRow.SharedStyleSheet);
         Element.style.alignItems = Align.Center;
         Element.style.flexGrow = 1f;
         var weight = new TextField { isDelayed = true };
@@ -49,32 +53,43 @@ internal sealed class BulkShapeControls
         toggle.Add(new Image { image = ToggleIcon });
         var remove = new Button(removeAll);
         remove.Add(new Image { image = RemoveIcon });
-        foreach (var button in new[] { _removeZero, toggle, remove })
+        var weightColumn = new HorizontalElement { name = "slider-float-field" };
+        weightColumn.AddToClassList("compact-field");
+        weightColumn.style.alignItems = Align.Center;
+        weightColumn.Add(spacer);
+        weightColumn.Add(_removeZero);
+        weightColumn.Add(weight);
+
+        Element.Add(new VisualElement { name = "metadata-gutter" });
+        Element.Add(new VisualElement { name = "validation-warning" });
+        Element.Add(new VisualElement { name = "name" });
+        Element.Add(weightColumn);
+
+        if (toggleCurveMode != null)
         {
+            _curveToggle = new Button(toggleCurveMode) { name = "curve-toggle", text = "M" };
+            _curveToggle.tooltip = "blendShapeAnimation.multiFrame.label".LS();
+            Element.Add(_curveToggle);
+        }
+
+        toggle.name = "toggle-button";
+        remove.name = "action";
+        foreach (var button in new[] { _removeZero, _curveToggle, toggle, remove })
+        {
+            if (button == null) continue;
             button.AddToClassList("compact-control");
             button.style.width = 30f;
-        }
-        if (trackingColumns)
-        {
-            var weightColumn = new HorizontalElement { name = "slider-float-field" };
-            weightColumn.style.alignItems = Align.Center;
-            weightColumn.Add(spacer);
-            weightColumn.Add(_removeZero);
-            weightColumn.Add(weight);
-            Element.Add(new VisualElement { name = "metadata-gutter" });
-            Element.Add(new VisualElement { name = "validation-warning" });
-            Element.Add(new VisualElement { name = "name" });
-            Element.Add(weightColumn);
-        }
-        else
-        {
-            Element.Add(spacer);
-            Element.Add(_removeZero);
-            Element.Add(weight);
+            button.style.flexShrink = 0f;
         }
         Element.Add(toggle);
         Element.Add(remove);
     }
 
     public void SetRemoveZeroVisible(bool visible) => _removeZero.SetVisible(visible);
+
+    public void SetCurveModeActive(bool active)
+    {
+        if (_curveToggle != null)
+            _curveToggle.style.unityFontStyleAndWeight = active ? FontStyle.Bold : FontStyle.Normal;
+    }
 }

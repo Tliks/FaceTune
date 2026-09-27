@@ -109,7 +109,9 @@ internal partial class FacialShapesEditor : EditorWindow
             ToFirstFrameSet(baseAnimations),
             ToFirstFrameSet(initialOverrideAnimations),
             unavailableBlendShapeNames ?? ImmutableHashSet<string>.Empty,
-            GetInitialCurves(initialOverrideAnimations));
+            GetInitialCurves(initialOverrideAnimations),
+            GetInitialCurves((facialAnimations ?? Array.Empty<BlendShapeWeightAnimation>())
+                .Concat(baseAnimations ?? Array.Empty<BlendShapeWeightAnimation>())));
         dataManager.OnAnyDataChange += SyncUnsavedChangesFromData;
 
         _context = new FacialShapesEditorContext(
@@ -156,7 +158,7 @@ internal partial class FacialShapesEditor : EditorWindow
 
     // MultiFrameのカーブは編集対象行として取り込むため、構造をそのままシードとして渡す。
     private static Dictionary<string, AnimationCurve>? GetInitialCurves(
-        IReadOnlyList<BlendShapeWeightAnimation>? animations)
+        IEnumerable<BlendShapeWeightAnimation>? animations)
     {
         if (animations == null) return null;
         var curves = new Dictionary<string, AnimationCurve>(StringComparer.Ordinal);
@@ -164,6 +166,8 @@ internal partial class FacialShapesEditor : EditorWindow
         {
             if (animation.IsMultiFrame)
                 curves[animation.Name] = animation.Curve;
+            else
+                curves.Remove(animation.Name);
         }
         return curves.Count == 0 ? null : curves;
     }

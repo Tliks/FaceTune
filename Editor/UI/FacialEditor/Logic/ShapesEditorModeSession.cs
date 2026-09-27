@@ -49,16 +49,14 @@ internal sealed class FacialModeSession : ShapesEditorModeSession
 
     public override ShapesEditorMode Kind => ShapesEditorMode.Facial;
     public override bool UsesFacialIgnoredNames => true;
+    public float PlaybackDurationSeconds => _manager.GetPreviewDurationSeconds();
     public override bool CanRestoreInitial => _manager.IsChangedFromInitialState;
     public override bool CanRestoreEdited => _manager.CanRestoreEditedOverrides;
 
     public FacialModeSession(BlendShapeOverrideManager manager) => _manager = manager;
 
     public override void BuildPreview(BlendShapeWeightSet result, float normalizedTime)
-    {
-        result.AddRange(_manager.EffectiveBaseSet);
-        _manager.GetTargetValues(result);
-    }
+        => _manager.GetPreviewValues(result, PlaybackDurationSeconds * normalizedTime);
 
     public override void ImportClip(
         IReadOnlyList<BlendShapeWeightAnimation> animations,

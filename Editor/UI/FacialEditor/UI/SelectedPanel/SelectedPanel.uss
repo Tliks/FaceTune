@@ -1,6 +1,14 @@
 #selected-shapes-controls {
     flex: 0 0 var(--row-height);
     align-items: center;
+    position: relative;
+}
+
+#bulk-controls {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 0px;
 }
 
 .filter-toggle {

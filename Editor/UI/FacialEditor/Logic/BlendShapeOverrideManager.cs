@@ -69,6 +69,7 @@ internal class BlendShapeOverrideManager : IDisposable
     private ImmutableBlendShapeWeightSet _facialSet = new();
     private ImmutableBlendShapeWeightSet _baseSet = new();
     private ImmutableBlendShapeWeightSet _effectiveBaseSet = new();
+    private IReadOnlyDictionary<string, AnimationCurve> _baseCurves = new Dictionary<string, AnimationCurve>();
     private ISet<string> _explicitlyExcluded = new HashSet<string>();
     private ISet<string> _rendererBlendShapeNames = new HashSet<string>();
     private Dictionary<string, int> _shapeNameToIndexMap = new();
@@ -121,10 +122,12 @@ internal class BlendShapeOverrideManager : IDisposable
         ImmutableBlendShapeWeightSet? baseSet,
         ImmutableBlendShapeWeightSet? targetSet,
         ISet<string> explicitlyExcluded,
-        IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null)
+        IReadOnlyDictionary<string, AnimationCurve>? initialCurves = null,
+        IReadOnlyDictionary<string, AnimationCurve>? baseCurves = null)
     {
         IsInitialized = true;
         _explicitlyExcluded = explicitlyExcluded;
+        _baseCurves = baseCurves ?? new Dictionary<string, AnimationCurve>();
         InitializeTargetRenderer(targetRenderer, targetSet, explicitlyExcluded);
         InitializeSourceSets(facialSet, baseSet, targetSet, initialCurves);
     }
@@ -170,7 +173,9 @@ internal class BlendShapeOverrideManager : IDisposable
             for (int i = 0; i < _allKeysArray.Length; i++)
             {
                 _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = false;
-                _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue = new AnimationCurve();
+                _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue =
+                    _baseCurves.TryGetValue(_allKeysArray[i], out var baseCurve)
+                        ? baseCurve : new AnimationCurve();
                 if (_effectiveBaseSet.TryGetValue(_allKeysArray[i], out var baseShape))
                 {
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = baseShape.Weight;
@@ -183,12 +188,11 @@ internal class BlendShapeOverrideManager : IDisposable
                 {
                     _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = true;
                     _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = defaultShape.Weight;
-                    if (initialCurves != null
+                    _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue =
+                        initialCurves != null
                         && initialCurves.TryGetValue(_allKeysArray[i], out var seedCurve)
-                        && seedCurve.keys.Length >= 2)
-                    {
-                        _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue = seedCurve;
-                    }
+                        && seedCurve.keys.Length >= 2
+                            ? seedCurve : new AnimationCurve();
                 }
             }
         }, registerUndo: false);
@@ -356,6 +360,43 @@ internal class BlendShapeOverrideManager : IDisposable
         return true;
     }
 
+    public bool HasPreviewMultiFrame => EnumeratePreviewCurves().Any();
+
+    public float GetPreviewDurationSeconds()
+        => Mathf.Max(0f, EnumeratePreviewCurves()
+            .Select(curve => curve.keys[^1].time)
+            .DefaultIfEmpty(0f).Max());
+
+    private IEnumerable<AnimationCurve> EnumeratePreviewCurves()
+    {
+        foreach (var (name, curve) in _baseCurves)
+        {
+            if (_effectiveBaseSet.ContainsKey(name)
+                && (!_shapeNameToIndexMap.TryGetValue(name, out var index) || !IsInTarget(index)))
+                yield return curve;
+        }
+        for (var index = 0; index < _allKeysArray.Length; index++)
+        {
+            if (IsInTarget(index) && IsCurveModeAt(index))
+                yield return GetCurveValueAt(index);
+        }
+    }
+
+    public void GetPreviewValues(BlendShapeWeightSet resultToAdd, float time)
+    {
+        foreach (var shape in _effectiveBaseSet)
+            resultToAdd.Add(new BlendShapeWeight(shape.Name,
+                _baseCurves.TryGetValue(shape.Name, out var curve)
+                    ? curve.Evaluate(time) : shape.Weight));
+
+        for (var index = 0; index < _allKeysArray.Length; index++)
+        {
+            if (!IsInTarget(index)) continue;
+            resultToAdd.Add(new BlendShapeWeight(_allKeysArray[index],
+                IsCurveModeAt(index) ? GetCurveValueAt(index).Evaluate(time) : GetShapeWeight(index)));
+        }
+    }
+
     public void GetTargetValues(BlendShapeWeightSet resultToAdd)
     {
         var length = _allKeysArray.Length;
@@ -426,29 +467,43 @@ internal class BlendShapeOverrideManager : IDisposable
     public void ToggleCurveMode(int index)
     {
         if (!_allowsCurves) return;
-        if (IsCurveModeAt(index))
-        {
-            if (!ExecuteModification(() =>
-            {
-                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue
-                    = GetCurveValueAt(index).Evaluate(0f);
-                _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
-                    = new AnimationCurve();
-            })) return;
-        }
-        else
-        {
-            var weight = GetEffectiveShapeWeight(index);
-            if (!ExecuteModification(() =>
-            {
-                _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
-                _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
-                _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
-                    = new AnimationCurve(new Keyframe(0f, weight), new Keyframe(1f, weight));
-            })) return;
-        }
+        SetCurveMode(new[] { index }, !IsCurveModeAt(index));
+    }
 
-        OnSingleShapeWeightChanged?.Invoke(index);
+    public void SetCurveMode(IEnumerable<int> indices, bool enabled)
+    {
+        if (!_allowsCurves) return;
+        var list = indices.Distinct()
+            .Where(index => (uint)index < (uint)_allKeysArray.Length)
+            .Where(index => IsCurveModeAt(index) != enabled)
+            .ToArray();
+        if (list.Length == 0) return;
+
+        if (!ExecuteModification(() =>
+        {
+            foreach (var index in list)
+            {
+                if (enabled)
+                {
+                    var weight = GetEffectiveShapeWeight(index);
+                    _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+                    _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
+                    _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
+                        = new AnimationCurve(new Keyframe(0f, weight), new Keyframe(1f, weight));
+                }
+                else
+                {
+                    _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+                    _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue
+                        = GetCurveValueAt(index).Evaluate(0f);
+                    _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
+                        = new AnimationCurve();
+                }
+            }
+        })) return;
+
+        if (list.Length == 1)
+            OnSingleShapeWeightChanged?.Invoke(list[0]);
         OnUnknownChange?.Invoke();
         OnAnyDataChange?.Invoke();
     }
@@ -459,6 +514,7 @@ internal class BlendShapeOverrideManager : IDisposable
         var isCurveMode = curve.keys.Length >= 2;
         if (!ExecuteModification(() =>
         {
+            _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
             _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue
                 = isCurveMode ? curve : new AnimationCurve();
             _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = curve.Evaluate(0f);
@@ -600,7 +656,9 @@ internal class BlendShapeOverrideManager : IDisposable
     public void RemoveShapeWithoutApply(int index)
     {
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = false;
-        _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue = new AnimationCurve();
+        _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue =
+            _baseCurves.TryGetValue(_allKeysArray[index], out var curve)
+                ? curve : new AnimationCurve();
     }
     public void RemoveShape(int index)
     {
@@ -620,9 +678,10 @@ internal class BlendShapeOverrideManager : IDisposable
     }
 
     public void SetShapeWeightWithoutApply(int index, float weight)
-    {        
+    {
         _overrideWeightsProperty.GetArrayElementAtIndex(index).floatValue = weight;
         _overrideFlagsProperty.GetArrayElementAtIndex(index).boolValue = true;
+        _overrideCurvesProperty.GetArrayElementAtIndex(index).animationCurveValue = new AnimationCurve();
     }
     public void SetShapeWeight(int index, float weight)
     {

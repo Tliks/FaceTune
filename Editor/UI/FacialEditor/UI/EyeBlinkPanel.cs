@@ -145,8 +145,8 @@ internal sealed class EyeBlinkPanel : IDisposable
             text = "conflictAutoSetup.button".LS()
         };
         autoSetup.AddToClassList("compact-control");
-        autoSetup.style.marginRight = FacialShapeUI.Spacing;
-        root.Add(autoSetup);
+        autoSetup.style.position = Position.Absolute;
+        autoSetup.style.left = 0f;
 
         var bulk = new BulkShapeControls(
             weight =>
@@ -171,6 +171,7 @@ internal sealed class EyeBlinkPanel : IDisposable
         bulk.Element.userData = bulk;
 
         root.Add(bulk.Element);
+        root.Add(autoSetup);
     }
 
     private void BuildShapeRow(RowElement root)

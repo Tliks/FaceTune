@@ -157,8 +157,8 @@ internal sealed class LipSyncPanel
             text = "conflictAutoSetup.button".LS()
         };
         autoSetup.AddToClassList("compact-control");
-        autoSetup.style.marginRight = FacialShapeUI.Spacing;
-        root.Add(autoSetup);
+        autoSetup.style.position = Position.Absolute;
+        autoSetup.style.left = 0f;
 
         var header = BuildHeader(root);
         var bulk = new BulkShapeControls(
@@ -183,6 +183,7 @@ internal sealed class LipSyncPanel
 
         root.Add(header);
         root.Add(bulk.Element);
+        root.Add(autoSetup);
     }
 
     private void BuildShapeRow(RowElement root)

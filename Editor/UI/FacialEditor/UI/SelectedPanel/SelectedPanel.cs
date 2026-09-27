@@ -96,6 +96,9 @@ internal class SelectedPanel
         _styleToggle.SetValueWithoutNotify(false);
         _styleToggle.RegisterValueChangedCallback(_ => RebuildListViewsSlow());
 
+        Action? toggleCurveMode = _blendShapeManager.AllowsCurves
+            ? ToggleCurveModeForCurrentSource
+            : null;
         _bulkControls = new BulkShapeControls(
             weight => _blendShapeManager.SetShapesWeight(
                 _currentSource.Select(item => item.KeyIndex),
@@ -105,10 +108,18 @@ internal class SelectedPanel
                 .Select(item => item.KeyIndex)),
             () => _blendShapeManager.RemoveShapes(_currentSource
                 .Select(item => item.KeyIndex)
-                .Where(index => _blendShapeManager.IsInTarget(index))));
-        var bulkContainer = _control.Q<VisualElement>("bulk-controls");
-        bulkContainer.style.flexGrow = 1f;
-        bulkContainer.Add(_bulkControls.Element);
+                .Where(index => _blendShapeManager.IsInTarget(index))),
+            toggleCurveMode: toggleCurveMode);
+        _control.Q<VisualElement>("bulk-controls").Add(_bulkControls.Element);
+    }
+
+    private void ToggleCurveModeForCurrentSource()
+    {
+        var indices = _currentSource.Select(item => item.KeyIndex).ToArray();
+        if (indices.Length == 0) return;
+
+        var enable = indices.Any(index => !_blendShapeManager.IsCurveMode(index));
+        _blendShapeManager.SetCurveMode(indices, enable);
     }
 
     private void SetupListViews()
@@ -381,6 +392,9 @@ internal class SelectedPanel
         var hasExplicitZeroTarget = _currentSource.Any(item =>
             _blendShapeManager.IsExplicitZeroTarget(item.KeyIndex));
         _bulkControls.SetRemoveZeroVisible(hasExplicitZeroTarget);
+        _bulkControls.SetCurveModeActive(
+            _currentSource.Count > 0
+            && _currentSource.All(item => _blendShapeManager.IsCurveMode(item.KeyIndex)));
     }
 
     private void BuildCurrentSource()
