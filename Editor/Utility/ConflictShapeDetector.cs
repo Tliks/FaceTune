@@ -28,8 +28,8 @@ internal static class ConflictShapeDetector
         return FindConflicts(mesh, region, references, unavailableNames);
     }
 
-    // 最大Blink移動量の5%未満は起点にしない。
-    private const float MinimumBlinkMotionFraction = 0.05f;
+    // 最大Blink移動量の一定値未満は起点にしない。
+    private const float MinimumBlinkMotionFraction = 0.01f;
 
     private static bool[] BuildBlinkRegion(
         Mesh mesh, IReadOnlyCollection<BlendShapeWeight> blinkShapes)
@@ -112,8 +112,8 @@ internal static class ConflictShapeDetector
         }
     }
 
-    // リップシンクの各フレームで最大移動量の5%未満は範囲に含めない。
-    private const float MinimumLipSyncMotionFraction = 0.05f;
+    // リップシンクの各フレームで最大移動量の一定値未満は範囲に含めない。
+    private const float MinimumLipSyncMotionFraction = 0.01f;
 
     private static bool[] BuildLipSyncRegion(
         Mesh mesh, IReadOnlyCollection<string> referenceNames)
