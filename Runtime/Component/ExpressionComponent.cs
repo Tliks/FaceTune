@@ -30,6 +30,11 @@ namespace Aoyon.FaceTune
 
         public SettingsReference ExpressionDataReference = new();
 
+        [Obsolete("Only for legacy project migration")]
+        public SettingsReference FacialBlendShapesReference = new();
+        [Obsolete("Only for legacy project migration")]
+        public SettingsReference NonFacialAnimationsReference = new();
+
         // 以下はExpressionDataReferenceがDirectのとき
 
         public FacialBlendShapeData FacialBlendShapes = new();
