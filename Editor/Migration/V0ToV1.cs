@@ -5,18 +5,11 @@ namespace Aoyon.FaceTune.Migration;
 
 internal static class V0ToV1
 {
-    internal static void Run(Action beginWrite)
+    internal static void Run()
     {
         var errors = new List<string>();
         var sceneCount = 0;
         var prefabCount = 0;
-        var started = false;
-        void StartWriting()
-        {
-            if (started) return;
-            beginWrite();
-            started = true;
-        }
 
         // Scene instances must read their inherited values before the source prefabs change.
         foreach (var guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets" }))
@@ -29,7 +22,6 @@ internal static class V0ToV1
                 if (opened) scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);
                 var changes = V0ToV1ComponentConverter.Prepare(scene.GetRootGameObjects());
                 if (changes.Count == 0) continue;
-                StartWriting();
                 foreach (var apply in changes) apply();
                 if (EditorSceneManager.SaveScene(scene)) sceneCount++;
                 else errors.Add($"{path}: saving scene failed");
@@ -74,7 +66,6 @@ internal static class V0ToV1
                 root = PrefabUtility.LoadPrefabContents(path);
                 var changes = V0ToV1ComponentConverter.Prepare(new[] { root });
                 if (changes.Count == 0) continue;
-                StartWriting();
                 foreach (var apply in changes) apply();
                 if (PrefabUtility.SaveAsPrefabAsset(root, path) != null) prefabCount++;
                 else errors.Add($"{path}: saving prefab failed");
@@ -83,7 +74,6 @@ internal static class V0ToV1
             finally { if (root != null) PrefabUtility.UnloadPrefabContents(root); }
         }
 
-        StartWriting();
         if (errors.Count > 0)
             Debug.LogError($"FaceTune V0 to V1 migration could not convert some assets. No automatic rerun will occur.\n{string.Join("\n", errors)}");
         else

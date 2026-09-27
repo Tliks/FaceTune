@@ -6,6 +6,13 @@ internal static class FaceTuneProjectMigration
 {
     private static bool running;
 
+    [InitializeOnLoadMethod]
+    private static void SchedulePending()
+    {
+        if (FaceTuneProjectMigrationState.LastStartedVersion < FaceTuneProjectMigrationState.CurrentVersion)
+            EditorApplication.delayCall += RunPending;
+    }
+
     internal static void RunPending()
     {
         if (running || EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -27,10 +34,9 @@ internal static class FaceTuneProjectMigration
                 Debug.LogWarning("FaceTune migration was not started because open scenes could not be saved.");
                 return;
             }
-            // The version records an attempted project migration, not a Component schema.
-            // Advance before writing assets; interrupted runs must not apply twice.
-            if (FaceTuneProjectMigrationState.LastStartedVersion < 1)
-                V0ToV1.Run(() => FaceTuneProjectMigrationState.MarkStarted(FaceTuneProjectMigrationState.CurrentVersion));
+            // Record the attempt before scanning assets so an interrupted scan is not repeated on startup.
+            FaceTuneProjectMigrationState.MarkStarted(FaceTuneProjectMigrationState.CurrentVersion);
+            V0ToV1.Run();
         }
         catch (Exception exception) { Debug.LogException(exception); }
         finally { running = false; }
