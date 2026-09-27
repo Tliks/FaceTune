@@ -21,7 +21,7 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
         var mmdPlayback = mmdSupport == null
             ? MmdPlaybackSettings.Disabled
             : new MmdPlaybackSettings(
-                conditionResolver.Resolve(mmdSupport.Condition) ?? DnfCondition.Never,
+                conditionResolver.Resolve(mmdSupport.Condition),
                 mmdSupport.MMD.ExplicitBlendShapeNames.ToArray(),
                 mmdSupport.MMD.SupportMode);
         var afkPlayback = afkSupport == null
@@ -29,9 +29,9 @@ internal sealed class CreateAvatarControlSettingsPass : FaceTunePass<CreateAvata
             : new AfkPlaybackSettings(true, afkSupport.AFK.SupportMode);
         context.SetAvatarControlSettings(new AvatarControlSettings(
             mmdPlayback,
-            conditionResolver.Resolve(eyeBlink?.Condition) ?? DnfCondition.Never,
-            conditionResolver.Resolve(lipSync?.Condition) ?? DnfCondition.Never,
-            conditionResolver.Resolve(lockFacial?.Condition) ?? DnfCondition.Never,
+            eyeBlink == null ? DnfCondition.Never : conditionResolver.Resolve(eyeBlink.Condition),
+            lipSync == null ? DnfCondition.Never : conditionResolver.Resolve(lipSync.Condition),
+            lockFacial == null ? DnfCondition.Never : conditionResolver.Resolve(lockFacial.Condition),
             afkPlayback));
     }
 

@@ -11,22 +11,22 @@ internal sealed class ExpressionDefinitionResolver
         this.context = context ?? ComputeContext.NullContext;
     }
 
-    public IExpressionDefinitionProvider? Resolve(ExpressionComponent expression)
+    public IExpressionDefinitionProvider? Resolve(IExpressionDefinitionProvider expression)
         => Resolve(expression, new HashSet<Component>());
 
     private IExpressionDefinitionProvider? Resolve(
         IExpressionDefinitionProvider provider,
         HashSet<Component> path)
     {
-        var component = (Component)provider;
+        var component = provider.Component;
         if (!path.Add(component)) return null;
         try
         {
             if (provider is not IExpressionDefinitionProviderWithReference) return provider;
             var reference = context.Observe(
                 component,
-                current => ((IExpressionDefinitionProviderWithReference)current).Reference,
-                (left, right) => left == right);
+                static current => ((IExpressionDefinitionProviderWithReference)current).Reference,
+                static (left, right) => left == right);
             if (reference.Mode == SettingsReferenceMode.Direct) return provider;
             return reference.Source is IExpressionDefinitionProvider source
                 ? Resolve(source, path)
@@ -50,7 +50,7 @@ internal sealed class ExpressionBehaviorResolver
         values = new SettingValueResolver<ExpressionBehavior>(static (_, value) => value, context);
     }
 
-    public ExpressionBehavior Resolve(ExpressionComponent expression)
+    public ExpressionBehavior Resolve(IExpressionDefinitionProvider expression)
         => definitions.Resolve(expression) is ISettingProvider<ExpressionBehavior> provider
             ? values.Resolve(provider) ?? ExpressionBehavior.Default
             : ExpressionBehavior.Default;
@@ -67,7 +67,7 @@ internal sealed class MultiFrameResolver
         values = new SettingValueResolver<MultiFrameSettings>(static (_, value) => value.Clone(), context);
     }
 
-    public MultiFrameSettings Resolve(ExpressionComponent expression)
+    public MultiFrameSettings Resolve(IExpressionDefinitionProvider expression)
         => definitions.Resolve(expression) is ISettingProvider<MultiFrameSettings> provider
             ? ResolveProvider(provider) ?? new MultiFrameSettings()
             : new MultiFrameSettings();
@@ -93,7 +93,7 @@ internal sealed class EyeBlinkResolver
             context);
     }
 
-    public EyeBlinkSettings? ResolveDefinition(ExpressionComponent expression)
+    public EyeBlinkSettings? ResolveDefinition(IExpressionDefinitionProvider expression)
         => definitions.Resolve(expression) is ISettingProvider<EyeBlinkSettings> provider
             ? references.Resolve(provider)
             : null;
@@ -128,7 +128,7 @@ internal sealed class LipSyncResolver
             context);
     }
 
-    public LipSyncSettings? ResolveDefinition(ExpressionComponent expression)
+    public LipSyncSettings? ResolveDefinition(IExpressionDefinitionProvider expression)
         => definitions.Resolve(expression) is ISettingProvider<LipSyncSettings> provider
             ? references.Resolve(provider)
             : null;
@@ -234,18 +234,18 @@ internal sealed class FacialAnimationResolver
     }
 
     public bool TryResolve(
-        Component component,
+        ISettingProvider<FacialBlendShapeData> provider,
         [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
     {
-        value = Resolve(component, new HashSet<Component>());
+        value = Resolve(provider, new HashSet<Component>());
         return value != null;
     }
 
     public bool TryResolveBase(
-        Component component,
+        ISettingProvider<FacialBlendShapeData> provider,
         [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
     {
-        var data = ReadData(component);
+        var data = ReadData(provider);
         if (data == null)
         {
             value = null;
@@ -256,11 +256,11 @@ internal sealed class FacialAnimationResolver
     }
 
     public bool TryResolveCompositeBase(
-        Component component,
+        ISettingProvider<FacialBlendShapeData> provider,
         int entryIndex,
         [NotNullWhen(true)] out BlendShapeWeightAnimationSet? value)
     {
-        var data = ReadData(component);
+        var data = ReadData(provider);
         if (data == null || data.BlendShapeMode != FacialBlendShapeData.Mode.Composite)
         {
             value = null;
@@ -290,8 +290,8 @@ internal sealed class FacialAnimationResolver
         {
             var enabled = _context.Observe(
                 settings,
-                value => value.ApplyToRenderer,
-                (left, right) => left == right);
+                static value => value.ApplyToRenderer,
+                static (left, right) => left == right);
             if (!enabled || Resolve(settings, new HashSet<Component>()) is not { } value)
                 continue;
             foreach (var animation in value) result.Add(animation);
@@ -299,20 +299,23 @@ internal sealed class FacialAnimationResolver
     }
 
     private BlendShapeWeightAnimationSet? Resolve(
-        Component? component,
+        ISettingProvider<FacialBlendShapeData> provider,
         HashSet<Component> path)
     {
-        if (component == null) return null;
-        if (component is ExpressionComponent expression)
+        if (provider is IExpressionDefinitionProvider definition)
         {
-            var source = _definitions.Resolve(expression);
+            var source = _definitions.Resolve(definition);
             if (source == null) return null;
-            if (source != expression) return Resolve((Component)source, path);
+            if (source != definition)
+                return source is ISettingProvider<FacialBlendShapeData> resolved
+                    ? Resolve(resolved, path)
+                    : null;
         }
+        var component = provider.Component;
         if (!path.Add(component)) return null;
         try
         {
-            var data = ReadData(component);
+            var data = ReadData(provider);
             return data == null ? null : ResolveData(data, path, includeLocal: true);
         }
         finally
@@ -321,18 +324,16 @@ internal sealed class FacialAnimationResolver
         }
     }
 
-    private FacialBlendShapeData? ReadData(Component component)
+    private FacialBlendShapeData? ReadData(ISettingProvider<FacialBlendShapeData> provider)
     {
-        if (component is not ISettingProvider<FacialBlendShapeData>)
-            return null;
         var setting = _context.Observe(
-            component,
-            current =>
+            provider.Component,
+            static component =>
             {
-                var setting = ((ISettingProvider<FacialBlendShapeData>)current).Setting;
-                return (setting.Enabled, Value: setting.Value.Clone());
+                var current = ((ISettingProvider<FacialBlendShapeData>)component).Setting;
+                return (current.Enabled, Value: current.Value.Clone());
             },
-            (left, right) => left.Enabled == right.Enabled && left.Value.Equals(right.Value));
+            static (left, right) => left.Enabled == right.Enabled && left.Value.Equals(right.Value));
         return setting.Enabled ? setting.Value : null;
     }
 
@@ -344,18 +345,34 @@ internal sealed class FacialAnimationResolver
     {
         var result = new BlendShapeWeightAnimationSet();
         if (data.BlendShapeMode == FacialBlendShapeData.Mode.Simple)
-        {
-            if (data.BaseSource == FacialBlendShapeData.SimpleBaseSource.Clip)
-                AddClip(result, data.Clip, data.ClipOption);
-            else if (ResolveReference(data.ReferenceSource, path) is { } reference)
-                result.AddRange(reference);
-            if (includeLocal)
-                result.AddRange(data.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
-            return result;
-        }
+            AddSimple(result, data, path, includeLocal);
+        else
+            AddComposite(result, data.CompositeEntries, path, compositeEntryLimit);
+        return result;
+    }
 
-        var entries = data.CompositeEntries ?? new List<FacialBlendShapeData.CompositeEntry>();
-        var count = Mathf.Min(compositeEntryLimit ?? entries.Count, entries.Count);
+    private void AddSimple(
+        BlendShapeWeightAnimationSet result,
+        FacialBlendShapeData data,
+        HashSet<Component> path,
+        bool includeLocal)
+    {
+        if (data.BaseSource == FacialBlendShapeData.SimpleBaseSource.Clip)
+            AddClip(result, data.Clip, data.ClipOption);
+        else if (ResolveReference(data.ReferenceSource, path) is { } reference)
+            result.AddRange(reference);
+        if (includeLocal)
+            result.AddRange(data.BlendShapeAnimations ?? Enumerable.Empty<BlendShapeWeightAnimation>());
+    }
+
+    private void AddComposite(
+        BlendShapeWeightAnimationSet result,
+        List<FacialBlendShapeData.CompositeEntry>? entries,
+        HashSet<Component> path,
+        int? entryLimit)
+    {
+        entries ??= new List<FacialBlendShapeData.CompositeEntry>();
+        var count = Mathf.Min(entryLimit ?? entries.Count, entries.Count);
         for (var index = 0; index < count; index++)
         {
             var entry = entries[index];
@@ -374,7 +391,6 @@ internal sealed class FacialAnimationResolver
                     break;
             }
         }
-        return result;
     }
 
     private void AddClip(
@@ -389,8 +405,8 @@ internal sealed class FacialAnimationResolver
     private BlendShapeWeightAnimationSet? ResolveReference(
         FaceTuneTagComponent? source,
         HashSet<Component> path)
-        => source is ISettingProvider<FacialBlendShapeData>
-            ? Resolve(source, path)
+        => source is ISettingProvider<FacialBlendShapeData> provider
+            ? Resolve(provider, path)
             : null;
 }
 
@@ -408,35 +424,30 @@ internal sealed class NonFacialAnimationResolver
     }
 
     public ResolvedNonFacialAnimationSet Resolve(
-        ExpressionComponent expression,
+        ISettingProvider<NonFacialAnimationData> provider,
         string bodyPath)
-        => Resolve((Component)expression, bodyPath, new HashSet<Component>())
-           ?? new ResolvedNonFacialAnimationSet();
-
-    public ResolvedNonFacialAnimationSet ResolveDefinition(
-        Component? source,
-        string bodyPath)
-        => Resolve(source, bodyPath, new HashSet<Component>())
+        => Resolve(provider, bodyPath, new HashSet<Component>())
            ?? new ResolvedNonFacialAnimationSet();
 
     private ResolvedNonFacialAnimationSet? Resolve(
-        Component? component,
+        ISettingProvider<NonFacialAnimationData> provider,
         string bodyPath,
         HashSet<Component> path)
     {
-        if (component == null) return null;
-        if (component is ExpressionComponent expression)
+        if (provider is IExpressionDefinitionProvider definition)
         {
-            var source = _definitions.Resolve(expression);
+            var source = _definitions.Resolve(definition);
             if (source == null) return null;
-            if (source != expression) return Resolve((Component)source, bodyPath, path);
+            if (source != definition)
+                return source is ISettingProvider<NonFacialAnimationData> resolved
+                    ? Resolve(resolved, bodyPath, path)
+                    : null;
         }
-        if (component is not ISettingProvider<NonFacialAnimationData>
-            || !path.Add(component))
-            return null;
+        var component = provider.Component;
+        if (!path.Add(component)) return null;
         try
         {
-            var data = ReadData(component);
+            var data = ReadData(provider);
             return data == null ? null : ResolveData(data, component, bodyPath, path);
         }
         finally
@@ -445,16 +456,16 @@ internal sealed class NonFacialAnimationResolver
         }
     }
 
-    private NonFacialAnimationData? ReadData(Component owner)
+    private NonFacialAnimationData? ReadData(ISettingProvider<NonFacialAnimationData> provider)
     {
         var setting = _context.Observe(
-            owner,
-            component =>
+            provider.Component,
+            static component =>
             {
-                var setting = ((ISettingProvider<NonFacialAnimationData>)component).Setting;
-                return (setting.Enabled, Value: setting.Value.Clone(component));
+                var current = ((ISettingProvider<NonFacialAnimationData>)component).Setting;
+                return (current.Enabled, Value: current.Value.Clone(component));
             },
-            (left, right) => left.Enabled == right.Enabled && left.Value.Equals(right.Value));
+            static (left, right) => left.Enabled == right.Enabled && left.Value.Equals(right.Value));
         return setting.Enabled ? setting.Value : null;
     }
 
@@ -494,8 +505,9 @@ internal sealed class NonFacialAnimationResolver
         ResolvedNonFacialAnimationSet? selected = null;
         foreach (var component in _context.GetComponents<FaceTuneTagComponent>(source.gameObject))
         {
-            if (component is not ISettingProvider<NonFacialAnimationData>) continue;
-            if (Resolve(component, bodyPath, path) is { } value) selected = value;
+            if (component is ISettingProvider<NonFacialAnimationData> provider
+                && Resolve(provider, bodyPath, path) is { } value)
+                selected = value;
         }
         return selected;
     }

@@ -43,13 +43,6 @@ internal class ConditionCase
                         && MenuConditions.Count == 0
                         && ParameterConditions.Count == 0;
 
-    public IEnumerable<object> EnumerateConditions()
-    {
-        foreach (var condition in HandGestureConditions) yield return condition;
-        foreach (var condition in MenuConditions) yield return condition;
-        foreach (var condition in ParameterConditions) yield return condition;
-    }
-
     public ConditionCase()
     {
     }
