@@ -68,8 +68,7 @@ internal sealed class EyeBlinkEditorUI : IDisposable
     private void OnModeChanged()
     {
         _context.PreviewManager.CurrentHoveredIndex = -1;
-        if (_session.Mode == EyeBlinkSettings.Kind.BuiltIn)
-            _timeline.Seek(1f);
+        _timeline.SetInitialTime(_session.InitialPreviewTime);
         ShowMode();
     }
 

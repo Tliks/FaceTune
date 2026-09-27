@@ -73,7 +73,6 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
 {
     private readonly BlendShapeOverrideManager[] _managers;
     private readonly IReadOnlyList<BlendShapeWeightAnimation>? _builtIn;
-    private readonly BlendShapeWeight[] _builtInClosed;
     private readonly EyeBlinkSettings _draft;
     private readonly SerializedObject _serializedObject;
     private readonly SerializedProperty _modeProperty;
@@ -91,18 +90,20 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
     public override bool CanImportClip => _mode != EyeBlinkSettings.Kind.BuiltIn;
     public IReadOnlyList<BlendShapeWeightAnimation>? BuiltIn => _builtIn;
     public event Action? ModeChanged;
-    public override float InitialPreviewTime => 1f;
+    public override float InitialPreviewTime => 0.5f;
     public float PlaybackDurationSeconds => _mode switch
     {
-        EyeBlinkSettings.Kind.BuiltIn => _builtIn == null ? 0f : _builtIn
-            .Select(EyeBlinkModeConversion.ClosingDuration).DefaultIfEmpty(0f).Max(),
-        EyeBlinkSettings.Kind.SimpleAnimation => Mathf.Max(0f, _draft.SimpleDurationsSeconds.x),
+        EyeBlinkSettings.Kind.BuiltIn => _builtIn == null
+            ? 0f : BlendShapeAnimationPreview.GetDuration(_builtIn),
+        EyeBlinkSettings.Kind.SimpleAnimation => GetSimplePlaybackDuration(),
         EyeBlinkSettings.Kind.CustomAnimation => BlendShapeAnimationPreview.GetDuration(
             GetAvailableCustomAnimations()),
         _ => 0f
     };
     public override float GetPreviewOpacity(float normalizedTime)
-        => _mode == EyeBlinkSettings.Kind.CustomAnimation ? 1f : normalizedTime;
+        => _mode == EyeBlinkSettings.Kind.SimpleAnimation
+            ? GetSimplePlaybackOpacity(normalizedTime)
+            : 1f;
     public override bool CanRestoreInitial
         => _managers.Any(manager => manager.IsChangedFromInitialState) || HasChanges;
     private EyeBlinkSettings.Kind _initialMode;
@@ -127,9 +128,6 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
         _mode = draft.EyeBlinkMode;
         _initialMode = _mode;
         _builtIn = builtIn;
-        _builtInClosed = builtIn?.Select(animation => new BlendShapeWeight(
-            animation.Name, EyeBlinkModeConversion.ClosedWeight(animation)))
-            .ToArray() ?? Array.Empty<BlendShapeWeight>();
         foreach (var manager in managers)
         {
             manager.OnAnyDataChange += () =>
@@ -149,7 +147,10 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
         }
         if (_mode == EyeBlinkSettings.Kind.BuiltIn)
         {
-            result.AddRange(_builtInClosed);
+            var builtInAnimations = _builtIn ?? Array.Empty<BlendShapeWeightAnimation>();
+            result.AddRange(BlendShapeAnimationPreview.Evaluate(
+                builtInAnimations,
+                BlendShapeAnimationPreview.GetDuration(builtInAnimations) * normalizedTime));
             return;
         }
 
@@ -157,6 +158,39 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
         result.AddRange(BlendShapeAnimationPreview.Evaluate(
             animations,
             BlendShapeAnimationPreview.GetDuration(animations) * normalizedTime));
+    }
+
+    private Vector3 SimpleDurations
+    {
+        get
+        {
+            var durations = _draft.SimpleDurationsSeconds;
+            return new Vector3(
+                Mathf.Max(0f, durations.x),
+                Mathf.Max(0f, durations.y),
+                Mathf.Max(0f, durations.z));
+        }
+    }
+
+    private float GetSimplePlaybackDuration()
+    {
+        var durations = SimpleDurations;
+        return durations.x + durations.y + durations.z;
+    }
+
+    private float GetSimplePlaybackOpacity(float normalizedTime)
+    {
+        var durations = SimpleDurations;
+        var duration = durations.x + durations.y + durations.z;
+        if (duration <= 0f) return 0f;
+
+        var time = Mathf.Clamp01(normalizedTime) * duration;
+        if (time < durations.x)
+            return time / durations.x;
+        time -= durations.x;
+        if (time <= durations.y) return 1f;
+        time -= durations.y;
+        return durations.z <= 0f ? 0f : 1f - Mathf.Clamp01(time / durations.z);
     }
 
     private List<BlendShapeWeightAnimation> GetAvailableCustomAnimations()
@@ -316,14 +350,6 @@ internal sealed class EyeBlinkModeSession : ShapesEditorModeSession
 
 internal static class EyeBlinkModeConversion
 {
-    public static float ClosingDuration(BlendShapeWeightAnimation animation)
-    {
-        var keys = animation.Curve.keys;
-        if (keys.Length == 0) return 0f;
-        var closedWeight = keys.Max(key => key.value);
-        return keys.First(key => key.value == closedWeight).time;
-    }
-
     public static float ClosedWeight(BlendShapeWeightAnimation animation)
         => animation.Curve.keys.Select(key => key.value).DefaultIfEmpty(0f).Max();
 

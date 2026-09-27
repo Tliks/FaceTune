@@ -14,6 +14,7 @@ internal sealed class PreviewTimelineElement : IDisposable
     private float _startValue;
     private float _playbackDurationSeconds;
     private bool _playing;
+    private bool _restartFromBeginning;
 
     public VisualElement Element { get; } = new SpacedHorizontalElement();
 
@@ -22,6 +23,7 @@ internal sealed class PreviewTimelineElement : IDisposable
     {
         _seek = seek;
         _getPlaybackDurationSeconds = getPlaybackDurationSeconds;
+        _restartFromBeginning = Mathf.Approximately(initialValue, 0.5f);
         Element.style.flexDirection = FlexDirection.Row;
         Element.style.alignItems = Align.Center;
         Element.style.width = Length.Percent(100f);
@@ -45,6 +47,7 @@ internal sealed class PreviewTimelineElement : IDisposable
         _slider.RegisterValueChangedCallback(evt =>
         {
             Pause();
+            _restartFromBeginning = false;
             _seek(evt.newValue);
         });
         Element.Add(_play);
@@ -61,13 +64,18 @@ internal sealed class PreviewTimelineElement : IDisposable
         _playbackDurationSeconds = _getPlaybackDurationSeconds();
         if (_playbackDurationSeconds <= 0f || float.IsNaN(_playbackDurationSeconds)
             || float.IsInfinity(_playbackDurationSeconds))
-        {
-            Seek(1f);
             return;
+
+        var restartFromBeginning = _restartFromBeginning || _slider.value >= 1f;
+        _startValue = restartFromBeginning ? 0f : _slider.value;
+        if (restartFromBeginning)
+        {
+            _slider.SetValueWithoutNotify(0f);
+            _seek(0f);
         }
+        _restartFromBeginning = false;
         _playing = true;
         _play.text = "Ⅱ";
-        _startValue = _slider.value >= 1f ? 0f : _slider.value;
         _startedAt = EditorApplication.timeSinceStartup;
         _schedule = Element.schedule.Execute(Tick).Every(16);
     }
@@ -79,18 +87,20 @@ internal sealed class PreviewTimelineElement : IDisposable
                     / _playbackDurationSeconds;
         if (value >= 1f)
         {
-            _slider.SetValueWithoutNotify(1f);
-            _seek(1f);
             Pause();
+            _restartFromBeginning = true;
+            _slider.SetValueWithoutNotify(0.5f);
+            _seek(0.5f);
             return;
         }
         _slider.SetValueWithoutNotify(value);
         _seek(value);
     }
 
-    public void Seek(float value)
+    public void SetInitialTime(float value)
     {
         Pause();
+        _restartFromBeginning = Mathf.Approximately(value, 0.5f);
         _slider.SetValueWithoutNotify(value);
         _seek(value);
     }
