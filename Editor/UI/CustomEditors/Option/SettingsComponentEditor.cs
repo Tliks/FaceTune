@@ -16,6 +16,16 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             kind,
             EditorApplication.timeSinceStartup + ExpansionRequestLifetimeSeconds);
 
+    protected override void PrepareInspector()
+    {
+        if (ConsumeExpansionRequest() is not { } kind) return;
+
+        var sections = Sections;
+        var settings = Settings;
+        for (var i = 0; i < settings.Length; i++)
+            sections[i].Foldout.Expanded = settings[i].Kind == kind;
+    }
+
     protected override IReadOnlyList<FaceTuneSection> CreateSections()
     {
         var settings = Settings;
@@ -30,8 +40,6 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
                 populateHeaderMenu: menu => PopulateHeaderMenu(menu, setting),
                 isVisible: () => IsEnabled(setting.Enabled),
                 spacingGroup: setting.SpacingGroup);
-            if (setting.Kind is { } kind && ConsumeExpansionRequest(kind))
-                sections[i].Foldout.Expanded = true;
         }
         return sections;
     }
@@ -173,20 +181,20 @@ internal sealed class SettingsComponentEditor : FaceTuneSectionEditorBase<Settin
             serializedObject.ApplyModifiedProperties();
         });
 
-    private bool ConsumeExpansionRequest(ExpressionInheritedSettingKind kind)
+    private ExpressionInheritedSettingKind? ConsumeExpansionRequest()
     {
         var request = _expansionRequest;
-        if (request == null) return false;
+        if (request == null) return null;
         if (request.ExpiresAt < EditorApplication.timeSinceStartup)
         {
             _expansionRequest = null;
-            return false;
+            return null;
         }
-        if (request.TargetInstanceId != Component.GetInstanceID() || request.Kind != kind)
-            return false;
+        if (targets.Length != 1 || request.TargetInstanceId != Component.GetInstanceID())
+            return null;
 
         _expansionRequest = null;
-        return true;
+        return request.Kind;
     }
 
     private static bool IsEnabled(SerializedProperty property)

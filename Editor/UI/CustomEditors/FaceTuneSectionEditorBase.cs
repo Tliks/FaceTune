@@ -415,7 +415,7 @@ internal abstract class FaceTuneSectionEditorBase<T> : FaceTuneEditorBase<T> whe
     private const float HeaderSpacing = 3f;
     private const float SectionGroupSpacing = 6f;
 
-    private IReadOnlyList<FaceTuneSection> Sections
+    protected IReadOnlyList<FaceTuneSection> Sections
         => _sections ??= CreateSections();
 
     private static float GetSectionHeight(FaceTuneSection section)
