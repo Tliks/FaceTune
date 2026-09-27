@@ -22,21 +22,15 @@ internal sealed class SelectedShapesPreviewSession : IDisposable
         _context.InvokeOnInvalidate(this, session => session.OnInvalidate());
     }
 
-    internal SelectedPreviewData Data { get; private set; } = null!;
+    internal SelectedPreviewData? Data { get; private set; }
 
-    internal static SelectedShapesPreviewSession? Create(
+    internal static SelectedShapesPreviewSession Create(
         Object selection,
         DirectBlendShapePreviewLayer preview,
         Action onInvalidate)
     {
         var session = new SelectedShapesPreviewSession(onInvalidate);
-        var data = SelectedPreviewResolver.Resolve(selection, preview, session._context);
-        if (data == null)
-        {
-            session.Dispose();
-            return null;
-        }
-        session.Data = data;
+        session.Data = SelectedPreviewResolver.Resolve(selection, preview, session._context);
         return session;
     }
 
