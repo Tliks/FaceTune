@@ -114,6 +114,16 @@ internal partial class FacialShapesEditor
         {
             var manager = _dataManagers[index];
             if (manager.IsInitialized) return;
+            var sampleName = mode == ShapesEditorMode.LipSync
+                ? "ShapesEditorSettings.InitializeLipSync"
+                : index switch
+                {
+                    0 => "ShapesEditorSettings.InitializeBlink",
+                    1 => "ShapesEditorSettings.InitializeConflictCorrection",
+                    2 => "ShapesEditorSettings.InitializeCustomBlink",
+                    _ => "ShapesEditorSettings.InitializeList"
+                };
+            using var sample = new Utils.ProfilingSampleScope(sampleName);
             var initial = initialLists[index];
             manager.SetInitialState(
                 renderer,

@@ -171,38 +171,57 @@ internal class BlendShapeOverrideManager : IDisposable
         _baseSet = baseSet ?? new ImmutableBlendShapeWeightSet();
         var initialTargetSet = targetSet ?? new ImmutableBlendShapeWeightSet();
         RebuildEffectiveBaseSet();
-        ExecuteModification(() =>
+        using (new Utils.ProfilingSampleScope("BlendShapeOverrideManager.InitializeSourceSets.WriteValues"))
         {
-            for (int i = 0; i < _allKeysArray.Length; i++)
+            using (new Utils.ProfilingSampleScope("BlendShapeOverrideManager.WriteFlags"))
             {
-                _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = false;
-                _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue =
-                    _baseCurves.TryGetValue(_allKeysArray[i], out var baseCurve)
-                        ? baseCurve : new AnimationCurve();
-                if (_effectiveBaseSet.TryGetValue(_allKeysArray[i], out var baseShape))
+                for (int i = 0; i < _allKeysArray.Length; i++)
+                    _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue =
+                        initialTargetSet.ContainsKey(_allKeysArray[i]);
+            }
+            using (new Utils.ProfilingSampleScope("BlendShapeOverrideManager.WriteWeights"))
+            {
+                for (int i = 0; i < _allKeysArray.Length; i++)
                 {
-                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = baseShape.Weight;
-                }
-                else
-                {
-                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = 0f;
-                }
-                if (initialTargetSet.TryGetValue(_allKeysArray[i], out var defaultShape))
-                {
-                    _overrideFlagsProperty.GetArrayElementAtIndex(i).boolValue = true;
-                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = defaultShape.Weight;
-                    _overrideCurvesProperty.GetArrayElementAtIndex(i).animationCurveValue =
-                        initialCurves != null
-                        && initialCurves.TryGetValue(_allKeysArray[i], out var seedCurve)
-                        && seedCurve.keys.Length >= 2
-                            ? seedCurve : new AnimationCurve();
+                    var name = _allKeysArray[i];
+                    var weight = initialTargetSet.TryGetValue(name, out var targetShape)
+                        ? targetShape.Weight
+                        : _effectiveBaseSet.TryGetValue(name, out var baseShape) ? baseShape.Weight : 0f;
+                    _overrideWeightsProperty.GetArrayElementAtIndex(i).floatValue = weight;
                 }
             }
-        }, registerUndo: false);
+            using (new Utils.ProfilingSampleScope("BlendShapeOverrideManager.WriteCurves"))
+            {
+                for (int i = 0; i < _allKeysArray.Length; i++)
+                {
+                    var name = _allKeysArray[i];
+                    AnimationCurve? curve = null;
+                    if (initialTargetSet.ContainsKey(name))
+                    {
+                        if (initialCurves != null && initialCurves.TryGetValue(name, out var targetCurve)
+                            && targetCurve.keys.Length >= 2)
+                            curve = targetCurve;
+                    }
+                    else if (_baseCurves.TryGetValue(name, out var sourceCurve))
+                    {
+                        curve = sourceCurve;
+                    }
 
-        _stateVersionProperty.intValue = 0;
-        _serializedObject.ApplyModifiedPropertiesWithoutUndo();
-        _serializedObject.UpdateIfRequiredOrScript();
+                    var property = _overrideCurvesProperty.GetArrayElementAtIndex(i);
+                    if (curve != null)
+                        property.animationCurveValue = curve;
+                    else if (property.animationCurveValue is not { length: 0 })
+                        property.animationCurveValue = new AnimationCurve();
+                }
+            }
+            _stateVersionProperty.intValue = 0;
+        }
+
+        using (new Utils.ProfilingSampleScope("BlendShapeOverrideManager.InitializeSourceSets.Apply"))
+        {
+            _serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            _serializedObject.UpdateIfRequiredOrScript();
+        }
         _initialStateVersion = _stateVersionProperty.intValue;
         _maximumStateVersion = _initialStateVersion;
         _lastObservedStateVersion = _stateVersionProperty.intValue;
