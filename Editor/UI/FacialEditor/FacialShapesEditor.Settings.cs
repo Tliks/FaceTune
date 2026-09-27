@@ -150,9 +150,7 @@ internal partial class FacialShapesEditor
             _dataManagers.Length,
             InitializeList,
             TryChangeRenderer,
-            SaveChanges,
-            groups => SelectInitialTrackingGroups(
-                groups, renderer, lipSync, builtInLipSync, eyeBlink, builtInEyeBlink));
+            SaveChanges);
         _context.ModeSession.Changed += SyncUnsavedChangesFromData;
         _context.SetActiveList(activeListIndex);
         titleContent = (mode == ShapesEditorMode.LipSync
@@ -162,69 +160,6 @@ internal partial class FacialShapesEditor
         _unsavedStateSyncPending = false;
         hasUnsavedChanges = false;
         Undo.SetCurrentGroupName($"Facial Shapes Editor: StartContext: {renderer.name}");
-    }
-
-    private static void SelectInitialTrackingGroups(
-        BlendShapeGrouping groups,
-        SkinnedMeshRenderer renderer,
-        LipSyncSettings? lipSync,
-        VrcVisemeLipSyncShapes? builtInLipSync,
-        EyeBlinkSettings? eyeBlink,
-        IReadOnlyList<BlendShapeWeightAnimation>? builtInEyeBlink)
-    {
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        if (lipSync != null)
-        {
-            foreach (var shape in lipSync.CancellerBlendShapes)
-                names.Add(shape.Name);
-            var visemes = lipSync.Mode == LipSyncSettings.Kind.Custom
-                ? lipSync.Shapes : builtInLipSync;
-            if (visemes != null)
-                foreach (var shapes in visemes.GetOrderedShapes())
-                    foreach (var shape in shapes)
-                        names.Add(shape.Name);
-        }
-        else if (eyeBlink != null)
-        {
-            switch (eyeBlink.EyeBlinkMode)
-            {
-                case EyeBlinkSettings.Kind.BuiltIn:
-                    if (builtInEyeBlink != null)
-                        foreach (var animation in builtInEyeBlink)
-                            names.Add(animation.Name);
-                    break;
-                case EyeBlinkSettings.Kind.SimpleAnimation:
-                    foreach (var shape in eyeBlink.SimpleBlinkBlendShapes)
-                        names.Add(shape.Name);
-                    foreach (var shape in eyeBlink.SimpleConflictPreventionBlendShapes)
-                        names.Add(shape.Name);
-                    break;
-                case EyeBlinkSettings.Kind.CustomAnimation:
-                    foreach (var animation in eyeBlink.Animations)
-                        names.Add(animation.Name);
-                    break;
-            }
-        }
-
-        var indices = new HashSet<int>();
-        var mesh = renderer.sharedMesh;
-        if (mesh != null)
-            foreach (var name in names)
-            {
-                var index = mesh.GetBlendShapeIndex(name);
-                if (index >= 0) indices.Add(index);
-            }
-        var keywords = lipSync != null
-            ? new[] { "mouth", "lip", "viseme", "口" }
-            : new[] { "eye", "blink", "目", "眼", "瞼", "まばたき" };
-        var selected = groups.Groups.Where(group =>
-            keywords.Any(keyword => group.Name.IndexOf(
-                keyword, StringComparison.OrdinalIgnoreCase) >= 0)
-            || group.BlendShapeIndices.Overlaps(indices)).ToArray();
-        if (selected.Length == 0) return;
-        groups.SelectAll(false);
-        foreach (var group in selected)
-            group.IsSelected = true;
     }
 
     private static void SaveSettings(FacialShapesEditorContext context)
