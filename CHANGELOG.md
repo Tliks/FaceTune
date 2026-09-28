@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.2.0] - 2026-09-28
+
 ### 一部機能に変更があり、プロジェクト起動時に自動でマイグレーションされます。
 
 ### Added
@@ -28,10 +42,6 @@
 - プレビューの仕様を一部変更しました。
 - UIを改善しました。
 - 生成されるAnimaotr Controllerの構造を一部変更しました。
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 - プレビューの安定性及びパフォーマンスを修正。
