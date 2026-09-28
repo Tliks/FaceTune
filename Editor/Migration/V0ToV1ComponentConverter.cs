@@ -31,11 +31,12 @@ internal static class V0ToV1ComponentConverter
                 case SettingsComponent settings:
                 {
                     var shapes = facial[settings];
+                    var convertedShapes = shapes == null ? null : PreserveFacialDataReference(settings, shapes);
                     plan.Add(() =>
                     {
                         ApplyReference(settings.EyeBlinkReference, eye);
                         ApplyReference(settings.LipSyncReference, lip);
-                        if (shapes != null) settings.FacialBlendShapes = shapes;
+                        if (convertedShapes != null) settings.FacialBlendShapes = convertedShapes;
                         else settings.HasFacialBlendShapes = false;
                         Mark(settings);
                     });
@@ -44,11 +45,12 @@ internal static class V0ToV1ComponentConverter
                 case ExpressionDataComponent data:
                 {
                     var shapes = facial[data];
+                    var convertedShapes = shapes == null ? null : PreserveFacialDataReference(data, shapes);
                     var animations = nonFacial[data];
                     plan.Add(() =>
                     {
                         data.HasFacialBlendShapes = shapes != null;
-                        data.FacialBlendShapes = shapes ?? new FacialBlendShapeData();
+                        data.FacialBlendShapes = convertedShapes ?? new FacialBlendShapeData();
                         data.HasNonFacialAnimations = animations != null;
                         data.NonFacialAnimations = animations ?? new NonFacialAnimationData();
                         Mark(data);
@@ -58,28 +60,36 @@ internal static class V0ToV1ComponentConverter
                 case ExpressionComponent expression:
                 {
                     var entries = new List<FacialBlendShapeData.CompositeEntry>();
-                    AddFacial(entries, facial[expression]);
+                    AddFacial(entries, expression, facial[expression]);
                     var animations = CopyNonFacial(nonFacial[expression]);
                     // Only NonFacial's cross-category order is relaxed: the new resolver
                     // processes the merged lists by category instead of per child.
                     var children = GetChildren(expression, childrenByExpression);
                     foreach (var child in children)
                     {
-                        AddFacial(entries, facial[child]);
+                        AddFacial(entries, child, facial[child]);
                         AddNonFacial(animations, nonFacial[child]);
                     }
                     var shapes = new FacialBlendShapeData();
-                    if (entries.Skip(1).Any(entry => entry.EntryKind == FacialBlendShapeData.CompositeEntry.Kind.Clip))
+                    if (entries.Skip(1).Any(entry => entry.EntryKind != FacialBlendShapeData.CompositeEntry.Kind.Direct))
                     {
                         shapes.BlendShapeMode = FacialBlendShapeData.Mode.Composite;
                         shapes.CompositeEntries = entries;
                     }
                     else
                     {
-                        if (entries.Count > 0 && entries[0].EntryKind == FacialBlendShapeData.CompositeEntry.Kind.Clip)
+                        if (entries.Count > 0)
                         {
-                            shapes.Clip = entries[0].Clip;
-                            shapes.ClipOption = entries[0].ClipOption;
+                            if (entries[0].EntryKind == FacialBlendShapeData.CompositeEntry.Kind.Clip)
+                            {
+                                shapes.Clip = entries[0].Clip;
+                                shapes.ClipOption = entries[0].ClipOption;
+                            }
+                            else if (entries[0].EntryKind == FacialBlendShapeData.CompositeEntry.Kind.Reference)
+                            {
+                                shapes.BaseSource = FacialBlendShapeData.SimpleBaseSource.Reference;
+                                shapes.ReferenceSource = entries[0].ReferenceSource;
+                            }
                         }
                         foreach (var entry in entries)
                             shapes.BlendShapeAnimations.AddRange(entry.BlendShapeAnimations);
@@ -228,6 +238,34 @@ internal static class V0ToV1ComponentConverter
         return false;
     }
 
+    private static SettingsReference? FacialReference(FaceTuneTagComponent owner)
+        => owner switch
+        {
+            SettingsComponent settings when settings.HasFacialBlendShapes => settings.FacialBlendShapesReference,
+            ExpressionComponent expression => expression.FacialBlendShapesReference,
+            ExpressionDataComponent data => data.FacialBlendShapesReference,
+            _ => null
+        };
+
+    private static ExpressionDataComponent? ReferencedFacialData(FaceTuneTagComponent owner)
+    {
+        var reference = FacialReference(owner);
+        return reference?.Mode == SettingsReferenceMode.Reference
+            ? Select(reference.Source, typeof(FacialBlendShapeData)) as ExpressionDataComponent
+            : null;
+    }
+
+    private static FacialBlendShapeData PreserveFacialDataReference(
+        FaceTuneTagComponent owner, FacialBlendShapeData value)
+    {
+        var source = ReferencedFacialData(owner);
+        return source == null ? value : new FacialBlendShapeData
+        {
+            BaseSource = FacialBlendShapeData.SimpleBaseSource.Reference,
+            ReferenceSource = source
+        };
+    }
+
     private static FacialBlendShapeData? ResolveFacial(FaceTuneTagComponent owner, HashSet<Component> path,
         Dictionary<FaceTuneTagComponent, FacialBlendShapeData?> cache)
     {
@@ -235,13 +273,7 @@ internal static class V0ToV1ComponentConverter
         if (!path.Add(owner)) return null;
         try
         {
-            var reference = owner switch
-            {
-                SettingsComponent settings when settings.HasFacialBlendShapes => settings.FacialBlendShapesReference,
-                ExpressionComponent expression => expression.FacialBlendShapesReference,
-                ExpressionDataComponent data => data.FacialBlendShapesReference,
-                _ => null
-            };
+            var reference = FacialReference(owner);
             if (reference == null) return cache[owner] = null;
             if (reference.Mode == SettingsReferenceMode.Reference)
             {
@@ -296,9 +328,20 @@ internal static class V0ToV1ComponentConverter
         finally { path.Remove(owner); }
     }
 
-    private static void AddFacial(List<FacialBlendShapeData.CompositeEntry> entries, FacialBlendShapeData? value)
+    private static void AddFacial(List<FacialBlendShapeData.CompositeEntry> entries,
+        FaceTuneTagComponent owner, FacialBlendShapeData? value)
     {
         if (value == null) return;
+        if (ReferencedFacialData(owner) is { } source)
+        {
+            if (value.Clip != null || value.BlendShapeAnimations.Count > 0)
+                entries.Add(new FacialBlendShapeData.CompositeEntry
+                {
+                    EntryKind = FacialBlendShapeData.CompositeEntry.Kind.Reference,
+                    ReferenceSource = source
+                });
+            return;
+        }
         if (value.Clip != null)
             entries.Add(new FacialBlendShapeData.CompositeEntry
             {
