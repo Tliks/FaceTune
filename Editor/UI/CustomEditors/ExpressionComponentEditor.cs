@@ -400,7 +400,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
                 nameof(ExpressionDataComponent.NonFacialAnimations));
             dataObject.FindProperty(nameof(ExpressionDataComponent.HasNonFacialAnimations)).boolValue =
                 nonFacialAnimations.FindPropertyRelative(
-                    nameof(NonFacialAnimationData.ReferenceAnimations)).arraySize > 0
+                    nameof(NonFacialAnimationData.ComponentReferences)).arraySize > 0
                 || nonFacialAnimations.FindPropertyRelative(
                     nameof(NonFacialAnimationData.AnimationClips)).arraySize > 0
                 || nonFacialAnimations.FindPropertyRelative(
@@ -434,7 +434,7 @@ internal sealed class ExpressionDefinitionSectionDrawer : ISectionDrawer, IColla
 
 internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer
 {
-    private static readonly ReorderableListOptions ReferenceAnimationsOptions = new(
+    private static readonly ReorderableListOptions ComponentReferencesOptions = new(
         Header: ReorderableListOptions.HeaderMode.Label,
         InitializeElement: property => property.objectReferenceValue = null,
         ElementHeight: GUIHelper.LineHeight,
@@ -465,10 +465,10 @@ internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer
 
     public float GetHeight()
     {
-        var references = _data.FindPropertyRelative(nameof(NonFacialAnimationData.ReferenceAnimations));
+        var components = _data.FindPropertyRelative(nameof(NonFacialAnimationData.ComponentReferences));
         var clips = _data.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
         var transforms = _data.FindPropertyRelative(nameof(NonFacialAnimationData.TransformAnimations));
-        return GUIHelper.GetListHeight(references, ReferenceAnimationsOptions)
+        return GUIHelper.GetListHeight(components, ComponentReferencesOptions)
              + GUIHelper.VerticalSpacing
              + GUIHelper.GetListHeight(clips, AnimationClipsOptions)
              + GUIHelper.VerticalSpacing
@@ -477,16 +477,16 @@ internal sealed class NonFacialAnimationDataSectionDrawer : ISectionDrawer
 
     public void Draw(Rect position)
     {
-        var references = _data.FindPropertyRelative(nameof(NonFacialAnimationData.ReferenceAnimations));
+        var components = _data.FindPropertyRelative(nameof(NonFacialAnimationData.ComponentReferences));
         var clips = _data.FindPropertyRelative(nameof(NonFacialAnimationData.AnimationClips));
         var transforms = _data.FindPropertyRelative(nameof(NonFacialAnimationData.TransformAnimations));
 
-        position.height = GUIHelper.GetListHeight(references, ReferenceAnimationsOptions);
+        position.height = GUIHelper.GetListHeight(components, ComponentReferencesOptions);
         GUIHelper.DrawList(
             position,
-            references,
+            components,
             "expression.additionalAnimations.references.label".LG(),
-            ReferenceAnimationsOptions);
+            ComponentReferencesOptions);
         position.NewLine();
         position.height = GUIHelper.GetListHeight(clips, AnimationClipsOptions);
         GUIHelper.DrawList(

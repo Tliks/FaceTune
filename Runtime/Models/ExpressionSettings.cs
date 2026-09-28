@@ -215,14 +215,16 @@ internal enum ClipImportOption
 [Serializable]
 internal sealed class NonFacialAnimationData : IEquatable<NonFacialAnimationData>
 {
+    [Obsolete("Only for legacy serialized data")]
     public List<Transform> ReferenceAnimations = new();
+    public List<FaceTuneTagComponent> ComponentReferences = new();
     public List<AnimationClip> AnimationClips = new();
     public List<TransformAnimation> TransformAnimations = new();
 
     internal NonFacialAnimationData Clone(Component owner)
         => new()
         {
-            ReferenceAnimations = ReferenceAnimations.ToList(),
+            ComponentReferences = ComponentReferences.ToList(),
             AnimationClips = AnimationClips.ToList(),
             TransformAnimations = TransformAnimations
                 .Where(animation => animation != null)
@@ -232,7 +234,7 @@ internal sealed class NonFacialAnimationData : IEquatable<NonFacialAnimationData
 
     public bool Equals(NonFacialAnimationData? other)
         => other != null
-        && ReferenceAnimations.SequenceEqual(other.ReferenceAnimations)
+        && ComponentReferences.SequenceEqual(other.ComponentReferences)
         && AnimationClips.SequenceEqual(other.AnimationClips)
         && TransformAnimations.SequenceEqual(other.TransformAnimations);
 
@@ -240,7 +242,7 @@ internal sealed class NonFacialAnimationData : IEquatable<NonFacialAnimationData
         => obj is NonFacialAnimationData other && Equals(other);
 
     public override int GetHashCode()
-        => HashCode.Combine(ReferenceAnimations.Count, AnimationClips.Count, TransformAnimations.Count);
+        => HashCode.Combine(ComponentReferences.Count, AnimationClips.Count, TransformAnimations.Count);
 }
 
 [Serializable]

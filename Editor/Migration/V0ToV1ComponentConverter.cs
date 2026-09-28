@@ -47,12 +47,13 @@ internal static class V0ToV1ComponentConverter
                     var shapes = facial[data];
                     var convertedShapes = shapes == null ? null : PreserveFacialDataReference(data, shapes);
                     var animations = nonFacial[data];
+                    var convertedAnimations = animations == null ? null : PreserveNonFacialDataReference(data, animations);
                     plan.Add(() =>
                     {
                         data.HasFacialBlendShapes = shapes != null;
                         data.FacialBlendShapes = convertedShapes ?? new FacialBlendShapeData();
                         data.HasNonFacialAnimations = animations != null;
-                        data.NonFacialAnimations = animations ?? new NonFacialAnimationData();
+                        data.NonFacialAnimations = convertedAnimations ?? new NonFacialAnimationData();
                         Mark(data);
                     });
                     break;
@@ -61,14 +62,15 @@ internal static class V0ToV1ComponentConverter
                 {
                     var entries = new List<FacialBlendShapeData.CompositeEntry>();
                     AddFacial(entries, expression, facial[expression]);
-                    var animations = CopyNonFacial(nonFacial[expression]);
-                    // Only NonFacial's cross-category order is relaxed: the new resolver
-                    // processes the merged lists by category instead of per child.
+                    var localAnimations = nonFacial[expression];
+                    var animations = localAnimations == null ? new NonFacialAnimationData()
+                        : PreserveNonFacialDataReference(expression, localAnimations);
                     var children = GetChildren(expression, childrenByExpression);
                     foreach (var child in children)
                     {
-                        AddFacial(entries, child, facial[child]);
-                        AddNonFacial(animations, nonFacial[child]);
+                        AddChildFacial(entries, child, facial[child]);
+                        if (nonFacial[child] != null)
+                            animations.ComponentReferences.Add(child);
                     }
                     var shapes = new FacialBlendShapeData();
                     if (entries.Skip(1).Any(entry => entry.EntryKind != FacialBlendShapeData.CompositeEntry.Kind.Direct))
@@ -247,18 +249,18 @@ internal static class V0ToV1ComponentConverter
             _ => null
         };
 
-    private static ExpressionDataComponent? ReferencedFacialData(FaceTuneTagComponent owner)
+    private static FaceTuneTagComponent? ReferencedFacialProvider(FaceTuneTagComponent owner)
     {
         var reference = FacialReference(owner);
         return reference?.Mode == SettingsReferenceMode.Reference
-            ? Select(reference.Source, typeof(FacialBlendShapeData)) as ExpressionDataComponent
+            ? Select(reference.Source, typeof(FacialBlendShapeData))
             : null;
     }
 
     private static FacialBlendShapeData PreserveFacialDataReference(
         FaceTuneTagComponent owner, FacialBlendShapeData value)
     {
-        var source = ReferencedFacialData(owner);
+        var source = ReferencedFacialProvider(owner);
         return source == null ? value : new FacialBlendShapeData
         {
             BaseSource = FacialBlendShapeData.SimpleBaseSource.Reference,
@@ -332,7 +334,7 @@ internal static class V0ToV1ComponentConverter
         FaceTuneTagComponent owner, FacialBlendShapeData? value)
     {
         if (value == null) return;
-        if (ReferencedFacialData(owner) is { } source)
+        if (ReferencedFacialProvider(owner) is { } source)
         {
             if (value.Clip != null || value.BlendShapeAnimations.Count > 0)
                 entries.Add(new FacialBlendShapeData.CompositeEntry
@@ -357,19 +359,46 @@ internal static class V0ToV1ComponentConverter
             });
     }
 
+    private static void AddChildFacial(List<FacialBlendShapeData.CompositeEntry> entries,
+        ExpressionDataComponent child, FacialBlendShapeData? value)
+    {
+        if (value == null || (value.Clip == null && value.BlendShapeAnimations.Count == 0)) return;
+        entries.Add(new FacialBlendShapeData.CompositeEntry
+        {
+            EntryKind = FacialBlendShapeData.CompositeEntry.Kind.Reference,
+            ReferenceSource = child
+        });
+    }
+
+    private static NonFacialAnimationData PreserveNonFacialDataReference(
+        FaceTuneTagComponent owner, NonFacialAnimationData value)
+    {
+        var reference = owner switch
+        {
+            ExpressionComponent expression => expression.NonFacialAnimationsReference,
+            ExpressionDataComponent data => data.NonFacialAnimationsReference,
+            _ => null
+        };
+        var source = reference?.Mode == SettingsReferenceMode.Reference
+            ? Select(reference.Source, typeof(NonFacialAnimationData))
+            : null;
+        return source == null ? CopyNonFacial(value) : new NonFacialAnimationData
+        {
+            ComponentReferences = new List<FaceTuneTagComponent> { source }
+        };
+    }
+
     private static NonFacialAnimationData CopyNonFacial(NonFacialAnimationData? value)
         => value == null ? new NonFacialAnimationData() : new NonFacialAnimationData
         {
+            ComponentReferences = (value.ReferenceAnimations ?? new List<Transform>())
+                .Select(reference => Select(reference, typeof(NonFacialAnimationData)))
+                .OfType<FaceTuneTagComponent>()
+                .Concat(value.ComponentReferences ?? new List<FaceTuneTagComponent>())
+                .ToList(),
             AnimationClips = value.AnimationClips.ToList(),
             TransformAnimations = value.TransformAnimations.ToList()
         };
-
-    private static void AddNonFacial(NonFacialAnimationData target, NonFacialAnimationData? source)
-    {
-        if (source == null) return;
-        target.AnimationClips.AddRange(source.AnimationClips);
-        target.TransformAnimations.AddRange(source.TransformAnimations);
-    }
 
     private static FaceTuneTagComponent? ResolveReference(FaceTuneTagComponent component, Type kind)
     {
