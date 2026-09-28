@@ -12,21 +12,22 @@ internal static class MenuItems
 {
     // Tools
     private const string ToolsPath = "Tools/" + FaceTuneConstants.Name + "/";
+    private const int ToolsPriority = 900;
     
     private const string ToolsSettingsPath = ToolsPath + "Settings/";
     public const string SelectedExpressionPreviewPath = ToolsSettingsPath + "Selected Expression Preview";
-    public const int SelectedExpressionPreviewPriority = 1100;
+    public const int SelectedExpressionPreviewPriority = ToolsPriority;
 
     public const string ProjectSelectedExpressionPreviewPath = ToolsSettingsPath + "Project Selected Expression Preview";
-    public const int ProjectSelectedExpressionPreviewPriority = 1101;
+    public const int ProjectSelectedExpressionPreviewPriority = ToolsPriority + 1;
 
     private const string ToolsDebugPath = ToolsPath + "Debug/";
     public const string ReloadLocalizationPath = ToolsDebugPath + "Reload Localization";
-    public const int ReloadLocalizationPriority = 1200;
+    public const int ReloadLocalizationPriority = ToolsPriority + 100;
     public const string RunMigrationPath = ToolsDebugPath + "Run Pending Migrations";
-    public const int RunMigrationPriority = 1201;
+    public const int RunMigrationPriority = ToolsPriority + 101;
     public const string DecrementMigrationVersionPath = ToolsDebugPath + "Decrement Migration Version";
-    public const int DecrementMigrationVersionPriority = 1202;
+    public const int DecrementMigrationVersionPriority = ToolsPriority + 102;
 
     // Assets
     public const string EditAnimationClipMenuPath = "Assets/Edit Animation Clip by FaceTune";
