@@ -476,9 +476,10 @@ internal sealed class NonFacialAnimationResolver
         HashSet<Component> path)
     {
         var result = new ResolvedNonFacialAnimationSet();
-        foreach (var reference in data.ReferenceAnimations ?? Enumerable.Empty<Transform>())
+        foreach (var reference in data.ComponentReferences ?? Enumerable.Empty<FaceTuneTagComponent>())
         {
-            if (ResolveReference(reference, bodyPath, path) is { } value)
+            if (reference is ISettingProvider<NonFacialAnimationData> provider
+                && Resolve(provider, bodyPath, path) is { } value)
                 Add(result, value);
         }
         foreach (var clip in data.AnimationClips ?? Enumerable.Empty<AnimationClip>())
@@ -494,22 +495,6 @@ internal sealed class NonFacialAnimationResolver
                 animation.Curve ?? AnimationCurve.Constant(0f, 1f, 1f));
         }
         return result;
-    }
-
-    private ResolvedNonFacialAnimationSet? ResolveReference(
-        Transform? source,
-        string bodyPath,
-        HashSet<Component> path)
-    {
-        if (source == null) return null;
-        ResolvedNonFacialAnimationSet? selected = null;
-        foreach (var component in _context.GetComponents<FaceTuneTagComponent>(source.gameObject))
-        {
-            if (component is ISettingProvider<NonFacialAnimationData> provider
-                && Resolve(provider, bodyPath, path) is { } value)
-                selected = value;
-        }
-        return selected;
     }
 
     private void AddClip(

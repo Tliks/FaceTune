@@ -334,28 +334,41 @@ internal sealed class LegacyFaceTuneImporter
         {
             [source.transform] = target.transform
         };
-        var sourceDataComponents = source.GetComponentsInChildren<LegacyExpressionDataComponent>(true);
-        foreach (var sourceData in sourceDataComponents)
+        var facialReferences = new List<FacialBlendShapeData.CompositeEntry>();
+        foreach (var sourceData in source.GetComponentsInChildren<LegacyExpressionDataComponent>(true))
         {
             if (FindNearestExpression(sourceData.transform) != source) continue;
-            if (sourceData.transform == source.transform)
-            {
-                ImportExpressionData(
-                    sourceData,
-                    target.FacialBlendShapes,
-                    target.NonFacialAnimations);
-                continue;
-            }
 
-            var targetTransform = GetOrCreateExpressionDataTransform(
-                sourceData.transform,
-                source.transform,
-                targetTransforms);
-            var data = targetTransform.gameObject.AddComponent<ExpressionDataComponent>();
-            ImportExpressionData(
-                sourceData,
-                data.FacialBlendShapes,
-                data.NonFacialAnimations);
+            var dataTransform = GetOrCreateExpressionDataTransform(
+                sourceData.transform, source.transform, targetTransforms);
+            var data = dataTransform.gameObject.AddComponent<ExpressionDataComponent>();
+            ImportExpressionData(sourceData, data.FacialBlendShapes, data.NonFacialAnimations);
+            data.HasFacialBlendShapes = data.FacialBlendShapes.Clip != null
+                || data.FacialBlendShapes.BlendShapeAnimations.Count > 0;
+            data.HasNonFacialAnimations = data.NonFacialAnimations.AnimationClips.Count > 0
+                || data.NonFacialAnimations.TransformAnimations.Count > 0;
+            data.HasFacialBehavior = false;
+            data.HasMultiFrame = false;
+
+            if (data.HasFacialBlendShapes)
+                facialReferences.Add(new FacialBlendShapeData.CompositeEntry
+                {
+                    EntryKind = FacialBlendShapeData.CompositeEntry.Kind.Reference,
+                    ReferenceSource = data
+                });
+            if (data.HasNonFacialAnimations)
+                target.NonFacialAnimations.ComponentReferences.Add(data);
+        }
+
+        if (facialReferences.Count == 1)
+        {
+            target.FacialBlendShapes.BaseSource = FacialBlendShapeData.SimpleBaseSource.Reference;
+            target.FacialBlendShapes.ReferenceSource = facialReferences[0].ReferenceSource;
+        }
+        else if (facialReferences.Count > 1)
+        {
+            target.FacialBlendShapes.BlendShapeMode = FacialBlendShapeData.Mode.Composite;
+            target.FacialBlendShapes.CompositeEntries = facialReferences;
         }
     }
 
