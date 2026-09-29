@@ -83,7 +83,10 @@ internal record AvatarContext(
             return false;
         }
 
-        var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
+        // var faceMesh = context.Observe(faceRenderer, r => r.sharedMesh, (a, b) => a == b);
+        context.Observe(faceRenderer);
+
+        var faceMesh = faceRenderer.sharedMesh;
         if (faceMesh == null)
         {
             result = BuildResult.NotFoundFaceMesh;
