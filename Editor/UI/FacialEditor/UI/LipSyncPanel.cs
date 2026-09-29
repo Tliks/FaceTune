@@ -296,6 +296,9 @@ internal sealed class LipSyncPanel
         shape.SetEnabled(sectionSelected
                          && (row.Canceller || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
         shape.NameLabel.text = row.ShapeName;
+        shape.SetFacial(row.Canceller
+                        && sectionSelected
+                        && _context.Background.ContainsKey(row.ShapeName));
         var missing = !_context.Catalog.Contains(row.ShapeName);
         var unavailable = row.Canceller
             ? _canceller.IsExplicitlyExcluded(row.ShapeName)

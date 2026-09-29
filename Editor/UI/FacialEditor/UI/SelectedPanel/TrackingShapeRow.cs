@@ -23,6 +23,7 @@ internal sealed class TrackingShapeRow : VisualElement
 
     public VisualElement Metadata { get; }
     public VisualElement ChangedMarker { get; }
+    public VisualElement FacialRail { get; }
     public Image Warning { get; }
     public Label NameLabel { get; }
     public SliderFloatField Weight { get; }
@@ -47,7 +48,14 @@ internal sealed class TrackingShapeRow : VisualElement
             name = "changed-marker"
         };
 
+        FacialRail = new VisualElement
+        {
+            name = "facial-rail"
+        };
+        FacialRail.style.opacity = 0f;
+
         Metadata.Add(ChangedMarker);
+        Metadata.Add(FacialRail);
 
         Warning = new Image
         {
@@ -97,6 +105,9 @@ internal sealed class TrackingShapeRow : VisualElement
             "changed-marker--visible",
             changed);
     }
+
+    public void SetFacial(bool facial)
+        => FacialRail.style.opacity = facial ? 0.5f : 0f;
 
     public void SetWarning(bool missing, bool unavailable)
     {

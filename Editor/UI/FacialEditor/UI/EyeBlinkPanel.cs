@@ -263,6 +263,7 @@ internal sealed class EyeBlinkPanel : IDisposable
                 var manager = _context.DataManagers[row.ListIndex];
                 var name = manager.AllKeys[row.ManagerIndex];
                 shape.NameLabel.text = name;
+                shape.SetFacial(row.ListIndex == 1 && _context.Background.ContainsKey(name));
                 shape.SetWarning(manager.IsMissing(row.ManagerIndex), manager.IsExplicitlyExcluded(name));
                 shape.SetChanged(manager.IsShapeChangedFromInitialState(row.ManagerIndex));
                 shape.Weight.SetValueWithoutNotify(manager.GetEffectiveShapeWeight(row.ManagerIndex));
