@@ -231,7 +231,7 @@ internal static class ConflictShapeDetector
     }
 
     // 変形量の一定以上が基準範囲に集中する候補だけを残す。
-    private const float MinimumRegionFraction = 0.8f;
+    private const float MinimumRegionFraction = 0.99f;
     // リップシンクでは平均移動を除いた残差、まばたきでは近傍ペアの移動差を評価する。
     private const float MinimumResidualFraction = 0.02f;
     private const float MinimumPairDifferenceFraction = 0.02f;
