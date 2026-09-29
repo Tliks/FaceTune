@@ -15,6 +15,7 @@ internal sealed class EyeBlinkPanel : IDisposable
 
     private readonly FacialShapesEditorContext _context;
     private readonly UnselectedPanel?[] _availablePanels;
+    private readonly RowElement _controls = new();
     private readonly ListView _selected = new();
     private readonly List<RowData> _rows = new();
     private readonly SimpleToggle _blinkPageToggle = new();
@@ -34,6 +35,12 @@ internal sealed class EyeBlinkPanel : IDisposable
         _availablePanels = new UnselectedPanel?[context.DataManagers.Count];
 
         SelectedElement.Add(CreatePageSelector());
+        _controls.style.flexDirection = FlexDirection.Row;
+        _controls.style.alignItems = Align.Center;
+        _controls.style.height = FacialShapeUI.RowHeight;
+        _controls.style.flexShrink = 0f;
+        BuildControlsRow(_controls);
+        SelectedElement.Add(_controls);
         SelectedElement.Add(_selected);
 
         _selected.fixedItemHeight = FacialShapeUI.ListItemHeight;
@@ -125,10 +132,6 @@ internal sealed class EyeBlinkPanel : IDisposable
     {
         switch (kind)
         {
-            case RowKind.Controls:
-                BuildControlsRow(root);
-                break;
-
             case RowKind.Shape:
                 BuildShapeRow(root);
                 break;
@@ -244,16 +247,6 @@ internal sealed class EyeBlinkPanel : IDisposable
 
         switch (row.Kind)
         {
-            case RowKind.Controls:
-            {
-                var bulkElement = root.Q<VisualElement>("bulk");
-                var bulk = (BulkShapeControls)bulkElement.userData;
-                // 干渉補正はWeight 0で追加する列表のため、0-を出さない
-                bulk.SetRemoveZeroVisible(row.ListIndex == 0 && HasZeroShape(row.ListIndex));
-                root.Q<Button>("auto-setup").SetVisible(row.ListIndex == 1);
-                break;
-            }
-
             case RowKind.Empty:
                 break;
 
@@ -279,8 +272,13 @@ internal sealed class EyeBlinkPanel : IDisposable
         var listIndex = _context.ActiveListIndex;
         var manager = _context.DataManagers[listIndex];
 
-        // 現在ページ全体の一括操作。1個だけ。
-        _rows.Add(new RowData(RowKind.Controls, listIndex, -1));
+        var controlsRow = new RowData(RowKind.Controls, listIndex, -1);
+        _controls.userData = controlsRow;
+        var bulkElement = _controls.Q<VisualElement>("bulk");
+        var bulk = (BulkShapeControls)bulkElement.userData;
+        // 干渉補正はWeight 0で追加する列表のため、0-を出さない
+        bulk.SetRemoveZeroVisible(listIndex == 0 && HasZeroShape(listIndex));
+        _controls.Q<Button>("auto-setup").SetVisible(listIndex == 1);
 
         var indices = manager.GetTargetIndices(index =>
                 !_context.GroupManager.IsLeftSelected
@@ -334,14 +332,11 @@ internal sealed class EyeBlinkPanel : IDisposable
     private void RefreshBulkControl(int listIndex)
     {
         if (listIndex != 0) return;
-        foreach (var root in _selected.Query<RowElement>().ToList())
-        {
-            if (root.userData is not RowData { Kind: RowKind.Controls } row
-                || row.ListIndex != listIndex) continue;
-            var bulk = root.Q<VisualElement>("bulk");
-            if (bulk?.userData is BulkShapeControls controls)
-                controls.SetRemoveZeroVisible(HasZeroShape(listIndex));
-        }
+        if (_controls.userData is not RowData { Kind: RowKind.Controls } row
+            || row.ListIndex != listIndex) return;
+        var bulk = _controls.Q<VisualElement>("bulk");
+        if (bulk?.userData is BulkShapeControls controls)
+            controls.SetRemoveZeroVisible(HasZeroShape(listIndex));
     }
 
     private UnselectedPanel GetAvailablePanel(int index)

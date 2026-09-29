@@ -26,6 +26,7 @@ internal sealed class LipSyncPanel
     private readonly FacialShapesEditorContext _context;
     private readonly LipSyncEditing _editing;
     private readonly BlendShapeOverrideManager _canceller;
+    private readonly RowElement _controls = new();
     private readonly ListView _selected = new();
     private readonly List<RowData> _rows = new();
     private readonly LipSyncAvailablePanel _available;
@@ -56,6 +57,12 @@ internal sealed class LipSyncPanel
 
         SelectedElement.Add(CreatePageSelector());
         SelectedElement.Add(_modeField);
+        _controls.style.flexDirection = FlexDirection.Row;
+        _controls.style.alignItems = Align.Center;
+        _controls.style.height = FacialShapeUI.RowHeight;
+        _controls.style.flexShrink = 0f;
+        BuildControlsRow(_controls);
+        SelectedElement.Add(_controls);
         SelectedElement.Add(_selected);
 
         context.GroupManager.OnGroupSelectionChanged += _ => Rebuild();
@@ -94,10 +101,6 @@ internal sealed class LipSyncPanel
     {
         switch (kind)
         {
-            case RowKind.Controls:
-                BuildControlsRow(root);
-                break;
-
             case RowKind.Shape:
                 BuildShapeRow(root);
                 break;
@@ -273,18 +276,6 @@ internal sealed class LipSyncPanel
         header.SetValueWithoutNotify(sectionSelected);
         header.SetEnabled(row.Canceller || _editing.Draft.Mode == LipSyncSettings.Kind.Custom);
 
-        if (row.Kind == RowKind.Controls)
-        {
-            var bulkElement = root.Q<VisualElement>("bulk");
-            var bulk = (BulkShapeControls)bulkElement.userData;
-            bulkElement.SetEnabled(sectionSelected
-                                   && (row.Canceller
-                                       || _editing.Draft.Mode == LipSyncSettings.Kind.Custom));
-            bulk.SetRemoveZeroVisible(!row.Canceller && _editing.HasZeroWeight());
-            root.Q<Button>("auto-setup").SetVisible(row.Canceller);
-            return;
-        }
-
         if (row.Kind == RowKind.Empty)
         {
             root.Q<Label>("empty").SetEnabled(sectionSelected
@@ -406,8 +397,8 @@ internal sealed class LipSyncPanel
     {
         var shapes = _editing.PreviewShapes ?? new VrcVisemeLipSyncShapes();
 
-        // ページ全体の一括操作。必ず1個だけ。
-        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, false, false));
+        UpdateControls(new RowData(
+            RowKind.Controls, -1, string.Empty, -1, false, false));
 
         for (var visemeIndex = 0; visemeIndex < VrcVisemeLipSyncShapes.Count; visemeIndex++)
         {
@@ -436,8 +427,8 @@ internal sealed class LipSyncPanel
 
     private void BuildConflictCorrectionRows()
     {
-        // 干渉対策ページ全体の一括操作。1個だけ。
-        _rows.Add(new RowData(RowKind.Controls, -1, string.Empty, -1, true, false));
+        UpdateControls(new RowData(
+            RowKind.Controls, -1, string.Empty, -1, true, false));
 
         var indices = _canceller.GetTargetIndices(index =>
                 !_context.GroupManager.IsLeftSelected
@@ -458,6 +449,21 @@ internal sealed class LipSyncPanel
                 true,
                 false));
         }
+    }
+
+    private void UpdateControls(RowData row)
+    {
+        _controls.userData = row;
+        var header = _controls.Q<SimpleToggle>("header");
+        header.SetVisible(_page == Page.LipSync);
+        header.style.visibility = Visibility.Hidden;
+
+        var bulkElement = _controls.Q<VisualElement>("bulk");
+        var bulk = (BulkShapeControls)bulkElement.userData;
+        bulkElement.SetEnabled(row.Canceller
+                               || _editing.Draft.Mode == LipSyncSettings.Kind.Custom);
+        bulk.SetRemoveZeroVisible(!row.Canceller && _editing.HasZeroWeight());
+        _controls.Q<Button>("auto-setup").SetVisible(row.Canceller);
     }
 
     private RowData[] SectionShapeRows(RowData section)
@@ -527,14 +533,11 @@ internal sealed class LipSyncPanel
         if (_page != Page.LipSync)
             return;
 
-        foreach (var root in _selected.Query<RowElement>().ToList())
-        {
-            if (root.userData is not RowData { Kind: RowKind.Controls, Canceller: false })
-                continue;
-            var bulk = root.Q<VisualElement>("bulk");
-            if (bulk?.userData is BulkShapeControls controls)
-                controls.SetRemoveZeroVisible(_editing.HasZeroWeight());
-        }
+        if (_controls.userData is not RowData { Kind: RowKind.Controls, Canceller: false })
+            return;
+        var bulk = _controls.Q<VisualElement>("bulk");
+        if (bulk?.userData is BulkShapeControls controls)
+            controls.SetRemoveZeroVisible(_editing.HasZeroWeight());
     }
 
     private bool IsChanged(RowData row, float weight)
