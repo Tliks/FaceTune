@@ -9,8 +9,21 @@ internal static class FaceTuneProjectMigration
     [InitializeOnLoadMethod]
     private static void SchedulePending()
     {
-        if (FaceTuneProjectMigrationState.LastStartedVersion < FaceTuneProjectMigrationState.CurrentVersion)
-            EditorApplication.delayCall += RunPending;
+        if (!FaceTuneProjectMigrationState.Exists
+            || FaceTuneProjectMigrationState.LastStartedVersion < FaceTuneProjectMigrationState.CurrentVersion)
+            EditorApplication.delayCall += RunAutomatic;
+    }
+
+    private static void RunAutomatic()
+    {
+        if (!FaceTuneProjectMigrationState.Exists)
+        {
+            Debug.LogWarning("FaceTune migration state file is missing. Automatic migration was skipped. "
+                + $"If this project was upgraded from an older version, run '{Gui.MenuItems.RunMigrationPath}' manually. "
+                + "No migration is needed for a new project.");
+            return;
+        }
+        RunPending();
     }
 
     internal static void RunPending()

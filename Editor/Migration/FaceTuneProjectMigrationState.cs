@@ -7,6 +7,8 @@ internal sealed class FaceTuneProjectMigrationState : ScriptableSingleton<FaceTu
 
     [SerializeField] private int lastStartedVersion;
 
+    internal static bool Exists => System.IO.File.Exists(GetFilePath());
+
     internal static int LastStartedVersion => instance.lastStartedVersion;
 
     internal static void MarkStarted(int version)
